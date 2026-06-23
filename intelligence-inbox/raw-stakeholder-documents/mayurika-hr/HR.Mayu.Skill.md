@@ -68,14 +68,14 @@
     └─ IT / Rajiv confirms company email and team placement  
     └─ Suman provides role title, experience level, and recruitment details at offer stage  
     └─ Mayurika creates staff record:  
-     	├─ Generates staff\_id (uuid)  
-     	├─ Records join\_date, role\_title, current\_team\_id, current\_tl\_id  
-     	├─ Sets employment\_status → "probation"  
-     	├─ Computes probation\_end\_date (join\_date \+ 180 days)  
-     	├─ Records preferred\_name from staff member directly  
-     	├─ Records personal\_email\_for\_records (PDPA-controlled)  
-     	├─ Issues PDPA notice → records pdpa\_notice\_acknowledged\_on on signature  
-     	└─ Sets next\_review\_due based on schedule rules
+      ├─ Generates staff\_id (uuid)  
+      ├─ Records join\_date, role\_title, current\_team\_id, current\_tl\_id  
+      ├─ Sets employment\_status → "probation"  
+      ├─ Computes probation\_end\_date (join\_date \+ 180 days)  
+      ├─ Records preferred\_name from staff member directly  
+      ├─ Records personal\_email\_for\_records (PDPA-controlled)  
+      ├─ Issues PDPA notice → records pdpa\_notice\_acknowledged\_on on signature  
+      └─ Sets next\_review\_due based on schedule rules
 
  2\. **PROBATION PERIOD (up to 180 days)**  
     └─ Suman leads probation tracking — Mayurika holds record only  
@@ -85,11 +85,11 @@
 
  3\. **ACTIVE EMPLOYMENT**  
     └─ Mayurika maintains all field updates as events occur:  
-     	├─ Role change → role\_title updated  
-     	├─ Team transfer → current\_team\_id, current\_tl\_id, current\_stl\_id updated  
-     	├─ Training completion → tools\_certified array updated (manager confirmation required)  
-     	├─ Review completion → last\_review\_date updated, next\_review\_due recomputed  
-     	└─ TL/STL change → current\_tl\_id / current\_stl\_id updated
+      ├─ Role change → role\_title updated  
+      ├─ Team transfer → current\_team\_id, current\_tl\_id, current\_stl\_id updated  
+      ├─ Training completion → tools\_certified array updated (manager confirmation required)  
+      ├─ Review completion → last\_review\_date updated, next\_review\_due recomputed  
+      └─ TL/STL change → current\_tl\_id / current\_stl\_id updated
 
  4\. **MONTH 6 HANDOFF (Suman → Mayurika)**  
     └─ Suman transfers recruitment\_source\_id and recruitment\_promise\_set\_id  
@@ -343,7 +343,6 @@
 
  \*Document Owner: Mayurika | Reviewed by: \[HR Manager / Rajiv\] | Version: 1.0 | Date: June 2026\*  
   
-
 # 2\. 996 project Management
 
 \# Skill.md – 996 Project Management: ROI Monitoring & Follow-up
@@ -671,8 +670,7 @@
 
  \*This document is intended for internal HR use, management review, knowledge transfer, and future automation planning. Sections marked as \*\*\[Assumption\]\*\* indicate areas where information was inferred based on standard business practice and should be verified against actual organizational procedures.\*  
   
-
-**Followup link :** [https://docs.google.com/spreadsheets/d/11Y1lAppEc9gfSE9vahJbjLhMA5L8Y8X1etOcBDpONJ8/edit?usp=sharing](https://docs.google.com/spreadsheets/d/11Y1lAppEc9gfSE9vahJbjLhMA5L8Y8X1etOcBDpONJ8/edit?usp=sharing) 
+**Followup link :** [https://docs.google.com/spreadsheets/d/11Y1lAppEc9gfSE9vahJbjLhMA5L8Y8X1etOcBDpONJ8/edit?usp=sharing](https://docs.google.com/spreadsheets/d/11Y1lAppEc9gfSE9vahJbjLhMA5L8Y8X1etOcBDpONJ8/edit?usp=sharing)
 
 # 3\. Leaders Review
 
@@ -1026,7 +1024,6 @@
 
  \*This document is intended for internal HR use, management review, knowledge transfer, and future automation planning. Sections marked as \*\*\[Assumption\]\*\* indicate areas where information was inferred based on standard business practice and should be verified against actual organizational procedures.\*  
   
-
 # 4\. EOD Management
 
 \# Skill.md – EOD Management & Workforce Productivity Analytics
@@ -1376,13 +1373,12 @@
 
  \*This document is intended for internal HR use, management review, knowledge transfer, and future automation planning. Sections marked as \*\*\[Assumption\]\*\* indicate areas where information was inferred based on standard business practice and should be verified against actual organizational procedures.\*  
   
-
  \*\*EOD (End of Day) Performance Management & Task Intelligence Monitoring\*\*  
  \*\*HR Officer Role | Website Team & PH Team | Active Since March 2025\*\*
 
  \---
 
-**FOLLOWUP LINK** :[http://149.28.134.54:6009/admin/QA/predefinedquestion/](http://149.28.134.54:6009/admin/QA/predefinedquestion/) 
+**FOLLOWUP LINK** :[http://149.28.134.54:6009/admin/QA/predefinedquestion/](http://149.28.134.54:6009/admin/QA/predefinedquestion/)
 
 # 5\. Critic Meeting Management
 
@@ -1749,7 +1745,6 @@
 
  \*This document is intended for internal HR use, management review, knowledge transfer, and future automation planning. Sections marked as \*\*\[Assumption\]\*\* indicate areas where information was inferred based on standard business practice and should be verified against actual organizational procedures.\*  
   
-
 # 6\. SKILL Team Compliance Controller
 
 \# Skill.md – SKILL File Compliance & Capability-Building Responsibility
@@ -1773,11 +1768,11 @@
 
  \`\`\`  
  Business Intelligence  
-     	↓  
+      ↓  
  LLM Queryable Memory  
-     	↓  
+      ↓  
  Decision Engine  
-     	↓  
+      ↓  
  Amazon / eBay / Shopify / Google / Warehouse Execution  
  \`\`\`
 
@@ -2158,7 +2153,6 @@
 
  \*This document is intended for internal HR use, management review, knowledge transfer, and future automation planning. Sections marked as \*\*\[Assumption\]\*\* indicate areas where information was inferred based on standard business practice and should be verified against actual organizational procedures.\*  
   
-
 # 7\. Tech team Management
 
 \# SKILL.md — Technical Team Management & ROI Monitoring
@@ -2224,9 +2218,9 @@
  \`\`\`  
  MORNING — COMMITMENT REVIEW  
  ├─ Review each Technical Team member's planned tasks for the day  
- │	├─ Workflow development tasks (new builds)  
- │	├─ Enhancement tasks (improvements to existing workflows)  
- │	└─ Maintenance tasks (bug fixes, updates, monitoring)  
+ │ ├─ Workflow development tasks (new builds)  
+ │ ├─ Enhancement tasks (improvements to existing workflows)  
+ │ └─ Maintenance tasks (bug fixes, updates, monitoring)  
  ├─ Confirm tasks are logged with clear deliverables and expected completion times  
  └─ Note any carry-forward items from the previous day
 
@@ -2248,10 +2242,10 @@
  \`\`\`  
  STEP 1 — DATA COLLECTION (Monday–Tuesday)  
  ├─ Collect time-saving data for all workflows completed or active during the week  
- │	├─ Time saved per workflow use (minutes / hours per instance)  
- │	├─ Number of times each workflow was used this week  
- │	├─ Employee teams or roles benefiting from each workflow  
- │	└─ Any new workflows that went live this week  
+ │ ├─ Time saved per workflow use (minutes / hours per instance)  
+ │ ├─ Number of times each workflow was used this week  
+ │ ├─ Employee teams or roles benefiting from each workflow  
+ │ └─ Any new workflows that went live this week  
  └─ Gather usage statistics from workflow users or system logs \*(assumed: n8n execution logs)\*
 
  STEP 2 — VALIDATION (Tuesday–Wednesday)  
@@ -2268,12 +2262,12 @@
 
  STEP 4 — REPORT COMPILATION (Thursday)  
  ├─ Compile weekly ROI report covering:  
- │	├─ Total time saved this week (hours)  
- │	├─ ROI per workflow — ranked by impact  
- │	├─ New workflows launched this week  
- │	├─ Cumulative time saved to date  
- │	├─ Workflow adoption rate by team  
- │	└─ Daily commitment completion rate for the week  
+ │ ├─ Total time saved this week (hours)  
+ │ ├─ ROI per workflow — ranked by impact  
+ │ ├─ New workflows launched this week  
+ │ ├─ Cumulative time saved to date  
+ │ ├─ Workflow adoption rate by team  
+ │ └─ Daily commitment completion rate for the week  
  └─ Prepare performance trend summary for management
 
  STEP 5 — MANAGEMENT PRESENTATION (Friday)  
@@ -2315,9 +2309,9 @@
  DAILY  
  ├─ Check whether every Technical Team member has submitted their Skill File for that day  
  ├─ Review each submission for:  
- │	├─ Completeness — does it cover the day's actual work in sufficient detail?  
- │	├─ Accuracy — does it match the committed and completed tasks?  
- │	└─ Consistency — is it in the required format with correct metadata and naming?  
+ │ ├─ Completeness — does it cover the day's actual work in sufficient detail?  
+ │ ├─ Accuracy — does it match the committed and completed tasks?  
+ │ └─ Consistency — is it in the required format with correct metadata and naming?  
  ├─ Identify missing, late, or token submissions  
  └─ Flag and follow up with the relevant team member on the same day
 
@@ -2330,8 +2324,8 @@
 
  ESCALATION  
  └─ If a team member repeatedly falls below the 80% benchmark or repeatedly misses:  
-  	├─ Raise with TL (Sajeesan / Pratheepan) for joint follow-up  
-  	└─ Escalate to management if pattern persists after direct discussion  
+   ├─ Raise with TL (Sajeesan / Pratheepan) for joint follow-up  
+   └─ Escalate to management if pattern persists after direct discussion  
  \`\`\`
 
  \---
@@ -2574,7 +2568,6 @@
 
  \*Document Owner: Mayurika | Reviewed by: \[Rajiv / HR Manager\] | Version: 1.0 | Date: June 2026\*  
   
-
 # 8\. Review Schedule Matrix Management
 
 \# SKILL.md — Review Schedule Matrix Management
@@ -2666,26 +2659,26 @@
  \`\`\`  
  1\. SCHEDULE SETUP (at join or at schedule reset)  
     └─ For each new staff member:  
-     	├─ Compute 1-month review due date (join\_date \+ 30 days ± 5\)  
-     	├─ Compute 3-month review due date (join\_date \+ 90 days ± 7\)  
-     	├─ Compute 6-month review due date (join\_date \+ 180 days ± 7\)  
-     	├─ Compute annual review due date (anniversary of join\_date)  
-     	├─ Add to quarterly skill review roster (end of Q1/Q2/Q3/Q4)  
-     	└─ Add to rolling monthly appraisal schedule (distribute across month)
+      ├─ Compute 1-month review due date (join\_date \+ 30 days ± 5\)  
+      ├─ Compute 3-month review due date (join\_date \+ 90 days ± 7\)  
+      ├─ Compute 6-month review due date (join\_date \+ 180 days ± 7\)  
+      ├─ Compute annual review due date (anniversary of join\_date)  
+      ├─ Add to quarterly skill review roster (end of Q1/Q2/Q3/Q4)  
+      └─ Add to rolling monthly appraisal schedule (distribute across month)
 
  2\. DAILY — EOD 3-TOUCH MONITORING  
     └─ By 18:30 SL: check EOD 3-Touch submission completion rate  
     └─ If completion rate \< 95%:  
-     	├─ Identify missing staff members  
-     	├─ Chase on same evening  
-     	└─ Log chase event and outcome
+      ├─ Identify missing staff members  
+      ├─ Chase on same evening  
+      └─ Log chase event and outcome
 
  3\. WEEKLY — KPI SUBMISSION (Monday)  
     └─ By 17:00 SL Monday:  
-     	├─ Confirm all TLs and STLs have submitted into Mayurika's KPI pack  
-     	├─ Log completions  
-     	├─ Chase any missing submissions immediately  
-     	└─ Flag persistent non-submission to management
+      ├─ Confirm all TLs and STLs have submitted into Mayurika's KPI pack  
+      ├─ Log completions  
+      ├─ Chase any missing submissions immediately  
+      └─ Flag persistent non-submission to management
 
  4\. WEEKLY — STL REVIEW SCHEDULING  
     └─ Confirm each STL has scheduled and completed their weekly team-member review  
@@ -2695,9 +2688,9 @@
 
  5\. MONTHLY — DATA PACK FOR ARUN (Last Friday)  
     └─ By last Thursday of month (24 hrs before):  
-     	├─ Compile KPI data pack for all teams  
-     	├─ Verify data accuracy and completeness  
-     	└─ Deliver to Arun with confirmation
+      ├─ Compile KPI data pack for all teams  
+      ├─ Verify data accuracy and completeness  
+      └─ Deliver to Arun with confirmation
 
  6\. MONTHLY — APPRAISAL SCHEDULE MANAGEMENT  
     └─ Distribute 60% of active staff across the month for appraisals  
@@ -2719,15 +2712,15 @@
 
  9\. ANNUAL REVIEW MANAGEMENT  
     └─ For each staff member approaching their join date anniversary:  
-     	├─ Flag to line manager and Arun at least 2 weeks in advance  
-     	├─ Prepare data pack (performance history, review history, AXIOM data)  
-     	└─ Log completion and update last\_review\_date and next\_review\_due
+      ├─ Flag to line manager and Arun at least 2 weeks in advance  
+      ├─ Prepare data pack (performance history, review history, AXIOM data)  
+      └─ Log completion and update last\_review\_date and next\_review\_due
 
  10\. NEW-HIRE REVIEW HANDOFF (Month 6\)  
- 	└─ At month 6: receive completed 1-month, 3-month, and 6-month review records from Suman  
- 	└─ Integrate all three records into the staff member's standard HR tracking  
- 	└─ Update employment\_status to "active" upon probation close confirmation  
- 	└─ Add staff member to all standard review cycles from month 6 onwards  
+  └─ At month 6: receive completed 1-month, 3-month, and 6-month review records from Suman  
+  └─ Integrate all three records into the staff member's standard HR tracking  
+  └─ Update employment\_status to "active" upon probation close confirmation  
+  └─ Add staff member to all standard review cycles from month 6 onwards  
  \`\`\`
 
  \---
@@ -2960,4 +2953,3 @@
  \*This Skill.md was prepared for knowledge transfer, management review, and future automation alignment. It reflects the current active process as maintained by Mayurika in her HR Officer role.\*
 
  \*Document Owner: Mayurika | Reviewed by: \[HR Manager / Rajiv\] | Version: 1.0 | Date: June 2026\*  
-    

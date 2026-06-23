@@ -53,6 +53,7 @@ Inputs to this skill must be process-level or aggregate. No personally identifia
 | Aggregate data | "3 of 5 team members missing PDPA acknowledgement" |
 
 **Not permitted as input:**
+
 - Individual salary figures
 - Disciplinary case personal details
 - Health or medical information
@@ -69,6 +70,7 @@ Inputs to this skill must be process-level or aggregate. No personally identifia
 *(Source: SRC-VAR-001 — Focus Area 1; SRC-POLICY-001 §3.0, §17.0)*
 
 Gaps detected when:
+
 - Pre-employment documents not collected before start date
 - First-day orientation not confirmed (team introduction, company culture, key policies)
 - Role-specific training not assigned or not confirmed with a mentor or supervisor
@@ -83,6 +85,7 @@ Gaps detected when:
 *(Source: SRC-VAR-001 — Focus Area 2; SRC-POLICY-001 §6.0–6.5)*
 
 Gaps detected when:
+
 - Leave not recorded in the leave system at least 48 hours in advance (SRC-POLICY-001 §6.1)
 - More than 12% of staff on leave simultaneously without authorisation (SRC-POLICY-001 §6.1)
 - Team leave limits exceeded (more than 2 members per day, or more than 1 in CST/Content Writing/Postage teams) (SRC-POLICY-001 §6.1)
@@ -99,6 +102,7 @@ Gaps detected when:
 *(Source: SRC-VAR-001 — Focus Area 3; SRC-ARUN-001)*
 
 Gaps detected when:
+
 - KPI meeting not scheduled or cancelled without rescheduling
 - KPI review data not collected before a scheduled meeting (review inputs not ready)
 - Weekly AXIOM data not submitted by Mayurika to Arun before processing deadline
@@ -114,6 +118,7 @@ Gaps detected when:
 *(Source: SRC-VAR-001 — Focus Area 4)*
 
 Gaps detected when:
+
 - Management decision not recorded or stored in a retrievable location
 - Supporting documentation for a management decision is missing
 - Files are unorganised, misnamed, or placed outside the agreed management structure
@@ -127,6 +132,7 @@ Gaps detected when:
 *(Source: SRC-VAR-001 — Recurring Problems section)*
 
 Gaps detected when:
+
 - A process problem has been flagged more than once without documented resolution
 - A corrective action plan issued at Month 1 review has not been followed up at Month 3 (SRC-SUMAN-001-v2)
 - Critic Meeting action items are not tracked or closed after the Action Review Meeting with the Team Leader (SRC-MAYU-001)
@@ -140,6 +146,7 @@ Gaps detected when:
 *(Source: SRC-POLICY-001 — Final Approved)*
 
 Gaps detected when:
+
 - AI tool daily use is not evidenced for a staff member (SRC-POLICY-001 §17.0)
 - An employee shifting departments has not received role-specific AI reorientation (SRC-POLICY-001 §17.0)
 - No AI-based contribution or efficiency gain reported for the current month (SRC-POLICY-001 §17.0)

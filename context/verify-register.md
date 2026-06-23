@@ -50,6 +50,7 @@ All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 Items 1–5 and the escalation path gap are all blocked by the same root cause: SRC-ADMIN-001 has not been received. The Admin Manager source folder exists but is empty.
 
 **Resolution path:**
+
 1. Obtain Admin Manager documents and/or conduct Admin Manager interview
 2. Place documents in `intelligence-inbox/raw-stakeholder-documents/admin-manager/`
 3. Register as SRC-ADMIN-001 in `evidence/source-register.md`
@@ -65,6 +66,7 @@ Items 1–5 and the escalation path gap are all blocked by the same root cause: 
 ## Arun Wording Items Summary
 
 Items 8, 9, and 10 require Arun confirmation. These can be resolved by email or direct question and do not require a full document source. Once confirmed:
+
 - Update the inline [VERIFY — Arun] tags in CLAUDE.md
 - Update `validation/claude-source-map.md`
 - Note the confirmation method (email / verbal / document) in the source register

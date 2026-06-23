@@ -31,6 +31,7 @@ Do not answer any policy question if SRC-POLICY-001 is not confirmed READY in `e
 **DRY-RUN / PROCESS-LEVEL REFERENCE ONLY.**
 
 This wrapper must not:
+
 - Give legal advice of any kind
 - Make disciplinary decisions or recommend specific disciplinary outcomes for named employees
 - Approve or deny leave requests
@@ -50,6 +51,7 @@ This wrapper must not:
 Pass a policy topic question as input. Reference process-level or aggregate scenarios only. No individual personal HR cases may be provided.
 
 **Accepted input examples:**
+
 - "What is the leave notice period for a 5-day leave request?"
 - "Is AI tool use mandatory for all staff?"
 - "What happens to login credentials when an employee resigns?"
@@ -62,28 +64,28 @@ Pass a policy topic question as input. Reference process-level or aggregate scen
 
 For each policy lookup, produce a record with all of the following fields:
 
-| Field | Description |
-|-------|-------------|
-| Policy Topic | The policy area being looked up |
-| Source Section | SRC-POLICY-001 section number |
-| Plain-Language Explanation | What the policy says in clear terms |
-| What Is Allowed | What is permitted under this policy |
-| What Is Not Allowed | What is prohibited under this policy |
-| Reviewer Needed | Who holds decision authority for this area |
-| [VERIFY] | Whether any aspect of this policy record depends on an unresolved [VERIFY] item |
+| Field                      | Description                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| Policy Topic               | The policy area being looked up                                                 |
+| Source Section             | SRC-POLICY-001 section number                                                   |
+| Plain-Language Explanation | What the policy says in clear terms                                             |
+| What Is Allowed            | What is permitted under this policy                                             |
+| What Is Not Allowed        | What is prohibited under this policy                                            |
+| Reviewer Needed            | Who holds decision authority for this area                                      |
+| [VERIFY]                   | Whether any aspect of this policy record depends on an unresolved [VERIFY] item |
 
 At the end of the output, produce a run summary:
 
-| Summary Field | Value |
-|---------------|-------|
-| PASS/FAIL | PASS if all policy content traces to SRC-POLICY-001 and all [VERIFY] constraints applied; FAIL if any policy rule is invented, any [VERIFY] removed, any HR decision made, or any personal data exposed |
-| Policy Topic Answered | Name of the policy area looked up |
-| Source Section | SRC-POLICY-001 section referenced |
-| Allowed / Not Allowed | Brief restatement of the core rule |
-| Reviewer Needed | Role with decision authority for this topic |
-| [VERIFY] Triggered | Any verify-register.md items that constrained this run's output |
-| Safety Check | Confirm no legal advice given, no HR decisions made, no personal data exposed |
-| Next Action | What the human reviewer should do with this output (e.g., route to Mayurika for leave compliance question; confirm with management for conduct question) |
+| Summary Field         | Value                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PASS/FAIL             | PASS if all policy content traces to SRC-POLICY-001 and all [VERIFY] constraints applied; FAIL if any policy rule is invented, any [VERIFY] removed, any HR decision made, or any personal data exposed |
+| Policy Topic Answered | Name of the policy area looked up                                                                                                                                                                       |
+| Source Section        | SRC-POLICY-001 section referenced                                                                                                                                                                       |
+| Allowed / Not Allowed | Brief restatement of the core rule                                                                                                                                                                      |
+| Reviewer Needed       | Role with decision authority for this topic                                                                                                                                                             |
+| [VERIFY] Triggered    | Any verify-register.md items that constrained this run's output                                                                                                                                         |
+| Safety Check          | Confirm no legal advice given, no HR decisions made, no personal data exposed                                                                                                                           |
+| Next Action           | What the human reviewer should do with this output (e.g., route to Mayurika for leave compliance question; confirm with management for conduct question)                                                |
 
 ---
 
@@ -91,12 +93,12 @@ At the end of the output, produce a run summary:
 
 The following items from `context/verify-register.md` directly limit what this wrapper may assert:
 
-| [VERIFY] Item | Constraint Applied |
-|---------------|--------------------|
-| Admin Manager authority and escalation paths (items 1–5) | No escalation path through Admin Manager may be explained or confirmed in any output. |
-| MD-specific requirements (items 6–7) | Mark all outputs as Foundation Draft v0.1. |
-| Director authority beyond leadership review (item 12) | Reference Director only for confirmed Leadership Review co-facilitation role (SRC-MAYU-001). |
-| Exact tool names for HR and EOD systems (item 13) | Do not state HR or EOD tool names by name until confirmed with Mayurika. |
+| [VERIFY] Item                                            | Constraint Applied                                                                           |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Admin Manager authority and escalation paths (items 1–5) | No escalation path through Admin Manager may be explained or confirmed in any output.        |
+| MD-specific requirements (items 6–7)                     | Mark all outputs as Foundation Draft v0.1.                                                   |
+| Director authority beyond leadership review (item 12)    | Reference Director only for confirmed Leadership Review co-facilitation role (SRC-MAYU-001). |
+| Exact tool names for HR and EOD systems (item 13)        | Do not state HR or EOD tool names by name until confirmed with Mayurika.                     |
 
 ---
 

@@ -147,6 +147,7 @@ All policy rules, thresholds, timelines, and governance claims in all four skill
 **YES — CONDITIONALLY SAFE FOR VARMEN REVIEW**
 
 All four skill files:
+
 - Contain only source-backed or [VERIFY]-tagged claims
 - Preserve all 13 active [VERIFY] items from verify-register.md
 - Include no forbidden actions
@@ -156,6 +157,7 @@ All four skill files:
 - Are correctly marked as Foundation Draft v0.1
 
 Conditions to note for Varmen review:
+
 - These are draft files — not operational until Varmen validates
 - Admin Manager [VERIFY] items (1–5) mean any skill section involving Admin Manager escalation is incomplete
 - Arun wording items (8–10) mean Amazon ACOS detection, Operational Manager PRC, and ROI Officer feedback are [VERIFY] in kpi-axiom-review-support.md
@@ -173,6 +175,7 @@ These skill drafts can be shared with Varmen and then Mayurika (as designated op
 All content is process-level and aggregate. Policy content draws from SRC-POLICY-001, which is Final Approved and Varmen-reviewed.
 
 **Conditions before operational use:**
+
 - Varmen review and sign-off required
 - All [VERIFY] items that affect operational scope must be resolved before the relevant skill sections are used
 - MD review and sign-off required before v1.0 treatment

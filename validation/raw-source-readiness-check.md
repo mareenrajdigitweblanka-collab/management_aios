@@ -78,6 +78,7 @@ The following sources are not yet available. CLAUDE.md sections that depend on t
 > **DECISION: READY FOR FOUNDATION DRAFT v0.1 ONLY**
 
 Six of seven registered sources are present and cleared. The available sources cover:
+
 - Owner directives and priorities (Varmen)
 - HR policies and org structure (Mayurika)
 - KPI framework and performance tracking (Arun)

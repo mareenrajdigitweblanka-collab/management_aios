@@ -38,6 +38,7 @@ status: CONDITIONAL PASS — Foundation Draft v0.1
 The Admin Manager is named as a PRC member in SRC-ARUN-001. No documents from the Admin Manager have been received. The folder `intelligence-inbox/raw-stakeholder-documents/admin-manager/` exists but is empty.
 
 The following are UNKNOWN until SRC-ADMIN-001 is received and reviewed:
+
 - Authority scope
 - Reporting line
 - Approval rights

@@ -40,6 +40,7 @@ The four core problem areas this AIOS was created to address, as stated by Varme
 Every fact, rule, process claim, or operational detail in this CLAUDE.md must trace to a Source ID registered in [evidence/source-register.md](evidence/source-register.md).
 
 **Rules:**
+
 - If a claim has a Source ID: it is conditionally confirmed and may be used for foundation context.
 - If a claim carries `[VERIFY]`: it is either unconfirmed, inferred, or pending a missing source. It must not be treated as operational truth until the verification is resolved.
 - If a claim has no Source ID and no `[VERIFY]` tag: it is an error. Flag it immediately.
@@ -86,6 +87,7 @@ The organisation structure as known from available sources:
 **[VERIFY — Operational Manager]:** The Operational Manager is listed in the PRC (SRC-ARUN-001). Detailed responsibilities and reporting line have not been confirmed by a dedicated source.
 
 **Key authority lines confirmed from sources:**
+
 - Rajiv holds canonical authority over name spelling and team structure (SRC-MAYU-001).
 - Suman leads recruitment and probation tracking for new staff (SRC-MAYU-001).
 - Arun owns AXIOM band placement and KPI definitions (SRC-MAYU-001, SRC-ARUN-001).
@@ -263,6 +265,7 @@ Collect data weekly → calculate KPI scores → assign bands → identify risks
 ### 7.8 PRC Governance
 
 **Performance Review Committee members (SRC-ARUN-001):**
+
 - Managing Director
 - Implementation Officer
 - Admin Manager [VERIFY — awaiting SRC-ADMIN-001: Admin Manager's PRC role and authority within PRC not yet independently confirmed]
@@ -274,6 +277,7 @@ Collect data weekly → calculate KPI scores → assign bands → identify risks
 ### 7.9 Bonus Eligibility
 
 All of the following must be met:
+
 - YOY Growth >= 30%
 - ROAS/ACOS Target Achieved
 - Individual Staff Net Sales at Green Band or Above
@@ -332,6 +336,7 @@ Candidates who score above 30 marks may be considered for recruitment, subject t
 ### 8.4 Rejected and On-Hold Candidate Tracking
 
 Separate tracking sheets are maintained for:
+
 - Rejected Candidates
 - On-Hold Candidates
 
@@ -356,6 +361,7 @@ A review is scheduled after the first 7/14 days, incorporating feedback from the
 ### 8.7 Month 1 Review
 
 **Assessment Areas:**
+
 - Onboarding completion
 - System and tool access
 - Initial assignments
@@ -375,6 +381,7 @@ Any employee marked as "Concern" at Month 1 will receive a documented corrective
 ### 8.8 Month 3 Review
 
 **Assessment Areas:**
+
 - Commitment delivery review
 - KPI participation
 - Behavioural observations
@@ -385,6 +392,7 @@ Employees marked "Concern" at Month 1 who fail to achieve their corrective actio
 ### 8.9 Month 6 Review
 
 **Assessment Areas:**
+
 - Full commitment versus delivery assessment
 - Probation confirmation decision
 - Formal handover preparation
@@ -394,11 +402,13 @@ Employees marked "Concern" at Month 1 who fail to achieve their corrective actio
 All recruitment sources are monitored across two dimensions:
 
 **Activity Metrics:**
+
 - Applications received
 - Response rates
 - Recruitment costs
 
 **Quality Metrics:**
+
 - Long-term hiring success
 - Probation completion rates
 - Performance outcomes
@@ -408,6 +418,7 @@ All recruitment sources are monitored across two dimensions:
 At Month 6, a structured 15-minute handover meeting is conducted involving the Line Manager [VERIFY — SRC-SUMAN-001-v2: named as attendee but role holder not identified in this source], Mayurika (referred to as "Mayoorika" in source document), Arun, and Suman.
 
 The review covers:
+
 - Commitment delivery summary
 - Employee record verification
 - KPI baseline confirmation
@@ -420,6 +431,7 @@ Recruitment ownership formally concludes at this stage unless unresolved actions
 ### 8.12 Daily Knowledge Capture
 
 Suman dedicates one hour each working day to documenting:
+
 - Evaluation and training status
 - Recruitment trends
 - Sourcing insights
@@ -484,6 +496,7 @@ Twice-weekly Leadership Review sessions are co-facilitated by Mayurika and the D
 *(Source: SRC-POLICY-001 §6.0–6.5)*
 
 **General leave guidelines:**
+
 - Leave requests must be updated in the leave system at least 48 hours in advance.
 - Maximum 12% of staff may take leave simultaneously. Excess is considered unauthorised leave.
 - Team leave limits: maximum 2 team members per day (or 1 for CST, Content Writing, and Postage teams).
@@ -499,6 +512,7 @@ Twice-weekly Leadership Review sessions are co-facilitated by Mayurika and the D
 | 13–14 days | 3 months | Manager approval |
 
 **Planned leave — entitlement:**
+
 - No leave during the 3-month probationary period. If urgent, leave can be taken and recovered within weekdays.
 - Junior staff: 1 day leave per month.
 - Senior staff: 2 days leave per month (32 days per annum).
@@ -545,6 +559,7 @@ Structured onboarding includes: collection of pre-employment documents before st
 *(Source: SRC-POLICY-001 §17.0)*
 
 AI tools are mandatory across all departments and roles. Daily use is required and monitored. AI inactivity negatively impacts performance reviews. Key rules:
+
 - All new hires must complete AI tool training during onboarding.
 - Employees shifting departments must complete role-specific AI reorientation.
 - Each subteam leader maintains a standardised AI toolkit and ensures staff competency.

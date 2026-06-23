@@ -7,6 +7,7 @@ input-provided-by: Varmen (session)
 ---
 
 # Policy Lookup — Test Run
+
 **Date:** 2026-06-23
 **Mode:** DRY-RUN — for information and reference only. No HR advice. No legal advice. No decisions made.
 
@@ -21,6 +22,7 @@ input-provided-by: Varmen (session)
 ## Policy Areas Identified
 
 This scenario crosses two confirmed policy areas:
+
 1. Leave during probation period (SRC-POLICY-001 §6.2)
 2. Unplanned leave and leave without notice (SRC-POLICY-001 §6.0, §6.3)
 

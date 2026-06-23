@@ -22,6 +22,7 @@ status: PASS — Foundation Draft v0.1
 Mayurika (HR Officer) is the primary custodian and write-authority for staff records. She maintains canonical employment status, dates, training logs, and review schedules for all active, probationary, on-leave, suspended, and departed employees.
 
 **Key lifecycle events managed by Mayurika:**
+
 - New joiner onboarding
 - Active employment record maintenance
 - Month 6 handoff from Suman (Recruitment Officer)
@@ -30,6 +31,7 @@ Mayurika (HR Officer) is the primary custodian and write-authority for staff rec
 - PDPA acknowledgement tracking
 
 **Mayurika does NOT write:**
+
 - Canonical name spelling (Rajiv's authority)
 - Team structure data (Rajiv's authority)
 - Salary band information
@@ -44,6 +46,7 @@ Mayurika (HR Officer) is the primary custodian and write-authority for staff rec
 Mayurika issues PDPA notices to all new joiners and records the acknowledgement date. Staff with no acknowledgement date on record are flagged as non-compliant.
 
 **Key process steps:**
+
 - Issue PDPA notice at onboarding
 - Record acknowledgement date in staff record
 - Flag null acknowledgement dates as non-compliant
@@ -71,16 +74,19 @@ Monthly review schedule refresh is performed to identify upcoming and overdue re
 *(Source: SRC-MAYU-001 — Section 4 of HR.Mayu.Skill.md; active since March 2025)*
 
 Mayurika manages the End of Day (EOD) Performance Management program for:
+
 - Website Team
 - PH Team
 
 **Process:**
+
 - Staff submit daily task reports via a ChatGPT project workspace
 - Mayurika monitors submission compliance
 - Data is synced with an EOD Dashboard
 - Weekly and monthly productivity analysis is produced
 
 **Task analysis dimensions tracked:**
+
 - Task Name
 - Staff ID
 - Task Tier
@@ -95,11 +101,13 @@ Mayurika manages the End of Day (EOD) Performance Management program for:
 *(Source: SRC-MAYU-001 — Section 5 of HR.Mayu.Skill.md)*
 
 Monthly Critic Meetings are co-facilitated by:
+
 - Mayurika (HR Officer)
 - Muguntha
 - Jefri
 
 **Process:**
+
 1. Each session reviews one department
 2. Employees from other departments provide structured feedback
 3. After each session, Mayurika arranges an Action Review Meeting with the relevant Team Leader
@@ -113,6 +121,7 @@ Monthly Critic Meetings are co-facilitated by:
 *(Source: SRC-MAYU-001 — Section 6 of HR.Mayu.Skill.md)*
 
 Mayurika is the SKILL File Compliance Manager for:
+
 - Developer Team
 - Technical/N8N Team
 
@@ -139,6 +148,7 @@ Sajeesan → Pratheepan → Joshna → Management
 Mayurika coordinates post-996-Project ROI monitoring.
 
 **Weekly data collection from:**
+
 - PH Team
 - Digital Marketing Team
 - Technical Team
@@ -154,6 +164,7 @@ Mayurika coordinates post-996-Project ROI monitoring.
 Twice-weekly Leadership Review sessions are co-facilitated by Mayurika and the Director.
 
 **Scope:**
+
 - Separate review frameworks exist for Sales Teams and Non-Sales Teams
 - Mayurika schedules sessions, prepares frameworks, captures data
 - Mayurika validates team leader-reported data against management-level data

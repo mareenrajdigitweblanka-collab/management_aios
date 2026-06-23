@@ -56,6 +56,7 @@ Inputs must be process-level or aggregate. No personal candidate data may be pro
 | Daily knowledge capture status | "No daily capture entry for last 3 working days" |
 
 **Not permitted as input:**
+
 - Individual candidate personal details, addresses, contact information
 - Salary negotiation data
 - Health or medical information about candidates

@@ -7,6 +7,7 @@ input-provided-by: Varmen (session)
 ---
 
 # Management Gap Detection — Test Run
+
 **Date:** 2026-06-23
 **Mode:** DRY-RUN — output for human review only. No actions triggered. No decisions made.
 

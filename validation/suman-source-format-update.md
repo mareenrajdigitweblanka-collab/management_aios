@@ -69,6 +69,7 @@ SRC-SUMAN-001-v2 spells the HR Officer's name as **"Mayoorika"** (double-o). All
 ## Pass / Fail Rule
 
 PASS if:
+
 - SRC-SUMAN-001-v2 (.md) is the current active source for all recruitment claims
 - SRC-SUMAN-001-v1 (.docx) is registered as SUPERSEDED and no longer cited as active
 - All recruitment claims in CLAUDE.md map to SRC-SUMAN-001-v2 in claude-source-map.md
@@ -76,6 +77,7 @@ PASS if:
 - [VERIFY] markers are only present where the .md source is genuinely unclear or incomplete
 
 FAIL if:
+
 - Both .docx and .md remain listed as active sources
 - Any [VERIFY] marker was removed without .md evidence
 - Admin Manager or Arun [VERIFY] markers were accidentally removed

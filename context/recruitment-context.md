@@ -20,6 +20,7 @@ status: CONDITIONAL PASS — Foundation Draft v0.1
 *(Source: SRC-SUMAN-001-v2 — Recruitment_Quality_Control_Process.md)*
 
 Candidates enter the recruitment pipeline through:
+
 - Internal and external referrals
 - Social media advertisements
 - Recruitment websites
@@ -72,6 +73,7 @@ Candidates who score above 30 marks may be considered for recruitment, subject t
 *(Source: SRC-SUMAN-001-v2)*
 
 Separate tracking sheets are maintained for:
+
 - Rejected Candidates
 - On-Hold Candidates
 
@@ -94,6 +96,7 @@ Every offer includes a documented commitment record outlining what the candidate
 A review is scheduled after the first 7 or 14 days, incorporating feedback from Trainer / Team Leader evaluation reports.
 
 **Assessment areas:**
+
 - Knowledge gained during training
 - Understanding of assigned responsibilities
 - Confidence level and communication skills
@@ -111,6 +114,7 @@ A review is scheduled after the first 7 or 14 days, incorporating feedback from 
 > **Probation leave restriction (Source: SRC-POLICY-001 §6.2):** No leave is permitted during the 3-month probationary period. If urgent, leave can be taken and recovered within weekdays.
 
 **Assessment areas:**
+
 - Onboarding completion
 - System and tool access
 - Initial assignments
@@ -134,6 +138,7 @@ Any employee marked "Concern" at Month 1 will receive a documented corrective ac
 *(Source: SRC-SUMAN-001-v2)*
 
 **Assessment areas:**
+
 - Commitment delivery review
 - KPI participation
 - Behavioural observations
@@ -148,6 +153,7 @@ Employees marked "Concern" at Month 1 who fail to achieve their corrective actio
 *(Source: SRC-SUMAN-001-v2)*
 
 **Assessment areas:**
+
 - Full commitment versus delivery assessment
 - Probation confirmation decision
 - Formal handover preparation
@@ -161,11 +167,13 @@ Employees marked "Concern" at Month 1 who fail to achieve their corrective actio
 All recruitment sources are monitored across two dimensions:
 
 **Activity metrics:**
+
 - Applications received
 - Response rates
 - Recruitment costs
 
 **Quality metrics:**
+
 - Long-term hiring success
 - Probation completion rates
 - Performance outcomes
@@ -179,12 +187,14 @@ All recruitment sources are monitored across two dimensions:
 At Month 6, a structured 15-minute handover meeting is conducted.
 
 **Attendees:**
+
 - Line Manager **[VERIFY — SRC-SUMAN-001-v2: role named as attendee but role holder not identified in this source. Confirm with Suman or Varmen.]**
 - Mayurika (HR Officer) — referred to as "Mayoorika" in source document
 - Arun (Implementation Officer)
 - Suman (Recruitment Officer)
 
 **Review covers:**
+
 - Commitment delivery summary
 - Employee record verification
 - KPI baseline confirmation
@@ -201,6 +211,7 @@ Recruitment ownership formally concludes at this stage unless unresolved actions
 *(Source: SRC-SUMAN-001-v2)*
 
 Suman dedicates one hour each working day to documenting:
+
 - Evaluation and training status
 - Recruitment trends
 - Sourcing insights

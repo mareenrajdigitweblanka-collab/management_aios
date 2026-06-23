@@ -66,10 +66,12 @@ management-aios/
 ## Evidence / Validation Note
 
 This skeleton must be validated by running:
+
 ```
 find . -maxdepth 3 -type d | sort
 find . -maxdepth 3 -name "README.md" | sort
 ```
+
 Validation output must be reviewed and signed off by Varmen before any content is added.
 
 ---

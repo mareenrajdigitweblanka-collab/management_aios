@@ -33,11 +33,11 @@ Individual Staff Net Sales Bands:
 
 YOY Growth below 30%, Website ROAS below 400%,
 
- Amazon ACOSBelow 25%, 
+ Amazon ACOSBelow 25%,
 
 eBay ACOS Below 20%,
 
-Incident Score below 15/25, 3+ incident reports, repeated task misses, 
+Incident Score below 15/25, 3+ incident reports, repeated task misses,
 
 missing documentation,
 
@@ -46,7 +46,7 @@ low ROI contribution, low NNV growth and poor utilization.
 # **4\. Review Inputs**
 
 Revenue, Profit, YOY Growth, ROAS, ACOS, Individual Staff Net Sales, Task Completion,  
- Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback,ROI officer feed back 
+ Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback,ROI officer feed back
 
 # **5\. Review Outputs**
 
@@ -80,4 +80,3 @@ YOY Growth \>=30%, ROAS/ACOS Target Achieved, Individual Staff Net Sales at Gree
 Weekly: Revenue, Profit, AXIOM Band, Incident Tracking.  
  Monthly: KPI Achievement, YOY Growth, ROI Contribution, Bonus Eligibility, Department Performance.  
  Required Views: Staff, Team, Department, Portfolio, Incident, Bonus and PRC Review.
-

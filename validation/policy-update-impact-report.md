@@ -43,6 +43,7 @@ Registered: 2026-06-23
 | 12 | Leave policy detail — no dedicated leave policy source registered | SRC-POLICY-001 §6.0–6.5 | 2026-06-23 |
 
 Full leave framework (general guidelines, notice periods, planned/unplanned leave, short leave, maternity leave, probation restriction) is now documented in:
+
 - CLAUDE.md §10.1
 - context/hr-operations-context.md §9
 
@@ -68,6 +69,7 @@ Total remaining: 13 items (was 14).
 ## Conflicts Found
 
 **None.** No policy claim conflicts with any confirmed existing source. All SRC-POLICY-001 additions are either:
+
 - Additive — new policy areas not previously covered, or
 - Reinforcing — policy confirms rules already stated in SRC-VAR-001 or SRC-MAYU-001, or
 - Resolving — directly resolves [VERIFY] item 12.
@@ -87,6 +89,7 @@ The source file is named `Draft DIGIT WEB LANKA - Company Policy Manual.md`. The
 All SRC-POLICY-001 content has been ingested, sourced, and mapped. The AIOS foundation now covers company-wide policy including leave, onboarding, offboarding, conduct, AI tools, and confidentiality rules.
 
 Conditions that remain before full Tier 1 skill drafting:
+
 - Admin Manager items (1–5) still [VERIFY] — do not draft skills that depend on Admin Manager authority or final escalation paths
 - Arun wording items (8–10) still [VERIFY] — confirm before drafting KPI/AXIOM detection skills
 - MD requirements (6–7) still pending — Tier 1 skills must be treated as draft until MD review

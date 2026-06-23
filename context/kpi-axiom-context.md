@@ -145,6 +145,7 @@ Collect data weekly → calculate KPI scores → assign bands → identify risks
 | Operational Manager | [VERIFY — Arun: confirm Operational Manager PRC membership and scope of participation] |
 
 **PRC Responsibilities:**
+
 - KPI Review
 - Bonus Approval
 - Escalation Decisions

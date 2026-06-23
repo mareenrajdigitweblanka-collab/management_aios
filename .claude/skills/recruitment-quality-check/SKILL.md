@@ -29,6 +29,7 @@ Read the following files before processing any input:
 **DRY-RUN ONLY. Use only with sample or redacted data.**
 
 This wrapper must not:
+
 - Approve or reject any candidate
 - Make probation decisions
 - Make discontinuation decisions (subject to management review and approval — SRC-SUMAN-001-v2 §8.8)
@@ -47,6 +48,7 @@ This wrapper must not:
 Pass process-level or aggregate recruitment status observations as input. No personal candidate data may be provided.
 
 **Accepted input examples:**
+
 - "Candidate shortlisted; 8-point screen not completed"
 - "AI Familiarity criterion not assessed"
 - "Interview score recorded as 28/50"
@@ -60,27 +62,27 @@ Pass process-level or aggregate recruitment status observations as input. No per
 
 For each recruitment process gap identified, produce one record with all of the following fields:
 
-| Field | Description |
-|-------|-------------|
-| Stage | Which stage of the recruitment process (e.g., 8-Point Screen, Month 1 Review, 180-Day Handover) |
-| Check Item | Which specific check item failed |
-| Evidence | What was observed or reported |
-| Source Affected | Source ID and section that defines the expected standard |
-| Impact | What risk or downstream harm may occur if this gap is not addressed |
-| Owner | Who is responsible for this stage (process-level — no personal decisions) |
-| [VERIFY] Status | Whether this gap record depends on an unresolved [VERIFY] item |
-| Recommended Next Action | What should happen next — by whom, at what stage |
+| Field                   | Description                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Stage                   | Which stage of the recruitment process (e.g., 8-Point Screen, Month 1 Review, 180-Day Handover) |
+| Check Item              | Which specific check item failed                                                                |
+| Evidence                | What was observed or reported                                                                   |
+| Source Affected         | Source ID and section that defines the expected standard                                        |
+| Impact                  | What risk or downstream harm may occur if this gap is not addressed                             |
+| Owner                   | Who is responsible for this stage (process-level — no personal decisions)                       |
+| [VERIFY] Status         | Whether this gap record depends on an unresolved [VERIFY] item                                  |
+| Recommended Next Action | What should happen next — by whom, at what stage                                                |
 
 At the end of the output, produce a run summary:
 
-| Summary Field | Value |
-|---------------|-------|
-| PASS/FAIL | PASS if all gaps trace to registered sources and all [VERIFY] constraints applied; FAIL if any recruitment rule is invented, any [VERIFY] removed, any personal candidate data stored, or any hiring decision made |
-| Gaps Found | Count of gaps identified in this run |
-| Source IDs Used | List of Source IDs referenced in this run |
-| [VERIFY] Items Triggered | List of verify-register.md items that constrained this run's output |
-| Safety Check | Confirm no hiring decisions made, no personal data stored, no escalations triggered |
-| Next Action | What the human reviewer should do with this output |
+| Summary Field            | Value                                                                                                                                                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PASS/FAIL                | PASS if all gaps trace to registered sources and all [VERIFY] constraints applied; FAIL if any recruitment rule is invented, any [VERIFY] removed, any personal candidate data stored, or any hiring decision made |
+| Gaps Found               | Count of gaps identified in this run                                                                                                                                                                               |
+| Source IDs Used          | List of Source IDs referenced in this run                                                                                                                                                                          |
+| [VERIFY] Items Triggered | List of verify-register.md items that constrained this run's output                                                                                                                                                |
+| Safety Check             | Confirm no hiring decisions made, no personal data stored, no escalations triggered                                                                                                                                |
+| Next Action              | What the human reviewer should do with this output                                                                                                                                                                 |
 
 ---
 
@@ -88,11 +90,11 @@ At the end of the output, produce a run summary:
 
 The following items from `context/verify-register.md` directly limit what this wrapper may assert:
 
-| [VERIFY] Item | Constraint Applied |
-|---------------|--------------------|
+| [VERIFY] Item                                       | Constraint Applied                                                                                                                     |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Line Manager identity in 180-day handover (item 11) | Handover attendee check cannot confirm Line Manager identity. Output must flag as [VERIFY] until Suman or Varmen confirms role holder. |
-| Admin Manager authority (items 1–5) | No escalation path through Admin Manager may be included in any output. |
-| MD-specific requirements (items 6–7) | This skill may change scope after MD review. Mark all outputs as Foundation Draft v0.1. |
+| Admin Manager authority (items 1–5)                 | No escalation path through Admin Manager may be included in any output.                                                                |
+| MD-specific requirements (items 6–7)                | This skill may change scope after MD review. Mark all outputs as Foundation Draft v0.1.                                                |
 
 ---
 

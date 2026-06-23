@@ -29,6 +29,7 @@ Read the following files before processing any input:
 **DRY-RUN / CHECKLIST PREPARATION ONLY.**
 
 This wrapper must not:
+
 - Make any performance decision for any employee
 - Assign AXIOM bands — Arun (Implementation Officer) holds sole authority for AXIOM band placement (SRC-MAYU-001, SRC-ARUN-001)
 - Issue First Warning, Second Warning, Third Warning, or PIP
@@ -50,6 +51,7 @@ All [VERIFY] items from Arun (items 8, 9, 10 in verify-register.md) must be pres
 Pass team-level KPI status, aggregate band distribution, review schedule status, incident documentation status, or dashboard availability observations as input. Individual named staff AXIOM band placements, salary data, and personal disciplinary case details must not be provided.
 
 **Accepted input examples:**
+
 - "Website Team ROAS this week: 380%"
 - "3 staff in Red band, 2 in Amber — net sales week"
 - "KPI review for eBay Team not scheduled this week"
@@ -63,25 +65,25 @@ Pass team-level KPI status, aggregate band distribution, review schedule status,
 
 Produce checklist-style output for the relevant section(s) of `skills/kpi-axiom-review-support.md`. For each missing input, undocumented step, or unmet condition identified, produce one record:
 
-| Field | Description |
-|-------|-------------|
-| Review Area | Which section or stage (e.g., Weekly AXIOM Workflow, Bonus Eligibility, PRC Preparation) |
-| Missing Input or Undocumented Step | What is not available or not evidenced |
-| Source ID | SRC-ARUN-001 section that defines the requirement |
-| Impact | What review activity is blocked or at risk |
-| [VERIFY] Status | Whether this record involves an unresolved [VERIFY] item |
-| Recommended Next Action | What should happen — by whom |
+| Field                              | Description                                                                              |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| Review Area                        | Which section or stage (e.g., Weekly AXIOM Workflow, Bonus Eligibility, PRC Preparation) |
+| Missing Input or Undocumented Step | What is not available or not evidenced                                                   |
+| Source ID                          | SRC-ARUN-001 section that defines the requirement                                        |
+| Impact                             | What review activity is blocked or at risk                                               |
+| [VERIFY] Status                    | Whether this record involves an unresolved [VERIFY] item                                 |
+| Recommended Next Action            | What should happen — by whom                                                             |
 
 At the end of the output, produce a run summary:
 
-| Summary Field | Value |
-|---------------|-------|
-| PASS/FAIL | PASS if all checklist items trace to SRC-ARUN-001 and all [VERIFY] constraints applied; FAIL if any KPI threshold is invented, any [VERIFY] removed, any employee decision made, or any escalation triggered |
-| Missing Inputs Found | Count of missing review inputs identified |
-| Source IDs Used | List of Source IDs referenced in this run |
-| [VERIFY] Items Triggered | List of verify-register.md items that constrained this run's output (especially items 8, 9, 10) |
-| Safety Check | Confirm no performance decisions made, no AXIOM bands assigned, no warnings issued, no PRC actions triggered |
-| Next Action | What the human reviewer should do with this output |
+| Summary Field            | Value                                                                                                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PASS/FAIL                | PASS if all checklist items trace to SRC-ARUN-001 and all [VERIFY] constraints applied; FAIL if any KPI threshold is invented, any [VERIFY] removed, any employee decision made, or any escalation triggered |
+| Missing Inputs Found     | Count of missing review inputs identified                                                                                                                                                                    |
+| Source IDs Used          | List of Source IDs referenced in this run                                                                                                                                                                    |
+| [VERIFY] Items Triggered | List of verify-register.md items that constrained this run's output (especially items 8, 9, 10)                                                                                                              |
+| Safety Check             | Confirm no performance decisions made, no AXIOM bands assigned, no warnings issued, no PRC actions triggered                                                                                                 |
+| Next Action              | What the human reviewer should do with this output                                                                                                                                                           |
 
 ---
 
@@ -89,14 +91,14 @@ At the end of the output, produce a run summary:
 
 The following items from `context/verify-register.md` directly limit what this wrapper may assert:
 
-| [VERIFY] Item | Constraint Applied |
-|---------------|--------------------|
-| Amazon ACOS threshold wording (item 8) | Amazon ACOS trigger in §6 of the draft must not be used operationally. Flag as [VERIFY — Arun: source wording "Amazon ACOSBelow 25%" — threshold direction and formatting must be confirmed with Arun] in all outputs. |
-| Operational Manager PRC membership (item 9) | Do not assert Operational Manager PRC membership or scope without Arun confirmation. |
-| ROI Officer feedback — role identity (item 10) | Do not assert ROI Officer Feedback as a confirmed input from a confirmed role. Flag as [VERIFY — Arun: confirm whether ROI Officer is a distinct role or an existing title]. |
-| Admin Manager PRC role (item 3) | Do not assert Admin Manager PRC authority or scope. Mark as [VERIFY — awaiting SRC-ADMIN-001]. |
-| Admin Manager escalation authority (items 1–5) | No final escalation paths through Admin Manager may be included. |
-| MD-specific requirements (items 6–7) | Mark all outputs as Foundation Draft v0.1. |
+| [VERIFY] Item                                  | Constraint Applied                                                                                                                                                                                                     |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Amazon ACOS threshold wording (item 8)         | Amazon ACOS trigger in §6 of the draft must not be used operationally. Flag as [VERIFY — Arun: source wording "Amazon ACOSBelow 25%" — threshold direction and formatting must be confirmed with Arun] in all outputs. |
+| Operational Manager PRC membership (item 9)    | Do not assert Operational Manager PRC membership or scope without Arun confirmation.                                                                                                                                   |
+| ROI Officer feedback — role identity (item 10) | Do not assert ROI Officer Feedback as a confirmed input from a confirmed role. Flag as [VERIFY — Arun: confirm whether ROI Officer is a distinct role or an existing title].                                           |
+| Admin Manager PRC role (item 3)                | Do not assert Admin Manager PRC authority or scope. Mark as [VERIFY — awaiting SRC-ADMIN-001].                                                                                                                         |
+| Admin Manager escalation authority (items 1–5) | No final escalation paths through Admin Manager may be included.                                                                                                                                                       |
+| MD-specific requirements (items 6–7)           | Mark all outputs as Foundation Draft v0.1.                                                                                                                                                                             |
 
 ---
 

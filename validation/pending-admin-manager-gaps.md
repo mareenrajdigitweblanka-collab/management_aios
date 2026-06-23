@@ -16,6 +16,7 @@ This document records every gap in CLAUDE.md Foundation Draft v0.1 that exists b
 ## 1. Why the Admin Manager Document Matters
 
 The Admin Manager is named in SRC-ARUN-001 as a member of the Performance Review Committee (PRC). The PRC has authority over:
+
 - KPI Review decisions
 - Bonus Approval
 - Escalation Decisions
@@ -61,30 +62,30 @@ The following questions should be answered during the Admin Manager interview or
 
 ### 3.2 PRC Membership
 
-6. You are listed as a PRC member in the KPI and AXIOM framework. Can you confirm this?
-7. What is your specific role in PRC meetings — do you vote, review, advise, or approve?
-8. For which types of decisions (KPI, bonus, escalation, promotion) do you have decision-making authority?
-9. Are there PRC decisions that require your approval specifically (i.e., cannot proceed without you)?
+1. You are listed as a PRC member in the KPI and AXIOM framework. Can you confirm this?
+2. What is your specific role in PRC meetings — do you vote, review, advise, or approve?
+3. For which types of decisions (KPI, bonus, escalation, promotion) do you have decision-making authority?
+4. Are there PRC decisions that require your approval specifically (i.e., cannot proceed without you)?
 
 ### 3.3 Escalation Paths
 
-10. When a management issue is escalated, at what point does it route to you?
-11. Are there operational problems that should always come to you directly rather than through another route?
-12. What is your escalation path upward — do you escalate to the Director, MD, or both?
+1. When a management issue is escalated, at what point does it route to you?
+2. Are there operational problems that should always come to you directly rather than through another route?
+3. What is your escalation path upward — do you escalate to the Director, MD, or both?
 
 ### 3.4 Operational Processes
 
-13. What ongoing processes do you own or manage day-to-day?
-14. Do you have authority over any HR decisions (leave approvals, disciplinary actions, recruitment sign-off)?
-15. Do you have authority over any operational approvals (procurement, budget, vendor)?
-16. Do you maintain any documents, trackers, or records that other teams depend on?
+1. What ongoing processes do you own or manage day-to-day?
+2. Do you have authority over any HR decisions (leave approvals, disciplinary actions, recruitment sign-off)?
+3. Do you have authority over any operational approvals (procurement, budget, vendor)?
+4. Do you maintain any documents, trackers, or records that other teams depend on?
 
 ### 3.5 Recurring Problems and AIOS Relevance
 
-17. What management or operational gaps have you observed in your current role?
-18. Are there management problems that repeatedly reach your desk?
-19. Is there anything the AIOS should track or surface that currently goes undetected?
-20. Are there any responsibilities or processes you handle that are not formally documented anywhere?
+1. What management or operational gaps have you observed in your current role?
+2. Are there management problems that repeatedly reach your desk?
+3. Is there anything the AIOS should track or surface that currently goes undetected?
+4. Are there any responsibilities or processes you handle that are not formally documented anywhere?
 
 ---
 
@@ -119,6 +120,7 @@ The following facts about the Admin Manager **must not be stated as confirmed tr
 | SRC-ADMIN-001 received but not yet validated by Varmen | PARTIAL — do not update CLAUDE.md until Varmen confirms |
 
 **Gap is NOT closed by:**
+
 - Receiving partial Admin Manager information
 - Inferring Admin Manager authority from the PRC list
 - Verbal confirmation that has not been documented and registered

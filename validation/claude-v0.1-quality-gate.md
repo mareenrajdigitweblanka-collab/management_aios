@@ -106,6 +106,7 @@ The summary block at the bottom of `validation/claude-source-map.md` currently r
 > CONFIRMED: 81 | [VERIFY]: 4 | TOTAL: 85
 
 This count is inaccurate. The actual [VERIFY] rows in the map are:
+
 - Admin Manager org structure (§3)
 - Admin Manager role boundaries (§5)
 - Admin Manager PRC (§7.8) — partial

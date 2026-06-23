@@ -53,6 +53,7 @@ It does not make performance decisions. It does not assign AXIOM bands. It does 
 | Dashboard data availability | "Monthly ROI Contribution data not yet collected" |
 
 **Not permitted as input:**
+
 - Individual named staff AXIOM band placements
 - Individual salary or compensation data
 - Personal disciplinary case details
