@@ -91,3 +91,17 @@ No broken paths or missing files found for any READY source.
 ## Pass/Fail Rationale
 
 CONDITIONAL PASS. All 14 registered source entries have confirmed paths. All READY sources resolve to existing files. SRC-ADMIN-001 is correctly PENDING with an empty but existing folder. Two unregistered Source IDs (SRC-MD-ARUN-001, SRC-MD-ADMIN-001) appear in skill files but only as explicitly-blocked future sources — no evidence claims are made from them. Minor count discrepancy in source register summary (shows 13, should be 14). No hard conflicts found.
+
+---
+
+## Coordinated Warning Fix Applied
+
+Date: 2026-06-25
+Fix report: validation/full-structure-integrity-warning-fix-report.md
+
+Fixes applied to evidence/source-register.md:
+- Source count summary corrected: READY (Full) updated from 10 to 11 (SRC-SUMAN-CONF-001 was missing from count); TOTAL updated from 13 to 16 (includes 2 newly registered pending entries)
+- SRC-MD-ARUN-001 registered as PENDING — AWAITING RECEIPT (cannot be used as evidence)
+- SRC-MD-ADMIN-001 registered as PENDING — AWAITING RECEIPT (cannot resolve Admin Manager [VERIFY] items 1–5)
+
+Status after fix: PASS — all source count discrepancies resolved; all unregistered Source IDs now formally tracked

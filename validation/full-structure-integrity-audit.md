@@ -190,3 +190,19 @@ VERIFY register: CONDITIONAL PASS (numbering mismatch; all 12 items correctly tr
 Skill/wrapper consistency: CONDITIONAL PASS (one stale wrapper label)
 Duplicate truth risk: LOW
 Next action: Present 5 warnings to Varmen for review; apply corrections to recruitment-quality-check wrapper, verify-register.md item numbering, source register count summary, and organization-structure.md read in a single coordinated update session.
+
+---
+
+## Coordinated Warning Fix Applied
+
+Date: 2026-06-25
+Fix report: validation/full-structure-integrity-warning-fix-report.md
+
+Warnings fixed: 4 of 5 (Warnings 1–4 corrected; Warning 4 — context/organization-structure.md unread — is a follow-up audit item, not a file correction)
+
+Files updated:
+- .claude/skills/recruitment-quality-check/SKILL.md — stale [VERIFY — item 11] label corrected (Warning 1)
+- context/verify-register.md — header count and item numbering corrected (Warning 2 and 3)
+- evidence/source-register.md — count summary corrected; SRC-MD-ARUN-001 and SRC-MD-ADMIN-001 registered as PENDING (Warning 3 and 5)
+
+Status after fix: CONDITIONAL PASS — 4 documentation-drift warnings resolved; Warning 4 (context/organization-structure.md not yet audited) remains open as a follow-up read task; no hard conflicts; all [VERIFY] items preserved; no business meaning changed

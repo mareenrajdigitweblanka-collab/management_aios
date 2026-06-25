@@ -83,3 +83,18 @@ The Line Manager identity [VERIFY] was resolved on 2026-06-25 by SRC-SUMAN-CONF-
 ## Pass/Fail Rationale
 
 CONDITIONAL PASS. All five skills and all five wrappers exist and are correctly configured. Source rules are present and enforced. SRC-SUMAN-002 is correctly labeled as historical evidence only in all files that reference it. management-action-records is correctly labeled as ongoing evidence (not policy) in the two skills that reference it. One warning-level issue found: the recruitment-quality-check wrapper contains a stale [VERIFY — item 11] reference to the resolved Line Manager identity item. Practical behavior is correct but the label is outdated and creates cross-reference confusion. All other boundary checks pass. No hard conflicts.
+
+---
+
+## Coordinated Warning Fix Applied
+
+Date: 2026-06-25
+Fix report: validation/full-structure-integrity-warning-fix-report.md
+
+Fixes applied to .claude/skills/recruitment-quality-check/SKILL.md:
+- Before Running section: updated item 11 reference to state Line Manager identity is resolved by SRC-SUMAN-CONF-001 (2026-06-25)
+- Operating Mode forbidden action line 44: removed stale [VERIFY — item 11]; replaced with confirmed resolution statement — no Line Manager role exists; confirmed attendees are Mayurika, Arun, and Suman only
+- [VERIFY] Constraints Active table: Line Manager row updated from open [VERIFY] to RESOLVED status with SRC-SUMAN-CONF-001 citation
+- Skill boundary behavior unchanged; practical enforcement was already correct
+
+Status after fix: PASS — all skill/wrapper boundaries confirmed; no stale [VERIFY] labels remain; all source rules preserved

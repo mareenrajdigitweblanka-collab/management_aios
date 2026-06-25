@@ -119,3 +119,22 @@ verify-register.md header states: "status: ACTIVE — 13 items outstanding; 1 it
 ## Pass/Fail Rationale
 
 CONDITIONAL PASS. All 12 expected open [VERIFY] items are accounted for and correctly tagged in source files. No [VERIFY] item has been removed without registered source evidence. Both resolved items (Line Manager identity and Leave policy detail) are correctly moved to the resolved table and not re-introduced. Two minor inconsistencies found: (1) numbering mismatch between CLAUDE.md §14 and verify-register.md for items 11/12 vs 12/13; (2) the recruitment-quality-check wrapper contains a stale [VERIFY — item 11] reference to the resolved Line Manager item. Neither constitutes a hard conflict but both should be corrected in a future update following Varmen review.
+
+---
+
+## Coordinated Warning Fix Applied
+
+Date: 2026-06-25
+Fix report: validation/full-structure-integrity-warning-fix-report.md
+
+Fixes applied to context/verify-register.md:
+- Header corrected: "13 items outstanding; 1 item resolved" → "12 items outstanding; 2 items resolved"
+- Register table item 12 (Director authority beyond leadership review) renumbered to item 11 — now matches CLAUDE.md §14
+- Register table item 13 (Exact tool names for HR and EOD systems) renumbered to item 12 — now matches CLAUDE.md §14
+- No open [VERIFY] items were resolved, removed, or changed in meaning
+
+Fixes applied to .claude/skills/recruitment-quality-check/SKILL.md:
+- Stale [VERIFY — item 11] reference to resolved Line Manager identity replaced with resolution confirmation statement (SRC-SUMAN-CONF-001 2026-06-25)
+- [VERIFY] Constraints table row updated to reflect resolution; no Line Manager constraint remains active
+
+Status after fix: PASS — 12 open VERIFY items confirmed; numbering consistent across CLAUDE.md §14 and verify-register.md; stale wrapper label corrected

@@ -21,7 +21,7 @@ It does not replace that file. It provides a Claude Code slash command entry poi
 Read the following files before processing any input:
 
 1. `skills/recruitment-quality-check.md` — the source-backed draft asset
-2. `context/verify-register.md` — confirm which [VERIFY] items are active, in particular item 11 (Line Manager identity in 180-day handover)
+2. `context/verify-register.md` — confirm which [VERIFY] items are active; note that Line Manager identity in 180-day handover was **resolved** by SRC-SUMAN-CONF-001 (2026-06-25) — no Line Manager role exists in the handover
 3. `evidence/source-register.md` — confirm SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, SRC-MD-SUMAN-001, and SRC-SUMAN-002 are READY
 
 When the input relates to 7-day training quality, training documentation completeness, practical training or demo gaps, AI tool access limitations, or training support gaps — also read:
@@ -41,7 +41,7 @@ This wrapper must not:
 - Approve or reject any candidate
 - Make probation decisions
 - Make discontinuation decisions (subject to management review and approval — SRC-SUMAN-001-v2 §8.8)
-- Identify the Line Manager in the 180-day handover [VERIFY — item 11: role holder not identified in SRC-SUMAN-001-v2; confirm with Suman or Varmen before this check can be fully completed]
+- Identify a Line Manager in the 180-day handover — no Line Manager role exists; confirmed resolved by SRC-SUMAN-CONF-001 (2026-06-25); confirmed attendees are Mayurika, Arun, and Suman only
 - Accept or store personal candidate data (names, personal contact details, personal information)
 - Finalize escalation paths involving Admin Manager authority [VERIFY — SRC-ADMIN-001 PENDING]
 - Invent screening thresholds, scoring criteria, or review timelines beyond what is stated in registered sources
@@ -100,7 +100,7 @@ The following items from `context/verify-register.md` directly limit what this w
 
 | [VERIFY] Item                                       | Constraint Applied                                                                                                                     |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Line Manager identity in 180-day handover (item 11) | Handover attendee check cannot confirm Line Manager identity. Output must flag as [VERIFY] until Suman or Varmen confirms role holder. |
+| Line Manager identity in 180-day handover | **RESOLVED** — SRC-SUMAN-CONF-001 (2026-06-25). No Line Manager role exists in the handover. Confirmed attendees: Mayurika, Arun, and Suman only. No [VERIFY] constraint applies. |
 | Admin Manager authority (items 1–5)                 | No escalation path through Admin Manager may be included in any output.                                                                |
 | MD-specific requirements (items 6–7)                | This skill may change scope after MD review. Mark all outputs as Foundation Draft v0.1.                                                |
 
