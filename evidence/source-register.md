@@ -25,6 +25,8 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 | SRC-MD-HR-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & HR Discussion Notes.md` | Management / HR / MD Governance | MD Discussion Notes with HR | MD Discussion Notes spanning 19/11/2025–22/06/2026 | YES — Varmen reviewed 2026-06-25 | INTERNAL / RESTRICTED — contains individual staff names in operational context; individual performance case references; do not copy personal case details to context | YES — with source mapping and sensitivity limits | READY — Varmen Reviewed |
 | SRC-MD-SUMAN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & Suman Discussions Notes.md` | Recruitment / Onboarding / MD Governance | MD Discussion Notes with Suman | MD Discussion Notes spanning 24/02/2026–23/06/2026 | YES — Varmen reviewed 2026-06-25 | INTERNAL / RESTRICTED — contains candidate names with statuses; individual CV/salary details (14/05/2026 entry); individual performance assessment references; do not copy candidate personal data, CV, or salary details to context | YES — with source mapping and sensitivity limits | READY — Varmen Reviewed |
 
+| SRC-SUMAN-CONF-001 | `evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md` | Suman | Recruitment Officer | Stakeholder Confirmation | YES — project default for confirmed project documents; not contradicted | INTERNAL | YES — limited to Line Manager typing correction resolution only | READY — Current Evidence Source |
+
 ---
 
 ## Source Count Summary

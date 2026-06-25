@@ -20,7 +20,10 @@ tracks: skills/ — Tier 1 Skill Drafts, Foundation Draft v0.1 — Updated with 
 | Recruitment Quality Check | `skills/recruitment-quality-check.md` | CREATED |
 | KPI / AXIOM Review Support | `skills/kpi-axiom-review-support.md` | CREATED |
 | Policy Lookup | `skills/policy-lookup.md` | CREATED |
-| Source Map | `validation/tier-1-skill-draft-source-map.md` | CREATED |
+| Management Problem Analysis | `skills/management-problem-analysis.md` | CREATED — 2026-06-25 — DRAFT ONLY — Pending Varmen Review |
+| Source Map (Tier 1) | `validation/tier-1-skill-draft-source-map.md` | CREATED |
+| Source Map (Management Problem Analysis) | `validation/management-problem-analysis-source-map.md` | CREATED — 2026-06-25 |
+| Readiness (Management Problem Analysis) | `validation/management-problem-analysis-readiness.md` | CREATED — 2026-06-25 |
 | This File | `validation/tier-1-skill-draft-readiness.md` | CREATED |
 
 ---
@@ -68,13 +71,13 @@ All [VERIFY] items from context/verify-register.md that are relevant to Tier 1 s
 | Amazon ACOS threshold wording | 8 | YES — kpi-axiom-review-support.md §6 marks as [VERIFY — Arun] | Arun confirmation required |
 | Operational Manager PRC membership | 9 | YES — kpi-axiom-review-support.md §11.1 marks as [VERIFY — Arun] | Arun confirmation required |
 | ROI Officer identity / title | 10 | YES — kpi-axiom-review-support.md §7 marks as [VERIFY — Arun] | Arun confirmation required |
-| Line Manager identity in 180-day handover | 11 | YES — recruitment-quality-check.md §4.10 marks as [VERIFY] | Suman or Varmen confirmation required |
+| Line Manager identity in 180-day handover | 11 (RESOLVED) | RESOLVED — SRC-SUMAN-CONF-001 2026-06-25: Suman confirmed the reference was a typing mistake; no Line Manager role in handover; recruitment-quality-check.md §4.10 updated | Confirmed by Suman |
 | Director authority beyond leadership review | 12 | YES — all skills reference Director only for confirmed Leadership Review role | Dedicated source required |
 | Exact tool names for HR and EOD systems | 13 | YES — no HR or EOD tool names asserted by name | Mayurika confirmation required |
 
-**[VERIFY] preservation result: ALL 13 ITEMS PRESERVED — PASS**
+**[VERIFY] preservation result: 12 ITEMS OPEN, 1 RESOLVED — PASS**
 
-No [VERIFY] item has been resolved or removed in any skill file.
+Item 11 (Line Manager identity in 180-day handover) resolved by SRC-SUMAN-CONF-001 on 2026-06-25. Suman confirmed the reference was a typing mistake. recruitment-quality-check.md §4.10 updated to reflect corrected attendee list. All remaining 12 [VERIFY] items are preserved and correctly tagged across all four skill files. No [VERIFY] item has been removed without registered source evidence.
 
 ---
 
@@ -188,7 +191,7 @@ All content is process-level and aggregate. Policy content draws from SRC-POLICY
 
 ## 8. Pass/Fail Result
 
-### Overall Result: **PASS — Updated 2026-06-25**
+### Overall Result: **PASS — Updated 2026-06-25 (SRC-SUMAN-CONF-001)**
 
 | Check | Result |
 |-------|--------|

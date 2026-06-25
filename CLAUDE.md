@@ -424,7 +424,9 @@ All recruitment sources are monitored across two dimensions:
 
 ### 8.11 180-Day Handover
 
-At Month 6, a structured 15-minute handover meeting is conducted involving the Line Manager [VERIFY — SRC-SUMAN-001-v2: named as attendee but role holder not identified in this source], Mayurika (referred to as "Mayoorika" in source document), Arun, and Suman.
+At Month 6, a structured 15-minute handover meeting is conducted involving Mayurika (referred to as "Mayoorika" in source document), Arun, and Suman.
+
+> **Typing correction (SRC-SUMAN-CONF-001 — 2026-06-25):** The original source document (SRC-SUMAN-001-v2) mentioned a "Line Manager" attendee. Suman confirmed this was a typing mistake. There is no Line Manager role in the 180-day handover. The [VERIFY] item for Line Manager identity (former item 11) is resolved.
 
 The review covers:
 
@@ -688,7 +690,7 @@ The assistant must not:
 
 The following items are unresolved and must remain tagged `[VERIFY]` until the listed condition is met.
 
-> **Resolved since Foundation Draft v0.1:** Item 12 (Leave policy detail) was resolved on 2026-06-23 by SRC-POLICY-001 §6.0–6.5. The full leave framework is documented in §10.1 and context/hr-operations-context.md §9.
+> **Resolved since Foundation Draft v0.1:** Item 12 (Leave policy detail) was resolved on 2026-06-23 by SRC-POLICY-001 §6.0–6.5. The full leave framework is documented in §10.1 and context/hr-operations-context.md §9. Item 11 (Line Manager identity in 180-day handover) was resolved on 2026-06-25 by SRC-SUMAN-CONF-001 — Suman confirmed the "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake; no Line Manager role exists in the handover. See §8.11 and evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md.
 
 | # | [VERIFY] Item | Blocked By | Resolution Condition |
 |---|---------------|-----------|----------------------|
@@ -702,9 +704,8 @@ The following items are unresolved and must remain tagged `[VERIFY]` until the l
 | 8 | Amazon ACOS threshold wording | SRC-ARUN-001 formatting unclear | Confirm exact threshold wording with Arun |
 | 9 | Operational Manager PRC role confirmation | SRC-ARUN-001 names role; no dedicated source | Arun or dedicated Operational Manager source confirms |
 | 10 | ROI Officer identity / title in review inputs | SRC-ARUN-001 wording unclear | Confirm with Arun whether this is a distinct role. **VERIFY Resolved Candidate:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly. [VERIFY] tag must remain until Arun directly confirms. |
-| 11 | Line Manager identity in 180-day handover (§8.11) | SRC-SUMAN-001-v2 names role but not the holder | Confirm who the Line Manager is with Suman or Varmen |
-| 12 | Director authority beyond leadership review | SRC-MAYU-001 partial coverage | Dedicated Director source or interview |
-| 13 | Exact tool names for HR and EOD systems | SRC-MAYU-001 marks several as (assumed) | Confirm actual tool names with Mayurika |
+| 11 | Director authority beyond leadership review | SRC-MAYU-001 partial coverage | Dedicated Director source or interview |
+| 12 | Exact tool names for HR and EOD systems | SRC-MAYU-001 marks several as (assumed) | Confirm actual tool names with Mayurika |
 
 ---
 

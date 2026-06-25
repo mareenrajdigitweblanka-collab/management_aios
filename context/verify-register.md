@@ -31,7 +31,6 @@ All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 | 8 | Amazon ACOS threshold wording | §7.3, §13 | Arun confirmation | Arun | PENDING | Ask Arun to confirm exact wording and threshold direction; update SRC-ARUN-001 note if confirmed |
 | 9 | Operational Manager PRC membership and scope | §3, §7.8, §13 | Arun or dedicated Operational Manager source | Arun | PENDING | Confirm with Arun or obtain dedicated source |
 | 10 | ROI Officer identity / title in review inputs | §7.4, §13 | Arun confirmation | Arun | PENDING — VERIFY Resolved Candidate | Confirm with Arun whether "ROI officer" is a distinct role or an existing title. **Candidate resolution:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly, with Selva auditing submissions. [VERIFY] tag must remain until Arun directly confirms — see `validation/md-discussion-conflict-check.md` and `validation/pending-md-discussion-source-plan.md`. |
-| 11 | Line Manager identity in 180-day handover | §8.11, §13 | SRC-SUMAN-001-v2 names role but not holder | Suman or Varmen | PENDING | Confirm who the Line Manager is with Suman or Varmen |
 | 12 | Director authority beyond leadership review | §5, §13 | Dedicated Director source or interview | Varmen | PENDING | Obtain dedicated Director source or conduct interview |
 | 13 | Exact tool names for HR and EOD systems | §9.4, §13 | Mayurika confirmation | Mayurika | PENDING | Confirm actual tool names with Mayurika; several listed as (assumed) in SRC-MAYU-001 |
 
@@ -42,6 +41,7 @@ All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 | # (Original) | [VERIFY] Item | Resolved By | Resolution Date | Resolution Note |
 |--------------|---------------|-------------|-----------------|-----------------|
 | 12 (original) | Leave policy detail | SRC-POLICY-001 §6.0–6.5 | 2026-06-23 | Full leave framework provided in Final Approved Company Policy Manual. Documented in CLAUDE.md §10.1 and context/hr-operations-context.md §9. |
+| 11 (original) | Line Manager identity in 180-day handover | SRC-SUMAN-CONF-001 | 2026-06-25 | Suman confirmed the "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake. There is no Line Manager role in the 180-day handover. Confirmed attendees are Mayurika, Arun, and Suman only. See evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md. |
 
 ---
 
@@ -77,14 +77,14 @@ Items 8, 9, and 10 require Arun confirmation. These can be resolved by email or 
 
 | Status | Count |
 |--------|-------|
-| PENDING | 13 |
-| RESOLVED | 1 |
+| PENDING | 12 |
+| RESOLVED | 2 |
 | TOTAL | 14 |
 
-**Note:** Original item 12 (Leave policy detail) resolved by SRC-POLICY-001 on 2026-06-23. Items 13–14 in the original register renumbered to 12–13 above.
+**Note:** Original item 12 (Leave policy detail) resolved by SRC-POLICY-001 on 2026-06-23. Items 13–14 in the original register renumbered to 12–13 above. Original item 11 (Line Manager identity in 180-day handover) resolved by SRC-SUMAN-CONF-001 on 2026-06-25 — Suman confirmed the reference was a typing mistake; no Line Manager role exists in the handover. Remaining open items renumbered to 11–12 (former items 12–13) in the register table above.
 
 ---
 
 ## Pass/Fail Result
 
-**PASS** — All 13 remaining [VERIFY] items from CLAUDE.md §13 are present and correctly recorded. Item 12 (leave policy) resolved by SRC-POLICY-001 and moved to Resolved Items table. No items removed without evidence.
+**PASS — Updated 2026-06-25** — 12 [VERIFY] items remain open. Item 11 (Line Manager identity in 180-day handover) resolved by SRC-SUMAN-CONF-001 on 2026-06-25 — Suman confirmed the reference was a typing mistake. Item 12 (leave policy) resolved by SRC-POLICY-001 on 2026-06-23. Both resolved items moved to the Resolved Items table. No items removed without registered source evidence. All 12 remaining open items are correctly tagged.

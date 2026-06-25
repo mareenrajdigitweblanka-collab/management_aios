@@ -79,7 +79,7 @@ Every claim in the context/ files is traced here to its Source ID.
 | recruitment-context.md | §9 Month 6 | Full commitment vs delivery; probation confirmation; handover preparation | SRC-SUMAN-001-v2 | CONFIRMED | — | Direct source text |
 | recruitment-context.md | §10 Source Quality | Activity metrics + quality metrics | SRC-SUMAN-001-v2 | CONFIRMED | — | Direct source text |
 | recruitment-context.md | §11 Handover | 15-minute meeting; Mayurika, Arun, Suman confirmed attendees | SRC-SUMAN-001-v2 | CONFIRMED | — | Line Manager identity [VERIFY] |
-| recruitment-context.md | §11 Handover | Line Manager identity | SRC-SUMAN-001-v2 | [VERIFY] | YES | Role named but holder not identified in source |
+| recruitment-context.md | §11 Handover | Line Manager identity — typing correction; no Line Manager role exists in handover | SRC-SUMAN-CONF-001 | CONFIRMED — Suman correction 2026-06-25 | NO | Suman confirmed "Line Manager" in SRC-SUMAN-001-v2 was a typing mistake; confirmed attendees are Mayurika, Arun, Suman only |
 | recruitment-context.md | §11 Handover | Mayurika 2-week proactive reminder; writes recruitment_source_id and recruitment_promise_set_id | SRC-MAYU-001 | CONFIRMED | — | Section 1: Solutions Implemented |
 | recruitment-context.md | §12 Daily Capture | 1 hour/day; 6 topic areas | SRC-SUMAN-001-v2 | CONFIRMED | — | Direct source text |
 | kpi-axiom-context.md | §1 KPI Defs | Portfolio Holders KPIs | SRC-ARUN-001 | CONFIRMED | — | Section 1 of ARUN-001 |
@@ -169,13 +169,13 @@ Every claim in the context/ files is traced here to its Source ID.
 
 | Status | Count |
 |--------|-------|
-| CONFIRMED | 123 |
+| CONFIRMED | 124 |
 | RESOLVED | 1 |
-| [VERIFY] | 18 |
+| [VERIFY] | 17 |
 | TOTAL | 142 |
 
 ---
 
 ## Validation Result
 
-**PASS** — All claims in all context files have either a Source ID, a [VERIFY] tag, or a RESOLVED status. SRC-POLICY-001 claims added across confidentiality-rules.md, hr-operations-context.md, and recruitment-context.md. [VERIFY] item 12 (leave policy) resolved. SRC-MD-HR-001 and SRC-MD-SUMAN-001 claims updated to CONFIRMED — Varmen Reviewed 2026-06-25 (26 rows, 2026-06-25). No unsourced business rules, HR policy, or sensitive personal data added. All Admin Manager and Arun [VERIFY] tags remain intact.
+**PASS — Updated 2026-06-25** — All claims in all context files have either a Source ID, a [VERIFY] tag, or a RESOLVED status. SRC-POLICY-001 claims added across confidentiality-rules.md, hr-operations-context.md, and recruitment-context.md. [VERIFY] item 12 (leave policy) resolved by SRC-POLICY-001 2026-06-23. [VERIFY] item 11 (Line Manager identity in 180-day handover) resolved by SRC-SUMAN-CONF-001 2026-06-25 — Suman confirmed the reference was a typing mistake; row status updated to CONFIRMED. SRC-MD-HR-001 and SRC-MD-SUMAN-001 claims updated to CONFIRMED — Varmen Reviewed 2026-06-25. No unsourced business rules, HR policy, or sensitive personal data added. All Admin Manager and Arun [VERIFY] tags remain intact. Total [VERIFY] rows: 17 (was 18).

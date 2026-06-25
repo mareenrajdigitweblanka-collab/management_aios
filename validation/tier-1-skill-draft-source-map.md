@@ -78,7 +78,7 @@ Every claim, workflow step, checklist item, threshold, and output field in the f
 | recruitment-quality-check.md | §4.10 180-Day Handover | Mayurika 2-week proactive reminder | SRC-MAYU-001 | CONFIRMED | — | Section 1: Solutions Implemented |
 | recruitment-quality-check.md | §4.10 180-Day Handover | 15-minute structured meeting | SRC-SUMAN-001-v2 | CONFIRMED | — | §11 180-day handover |
 | recruitment-quality-check.md | §4.10 180-Day Handover | Confirmed attendees: Mayurika, Arun, Suman | SRC-SUMAN-001-v2, SRC-MAYU-001 | CONFIRMED | — | §11; Section 1 |
-| recruitment-quality-check.md | §4.10 180-Day Handover | Line Manager attendee identity | SRC-SUMAN-001-v2 | [VERIFY] | YES | Item 11 in verify-register.md — role named, holder not identified |
+| recruitment-quality-check.md | §4.10 180-Day Handover | Line Manager attendee — typing correction; no Line Manager role in handover; attendees confirmed as Mayurika, Arun, Suman only | SRC-SUMAN-CONF-001 | CONFIRMED — Suman correction 2026-06-25 | NO | Former item 11 in verify-register.md — resolved by SRC-SUMAN-CONF-001; Suman confirmed the reference was a typing mistake |
 | recruitment-quality-check.md | §4.10 180-Day Handover | 4 handover review areas | SRC-SUMAN-001-v2 | CONFIRMED | — | §11 180-day handover |
 | recruitment-quality-check.md | §4.10 180-Day Handover | recruitment_source_id written to staff record | SRC-MAYU-001 | CONFIRMED | — | Section 1: Month 6 Handoff |
 | recruitment-quality-check.md | §4.10 180-Day Handover | recruitment_promise_set_id written to staff record | SRC-MAYU-001 | CONFIRMED | — | Section 1: Month 6 Handoff |
@@ -186,12 +186,12 @@ Every claim, workflow step, checklist item, threshold, and output field in the f
 | recruitment-quality-check.md | 42 | 1 | 43 |
 | kpi-axiom-review-support.md | 28 | 4 | 32 |
 | policy-lookup.md | 26 | 4 | 30 |
-| **TOTAL** | **142** | **13** | **155** |
+| **TOTAL** | **143** | **12** | **155** |
 
-*Updated 2026-06-25: +37 CONFIRMED rows added from SRC-MD-HR-001 (management-gap-detection.md ×16, kpi-axiom-review-support.md ×4, policy-lookup.md ×1) and SRC-MD-SUMAN-001 (recruitment-quality-check.md ×16). All [VERIFY] rows unchanged.*
+*Updated 2026-06-25 (SRC-SUMAN-CONF-001): Line Manager attendee identity row updated from [VERIFY] to CONFIRMED — Suman confirmed the reference was a typing mistake; no Line Manager role in handover. [VERIFY] count reduced from 13 to 12. Previously updated 2026-06-25: +37 CONFIRMED rows added from SRC-MD-HR-001 and SRC-MD-SUMAN-001.*
 
 ---
 
 ## Validation Result
 
-**PASS — Updated 2026-06-25** — All 155 rows have either a Source ID with CONFIRMED status or a [VERIFY] tag with the relevant verify-register.md item number cited. No row is unsourced. No [VERIFY] tag has been removed. All Admin Manager, Arun wording, and MD-requirement [VERIFY] items are preserved across all four skill files. 37 new CONFIRMED rows added from SRC-MD-HR-001 and SRC-MD-SUMAN-001 (both Varmen Reviewed 2026-06-25).
+**PASS — Updated 2026-06-25 (SRC-SUMAN-CONF-001)** — All 155 rows have either a Source ID with CONFIRMED status or a [VERIFY] tag with the relevant verify-register.md item number cited. No row is unsourced. Line Manager attendee identity row updated to CONFIRMED — Suman correction 2026-06-25. All remaining Admin Manager, Arun wording, and MD-requirement [VERIFY] items are preserved. Total: 143 CONFIRMED, 12 [VERIFY].

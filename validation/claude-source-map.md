@@ -107,7 +107,7 @@ Every claim in CLAUDE.md Foundation Draft v0.1 is traced here to its Source ID. 
 | §8.8 Recruitment | Month 3 review — 4 areas; "Concern" at M1 who fail corrective plan may face discontinuation | SRC-SUMAN-001-v2 | Recruitment_Quality_Control_Process.md | Stakeholder doc | CONFIRMED | Varmen | Subject to management review and approval |
 | §8.9 Recruitment | Month 6 review — full commitment vs delivery, probation confirmation, handover preparation | SRC-SUMAN-001-v2 | Recruitment_Quality_Control_Process.md | Stakeholder doc | CONFIRMED | Varmen | Direct source text |
 | §8.10 Recruitment | Source quality monitoring — activity metrics (applications, response rate, cost) + quality metrics (long-term success, probation completion, performance) | SRC-SUMAN-001-v2 | Recruitment_Quality_Control_Process.md | Stakeholder doc | CONFIRMED | Varmen | Direct source text |
-| §8.11 Recruitment | 180-day handover — 15-min meeting; Line Manager, Mayurika, Arun, Suman | SRC-SUMAN-001-v2 | Recruitment_Quality_Control_Process.md | Stakeholder doc | CONFIRMED (Line Manager identity [VERIFY]) | Varmen | Source spells name "Mayoorika"; Line Manager role holder not named |
+| §8.11 Recruitment | 180-day handover — 15-min meeting; attendees: Mayurika, Arun, Suman (Line Manager reference was typing mistake — resolved) | SRC-SUMAN-001-v2, SRC-SUMAN-CONF-001 | Recruitment_Quality_Control_Process.md; suman-line-manager-typing-correction-2026-06-25.md | Stakeholder doc + Stakeholder Confirmation | CONFIRMED — Suman correction 2026-06-25 | Varmen | Source spelled name "Mayoorika"; Line Manager reference confirmed as typing mistake by SRC-SUMAN-CONF-001; no Line Manager role in handover |
 | §8.12 Recruitment | Daily knowledge capture — 1 hour/day; 6 topic areas | SRC-SUMAN-001-v2 | Recruitment_Quality_Control_Process.md | Stakeholder doc | CONFIRMED | Varmen | Direct source text |
 | §9.1 Staff Records | Staff data model fields and lifecycle events | SRC-MAYU-001 | HR.Mayu.Skill.md | Stakeholder doc | CONFIRMED | Varmen | Appendix: Canonical Staff Record Fields Reference |
 | §9.2 PDPA | PDPA notice issuance and acknowledgement tracking | SRC-MAYU-001 | HR.Mayu.Skill.md | Stakeholder doc | CONFIRMED | Varmen | Daily Activities #4; PDPA Compliance Report monthly |
@@ -186,8 +186,8 @@ Every claim in CLAUDE.md Foundation Draft v0.1 is traced here to its Source ID. 
 
 | Status | Count |
 |--------|-------|
-| CONFIRMED | 138 |
-| [VERIFY] | 5 |
+| CONFIRMED | 139 |
+| [VERIFY] | 4 |
 | TOTAL | 143 |
 
-**Validation Result: PASS** — All [VERIFY] items are tagged. SRC-MD-HR-001 and SRC-MD-SUMAN-001 claims updated to CONFIRMED — Varmen Reviewed 2026-06-25 (18 rows, 2026-06-25). SRC-POLICY-001 claims added (39 rows). Admin Manager gap remains. VERIFY Resolved Candidate noted for item 10 (ROI Officer identity) — [VERIFY] tag preserved until Arun confirms.
+**Validation Result: PASS — Updated 2026-06-25** — All [VERIFY] items are tagged. SRC-MD-HR-001 and SRC-MD-SUMAN-001 claims updated to CONFIRMED — Varmen Reviewed 2026-06-25 (18 rows, 2026-06-25). SRC-POLICY-001 claims added (39 rows). Admin Manager gap remains. VERIFY Resolved Candidate noted for item 10 (ROI Officer identity) — [VERIFY] tag preserved until Arun confirms. §8.11 Line Manager identity row updated to CONFIRMED — Suman correction 2026-06-25 via SRC-SUMAN-CONF-001 (typing mistake confirmed; no Line Manager role in handover). [VERIFY] row count reduced from 5 to 4.

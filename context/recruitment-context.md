@@ -188,10 +188,11 @@ At Month 6, a structured 15-minute handover meeting is conducted.
 
 **Attendees:**
 
-- Line Manager **[VERIFY — SRC-SUMAN-001-v2: role named as attendee but role holder not identified in this source. Confirm with Suman or Varmen.]**
 - Mayurika (HR Officer) — referred to as "Mayoorika" in source document
 - Arun (Implementation Officer)
 - Suman (Recruitment Officer)
+
+> **Typing correction (SRC-SUMAN-CONF-001 — 2026-06-25):** Suman confirmed that the previous "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake. There is no Line Manager role in the 180-day handover. No Line Manager identity verification is required for this item. The confirmed attendees are Mayurika, Arun, and Suman only.
 
 **Review covers:**
 
@@ -345,11 +346,11 @@ All recruitment and onboarding claims must be substantiated with documented proo
 
 ---
 
-## Remaining [VERIFY] Item
+## Remaining [VERIFY] Items
 
-| # | [VERIFY] Item | Source | Resolution Condition |
-|---|---------------|--------|---------------------|
-| 1 | Line Manager identity in 180-day handover | SRC-SUMAN-001-v2 names role; role holder not identified | Confirm with Suman or Varmen |
+No open [VERIFY] items remain in this file.
+
+**Resolved 2026-06-25:** Line Manager identity in 180-day handover — resolved by SRC-SUMAN-CONF-001. Suman confirmed the reference was a typing mistake. No Line Manager role exists in the handover. See evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md.
 
 ---
 
@@ -361,7 +362,7 @@ All recruitment and onboarding claims must be substantiated with documented proo
 | 7/14-day, Month 1, Month 3, Month 6 reviews | SRC-SUMAN-001-v2 | CONFIRMED |
 | Source quality monitoring, 180-day handover structure, daily knowledge capture | SRC-SUMAN-001-v2 | CONFIRMED |
 | Mayurika 2-week reminder; recruitment_source_id and recruitment_promise_set_id fields | SRC-MAYU-001 | CONFIRMED |
-| Line Manager identity in 180-day handover | SRC-SUMAN-001-v2 | [VERIFY] |
+| Line Manager identity in 180-day handover — typing correction, no Line Manager role exists | SRC-SUMAN-CONF-001 | CONFIRMED — Suman correction 2026-06-25 |
 | Probation leave restriction — no leave during 3-month probation | SRC-POLICY-001 | CONFIRMED |
 | MD-Directed Suman Governance (§13.1–§13.11) | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 |
 
@@ -369,4 +370,4 @@ All recruitment and onboarding claims must be substantiated with documented proo
 
 ## Pass/Fail Result
 
-**PASS** — All process claims trace to SRC-SUMAN-001-v2, SRC-MAYU-001, or SRC-MD-SUMAN-001. MD-directed Suman governance section (§13) is Varmen Reviewed 2026-06-25. No personal candidate data included. One [VERIFY] item remains correctly tagged: Line Manager identity in the 180-day handover.
+**PASS — Updated 2026-06-25** — All process claims trace to SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-MD-SUMAN-001, or SRC-SUMAN-CONF-001. MD-directed Suman governance section (§13) is Varmen Reviewed 2026-06-25. No personal candidate data included. No open [VERIFY] items remain in this file. The Line Manager identity [VERIFY] item was resolved on 2026-06-25 by SRC-SUMAN-CONF-001 — Suman confirmed the reference was a typing mistake; no Line Manager role exists in the 180-day handover.

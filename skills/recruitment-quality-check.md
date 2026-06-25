@@ -33,7 +33,6 @@ It does not make hiring decisions. It does not approve or reject candidates. It 
 - Does not approve or reject candidates
 - Does not make probation decisions
 - Does not make discontinuation decisions (subject to management review and approval — SRC-SUMAN-001-v2 §8.8)
-- Does not identify the Line Manager in the 180-day handover [VERIFY — item 11 in verify-register.md]
 - Does not store personal candidate information (names, personal contact details, personal data)
 - Does not finalize escalation paths involving Admin Manager authority [VERIFY — SRC-ADMIN-001 PENDING]
 - Does not invent screening thresholds, scoring criteria, or review timelines beyond what is stated in registered sources
@@ -228,14 +227,13 @@ Note: Probation confirmation is a management decision. This skill surfaces prepa
 |------------|-------------------|
 | Mayurika 2-week reminder sent | Mayurika proactively reminds Suman 2 weeks before 6-month handoff is due (SRC-MAYU-001) |
 | 15-minute handover meeting scheduled | Structured meeting scheduled at Month 6 |
-| Confirmed attendees present | Mayurika (HR Officer), Arun (Implementation Officer), Suman (Recruitment Officer) |
-| Line Manager attendance confirmed | **[VERIFY — item 11 in verify-register.md: Line Manager role named as attendee in SRC-SUMAN-001-v2 but role holder not identified. Confirm with Suman or Varmen before this check can be fully completed.]** |
+| Confirmed attendees present | Mayurika (HR Officer), Arun (Implementation Officer), Suman (Recruitment Officer) — confirmed attendees only; no Line Manager role exists in this handover (SRC-SUMAN-CONF-001 — Suman confirmed 2026-06-25: the previous Line Manager reference in SRC-SUMAN-001-v2 was a typing mistake) |
 | Handover meeting covers 4 areas | Commitment delivery summary, employee record verification, KPI baseline confirmation, outstanding issues and owners |
 | recruitment_source_id written to staff record | Mayurika writes upon handoff (SRC-MAYU-001) |
 | recruitment_promise_set_id written to staff record | Mayurika writes upon handoff (SRC-MAYU-001) |
 | In-flight performance evidence provided to Suman before audit | Mayurika must provide in-flight performance evidence to Suman before the 6-month ROI audit is completed (SRC-MD-SUMAN-001, 07/05/2026) |
 
-**Gap flag:** 2-week reminder not sent; handover meeting not scheduled; any confirmed attendee absent; any of the 4 handover review areas not covered; IDs not written to staff record; in-flight performance evidence not provided to Suman before audit.
+**Gap flag:** 2-week reminder not sent; handover meeting not scheduled; Mayurika, Arun, or Suman absent; any of the 4 handover review areas not covered; IDs not written to staff record; in-flight performance evidence not provided to Suman before audit.
 
 ---
 
@@ -332,7 +330,7 @@ For each recruitment process gap identified, produce one record:
 
 | [VERIFY] Item | Effect on This Skill |
 |---------------|---------------------|
-| Line Manager identity in 180-day handover (item 11) | Handover attendee check cannot confirm Line Manager identity. Flag as [VERIFY] until Suman or Varmen confirms role holder. |
+| Line Manager identity in 180-day handover (RESOLVED — SRC-SUMAN-CONF-001 2026-06-25) | Suman confirmed the previous Line Manager reference in SRC-SUMAN-001-v2 was a typing mistake. No Line Manager role exists. §4.10 attendee check updated accordingly. No further [VERIFY] constraint applies for this item. |
 | Admin Manager authority (items 1–5) | No escalation path through Admin Manager may be included in this skill. |
 | MD-specific requirements (items 6–7) | This skill may change scope after MD review. Foundation Draft v0.1 only. |
 
@@ -352,9 +350,9 @@ For each recruitment process gap identified, produce one record:
 
 ## Pass/Fail Result
 
-**DRAFT — CONDITIONAL PASS — Updated 2026-06-25**
+**DRAFT — CONDITIONAL PASS — Updated 2026-06-25 (SRC-SUMAN-CONF-001)**
 
-All checklist items, review stages, and output fields trace to SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, or SRC-MD-SUMAN-001 (Varmen Reviewed 2026-06-25). [VERIFY] item 11 (Line Manager identity) is preserved and marked. No personal candidate data included. No hiring, probation, or discontinuation decisions included. No invented recruitment rules.
+All checklist items, review stages, and output fields trace to SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, SRC-MD-SUMAN-001 (Varmen Reviewed 2026-06-25), or SRC-SUMAN-CONF-001. [VERIFY] item 11 (Line Manager identity) resolved by SRC-SUMAN-CONF-001 on 2026-06-25 — Suman confirmed the reference was a typing mistake; §4.10 attendee list updated to Mayurika, Arun, and Suman only. No personal candidate data included. No hiring, probation, or discontinuation decisions included. No invented recruitment rules.
 
 **MD discussion source additions (2026-06-25):** §1 updated (Suman formal role — Head Hunter, Onboarder, 6-Month Progress ROI Reviewer); §4.1 extended (LLM-queryable onboarding check); §4.7 extended (Dan Martel onboarding principle check); §4.9 extended (six-month hire ROI audit evidence check); §4.10 extended (in-flight performance evidence check); §4.12 extended (weekly deliverables: Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop Proof; shovel-ready requirement; 14-day pipeline baseline); §4.13 added (OLOS onboarding system validation check); §4.14 added (BGCT completion compliance check). All additions sourced from SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25.
 
