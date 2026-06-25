@@ -21,8 +21,9 @@ This document validates whether raw stakeholder sources are sufficient to begin 
 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/` | YES | YES | Contains Recruitment_Quality_Control_Process.docx |
 | `intelligence-inbox/raw-stakeholder-documents/admin-manager/` | YES | **YES — EMPTY** | Folder exists but contains no documents. Admin Manager documents not yet received. |
 | `intelligence-inbox/raw-stakeholder-documents/company-policy/` | YES | YES | Contains `Draft DIGIT WEB LANKA - Company Policy Manual.md` — registered as SRC-POLICY-001; Varmen reviewed, Final Approved. |
+| `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/` | YES | YES | Contains MD & HR Discussion Notes.md (SRC-MD-HR-001) and MD & Suman Discussions Notes.md (SRC-MD-SUMAN-001) — registered 2026-06-25. |
 
-**Folder Check Result: CONDITIONAL PASS — 6 of 6 folders present. Admin-manager folder still empty (SRC-ADMIN-001 still PENDING). Company-policy folder present with SRC-POLICY-001 registered.**
+**Folder Check Result: CONDITIONAL PASS — 7 of 7 folders present. Admin-manager folder still empty (SRC-ADMIN-001 still PENDING). MD discussion notes folder present with both sources registered.**
 
 ---
 
@@ -39,8 +40,10 @@ The following sources are present, file-verified, and Varmen-confirmed. They are
 | SRC-ARUN-002 | `my day check list-arun - shedule.csv` | Daily operational workflow, check-in timing |
 | SRC-SUMAN-001-v2 | `Recruitment_Quality_Control_Process.md` | Candidate pipeline, 8-point screening, interview scoring, rejected/on-hold tracking, commitment records, 7/14-day review, Month 1/3/6 reviews, source quality monitoring, 180-day handover, daily knowledge capture |
 | SRC-POLICY-001 | `Draft DIGIT WEB LANKA - Company Policy Manual.md` | Company-wide conduct, leave policy, onboarding, offboarding, AI tools mandate, confidentiality, assets, hours of work, attendance |
+| SRC-MD-HR-001 | `MD & HR Discussion Notes.md` | MD governance directives: LLM-queryable compliance, requirement file governance, documentation standards, new employee ROI monitoring, developer project monitoring, management folder structure, BGCT collection, EOD strengthening, task ID standard, business logic standard. Varmen Reviewed 2026-06-25. Sensitivity limits apply. |
+| SRC-MD-SUMAN-001 | `MD & Suman Discussions Notes.md` | MD governance directives: Suman formal role, six-month hire ROI audit, OLOS onboarding validation, BGCT completion, weekly deliverables, LLM-in-the-loop requirement, department handbooks/SOPs, pipeline baseline. Varmen Reviewed 2026-06-25. Sensitivity limits apply — no candidate names/CV/salary to context. |
 
-Ready Source Count: 7 of 8 (SRC-POLICY-001 added 2026-06-23; Varmen reviewed, Final Approved)
+Ready Source Count: 9 of 10 (SRC-MD-HR-001 and SRC-MD-SUMAN-001 added 2026-06-25, Varmen Reviewed 2026-06-25)
 
 ---
 
@@ -68,6 +71,8 @@ The following sources are not yet available. CLAUDE.md sections that depend on t
 | SRC-SUMAN-001 | MEDIUM | Candidate handling process | Include process steps only. No candidate names or personal data to be referenced. |
 | SRC-ADMIN-001 | UNKNOWN | Content not yet reviewed | Cannot assess. Mark all Admin Manager content [VERIFY] until source is received and reviewed. |
 | SRC-POLICY-001 | INTERNAL / RESTRICTED | Company policy manual — process-level rules only; no personal employee data | Include process-level policy rules only. No employee case data, salary figures, or personal data in this source. |
+| SRC-MD-HR-001 | INTERNAL / RESTRICTED | Contains individual staff names in operational context; individual performance case references (Prakalathan case, backup resource planning for named staff, project failure examples by name) | Include process-level governance claims only. Do not copy individual performance case details, individual staff performance examples, or named operational cases to context. Names may be used only as source evidence markers. |
+| SRC-MD-SUMAN-001 | INTERNAL / RESTRICTED | Contains candidate names with statuses; individual CV/salary/interview details (14/05/2026 entry); individual performance assessment reference | Do not copy candidate names, CV details, salary data, or individual performance assessments to context. Use process-level recruitment governance claims only. |
 
 **Sensitive Data Check Result: MANAGEABLE — known sources have clear handling rules. SRC-ADMIN-001 sensitivity is unassessed. SRC-POLICY-001 contains no sensitive personal data.**
 
@@ -118,12 +123,14 @@ Final Admin Manager authority scope and escalation logic must remain **[VERIFY]*
 
 | Check | Result |
 |-------|--------|
-| Folder check | CONDITIONAL PASS — 6 of 6 folders present; admin-manager still empty |
-| Ready sources | 7 of 8 |
+| Folder check | CONDITIONAL PASS — 7 of 7 folders present; admin-manager still empty; md-discussion-notes folder present with both sources |
+| Ready sources | 9 of 10 (7 full READY + 2 READY — Conditional) |
 | Pending sources | 1 (SRC-ADMIN-001) |
-| Sensitive data handling defined | YES for all known sources |
-| CLAUDE.md readiness | CONDITIONAL PASS — Foundation Draft v0.1; company policy integrated as §10 |
+| Sensitive data handling defined | YES for all known sources including SRC-MD-HR-001 and SRC-MD-SUMAN-001 |
+| CLAUDE.md readiness | CONDITIONAL PASS — Foundation Draft v0.1; company policy integrated as §10; MD discussion sources registered for integration |
 | Admin Manager sections | BLOCKED — must remain [VERIFY] |
 | SRC-POLICY-001 status | READY — Varmen reviewed, Final Approved, registered 2026-06-23 |
+| SRC-MD-HR-001 status | READY — Varmen Reviewed 2026-06-25; sensitivity limits apply |
+| SRC-MD-SUMAN-001 status | READY — Varmen Reviewed 2026-06-25; sensitivity limits apply |
 
-**Overall Validation Status: CONDITIONAL PASS**
+**Overall Validation Status: CONDITIONAL PASS — Updated 2026-06-25 (MD discussion sources Varmen Reviewed 2026-06-25)**

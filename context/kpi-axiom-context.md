@@ -84,7 +84,7 @@ The following conditions trigger KPI risk detection:
 
 *(Source: SRC-ARUN-001 — Section 4)*
 
-Revenue, Profit, YOY Growth, ROAS, ACOS, Individual Staff Net Sales, Task Completion, Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback, ROI Officer Feedback **[VERIFY — Arun: source lists "ROI officer feed back" — confirm whether this is a distinct role or a title for an existing role]**
+Revenue, Profit, YOY Growth, ROAS, ACOS, Individual Staff Net Sales, Task Completion, Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback, ROI Officer Feedback **[VERIFY — Arun: source lists "ROI officer feed back" — confirm whether this is a distinct role or a title for an existing role. VERIFY Resolved Candidate (SRC-MD-SUMAN-001, 07/05/2026): ROI Officers are identified as Arun and Mayurika jointly, with Selva auditing submissions. This candidate resolution does NOT remove the [VERIFY] tag — Arun must directly confirm before this item is formally resolved.]**
 
 ---
 
@@ -193,7 +193,7 @@ Staff, Team, Department, Portfolio, Incident, Bonus, PRC Review
 |---|---------------|------------------------|---------------------|
 | 1 | Amazon ACOS threshold wording | Arun | Confirm exact threshold direction and formatting |
 | 2 | Operational Manager PRC membership scope | Arun or Operational Manager | Confirm membership and scope of participation |
-| 3 | ROI Officer feedback — role identity | Arun | Confirm whether distinct role or existing title |
+| 3 | ROI Officer feedback — role identity | Arun | Confirm whether distinct role or existing title. **VERIFY Resolved Candidate:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly. [VERIFY] tag remains until Arun directly confirms. |
 | 4 | Admin Manager PRC role and authority | Admin Manager (SRC-ADMIN-001) | Receive and review Admin Manager documents |
 
 ---
@@ -208,4 +208,4 @@ Staff, Team, Department, Portfolio, Incident, Bonus, PRC Review
 
 ## Pass/Fail Result
 
-**CONDITIONAL PASS** — All claims trace to SRC-ARUN-001. All three Arun [VERIFY] items and the Admin Manager PRC [VERIFY] remain correctly tagged. No new performance rules or thresholds added.
+**CONDITIONAL PASS** — All claims trace to SRC-ARUN-001. All three Arun [VERIFY] items and the Admin Manager PRC [VERIFY] remain correctly tagged. VERIFY Resolved Candidate noted for item 3 (ROI Officer identity) based on SRC-MD-SUMAN-001 — [VERIFY] tag preserved pending Arun direct confirmation. No new performance rules or thresholds added.

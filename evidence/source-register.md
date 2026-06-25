@@ -22,6 +22,8 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 | SRC-SUMAN-001-v2 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Recruitment_Quality_Control_Process.md` | Suman | Recruitment Officer | Recruitment Process Document | YES — confirmed in interview | MEDIUM — recruitment process | YES — current readable source | READY |
 | SRC-ADMIN-001 | `intelligence-inbox/raw-stakeholder-documents/admin-manager/` *(folder exists; no documents inside)* | Admin Manager | Admin Manager | Stakeholder Documents | NO — not yet interviewed | UNKNOWN — pending review | PARTIAL — authority and escalation logic marked [VERIFY] until received | PENDING |
 | SRC-POLICY-001 | `intelligence-inbox/raw-stakeholder-documents/company-policy/Draft DIGIT WEB LANKA - Company Policy Manual.md` | Management / HR | Company Policy | Company Policy Manual | YES — Varmen reviewed; Final Approved | INTERNAL / RESTRICTED | YES — company-wide conduct, leave, onboarding, offboarding, AI tools, confidentiality, assets | READY — Final Approved |
+| SRC-MD-HR-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & HR Discussion Notes.md` | Management / HR / MD Governance | MD Discussion Notes with HR | MD Discussion Notes spanning 19/11/2025–22/06/2026 | YES — Varmen reviewed 2026-06-25 | INTERNAL / RESTRICTED — contains individual staff names in operational context; individual performance case references; do not copy personal case details to context | YES — with source mapping and sensitivity limits | READY — Varmen Reviewed |
+| SRC-MD-SUMAN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & Suman Discussions Notes.md` | Recruitment / Onboarding / MD Governance | MD Discussion Notes with Suman | MD Discussion Notes spanning 24/02/2026–23/06/2026 | YES — Varmen reviewed 2026-06-25 | INTERNAL / RESTRICTED — contains candidate names with statuses; individual CV/salary details (14/05/2026 entry); individual performance assessment references; do not copy candidate personal data, CV, or salary details to context | YES — with source mapping and sensitivity limits | READY — Varmen Reviewed |
 
 ---
 
@@ -29,10 +31,11 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 
 | Status | Count |
 |--------|-------|
-| READY | 7 |
+| READY (Full) | 9 |
+| READY — Conditional (Varmen review pending) | 0 |
 | SUPERSEDED | 1 |
 | PENDING | 1 |
-| TOTAL | 9 |
+| TOTAL | 11 |
 
 ---
 

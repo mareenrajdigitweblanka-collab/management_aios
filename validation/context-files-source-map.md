@@ -134,6 +134,34 @@ Every claim in the context/ files is traced here to its Source ID.
 | hr-operations-context.md | §9.5 Maternity Leave | 3 months; 30 days notice; full pay for full-time employees | SRC-POLICY-001 | CONFIRMED | — | §6.5 of company policy |
 | hr-operations-context.md | §9.6 Offboarding | Exit interview conducted by HR; final checklist signed by employee, manager, HR | SRC-POLICY-001 | CONFIRMED | — | §10.6–10.7 of company policy |
 | recruitment-context.md | §7 Month 1 | Probation leave restriction — no leave during 3-month probationary period | SRC-POLICY-001 | CONFIRMED | — | §6.2 of company policy; cross-reference with probation review framework |
+| management-aios-purpose.md | MD Governance Direction | LLM-queryable documentation standard — any activity not documented in LLM-queryable format is "not happened" | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/05/2026 and 22/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.1 LLM-Queryable Standard | LLM-queryable documentation standard applies organisation-wide to all work activities | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/05/2026 and 22/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.2 Task ID Standard | Every task must be assigned a unique Task ID; work without Task ID cannot be tracked | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 19/11/2025; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.3 Requirement File Metadata | 8 metadata fields required: Project Name, Start Date, Expected Deadline, User/Stakeholder, Company Value, MVP Date, Project Owner, Status | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.4 Verbal-to-Documented | No verbal MD instruction may be executed without first being converted to a written documented requirement | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 and 15/05/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.5 85% Specification Rule | Development must not begin until 85% of project requirements are documented and approved | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/05/2026 and 15/05/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.6 Daily 10% Validation | Daily 10% business logic validation required and must be evidenced | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/05/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.7 Business Logic Docs | Business logic in plain English comprehensible by fresh joiner | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 10/02/2026 and 24/03/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.8 EOD — Actual Revenue per Hour | Actual Revenue per Hour added as EOD metric; extends existing EOD framework | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 10/02/2026; cross-reference SRC-MAYU-001 §4; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.9 New Employee ROI Monitoring | ROI review at 1 week, 1 month, and 3 months for all new employees | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.10 Developer/Tech Project Monitoring | Developer and technical team projects monitored for ROI contribution and value delivery | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.11 Technical Team Stand-Up Governance | Stand-up meetings must cover user-facing work and deliverables | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.12 Lessons Learned | Lessons learned document required after project or case outcome conclusion | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.13 BGCT Collection | BGCT docs centrally collected and stored | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 08/06/2026; Varmen Reviewed 2026-06-25 |
+| hr-operations-context.md | §10.14 Folder Consolidation | Google Sheets and management docs consolidated; staff biodata under PDPA-compliant access | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 08/06/2026; PDPA caveat applies to biodata; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.1 Suman Formal Role | Head Hunter, Onboarder, 6-Month Progress ROI Reviewer | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.2 Six-Month Hire ROI Audit | Binary audit: traceable contribution to revenue, margin, NNV, automation, or capacity | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.3 Weekly Deliverables | 4 deliverables: Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop proof | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.4 LLM-in-the-Loop | LLM consultation required before any recruitment planning or decision action | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.5 14-Day Pipeline Baseline | 14-day recruitment pipeline baseline maintained | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.6 OLOS Validation | OLOS validated before go-live; 5 required documents: Evidence Standard, Onboarding Guide, OLOS Master, Team Leader Setup Guide, File Pack Register | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 29/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.7 BGCT Completion | All staff from last 6 months must complete BGCT; onboarding docs updated with BGCT details | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 25/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.8 LLM-Queryable Onboarding | Onboarding captured in LLM-queryable format from day one | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 28/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.9 Dan Martel Principle | "WE HIRE THEM TO SAVE COMPANY TIME" poster shown at onboarding | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.10 Shovel-Ready Requirement | Shovel-ready requirement document for dev team maintained | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026; Varmen Reviewed 2026-06-25 |
+| recruitment-context.md | §13.11 Proof-Over-Narrative | Evidence-backed outputs take precedence over narrative description | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001; Varmen Reviewed 2026-06-25 |
+| kpi-axiom-context.md | §4 Review Inputs | ROI Officer feedback — VERIFY Resolved Candidate: ROI Officers = Arun and Mayurika jointly (SRC-MD-SUMAN-001); Arun direct confirmation still required | SRC-MD-SUMAN-001 | VERIFY Resolved Candidate | YES | SRC-MD-SUMAN-001 07/05/2026; [VERIFY] tag preserved; see validation/md-discussion-conflict-check.md |
+| verify-register.md | Item 10 | VERIFY Resolved Candidate noted for item 10 (ROI Officer = Arun and Mayurika) | SRC-MD-SUMAN-001 | VERIFY Resolved Candidate | YES | [VERIFY] tag preserved; Arun direct confirmation required for full resolution |
 
 ---
 
@@ -141,13 +169,13 @@ Every claim in the context/ files is traced here to its Source ID.
 
 | Status | Count |
 |--------|-------|
-| CONFIRMED | 97 |
+| CONFIRMED | 123 |
 | RESOLVED | 1 |
-| [VERIFY] | 16 |
-| TOTAL | 114 |
+| [VERIFY] | 18 |
+| TOTAL | 142 |
 
 ---
 
 ## Validation Result
 
-**CONDITIONAL PASS** — All claims in all context files have either a Source ID, a [VERIFY] tag, or a RESOLVED status. SRC-POLICY-001 claims added across confidentiality-rules.md, hr-operations-context.md, and recruitment-context.md. [VERIFY] item 12 (leave policy) resolved. No unsourced business rules, HR policy, or sensitive personal data added. All Admin Manager and Arun [VERIFY] tags remain intact.
+**PASS** — All claims in all context files have either a Source ID, a [VERIFY] tag, or a RESOLVED status. SRC-POLICY-001 claims added across confidentiality-rules.md, hr-operations-context.md, and recruitment-context.md. [VERIFY] item 12 (leave policy) resolved. SRC-MD-HR-001 and SRC-MD-SUMAN-001 claims updated to CONFIRMED — Varmen Reviewed 2026-06-25 (26 rows, 2026-06-25). No unsourced business rules, HR policy, or sensitive personal data added. All Admin Manager and Arun [VERIFY] tags remain intact.

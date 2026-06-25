@@ -1,10 +1,10 @@
 ---
 name: hr-operations-context
 type: context
-source-ids: SRC-MAYU-001, SRC-POLICY-001
+source-ids: SRC-MAYU-001, SRC-POLICY-001, SRC-MD-HR-001
 created: 2026-06-23
-last-updated: 2026-06-23
-status: PASS — Foundation Draft v0.1
+last-updated: 2026-06-25
+status: PASS — Varmen Reviewed 2026-06-25
 ---
 
 # HR Operations Context
@@ -229,6 +229,123 @@ An exit interview is conducted by HR upon resignation or termination. This confi
 
 ---
 
+---
+
+## 10. MD-Directed HR Governance
+
+*(Source: SRC-MD-HR-001 — MD & HR Discussion Notes, multiple dates 19/11/2025–22/06/2026; Varmen Reviewed 2026-06-25)*
+
+> This section reflects MD-directed governance standards from discussion notes. These are MD-level operational directives, not independently confirmed by SRC-POLICY-001. All content is process-level only. No individual staff case details, performance records, or personal data are included. Varmen Reviewed MD Governance Evidence.
+
+### 10.1 LLM-Queryable Documentation Standard
+
+*(SRC-MD-HR-001, 22/05/2026 and 22/06/2026)*
+
+Any activity not documented in LLM-queryable format will be considered as "not happened." This is an organisation-wide MD-directed governance principle applicable to all teams and staff members.
+
+### 10.2 Task ID Standard
+
+*(SRC-MD-HR-001, 19/11/2025)*
+
+Every task must be assigned a unique Task ID. Work performed without a Task ID cannot be tracked, validated, or attributed. Gap detection: tasks without assigned Task IDs are a compliance failure.
+
+### 10.3 Requirement File Metadata Standard
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+All project and development work must be preceded by a documented requirement file containing the following metadata fields before work begins:
+
+| Required Field | Description |
+|----------------|-------------|
+| Project Name | Name of the project or initiative |
+| Start Date | Date work is intended to begin |
+| Expected Deadline | Target completion date |
+| User / Stakeholder | Who the work serves |
+| Company Value Contribution | Expected business or operational value |
+| MVP Submission Date | Earliest viable deliverable date |
+| Project Owner | Named owner of the project |
+| Status | Current project status |
+
+### 10.4 Verbal-to-Documented Conversion Rule
+
+*(SRC-MD-HR-001, 16/06/2026 and 15/05/2026)*
+
+No verbal MD instruction may be executed without first being converted into a written, documented requirement. Gap detection: any work initiated from verbal direction alone without a documented requirement file is a governance failure.
+
+### 10.5 85% Specification Rule
+
+*(SRC-MD-HR-001, 22/05/2026 and 15/05/2026)*
+
+Development work must not begin until at least 85% of the project requirements are documented and approved. Starting development before this threshold is met is a governance gap.
+
+### 10.6 Daily 10% Business Logic Validation
+
+*(SRC-MD-HR-001, 22/05/2026)*
+
+Technical and development staff are required to complete a daily 10% business logic validation. Evidence of completion must be documented. Absence of evidence is a compliance gap.
+
+### 10.7 Business Logic Documentation Standard
+
+*(SRC-MD-HR-001, 10/02/2026 and 24/03/2026)*
+
+Business logic must be documented in plain English, written to a standard comprehensible by a fresh joiner. Documentation that cannot be understood by someone unfamiliar with the project does not meet this standard.
+
+### 10.8 EOD Strengthening — Actual Revenue per Hour
+
+*(SRC-MD-HR-001, 10/02/2026; cross-reference SRC-MAYU-001 §4)*
+
+The EOD productivity program (see §4) must include an "Actual Revenue per Hour" metric in addition to existing Task Tier, Time Spent, Yield, and Category dimensions. This is an MD-directed extension to the existing EOD framework.
+
+### 10.9 New Employee ROI Monitoring
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+For all new employees, ROI monitoring must be conducted at the following milestones:
+
+| Milestone | Purpose |
+|-----------|---------|
+| 1 week | Initial capability and activity baseline |
+| 1 month | Early value and task completion assessment |
+| 3 months | Traceable contribution to team or business output |
+
+Gap detection: missing ROI review at any of these milestones for a new employee is a governance failure.
+
+### 10.10 Developer and Technical Team Project Performance Monitoring
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+Developer and technical team projects must be monitored for ROI contribution and value delivery on an ongoing basis. Project completion without a documented value outcome or ROI assessment is a gap.
+
+### 10.11 Technical Team Stand-Up Governance
+
+*(SRC-MD-HR-001, 22/06/2026)*
+
+Technical team stand-up meetings must cover user-facing work and deliverables — not internal tasks only. Gap detection: stand-up records that do not evidence coverage of user-facing deliverables are non-compliant with this standard.
+
+### 10.12 Lessons Learned Documentation
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+Following the outcome of a project or case, a lessons learned document must be produced and stored. Absence of a lessons learned record following a concluded project is a gap.
+
+### 10.13 BGCT Collection
+
+*(SRC-MD-HR-001, 08/06/2026)*
+
+Best Practices, Guidelines, Checklists, and Tutorials (BGCT) documents must be collected and stored in a central location. Gap detection: no central BGCT repository or incomplete BGCT collection is a management file gap.
+
+### 10.14 Management Documentation and Folder Consolidation
+
+*(SRC-MD-HR-001, 08/06/2026)*
+
+The following management documentation consolidation tasks are MD-directed:
+
+- Management Team Google Sheets must be identified, listed, and consolidated
+- Staff biodata documents must be consolidated (note: PDPA and confidentiality rules apply — see §2 and confidentiality-rules.md)
+- Management and operational documents must be centrally located and accessible
+
+---
+
 ## Source IDs Used in This File
 
 | Claim Area | Source ID | Status |
@@ -236,9 +353,10 @@ An exit interview is conducted by HR upon resignation or termination. This confi
 | All HR operations process claims (§1–§8) | SRC-MAYU-001 | CONFIRMED |
 | Leave policy framework (§9.1–§9.5) | SRC-POLICY-001 | CONFIRMED |
 | Offboarding exit interview and checklist (§9.6) | SRC-POLICY-001 | CONFIRMED |
+| MD-Directed HR Governance (§10.1–§10.14) | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 |
 
 ---
 
 ## Pass/Fail Result
 
-**PASS** — All claims trace to SRC-MAYU-001 or SRC-POLICY-001. No personal employee data included. No salary, disciplinary, or health data included. Process-level only. [VERIFY] item 12 resolved by SRC-POLICY-001 §6.0–6.5.
+**PASS** — All claims trace to SRC-MAYU-001, SRC-POLICY-001, or SRC-MD-HR-001. MD-directed governance section (§10) is Varmen Reviewed 2026-06-25. No personal employee data included. No salary, disciplinary, or health data included. Process-level only. [VERIFY] item 12 resolved by SRC-POLICY-001 §6.0–6.5.

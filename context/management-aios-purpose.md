@@ -1,9 +1,10 @@
 ---
 name: management-aios-purpose
 type: context
-source-ids: SRC-VAR-001
+source-ids: SRC-VAR-001, SRC-MD-HR-001
 created: 2026-06-23
-status: CONDITIONAL PASS — Foundation Draft v0.1
+last-updated: 2026-06-25
+status: PASS — Varmen Reviewed 2026-06-25
 ---
 
 # Management AIOS — Purpose Context
@@ -73,6 +74,23 @@ Build and deliver as soon as possible. No phased delay was requested.
 
 ---
 
+---
+
+## MD Governance Direction
+
+*(Source: SRC-MD-HR-001 — MD & HR Discussion Notes; Varmen Reviewed 2026-06-25)*
+
+> These governance principles are MD-directed operational standards extracted from discussion notes. They are not independently confirmed by SRC-POLICY-001. They are registered as SRC-MD-HR-001. Varmen Reviewed MD Governance Evidence.
+
+The following MD-directed governance principles are directly relevant to the purpose of this AIOS:
+
+**LLM-Queryable Documentation Standard (SRC-MD-HR-001, 22/05/2026 and 22/06/2026):**
+Any activity not documented in LLM-queryable format will be considered as "not happened." This applies to all staff work activities, operational decisions, and management records. The Management AIOS is the intended enforcement and monitoring layer for this standard.
+
+**Scope:** This principle applies organisation-wide and is a primary detection trigger for the Management AIOS gap detection function. It directly extends the fourth focus area (Management file and decision disorganization) confirmed by SRC-VAR-001.
+
+---
+
 ## Source IDs Used in This File
 
 | Claim Area | Source ID | Status |
@@ -81,9 +99,10 @@ Build and deliver as soon as possible. No phased delay was requested.
 | Builder and ownership | SRC-VAR-001 | CONFIRMED |
 | Urgency | SRC-VAR-001 | CONFIRMED |
 | Known limits | SRC-VAR-001 | CONFIRMED |
+| LLM-queryable documentation standard — governance principle | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 |
 
 ---
 
 ## Pass/Fail Result
 
-**PASS** — All claims in this file trace to SRC-VAR-001. No unsourced rules or management authorities added.
+**CONDITIONAL PASS** — All foundational claims trace to SRC-VAR-001. MD governance direction added from SRC-MD-HR-001 (Varmen review status [VERIFY]) — correctly tagged. No unsourced rules or management authorities added.

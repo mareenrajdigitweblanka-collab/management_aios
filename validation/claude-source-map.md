@@ -160,6 +160,25 @@ Every claim in CLAUDE.md Foundation Draft v0.1 is traced here to its Source ID. 
 | §10.6 Other Policies | Digital assets: work only; company property; no unauthorized social media groups | SRC-POLICY-001 | Company Policy Manual | Company Policy | CONFIRMED | Varmen | §11.0 |
 | §10.6 Other Policies | Physical assets: return in good condition on departure; report loss/damage immediately | SRC-POLICY-001 | Company Policy Manual | Company Policy | CONFIRMED | Varmen | §11.2 |
 | §10.6 Other Policies | Salary confidentiality: employees must not share or discuss compensation with other employees | SRC-POLICY-001 | Company Policy Manual | Company Policy | CONFIRMED | Varmen | §2.0 |
+| §2 Source Table | SRC-MD-HR-001 added as READY — Conditional | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | Sensitivity limits apply; no personal case details to context |
+| §2 Source Table | SRC-MD-SUMAN-001 added as READY — Conditional | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | Sensitivity limits apply; no candidate personal data to context |
+| §4 Domains | LLM-queryable documentation compliance domain added | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 22/05/2026 and 22/06/2026 |
+| §4 Domains | Requirement documentation governance domain added | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 16/06/2026 |
+| §4 Domains | Management folder structure governance domain added | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 08/06/2026 |
+| §4 Domains | Six-month hire ROI audit domain added | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 07/05/2026 |
+| §4 Domains | Onboarding system validation (OLOS) domain added | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 29/05/2026 |
+| §5 Role Boundaries | Suman formal role designation: Head Hunter, Onboarder, 6-Month Progress ROI Reviewer | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | Extends SRC-SUMAN-001-v2 and SRC-MAYU-001 confirmed responsibilities |
+| §5 Role Boundaries | Suman extended responsibilities: six-month hire ROI audit, OLOS validation, BGCT monitoring, weekly deliverables | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 07/05/2026 and 29/05/2026 |
+| §8 Recruitment Context | Suman formal role designation note added to §8 header | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | Cross-reference to §11.7–11.8 and context/recruitment-context.md §13 |
+| §11.1 MD Governance | LLM-queryable documentation standard — "not happened" principle | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 22/05/2026 and 22/06/2026 |
+| §11.2 MD Governance | Task ID standard — every task requires unique ID | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 19/11/2025 |
+| §11.3 MD Governance | Requirement documentation governance; 85% specification rule; 8 metadata fields required | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 16/06/2026 and 15/05/2026 |
+| §11.4 MD Governance | Business logic documentation in plain English; daily 10% validation | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 10/02/2026, 24/03/2026, 22/05/2026 |
+| §11.5 MD Governance | Management folder structure; BGCT collection; Google Sheets and biodata consolidation | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 08/06/2026; PDPA caveat for biodata |
+| §11.6 MD Governance | New employee ROI monitoring at 1 week, 1 month, 3 months | SRC-MD-HR-001 | MD & HR Discussion Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 16/06/2026 |
+| §11.7 MD Governance | Six-month hire ROI audit — binary; Suman's responsibility; evidence required before 180-day handover | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 07/05/2026 |
+| §11.8 MD Governance | OLOS onboarding validation — 5 required documents; department handbooks/SOPs must be present pre-deployment | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | CONFIRMED — Varmen Reviewed 2026-06-25 | — | 29/05/2026 |
+| §14 [VERIFY] Register | Item 10 VERIFY Resolved Candidate — ROI Officers = Arun and Mayurika jointly (SRC-MD-SUMAN-001) | SRC-MD-SUMAN-001 | MD & Suman Discussions Notes.md | MD Discussion Notes | VERIFY Resolved Candidate | — | [VERIFY] tag preserved; Arun direct confirmation still required for full resolution |
 
 ---
 
@@ -167,8 +186,8 @@ Every claim in CLAUDE.md Foundation Draft v0.1 is traced here to its Source ID. 
 
 | Status | Count |
 |--------|-------|
-| CONFIRMED | 120 |
-| [VERIFY] | 4 |
-| TOTAL | 124 |
+| CONFIRMED | 138 |
+| [VERIFY] | 5 |
+| TOTAL | 143 |
 
-**Validation Result: CONDITIONAL PASS** — All [VERIFY] items are tagged. SRC-POLICY-001 claims added (39 new rows). [VERIFY] item 12 (leave policy) resolved — removed from tracking. Admin Manager gap remains.
+**Validation Result: PASS** — All [VERIFY] items are tagged. SRC-MD-HR-001 and SRC-MD-SUMAN-001 claims updated to CONFIRMED — Varmen Reviewed 2026-06-25 (18 rows, 2026-06-25). SRC-POLICY-001 claims added (39 rows). Admin Manager gap remains. VERIFY Resolved Candidate noted for item 10 (ROI Officer identity) — [VERIFY] tag preserved until Arun confirms.

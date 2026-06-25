@@ -60,6 +60,8 @@ Every fact, rule, process claim, or operational detail in this CLAUDE.md must tr
 | SRC-SUMAN-001-v2 | READY — Markdown source, content confirmed |
 | SRC-ADMIN-001 | PENDING — no documents received |
 | SRC-POLICY-001 | READY — Final Approved (Varmen reviewed) |
+| SRC-MD-HR-001 | READY — Varmen Reviewed 2026-06-25 |
+| SRC-MD-SUMAN-001 | READY — Varmen Reviewed 2026-06-25 |
 
 ---
 
@@ -99,7 +101,7 @@ The organisation structure as known from available sources:
 
 ## 4. Core Management AIOS Domains
 
-*(Sources: SRC-VAR-001, SRC-MAYU-001, SRC-ARUN-001, SRC-ARUN-002, SRC-SUMAN-001, SRC-POLICY-001)*
+*(Sources: SRC-VAR-001, SRC-MAYU-001, SRC-ARUN-001, SRC-ARUN-002, SRC-SUMAN-001, SRC-POLICY-001, SRC-MD-HR-001, SRC-MD-SUMAN-001)*
 
 The following domains are confirmed by registered sources and are in scope for this AIOS:
 
@@ -124,6 +126,11 @@ The following domains are confirmed by registered sources and are in scope for t
 | Digital and physical asset governance | SRC-POLICY-001 |
 | Mandatory AI tools compliance | SRC-POLICY-001 |
 | Working hours and attendance management | SRC-POLICY-001 |
+| LLM-queryable documentation compliance | SRC-MD-HR-001 |
+| Requirement documentation governance | SRC-MD-HR-001 |
+| Management folder structure governance | SRC-MD-HR-001 |
+| Six-month hire ROI audit | SRC-MD-SUMAN-001 |
+| Onboarding system validation (OLOS) | SRC-MD-SUMAN-001 |
 
 ---
 
@@ -135,7 +142,7 @@ The following domains are confirmed by registered sources and are in scope for t
 |------|---------------------------|-----------|-----------------|
 | **HR Officer (Mayurika)** | Staff record maintenance and data stewardship; PDPA compliance tracking; AXIOM weekly data submission to Arun; probation date monitoring; review schedule management; EOD productivity monitoring (Website & PH Teams); Critic Meeting coordination (with Muguntha and Jefri); SKILL file compliance enforcement (Developer & Technical/N8N Teams); Leadership Review coordination (with Director); 996 Project ROI monitoring; monthly HR governance reporting to MD | SRC-MAYU-001 | Does not write AXIOM band placements (Arun's authority); does not overwrite canonical name spelling (Rajiv's authority); does not write team structure data (Rajiv's authority); does not write salary band information |
 | **Implementation Officer (Arun)** | KPI definitions per role; AXIOM band placement; weekly AXIOM processing; incident escalation management; PRC membership; management dashboard requirements; daily operational checklist across teams | SRC-ARUN-001, SRC-ARUN-002 | [VERIFY — detailed authority limits beyond KPI/AXIOM scope not yet documented] |
-| **Recruitment Officer (Suman)** | Recruitment pipeline management; 8-point candidate screening; interview scoring (50-point scale); rejected/on-hold tracking; commitment records; 7/14-day, Month 1, Month 3, and Month 6 reviews; source quality monitoring; 180-day handover; daily knowledge capture | SRC-SUMAN-001-v2, SRC-MAYU-001 | Line Manager identity in 180-day handover [VERIFY — §8.11] |
+| **Recruitment Officer (Suman)** | Formal role designation: Head Hunter, Onboarder, 6-Month Progress ROI Reviewer (SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25); recruitment pipeline management; 8-point candidate screening; interview scoring (50-point scale); rejected/on-hold tracking; commitment records; 7/14-day, Month 1, Month 3, and Month 6 reviews; source quality monitoring; 180-day handover; daily knowledge capture; six-month hire ROI audit (binary); OLOS onboarding validation; BGCT completion monitoring; weekly deliverables (Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop proof) | SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-MD-SUMAN-001 | Line Manager identity in 180-day handover [VERIFY — §8.11]; Suman formal role designation and extended responsibilities confirmed — Varmen Reviewed 2026-06-25 (SRC-MD-SUMAN-001) |
 | **Admin Manager** | [VERIFY — awaiting SRC-ADMIN-001] | SRC-ADMIN-001 PENDING | All authority, approval rights, and escalation responsibilities unknown until source received |
 | **Operational Manager** | PRC member | SRC-ARUN-001 | [VERIFY — full operational responsibilities not yet sourced] |
 | **Director** | Co-facilitates twice-weekly Leadership Review sessions with Mayurika; receives weekly and monthly review reports; approves corrective actions | SRC-MAYU-001 | [VERIFY — additional directorial responsibilities beyond leadership review not yet documented] |
@@ -299,7 +306,9 @@ All of the following must be met:
 
 ## 8. Recruitment Context
 
-*(Source: SRC-SUMAN-001-v2 — `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Recruitment_Quality_Control_Process.md`)*
+*(Sources: SRC-SUMAN-001-v2 — `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Recruitment_Quality_Control_Process.md`; SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
+
+> **Suman Formal Role Designation (Source: SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25):** Suman's role encompasses three formal functions — Head Hunter, Onboarder, and 6-Month Progress ROI Reviewer. These designations were confirmed in MD discussion sessions and extend the operational scope described in §8.1–§8.12. Full governance directives in §11.7–§11.8 and context/recruitment-context.md §13.
 
 ### 8.1 Candidate Pipeline
 
@@ -585,7 +594,63 @@ AI tools are mandatory across all departments and roles. Daily use is required a
 
 ---
 
-## 11. Assistant Allowed Actions
+## 11. MD Governance Context
+
+*(Sources: SRC-MD-HR-001 — MD & HR Discussion Notes; SRC-MD-SUMAN-001 — MD & Suman Discussion Notes; Varmen Reviewed 2026-06-25)*
+
+> This section reflects MD-directed governance principles from registered discussion note sources. All content is process-level. No individual staff case details, candidate personal data, or salary information are included. Varmen Reviewed MD Governance Evidence.
+
+### 11.1 LLM-Queryable Documentation Standard
+
+*(SRC-MD-HR-001, 22/05/2026 and 22/06/2026)*
+
+Any activity not documented in LLM-queryable format will be considered as "not happened." This governance principle applies organisation-wide to all work activities, operational decisions, and management records.
+
+### 11.2 Task ID Standard
+
+*(SRC-MD-HR-001, 19/11/2025)*
+
+Every task must be assigned a unique Task ID. Work performed without a Task ID cannot be tracked, validated, or attributed.
+
+### 11.3 Requirement Documentation Governance
+
+*(SRC-MD-HR-001, 16/06/2026 and 15/05/2026)*
+
+No verbal MD instruction may be executed without first being converted into a written, documented requirement. Development work must not begin until at least 85% of project requirements are documented and approved (the 85% specification rule). All requirement files must contain the following metadata fields: Project Name, Start Date, Expected Deadline, User / Stakeholder, Company Value Contribution, MVP Submission Date, Project Owner, Status.
+
+### 11.4 Business Logic Documentation
+
+*(SRC-MD-HR-001, 10/02/2026 and 24/03/2026)*
+
+Business logic must be documented in plain English, comprehensible by a fresh joiner. A daily 10% business logic validation is required and must be evidenced (SRC-MD-HR-001, 22/05/2026).
+
+### 11.5 Management Folder Structure and BGCT Governance
+
+*(SRC-MD-HR-001, 08/06/2026)*
+
+BGCT (Best Practices, Guidelines, Checklists, Tutorials) documents must be collected and stored centrally. Management Team Google Sheets must be identified, listed, and consolidated. Staff biodata documents must be consolidated under PDPA-compliant access controls.
+
+### 11.6 New Employee ROI Monitoring
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+ROI reviews must be conducted at 1 week, 1 month, and 3 months for all new employees. Missing ROI review at any of these milestones is a governance failure.
+
+### 11.7 Six-Month Hire ROI Audit — Suman
+
+*(SRC-MD-SUMAN-001, 07/05/2026)*
+
+Suman must conduct a binary ROI audit at the 6-month mark for each hire, assessing traceable contribution to: Revenue, Margin, NNV reduction, Automation output, or Capacity. Evidence of this audit must be documented before the 180-day handover.
+
+### 11.8 OLOS Onboarding Validation
+
+*(SRC-MD-SUMAN-001, 29/05/2026)*
+
+The OLOS onboarding system must be validated against actual company operations before go-live. Required validation documents: Evidence Standard, Onboarding Guide, OLOS Master, Team Leader Setup Guide, File Pack Register. Department handbooks, role guides, and SOP documents must be confirmed as present before deployment.
+
+---
+
+## 12. Assistant Allowed Actions
 
 Within this Management AIOS, the assistant may:
 
@@ -601,7 +666,7 @@ Within this Management AIOS, the assistant may:
 
 ---
 
-## 12. Assistant Forbidden Actions
+## 13. Assistant Forbidden Actions
 
 The assistant must not:
 
@@ -619,7 +684,7 @@ The assistant must not:
 
 ---
 
-## 13. [VERIFY] Register
+## 14. [VERIFY] Register
 
 The following items are unresolved and must remain tagged `[VERIFY]` until the listed condition is met.
 
@@ -636,14 +701,14 @@ The following items are unresolved and must remain tagged `[VERIFY]` until the l
 | 7 | Final implementation scope | SRC-VAR-001 acknowledged limit | MD review meeting completed |
 | 8 | Amazon ACOS threshold wording | SRC-ARUN-001 formatting unclear | Confirm exact threshold wording with Arun |
 | 9 | Operational Manager PRC role confirmation | SRC-ARUN-001 names role; no dedicated source | Arun or dedicated Operational Manager source confirms |
-| 10 | ROI Officer identity / title in review inputs | SRC-ARUN-001 wording unclear | Confirm with Arun whether this is a distinct role |
+| 10 | ROI Officer identity / title in review inputs | SRC-ARUN-001 wording unclear | Confirm with Arun whether this is a distinct role. **VERIFY Resolved Candidate:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly. [VERIFY] tag must remain until Arun directly confirms. |
 | 11 | Line Manager identity in 180-day handover (§8.11) | SRC-SUMAN-001-v2 names role but not the holder | Confirm who the Line Manager is with Suman or Varmen |
 | 12 | Director authority beyond leadership review | SRC-MAYU-001 partial coverage | Dedicated Director source or interview |
 | 13 | Exact tool names for HR and EOD systems | SRC-MAYU-001 marks several as (assumed) | Confirm actual tool names with Mayurika |
 
 ---
 
-## 14. Queryability Test
+## 15. Queryability Test
 
 A clean LLM should be able to answer the following questions from this document:
 
@@ -651,14 +716,14 @@ A clean LLM should be able to answer the following questions from this document:
 |----------|-----------------------|
 | What is this AIOS and why does it exist? | YES — Section 1 |
 | What sources support it? | YES — Section 2 |
-| What is verified and what is pending? | YES — Sections 2 and 13 |
+| What is verified and what is pending? | YES — Sections 2 and 14 |
 | Who reviews and owns it? | YES — Header block and Section 5 |
-| What must happen next? | YES — Section 15 |
+| What must happen next? | YES — Section 16 |
 | What are the KPI definitions and AXIOM bands? | YES — Section 7 |
 | What are Mayurika's HR responsibilities? | YES — Section 9 |
 | What is the incident escalation path? | YES — Section 7.7 |
 | Who sits on the PRC? | YES, partially — Section 7.8 (Admin Manager role [VERIFY]) |
-| What can the assistant do and not do? | YES — Sections 11 and 12 |
+| What can the assistant do and not do? | YES — Sections 12 and 13 |
 | What is the Admin Manager's authority? | NO — [VERIFY], awaiting SRC-ADMIN-001 |
 | What are the final escalation paths? | NO — [VERIFY], awaiting SRC-ADMIN-001 and MD review |
 | What is the full recruitment process? | YES — Section 8 (pipeline, 8-point screening, scoring, reviews, handover, daily capture all confirmed via SRC-SUMAN-001-v2) |
@@ -669,20 +734,24 @@ A clean LLM should be able to answer the following questions from this document:
 
 ---
 
-## 15. Next Step
+## 16. Next Step
 
 **Completed 2026-06-23:** SRC-POLICY-001 (Final Approved Company Policy Manual, Varmen reviewed) has been registered and integrated. Leave policy detail ([VERIFY] item 12) is resolved. See [validation/policy-update-impact-report.md](validation/policy-update-impact-report.md) for full impact summary.
+
+**Completed 2026-06-25:** SRC-MD-HR-001 (MD & HR Discussion Notes) and SRC-MD-SUMAN-001 (MD & Suman Discussion Notes) have been registered and integrated as conditional sources. Both sources are sensitivity-checked and source-mapped. Key additions: §11 MD Governance Context, §4 domain extensions, §5 Suman role update, §8 formal role note. VERIFY Resolved Candidate identified for item 10 (ROI Officer = Arun and Mayurika). Varmen review of both MD discussion sources is [VERIFY]. See [validation/md-discussion-source-ingestion-check.md](validation/md-discussion-source-ingestion-check.md), [validation/md-discussion-impact-map.md](validation/md-discussion-impact-map.md), [validation/md-discussion-conflict-check.md](validation/md-discussion-conflict-check.md), and [validation/md-discussion-skill-impact-check.md](validation/md-discussion-skill-impact-check.md) for full details.
 
 **Immediate action:** Obtain Admin Manager source document and/or conduct Admin Manager interview. Once received:
 
 1. Register the document as SRC-ADMIN-001 in [evidence/source-register.md](evidence/source-register.md)
 2. Update [validation/raw-source-readiness-check.md](validation/raw-source-readiness-check.md) — change SRC-ADMIN-001 status from PENDING to READY
-3. Review and resolve all `[VERIFY — awaiting SRC-ADMIN-001]` items in Section 13
+3. Review and resolve all `[VERIFY — awaiting SRC-ADMIN-001]` items in Section 14
 4. Update this CLAUDE.md: populate Admin Manager rows in Sections 3, 5, and 7.8
 5. Update [validation/claude-source-map.md](validation/claude-source-map.md) with new Admin Manager claims
 6. Remove resolved items from [validation/pending-admin-manager-gaps.md](validation/pending-admin-manager-gaps.md)
 7. Validate updated draft with Varmen before promoting to v0.2
 
-**Secondary actions:** Confirm Line Manager identity in 180-day handover with Suman or Varmen (§8.11, [VERIFY] item 11). Confirm Arun wording items: Amazon ACOS threshold, Operational Manager PRC role, ROI Officer title ([VERIFY] items 8–10).
+**Secondary actions:** Confirm Line Manager identity in 180-day handover with Suman or Varmen (§8.11, [VERIFY] item 11). Confirm Arun wording items: Amazon ACOS threshold, Operational Manager PRC role, ROI Officer title ([VERIFY] items 8–10) — note: item 10 has a VERIFY Resolved Candidate from SRC-MD-SUMAN-001; Arun direct confirmation is still required.
+
+**Skill update actions (pending Varmen approval):** management-gap-detection and recruitment-quality-check have identified update candidates from the MD discussion sources. See [validation/md-discussion-skill-impact-check.md](validation/md-discussion-skill-impact-check.md) for full recommendations. Do not edit skill files until Varmen reviews.
 
 **Before v1.0 approval:** MD-specific requirements must be gathered directly and registered as a source. CLAUDE.md must not be treated as final operational truth until MD review is complete and all [VERIFY] items are resolved.
