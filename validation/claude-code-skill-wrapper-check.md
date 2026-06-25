@@ -157,6 +157,33 @@ Skills must not be used operationally until Varmen review and sign-off is comple
 
 ---
 
+## Wrapper Review — SRC-SUMAN-002 Integration (2026-06-25)
+
+**Date:** 2026-06-25
+
+**Trigger:** SRC-SUMAN-002 (Suman Historical Action Data — New Joinee 7-Day Training Gaps) registered as a READY historical evidence source. Relevant wrappers updated to reference this source when onboarding / 7-day training gap problems arise.
+
+| Command | Wrapper Path | Updated? | Reason | Safety Status |
+| --- | --- | --- | --- | --- |
+| /management-problem-analysis | `.claude/skills/management-problem-analysis/SKILL.md` | YES | Required reading extended: suman-7-day-training-gap-action-data-2026-06-25.md added for onboarding/7-day training gap context. SRC-SUMAN-002 wrapper boundary stated: historical evidence only; not solution, approval, policy, escalation, or [VERIFY] resolution evidence. | PASS |
+| /recruitment-quality-check | `.claude/skills/recruitment-quality-check/SKILL.md` | YES | Before Running extended: SRC-SUMAN-002 added to source check list. Conditional read of suman-7-day-training-gap-action-data-2026-06-25.md when input relates to 7-day training gaps. SRC-SUMAN-002 wrapper boundary stated. Scope note updated to reference SRC-SUMAN-002. | PASS |
+| /management-gap-detection | `.claude/skills/management-gap-detection/SKILL.md` | NO | SRC-SUMAN-002 is recruitment/onboarding-specific historical evidence; management-gap-detection covers system-observed conditions, not historical raw source lookup | NO CHANGE NEEDED |
+| /kpi-axiom-review-support | `.claude/skills/kpi-axiom-review-support/SKILL.md` | NO | SRC-SUMAN-002 is not in scope for KPI/AXIOM review support | NO CHANGE NEEDED |
+| /policy-lookup | `.claude/skills/policy-lookup/SKILL.md` | NO | SRC-SUMAN-002 is not policy evidence | NO CHANGE NEEDED |
+
+**Safety Confirmation:**
+
+| Safety Check | Result |
+| --- | --- |
+| SRC-SUMAN-002 boundary preserved in all updated wrappers | CONFIRMED — historical evidence only; not solution, approval, policy, or [VERIFY] resolution |
+| No [VERIFY] tags removed | CONFIRMED — all 12 items preserved; Admin Manager [VERIFY] items 1–5 explicitly preserved for SRC-SUMAN-002 Admin Manager references |
+| No operational approval language added | CONFIRMED — wrappers remain dry-run / review-support only |
+| No trainee names expanded | CONFIRMED — boundary stated explicitly in wrappers |
+| No automation added | CONFIRMED |
+| Dry-run / review-support boundary preserved | CONFIRMED |
+
+---
+
 ## Next Step
 
 1. Varmen reviews all four wrappers and their source drafts

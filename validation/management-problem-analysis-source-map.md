@@ -151,6 +151,12 @@ Every major claim, workflow step, allowed problem type, forbidden problem type, 
 | Wrapper — Management Action Records Check section | Wrapper must check INDEX.md and relevant person folder when user asks about previous action, MD follow-up, action history, recurring issue history, or problem/solution records | MGMT-ACTION-RECORDS-FOLDER, context/management-action-records-context.md | CONFIRMED | — | Added to wrapper SKILL.md |
 | Wrapper — Rajiv/Admin [VERIFY] preserved | Wrapper explicitly preserves [VERIFY — Admin Manager authority not yet confirmed] for any claim from rajiv-admin-manager/ | SRC-ADMIN-001 PENDING | [VERIFY] | YES | Items 1–5 in verify-register.md |
 | Wrapper — Required Output | Management Action Records Checked added to required output fields | MGMT-ACTION-RECORDS-FOLDER | CONFIRMED | — | .claude/skills/management-problem-analysis/SKILL.md updated |
+| Source IDs Used | SRC-SUMAN-002 READY — Historical Evidence Only | evidence/source-register.md | CONFIRMED | — | Registered 2026-06-25; historical raw action/gap data for new joinee 7-day training gaps |
+| Problem Type 4 — Onboarding Evidence Gap | SRC-SUMAN-002 as optional historical evidence — check when problem relates to 7-day training gaps, practical training/documentation gaps, AI tool/access limitations, live demos, campaign training, keyword platform guidance, or training support gaps | SRC-SUMAN-002 | CONFIRMED — Evidence boundary applied | — | Proves Suman recorded gap and informed a party; does not prove gap was solved, approved, or converted into final process change; trainee names not expanded into HR profiles |
+| Problem Type 4 — Onboarding Evidence Gap | SRC-SUMAN-002 boundary — not solution evidence, not approval evidence, not policy change, not [VERIFY] resolution | SRC-SUMAN-002 | CONFIRMED | — | Boundary stated in skill §4 and source note |
+| Step 3 — domain routing | Onboarding gaps: also check SRC-SUMAN-002 when problem involves 7-day training, practical/documentation training gaps, AI tool access limitations, live demos, campaign training, keyword platform guidance, or training support | SRC-SUMAN-002 | CONFIRMED — Evidence boundary applied | — | Historical evidence only; added to onboarding gap routing row in Step 3 table |
+| Wrapper — required reading | suman-7-day-training-gap-action-data-2026-06-25.md added to wrapper required reading for onboarding/7-day training gap problems | SRC-SUMAN-002 | CONFIRMED | — | .claude/skills/management-problem-analysis/SKILL.md updated 2026-06-25 |
+| Wrapper — SRC-SUMAN-002 boundary | Wrapper states SRC-SUMAN-002 is raw historical evidence only; not solution, approval, policy, escalation, or [VERIFY] resolution evidence | SRC-SUMAN-002 | CONFIRMED | — | Boundary explicitly stated in wrapper |
 
 ---
 
@@ -177,11 +183,13 @@ Every major claim, workflow step, allowed problem type, forbidden problem type, 
 
 | Status | Count |
 |--------|-------|
-| CONFIRMED | 103 |
+| CONFIRMED | 109 |
 | [VERIFY] | 15 |
 | Process rule (no source required) | 6 |
-| TOTAL rows | 124 |
+| TOTAL rows | 130 |
 
 **Source map result: PASS — all claims trace to a registered READY source or carry [VERIFY]. No claim is unsourced and untagged.**
+
+**Update note (2026-06-25 — SRC-SUMAN-002):** 6 rows added for SRC-SUMAN-002 historical gap evidence integration: source ID registration, Problem Type 4 optional historical evidence rule, Problem Type 4 boundary, Step 3 onboarding routing extension, wrapper required reading, and wrapper boundary statement. All 6 rows CONFIRMED. No [VERIFY] items changed. 12 open [VERIFY] items remain unchanged.
 
 **Update note (2026-06-25):** 12 rows added for Management Action Records Reading Rule, person folder routing, evidence boundary, Rajiv/Admin [VERIFY] boundary, MD discussion notes relationship, Workflow Step 3 action records check, output field, wrapper required reading, wrapper check section, wrapper [VERIFY] preservation, and wrapper required output. All new rows confirmed against MGMT-ACTION-RECORDS-FOLDER, context/management-action-records-context.md, and intelligence-inbox/management-action-records/INDEX.md. Three additional [VERIFY] rows added for Rajiv/Admin boundary and escalation path items (covered by existing items 1–5; surfaced here for traceability). 12 [VERIFY] items in verify-register.md remain open — no items resolved by this update.

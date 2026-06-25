@@ -5,7 +5,7 @@ name: management-problem-analysis
 type: skill
 tier: 2
 status: DRAFT — Foundation Draft v0.1 — Pending Varmen Review
-sources: SRC-VAR-001, SRC-MAYU-001, SRC-ARUN-001, SRC-ARUN-002, SRC-SUMAN-001-v2, SRC-POLICY-001, SRC-MD-HR-001, SRC-MD-SUMAN-001, SRC-SUMAN-CONF-001
+sources: SRC-VAR-001, SRC-MAYU-001, SRC-ARUN-001, SRC-ARUN-002, SRC-SUMAN-001-v2, SRC-POLICY-001, SRC-MD-HR-001, SRC-MD-SUMAN-001, SRC-SUMAN-CONF-001, SRC-SUMAN-002
 context-files: context/management-aios-purpose.md, context/hr-operations-context.md, context/recruitment-context.md, context/kpi-axiom-context.md, context/confidentiality-rules.md, context/verify-register.md
 created: 2026-06-25
 owner-for-review: Varmen (validation before operational use)
@@ -58,6 +58,7 @@ The following registered READY sources support this skill:
 | SRC-MD-HR-001 | READY — Varmen Reviewed 2026-06-25 | Documentation and requirement gaps (requirement file metadata, verbal-to-documented rule, Task ID standard, 85% specification rule, business logic documentation), LLM-queryable compliance gaps, management file organisation gaps (BGCT, folder consolidation), ROI evidence gaps (new employee ROI milestones, developer/technical project ROI, lessons learned), KPI review preparation gaps |
 | SRC-MD-SUMAN-001 | READY — Varmen Reviewed 2026-06-25 | Recruitment process evidence gaps (weekly deliverables, OLOS validation, LLM-in-the-Loop proof), ROI evidence gaps (six-month hire ROI audit, in-flight performance evidence), handover continuity gaps (in-flight evidence before audit), OLOS and BGCT gaps |
 | SRC-SUMAN-CONF-001 | READY | Used only for resolved Line Manager typing correction — confirms no Line Manager role exists in the 180-day handover |
+| SRC-SUMAN-002 | READY — Historical Evidence Only | New joinee 7-day training gap/action data. Check when problem relates to new joinee 7-day training, practical training gaps, training documentation gaps, AI tool/access limitations, live demo gaps, campaign creation training, keyword platform guidance, or training support gaps. Boundary: proves Suman recorded gaps and informed parties (MD, Admin Manager, or Team Leader). Does not prove gaps were solved, approved, or converted into final process changes. Does not resolve any [VERIFY] item. Trainee names in source must not be expanded into HR profiles. |
 
 **Pending sources — blocked from use as evidence:**
 
@@ -119,9 +120,11 @@ The following problem types are supported by READY registered sources and are sa
 
 **Evidence to check:** SRC-POLICY-001 §3.0 (pre-employment documents, first-day orientation, role-specific training with mentor/supervisor, probation definition); SRC-POLICY-001 §17.0 (AI tool training mandatory for all new hires); SRC-MAYU-001 (PDPA acknowledgement date must be recorded); SRC-SUMAN-001-v2 (onboarding checklists and BGCT completion); SRC-MD-SUMAN-001 (OLOS validation and BGCT monitoring).
 
+**Historical gap evidence (optional):** When the problem relates to new joinee 7-day training gaps, practical training/documentation gaps, AI tool access limitations, live demo gaps, campaign creation training, keyword platform guidance, or training support gaps — also check SRC-SUMAN-002 (Suman Historical Action Data — New Joinee 7-Day Training Gaps). This source can prove Suman recorded the gap and informed a party (MD, Admin Manager, or Team Leader). It cannot prove the gap was solved, approved, or converted into final process change. Trainee names must not be expanded into HR profiles.
+
 **Likely reviewer:** Mayurika / Suman / Varmen
 
-**Source IDs:** SRC-POLICY-001, SRC-MAYU-001, SRC-SUMAN-001-v2, SRC-MD-SUMAN-001
+**Source IDs:** SRC-POLICY-001, SRC-MAYU-001, SRC-SUMAN-001-v2, SRC-MD-SUMAN-001, SRC-SUMAN-002 (historical evidence only)
 
 ---
 
@@ -386,7 +389,7 @@ Query the relevant context files and skill reference tables for the identified d
 | Domain | Context Source |
 |--------|---------------|
 | Documentation / requirement / LLM-queryable gaps | context/management-aios-purpose.md, context/hr-operations-context.md |
-| Onboarding gaps | context/hr-operations-context.md §1–§2, context/recruitment-context.md §1–§13 |
+| Onboarding gaps | context/hr-operations-context.md §1–§2, context/recruitment-context.md §1–§13; also check SRC-SUMAN-002 when problem involves new joinee 7-day training gaps, practical/documentation training gaps, AI tool access limitations, live demos, campaign training, keyword platform guidance, or training support (historical evidence only — not solution or approval evidence) |
 | Leave gaps | context/hr-operations-context.md §9 |
 | KPI review preparation gaps | context/kpi-axiom-context.md |
 | Recruitment process evidence gaps | context/recruitment-context.md §1–§13 |

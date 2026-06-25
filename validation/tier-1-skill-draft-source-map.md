@@ -170,6 +170,8 @@ Every claim, workflow step, checklist item, threshold, and output field in the f
 | recruitment-quality-check.md | §4.13 OLOS Validation | Pre-go-live requirements: department handbooks, role guides, SOPs, universal files, folder structure, mandatory files | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 29/05/2026 |
 | recruitment-quality-check.md | §4.14 BGCT Compliance | BGCT completion for all staff who joined within last 6 months | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 25/05/2026 |
 | recruitment-quality-check.md | §4.14 BGCT Compliance | Onboarding documents updated with BGCT details and requirements | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 25/05/2026 |
+| recruitment-quality-check.md | §4.6 7/14-Day Review — Historical Gap Evidence | SRC-SUMAN-002 as optional historical evidence — check when input relates to 7-day training quality, training documentation completeness, practical training/demo gaps, AI tool access limitations, or training support gaps | SRC-SUMAN-002 | CONFIRMED — Evidence boundary applied | NO | Historical raw action/gap data only; boundary: not solution evidence, not approval evidence, not policy change, not [VERIFY] resolution; trainee names not expanded |
+| recruitment-quality-check.md | §4.6 7/14-Day Review — SRC-SUMAN-002 boundary | Do not use SRC-SUMAN-002 to mark 7-day training as failed, passed, solved, approved, or escalated | SRC-SUMAN-002 | CONFIRMED | NO | Boundary stated in §4.6 and source note |
 | kpi-axiom-review-support.md | §14.1 New Employee ROI | ROI milestone evidence at 1 week, 1 month, and 3 months for all new employees | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
 | kpi-axiom-review-support.md | §14.2 Project ROI | Developer or technical project ROI evidence documented on conclusion | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
 | kpi-axiom-review-support.md | §14.2 Project ROI | Business value contribution traceable to project output | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
@@ -183,10 +185,12 @@ Every claim, workflow step, checklist item, threshold, and output field in the f
 | Skill File | CONFIRMED Rows | [VERIFY] Rows | Total Rows |
 |------------|---------------|--------------|-----------|
 | management-gap-detection.md | 46 | 4 | 50 |
-| recruitment-quality-check.md | 42 | 1 | 43 |
+| recruitment-quality-check.md | 44 | 1 | 45 |
 | kpi-axiom-review-support.md | 28 | 4 | 32 |
 | policy-lookup.md | 26 | 4 | 30 |
-| **TOTAL** | **143** | **12** | **155** |
+| **TOTAL** | **145** | **12** | **157** |
+
+*Updated 2026-06-25 (SRC-SUMAN-002): +2 CONFIRMED rows added for recruitment-quality-check.md §4.6 — SRC-SUMAN-002 historical gap evidence optional note and boundary statement. No [VERIFY] items changed. All 12 open items remain unchanged.*
 
 *Updated 2026-06-25 (SRC-SUMAN-CONF-001): Line Manager attendee identity row updated from [VERIFY] to CONFIRMED — Suman confirmed the reference was a typing mistake; no Line Manager role in handover. [VERIFY] count reduced from 13 to 12. Previously updated 2026-06-25: +37 CONFIRMED rows added from SRC-MD-HR-001 and SRC-MD-SUMAN-001.*
 

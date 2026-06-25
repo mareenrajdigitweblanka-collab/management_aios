@@ -49,6 +49,7 @@ tracks: skills/ — Tier 1 Skill Drafts, Foundation Draft v0.1 — Updated with 
 | SRC-MD-HR-001 | READY — Varmen Reviewed 2026-06-25 | management-gap-detection.md, kpi-axiom-review-support.md |
 | SRC-MD-SUMAN-001 | READY — Varmen Reviewed 2026-06-25 | recruitment-quality-check.md |
 | SRC-ADMIN-001 | PENDING | Referenced only as [VERIFY] across all files — not used as a source |
+| SRC-SUMAN-002 | READY — Historical Evidence Only | YES — recruitment-quality-check.md §4.6 optional historical gap evidence note; boundary preserved: not solution evidence, not approval evidence, not policy change, not [VERIFY] resolution |
 | SRC-SUMAN-001-v1 | SUPERSEDED | Not used — correctly excluded |
 | SRC-MAYU-002 | READY (org chart image) | Not required for skill drafts |
 | SRC-ARUN-002 | READY (daily schedule) | Referenced in skill frontmatter; daily schedule context not required for Tier 1 content |

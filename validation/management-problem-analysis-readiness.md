@@ -46,6 +46,7 @@ All sources used in this skill are READY registered sources from evidence/source
 | SRC-MD-SUMAN-001 | READY — Varmen Reviewed 2026-06-25 | YES — Recruitment process evidence gaps, ROI evidence gaps, handover continuity gaps, OLOS and BGCT gaps |
 | SRC-SUMAN-CONF-001 | READY | YES — Limited to confirmed attendee list in handover continuity gap (Line Manager typing correction resolution) |
 | SRC-ADMIN-001 | PENDING | NOT USED as evidence — referenced only as [VERIFY] block throughout skill |
+| SRC-SUMAN-002 | READY — Historical Evidence Only | YES — optional historical evidence for Problem Type 4 (Onboarding Evidence Gap) when problem relates to new joinee 7-day training gaps, practical/documentation training gaps, AI tool access limitations, live demos, campaign training, keyword platform guidance, or training support gaps; boundary preserved in skill and wrapper |
 | SRC-SUMAN-001-v1 | SUPERSEDED | NOT USED — correctly excluded |
 | SRC-MAYU-002 | READY (org chart image) | NOT REQUIRED for this skill |
 
@@ -225,6 +226,13 @@ Required dry-run coverage:
 | Action records treated as evidence only | PASS |
 | Action records not treated as policy truth | PASS |
 | 12 [VERIFY] items preserved after action records update | PASS |
+| SRC-SUMAN-002 added to source coverage | PASS |
+| SRC-SUMAN-002 optional evidence rule in Problem Type 4 | PASS |
+| SRC-SUMAN-002 boundary preserved (not solution/approval/policy/[VERIFY]) | PASS |
+| SRC-SUMAN-002 wrapper reading rule added | PASS |
+| Trainee names not expanded | PASS |
+| Admin Manager [VERIFY] preserved for SRC-SUMAN-002 references | PASS |
+| 12 [VERIFY] items preserved after SRC-SUMAN-002 update | PASS |
 | Safe for Varmen review | PASS (conditional) |
 
 **Conditions before operational use:**

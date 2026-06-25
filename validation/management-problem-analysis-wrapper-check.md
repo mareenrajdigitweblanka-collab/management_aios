@@ -69,13 +69,40 @@ The wrapper specifies that the following files must be read before analysis:
 
 | File | Exists? | Status |
 |------|---------|--------|
-| skills/management-problem-analysis.md | YES | READY — updated with action records reading rule |
-| validation/management-problem-analysis-source-map.md | YES | PASS — updated with action records rows |
-| validation/management-problem-analysis-readiness.md | YES | CONDITIONAL PASS — updated with action records integration check |
+| skills/management-problem-analysis.md | YES | READY — updated with action records reading rule and SRC-SUMAN-002 |
+| validation/management-problem-analysis-source-map.md | YES | PASS — updated with action records rows and SRC-SUMAN-002 rows |
+| validation/management-problem-analysis-readiness.md | YES | CONDITIONAL PASS — updated with action records integration check and SRC-SUMAN-002 coverage |
 | context/verify-register.md | YES | ACTIVE — 12 items open |
 | evidence/source-register.md | YES | ACTIVE |
 | context/management-action-records-context.md | YES | Foundation Context — Evidence Use Only |
 | intelligence-inbox/management-action-records/INDEX.md | YES | ACTIVE |
+
+When problem relates to new joinee 7-day training gaps, practical training/documentation gaps, AI tool access limitations, live demos, campaign training, keyword platform guidance, or training support gaps — wrapper also reads:
+
+| File | Exists? | Status |
+|------|---------|--------|
+| intelligence-inbox/raw-stakeholder-documents/suman-recruitment/historical-action-data/suman-7-day-training-gap-action-data-2026-06-25.md | YES | READY — SRC-SUMAN-002 source note; historical evidence only |
+
+---
+
+## SRC-SUMAN-002 Integration Check (2026-06-25 Update)
+
+| SRC-SUMAN-002 Check | Status |
+|---|---|
+| SRC-SUMAN-002 added to skill source IDs table | YES |
+| SRC-SUMAN-002 optional evidence rule added to Problem Type 4 (Onboarding Evidence Gap) | YES |
+| SRC-SUMAN-002 boundary added to Problem Type 4 (not solution/approval/policy/[VERIFY]) | YES |
+| SRC-SUMAN-002 added to Step 3 onboarding domain routing | YES |
+| Wrapper required reading updated for onboarding/7-day training gap context | YES |
+| Wrapper boundary for SRC-SUMAN-002 explicit in wrapper | YES |
+| Source map updated with 6 new CONFIRMED rows | YES |
+| Readiness file source coverage updated | YES |
+| No [VERIFY] items changed | YES — 12 items remain open |
+| No trainee names expanded | YES — boundary preserved throughout |
+| No solution/approval inferred | YES — all uses clearly marked as historical evidence only |
+| Admin Manager [VERIFY] preserved for SRC-SUMAN-002 rows 3 and 10 | YES — Admin Manager authority remains [VERIFY] items 1–5 |
+| No HR/recruitment decisions added | YES |
+| No automation added | YES |
 
 ---
 

@@ -23,6 +23,11 @@ It must read:
 - context/management-action-records-context.md
 - intelligence-inbox/management-action-records/INDEX.md
 
+When the problem relates to new joinee onboarding, 7-day training gaps, practical training gaps, training documentation gaps, AI tool/access limitations, live demos, campaign creation training, keyword platform guidance, or training support gaps — also read:
+- intelligence-inbox/raw-stakeholder-documents/suman-recruitment/historical-action-data/suman-7-day-training-gap-action-data-2026-06-25.md
+
+**SRC-SUMAN-002 wrapper boundary:** This source is raw historical evidence only. It proves Suman recorded onboarding/training gaps and informed parties. It does not prove gaps were solved, approved, or converted into final process changes. It does not resolve any [VERIFY] item. Trainee names in the source must not be expanded into HR profiles.
+
 ## Allowed Use
 
 Use this command to:

@@ -3,7 +3,7 @@ name: recruitment-quality-check
 type: skill
 tier: 1
 status: DRAFT — Foundation Draft v0.1 — Updated 2026-06-25 (SRC-MD-SUMAN-001)
-sources: SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, SRC-MD-SUMAN-001
+sources: SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, SRC-MD-SUMAN-001, SRC-SUMAN-002
 context-files: context/recruitment-context.md, context/confidentiality-rules.md, context/verify-register.md
 created: 2026-06-23
 last-updated: 2026-06-25
@@ -163,6 +163,16 @@ The 7/14-day review must incorporate feedback from the Trainer and Team Leader e
 | All 7 assessment areas covered | Knowledge, responsibilities, confidence/communication, AI/LLM adoption, independent task ability, commitment, areas for further support |
 
 **Gap flag:** Missing Trainer or Team Leader feedback; any of the 7 assessment areas not addressed.
+
+**Historical gap evidence (optional — SRC-SUMAN-002):** When checking 7-day training quality, training documentation completeness, practical training/demo gaps, AI tool access limitations, or training support gaps — also check SRC-SUMAN-002 (Suman Historical Action Data — New Joinee 7-Day Training Gaps). This source records 10 onboarding and training gaps observed during new joinee 7-day training and the informed-to path (MD, Admin Manager, Team Leader) recorded at that time.
+
+Boundary for SRC-SUMAN-002:
+
+- Do not use SRC-SUMAN-002 to mark 7-day training as failed, passed, solved, approved, or escalated.
+- Use only to identify historical gaps that may need follow-up evidence.
+- This source does not prove any gap was resolved, approved, or that policy changed.
+- Admin Manager authority in SRC-SUMAN-002 remains [VERIFY] — awaiting SRC-ADMIN-001.
+- Trainee names in the source must not be expanded into personal HR profiles.
 
 ---
 
@@ -350,10 +360,12 @@ For each recruitment process gap identified, produce one record:
 
 ## Pass/Fail Result
 
-**DRAFT — CONDITIONAL PASS — Updated 2026-06-25 (SRC-SUMAN-CONF-001)**
+DRAFT — CONDITIONAL PASS — Updated 2026-06-25 (SRC-SUMAN-002)
 
-All checklist items, review stages, and output fields trace to SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, SRC-MD-SUMAN-001 (Varmen Reviewed 2026-06-25), or SRC-SUMAN-CONF-001. [VERIFY] item 11 (Line Manager identity) resolved by SRC-SUMAN-CONF-001 on 2026-06-25 — Suman confirmed the reference was a typing mistake; §4.10 attendee list updated to Mayurika, Arun, and Suman only. No personal candidate data included. No hiring, probation, or discontinuation decisions included. No invented recruitment rules.
+All checklist items, review stages, and output fields trace to SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, SRC-MD-SUMAN-001 (Varmen Reviewed 2026-06-25), SRC-SUMAN-CONF-001, or SRC-SUMAN-002 (historical evidence only). [VERIFY] item 11 (Line Manager identity) resolved by SRC-SUMAN-CONF-001 on 2026-06-25 — Suman confirmed the reference was a typing mistake; §4.10 attendee list updated to Mayurika, Arun, and Suman only. No personal candidate data included. No hiring, probation, or discontinuation decisions included. No invented recruitment rules.
 
 **MD discussion source additions (2026-06-25):** §1 updated (Suman formal role — Head Hunter, Onboarder, 6-Month Progress ROI Reviewer); §4.1 extended (LLM-queryable onboarding check); §4.7 extended (Dan Martel onboarding principle check); §4.9 extended (six-month hire ROI audit evidence check); §4.10 extended (in-flight performance evidence check); §4.12 extended (weekly deliverables: Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop Proof; shovel-ready requirement; 14-day pipeline baseline); §4.13 added (OLOS onboarding system validation check); §4.14 added (BGCT completion compliance check). All additions sourced from SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25.
+
+**SRC-SUMAN-002 addition (2026-06-25):** §4.6 extended with optional historical gap evidence note. SRC-SUMAN-002 (Suman Historical Action Data — New Joinee 7-Day Training Gaps) is available as historical evidence when checking 7-day training quality gaps. Boundary preserved: historical evidence only; not solution evidence, not approval evidence, not policy change, not [VERIFY] resolution. Trainee names not expanded.
 
 Safe for Varmen review. Not yet safe for operational use — Foundation Draft v0.1 only.

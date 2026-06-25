@@ -346,6 +346,16 @@ All recruitment and onboarding claims must be substantiated with documented proo
 
 ---
 
+## Historical Gap Evidence — SRC-SUMAN-002
+
+Registered 2026-06-25.
+
+SRC-SUMAN-002 exists as historical raw onboarding gap/action data. It records 10 training gaps observed during new joinee 7-day training and the informed-to path (MD, Admin Manager, Team Leader) as recorded by Suman at that time.
+
+Use as evidence only. Do not treat as solution evidence, approval evidence, or final process truth. See `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/historical-action-data/suman-7-day-training-gap-action-data-2026-06-25.md` for full source note.
+
+---
+
 ## Remaining [VERIFY] Items
 
 No open [VERIFY] items remain in this file.
