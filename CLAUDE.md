@@ -735,7 +735,54 @@ A clean LLM should be able to answer the following questions from this document:
 
 ---
 
-## 16. Next Step
+## 16. Management Action Records Reading Rule
+
+*(Source: SRC-VAR-001 — management file and decision disorganization; SRC-MD-HR-001 — management folder structure governance; context/management-action-records-context.md)*
+
+The Management AIOS maintains two distinct evidence layers for management records. Claude must not confuse them:
+
+| Folder | Type | Use As |
+|---|---|---|
+| `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/` | Historical MD discussion source files — SRC-MD-HR-001 and SRC-MD-SUMAN-001; ingested, source-mapped, Varmen-reviewed | MD governance evidence — historical foundation layer |
+| `intelligence-inbox/management-action-records/` | Ongoing records created by Mayurika, Arun, Rajiv, and Suman as management actions occur | Evidence of recorded discussion, action, problem, or follow-up — ongoing intelligence input layer |
+
+**When to check `intelligence-inbox/management-action-records/`:**
+
+Check this folder when the user asks about management problems, actions taken by HR or the Management Team, MD discussion follow-up, problem–solution history, recurring management issues, review pack preparation, or `management-problem-analysis` skill inputs.
+
+**Reading order when asked about a management problem or action:**
+
+1. CLAUDE.md (this file) — confirm domain, [VERIFY] limits, allowed/forbidden actions
+2. `evidence/source-register.md` — confirm registered source status
+3. `context/verify-register.md` — confirm whether question touches an unresolved [VERIFY] item
+4. Relevant context file (`context/hr-operations-context.md`, `context/recruitment-context.md`, `context/kpi-axiom-context.md`, or `context/management-aios-purpose.md`)
+5. `intelligence-inbox/management-action-records/INDEX.md` — confirm person folder and usage rules
+6. Relevant person subfolder under `management-action-records/`
+7. `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/` — only when historical MD governance evidence is specifically needed
+
+**What action records are — and are not:**
+
+- Records are evidence that a discussion was documented or an action was recorded. They are NOT automatic approved policy.
+- Records do not resolve [VERIFY] items — that requires registered source evidence and Varmen sign-off.
+- Records in `rajiv-admin-manager/` do not establish Admin Manager authority — [VERIFY] items 1–5 remain open pending SRC-ADMIN-001.
+- Records do not replace or override SRC-MD-HR-001 or SRC-MD-SUMAN-001 as governance sources.
+- Check reviewer status, sensitivity limits, and policy alignment before citing any record.
+
+**[VERIFY] items preserved by this section:**
+
+All [VERIFY] items in Section 14 remain open. This reading rule does not resolve any of them. In particular:
+
+- Admin Manager authority ([VERIFY] items 1–5) — awaiting SRC-ADMIN-001
+- Escalation paths through Admin Manager ([VERIFY] items 4–5) — awaiting SRC-ADMIN-001
+- Arun wording items ([VERIFY] items 8–10) — awaiting Arun direct confirmation
+- Director authority beyond leadership review ([VERIFY] item 11)
+- Exact tool names for HR and EOD systems ([VERIFY] item 12)
+
+See [intelligence-inbox/management-action-records/INDEX.md](intelligence-inbox/management-action-records/INDEX.md) and [context/management-action-records-context.md](context/management-action-records-context.md) for full usage rules.
+
+---
+
+## 17. Next Step
 
 **Completed 2026-06-23:** SRC-POLICY-001 (Final Approved Company Policy Manual, Varmen reviewed) has been registered and integrated. Leave policy detail ([VERIFY] item 12) is resolved. See [validation/policy-update-impact-report.md](validation/policy-update-impact-report.md) for full impact summary.
 

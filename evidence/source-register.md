@@ -26,6 +26,7 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 | SRC-MD-SUMAN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & Suman Discussions Notes.md` | Recruitment / Onboarding / MD Governance | MD Discussion Notes with Suman | MD Discussion Notes spanning 24/02/2026–23/06/2026 | YES — Varmen reviewed 2026-06-25 | INTERNAL / RESTRICTED — contains candidate names with statuses; individual CV/salary details (14/05/2026 entry); individual performance assessment references; do not copy candidate personal data, CV, or salary details to context | YES — with source mapping and sensitivity limits | READY — Varmen Reviewed |
 
 | SRC-SUMAN-CONF-001 | `evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md` | Suman | Recruitment Officer | Stakeholder Confirmation | YES — project default for confirmed project documents; not contradicted | INTERNAL | YES — limited to Line Manager typing correction resolution only | READY — Current Evidence Source |
+| MGMT-ACTION-RECORDS-FOLDER | `intelligence-inbox/management-action-records/` | Mayurika, Arun, Rajiv, Suman | Management Team | Ongoing Management Action Records Inbox — ongoing records created by Management Team members documenting problems, actions, and follow-ups | YES — Varmen reviewed folder standard (2026-06-25) | INTERNAL — individual records must each be sensitivity-checked before use; no bulk sensitivity clearance | YES — as record index / evidence location; see `intelligence-inbox/management-action-records/INDEX.md` and `context/management-action-records-context.md` for reading rules | ACTIVE FOLDER STANDARD |
 
 ---
 
@@ -37,7 +38,8 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 | READY — Conditional (Varmen review pending) | 0 |
 | SUPERSEDED | 1 |
 | PENDING | 1 |
-| TOTAL | 11 |
+| ACTIVE FOLDER STANDARD | 1 |
+| TOTAL | 12 |
 
 ---
 

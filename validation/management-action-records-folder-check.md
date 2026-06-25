@@ -2,7 +2,8 @@
 name: management-action-records-folder-check
 type: validation
 created: 2026-06-25
-status: PASS
+last-updated: 2026-06-25
+status: PASS — Updated with integration status
 checked-by: Mareenraj (builder)
 source-boundary: SRC-VAR-001, SRC-MAYU-001, SRC-POLICY-001, SRC-SUMAN-001-v2, SRC-MD-SUMAN-001
 ---
