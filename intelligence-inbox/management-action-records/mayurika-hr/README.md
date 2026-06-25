@@ -61,4 +61,8 @@ Use one of:
 
 ## Current Record Count
 
-0 records — folder created 2026-06-25.
+1 record — last updated 2026-06-25.
+
+| File                                                                           | Date       | Topic                                                                                                                  | Status                                             |
+| ------------------------------------------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `2026-06-22_mayurika-hr_md-discussion_management-structure-llm-compliance.md` | 2026-06-22 | MD discussion — Management structure, Rajiv support, Technical Team stand-ups, Development monitoring, LLM compliance | OPEN — pending Varmen review and due date assignment |
