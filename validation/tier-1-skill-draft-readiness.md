@@ -2,7 +2,8 @@
 name: tier-1-skill-draft-readiness
 type: validation
 created: 2026-06-23
-tracks: skills/ — Tier 1 Skill Drafts, Foundation Draft v0.1
+last-updated: 2026-06-25
+tracks: skills/ — Tier 1 Skill Drafts, Foundation Draft v0.1 — Updated with SRC-MD-HR-001 and SRC-MD-SUMAN-001
 ---
 
 # Tier 1 Skill Draft Readiness Check
@@ -28,9 +29,9 @@ tracks: skills/ — Tier 1 Skill Drafts, Foundation Draft v0.1
 
 | Skill File | Primary Sources Used | Secondary Sources Used | All Claims Sourced? |
 |------------|---------------------|----------------------|---------------------|
-| management-gap-detection.md | SRC-VAR-001, SRC-POLICY-001 | SRC-MAYU-001, SRC-ARUN-001, SRC-SUMAN-001-v2 | YES — or [VERIFY] tagged |
-| recruitment-quality-check.md | SRC-SUMAN-001-v2, SRC-POLICY-001 | SRC-MAYU-001 | YES — or [VERIFY] tagged |
-| kpi-axiom-review-support.md | SRC-ARUN-001 | — | YES — or [VERIFY] tagged |
+| management-gap-detection.md | SRC-VAR-001, SRC-POLICY-001, SRC-MD-HR-001 | SRC-MAYU-001, SRC-ARUN-001, SRC-SUMAN-001-v2 | YES — or [VERIFY] tagged |
+| recruitment-quality-check.md | SRC-SUMAN-001-v2, SRC-POLICY-001, SRC-MD-SUMAN-001 | SRC-MAYU-001 | YES — or [VERIFY] tagged |
+| kpi-axiom-review-support.md | SRC-ARUN-001, SRC-MD-HR-001 | — | YES — or [VERIFY] tagged |
 | policy-lookup.md | SRC-POLICY-001 | — | YES — or [VERIFY] tagged |
 
 **Sources referenced across all four skill files:**
@@ -42,6 +43,8 @@ tracks: skills/ — Tier 1 Skill Drafts, Foundation Draft v0.1
 | SRC-ARUN-001 | READY | management-gap-detection.md, kpi-axiom-review-support.md |
 | SRC-SUMAN-001-v2 | READY | recruitment-quality-check.md, management-gap-detection.md |
 | SRC-POLICY-001 | READY — Final Approved | management-gap-detection.md, recruitment-quality-check.md, policy-lookup.md |
+| SRC-MD-HR-001 | READY — Varmen Reviewed 2026-06-25 | management-gap-detection.md, kpi-axiom-review-support.md |
+| SRC-MD-SUMAN-001 | READY — Varmen Reviewed 2026-06-25 | recruitment-quality-check.md |
 | SRC-ADMIN-001 | PENDING | Referenced only as [VERIFY] across all files — not used as a source |
 | SRC-SUMAN-001-v1 | SUPERSEDED | Not used — correctly excluded |
 | SRC-MAYU-002 | READY (org chart image) | Not required for skill drafts |
@@ -185,7 +188,7 @@ All content is process-level and aggregate. Policy content draws from SRC-POLICY
 
 ## 8. Pass/Fail Result
 
-### Overall Result: **PASS**
+### Overall Result: **PASS — Updated 2026-06-25**
 
 | Check | Result |
 |-------|--------|
@@ -197,9 +200,14 @@ All content is process-level and aggregate. Policy content draws from SRC-POLICY
 | No decisions made | PASS |
 | No escalation automated | PASS |
 | No policy invented | PASS |
+| MD discussion source coverage included | PASS — SRC-MD-HR-001 and SRC-MD-SUMAN-001 (both Varmen Reviewed 2026-06-25) added to relevant skills |
+| Arun [VERIFY] items unchanged | PASS — items 8, 9, 10 preserved; no ACOS, Operational Manager, or ROI Officer rows modified |
 | Safe for Varmen review | PASS (conditional) |
 | Safe for business-owner review | PASS (conditional) |
+| Wrapper dry-run needed | YES — skill content changed; wrapper dry-run should be repeated before operational use |
 
 **PASS — All four Tier 1 skill draft files are source-backed, [VERIFY]-compliant, and within the allowed action scope of Foundation Draft v0.1.**
 
-Skills must not be used operationally until Varmen review and sign-off is complete.
+**MD discussion source update (2026-06-25):** management-gap-detection.md extended with 16 new gap flags from SRC-MD-HR-001. recruitment-quality-check.md extended with 16 new check items from SRC-MD-SUMAN-001 including 2 new sections (§4.13 OLOS, §4.14 BGCT). kpi-axiom-review-support.md extended with 1 new section (§14 MD Governance ROI Evidence Checklist) from SRC-MD-HR-001. policy-lookup.md updated with scope boundary note only — no MD governance content added to policy lookup areas.
+
+Skills must not be used operationally until Varmen review and sign-off is complete. Wrapper dry-run must be repeated after this update.

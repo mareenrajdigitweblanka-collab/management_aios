@@ -43,6 +43,9 @@ This wrapper must not:
 - Send policy communications to staff on behalf of HR or management
 - Apply policy to named individuals — all explanations are process-level only
 - Finalize escalation paths involving Admin Manager authority [VERIFY — SRC-ADMIN-001 PENDING]
+- Answer questions about MD governance standards — MD governance sources (SRC-MD-HR-001 and SRC-MD-SUMAN-001) are not company policy and are not covered by this skill; those governance standards (LLM-queryable documentation standard, 85% specification rule, Task ID standard, OLOS validation, BGCT requirements) are handled by `skills/management-gap-detection.md` and `skills/recruitment-quality-check.md`
+
+**Scope boundary:** SRC-POLICY-001 is the sole policy truth source for this wrapper. Do not extend policy lookup to MD governance evidence sources.
 
 ---
 

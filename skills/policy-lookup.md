@@ -23,6 +23,10 @@ This skill supports source-backed lookup and plain-language explanation of confi
 
 It does not give legal advice. It does not make HR decisions. It does not expose personal employee case details. It does not override management or HR authority.
 
+**Scope boundary — MD governance evidence is not policy:**
+
+SRC-POLICY-001 is the sole policy truth source for this skill. MD discussion sources (SRC-MD-HR-001 and SRC-MD-SUMAN-001), which contain MD-directed operational governance standards (e.g. LLM-queryable documentation standard, 85% specification rule, Task ID standard, OLOS validation requirements), are not company policy documents and are not covered by this skill. Those governance standards are handled by `skills/management-gap-detection.md` and `skills/recruitment-quality-check.md`. Do not query this skill for MD governance requirements — query the appropriate skill instead.
+
 ---
 
 ## 2. What This Skill Does NOT Do
@@ -502,8 +506,10 @@ This skill must not:
 
 ## Pass/Fail Result
 
-**DRAFT — CONDITIONAL PASS**
+**DRAFT — CONDITIONAL PASS — Updated 2026-06-25**
 
 All 21 policy lookup areas, rules, thresholds, and output fields trace to SRC-POLICY-001 — Final Approved. All [VERIFY] constraints are preserved and marked. No HR decisions, legal advice, personal data exposure, or invented policy rules included.
+
+**MD discussion source boundary note added (2026-06-25):** §1 updated with scope boundary clarification: SRC-POLICY-001 is sole policy truth; MD governance sources (SRC-MD-HR-001, SRC-MD-SUMAN-001) are not policy and are not covered by this skill. No MD governance content added to policy lookup areas. No policy rules changed.
 
 Safe for Varmen review. Not yet safe for operational use — Foundation Draft v0.1 only.

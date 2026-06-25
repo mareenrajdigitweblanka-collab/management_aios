@@ -138,20 +138,60 @@ Every claim, workflow step, checklist item, threshold, and output field in the f
 | policy-lookup.md | §7 VERIFY Constraints | Director authority beyond leadership review [VERIFY] | SRC-MAYU-001 partial | [VERIFY] | YES | Item 12 in verify-register.md |
 | policy-lookup.md | §7 VERIFY Constraints | Exact HR and EOD tool names [VERIFY] | SRC-MAYU-001 | [VERIFY] | YES | Item 13 in verify-register.md |
 
+| management-gap-detection.md | §4.3 KPI Meeting Gaps | Technical team stand-up not evidencing coverage of user-facing work and deliverables | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/06/2026 |
+| management-gap-detection.md | §4.4 File/Decision Gaps | Requirement file metadata missing or incomplete (8 required fields) | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| management-gap-detection.md | §4.4 File/Decision Gaps | Verbal MD instruction executed without written, documented requirement | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 and 15/05/2026 |
+| management-gap-detection.md | §4.4 File/Decision Gaps | Project or development work started without a documented requirement file | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| management-gap-detection.md | §4.4 File/Decision Gaps | Task has no unique Task ID assigned | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 19/11/2025 |
+| management-gap-detection.md | §4.4 File/Decision Gaps | BGCT documents not collected and stored centrally | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 08/06/2026 |
+| management-gap-detection.md | §4.4 File/Decision Gaps | Management Team Google Sheets not identified, listed, or consolidated | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 08/06/2026 |
+| management-gap-detection.md | §4.4 File/Decision Gaps | Staff biodata documents not consolidated under PDPA-compliant access controls | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 08/06/2026; PDPA and confidentiality rules apply; no personal biodata content stored in AIOS |
+| management-gap-detection.md | §4.4 File/Decision Gaps | Business logic documentation not in plain English comprehensible by fresh joiner | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 10/02/2026 and 24/03/2026 |
+| management-gap-detection.md | §4.5 Recurring Problems | New employee ROI review not conducted at 1-week, 1-month, or 3-month milestone | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| management-gap-detection.md | §4.5 Recurring Problems | Developer or technical project not reviewed for ROI or value delivery on conclusion | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| management-gap-detection.md | §4.5 Recurring Problems | Lessons learned document not produced or stored after project or case outcome | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| management-gap-detection.md | §4.7 LLM-Queryable Compliance | Work activities not documented in LLM-queryable format ("not happened" principle) | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/05/2026 and 22/06/2026 |
+| management-gap-detection.md | §4.7 LLM-Queryable Compliance | Daily 10% business logic validation not completed or not evidenced | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/05/2026 |
+| management-gap-detection.md | §4.7 LLM-Queryable Compliance | Development work initiated before 85% of requirements documented and approved | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 22/05/2026 and 15/05/2026 |
+| management-gap-detection.md | §4.7 LLM-Queryable Compliance | EOD entry missing Actual Revenue per Hour metric | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 10/02/2026; cross-reference SRC-MAYU-001 §4 |
+| recruitment-quality-check.md | §1 What It Does | Suman formal role: Head Hunter, Onboarder, 6-Month Progress ROI Reviewer | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001; Varmen Reviewed 2026-06-25 |
+| recruitment-quality-check.md | §4.1 Pipeline | LLM-queryable onboarding implementation from day one of new recruit joining | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 28/05/2026 |
+| recruitment-quality-check.md | §4.7 Month 1 | Dan Martel poster communicated at onboarding ("WE HIRE THEM TO SAVE COMPANY TIME") | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.9 Month 6 | Six-month hire ROI audit (binary) conducted by Suman before handover | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026; audit covers revenue, margin, NNV, automation, capacity |
+| recruitment-quality-check.md | §4.9 Month 6 | ROI audit evidence documented and present before 180-day handover proceeds | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.10 180-Day Handover | In-flight performance evidence provided by Mayurika to Suman before 6-month ROI audit | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.12 Daily Capture | Weekly deliverable: Risk Identification submitted | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.12 Daily Capture | Weekly deliverable: One-Month Task Rule submitted | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.12 Daily Capture | Weekly deliverable: SKU/Margin/Hire-ROI Trace submitted | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.12 Daily Capture | Weekly deliverable: LLM-in-the-Loop Proof submitted | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.12 Daily Capture | Shovel-ready requirement document maintained for development team | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 07/05/2026 |
+| recruitment-quality-check.md | §4.12 Daily Capture | 14-day recruitment pipeline baseline established and maintained | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 |
+| recruitment-quality-check.md | §4.13 OLOS Validation | OLOS validated by Suman before go-live; 5 required OLOS documents validated | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 29/05/2026 |
+| recruitment-quality-check.md | §4.13 OLOS Validation | Pre-go-live requirements: department handbooks, role guides, SOPs, universal files, folder structure, mandatory files | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 29/05/2026 |
+| recruitment-quality-check.md | §4.14 BGCT Compliance | BGCT completion for all staff who joined within last 6 months | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 25/05/2026 |
+| recruitment-quality-check.md | §4.14 BGCT Compliance | Onboarding documents updated with BGCT details and requirements | SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-SUMAN-001 25/05/2026 |
+| kpi-axiom-review-support.md | §14.1 New Employee ROI | ROI milestone evidence at 1 week, 1 month, and 3 months for all new employees | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| kpi-axiom-review-support.md | §14.2 Project ROI | Developer or technical project ROI evidence documented on conclusion | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| kpi-axiom-review-support.md | §14.2 Project ROI | Business value contribution traceable to project output | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| kpi-axiom-review-support.md | §14.3 Requirement Metadata | 8 required metadata fields for requirement files before project work begins | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
+| policy-lookup.md | §1 Scope Boundary | MD governance sources (SRC-MD-HR-001, SRC-MD-SUMAN-001) are not policy — handled by other skills | SRC-MD-HR-001, SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | Boundary clarification only; no MD governance content added to policy lookup |
+
 ---
 
 ## Source Map Summary
 
 | Skill File | CONFIRMED Rows | [VERIFY] Rows | Total Rows |
 |------------|---------------|--------------|-----------|
-| management-gap-detection.md | 30 | 4 | 34 |
-| recruitment-quality-check.md | 26 | 1 | 27 |
-| kpi-axiom-review-support.md | 24 | 4 | 28 |
-| policy-lookup.md | 25 | 4 | 29 |
-| **TOTAL** | **105** | **13** | **118** |
+| management-gap-detection.md | 46 | 4 | 50 |
+| recruitment-quality-check.md | 42 | 1 | 43 |
+| kpi-axiom-review-support.md | 28 | 4 | 32 |
+| policy-lookup.md | 26 | 4 | 30 |
+| **TOTAL** | **142** | **13** | **155** |
+
+*Updated 2026-06-25: +37 CONFIRMED rows added from SRC-MD-HR-001 (management-gap-detection.md ×16, kpi-axiom-review-support.md ×4, policy-lookup.md ×1) and SRC-MD-SUMAN-001 (recruitment-quality-check.md ×16). All [VERIFY] rows unchanged.*
 
 ---
 
 ## Validation Result
 
-**CONDITIONAL PASS** — All 118 rows have either a Source ID with CONFIRMED status or a [VERIFY] tag with the relevant verify-register.md item number cited. No row is unsourced. No [VERIFY] tag has been removed. All Admin Manager, Arun wording, and MD-requirement [VERIFY] items are preserved across all four skill files.
+**PASS — Updated 2026-06-25** — All 155 rows have either a Source ID with CONFIRMED status or a [VERIFY] tag with the relevant verify-register.md item number cited. No row is unsourced. No [VERIFY] tag has been removed. All Admin Manager, Arun wording, and MD-requirement [VERIFY] items are preserved across all four skill files. 37 new CONFIRMED rows added from SRC-MD-HR-001 and SRC-MD-SUMAN-001 (both Varmen Reviewed 2026-06-25).

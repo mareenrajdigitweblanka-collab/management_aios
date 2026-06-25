@@ -1,5 +1,5 @@
 ---
-description: Dry-run Management AIOS gap detection using source-backed context. Use only for documentation review, missing-evidence detection, and Varmen review support.
+description: Dry-run Management AIOS gap detection using source-backed context. Covers onboarding, leave, KPI meeting, file/decision, policy compliance, and LLM-queryable documentation compliance gaps (MD governance evidence from SRC-MD-HR-001 included). Use only for documentation review, missing-evidence detection, and Varmen review support.
 disable-model-invocation: true
 allowed-tools: Read Grep Glob Write
 ---
@@ -11,6 +11,8 @@ allowed-tools: Read Grep Glob Write
 This skill wrapper invokes the draft asset at `skills/management-gap-detection.md`.
 
 It does not replace that file. It provides a Claude Code slash command entry point that reads the draft, applies its logic in dry-run mode, and produces a review-ready output for human inspection.
+
+**Scope note (updated 2026-06-25):** The source draft was extended with SRC-MD-HR-001 (Varmen Reviewed 2026-06-25). The skill now covers six gap categories: onboarding documentation, leave visibility, KPI meeting tracking, management file and decision organisation, recurring process problems, and LLM-queryable documentation compliance (§4.7 — new). This includes requirement governance (verbal-to-documented rule, task ID standard, 85% specification rule), folder and BGCT consolidation, business logic documentation standards, and new employee and project ROI milestone evidence checks. All additions are source-backed from SRC-MD-HR-001 — no [VERIFY] items changed.
 
 ---
 

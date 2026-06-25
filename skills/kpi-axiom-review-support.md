@@ -2,10 +2,11 @@
 name: kpi-axiom-review-support
 type: skill
 tier: 1
-status: DRAFT — Foundation Draft v0.1
-sources: SRC-ARUN-001, SRC-ARUN-002
-context-files: context/kpi-axiom-context.md, context/confidentiality-rules.md, context/verify-register.md
+status: DRAFT — Foundation Draft v0.1 — Updated 2026-06-25 (SRC-MD-HR-001)
+sources: SRC-ARUN-001, SRC-ARUN-002, SRC-MD-HR-001
+context-files: context/kpi-axiom-context.md, context/hr-operations-context.md, context/confidentiality-rules.md, context/verify-register.md
 created: 2026-06-23
+last-updated: 2026-06-25
 owner-for-review: Varmen (validation); Arun (KPI/AXIOM content review); Mayurika (operational review after foundation approval)
 ---
 
@@ -309,7 +310,59 @@ This checklist supports checking whether the documented conditions for bonus eli
 
 ---
 
-## 14. [VERIFY] Constraints Active for This Skill
+## 14. MD Governance ROI Evidence Checklist
+
+*(Source: SRC-MD-HR-001 — Varmen Reviewed 2026-06-25)*
+
+> This section reflects MD-directed ROI and documentation governance standards that overlap with KPI/AXIOM review support. All checks are evidence-completeness checks only — this skill does not make ROI assessments or performance decisions. All content is process-level. No individual staff performance data is included.
+
+### 14.1 New Employee ROI Monitoring Evidence Check
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+For all new employees, confirm whether ROI monitoring evidence exists at the following milestones:
+
+| Milestone | Evidence Required | Gap if Missing |
+|-----------|------------------|----------------|
+| 1 week | Initial capability and activity baseline documented | Governance failure — milestone ROI review not evidenced |
+| 1 month | Early value and task completion assessment documented | Governance failure — milestone ROI review not evidenced |
+| 3 months | Traceable contribution to team or business output documented | Governance failure — milestone ROI review not evidenced |
+
+**Gap flag:** Missing ROI review evidence at any of the three milestones for a new employee is a governance failure.
+
+### 14.2 Developer and Technical Team Project ROI Evidence Check
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+| Check Item | Expected Standard | Gap if Missing |
+|------------|------------------|----------------|
+| Project ROI evidence documented on conclusion | Developer or technical team project completed with a documented value outcome or ROI assessment | Project completion without ROI assessment is a gap |
+| Business value contribution traceable | Project output linked to a traceable business or operational value | Untraceable project output is a documentation gap |
+
+**Gap flag:** Project concluded without documented ROI contribution or value assessment.
+
+### 14.3 Requirement and Business Value Metadata Check
+
+*(SRC-MD-HR-001, 16/06/2026)*
+
+Before any KPI-related development or project work begins, confirm the requirement file contains all required metadata fields:
+
+| Required Field | Present? |
+|----------------|---------|
+| Project Name | — |
+| Start Date | — |
+| Expected Deadline | — |
+| User / Stakeholder | — |
+| Company Value Contribution | — |
+| MVP Submission Date | — |
+| Project Owner | — |
+| Status | — |
+
+**Gap flag:** Any metadata field missing; development work begun without a complete requirement file.
+
+---
+
+## 15. [VERIFY] Constraints Active for This Skill
 
 | [VERIFY] Item | Effect on This Skill |
 |---------------|---------------------|
@@ -322,7 +375,7 @@ This checklist supports checking whether the documented conditions for bonus eli
 
 ---
 
-## 15. Confidentiality Rules Active for This Skill
+## 16. Confidentiality Rules Active for This Skill
 
 *(Source: context/confidentiality-rules.md — SRC-VAR-001, SRC-MAYU-001, SRC-POLICY-001)*
 
@@ -337,8 +390,10 @@ This checklist supports checking whether the documented conditions for bonus eli
 
 ## Pass/Fail Result
 
-**DRAFT — CONDITIONAL PASS**
+**DRAFT — CONDITIONAL PASS — Updated 2026-06-25**
 
 All KPI definitions, AXIOM band values, escalation stages, PRC membership claims, bonus conditions, and dashboard requirements trace to SRC-ARUN-001. All four active [VERIFY] items (Amazon ACOS, Operational Manager PRC, ROI Officer feedback, Admin Manager PRC) are preserved and marked. No employee decisions, band assignments, warning issuances, or PRC triggers included. No invented thresholds.
+
+**MD discussion source additions (2026-06-25):** §14 added (MD Governance ROI Evidence Checklist — new employee ROI milestone evidence check, developer/technical project ROI evidence check, requirement and business value metadata check). All additions sourced from SRC-MD-HR-001 — Varmen Reviewed 2026-06-25. No Arun [VERIFY] items changed. No ACOS threshold, Operational Manager PRC, or ROI Officer rows modified.
 
 Safe for Varmen review. Not yet safe for operational use — Foundation Draft v0.1 only. Arun confirmation required for [VERIFY] items 8, 9, and 10 before skill sections relying on those items can be used operationally.

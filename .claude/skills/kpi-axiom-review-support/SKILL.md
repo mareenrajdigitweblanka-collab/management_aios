@@ -1,5 +1,5 @@
 ---
-description: Dry-run KPI and AXIOM review support using source-backed Arun context. Use only for checklist preparation and missing-evidence review.
+description: Dry-run KPI and AXIOM review support using source-backed context (SRC-ARUN-001 for KPI/AXIOM definitions and workflow; SRC-MD-HR-001 for MD Governance ROI Evidence Checklist §14). Use only for checklist preparation and missing-evidence review.
 disable-model-invocation: true
 allowed-tools: Read Grep Glob Write
 ---
@@ -12,6 +12,8 @@ This skill wrapper invokes the draft asset at `skills/kpi-axiom-review-support.m
 
 It does not replace that file. It provides a Claude Code slash command entry point that reads the draft, applies its checklist logic in dry-run mode, and produces a review-ready output for human inspection.
 
+**Scope note (updated 2026-06-25):** The source draft was extended with SRC-MD-HR-001 (Varmen Reviewed 2026-06-25). A new §14 MD Governance ROI Evidence Checklist was added covering: §14.1 new employee ROI milestone evidence check (1-week, 1-month, 3-month); §14.2 developer and technical team project ROI evidence check; §14.3 requirement and business value metadata check (8 required fields). The previous §14 (VERIFY Constraints) is renumbered §15 and §15 (Confidentiality) is renumbered §16 in the source draft. No Arun [VERIFY] items (8, 9, 10) were changed.
+
 ---
 
 ## Before Running
@@ -20,7 +22,7 @@ Read the following files before processing any input:
 
 1. `skills/kpi-axiom-review-support.md` — the source-backed draft asset
 2. `context/verify-register.md` — confirm which [VERIFY] items are active, in particular items 8, 9, and 10 (Arun wording items)
-3. `evidence/source-register.md` — confirm SRC-ARUN-001 is READY
+3. `evidence/source-register.md` — confirm SRC-ARUN-001 and SRC-MD-HR-001 are READY
 
 ---
 
@@ -69,7 +71,7 @@ Produce checklist-style output for the relevant section(s) of `skills/kpi-axiom-
 | ---------------------------------- | ---------------------------------------------------------------------------------------- |
 | Review Area                        | Which section or stage (e.g., Weekly AXIOM Workflow, Bonus Eligibility, PRC Preparation) |
 | Missing Input or Undocumented Step | What is not available or not evidenced                                                   |
-| Source ID                          | SRC-ARUN-001 section that defines the requirement                                        |
+| Source ID                          | Source ID and section that defines the requirement (SRC-ARUN-001 for KPI/AXIOM items §4–§13; SRC-MD-HR-001 for §14 MD Governance ROI Evidence items) |
 | Impact                             | What review activity is blocked or at risk                                               |
 | [VERIFY] Status                    | Whether this record involves an unresolved [VERIFY] item                                 |
 | Recommended Next Action            | What should happen — by whom                                                             |

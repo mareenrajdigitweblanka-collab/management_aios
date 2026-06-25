@@ -2,10 +2,11 @@
 name: recruitment-quality-check
 type: skill
 tier: 1
-status: DRAFT — Foundation Draft v0.1
-sources: SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001
+status: DRAFT — Foundation Draft v0.1 — Updated 2026-06-25 (SRC-MD-SUMAN-001)
+sources: SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, SRC-MD-SUMAN-001
 context-files: context/recruitment-context.md, context/confidentiality-rules.md, context/verify-register.md
 created: 2026-06-23
+last-updated: 2026-06-25
 owner-for-review: Varmen (validation); Mayurika (operational review after foundation approval)
 ---
 
@@ -17,9 +18,11 @@ owner-for-review: Varmen (validation); Mayurika (operational review after founda
 
 ## 1. What This Skill Does
 
-*(Source: SRC-SUMAN-001-v2 — Recruitment_Quality_Control_Process.md; SRC-MAYU-001; SRC-POLICY-001)*
+*(Source: SRC-SUMAN-001-v2 — Recruitment_Quality_Control_Process.md; SRC-MAYU-001; SRC-POLICY-001; SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
 
 This skill supports checking the completeness and quality of recruitment process execution. It checks whether each stage of the confirmed recruitment process has been completed and whether required records exist. It surfaces gaps and missing steps for human review.
+
+**Suman's formal role (SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25):** Suman's role encompasses three formal functions — Head Hunter, Onboarder, and 6-Month Progress ROI Reviewer. This skill covers compliance checks across all three functions.
 
 It does not make hiring decisions. It does not approve or reject candidates. It does not store personal candidate data.
 
@@ -68,12 +71,13 @@ Inputs must be process-level or aggregate. No personal candidate data may be pro
 
 ### 4.1 Candidate Pipeline Check
 
-*(Source: SRC-SUMAN-001-v2 §1)*
+*(Source: SRC-SUMAN-001-v2 §1; SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
 
 | Check Item | Expected Standard | Gap if Missing |
 |------------|-------------------|----------------|
 | Sourcing channel recorded | Pipeline entry includes source channel (referral, social media, recruitment website, other) | Source quality cannot be monitored |
 | Shortlisting basis documented | Candidate shortlisted against position requirements and vacancy availability | Pipeline integrity not verifiable |
+| LLM-queryable onboarding implementation | Onboarding process implemented in LLM-queryable format from the point of a new recruit joining (SRC-MD-SUMAN-001, 28/05/2026) | Onboarding activities not captured in queryable format from day one are non-compliant |
 
 ---
 
@@ -165,7 +169,7 @@ The 7/14-day review must incorporate feedback from the Trainer and Team Leader e
 
 ### 4.7 Month 1 Review Check
 
-*(Source: SRC-SUMAN-001-v2 §7)*
+*(Source: SRC-SUMAN-001-v2 §7; SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
 
 > **Probation leave restriction (Source: SRC-POLICY-001 §6.2):** No leave is permitted during the 3-month probationary period. If leave was taken during this period, a documented justification and recovery plan are required.
 
@@ -176,8 +180,9 @@ The 7/14-day review must incorporate feedback from the Trainer and Team Leader e
 | Status category assigned | One of: On Track / Watch / Concern / Critical |
 | Corrective action plan issued if status is "Concern" | Corrective action plan with responsibilities and deadlines produced before Month 3 |
 | Probation leave compliance confirmed | No leave taken during probation, or documented urgent justification and recovery plan exists |
+| Dan Martel onboarding principle communicated | New recruit has been shown the Dan Martel poster with the principle "WE HIRE THEM TO SAVE COMPANY TIME" at onboarding — mandatory onboarding communication (SRC-MD-SUMAN-001, 07/05/2026) |
 
-**Gap flag:** Missing status assignment; "Concern" status without corrective action plan; unexplained leave during probation.
+**Gap flag:** Missing status assignment; "Concern" status without corrective action plan; unexplained leave during probation; no evidence that Dan Martel onboarding communication was made.
 
 ---
 
@@ -199,23 +204,25 @@ Note: Decisions on discontinuation during probation are subject to management re
 
 ### 4.9 Month 6 Review Check
 
-*(Source: SRC-SUMAN-001-v2 §9)*
+*(Source: SRC-SUMAN-001-v2 §9; SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
 
 | Check Item | Expected Standard |
 |------------|-------------------|
 | Review conducted | Month 6 review completed |
 | 3 assessment areas covered | Full commitment vs delivery, probation confirmation decision, formal handover preparation |
 | Handover preparation completed | Formal handover to Mayurika prepared |
+| Six-month hire ROI audit (binary) completed by Suman | Suman has conducted a binary ROI audit assessing whether the hire has produced a traceable contribution to: Revenue, Margin improvement, NNV reduction, Automation output, or Capacity (SRC-MD-SUMAN-001, 07/05/2026) |
+| ROI audit evidence documented before handover | Evidence of the 6-month ROI audit must exist before the 180-day handover meeting proceeds (SRC-MD-SUMAN-001, 07/05/2026) |
 
-**Gap flag:** Month 6 review not conducted; handover preparation not completed.
+**Gap flag:** Month 6 review not conducted; handover preparation not completed; Suman 6-month ROI audit not completed or not evidenced before handover.
 
-Note: Probation confirmation is a management decision. This skill surfaces preparation status only.
+Note: Probation confirmation is a management decision. This skill surfaces preparation status only. The ROI audit is a binary check (contribution traceable or not) — this skill does not make the assessment, it checks whether the evidence of assessment exists.
 
 ---
 
 ### 4.10 180-Day Handover Check
 
-*(Source: SRC-SUMAN-001-v2 §11; SRC-MAYU-001)*
+*(Source: SRC-SUMAN-001-v2 §11; SRC-MAYU-001; SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
 
 | Check Item | Expected Standard |
 |------------|-------------------|
@@ -226,8 +233,9 @@ Note: Probation confirmation is a management decision. This skill surfaces prepa
 | Handover meeting covers 4 areas | Commitment delivery summary, employee record verification, KPI baseline confirmation, outstanding issues and owners |
 | recruitment_source_id written to staff record | Mayurika writes upon handoff (SRC-MAYU-001) |
 | recruitment_promise_set_id written to staff record | Mayurika writes upon handoff (SRC-MAYU-001) |
+| In-flight performance evidence provided to Suman before audit | Mayurika must provide in-flight performance evidence to Suman before the 6-month ROI audit is completed (SRC-MD-SUMAN-001, 07/05/2026) |
 
-**Gap flag:** 2-week reminder not sent; handover meeting not scheduled; any confirmed attendee absent; any of the 4 handover review areas not covered; IDs not written to staff record.
+**Gap flag:** 2-week reminder not sent; handover meeting not scheduled; any confirmed attendee absent; any of the 4 handover review areas not covered; IDs not written to staff record; in-flight performance evidence not provided to Suman before audit.
 
 ---
 
@@ -244,16 +252,60 @@ Note: Probation confirmation is a management decision. This skill surfaces prepa
 
 ---
 
-### 4.12 Daily Recruitment Knowledge Capture Check
+### 4.12 Daily Recruitment Knowledge Capture and Weekly Deliverables Check
 
-*(Source: SRC-SUMAN-001-v2 §12)*
+*(Source: SRC-SUMAN-001-v2 §12; SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
 
 | Check Item | Expected Standard |
 |------------|-------------------|
 | Daily 1-hour knowledge capture completed | Suman dedicates 1 hour each working day |
 | All 6 topic areas covered | Evaluation and training status; recruitment trends; sourcing insights; interview observations; probation concerns; commitment gaps |
+| Weekly deliverable — Risk Identification | Identification of risks in the current recruitment pipeline or probation cohort submitted weekly (SRC-MD-SUMAN-001, 07/05/2026) |
+| Weekly deliverable — One-Month Task Rule | Evidence that new hires have been assessed against task completion expectations at Month 1, submitted weekly (SRC-MD-SUMAN-001, 07/05/2026) |
+| Weekly deliverable — SKU / Margin / Hire-ROI Trace | Traceable linkage between hires and SKU, margin, or ROI outcomes submitted weekly (SRC-MD-SUMAN-001, 07/05/2026) |
+| Weekly deliverable — LLM-in-the-Loop Proof | Evidence that LLM tools were used before any planning or decision-making action was taken, submitted weekly (SRC-MD-SUMAN-001, 07/05/2026) |
+| Shovel-ready requirement document maintained | Suman maintains a shovel-ready requirement document for the development team — pre-documented, ready-to-execute, with no delay needed before handover (SRC-MD-SUMAN-001, 07/05/2026) |
+| 14-day pipeline baseline maintained | A 14-day baseline for the recruitment pipeline is established and tracked to support weekly risk identification (SRC-MD-SUMAN-001) |
 
-**Gap flag:** No daily entry; entry missing any of the 6 topic areas.
+**Gap flag:** No daily entry; entry missing any of the 6 topic areas; any of the 4 weekly deliverables not submitted; no shovel-ready requirement document on record; 14-day pipeline baseline not established.
+
+---
+
+### 4.13 OLOS Onboarding System Validation Check
+
+*(Source: SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
+
+> This section reflects MD-directed OLOS governance requirements from SRC-MD-SUMAN-001. All checks are process-level only. No personal candidate or staff data is included.
+
+| Check Item | Expected Standard |
+|------------|-------------------|
+| OLOS validated before go-live | Suman has validated the OLOS onboarding system against actual company operations before any deployment (SRC-MD-SUMAN-001, 29/05/2026) |
+| Department handbooks present | All department handbooks confirmed as present before OLOS go-live |
+| Role guides present | All role guides confirmed as present before OLOS go-live |
+| SOP documents present | All SOP documents confirmed as present before OLOS go-live |
+| Universal files and version control in place | Universal files and version control structure in place |
+| Shared folder structure in place | Shared folder structure confirmed as accessible |
+| Mandatory files for all departments confirmed | All mandatory files for all departments present |
+| Evidence Standard document validated | Validated by Suman before deployment |
+| Onboarding Guide validated | Validated by Suman before deployment |
+| OLOS Master validated | Validated by Suman before deployment |
+| Team Leader Setup Guide validated | Validated by Suman before deployment |
+| File Pack Register validated | Validated by Suman before deployment |
+
+**Gap flag:** OLOS deployed without Suman's validation sign-off; any of the five required OLOS documents not validated; any pre-go-live requirement (department handbooks, role guides, SOPs, folder structure) not confirmed as present.
+
+---
+
+### 4.14 BGCT Completion Compliance Check
+
+*(Source: SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25)*
+
+| Check Item | Expected Standard |
+|------------|-------------------|
+| BGCT completion for recent joiners | All staff who joined within the last 6 months have completed BGCT (Best Practices, Guidelines, Checklists, Tutorials) (SRC-MD-SUMAN-001, 25/05/2026) |
+| Onboarding documents updated with BGCT details | Onboarding documentation has been updated to include BGCT details and requirements (SRC-MD-SUMAN-001, 25/05/2026) |
+
+**Gap flag:** Any staff member who joined within the last 6 months without a BGCT completion record is a compliance gap; onboarding documents not yet updated with BGCT details.
 
 ---
 
@@ -300,8 +352,10 @@ For each recruitment process gap identified, produce one record:
 
 ## Pass/Fail Result
 
-**DRAFT — CONDITIONAL PASS**
+**DRAFT — CONDITIONAL PASS — Updated 2026-06-25**
 
-All checklist items, review stages, and output fields trace to SRC-SUMAN-001-v2, SRC-MAYU-001, or SRC-POLICY-001. [VERIFY] item 11 (Line Manager identity) is preserved and marked. No personal candidate data included. No hiring, probation, or discontinuation decisions included. No invented recruitment rules.
+All checklist items, review stages, and output fields trace to SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, or SRC-MD-SUMAN-001 (Varmen Reviewed 2026-06-25). [VERIFY] item 11 (Line Manager identity) is preserved and marked. No personal candidate data included. No hiring, probation, or discontinuation decisions included. No invented recruitment rules.
+
+**MD discussion source additions (2026-06-25):** §1 updated (Suman formal role — Head Hunter, Onboarder, 6-Month Progress ROI Reviewer); §4.1 extended (LLM-queryable onboarding check); §4.7 extended (Dan Martel onboarding principle check); §4.9 extended (six-month hire ROI audit evidence check); §4.10 extended (in-flight performance evidence check); §4.12 extended (weekly deliverables: Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop Proof; shovel-ready requirement; 14-day pipeline baseline); §4.13 added (OLOS onboarding system validation check); §4.14 added (BGCT completion compliance check). All additions sourced from SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25.
 
 Safe for Varmen review. Not yet safe for operational use — Foundation Draft v0.1 only.

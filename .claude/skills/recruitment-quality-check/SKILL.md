@@ -1,5 +1,5 @@
 ---
-description: Dry-run recruitment quality completeness checks using source-backed recruitment context. Use only with sample/redacted data before business approval.
+description: Dry-run recruitment quality completeness checks using source-backed recruitment context. Covers Suman's three formal role functions (Head Hunter, Onboarder, 6-Month Progress ROI Reviewer), OLOS onboarding validation, BGCT compliance, six-month hire ROI audit evidence, and weekly deliverables (SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25). Use only with sample/redacted data before business approval.
 disable-model-invocation: true
 allowed-tools: Read Grep Glob Write
 ---
@@ -12,6 +12,8 @@ This skill wrapper invokes the draft asset at `skills/recruitment-quality-check.
 
 It does not replace that file. It provides a Claude Code slash command entry point that reads the draft, applies its checklist logic in dry-run mode, and produces a review-ready output for human inspection.
 
+**Scope note (updated 2026-06-25):** The source draft was extended with SRC-MD-SUMAN-001 (Varmen Reviewed 2026-06-25). Suman's formal role now encompasses three functions — Head Hunter, Onboarder, and 6-Month Progress ROI Reviewer. The skill now includes: §4.1 LLM-queryable onboarding check; §4.7 Dan Martel onboarding principle check; §4.9 six-month hire ROI audit evidence check; §4.10 in-flight performance evidence check; §4.12 weekly deliverables (Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop Proof), shovel-ready requirement document, and 14-day pipeline baseline; §4.13 OLOS onboarding system validation (new); §4.14 BGCT completion compliance (new). All additions are source-backed from SRC-MD-SUMAN-001 — no [VERIFY] items changed.
+
 ---
 
 ## Before Running
@@ -20,7 +22,7 @@ Read the following files before processing any input:
 
 1. `skills/recruitment-quality-check.md` — the source-backed draft asset
 2. `context/verify-register.md` — confirm which [VERIFY] items are active, in particular item 11 (Line Manager identity in 180-day handover)
-3. `evidence/source-register.md` — confirm SRC-SUMAN-001-v2, SRC-MAYU-001, and SRC-POLICY-001 are READY
+3. `evidence/source-register.md` — confirm SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-POLICY-001, and SRC-MD-SUMAN-001 are READY
 
 ---
 

@@ -2,6 +2,7 @@
 name: claude-code-skill-wrapper-check
 type: validation
 created: 2026-06-23
+last-updated: 2026-06-25
 tracks: .claude/skills/ — Claude Code skill wrappers for Tier 1 draft skills
 ---
 
@@ -128,9 +129,38 @@ Skills must not be used operationally until Varmen review and sign-off is comple
 
 ---
 
+## Wrapper Review — MD Discussion Skill Update (2026-06-25)
+
+**Date:** 2026-06-25
+
+**Trigger:** Tier 1 skill drafts updated with SRC-MD-HR-001 and SRC-MD-SUMAN-001 (both Varmen Reviewed 2026-06-25). Wrapper accuracy check required to confirm SKILL.md files still describe the updated skill scope correctly.
+
+| Command | Wrapper Path | Updated? | Reason | Safety Status |
+| --- | --- | --- | --- | --- |
+| /management-gap-detection | `.claude/skills/management-gap-detection/SKILL.md` | YES | Description and body updated to reflect SRC-MD-HR-001 additions: LLM-queryable documentation compliance (§4.7 new), requirement governance, BGCT/folder consolidation, business logic standards, new employee/project ROI milestone checks. Before Running and [VERIFY] constraints unchanged — still accurate. | PASS |
+| /recruitment-quality-check | `.claude/skills/recruitment-quality-check/SKILL.md` | YES | Description and body updated to reflect SRC-MD-SUMAN-001 additions: Suman formal role (Head Hunter, Onboarder, 6-Month Progress ROI Reviewer), OLOS validation (§4.13 new), BGCT compliance (§4.14 new), six-month ROI audit evidence, weekly deliverables, shovel-ready requirement, 14-day pipeline baseline. Before Running section updated to add SRC-MD-SUMAN-001 to the READY check. [VERIFY] constraints unchanged. | PASS |
+| /kpi-axiom-review-support | `.claude/skills/kpi-axiom-review-support/SKILL.md` | YES | Description updated from "Arun context" to include SRC-MD-HR-001 and new §14. Body updated to note §14 additions and §14/§15/§16 renumbering. Before Running section updated to add SRC-MD-HR-001 to READY check. Output Format Source ID field updated to reference both SRC-ARUN-001 (§4–§13) and SRC-MD-HR-001 (§14). Arun [VERIFY] items 8, 9, 10 constraints unchanged. | PASS |
+| /policy-lookup | `.claude/skills/policy-lookup/SKILL.md` | YES | Operating Mode updated with explicit MD governance boundary note: SRC-MD-HR-001 and SRC-MD-SUMAN-001 are not policy sources and are not in scope. Users directed to management-gap-detection and recruitment-quality-check for MD governance queries. No policy rules changed. | PASS |
+
+**Safety Confirmation:**
+
+| Safety Check | Result |
+| --- | --- |
+| No skill business logic changed | CONFIRMED — only wrapper descriptions, Before Running source lists, and scope notes updated |
+| No [VERIFY] tags removed | CONFIRMED — all 13 items preserved; [VERIFY] constraint sections in wrappers unchanged |
+| No operational approval language added | CONFIRMED — all wrappers remain dry-run / review-support only |
+| No sensitive personal data allowed | CONFIRMED — confidentiality sections unchanged in all wrappers |
+| No automation added | CONFIRMED — no tool connections or automation logic added |
+| Dry-run / review-support boundary preserved | CONFIRMED — Operating Mode sections unchanged in management-gap-detection, recruitment-quality-check, kpi-axiom-review-support; policy-lookup boundary strengthened |
+
+**Dry-run required:** YES — wrapper content changed. Dry-run must be repeated before operational use.
+
+---
+
 ## Next Step
 
 1. Varmen reviews all four wrappers and their source drafts
-2. Run dry-run tests using sample inputs; save outputs under `validation/skill-test-runs/`
-3. Confirm wrapper behaviour matches draft asset intent
-4. Do not promote to operational use until Varmen sign-off and all active [VERIFY] items affecting operational scope are resolved
+2. Varmen reviews `validation/tier-1-wrapper-md-update-report.md`
+3. Run dry-run tests using sample inputs; save outputs under `validation/skill-test-runs/`
+4. Confirm wrapper behaviour matches draft asset intent
+5. Do not promote to operational use until Varmen sign-off and all active [VERIFY] items affecting operational scope are resolved

@@ -2,10 +2,11 @@
 name: management-gap-detection
 type: skill
 tier: 1
-status: DRAFT — Foundation Draft v0.1
-sources: SRC-VAR-001, SRC-POLICY-001
-context-files: context/management-aios-purpose.md, context/confidentiality-rules.md, context/verify-register.md
+status: DRAFT — Foundation Draft v0.1 — Updated 2026-06-25 (SRC-MD-HR-001)
+sources: SRC-VAR-001, SRC-POLICY-001, SRC-MD-HR-001
+context-files: context/management-aios-purpose.md, context/hr-operations-context.md, context/confidentiality-rules.md, context/verify-register.md
 created: 2026-06-23
+last-updated: 2026-06-25
 owner-for-review: Varmen (validation); Mayurika (operational review after foundation approval)
 ---
 
@@ -99,7 +100,7 @@ Gaps detected when:
 
 ### 4.3 KPI Meeting Tracking Gaps
 
-*(Source: SRC-VAR-001 — Focus Area 3; SRC-ARUN-001)*
+*(Source: SRC-VAR-001 — Focus Area 3; SRC-ARUN-001; SRC-MD-HR-001)*
 
 Gaps detected when:
 
@@ -110,12 +111,13 @@ Gaps detected when:
 - Action plans not issued following a management review
 - Outcomes not monitored following action plan issue
 - Leadership Review session not held on its twice-weekly schedule (SRC-MAYU-001)
+- Technical team stand-up meeting not covering user-facing work and deliverables, or stand-up record does not evidence coverage of user-facing deliverables (SRC-MD-HR-001, 22/06/2026)
 
 ---
 
 ### 4.4 Management File and Decision Organization Gaps
 
-*(Source: SRC-VAR-001 — Focus Area 4)*
+*(Source: SRC-VAR-001 — Focus Area 4; SRC-MD-HR-001 — Varmen Reviewed 2026-06-25)*
 
 Gaps detected when:
 
@@ -124,12 +126,20 @@ Gaps detected when:
 - Files are unorganised, misnamed, or placed outside the agreed management structure
 - Records for active, probationary, on-leave, suspended, or departed employees are incomplete or missing from the staff record system
 - Recruitment handover records (recruitment_source_id, recruitment_promise_set_id) not written to staff record at Month 6 (SRC-MAYU-001)
+- Requirement file metadata missing or incomplete — all eight fields must be present before project work begins: Project Name, Start Date, Expected Deadline, User/Stakeholder, Company Value Contribution, MVP Submission Date, Project Owner, Status (SRC-MD-HR-001, 16/06/2026)
+- Verbal MD instruction executed without first being converted into a written, documented requirement — any work initiated from verbal direction alone without a documented requirement file is a governance failure (SRC-MD-HR-001, 16/06/2026 and 15/05/2026)
+- Project or development work started without a documented and approved requirement file (SRC-MD-HR-001, 16/06/2026)
+- Task has no unique Task ID assigned — work without a Task ID cannot be tracked, validated, or attributed (SRC-MD-HR-001, 19/11/2025)
+- BGCT documents (Best Practices, Guidelines, Checklists, Tutorials) not collected and stored in a central location (SRC-MD-HR-001, 08/06/2026)
+- Management Team Google Sheets not identified, listed, or consolidated (SRC-MD-HR-001, 08/06/2026)
+- Staff biodata documents not consolidated under PDPA-compliant access controls — note: PDPA and confidentiality rules apply; no personal biodata content may be stored in this AIOS (SRC-MD-HR-001, 08/06/2026; see context/confidentiality-rules.md)
+- Business logic documentation not maintained in plain English comprehensible by a fresh joiner — documentation that cannot be understood by someone unfamiliar with the project does not meet this standard (SRC-MD-HR-001, 10/02/2026 and 24/03/2026)
 
 ---
 
 ### 4.5 Recurring Process Problems
 
-*(Source: SRC-VAR-001 — Recurring Problems section)*
+*(Source: SRC-VAR-001 — Recurring Problems section; SRC-MD-HR-001 — Varmen Reviewed 2026-06-25)*
 
 Gaps detected when:
 
@@ -138,6 +148,9 @@ Gaps detected when:
 - Critic Meeting action items are not tracked or closed after the Action Review Meeting with the Team Leader (SRC-MAYU-001)
 - SKILL file non-compliance is flagged repeatedly without same-day follow-up (SRC-MAYU-001)
 - EOD submission non-compliance recurs without documented escalation (SRC-MAYU-001)
+- New employee ROI review not conducted at the 1-week, 1-month, or 3-month milestone — missing ROI review at any of these milestones is a governance failure (SRC-MD-HR-001, 16/06/2026)
+- Developer or technical team project not reviewed for ROI contribution or value delivery on conclusion — project completion without a documented value outcome or ROI assessment is a gap (SRC-MD-HR-001, 16/06/2026)
+- Lessons learned document not produced or stored following a concluded project or case outcome (SRC-MD-HR-001, 16/06/2026)
 
 ---
 
@@ -155,6 +168,21 @@ Gaps detected when:
 - Work hours not logged daily (SRC-POLICY-001 §15.0)
 - Exit interview not conducted, or final checklist not completed, on departure (SRC-POLICY-001 §10.6–10.7)
 - Credentials not revoked promptly on resignation or termination (SRC-POLICY-001 §10.5)
+
+---
+
+### 4.7 LLM-Queryable Documentation Compliance Gaps
+
+*(Source: SRC-MD-HR-001 — Varmen Reviewed 2026-06-25)*
+
+> This section reflects MD-directed documentation compliance standards from SRC-MD-HR-001. All gap flags are process-level only. No individual staff performance case details are included.
+
+Gaps detected when:
+
+- Staff member's work activities are not documented in LLM-queryable format — any activity not documented in LLM-queryable format is considered "not happened" (SRC-MD-HR-001, 22/05/2026 and 22/06/2026)
+- Daily 10% business logic validation not completed or not evidenced for technical or development staff (SRC-MD-HR-001, 22/05/2026)
+- Development work initiated before 85% of project requirements are documented and approved (SRC-MD-HR-001, 22/05/2026 and 15/05/2026)
+- EOD entry missing "Actual Revenue per Hour" metric — this is an MD-directed extension to the existing EOD framework (SRC-MD-HR-001, 10/02/2026; cross-reference SRC-MAYU-001 §4)
 
 ---
 
@@ -207,8 +235,10 @@ The following items in context/verify-register.md directly affect the scope of t
 
 ## Pass/Fail Result
 
-**DRAFT — CONDITIONAL PASS**
+**DRAFT — CONDITIONAL PASS — Updated 2026-06-25**
 
-All gap categories, output fields, and operational rules trace to SRC-VAR-001, SRC-POLICY-001, SRC-MAYU-001, SRC-SUMAN-001-v2, or SRC-ARUN-001. All [VERIFY] constraints are preserved and applied. No decision-making, escalation automation, sensitive data storage, or invented policy rules included.
+All gap categories, output fields, and operational rules trace to SRC-VAR-001, SRC-POLICY-001, SRC-MAYU-001, SRC-SUMAN-001-v2, SRC-ARUN-001, or SRC-MD-HR-001 (Varmen Reviewed 2026-06-25). All [VERIFY] constraints are preserved and applied. No decision-making, escalation automation, sensitive data storage, or invented policy rules included.
+
+**MD discussion source additions (2026-06-25):** §4.3 extended (technical team stand-up governance); §4.4 extended (requirement file metadata, verbal-to-documented rule, task ID standard, BGCT collection, management folder consolidation, business logic documentation standard); §4.5 extended (new employee ROI milestones, developer/technical project ROI, lessons learned); §4.7 added (LLM-queryable documentation compliance gaps). All additions sourced from SRC-MD-HR-001 — Varmen Reviewed 2026-06-25.
 
 Safe for Varmen review. Not yet safe for operational use — Foundation Draft v0.1 only.
