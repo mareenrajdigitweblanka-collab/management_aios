@@ -69,11 +69,29 @@ The wrapper specifies that the following files must be read before analysis:
 
 | File | Exists? | Status |
 |------|---------|--------|
-| skills/management-problem-analysis.md | YES | READY — Varmen-approved for wrapper creation |
-| validation/management-problem-analysis-source-map.md | YES | PASS |
-| validation/management-problem-analysis-readiness.md | YES | CONDITIONAL PASS |
+| skills/management-problem-analysis.md | YES | READY — updated with action records reading rule |
+| validation/management-problem-analysis-source-map.md | YES | PASS — updated with action records rows |
+| validation/management-problem-analysis-readiness.md | YES | CONDITIONAL PASS — updated with action records integration check |
 | context/verify-register.md | YES | ACTIVE — 12 items open |
 | evidence/source-register.md | YES | ACTIVE |
+| context/management-action-records-context.md | YES | Foundation Context — Evidence Use Only |
+| intelligence-inbox/management-action-records/INDEX.md | YES | ACTIVE |
+
+---
+
+## Action Records Integration Check (2026-06-25 Update)
+
+| Action Records Check | Status |
+|---|---|
+| Action records reading path included in wrapper | YES — Management Action Records Check section added |
+| intelligence-inbox/management-action-records/INDEX.md referenced in required reading | YES |
+| context/management-action-records-context.md referenced in required reading | YES |
+| Person-folder routing included (mayurika-hr/, arun-implementation/, rajiv-admin-manager/, suman-recruitment/) | YES |
+| Rajiv / Admin Manager [VERIFY] preserved in wrapper | YES — [VERIFY — Admin Manager authority not yet confirmed] explicitly stated |
+| Action records not treated as policy truth | YES — usage boundary section states: "not final policy, automatic approval, final authority, or [VERIFY] resolution" |
+| Management Action Records Checked added to Required Output | YES |
+| [VERIFY] items 1–5 preserved for Admin Manager boundary | YES |
+| No decision-making authority added to wrapper | YES — wrapper remains dry-run / review-support only |
 
 ---
 

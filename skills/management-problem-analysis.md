@@ -251,6 +251,59 @@ The following problem types are supported by READY registered sources and are sa
 
 ---
 
+## Management Action Records Reading Rule
+
+When analyzing a management problem, this skill must check:
+
+`intelligence-inbox/management-action-records/INDEX.md`
+
+when the user asks about:
+
+- previous action taken on a management problem
+- MD discussion follow-up or implementation progress
+- management problem history or recurring issue history
+- who handled a problem previously
+- what evidence exists for a past action
+- problem/solution records from Mayurika, Arun, Rajiv, or Suman
+
+The skill may use management-action-records as evidence that:
+
+- a discussion was documented by the named Management Team member
+- a problem was recorded with a date and description
+- an action was taken and assigned to a responsible person
+- a follow-up was identified and assigned
+- a reviewer or approval status was recorded against the action
+
+The skill must not assume from action records that:
+
+- the action was correct or compliant
+- the action was formally approved unless a reviewer is explicitly named and confirmed
+- the record represents final company policy
+- Admin Manager authority is confirmed — [VERIFY] items 1–5 remain open pending SRC-ADMIN-001
+- escalation paths through the Admin Manager are valid — [VERIFY] items 4–5 remain open
+- any outstanding [VERIFY] item has been resolved
+
+**Person folder routing:**
+
+| Person | Folder | Safe Scope |
+|---|---|---|
+| Mayurika / HR records | `mayurika-hr/` | HR process records, leave follow-up, onboarding records, PDPA tracking, EOD monitoring, Critic Meeting records, SKILL file compliance, leadership review records — process-level only |
+| Arun / Implementation records | `arun-implementation/` | KPI tracking, AXIOM review records, incident management records, dashboard records — process-level; [VERIFY] items 8–10 still apply |
+| Rajiv / Admin Manager records | `rajiv-admin-manager/` | Admin Manager domain records — CRITICAL: SRC-ADMIN-001 PENDING; no Admin Manager authority, escalation path, or PRC role may be derived from records in this folder; [VERIFY] items 1–5 remain open |
+| Suman / Recruitment records | `suman-recruitment/` | Recruitment process records, onboarding records, 6-month ROI audit records, OLOS validation records — process-level; no candidate personal data |
+
+**Reading order when action history is relevant:**
+
+1. CLAUDE.md §16 — confirm domain, [VERIFY] limits, allowed/forbidden actions
+2. `evidence/source-register.md` — confirm registered source status
+3. `context/verify-register.md` — confirm whether question touches an unresolved [VERIFY] item
+4. Relevant context file for the domain
+5. `intelligence-inbox/management-action-records/INDEX.md` — confirm person folder and usage rules
+6. Relevant person subfolder under `management-action-records/`
+7. `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/` — only when historical MD governance evidence (SRC-MD-HR-001 or SRC-MD-SUMAN-001) is specifically needed
+
+---
+
 ## Forbidden Problem Types
 
 The following areas must not be handled by this skill. Any problem statement falling into these areas must be declined with a clear explanation citing the relevant [VERIFY] item or authority boundary.
@@ -317,9 +370,18 @@ Accept a free-form problem statement. Confirm it is process-level. Reject if it 
 
 Classify the problem statement against the 13 allowed problem types. If the problem maps to a forbidden problem type, decline with reference to the relevant block and [VERIFY] item. If ambiguous, identify the closest matching domain and flag the ambiguity for the reviewer.
 
-### Step 3 — Search Source-Backed Context
+### Step 3 — Search Source-Backed Context and Action Records
 
-Query the relevant context files and skill reference tables for the identified domain:
+Query the relevant context files and skill reference tables for the identified domain. If the user asks about previous action, MD follow-up, action history, recurring issue history, or problem/solution records, also check `intelligence-inbox/management-action-records/INDEX.md` and the relevant person subfolder before proceeding to evidence identification. Action records are evidence inputs — not decisions, not policy, and not [VERIFY] resolution.
+
+**Action records person folder routing:**
+
+| Ask | Folder to Check |
+|---|---|
+| HR process records, leave, onboarding, EOD, Critic Meeting, SKILL compliance | `mayurika-hr/` |
+| KPI tracking, AXIOM, incident management, dashboard records | `arun-implementation/` |
+| Admin Manager domain records | `rajiv-admin-manager/` — preserve [VERIFY] items 1–5 |
+| Recruitment, onboarding, 6-month ROI audit, OLOS | `suman-recruitment/` |
 
 | Domain | Context Source |
 |--------|---------------|
@@ -436,6 +498,19 @@ Every problem record produced by this skill must include all fields below. No fi
 ### Pass/Fail Rule
 
 *(State the rule applied and whether this record PASSES or FAILS it)*
+
+### Management Action Records Checked
+
+YES / NO
+
+If YES, include:
+
+- **Folder checked:** path of `management-action-records/` subfolder reviewed
+- **Record path checked:** specific file or subfolder path reviewed (if any record located)
+- **Reviewer/status present:** YES / NO — whether the record carried a named reviewer and a status field
+- **Source IDs present:** YES / NO — whether the record referenced registered source IDs
+- **Policy/source support present:** YES / NO — whether the action was corroborated by a registered source (SRC-POLICY-001, SRC-MAYU-001, SRC-ARUN-001, SRC-SUMAN-001-v2, etc.)
+- **[VERIFY] limits remaining:** list any [VERIFY] items that still constrain what can be concluded from the record (e.g., Admin Manager authority [VERIFY] items 1–5 if `rajiv-admin-manager/` was checked)
 
 ### Closure Note
 

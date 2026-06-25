@@ -177,6 +177,28 @@ Required dry-run coverage:
 
 ---
 
+## Management Action Records Integration (2026-06-25 Update)
+
+| Integration Check | Result |
+|---|---|
+| Management Action Records integration added to skill | YES — Management Action Records Reading Rule section added to skills/management-problem-analysis.md |
+| Wrapper updated with action-records reading rule | YES — Management Action Records Check section added to .claude/skills/management-problem-analysis/SKILL.md |
+| context/management-action-records-context.md added to wrapper required reading | YES |
+| intelligence-inbox/management-action-records/INDEX.md added to wrapper required reading | YES |
+| Existing MD discussion files not moved or duplicated | YES — md-discussion-notes/ folder is untouched; no content duplicated |
+| Action records treated as evidence only | YES — skill and wrapper both carry explicit evidence-only boundary |
+| Action records not treated as policy truth | YES — SRC-POLICY-001 remains the sole policy truth source |
+| Person folder routing included in skill | YES — mayurika-hr/, arun-implementation/, rajiv-admin-manager/, suman-recruitment/ |
+| Person folder routing included in wrapper | YES — same routing listed in wrapper Management Action Records Check section |
+| Rajiv/Admin Manager [VERIFY] preserved in skill | YES — [VERIFY] items 1–5 explicitly preserved in action records reading rule |
+| Rajiv/Admin Manager [VERIFY] preserved in wrapper | YES — wrapper section states [VERIFY — Admin Manager authority not yet confirmed] |
+| Management Action Records Checked output field added to skill | YES — output template updated |
+| Management Action Records Checked output field added to wrapper Required Output | YES — wrapper required output list updated |
+| Source map updated with action records rows | YES — 12 new rows added to management-problem-analysis-source-map.md |
+| 12 [VERIFY] items preserved (none resolved by this update) | YES — all 12 items in context/verify-register.md remain open |
+
+---
+
 ## Pass/Fail Result
 
 **CONDITIONAL PASS**
@@ -197,6 +219,12 @@ Required dry-run coverage:
 | No Arun wording items resolved | PASS |
 | Line Manager correction preserved (not reintroduced) | PASS |
 | Skill marked Foundation Draft v0.1 | PASS |
+| Management Action Records integration complete | PASS |
+| Wrapper updated with action-records reading rule | PASS |
+| Existing MD discussion files not moved | PASS |
+| Action records treated as evidence only | PASS |
+| Action records not treated as policy truth | PASS |
+| 12 [VERIFY] items preserved after action records update | PASS |
 | Safe for Varmen review | PASS (conditional) |
 
 **Conditions before operational use:**

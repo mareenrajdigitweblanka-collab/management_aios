@@ -140,6 +140,17 @@ Every major claim, workflow step, allowed problem type, forbidden problem type, 
 | Safety Rules | All [VERIFY] items preserved and applied | — | Process rule | — | CLAUDE.md §12 forbidden actions |
 | Safety Rules | No Admin Manager authority invented | SRC-ADMIN-001 PENDING | [VERIFY] | YES | Items 1–5 in verify-register.md |
 | Safety Rules | No Arun [VERIFY] wording items treated as resolved | SRC-ARUN-001 | [VERIFY] | YES | Items 8, 9, 10 in verify-register.md |
+| Management Action Records Reading Rule | Skill must check management-action-records/INDEX.md when user asks about previous action, MD follow-up, action history, recurring issue history, or problem/solution records | MGMT-ACTION-RECORDS-FOLDER, context/management-action-records-context.md | CONFIRMED | — | CLAUDE.md §16; INDEX.md defines when and how to check |
+| Management Action Records Reading Rule — person folder routing | mayurika-hr/ for HR records; arun-implementation/ for KPI/ROI records; rajiv-admin-manager/ for admin records with [VERIFY] preserved; suman-recruitment/ for recruitment records | MGMT-ACTION-RECORDS-FOLDER, intelligence-inbox/management-action-records/INDEX.md | CONFIRMED | — | INDEX.md Active User Folders table |
+| Management Action Records Reading Rule — evidence boundary | Records are evidence of recorded discussion/action only — not final policy, not automatic approval, not [VERIFY] resolution | context/management-action-records-context.md | CONFIRMED | — | Safety Boundary section of context file |
+| Management Action Records Reading Rule — Rajiv/Admin boundary | Records in rajiv-admin-manager/ do not establish Admin Manager authority; [VERIFY] items 1–5 preserved | SRC-ADMIN-001 PENDING | [VERIFY] | YES | Items 1–5 in verify-register.md; context/management-action-records-context.md |
+| Management Action Records Reading Rule — relationship to MD discussion notes | intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/ is the historical source layer (SRC-MD-HR-001, SRC-MD-SUMAN-001); management-action-records/ is the ongoing intelligence input layer; these are distinct and must not be conflated | SRC-MD-HR-001, SRC-MD-SUMAN-001, MGMT-ACTION-RECORDS-FOLDER | CONFIRMED | — | context/management-action-records-context.md Relationship Between Folders section |
+| Workflow Step 3 — action records check | When action history is relevant, check management-action-records/INDEX.md and relevant person subfolder before evidence identification | MGMT-ACTION-RECORDS-FOLDER, context/management-action-records-context.md | CONFIRMED | — | Added to Step 3 in skill workflow |
+| Output field — Management Action Records Checked | Required output field: YES/NO; if YES includes folder checked, record path, reviewer/status present, source IDs present, policy/source support present, [VERIFY] limits remaining | MGMT-ACTION-RECORDS-FOLDER, intelligence-inbox/management-action-records/INDEX.md | CONFIRMED | — | Added to Output Template in skill |
+| Wrapper — required reading | context/management-action-records-context.md and intelligence-inbox/management-action-records/INDEX.md added to wrapper required reading list | context/management-action-records-context.md, MGMT-ACTION-RECORDS-FOLDER | CONFIRMED | — | .claude/skills/management-problem-analysis/SKILL.md updated |
+| Wrapper — Management Action Records Check section | Wrapper must check INDEX.md and relevant person folder when user asks about previous action, MD follow-up, action history, recurring issue history, or problem/solution records | MGMT-ACTION-RECORDS-FOLDER, context/management-action-records-context.md | CONFIRMED | — | Added to wrapper SKILL.md |
+| Wrapper — Rajiv/Admin [VERIFY] preserved | Wrapper explicitly preserves [VERIFY — Admin Manager authority not yet confirmed] for any claim from rajiv-admin-manager/ | SRC-ADMIN-001 PENDING | [VERIFY] | YES | Items 1–5 in verify-register.md |
+| Wrapper — Required Output | Management Action Records Checked added to required output fields | MGMT-ACTION-RECORDS-FOLDER | CONFIRMED | — | .claude/skills/management-problem-analysis/SKILL.md updated |
 
 ---
 
@@ -166,9 +177,11 @@ Every major claim, workflow step, allowed problem type, forbidden problem type, 
 
 | Status | Count |
 |--------|-------|
-| CONFIRMED | 94 |
-| [VERIFY] | 12 |
+| CONFIRMED | 103 |
+| [VERIFY] | 15 |
 | Process rule (no source required) | 6 |
-| TOTAL rows | 112 |
+| TOTAL rows | 124 |
 
 **Source map result: PASS — all claims trace to a registered READY source or carry [VERIFY]. No claim is unsourced and untagged.**
+
+**Update note (2026-06-25):** 12 rows added for Management Action Records Reading Rule, person folder routing, evidence boundary, Rajiv/Admin [VERIFY] boundary, MD discussion notes relationship, Workflow Step 3 action records check, output field, wrapper required reading, wrapper check section, wrapper [VERIFY] preservation, and wrapper required output. All new rows confirmed against MGMT-ACTION-RECORDS-FOLDER, context/management-action-records-context.md, and intelligence-inbox/management-action-records/INDEX.md. Three additional [VERIFY] rows added for Rajiv/Admin boundary and escalation path items (covered by existing items 1–5; surfaced here for traceability). 12 [VERIFY] items in verify-register.md remain open — no items resolved by this update.
