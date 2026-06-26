@@ -28,7 +28,7 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 
 | SRC-SUMAN-CONF-001 | `evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md` | Suman | Recruitment Officer | Stakeholder Confirmation | YES — project default for confirmed project documents; not contradicted | INTERNAL | YES — limited to Line Manager typing correction resolution only | READY — Current Evidence Source |
 | MGMT-ACTION-RECORDS-FOLDER | `intelligence-inbox/management-action-records/` | Mayurika, Arun, Rajiv, Suman | Management Team | Ongoing Management Action Records Inbox — ongoing records created by Management Team members documenting problems, actions, and follow-ups | YES — Varmen reviewed folder standard (2026-06-25) | INTERNAL — individual records must each be sensitivity-checked before use; no bulk sensitivity clearance | YES — as record index / evidence location; see `intelligence-inbox/management-action-records/INDEX.md` and `context/management-action-records-context.md` for reading rules | ACTIVE FOLDER STANDARD |
-| SRC-MD-ARUN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/pending/SRC-MD-ARUN-001.md` *(not yet received)* | Arun | Implementation Officer | MD Discussion Notes with Arun — pending; not yet received | NO — awaiting receipt | UNKNOWN — pending review | NO — cannot be used as evidence until registered, received, and Varmen-reviewed; referenced in skills/management-problem-analysis.md as blocked pending source only | PENDING — AWAITING RECEIPT |
+| SRC-MD-ARUN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & Arun Discussion Notes.md` | Arun / MD discussion | Implementation Officer | MD Discussion Notes with Arun — spanning 24/06/2025–25/06/2026 | YES — Varmen reviewed by project default; not contradicted | INTERNAL / RESTRICTED — contains individual staff names in operational context; individual performance references (08/08/2025); do not copy personal case details or individual performance references to context files; process-level extraction only | YES — with source mapping and sensitivity limits; see validation/md-arun-discussion-impact-map.md | READY — Current Evidence Source |
 | SRC-MD-ADMIN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/pending/SRC-MD-ADMIN-001.md` *(not yet received)* | Admin Manager / Rajiv | Admin Manager | MD Discussion Notes with Admin Manager — pending; not yet received | NO — awaiting receipt | UNKNOWN — pending review | NO — cannot be used as evidence until registered, received, and Varmen-reviewed; cannot resolve Admin Manager authority or escalation [VERIFY] items 1–5; referenced in skills/management-problem-analysis.md as blocked pending source only | PENDING — AWAITING RECEIPT |
 
 ---
@@ -37,10 +37,10 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 
 | Status | Count |
 |--------|-------|
-| READY (Full) | 11 |
+| READY (Full) | 12 |
 | READY — Conditional (Varmen review pending) | 0 |
 | SUPERSEDED | 1 |
-| PENDING | 3 |
+| PENDING | 2 |
 | ACTIVE FOLDER STANDARD | 1 |
 | TOTAL | 16 |
 

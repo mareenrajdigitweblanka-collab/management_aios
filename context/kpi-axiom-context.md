@@ -1,7 +1,7 @@
 ---
 name: kpi-axiom-context
 type: context
-source-ids: SRC-ARUN-001
+source-ids: SRC-ARUN-001, SRC-MD-ARUN-001
 created: 2026-06-23
 status: CONDITIONAL PASS — Foundation Draft v0.1
 ---
@@ -187,6 +187,44 @@ Staff, Team, Department, Portfolio, Incident, Bonus, PRC Review
 
 ---
 
+## 11. KPI Meeting Governance
+
+*(Source: SRC-MD-ARUN-001, 24/06/2025 and 10/07/2025)*
+
+KPI meetings must follow a defined format and governance standard:
+
+| Rule | Standard |
+|------|---------|
+| Per-person discussion time | Maximum 5 minutes per person (explanation, score discussion, and upcoming action plan) |
+| Weekly KPI scores | Required for everyone who performs KPI — no exceptions |
+| Post-meeting self-recording | Every participant must record their own KPI score after each meeting |
+| KPI Meeting Statistics | Number of attendees, total meeting duration, and Average KPI Time Index must be tracked |
+| Weekly self-evaluation | Self-evaluation for the current week required; KPI Scoring Scale applied for upcoming week |
+| Discussion quality | Inputs must reflect whether the person has properly analysed and improved their weaknesses — not merely listed problems |
+
+**KPI discussion quality check:** Questions must include: What was attempted? How many attempts succeeded and how many did not? What is the plan for next week? What is the success story for the person or product? What roadmap (BGCT) is being followed?
+
+---
+
+## 12. Bonus Eligibility — LLM-Queryability Extension
+
+*(Source: SRC-MD-ARUN-001, 22/06/2026 and 25/06/2026)*
+
+> **Integration note:** This section extends §9 (Bonus Eligibility — SRC-ARUN-001). It does not replace or contradict the 7 conditions in §9. The relationship between this queryability extension and the §9 conditions requires Varmen confirmation. See validation/md-arun-discussion-conflict-check.md (soft conflict #1).
+
+Bonuses for the Sales Team will be awarded only if work and documentation are maintained in LLM-queryable format. Compliance is verified by the Auditor before bonus eligibility is confirmed.
+
+**Queryability scoring:**
+
+| Score | Standard |
+|-------|---------|
+| 5 Marks | Fully queryable |
+| 1–4 Marks | Partially queryable |
+| 0 Marks | Not queryable, but correct skill is documented |
+| −1 to −5 Marks | Not queryable and required skill not documented (based on deadline compliance) |
+
+---
+
 ## Remaining [VERIFY] Items
 
 | # | [VERIFY] Item | Resolution Needed From | Resolution Condition |
@@ -203,6 +241,8 @@ Staff, Team, Department, Portfolio, Incident, Bonus, PRC Review
 | Claim Area | Source ID | Status |
 |------------|-----------|--------|
 | All KPI, AXIOM, escalation, PRC, bonus, and dashboard claims | SRC-ARUN-001 | CONFIRMED (3 inline [VERIFY] items remain) |
+| KPI meeting governance (§11) | SRC-MD-ARUN-001 | CONFIRMED — Varmen reviewed by project default |
+| Bonus queryability extension (§12) | SRC-MD-ARUN-001 | CONFIRMED — Varmen reviewed by project default; Varmen confirmation of integration with §9 recommended |
 
 ---
 

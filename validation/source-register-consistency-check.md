@@ -105,3 +105,11 @@ Fixes applied to evidence/source-register.md:
 - SRC-MD-ADMIN-001 registered as PENDING — AWAITING RECEIPT (cannot resolve Admin Manager [VERIFY] items 1–5)
 
 Status after fix: PASS — all source count discrepancies resolved; all unregistered Source IDs now formally tracked
+
+---
+
+## Post-Arun Refresh Addendum
+
+Date: 2026-06-26
+Report: validation/post-arun-integrity-warning-refresh-fix-report.md
+Summary: SRC-MD-ARUN-001 ingested as READY; zero VERIFY items resolved; source count updated to TOTAL=16, READY(Full)=12, PENDING=2 following Arun ingestion; SRC-MD-ARUN-001 confirmed READY; SRC-MD-ADMIN-001 confirmed PENDING — AWAITING RECEIPT; no pending source treated as evidence; safe documentation drift corrected.

@@ -177,6 +177,11 @@ Every claim, workflow step, checklist item, threshold, and output field in the f
 | kpi-axiom-review-support.md | §14.2 Project ROI | Business value contribution traceable to project output | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
 | kpi-axiom-review-support.md | §14.3 Requirement Metadata | 8 required metadata fields for requirement files before project work begins | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | SRC-MD-HR-001 16/06/2026 |
 | policy-lookup.md | §1 Scope Boundary | MD governance sources (SRC-MD-HR-001, SRC-MD-SUMAN-001) are not policy — handled by other skills | SRC-MD-HR-001, SRC-MD-SUMAN-001 | CONFIRMED — Varmen Reviewed 2026-06-25 | NO | Boundary clarification only; no MD governance content added to policy lookup |
+| kpi-axiom-review-support.md | context/kpi-axiom-context.md §11 | KPI meeting governance — 5-minute per person limit, KPI Time Index, weekly scores, post-meeting self-recording, self-evaluation, discussion quality requirement | SRC-MD-ARUN-001 | CONFIRMED — Varmen Reviewed by project default 2026-06-26 | NO | SRC-MD-ARUN-001 24/06/2025 and 10/07/2025; added to context/kpi-axiom-context.md §11; skill wrapper update RECOMMENDED but not yet applied — awaiting Varmen approval |
+| kpi-axiom-review-support.md | context/kpi-axiom-context.md §12 | Bonus queryability evaluation — Sales Team bonus contingent on LLM-queryable documentation; scoring 5/1-4/0/−1 to −5 | SRC-MD-ARUN-001 | CONFIRMED — Varmen Reviewed by project default 2026-06-26 | NO | SRC-MD-ARUN-001 22/06/2026 and 25/06/2026; soft conflict with SRC-ARUN-001 §9 noted — Varmen integration confirmation recommended; skill wrapper update RECOMMENDED but not yet applied |
+| kpi-axiom-review-support.md | VERIFY check — Amazon ACOS item 8 | Checked against SRC-MD-ARUN-001 — no evidence found | SRC-MD-ARUN-001 | NO EVIDENCE — VERIFY RETAINED | YES | Item 8 in verify-register.md; SRC-MD-ARUN-001 does not address Amazon ACOS thresholds |
+| kpi-axiom-review-support.md | VERIFY check — Operational Manager PRC item 9 | Checked against SRC-MD-ARUN-001 — no evidence found | SRC-MD-ARUN-001 | NO EVIDENCE — VERIFY RETAINED | YES | Item 9 in verify-register.md; PRC composition not discussed in source |
+| kpi-axiom-review-support.md | VERIFY check — ROI Officer item 10 | Checked against SRC-MD-ARUN-001 — partial supporting evidence (Mayurika coordinating developer ROI validation confirmed); "ROI Officer" title not used | SRC-MD-ARUN-001 | PARTIAL — VERIFY RETAINED | YES | Item 10 in verify-register.md; adds context for VERIFY Resolved Candidate but does not replace Arun direct confirmation |
 
 ---
 
@@ -186,9 +191,12 @@ Every claim, workflow step, checklist item, threshold, and output field in the f
 |------------|---------------|--------------|-----------|
 | management-gap-detection.md | 46 | 4 | 50 |
 | recruitment-quality-check.md | 44 | 1 | 45 |
-| kpi-axiom-review-support.md | 28 | 4 | 32 |
+| kpi-axiom-review-support.md | 30 | 7 | 37 |
 | policy-lookup.md | 26 | 4 | 30 |
-| **TOTAL** | **145** | **12** | **157** |
+| **TOTAL (before SRC-MD-ARUN-001 additions)** | **145** | **12** | **157** |
+| **TOTAL (after SRC-MD-ARUN-001 additions — 2026-06-26)** | **147** | **15** | **163** |
+
+**Note:** SRC-MD-ARUN-001 rows added 2026-06-26. kpi-axiom-review-support.md skill wrapper update is RECOMMENDED but not yet applied — pending Varmen approval. See validation/md-arun-discussion-impact-map.md.
 
 *Updated 2026-06-25 (SRC-SUMAN-002): +2 CONFIRMED rows added for recruitment-quality-check.md §4.6 — SRC-SUMAN-002 historical gap evidence optional note and boundary statement. No [VERIFY] items changed. All 12 open items remain unchanged.*
 

@@ -193,6 +193,14 @@ Next action: Present 5 warnings to Varmen for review; apply corrections to recru
 
 ---
 
+## Post-Arun Refresh Addendum
+
+Date: 2026-06-26
+Report: validation/post-arun-integrity-warning-refresh-fix-report.md
+Summary: SRC-MD-ARUN-001 ingested as READY; zero VERIFY items resolved; original warnings 1, 2, 3, and 5 confirmed closed by prior fixes and Arun ingestion; two additional frontmatter drift items corrected (verify-register.md last-updated, kpi-axiom-context.md source-ids); Warning 4 (context/organization-structure.md not audited) remains open as a follow-up audit task; remaining wrapper updates (kpi-axiom-review-support, management-problem-analysis) pending Varmen approval.
+
+---
+
 ## Coordinated Warning Fix Applied
 
 Date: 2026-06-25

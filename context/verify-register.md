@@ -2,7 +2,7 @@
 name: verify-register
 type: context
 created: 2026-06-23
-last-updated: 2026-06-23
+last-updated: 2026-06-26
 extracted-from: CLAUDE.md Foundation Draft v0.1 §13
 status: ACTIVE — 12 items outstanding; 2 items resolved
 ---
@@ -28,9 +28,9 @@ All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 | 5 | Final escalation paths (routes through Admin Manager) | §3, §13 | SRC-ADMIN-001 | Varmen | PENDING | As above |
 | 6 | MD-specific requirements beyond Varmen relay | §1, §5, §13 | Future MD interview / registered MD source | Varmen + MD | PENDING | Conduct MD review meeting; document and register findings |
 | 7 | Final implementation scope | §1, §13 | MD review meeting completed | Varmen | PENDING | MD review meeting; update CLAUDE.md after sign-off |
-| 8 | Amazon ACOS threshold wording | §7.3, §13 | Arun confirmation | Arun | PENDING | Ask Arun to confirm exact wording and threshold direction; update SRC-ARUN-001 note if confirmed |
-| 9 | Operational Manager PRC membership and scope | §3, §7.8, §13 | Arun or dedicated Operational Manager source | Arun | PENDING | Confirm with Arun or obtain dedicated source |
-| 10 | ROI Officer identity / title in review inputs | §7.4, §13 | Arun confirmation | Arun | PENDING — VERIFY Resolved Candidate | Confirm with Arun whether "ROI officer" is a distinct role or an existing title. **Candidate resolution:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly, with Selva auditing submissions. [VERIFY] tag must remain until Arun directly confirms — see `validation/md-discussion-conflict-check.md` and `validation/pending-md-discussion-source-plan.md`. |
+| 8 | Amazon ACOS threshold wording | §7.3, §13 | Arun confirmation | Arun | PENDING | Ask Arun to confirm exact wording and threshold direction; update SRC-ARUN-001 note if confirmed. **Checked against SRC-MD-ARUN-001 (2026-06-26): no evidence found — Amazon ACOS threshold not mentioned in source. Still VERIFY.** |
+| 9 | Operational Manager PRC membership and scope | §3, §7.8, §13 | Arun or dedicated Operational Manager source | Arun | PENDING | Confirm with Arun or obtain dedicated source. **Checked against SRC-MD-ARUN-001 (2026-06-26): no evidence found — PRC composition not discussed in source. Still VERIFY.** |
+| 10 | ROI Officer identity / title in review inputs | §7.4, §13 | Arun confirmation | Arun | PENDING — VERIFY Resolved Candidate | Confirm with Arun whether "ROI officer" is a distinct role or an existing title. **Candidate resolution:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly, with Selva auditing submissions. **Checked against SRC-MD-ARUN-001 (2026-06-26): partial supporting evidence — Mayurika confirmed coordinating developer ROI validation (25/06/2026), which aligns with the candidate resolution, but "ROI Officer" title not used in this source.** [VERIFY] tag must remain until Arun directly confirms — see `validation/md-arun-discussion-impact-map.md`. |
 | 11 | Director authority beyond leadership review | §5, §13 | Dedicated Director source or interview | Varmen | PENDING | Obtain dedicated Director source or conduct interview |
 | 12 | Exact tool names for HR and EOD systems | §9.4, §13 | Mayurika confirmation | Mayurika | PENDING | Confirm actual tool names with Mayurika; several listed as (assumed) in SRC-MAYU-001 |
 

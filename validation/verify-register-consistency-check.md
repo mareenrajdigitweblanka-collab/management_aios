@@ -138,3 +138,11 @@ Fixes applied to .claude/skills/recruitment-quality-check/SKILL.md:
 - [VERIFY] Constraints table row updated to reflect resolution; no Line Manager constraint remains active
 
 Status after fix: PASS — 12 open VERIFY items confirmed; numbering consistent across CLAUDE.md §14 and verify-register.md; stale wrapper label corrected
+
+---
+
+## Post-Arun Refresh Addendum
+
+Date: 2026-06-26
+Report: validation/post-arun-integrity-warning-refresh-fix-report.md
+Summary: SRC-MD-ARUN-001 ingested as READY; zero VERIFY items resolved; items 8, 9, and 10 checked against SRC-MD-ARUN-001 — items 8 and 9 no evidence found; item 10 partial support only, [VERIFY] tag preserved; verify-register.md last-updated frontmatter corrected from 2026-06-23 to 2026-06-26; VERIFY count remains 12 open, 2 resolved; numbering 1–12 consistent with CLAUDE.md §14; safe documentation drift corrected; remaining wrapper updates pending Varmen approval.

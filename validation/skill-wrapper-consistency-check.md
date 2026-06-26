@@ -98,3 +98,11 @@ Fixes applied to .claude/skills/recruitment-quality-check/SKILL.md:
 - Skill boundary behavior unchanged; practical enforcement was already correct
 
 Status after fix: PASS — all skill/wrapper boundaries confirmed; no stale [VERIFY] labels remain; all source rules preserved
+
+---
+
+## Post-Arun Refresh Addendum
+
+Date: 2026-06-26
+Report: validation/post-arun-integrity-warning-refresh-fix-report.md
+Summary: SRC-MD-ARUN-001 ingested as READY; zero VERIFY items resolved; recruitment-quality-check wrapper confirmed correct — stale [VERIFY — item 11] label was already resolved in the 2026-06-25 coordinated fix; kpi-axiom-context.md frontmatter source-ids corrected to include SRC-MD-ARUN-001; wrapper updates for kpi-axiom-review-support and management-problem-analysis recommended but not yet applied — pending Varmen approval of CLAUDE.md §11.9–§11.14 and bonus queryability integration guidance; safe documentation drift corrected.

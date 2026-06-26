@@ -62,6 +62,7 @@ Every fact, rule, process claim, or operational detail in this CLAUDE.md must tr
 | SRC-POLICY-001 | READY — Final Approved (Varmen reviewed) |
 | SRC-MD-HR-001 | READY — Varmen Reviewed 2026-06-25 |
 | SRC-MD-SUMAN-001 | READY — Varmen Reviewed 2026-06-25 |
+| SRC-MD-ARUN-001 | READY — Varmen Reviewed by project default (2026-06-26) |
 
 ---
 
@@ -101,7 +102,7 @@ The organisation structure as known from available sources:
 
 ## 4. Core Management AIOS Domains
 
-*(Sources: SRC-VAR-001, SRC-MAYU-001, SRC-ARUN-001, SRC-ARUN-002, SRC-SUMAN-001, SRC-POLICY-001, SRC-MD-HR-001, SRC-MD-SUMAN-001)*
+*(Sources: SRC-VAR-001, SRC-MAYU-001, SRC-ARUN-001, SRC-ARUN-002, SRC-SUMAN-001, SRC-POLICY-001, SRC-MD-HR-001, SRC-MD-SUMAN-001, SRC-MD-ARUN-001)*
 
 The following domains are confirmed by registered sources and are in scope for this AIOS:
 
@@ -110,8 +111,8 @@ The following domains are confirmed by registered sources and are in scope for t
 | Management gap detection | SRC-VAR-001 |
 | Onboarding compliance | SRC-VAR-001, SRC-MAYU-001, SRC-POLICY-001 |
 | Leave visibility | SRC-VAR-001, SRC-MAYU-001, SRC-POLICY-001 |
-| KPI meeting governance | SRC-VAR-001, SRC-ARUN-001 |
-| Management file and decision organization | SRC-VAR-001 |
+| KPI meeting governance | SRC-VAR-001, SRC-ARUN-001, SRC-MD-ARUN-001 |
+| Management file and decision organization | SRC-VAR-001, SRC-MD-ARUN-001 |
 | HR staff record governance | SRC-MAYU-001 |
 | Recruitment quality control | SRC-SUMAN-001-v2 |
 | KPI / AXIOM review framework | SRC-ARUN-001 |
@@ -126,7 +127,7 @@ The following domains are confirmed by registered sources and are in scope for t
 | Digital and physical asset governance | SRC-POLICY-001 |
 | Mandatory AI tools compliance | SRC-POLICY-001 |
 | Working hours and attendance management | SRC-POLICY-001 |
-| LLM-queryable documentation compliance | SRC-MD-HR-001 |
+| LLM-queryable documentation compliance | SRC-MD-HR-001, SRC-MD-ARUN-001 |
 | Requirement documentation governance | SRC-MD-HR-001 |
 | Management folder structure governance | SRC-MD-HR-001 |
 | Six-month hire ROI audit | SRC-MD-SUMAN-001 |
@@ -598,7 +599,7 @@ AI tools are mandatory across all departments and roles. Daily use is required a
 
 ## 11. MD Governance Context
 
-*(Sources: SRC-MD-HR-001 — MD & HR Discussion Notes; SRC-MD-SUMAN-001 — MD & Suman Discussion Notes; Varmen Reviewed 2026-06-25)*
+*(Sources: SRC-MD-HR-001 — MD & HR Discussion Notes; SRC-MD-SUMAN-001 — MD & Suman Discussion Notes; SRC-MD-ARUN-001 — MD & Arun Discussion Notes; Varmen Reviewed 2026-06-25 / Varmen Reviewed by project default 2026-06-26)*
 
 > This section reflects MD-directed governance principles from registered discussion note sources. All content is process-level. No individual staff case details, candidate personal data, or salary information are included. Varmen Reviewed MD Governance Evidence.
 
@@ -649,6 +650,83 @@ Suman must conduct a binary ROI audit at the 6-month mark for each hire, assessi
 *(SRC-MD-SUMAN-001, 29/05/2026)*
 
 The OLOS onboarding system must be validated against actual company operations before go-live. Required validation documents: Evidence Standard, Onboarding Guide, OLOS Master, Team Leader Setup Guide, File Pack Register. Department handbooks, role guides, and SOP documents must be confirmed as present before deployment.
+
+### 11.9 KPI Meeting Format and Governance
+
+*(SRC-MD-ARUN-001, 24/06/2025 and 10/07/2025)*
+
+KPI meetings must follow a defined format:
+
+- Each person's KPI discussion must be completed within 5 minutes (including explanation, score discussion, and upcoming action plan).
+- Weekly KPI scores must be given to everyone who performs KPI.
+- After each meeting, every participant must record their own KPI score.
+- KPI Meeting Statistics must be tracked: number of attendees, total meeting duration, and Average KPI Time Index.
+- Weekly KPI evaluation includes: self-evaluation for the current week and KPI Scoring Scale applied for the upcoming week.
+- KPI discussions must reflect whether the person has properly analysed and improved their weaknesses, not merely listed complaints.
+- Questions should include analysis of what was attempted, how many attempts succeeded, and why target was or was not achieved.
+
+### 11.10 Meeting ID System
+
+*(SRC-MD-ARUN-001, 19/06/2026)*
+
+- A unique Meeting ID must be assigned to every meeting.
+- Each Meeting Point must have a Main ID along with corresponding Sub IDs.
+- Required metadata must be recorded for every meeting.
+- Meeting IDs, Meeting Point IDs, and related metadata must be integrated and maintained systematically.
+
+**Note:** This supplements the Task ID Standard in §11.2 (SRC-MD-HR-001). Task ID applies to all tasks; Meeting ID applies specifically to meeting management records.
+
+### 11.11 Bonus Queryability Evaluation Framework
+
+*(SRC-MD-ARUN-001, 22/06/2026 and 25/06/2026)*
+
+Bonuses for the Sales Team will be awarded only if work and documentation are maintained in LLM-queryable format. Compliance must be verified by the Auditor before bonus eligibility is confirmed.
+
+**Queryability scoring framework:**
+
+| Score | Meaning |
+|-------|---------|
+| 5 Marks | Fully queryable |
+| 1–4 Marks | Partially queryable |
+| 0 Marks | Not queryable, but the correct skill is documented |
+| −1 to −5 Marks | Not queryable and the required skill is not documented (based on deadline compliance) |
+
+**Integration note:** This extends the bonus eligibility framework in §7.9 (SRC-ARUN-001) with a specific LLM-queryability dimension. Varmen confirmation of how this integrates with the §7.9 conditions is recommended before treating as a mandatory additional eligibility condition. [Soft conflict flagged in validation/md-arun-discussion-conflict-check.md]
+
+### 11.12 Technical Team Escalation Standard
+
+*(SRC-MD-ARUN-001, 19/06/2026)*
+
+- Technical team members are permitted to escalate only those issues they are unable to resolve independently.
+- Every escalation must include the reason for escalation and details of the actions already taken.
+
+### 11.13 BGCT Documentation Hierarchy
+
+*(SRC-MD-ARUN-001, 26/05/2026)*
+
+Documentation creation follows a defined four-step hierarchy:
+
+| Step | Document Type | Audience |
+|------|---------------|---------|
+| 1 | BGCT (Best Practices, Guidelines, Checklists, Tutorials) | Staff |
+| 2 | Handbook | Staff |
+| 3 | Skill file | LLM and developers |
+| 4 | Rule book | Management |
+
+BGCT documents must include a create date and creation owner. This hierarchy specifies the sequencing of documentation creation — BGCT must be completed before Handbooks, and Handbooks before Skill files. See also §11.5 for BGCT central storage governance (SRC-MD-HR-001).
+
+### 11.14 Developer ROI Review Process
+
+*(SRC-MD-ARUN-001, 25/06/2026)*
+
+Developer work from the past 30 days must be reviewed monthly. The review process follows this sequence:
+
+1. Team Leaders complete initial validation of developer work.
+2. Tasks completed after the third week of the month must be verified as maintained in queryable format (role-assigned verification step).
+3. Mayurika coordinates the overall validation process.
+4. Queryable task files are provided for ROI methodology development.
+
+**Note:** This is an operational process detail recorded as of 25/06/2026. Role assignments within this process should be confirmed as current before use as an audit checklist. Consistent with SRC-MD-HR-001 developer/technical project ROI documentation requirements (§11.6).
 
 ---
 
@@ -785,6 +863,8 @@ See [intelligence-inbox/management-action-records/INDEX.md](intelligence-inbox/m
 ## 17. Next Step
 
 **Completed 2026-06-23:** SRC-POLICY-001 (Final Approved Company Policy Manual, Varmen reviewed) has been registered and integrated. Leave policy detail ([VERIFY] item 12) is resolved. See [validation/policy-update-impact-report.md](validation/policy-update-impact-report.md) for full impact summary.
+
+**Completed 2026-06-26:** SRC-MD-ARUN-001 (MD & Arun Discussion Notes, spanning 24/06/2025–25/06/2026) has been registered and integrated. Source is sensitivity-checked and source-mapped. Key additions: §11.9–§11.14 (KPI meeting format, meeting ID system, bonus queryability evaluation, technical team escalation, BGCT documentation hierarchy, developer ROI review process). §4 domain table updated (KPI meeting governance, management file organization, LLM-queryable compliance). No Arun [VERIFY] items (8, 9, 10) resolved — checked and no direct evidence found. Soft conflict noted: bonus queryability condition extends §7.9 bonus conditions — Varmen confirmation recommended. See [validation/md-arun-discussion-source-ingestion-check.md](validation/md-arun-discussion-source-ingestion-check.md), [validation/md-arun-discussion-impact-map.md](validation/md-arun-discussion-impact-map.md), [validation/md-arun-discussion-conflict-check.md](validation/md-arun-discussion-conflict-check.md), and [validation/md-arun-discussion-ingestion-final-report.md](validation/md-arun-discussion-ingestion-final-report.md) for full details.
 
 **Completed 2026-06-25:** SRC-MD-HR-001 (MD & HR Discussion Notes) and SRC-MD-SUMAN-001 (MD & Suman Discussion Notes) have been registered and integrated as conditional sources. Both sources are sensitivity-checked and source-mapped. Key additions: §11 MD Governance Context, §4 domain extensions, §5 Suman role update, §8 formal role note. VERIFY Resolved Candidate identified for item 10 (ROI Officer = Arun and Mayurika). Varmen review of both MD discussion sources is [VERIFY]. See [validation/md-discussion-source-ingestion-check.md](validation/md-discussion-source-ingestion-check.md), [validation/md-discussion-impact-map.md](validation/md-discussion-impact-map.md), [validation/md-discussion-conflict-check.md](validation/md-discussion-conflict-check.md), and [validation/md-discussion-skill-impact-check.md](validation/md-discussion-skill-impact-check.md) for full details.
 
