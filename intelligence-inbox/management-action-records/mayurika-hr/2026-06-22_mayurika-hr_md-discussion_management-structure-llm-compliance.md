@@ -2,10 +2,12 @@
 name: mayurika-hr-md-discussion-2026-06-22
 type: md-discussion-note
 created: 2026-06-25
+routing-corrected: 2026-06-26
 record-id: MD-DISCUSSION-20260622-001
 meeting-date: 2026-06-22
 status: OPEN — action items pending
 source-boundary: Evidence of recorded MD discussion and action plan. Not approved policy. Does not resolve any [VERIFY] items.
+routing-note: Reviewer routing language updated 2026-06-26 to align with CLAUDE.md §18. Historical Varmen review records preserved. No business meaning changed. See validation/mayurika-first-record-routing-correction-check.md.
 ---
 
 # MD Discussion Note — 22 June 2026
@@ -128,9 +130,9 @@ The MD held a structured meeting covering five key governance and operational ar
 
 ## Decisions Made
 
-No final policy decisions recorded in this session. All points represent MD direction requiring action by HR. Policy implications (e.g. bonus evaluation criteria change) require further source registration and Varmen sign-off before being treated as finalised policy change.
+No final policy decisions recorded in this session. All points represent MD direction requiring action by HR. Policy implications (e.g. bonus evaluation criteria change) require further source registration and relevant Management Team/domain owner sign-off before being treated as finalised policy change. *(Routing updated 2026-06-26 per CLAUDE.md §18 — KPI/bonus domain routes to Arun.)*
 
-> **Note on Sales Bonus Direction (Action Item 10):** MD's direction that bonus evaluations will consider LLM-queryable documentation compliance is consistent with SRC-ARUN-001 (documentation compliance ≥90% as a bonus eligibility criterion). However, the specific mechanism for how HR communicates this to the Sales Team is an operational action — it does not alter the existing bonus policy unless Varmen confirms a formal policy update is required.
+> **Note on Sales Bonus Direction (Action Item 10):** MD's direction that bonus evaluations will consider LLM-queryable documentation compliance is consistent with SRC-ARUN-001 (documentation compliance ≥90% as a bonus eligibility criterion). However, the specific mechanism for how HR communicates this to the Sales Team is an operational action — it does not alter the existing bonus policy unless Arun confirms a formal policy update is required. *(Routing updated 2026-06-26 per CLAUDE.md §18 — KPI/bonus domain routes to Arun.)*
 
 ---
 
@@ -138,7 +140,7 @@ No final policy decisions recorded in this session. All points represent MD dire
 
 [VERIFY — reviewer not confirmed]
 
-This record has been prepared by Claude Code on behalf of the Management AIOS (2026-06-25) from the registered source SRC-MD-HR-001. It must be reviewed by Varmen or Mayurika before being treated as an approved action record.
+This record has been prepared by Claude Code on behalf of the Management AIOS (2026-06-25) from the registered source SRC-MD-HR-001. It must be reviewed by Mayurika (HR domain owner) before being treated as an approved action record. *(Routing updated 2026-06-26 — CLAUDE.md §18: HR domain routes to Mayurika. Varmen provided initial setup guidance only and is not required for normal ongoing Management AIOS reviews.)*
 
 ---
 
@@ -168,15 +170,15 @@ Claude must not treat this record as final policy. For any policy-related claim,
 | # | [VERIFY] Item | What Is Needed | Status |
 |---|---|---|---|
 | 1 | Due dates for all action items | Meeting did not record specific deadlines — Mayurika or Varmen to assign due dates | PENDING |
-| 2 | Reviewer confirmation for this record | Varmen or Mayurika to review and sign off | PENDING |
-| 3 | Formal policy update for Sales Team bonus criteria | Varmen to confirm if this MD direction constitutes a policy change requiring source registration | PENDING |
+| 2 | Reviewer confirmation for this record | Mayurika (HR domain owner) to review and sign off. *(Routing updated 2026-06-26 per CLAUDE.md §18.)* | PENDING |
+| 3 | Formal policy update for Sales Team bonus criteria | Arun to confirm if this MD direction constitutes a policy change requiring source registration. Cross-reference SRC-MD-ARUN-001 §11.11 (bonus queryability evaluation framework). *(Routing updated 2026-06-26 per CLAUDE.md §18 — KPI/bonus domain routes to Arun.)* | PENDING |
 | 4 | Priya backup resource plan scope | Mayurika to define coverage responsibilities and confirm with relevant TL | PENDING |
 
 ---
 
 ## Next Step
 
-Share this record with Varmen for review. Once Varmen confirms, assign due dates to all open action items and begin tracking progress in this folder.
+Mayurika (HR domain owner) to review this record. Once confirmed, assign due dates to all open action items and begin tracking progress in this folder. *(Routing updated 2026-06-26 per CLAUDE.md §18 — HR domain routes to Mayurika.)*
 
 ---
 
