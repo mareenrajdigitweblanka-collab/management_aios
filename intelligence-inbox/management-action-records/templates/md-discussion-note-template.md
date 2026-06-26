@@ -113,7 +113,7 @@ Describe any decisions that were formally made during this discussion.
 **If no final decision was made, write:**
 No final decision recorded.
 
-*(Important: A discussion note does not constitute a final policy decision. Policy changes require source registration and Varmen sign-off.)*
+*(Important: A discussion note does not constitute a final policy decision. Policy changes require source registration and relevant Management Team/domain owner review. Reviewer routing updated 2026-06-26 — see validation/reviewer-model-correction-note.md.)*
 
 ---
 

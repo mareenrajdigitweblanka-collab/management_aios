@@ -47,9 +47,9 @@ These two folders are distinct evidence layers and must not be conflated.
 - Records are not automatically registered sources — they are raw management evidence
 - Records have individual reviewer and status fields that must be checked before use
 - This folder is the ongoing intelligence input layer, sitting above the historical source layer
-- Records here do not automatically update CLAUDE.md, context files, or skill files — that requires source registration and Varmen sign-off
+- Records here do not automatically update CLAUDE.md, context files, or skill files — that requires source registration and relevant Management Team/domain owner review
 
-**Both are evidence, not automatic authority.** Neither folder grants permission to resolve [VERIFY] items, approve escalation paths, or finalize Admin Manager authority without the standard source registration and Varmen sign-off process.
+**Both are evidence, not automatic authority.** Neither folder grants permission to resolve [VERIFY] items, approve escalation paths, or finalize Admin Manager authority without the standard source registration and relevant Management Team/domain owner review process.
 
 ---
 
@@ -91,7 +91,7 @@ Records in `management-action-records/` are evidence of an action or discussion.
 |---|---|
 | Not final policy | Records do not change or create company policy — SRC-POLICY-001 is the sole policy truth source |
 | Not approval by default | A record does not prove an action was approved unless a named reviewer is explicitly listed and confirmed |
-| Not parent AIOS truth | Records do not update CLAUDE.md or skill files — that requires source registration and Varmen sign-off |
+| Not parent AIOS truth | Records do not update CLAUDE.md or skill files — that requires source registration and relevant Management Team/domain owner review |
 | Not [VERIFY] resolution | Records do not resolve any outstanding [VERIFY] item — those require registered source evidence and Varmen confirmation |
 | Not Admin Manager authority | Records in `rajiv-admin-manager/` cannot establish Admin Manager authority, escalation paths, or PRC roles — these remain [VERIFY] pending SRC-ADMIN-001 |
 | Sensitivity always applies | Records must not contain unredacted personal data, salary data, candidate CV details, disciplinary case details beyond aggregate/process level — check `context/confidentiality-rules.md` |

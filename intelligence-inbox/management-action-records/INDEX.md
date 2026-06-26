@@ -111,4 +111,4 @@ Claude must not assume:
 
 **PASS** if Claude can understand when and how to use the `management-action-records` folder without verbal explanation, and without creating duplicate truth or unsupported authority claims.
 
-**FAIL** if Claude treats records in this folder as automatic approved policy, treats them as equivalent to the registered source documents in `md-discussion-notes/`, or uses them to resolve [VERIFY] items without independent source registration and Varmen sign-off.
+**FAIL** if Claude treats records in this folder as automatic approved policy, treats them as equivalent to the registered source documents in `md-discussion-notes/`, or uses them to resolve [VERIFY] items without independent source registration and relevant Management Team/domain owner confirmation. *(Reviewer routing updated 2026-06-26 — see validation/reviewer-model-correction-note.md.)*

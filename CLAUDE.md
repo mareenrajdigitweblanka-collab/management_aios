@@ -738,7 +738,7 @@ Within this Management AIOS, the assistant may:
 - Identify gaps between registered sources and expected coverage
 - Create Claude Code prompts for AIOS development tasks
 - Create validation reports (readiness checks, source maps, gap registers)
-- Draft documentation for review by Varmen or Mayurika
+- Draft documentation for review by the relevant Management Team/domain owner
 - Prepare review checklists based on confirmed process flows
 - Maintain and update source maps and [VERIFY] registers
 - Flag when a claim lacks a Source ID or [VERIFY] tag
@@ -756,7 +756,7 @@ The assistant must not:
 - Change production data in any HR, payroll, or performance system
 - Connect to or write to live HR systems
 - Automate HR decisions without explicit human approval from the appropriate authority
-- Promote any content in this AIOS to parent AIOS truth without Varmen sign-off
+- Promote any content in this AIOS to parent AIOS truth without relevant Management Team/domain owner sign-off
 - Remove a `[VERIFY]` tag without producing the source evidence that resolves the gap
 - Invent Admin Manager authority, escalation logic, or approval chains
 - Treat this Foundation Draft v0.1 as final approved operational truth
@@ -774,8 +774,8 @@ The following items are unresolved and must remain tagged `[VERIFY]` until the l
 |---|---------------|-----------|----------------------|
 | 1 | Admin Manager document | SRC-ADMIN-001 PENDING | Receive and register Admin Manager documents |
 | 2 | Admin Manager authority scope | SRC-ADMIN-001 PENDING | Admin Manager source received and content reviewed |
-| 3 | Admin Manager PRC role and authority within PRC | SRC-ADMIN-001 PENDING | Admin Manager source received and confirmed by Varmen |
-| 4 | Admin Manager approval chains and escalation paths | SRC-ADMIN-001 PENDING | Admin Manager source received and confirmed by Varmen |
+| 3 | Admin Manager PRC role and authority within PRC | SRC-ADMIN-001 PENDING | Admin Manager source received and confirmed by relevant Management Team/domain owner review |
+| 4 | Admin Manager approval chains and escalation paths | SRC-ADMIN-001 PENDING | Admin Manager source received and confirmed by relevant Management Team/domain owner review |
 | 5 | Final escalation paths (routes through Admin Manager) | SRC-ADMIN-001 PENDING | Admin Manager source received |
 | 6 | MD-specific requirements beyond Varmen relay | SRC-VAR-001 acknowledged limit | Future meeting with MD; findings documented and registered |
 | 7 | Final implementation scope | SRC-VAR-001 acknowledged limit | MD review meeting completed |
@@ -841,7 +841,7 @@ Check this folder when the user asks about management problems, actions taken by
 **What action records are — and are not:**
 
 - Records are evidence that a discussion was documented or an action was recorded. They are NOT automatic approved policy.
-- Records do not resolve [VERIFY] items — that requires registered source evidence and Varmen sign-off.
+- Records do not resolve [VERIFY] items — that requires registered source evidence and relevant Management Team/domain owner confirmation.
 - Records in `rajiv-admin-manager/` do not establish Admin Manager authority — [VERIFY] items 1–5 remain open pending SRC-ADMIN-001.
 - Records do not replace or override SRC-MD-HR-001 or SRC-MD-SUMAN-001 as governance sources.
 - Check reviewer status, sensitivity limits, and policy alignment before citing any record.
@@ -876,10 +876,34 @@ See [intelligence-inbox/management-action-records/INDEX.md](intelligence-inbox/m
 4. Update this CLAUDE.md: populate Admin Manager rows in Sections 3, 5, and 7.8
 5. Update [validation/claude-source-map.md](validation/claude-source-map.md) with new Admin Manager claims
 6. Remove resolved items from [validation/pending-admin-manager-gaps.md](validation/pending-admin-manager-gaps.md)
-7. Validate updated draft with Varmen before promoting to v0.2
+7. Validate updated draft with relevant Management Team/domain owners before promoting to v0.2
 
 **Secondary actions:** Confirm Line Manager identity in 180-day handover with Suman or Varmen (§8.11, [VERIFY] item 11). Confirm Arun wording items: Amazon ACOS threshold, Operational Manager PRC role, ROI Officer title ([VERIFY] items 8–10) — note: item 10 has a VERIFY Resolved Candidate from SRC-MD-SUMAN-001; Arun direct confirmation is still required.
 
-**Skill update actions (pending Varmen approval):** management-gap-detection and recruitment-quality-check have identified update candidates from the MD discussion sources. See [validation/md-discussion-skill-impact-check.md](validation/md-discussion-skill-impact-check.md) for full recommendations. Do not edit skill files until Varmen reviews.
+**Skill update actions (pending Management Team/domain owner review):** management-gap-detection and recruitment-quality-check have identified update candidates from the MD discussion sources. See [validation/md-discussion-skill-impact-check.md](validation/md-discussion-skill-impact-check.md) for full recommendations. Do not edit skill files until the relevant Management Team/domain owner (Arun for KPI/implementation, Mayurika for HR, Suman for recruitment) reviews and confirms.
 
 **Before v1.0 approval:** MD-specific requirements must be gathered directly and registered as a source. CLAUDE.md must not be treated as final operational truth until MD review is complete and all [VERIFY] items are resolved.
+
+---
+
+## 18. Reviewer Routing Rule
+
+*(Updated: 2026-06-26 — see validation/reviewer-model-correction-note.md)*
+
+Varmen provided initial guidance during the Management AIOS foundation build and may appear in historical review records. Historical Varmen review records (e.g., "Varmen Reviewed 2026-06-25") must not be altered — they record completed historical events.
+
+For ongoing Management AIOS work, Claude must route review to the relevant Management Team member or domain owner:
+
+| Domain | Reviewer |
+|---|---|
+| HR / leave / staff records / PDPA / EOD monitoring / SKILL compliance | Mayurika / Mayuri |
+| Recruitment / onboarding / probation / 6-month ROI | Suman |
+| KPI / AXIOM / ROI / implementation / incident management | Arun |
+| Admin Manager / admin authority / escalation / PRC roles | Rajiv, after SRC-ADMIN-001 is received |
+| Cross-management or unresolved domain ownership | Relevant Management Team member; trainee documents gap |
+| Queryability / documentation structure | Trainee prepares; domain owner confirms meaning |
+| [VERIFY] item resolution | Registered source evidence + relevant Management Team/domain owner confirmation |
+| Skill file updates | Trainee prepares draft; domain owner reviews before applying |
+| Promotion to parent AIOS truth / v0.2 | Relevant Management Team/domain owner sign-off |
+
+**Claude must not require Varmen approval for normal ongoing Management AIOS work** unless the user explicitly requests Varmen review in a specific conversation turn.

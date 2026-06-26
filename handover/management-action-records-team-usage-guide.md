@@ -2,7 +2,7 @@
 name: management-action-records-team-usage-guide
 type: handover
 created: 2026-06-25
-status: READY FOR VARMEN REVIEW — NOT YET APPROVED FOR TEAM ROLLOUT
+status: READY FOR MANAGEMENT TEAM ROLLOUT — REVIEWER MODEL UPDATED 2026-06-26
 source-boundary: SRC-VAR-001, SRC-MAYU-001, SRC-POLICY-001, SRC-ARUN-001, SRC-SUMAN-001-v2, SRC-MD-HR-001, SRC-MD-SUMAN-001
 ---
 
@@ -10,9 +10,9 @@ source-boundary: SRC-VAR-001, SRC-MAYU-001, SRC-POLICY-001, SRC-ARUN-001, SRC-SU
 
 ## Status
 
-Ready for Varmen review before team rollout.
+Ready for Management Team rollout. *(Reviewer model updated 2026-06-26 — see validation/reviewer-model-correction-note.md.)*
 
-This guide must not be shared with Mayurika, Arun, Rajiv, or Suman until Varmen confirms it is approved for distribution.
+This guide may be shared with Mayurika, Arun, Rajiv, and Suman. Distribution does not require Varmen confirmation for normal ongoing Management AIOS work. If explicit Varmen input is needed on a specific item, the user must request it directly.
 
 ---
 
@@ -185,7 +185,7 @@ This rule does not prevent Rajiv from creating records. It means that until the 
 
 ## Review Rule
 
-Each record should be reviewed by Varmen or the relevant business owner before being treated as reliable evidence for governance or decision-making purposes.
+Each record should be reviewed by the relevant Management Team/domain owner before being treated as reliable evidence for governance or decision-making purposes. *(Reviewer routing updated 2026-06-26: Mayurika for HR, Suman for recruitment, Arun for KPI/implementation, Rajiv for admin once SRC-ADMIN-001 received. Varmen is not required for normal ongoing reviews.)*
 
 Records with `[VERIFY — reviewer not confirmed]` in the Reviewer/Approval Status field must not be cited as approved policy or authority. They may still be cited as evidence that an event was documented.
 
@@ -209,6 +209,6 @@ Records with `[VERIFY — reviewer not confirmed]` in the Reviewer/Approval Stat
 
 ## This Guide Covers Evidence Use Only
 
-Records in this folder are evidence — not authority. Creating a record does not approve a policy, finalize a decision, or override any existing registered source. If an action you take or a discussion you record needs to become formal company policy or governance, it must be submitted for source registration and Varmen sign-off separately.
+Records in this folder are evidence — not authority. Creating a record does not approve a policy, finalize a decision, or override any existing registered source. If an action you take or a discussion you record needs to become formal company policy or governance, it must be submitted for source registration and relevant Management Team/domain owner review separately.
 
 This folder is the intelligence input layer for the AIOS. It feeds into analysis and review support — it does not replace or override the foundation sources already registered in `evidence/source-register.md`.

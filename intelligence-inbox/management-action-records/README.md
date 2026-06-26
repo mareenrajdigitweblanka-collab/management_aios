@@ -49,9 +49,9 @@ Claude must still apply full source discipline, policy checks, sensitivity check
 - Salary, bonus, or compensation data (out of scope at all times — SRC-VAR-001, SRC-POLICY-001 §2.0)
 - Medical or private personal data
 - Disciplinary case details without explicit MD + HR owner approval
-- Final policy changes (those must follow the source registration and Varmen sign-off process)
+- Final policy changes (those must follow the source registration and relevant Management Team/domain owner review process)
 - Automation instructions
-- Parent AIOS promotion decisions (no record in this folder promotes itself to CLAUDE.md truth without Varmen sign-off)
+- Parent AIOS promotion decisions (no record in this folder promotes itself to CLAUDE.md truth without relevant Management Team/domain owner sign-off)
 - Individually identifiable HR data beyond what is necessary for process identification
 
 ---
@@ -127,6 +127,6 @@ Use one of the two templates in the `templates/` folder for every new record:
 
 ## Source Boundary Note
 
-Records placed in this folder are raw management evidence. They feed into the AIOS intelligence layer. They do not automatically update CLAUDE.md, context files, or skill files. Any update to those files must follow the established source registration and Varmen sign-off process as documented in CLAUDE.md §16 and evidence/source-register.md.
+Records placed in this folder are raw management evidence. They feed into the AIOS intelligence layer. They do not automatically update CLAUDE.md, context files, or skill files. Any update to those files must follow the established source registration and relevant Management Team/domain owner review process as documented in CLAUDE.md §16 and evidence/source-register.md. *(Reviewer routing updated 2026-06-26 — see validation/reviewer-model-correction-note.md.)*
 
-Admin Manager records in rajiv-admin-manager/ have an additional constraint: until SRC-ADMIN-001 is received and Varmen reviews it, no Admin Manager authority, escalation path, or approval chain may be derived from records in that subfolder. See CLAUDE.md §14 [VERIFY] items 1–5.
+Admin Manager records in rajiv-admin-manager/ have an additional constraint: until SRC-ADMIN-001 is received and Rajiv (Admin Manager) confirms it with relevant domain owner review, no Admin Manager authority, escalation path, or approval chain may be derived from records in that subfolder. See CLAUDE.md §14 [VERIFY] items 1–5.

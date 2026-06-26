@@ -11,7 +11,7 @@ status: ACTIVE — 12 items outstanding; 2 items resolved
 
 All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 
-**Rule:** A [VERIFY] tag must not be removed without producing registered source evidence and updating evidence/source-register.md. Removal requires Varmen sign-off on each resolved item.
+**Rule:** A [VERIFY] tag must not be removed without producing registered source evidence and updating evidence/source-register.md. Removal requires registered source evidence and relevant Management Team/domain owner confirmation. *(Reviewer routing updated 2026-06-26 — see validation/reviewer-model-correction-note.md. Varmen provided initial setup guidance only; ongoing [VERIFY] resolution routes to the relevant domain owner.)*
 
 **Pass/Fail Rule:** PASS if all items in this register match the [VERIFY] items in CLAUDE.md §13 exactly. FAIL if any item is removed without a corresponding source registration and Varmen confirmation.
 
@@ -21,17 +21,17 @@ All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 
 | # | [VERIFY] Item | Affected Section(s) in CLAUDE.md | Source Needed | Reviewer Needed | Status | Next Step |
 |---|---------------|----------------------------------|---------------|-----------------|--------|-----------|
-| 1 | Admin Manager document | §3 org structure, §5 role boundaries, §7.8 PRC, §13 | SRC-ADMIN-001 | Varmen | PENDING | Obtain Admin Manager documents; place in `intelligence-inbox/raw-stakeholder-documents/admin-manager/`; register as SRC-ADMIN-001 |
-| 2 | Admin Manager authority scope | §3, §5, §13 | SRC-ADMIN-001 | Varmen | PENDING | As above |
-| 3 | Admin Manager PRC role and authority within PRC | §7.8, §13 | SRC-ADMIN-001 | Varmen | PENDING | As above |
-| 4 | Admin Manager approval chains and escalation paths | §3, §13 | SRC-ADMIN-001 | Varmen | PENDING | As above |
-| 5 | Final escalation paths (routes through Admin Manager) | §3, §13 | SRC-ADMIN-001 | Varmen | PENDING | As above |
-| 6 | MD-specific requirements beyond Varmen relay | §1, §5, §13 | Future MD interview / registered MD source | Varmen + MD | PENDING | Conduct MD review meeting; document and register findings |
-| 7 | Final implementation scope | §1, §13 | MD review meeting completed | Varmen | PENDING | MD review meeting; update CLAUDE.md after sign-off |
+| 1 | Admin Manager document | §3 org structure, §5 role boundaries, §7.8 PRC, §13 | SRC-ADMIN-001 | Rajiv (Admin Manager) | PENDING | Obtain Admin Manager documents; place in `intelligence-inbox/raw-stakeholder-documents/admin-manager/`; register as SRC-ADMIN-001 |
+| 2 | Admin Manager authority scope | §3, §5, §13 | SRC-ADMIN-001 | Rajiv (Admin Manager) | PENDING | As above |
+| 3 | Admin Manager PRC role and authority within PRC | §7.8, §13 | SRC-ADMIN-001 | Rajiv (Admin Manager) | PENDING | As above |
+| 4 | Admin Manager approval chains and escalation paths | §3, §13 | SRC-ADMIN-001 | Rajiv (Admin Manager) | PENDING | As above |
+| 5 | Final escalation paths (routes through Admin Manager) | §3, §13 | SRC-ADMIN-001 | Rajiv (Admin Manager) | PENDING | As above |
+| 6 | MD-specific requirements beyond Varmen relay | §1, §5, §13 | Future MD interview / registered MD source | MD-level authority; relevant Management Team member documents | PENDING | Conduct MD review meeting; document and register findings |
+| 7 | Final implementation scope | §1, §13 | MD review meeting completed | Relevant Management Team/domain owner | PENDING | MD review meeting; update CLAUDE.md after sign-off |
 | 8 | Amazon ACOS threshold wording | §7.3, §13 | Arun confirmation | Arun | PENDING | Ask Arun to confirm exact wording and threshold direction; update SRC-ARUN-001 note if confirmed. **Checked against SRC-MD-ARUN-001 (2026-06-26): no evidence found — Amazon ACOS threshold not mentioned in source. Still VERIFY.** |
 | 9 | Operational Manager PRC membership and scope | §3, §7.8, §13 | Arun or dedicated Operational Manager source | Arun | PENDING | Confirm with Arun or obtain dedicated source. **Checked against SRC-MD-ARUN-001 (2026-06-26): no evidence found — PRC composition not discussed in source. Still VERIFY.** |
 | 10 | ROI Officer identity / title in review inputs | §7.4, §13 | Arun confirmation | Arun | PENDING — VERIFY Resolved Candidate | Confirm with Arun whether "ROI officer" is a distinct role or an existing title. **Candidate resolution:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly, with Selva auditing submissions. **Checked against SRC-MD-ARUN-001 (2026-06-26): partial supporting evidence — Mayurika confirmed coordinating developer ROI validation (25/06/2026), which aligns with the candidate resolution, but "ROI Officer" title not used in this source.** [VERIFY] tag must remain until Arun directly confirms — see `validation/md-arun-discussion-impact-map.md`. |
-| 11 | Director authority beyond leadership review | §5, §13 | Dedicated Director source or interview | Varmen | PENDING | Obtain dedicated Director source or conduct interview |
+| 11 | Director authority beyond leadership review | §5, §13 | Dedicated Director source or interview | Relevant Management Team member | PENDING | Obtain dedicated Director source or conduct interview |
 | 12 | Exact tool names for HR and EOD systems | §9.4, §13 | Mayurika confirmation | Mayurika | PENDING | Confirm actual tool names with Mayurika; several listed as (assumed) in SRC-MAYU-001 |
 
 ---
@@ -59,7 +59,7 @@ Items 1–5 and the escalation path gap are all blocked by the same root cause: 
 6. Update CLAUDE.md §3, §5, §7.8 with confirmed Admin Manager claims
 7. Update `validation/claude-source-map.md` with new Admin Manager rows
 8. Remove resolved items from `validation/pending-admin-manager-gaps.md`
-9. Obtain Varmen sign-off before promoting to v0.2
+9. Obtain relevant Management Team/domain owner sign-off before promoting to v0.2
 
 ---
 

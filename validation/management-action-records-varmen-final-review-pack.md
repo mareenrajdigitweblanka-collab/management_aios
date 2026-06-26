@@ -2,20 +2,22 @@
 name: management-action-records-varmen-final-review-pack
 type: validation
 created: 2026-06-25
-status: READY FOR VARMEN FINAL REVIEW
+status: REVIEWER MODEL UPDATED 2026-06-26 — routing to Management Team; historical file name retained
 checked-by: Mareenraj (builder)
 source-boundary: SRC-VAR-001, SRC-MAYU-001, SRC-POLICY-001, SRC-ARUN-001, SRC-SUMAN-001-v2, SRC-MD-HR-001, SRC-MD-SUMAN-001, MGMT-ACTION-RECORDS-FOLDER
 ---
 
 # Management Action Records — Varmen Final Review Pack
 
+> **Historical file name retained.** This file was created when Varmen was the initial approver for the Management AIOS foundation. Reviewer model updated 2026-06-26: ongoing approvals now route to relevant Management Team/domain owner. See [validation/reviewer-model-correction-note.md](reviewer-model-correction-note.md). Historical content below is preserved as-is.
+
 ## Status
 
-**READY FOR VARMEN FINAL REVIEW**
+**REVIEWER MODEL UPDATED 2026-06-26 — Management Team rollout may proceed.**
 
-The `intelligence-inbox/management-action-records/` folder has been created, indexed, integrated into CLAUDE.md §16, registered in `evidence/source-register.md`, integrated into the `management-problem-analysis` skill and wrapper, and validated through a safe dry-run test. A team usage guide has been drafted for Mayurika, Arun, Rajiv, and Suman.
+The `intelligence-inbox/management-action-records/` folder has been created, indexed, integrated into CLAUDE.md §16, registered in `evidence/source-register.md`, integrated into the `management-problem-analysis` skill and wrapper, and validated through a safe dry-run test. A team usage guide has been prepared for Mayurika, Arun, Rajiv, and Suman.
 
-This pack summarises what has been built, what is approved if Varmen says YES, what is not approved, the remaining [VERIFY] count, and the decision requested.
+This pack summarises what has been built, what is active if the relevant Management Team/domain owner confirms rollout, what is not approved, the remaining [VERIFY] count, and the decision requested.
 
 ---
 
@@ -46,9 +48,9 @@ All records in this folder are treated as evidence of recorded action or discuss
 
 ---
 
-## What Is Approved If Varmen Says YES
+## What Is Approved If Relevant Management Team/Domain Owner Confirms
 
-If Varmen approves team rollout, the following and only the following becomes active:
+If the relevant Management Team/domain owner confirms team rollout, the following and only the following becomes active:
 
 - The Management Team (Mayurika, Arun, Rajiv, and Suman) may start saving records in their person subfolders using the two approved templates
 - Claude may check `intelligence-inbox/management-action-records/` as evidence of recorded action or discussion when asked about management problems, action history, MD discussion follow-up, problem–solution history, recurring management issues, or review pack preparation
@@ -113,7 +115,7 @@ Full register: `context/verify-register.md`
 | `skills/management-problem-analysis.md` action records update | COMPLETE — Management Action Records Reading Rule section, Workflow Step 3 action records check, output field added |
 | `.claude/skills/management-problem-analysis/SKILL.md` wrapper update | COMPLETE — required reading updated, person-folder routing, usage boundary, required output field added |
 | Dry-run wrapper test | COMPLETE — test result PASS |
-| `handover/management-action-records-team-usage-guide.md` | CREATED — awaiting Varmen approval before sharing with team |
+| `handover/management-action-records-team-usage-guide.md` | CREATED — ready for team distribution; reviewer model updated 2026-06-26 |
 | No real records created | CONFIRMED — all person subfolders are empty; no records invented |
 | No [VERIFY] items resolved | CONFIRMED — 12 items remain open, unchanged |
 | No policy changed | CONFIRMED — SRC-POLICY-001 untouched |
@@ -121,21 +123,23 @@ Full register: `context/verify-register.md`
 
 ---
 
-## Decision Requested From Varmen
+## Decision Routing — Reviewer Model Updated 2026-06-26
 
-Please choose one:
+Varmen is not required for normal ongoing Management AIOS approvals. This decision is now routed to the relevant Management Team/domain owner. See [validation/reviewer-model-correction-note.md](reviewer-model-correction-note.md).
+
+**Team rollout decision options:**
 
 **1. APPROVE team rollout for evidence-only record keeping**
 
-Varmen confirms that Mayurika, Arun, Rajiv, and Suman may begin saving action records using the approved templates, and that Claude may use these records as evidence of recorded action during management problem analysis and review support. The team usage guide may be shared with the team.
+Relevant Management Team/domain owner confirms that Mayurika, Arun, Rajiv, and Suman may begin saving action records using the approved templates, and that Claude may use these records as evidence of recorded action during management problem analysis and review support. The team usage guide may be shared with the team.
 
 **2. RETURN WITH CORRECTIONS**
 
-Varmen identifies specific corrections needed before team rollout. Please note the file and the specific issue so corrections can be made and resubmitted.
+Relevant domain owner identifies specific corrections needed before team rollout. Please note the file and the specific issue so corrections can be made and resubmitted.
 
 **3. HOLD until Admin Manager and/or Arun sources arrive**
 
-Varmen prefers to wait until SRC-ADMIN-001 is received and/or Arun confirmation items (8–10) are resolved before proceeding with team rollout.
+Management Team prefers to wait until SRC-ADMIN-001 is received and/or Arun confirmation items (8–10) are resolved before proceeding with team rollout.
 
 ---
 
