@@ -1,0 +1,140 @@
+No,Employee ID,Location,Full Name, Designation,Department / Team
+,2015-2017,,,,
+1,DWLS,Jaffna,Selvanayagam Kirubamalar,Director,Management
+,2018,,,,
+2,DWL003,WFH,Kobithsanjutha Kirubakaran,Customer Service Executive,CST
+3,DWL004,Jaffna,Ketharalingam Pratheepan,Automation team leader,Technical
+,2019,,,,
+4,DWL009,Jaffna,Mugunthiny Sakthivel,Digital Marketing Executive,Digital Marketing
+5,DWL010,Jaffna,"Kobinath Rebecca
+ ",E-Commerce Executive,Amazon
+6,DWL013,Jaffna,Thadshayini Inthuvarnan,E-Commerce Executive,Wayfair/Temu
+,2020,,,,
+7,DWL015,Jaffna,Pathmarajan Satheeswaran,Operations Manager,Management
+8,DWL016,Jaffna,Thojika Santhasivam,E-Commerce Executive,Portfolio team
+,2021,,,,
+,2022,,,,
+9,DWL031,Nelliyadi,Chantharathas Shanthini,E-Commerce Executive,Portfolio team
+10,DWL033,Jaffna,Kamsika Arulananthan,Digital Marketing Executive,Digital Marketing
+11,DWL035,Jaffna,Shanmugasundharam Kesavarmen,Graphic Designer,Image
+12,DWL036,Jaffna,Thuwaraga Sivakumar,E-Commerce Executive,Portfolio team
+13,DWL039,Jaffna,Mahima Sivakumaran,Digital Marketing Executive,Digital Marketing
+14,DWL045,Jaffna,Ladsika Sivakumar,E-Commerce Executive ,Postage
+15,DWL046,Jaffna,Sivavannan Dilaksi,Digital Marketing Executive,Digital Marketing
+16,DWL051,WFH,Selvarajah Thurgesan,Graphic Designer,Image
+17,DWL053,Nelliyadi,Rasalingam Nivarnan,Regional Operational Manager,Amazon
+,2023,,,,
+18,DWL055,Nelliyadi,Mothajini Kathirkamanathan ,E-Commerce Executive,Portfolio team
+19,DWL058,Jaffna,Utharsika Satkunarasa,E-Commerce Executive,Portfolio team
+20,DWL061,Jaffna,Shimee Srirajakumar,E-Commerce Executive,Portfolio team
+21,DWL064,Jaffna,Lingeswaran Piranavakanan,Digital Marketing Executive ,Digital Marketing
+22,DWL065,Jaffna,Jarsini Sivalinkarasa,E-Commerce Executive,EBay
+23,DWL067,Jaffna,Jubista Josephnathar,E-Commerce Executive,Portfolio team
+24,DWL069,Nelliyadi,Jensika Thuraisingam,E-Commerce Executive,Amazon
+25,DWL070,Chankanai,Sureshkaran Thineshkaran,E-Commerce Executive,EBay
+26,DWL075,Nelliyadi,Renuha Mahalingam,E-Commerce Executive,Portfolio team
+27,DWL078,Jaffna, A. S. Jefri Alrick Fernando,Digital Marketing executive,Digital Marketing
+28,DWL079,Jaffna, Ronald Bietrick Derick,E-Commerce Executive,Portfolio team
+29,DWL080,Nelliyadi, Preethi Prakash,E-Commerce Executive,Portfolio team
+30,DWL082,Jaffna,Srikantha Vithurshan,E-Commerce Executive ,Postage
+31,DWL083,Jaffna,Sonya Jeyakumar,Digital Marketing Executive,Digital Marketing
+32,DWL084,Jaffna,Sathiyaseelan Sajeesan,Software Engineer,Developing
+33,DWL089,Jaffna,Pathmanathan Matheesan,E-Commerce Executive ,Postage
+34,DWL094,Jaffna,Sumanggalai Kugaruban,Human Resource Assisant,Management 
+35,DWL096,Jaffna,Jesuthan PaulRoshan,E-Commerce Executive,Portfolio team
+36,DWL097,Jaffna,Theepana Sivapathasakthy,E-Commerce Executive,Portfolio team
+37,DWL100,Jaffna,Vickneshwaran Sajeepan,Digital Marketing Executive,Digital Marketing
+38,DWL104,WFH,Ranjan Kisanth,Graphic Designer,Graphic Designing
+39,DWL106,Jaffna,Ketheeswaran Danujan,Graphic Designer,Graphic Designing
+40,DWL108,Jaffna,Sukirtha Selvarathinam,Digital Marketing Executive,Digital Marketing
+41,DWL110,Nelliyadi,Thushyanthini Prabakaran,E-Commerce Executive,CPPC
+42,DWL113,Jaffna,Inthuvarnan Vaishnavan ,Graphic Designer,Graphic Designing
+43,DWL115,Nelliyadi,Manoranjani Maheswaran,E-Commerce Executive,Inventory Management
+44,DWL116,Jaffna, Skantharajah Rajiv,Admin Manager,Management 
+45,DWL119,Jaffna,Mathusha Tharmalingam,Customer Service Executive,Customer Service Team
+46,DWL123,Chankanai,Natkunarasa Arudchelvi,E-Commerce Executive,Portfolio team
+,2024,,,,
+47,DWL126,Jaffna,Tharsigha Thanabalasingam,E-Commerce Executive,Portfolio team
+48,DWL131,Nelliyadi,Sarujan Thuraisingam ,E-Commerce Executive,CPPC
+49,DWL135,Nelliyadi,Priya Kaliyukan,Software Engineer,Development team
+50,DWL137,Jaffna,Mithusha balachanthiran,E-Commerce Executive,Inventory Management
+51,DWL141,Jaffna,Nyasha Mayuran,Customer Service executive,Customer service team
+52,DWL145,Jaffna,Uthayasegaran Atisraj,E-Commerce Executive,Postage
+53,DWL146,Jaffna,Suresh Dilani,E-Commerce Executive,portfolio team
+54,DWL149,Jaffna,Kanesarajah Jasmini(rejoining),E-Commerce Executive,portfolio team
+55,DWL 151,Nelliyadi,Francis Xavier Rosanthan,Regional Admin manager,Amazon PPC
+56,DWL 152,Nelliyadi,Abinayaa Thavapalaratnam,E-Commerce Executive,Portfolio team
+57,DWL 157,Nelliyadi,Tharshana Murugamoorthy,E-Commerce Executive,Portfolio team
+58,DWL 159,Nelliyadi,Moganathas Arunraj,Implementation Officer,Management
+59,DWL162,Nelliyadi,Tharsika Thankarathinam,E-Commerce executive,Portfolio team
+60,DWL164,Nelliyadi,Piranavi Kanthasamy,E-Commerce Executive,Amazon
+61,DWL167,Jaffna,Janani Vinasithamby,Accounts Assistant ,Accounts
+62,DWL168,Nelliyadi,Ajintha Thavarasa,E-Commerce Executive,Amazon
+63,DWL171,Jaffna,Akshani Chanthirarasa,E-Commerce Executive,CPPC
+64,DWL175,Nelliyadi,Nithushana Nimalarajah,E-Commerce Executive,portfolio team
+65,DWL176,Jaffna,Judethadeus Valan Prasath ,E-Commerce Executive,portfolio team
+,2025,,,,
+,O/Emp.No.,,Full Name, Designation,Department / Team
+66,DWL186,Nelliyadi,"Sivatharsan Ilakkiya 
+",E-Commerce Executive,Portfolio team
+67,DWL190,Jaffna,Mayurika Jeyakumar,HRA,Management
+68,DWL196,Chankanai,"Gengah Shamaran Kanagasabapathy
+",E-Commerce Executive,EBAY
+69,DWL 209,Jaffna,Thanusha Kirupananthan,Accounts Assistant,Accounts department
+70,DWL 212,Jaffna,Thivajini Ravichandran,Digital Marketing Executive,Digital Marketing
+71,DWL 213,Chankanai,KOBIGA PULENTHIRAN,E-Commerce Executive,EBAY
+72,DWL 224,Jaffna,Gajan Sivananthan,Software Engineer,Development
+73,DWL 222,Chankanai,Mary Powsteena Jebanesan,E-Commerce Executive,EBAY
+74,DWL 230,Jaffna,VITHUSALI RAVINDRARAJAH,Automation Engineer,Technical
+75,DWL 231,Jaffna,Gishor Rajendra,Automation Engineer,Technical
+76,DWL 235,Jaffna,Chandramohan Satheskanth.,Automation Engineer,Technical
+77,DWL 238,Jaffna,Vijayakumar Kuberan,Digital Marketing Executive,Digital marketing
+78,DWL 240,Jaffna,Tamilchelvan Thavachelvam,Software Engineer,Development team
+79,DWL 241,Jaffna,Gnanatheepan Subramaniam,Sales manager,Portfolio team
+80,DWL 244,Jaffna,Inthujan Kerubathason,E-Commerce Executive,ledsone canada/USA
+81,DWL 246,Jaffna,ANTONY DILAIKSHAN MEVIN JEYAKUMAR,Automation Engineer,Technical team
+82,DWL 247,Nelliyadi,Selvakumar Meshika,E-Commerce Executive,CPPC
+83,DWL 250,Jaffna,Anandharajah Ainkaran,Technician,IT team
+84,DWL 252,Jaffna,Hetheesa Maheswararaj,Digital Marketing Executive,Digital Marketing
+85,DWL 254,Jaffna,"Adems
+inpanathan",E-Commerce Executive,merchandising
+86,DWL 256,Jaffna,Shinuja Srikanthan,E-Commerce Executive,Ebay
+87,DWL 258,Jaffna,Suman suntharalingam,Recruitment Officer,Management
+88,DWL 262,WFH,MOHAMED RIPSAN,Digital Marketing Executive,Digital Marketing
+,2026,,,,
+,O/Emp.No.,,Full Name, Designation,Department / Team
+89,DWL 265,Jaffna,"FARSHAD INAYATHULLA ,",E-Commerce Executive,Ledsone canada
+90,DWL268,Jaffna,Narthanan Sivarajah,Software Engineer,Development team
+91,DWL 269,Jaffna,Susmitha Vimalarajan(intern-unpaid),E-Commerce Executive,Merchadising
+92,DWL 270,Nelliyadi,Anantharajah Lithusha,Graphic Designer,Graphic Designing
+93,DWL 272,Chankanai,"Manoja Thevarajah,(intern-unpaid)",E-Commerce Executive,Ebay
+94,DWL 276,Jaffna,Gunabala Dilaksan,Automation Engineer,Technical Team
+95,DWL 277,Jaffna,Tharsika Kailayapathy,Automation Engineer,Technical Team
+96,DWL 286,Jaffna,Saranya Srikrishnarajah,E-Commerce Executive,Portfolio team
+97,DWL 289,Jaffna,Kanesalingam Thurshikan,Customer Service Executive,CST
+98,DWL 290,Jaffna,Lavan Lakshan,Automation Engineer,Automation Technical (IOT)
+99,DWL 291,Chankanai, Lishany Jegatheeswaran,E-Commerce Executive,Website team
+100,DWL 292,Jaffna, Jeyarajen Jeyatheekshy,E-Commerce Executive,Website team
+101,DWL 293,Jaffna,Kajenthiran Lajeekan,E-Commerce Executive,CPPC
+102,DWL 297,Jaffna,JACKSHANAN,E-Commerce Executive,SEO Specialist
+103,DWL 298,Jaffna,Ganeshwaran Sarujanan,,Intern - Automation Technical
+104,DWL 299,Jaffna,Mathiyaparanam Vishnusri,Automation Engineer-intern,Intern - Automation Technical
+105,DWL 300,Jaffna, Apirame Kalaichelvan,Automation Engineer-intern,Intern - Automation Technical
+106,DWL 302,Jaffna,Kathirkamanathan Kajanthan,Automation Engineer,Automation Technical-rejoiner
+107,DWL 303,Jaffna,Thasitha Thangarasa,E-Commerce Executive,Data Analysis
+108,DWL 304,Jaffna,Jatheeskumar Abiraj,Software Engineer,Software intern
+109,DWL 306,Jaffna,Mareenraj Robinsan selvarajah,Automation Engineer-intern,Automation Technical
+110,DWL 307,Jaffna, Thanistika Rajamohan,E-Commerce Executive,Data Analysis
+111,DWL 309,Jaffna,Jathisha Suthaharan,E-Commerce Executive,Intern - PH
+112,DWL 310,Jaffna,Ganeshanathan Paraparan,E-Commerce Executive,Accountant
+113,DWL 311,Jaffna, Sandrasekaran Thanujan,Automation Engineer,Automation Technical (IOT)
+114,DWL 312,Nelliyadi,Parameswaran Vaishnavi,E-Commerce Executive,Intern - PH
+115,DWL 314,Jaffna,Dilakshiga Jeyakumar,E-Commerce Executive,Intern - PH
+116,DWL 315,Jaffna,Sarbavi Baskaran,E-Commerce Executive,Intern - PH
+117,DWL 317,Jaffna,Ramsika Jesuthas,E-Commerce Executive,Intern - PH
+118,DWL 318,Jaffna,Akalika Arumainayagam,E-Commerce Executive,Intern - PH
+119,DWL 319,Jaffna, Shanthiravathanan Janu,E-Commerce Executive,Intern -merchandizing
+120,DWL 322,Jaffna,Akanila Ravichchandran,E-Commerce Executive,Intern - PH
+121,DWL 323,Jaffna,Sivajitha Sivarajah ,E-Commerce Executive,eBay
+122,DWL 324,Jaffna,Selvainthiran Sharmilan,E-Commerce Executive,Intern - eBay
+123,DWL 325,Nelliyadi,Karunairaja Jathukulan,E-Commerce Executive,Data Analysis(nelliyadi)
