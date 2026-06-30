@@ -65,7 +65,7 @@ Supporting evidence read during creation:
 
 **Prior commit shown in dashboard:** `2d98f6312cc859b0f247ad872a3ccc2a0c548ceb`
 
-**Commit hash for this web-view addition:** `[PLACEHOLDER — fill after commit]`
+**Commit hash for this web-view addition:** `dd3e10ca396d2b5d1fe2f6c06ae828340a49ab6a`
 
 *After committing these three files, update the commit hash placeholder above with the actual commit hash.*
 
