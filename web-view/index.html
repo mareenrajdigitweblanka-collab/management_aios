@@ -416,7 +416,7 @@
   </button>
   <button class="tab-btn" data-tab="suman-recruitment" role="tab" aria-selected="false">
     Suman Recruitment
-    <span class="tab-badge tab-badge-draft">DRAFT</span>
+    <span class="tab-badge tab-badge-active">ACTIVE</span>
   </button>
   <button class="tab-btn" data-tab="arun-implementation" role="tab" aria-selected="false">
     Arun Implementation
@@ -514,7 +514,7 @@
       <div class="status-item">
         <span class="status-label">Member Workbenches</span>
         <span class="status-value">3 / 4</span>
-        <span class="status-sub">Arun: ACTIVE · Mayurika: DRAFT · Suman: DRAFT · Rajiv: BLOCKED</span>
+        <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: DRAFT · Rajiv: BLOCKED</span>
       </div>
       <div class="status-divider"></div>
       <div class="status-item">
@@ -606,17 +606,17 @@
     <div class="result-box" data-searchable data-tags="pass amber result foundation draft active arun complete">
       <h3>Overall Result: PASS — AMBER noted</h3>
       <p>
-        The Management AIOS Foundation Draft v0.1 is structurally complete. Arun's workbench is now ACTIVE — Arun Reviewed 2026-06-30. Mayurika and Suman workbenches remain DRAFT pending their reviews. All source pointers are correct. No sensitive data is stored. No policy text is duplicated. Reviewer routing is correctly configured per CLAUDE.md §18.
+        The Management AIOS Foundation Draft v0.1 is structurally complete. Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is now ACTIVE — Suman Reviewed 2026-06-30. Mayurika workbench remains DRAFT pending her review. All source pointers are correct. No sensitive data is stored. No policy text is duplicated. Reviewer routing is correctly configured per CLAUDE.md §18.
         <br><br>
         <strong>Commit:</strong> <code>db06f7d</code> — Branch: <code>individual-aios</code>
         <br><br>
-        <strong>AMBER:</strong> Root propagation of Arun's confirmations (items 8, 9, 10) is pending as a separate controlled task — root CLAUDE.md, source-register.md, and verify-register.md have not yet been updated. Mayurika and Suman domain reviews remain pending. Rajiv / Admin Manager workbench remains blocked pending SRC-ADMIN-001.
+        <strong>AMBER:</strong> Root propagation of Arun's confirmations (items 8, 9, 10) is pending as a separate controlled task — root CLAUDE.md, source-register.md, and verify-register.md have not yet been updated. Mayurika domain review remains pending. Rajiv / Admin Manager workbench remains blocked pending SRC-ADMIN-001.
       </p>
     </div>
 
     <div class="next-step-box">
       <h3>What should I do next?</h3>
-      <p>Go to the <strong>Review Queue</strong> tab — Arun's review is complete. Next priorities are Mayurika and Suman workbench reviews (actions 2 and 3), and the separate root propagation task for Arun's item 8, 9, and 10 confirmations.</p>
+      <p>Go to the <strong>Review Queue</strong> tab — Arun and Suman reviews are complete. Next priorities are Mayurika's workbench review (action 2) and the separate root propagation task for Arun's item 8, 9, and 10 confirmations (action 4).</p>
     </div>
 
   </div><!-- /tab-root-aios -->
@@ -728,18 +728,18 @@
   ══════════════════════════════════ -->
   <div class="tab-panel" id="tab-suman-recruitment" role="tabpanel">
 
-    <div class="member-header" data-searchable data-tags="suman recruitment officer head hunter onboarder roi reviewer draft pending">
+    <div class="member-header" data-searchable data-tags="suman recruitment officer head hunter onboarder roi reviewer active reviewed 2026-06-30 8-point screening line manager">
       <div class="member-header-info">
         <h2>Suman</h2>
         <div class="role-label">Recruitment Officer — Head Hunter · Onboarder · 6-Month Progress ROI Reviewer</div>
         <div class="status-note">
-          <strong>Status:</strong> DRAFT — Pending Suman review.<br>
-          <span style="color:var(--muted); font-size:.8rem;">Suman's formal role has three parts: finding candidates (Head Hunter), bringing them onboard (Onboarder), and reviewing whether each new hire delivered value after six months (6-Month Progress ROI Reviewer). These designations are confirmed by MD discussion source SRC-MD-SUMAN-001. The workbench is DRAFT until Suman has reviewed and confirmed it is accurate.</span>
+          <strong>Status:</strong> ACTIVE — Suman Reviewed 2026-06-30.<br>
+          <span style="color:var(--muted); font-size:.8rem;">Suman reviewed and confirmed his workbench on 2026-06-30. He confirmed: recruitment domain pointers are accurate; 8-point screening criteria quick reference is correct; Line Manager in the 180-day handover = employee's Team Lead (consistent with SRC-SUMAN-CONF-002); weekly deliverables checklist (4 items) is operationally correct. Evidence: <code>evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md</code></span>
         </div>
       </div>
       <div class="member-header-badges">
-        <span class="badge badge-draft">DRAFT</span>
-        <span class="badge badge-pending">Pending Suman Review</span>
+        <span class="badge badge-pass">ACTIVE</span>
+        <span class="badge badge-source">Suman Reviewed 2026-06-30</span>
         <span class="badge badge-source">Formal designations confirmed — SRC-MD-SUMAN-001</span>
       </div>
     </div>
@@ -808,9 +808,24 @@
       </ul>
     </div>
 
+    <!-- Evidence file -->
+    <div class="section-title">Review Evidence</div>
+    <div class="file-list-box" data-searchable data-tags="suman review evidence confirmation 2026-06-30 active">
+      <h4>Evidence on file</h4>
+      <ul>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md</div>
+            <div class="fdesc">Suman review confirmation — confirmed domain pointers, 8-point screening criteria, Line Manager = employee's Team Lead, and weekly deliverables accuracy. Status: READY — Suman Reviewed 2026-06-30.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
     <div class="next-step-box">
       <h3>What should I do next?</h3>
-      <p>Route all three workbench files to Suman for review. Ask him to confirm the recruitment pipeline scope, the weekly deliverables checklist (4 items), and the 180-day handover process. No formal source document is needed — Suman's direct confirmation is sufficient to move from DRAFT to ACTIVE.</p>
+      <p>Suman's review is complete. No further action required on this workbench until the MD review or a new recruitment domain update is triggered. See the <strong>Review Queue</strong> tab — Mayurika's review (action 2) is the next open item.</p>
     </div>
 
   </div><!-- /tab-suman-recruitment -->
@@ -1043,15 +1058,19 @@
             <td class="mono">member-aios/mayurika-hr/WORKBENCH.md<br>member-aios/mayurika-hr/daily-weekly-checklist.md</td>
             <td><span class="badge badge-pending">PENDING</span></td>
           </tr>
-          <tr data-searchable data-tags="suman recruitment workbench weekly deliverables confirm review pending">
+          <tr data-searchable data-tags="suman recruitment workbench weekly deliverables confirm review completed active 2026-06-30 8-point screening line manager">
             <td><strong>3</strong></td>
             <td><strong>Suman</strong></td>
             <td>
-              Review recruitment workbench and confirm the domain scope is accurately described.<br>
-              Priority: confirm the weekly deliverables checklist (4 items) is operationally correct.
+              Suman reviewed and confirmed his workbench on 2026-06-30. Confirmed items:<br>
+              <em>Domain pointers</em> — recruitment pipeline scope accurately described ✓<br>
+              <em>8-point screening criteria</em> — quick reference list confirmed correct ✓<br>
+              <em>Line Manager</em> — employee's Team Lead (consistent with SRC-SUMAN-CONF-002) ✓<br>
+              <em>Weekly deliverables checklist</em> — 4 items confirmed operationally correct ✓<br>
+              Evidence: <code>evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md</code>
             </td>
             <td class="mono">member-aios/suman-recruitment/WORKBENCH.md<br>member-aios/suman-recruitment/weekly-deliverables-checklist.md</td>
-            <td><span class="badge badge-pending">PENDING</span></td>
+            <td><span class="badge badge-pass">COMPLETED 2026-06-30</span></td>
           </tr>
           <tr data-searchable data-tags="root propagation arun confirmations items 8 9 10 verify-register claude.md pending">
             <td><strong>4</strong></td>
@@ -1088,18 +1107,13 @@
         <div class="amber-item-body">The three Mayurika workbench files (WORKBENCH.md, quick-reference-sources.md, daily-weekly-checklist.md) were created based on source documents and remain DRAFT. Mayurika has not yet reviewed them. [VERIFY] item 12 (exact tool names for HR records system and EOD dashboard) requires her direct confirmation.</div>
         <div class="amber-item-action">Route all three files to Mayurika for review. Priority: confirm tool names to resolve [VERIFY] item 12.</div>
       </div>
-      <div class="amber-item" data-searchable data-tags="amber suman recruitment workbench review pending draft">
-        <div class="amber-item-title">AMBER 3 — Suman Review Pending</div>
-        <div class="amber-item-body">The three Suman workbench files (WORKBENCH.md, quick-reference-sources.md, weekly-deliverables-checklist.md) were created based on source documents and remain DRAFT. Suman has not yet reviewed them. The weekly deliverables checklist (4 items) is the highest priority item for his confirmation.</div>
-        <div class="amber-item-action">Route all three files to Suman for review. Confirm the weekly deliverables checklist (4 items) is operationally correct.</div>
-      </div>
       <div class="amber-item" data-searchable data-tags="amber bonus queryability soft conflict src-md-arun-001 src-arun-001">
-        <div class="amber-item-title">AMBER 4 — Bonus Queryability Soft Conflict</div>
+        <div class="amber-item-title">AMBER 3 — Bonus Queryability Soft Conflict</div>
         <div class="amber-item-body">SRC-MD-ARUN-001 introduces a bonus queryability scoring framework (LLM-queryable format as a condition for Sales Team bonus eligibility) that may extend the existing bonus conditions from SRC-ARUN-001. These two sources may not be fully aligned. See <code>validation/md-arun-discussion-conflict-check.md</code>.</div>
         <div class="amber-item-action">Varmen confirmation recommended before treating the queryability condition as mandatory. Do not treat as definitively integrated until confirmed.</div>
       </div>
       <div class="amber-item" data-searchable data-tags="amber skill file updates pending domain owner review management-gap-detection recruitment kpi">
-        <div class="amber-item-title">AMBER 5 — Skill File Update Candidates Not Yet Applied</div>
+        <div class="amber-item-title">AMBER 4 — Skill File Update Candidates Not Yet Applied</div>
         <div class="amber-item-body">MD discussion sources generated skill file update candidates identified in <code>validation/md-discussion-skill-impact-check.md</code>. These were not applied — they require domain owner review. Skills affected: management-gap-detection, recruitment-quality-check, kpi-axiom-review-support.</div>
         <div class="amber-item-action">Raise with each domain owner during their workbench review. Trainee prepares draft; domain owner reviews before applying.</div>
       </div>
@@ -1107,7 +1121,7 @@
 
     <div class="next-step-box">
       <h3>What should I do next?</h3>
-      <p>Action 1 (Arun) is complete. Next: (a) start root propagation task for items 8, 9, and 10 (action 4); and (b) route workbench files to Mayurika (action 2) and Suman (action 3) — these can run in parallel.</p>
+      <p>Actions 1 (Arun) and 3 (Suman) are complete. Next: (a) route workbench files to Mayurika (action 2); and (b) start root propagation task for items 8, 9, and 10 (action 4) — these can run in parallel.</p>
     </div>
 
   </div><!-- /tab-review-queue -->
@@ -1149,11 +1163,12 @@
             </div>
           </details>
           <details style="margin-top:4px;">
-            <summary style="font-size:.84rem; padding:8px 12px;">📁 suman-recruitment/ <span class="badge badge-draft" style="font-size:.62rem;">DRAFT</span></summary>
+            <summary style="font-size:.84rem; padding:8px 12px;">📁 suman-recruitment/ <span class="badge badge-pass" style="font-size:.62rem;">ACTIVE</span></summary>
             <div class="details-body">
-              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/WORKBENCH.md</span><span class="fdesc">— Suman domain workbench. Pending review.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/WORKBENCH.md</span><span class="fdesc">— Suman domain workbench. ACTIVE — Suman Reviewed 2026-06-30.</span><span class="badge badge-pass" style="font-size:.62rem;">ACTIVE</span></div>
               <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/quick-reference-sources.md</span><span class="fdesc">— Source quick reference for Suman's domain.</span></div>
-              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/weekly-deliverables-checklist.md</span><span class="fdesc">— 4 weekly deliverables checklist.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/weekly-deliverables-checklist.md</span><span class="fdesc">— 4 weekly deliverables checklist. ACTIVE — Suman Reviewed 2026-06-30.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md</span><span class="fdesc">— Suman review confirmation evidence. READY — 2026-06-30.</span><span class="badge badge-source" style="font-size:.62rem;">READY</span></div>
             </div>
           </details>
           <details style="margin-top:4px;">
@@ -1202,6 +1217,7 @@
           <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md</span><span class="fdesc">— SRC-SUMAN-CONF-002: Suman clarified Line Manager = employee's Team Lead. Supersedes SRC-SUMAN-CONF-001. Root propagation complete 2026-06-30.</span><span class="badge badge-pass" style="font-size:.62rem;">READY</span></div>
           <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/mayurika-active-staff-roster-confirmation-2026-06-26.md</span><span class="fdesc">— Mayurika confirmed active staff roster details.</span></div>
           <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</span><span class="fdesc">— Arun confirmed workbench accuracy and items 8, 9, 10. READY — 2026-06-30.</span><span class="badge badge-pass" style="font-size:.62rem;">READY</span></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md</span><span class="fdesc">— Suman confirmed workbench accuracy, 8-point screening criteria, Line Manager = Team Lead, and weekly deliverables. READY — 2026-06-30.</span><span class="badge badge-pass" style="font-size:.62rem;">READY</span></div>
         </div>
       </details>
     </div>

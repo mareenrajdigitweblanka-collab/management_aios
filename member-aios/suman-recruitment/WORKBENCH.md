@@ -4,7 +4,7 @@ type: workbench
 member: Suman
 role: Recruitment Officer (formal designations: Head Hunter, Onboarder, 6-Month Progress ROI Reviewer)
 created: 2026-06-30
-status: DRAFT — Pending Suman review
+status: ACTIVE — Suman Reviewed 2026-06-30
 source-boundary: SRC-SUMAN-001-v2, SRC-MD-SUMAN-001, SRC-MAYU-001, SRC-SUMAN-CONF-001, SRC-SUMAN-CONF-002, SRC-SUMAN-002
 root-truth: CLAUDE.md — canonical; this file is a navigation pointer only
 ---
@@ -103,6 +103,23 @@ Each item below points to the correct source and context file. Do not treat thes
 | 7-day training gap historical evidence | SRC-SUMAN-002 | context/recruitment-context.md — evidence note | evidence only; not solution authority |
 | Probation leave restriction | SRC-POLICY-001 §6.2 | context/recruitment-context.md §7 | §10.1 |
 | Onboarding policy | SRC-POLICY-001 §3.0, §17.0 | — | §10.2 |
+
+### 8-Point Screening Criteria — Quick Reference
+
+*(Source: SRC-SUMAN-001-v2 — full detail at CLAUDE.md §8.2 and context/recruitment-context.md §2)*
+
+All candidates are assessed against these 8 criteria before progressing to interview:
+
+1. O/L Mathematics
+2. English Proficiency
+3. IT Skills
+4. E-Commerce Knowledge
+5. AI Familiarity
+6. Salary Alignment
+7. Availability
+8. Commitment
+
+**Quick-reference rule:** This list is a navigation aid only. Do not treat it as a standalone policy definition. Source authority is SRC-SUMAN-001-v2. Full screening process detail is in context/recruitment-context.md §2.
 
 ---
 

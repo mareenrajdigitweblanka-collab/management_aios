@@ -119,7 +119,7 @@ A clean LLM reading `member-aios/` after this task should be able to answer:
 |---|---|---|
 | Rajiv workbench blocked | SRC-ADMIN-001 PENDING — no Admin Manager documents received | Admin Manager to supply documents |
 | Mayurika review pending | Three HR workbench files are DRAFT — [VERIFY] item 12 (tool names) can be resolved during review | Mayurika |
-| Suman review pending | Three recruitment workbench files are DRAFT | Suman |
+| Suman review completed | Three recruitment workbench files are ACTIVE — Suman Reviewed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` | COMPLETE |
 | Arun review completed — root register update pending | Arun reviewed 2026-06-30; workbench ACTIVE; items 8, 9, 10 confirmed at member workbench layer; root `context/verify-register.md` and CLAUDE.md update is a separate pending step | Mareenraj |
 | Bonus queryability soft conflict | SRC-MD-ARUN-001 §11.11 extends §7.9 bonus conditions — relationship not yet confirmed | Varmen confirmation recommended — see validation/md-arun-discussion-conflict-check.md |
 | Skill file updates pending | md-discussion-skill-impact-check.md contains skill update candidates — not applied; require domain owner review | Domain owners (Arun, Suman, Mayurika) |
@@ -132,7 +132,7 @@ A clean LLM reading `member-aios/` after this task should be able to answer:
 | Domain | Reviewer | Status |
 |---|---|---|
 | HR / leave / staff records / PDPA / EOD / SKILL compliance | Mayurika / Mayuri | PENDING |
-| Recruitment / onboarding / probation / 6-month ROI | Suman | PENDING |
+| Recruitment / onboarding / probation / 6-month ROI | Suman | ACTIVE — Suman Reviewed 2026-06-30 |
 | KPI / AXIOM / ROI / implementation / incident management | Arun | ACTIVE — Arun Reviewed 2026-06-30 |
 | Admin Manager / escalation / PRC | Rajiv — only after SRC-ADMIN-001 received | BLOCKED |
 
@@ -186,16 +186,19 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 **Arun review completed 2026-06-30.** Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. Arun workbench files are ACTIVE.
 
-Two domain reviews remain pending:
+**Suman review completed 2026-06-30.** Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md`. Suman confirmed domain pointers, 8-point screening criteria quick reference, Line Manager = employee's Team Lead, and weekly deliverables checklist accuracy. All three Suman workbench files are ACTIVE.
+
+One domain review remains pending:
 
 1. **Mayurika:** Review `member-aios/mayurika-hr/` — confirm HR domain pointer accuracy; confirm tool names to resolve [VERIFY] item 12
-2. **Suman:** Review `member-aios/suman-recruitment/` — confirm recruitment domain pointers and weekly deliverables checklist accuracy
 
-Once both confirm, update each WORKBENCH.md status from DRAFT to ACTIVE.
+Once Mayurika confirms, update WORKBENCH.md status from DRAFT to ACTIVE.
 
 **Separate step also pending:** Mareenraj to update root `context/verify-register.md`, CLAUDE.md, and `context/kpi-axiom-context.md` with Arun's confirmed items 8 (ACOS threshold), 9 (Operational Manager escalation authority), and 10 (Implementation Officer – Arunraj; Paraparan as External Auditor).
 
 **Suman Line Manager clarification — COMPLETE 2026-06-30:** Suman confirmed Line Manager = employee's Team Lead. Root propagation complete. Dashboard update (`web-view/index.html`) pending as next step.
+
+**8-point screening quick reference added — 2026-06-30:** Explicit 8-point screening criteria quick reference added to all three Suman member files: `member-aios/suman-recruitment/WORKBENCH.md` (§4 sub-section), `member-aios/suman-recruitment/quick-reference-sources.md` (under SRC-SUMAN-001-v2 entry), and `member-aios/suman-recruitment/weekly-deliverables-checklist.md` (before Source Quality Monitoring section). Source authority: SRC-SUMAN-001-v2 (READY). No policy text duplicated. No candidate personal data added. No [VERIFY] items resolved. Suman status remains DRAFT — Pending Suman review. No status promotion applied.
 
 ---
 

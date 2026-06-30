@@ -4,7 +4,7 @@ type: quick-reference
 member: Suman
 role: Recruitment Officer (Head Hunter, Onboarder, 6-Month Progress ROI Reviewer)
 created: 2026-06-30
-status: DRAFT — Pending Suman review
+status: ACTIVE — Suman Reviewed 2026-06-30
 root-truth: CLAUDE.md — canonical; this file is a pointer index only
 ---
 
@@ -28,6 +28,23 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | SRC-SUMAN-002 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/historical-action-data/suman-7-day-training-gap-action-data-2026-06-25.md` (source note); raw CSV: `historical-action-data/On Boarding - Gaps in 7 days trainning.csv` | Historical raw onboarding gap/action data — 7-day training gaps, informed-to path at the time | READY — evidence only; not solution authority |
 | SRC-POLICY-001 | `intelligence-inbox/raw-stakeholder-documents/company-policy/Draft DIGIT WEB LANKA - Company Policy Manual.md` | Probation leave restriction (§6.2); onboarding policy (§3.0, §17.0); AI tools mandatory compliance (§17.0); offboarding and termination (§10.0–10.8) | READY — Final Approved |
 | MGMT-ACTION-RECORDS-FOLDER | `intelligence-inbox/management-action-records/` | Ongoing management action records inbox — Suman's subfolder is `suman-recruitment/` | ACTIVE |
+
+### 8-Point Screening Criteria — Quick Reference (SRC-SUMAN-001-v2)
+
+*(Source: SRC-SUMAN-001-v2 — full process detail at context/recruitment-context.md §2 and CLAUDE.md §8.2)*
+
+All candidates are assessed against these 8 criteria before progressing to interview:
+
+1. O/L Mathematics
+2. English Proficiency
+3. IT Skills
+4. E-Commerce Knowledge
+5. AI Familiarity
+6. Salary Alignment
+7. Availability
+8. Commitment
+
+**Quick-reference rule:** Navigation aid only. Do not reproduce candidate-level screening records in this file. No personal candidate data, individual scores, or named assessments may be stored here. Full authority is SRC-SUMAN-001-v2.
 
 ---
 

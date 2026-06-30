@@ -141,9 +141,9 @@ Files to be created or confirmed:
 | member-aios/mayurika-hr/WORKBENCH.md | Mayurika / Mayuri | PENDING — DRAFT |
 | member-aios/mayurika-hr/quick-reference-sources.md | Mayurika / Mayuri | PENDING — DRAFT |
 | member-aios/mayurika-hr/daily-weekly-checklist.md | Mayurika / Mayuri | PENDING — DRAFT |
-| member-aios/suman-recruitment/WORKBENCH.md | Suman | PENDING — DRAFT |
-| member-aios/suman-recruitment/quick-reference-sources.md | Suman | PENDING — DRAFT |
-| member-aios/suman-recruitment/weekly-deliverables-checklist.md | Suman | PENDING — DRAFT |
+| member-aios/suman-recruitment/WORKBENCH.md | Suman | ACTIVE — Suman Reviewed 2026-06-30 |
+| member-aios/suman-recruitment/quick-reference-sources.md | Suman | ACTIVE — Suman Reviewed 2026-06-30 |
+| member-aios/suman-recruitment/weekly-deliverables-checklist.md | Suman | ACTIVE — Suman Reviewed 2026-06-30 |
 | member-aios/arun-implementation/WORKBENCH.md | Arun | ACTIVE — Arun Reviewed 2026-06-30 |
 | member-aios/arun-implementation/quick-reference-sources.md | Arun | ACTIVE — Arun Reviewed 2026-06-30 |
 | member-aios/arun-implementation/verify-items-arun.md | Arun — items 8, 9, 10 CONFIRMED at member workbench layer | ACTIVE — Arun Reviewed 2026-06-30 |
@@ -184,6 +184,7 @@ The following items are non-blocking but should be tracked:
 | Bonus queryability soft conflict | SRC-MD-ARUN-001 §11.11 potentially extends §7.9 bonus conditions — Varmen confirmation recommended. Noted in Arun workbench §8. | See validation/md-arun-discussion-conflict-check.md. Do not treat as mandatory additional condition until confirmed. |
 | Skill update recommendations for Suman and Arun | md-discussion-skill-impact-check.md contains skill update candidates from MD discussion sources. Not applied during this task — require domain owner review first. | Raise with Arun and Suman during workbench review. |
 | Suman Line Manager clarification — RESOLVED 2026-06-30 | Suman clarified (2026-06-30) that the Line Manager is the employee's Team Lead — a role-based attendee, not a fixed named person. SRC-SUMAN-CONF-002 registered as READY; SRC-SUMAN-CONF-001 superseded for this claim only (historical record preserved). Root propagation complete: CLAUDE.md §8.11, source-register.md, verify-register.md, context/recruitment-context.md, all Suman member workbench files, and Mayurika daily-weekly-checklist.md updated 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`. Dashboard update pending as next step. | No further action required for this item. |
+| 8-point screening quick reference added — 2026-06-30 | Explicit 8-point screening criteria quick reference added to all three Suman member files: WORKBENCH.md (§4 sub-section), quick-reference-sources.md (under SRC-SUMAN-001-v2), and weekly-deliverables-checklist.md (before Source Quality Monitoring). Source: SRC-SUMAN-001-v2 (READY). No policy text duplicated — pointer-only with source citation. No candidate personal data added. No [VERIFY] items touched. Suman status remains DRAFT — Pending Suman review. | Non-blocking addition. Suman to confirm criteria list accuracy during workbench review. |
 
 ---
 
@@ -202,11 +203,14 @@ The following items are non-blocking but should be tracked:
 
 **Arun review completed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.**
 
-Two domain reviews remain pending:
-- Mayurika reviews `member-aios/mayurika-hr/` — priority: confirm tool names ([VERIFY] item 12)
-- Suman reviews `member-aios/suman-recruitment/` — priority: confirm weekly deliverables checklist accuracy
+**Suman review completed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md`.**
 
-Once both confirm, update each WORKBENCH.md status to `ACTIVE — [Member] Reviewed [date]`. Separately, Mareenraj to update root `context/verify-register.md` and CLAUDE.md with Arun's confirmed items 8, 9, 10.
+Suman confirmed: recruitment domain pointers are accurate; 8-point screening criteria quick reference is correct; Line Manager = employee's Team Lead (consistent with SRC-SUMAN-CONF-002); weekly deliverables checklist (4 items) is operationally correct. All three Suman workbench files updated to ACTIVE — Suman Reviewed 2026-06-30.
+
+One domain review remains pending:
+- Mayurika reviews `member-aios/mayurika-hr/` — priority: confirm tool names ([VERIFY] item 12)
+
+Once Mayurika confirms, update each WORKBENCH.md status to `ACTIVE — Mayurika Reviewed [date]`. Separately, Mareenraj to update root `context/verify-register.md` and CLAUDE.md with Arun's confirmed items 8, 9, 10.
 
 ---
 

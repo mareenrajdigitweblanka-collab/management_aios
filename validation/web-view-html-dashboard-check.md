@@ -6,7 +6,7 @@ last-updated: 2026-06-30
 checked-by: Mareenraj (builder)
 scope: web-view/index.html — static HTML dashboard for Netlify deployment
 status: PASS — AMBER noted
-update: Tab-based beginner-friendly UI added 2026-06-30; Arun status updated to ACTIVE 2026-06-30; Suman Line Manager clarification propagated to dashboard 2026-06-30
+update: Tab-based beginner-friendly UI added 2026-06-30; Arun status updated to ACTIVE 2026-06-30; Suman Line Manager clarification propagated to dashboard 2026-06-30; Suman status updated to ACTIVE 2026-06-30
 ---
 
 # Web View HTML Dashboard — Validation Check
@@ -322,8 +322,43 @@ After commit: update the commit hash placeholder in `handover/2026-06-30__web-vi
 
 ---
 
+## 16. Suman ACTIVE Status Update Check (2026-06-30)
+
+**Change:** Suman workbench status updated from DRAFT to ACTIVE — Suman Reviewed 2026-06-30.
+
+**Evidence file:** `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` — Status: READY — Suman reviewed 2026-06-30. Confirmed domain pointers, 8-point screening criteria, Line Manager = employee's Team Lead, and weekly deliverables checklist (4 items).
+
+| Check | Result |
+|---|---|
+| Suman tab badge changed from DRAFT to ACTIVE | YES |
+| Suman member header status updated to ACTIVE — Suman Reviewed 2026-06-30 | YES |
+| Evidence file path shown in Suman tab | YES — `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` |
+| Evidence file entry added to File Map (suman-recruitment/ folder and evidence/ section) | YES |
+| 8-point screening criteria confirmed note in Suman header | YES |
+| Line Manager = employee's Team Lead confirmed note in Suman header | YES |
+| Weekly deliverables confirmed note in review queue action 3 | YES |
+| Review Queue action 3 marked COMPLETED 2026-06-30 | YES |
+| AMBER 3 (Suman Review Pending) removed; AMBER 4 and 5 renumbered to 3 and 4 | YES |
+| Status bar sub-text updated: Suman ACTIVE | YES |
+| Root AIOS result box updated to reflect Suman ACTIVE | YES |
+| Root AIOS next step box updated | YES |
+| Review Queue next step box updated | YES |
+| Suman file map folder badge changed from DRAFT to ACTIVE | YES |
+| Mayurika status remains DRAFT | YES — unchanged |
+| Arun status remains ACTIVE | YES — unchanged |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Global verify-register not updated | CORRECT — all 12 [VERIFY] items remain open in root register |
+| Root CLAUDE.md not updated | CORRECT — dashboard is navigation layer only |
+| source-register.md not updated | CORRECT — root propagation is a separate task |
+| Sensitive-data check | PASS — no personal data, salary, health, disciplinary, or grievance data added |
+| Duplicate-truth check | PASS — no policy text, KPI rules, or recruitment criteria reproduced |
+| PASS/AMBER preserved | YES — overall result remains PASS-AMBER; AMBER count reduced from 5 to 4 |
+| Netlify wording preserved | YES — Root AIOS tab deploy-box unchanged |
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. No sensitive data. No [VERIFY] items resolved in root register. No duplicate truth. No editing capability. All 12 [VERIFY] items preserved in root register. Root propagation of Arun's confirmations (items 8, 9, 10) is pending as a separate controlled task and is documented as such in the dashboard. Mayurika and Suman remain DRAFT. Rajiv remains BLOCKED. 5 AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. No sensitive data. No [VERIFY] items resolved in root register. No duplicate truth. No editing capability. All 12 [VERIFY] items preserved in root register. Root propagation of Arun's confirmations (items 8, 9, 10) is pending as a separate controlled task and is documented as such in the dashboard. Mayurika remains DRAFT. Rajiv remains BLOCKED. 4 AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.

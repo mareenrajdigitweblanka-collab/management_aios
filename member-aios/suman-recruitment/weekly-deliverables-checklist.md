@@ -4,7 +4,7 @@ type: checklist
 member: Suman
 role: Recruitment Officer (Head Hunter, Onboarder, 6-Month Progress ROI Reviewer)
 created: 2026-06-30
-status: DRAFT — Pending Suman review
+status: ACTIVE — Suman Reviewed 2026-06-30
 source-boundary: SRC-SUMAN-001-v2, SRC-MD-SUMAN-001, SRC-MAYU-001, SRC-POLICY-001
 root-truth: CLAUDE.md — canonical; this file is a checklist pointer only
 ---
@@ -223,6 +223,25 @@ For each new recruit at onboarding:
 - [ ] Maintain a current shovel-ready requirement document for the development team
 - [ ] This document must be pre-written and ready to hand to developers without delay
 - [ ] Gap detection: no shovel-ready requirement document on record is a management file gap
+
+---
+
+## Candidate Screening — 8-Point Criteria Quick Reference
+
+*(Source: SRC-SUMAN-001-v2 — full process detail at CLAUDE.md §8.2 and context/recruitment-context.md §2)*
+
+All candidates must be assessed against these 8 criteria before progressing to interview:
+
+1. O/L Mathematics
+2. English Proficiency
+3. IT Skills
+4. E-Commerce Knowledge
+5. AI Familiarity
+6. Salary Alignment
+7. Availability
+8. Commitment
+
+**Quick-reference rule:** This list is a checklist navigation aid only. Do not record individual candidate screening outcomes, named scores, or personal data in this file or any AIOS action record. Use process-level and aggregate references only. Full authority is SRC-SUMAN-001-v2.
 
 ---
 
