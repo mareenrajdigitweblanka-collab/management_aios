@@ -358,7 +358,7 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 | Edit/save feature | NOT PRESENT |
 | Netlify deployment wording | PRESERVED |
 
-**Commit hash for this root propagation complete dashboard update:** `[placeholder — update after commit]`
+**Commit hash for this root propagation complete dashboard update:** `63ec09e`
 
 ---
 
