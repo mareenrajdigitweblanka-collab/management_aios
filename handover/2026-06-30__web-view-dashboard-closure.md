@@ -399,9 +399,9 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 | PASS/AMBER overall result | PRESERVED |
 | Netlify deployment wording | PRESERVED |
 
-**Commit hash for Markdown Viewer addition:** `[COMMIT-HASH-MD-VIEWER]`
+**Commit hash for Markdown Viewer addition:** `2fe3c8a`
 
-*After committing `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, and this closure file, replace the placeholder above with the actual commit hash, then redeploy to Netlify.*
+*Files committed: `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, and this closure file. Redeploy to Netlify to publish the Markdown Viewer tab.*
 
 ---
 
