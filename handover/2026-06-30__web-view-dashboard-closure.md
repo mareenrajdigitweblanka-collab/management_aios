@@ -25,12 +25,13 @@ status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Raji
 
 | Asset | Path | Action |
 |---|---|---|
-| Main dashboard | `web-view/index.html` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE); UPDATED 2026-06-30 (Suman ACTIVE) |
-| Validation check | `validation/web-view-html-dashboard-check.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE check added); UPDATED 2026-06-30 (Suman ACTIVE check §16 added) |
-| This closure file | `handover/2026-06-30__web-view-dashboard-closure.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE update recorded); UPDATED 2026-06-30 (Suman ACTIVE update recorded) |
+| Main dashboard | `web-view/index.html` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE); UPDATED 2026-06-30 (Suman ACTIVE); UPDATED 2026-06-30 (Arun root propagation complete) |
+| Validation check | `validation/web-view-html-dashboard-check.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE check added); UPDATED 2026-06-30 (Suman ACTIVE check §16 added); UPDATED 2026-06-30 (root propagation complete check §17 added) |
+| This closure file | `handover/2026-06-30__web-view-dashboard-closure.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE update recorded); UPDATED 2026-06-30 (Suman ACTIVE update recorded); UPDATED 2026-06-30 (root propagation complete recorded) |
 
 **Total new files (original creation):** 3
 **Files modified in Arun ACTIVE update:** 3 (all three above)
+**Files modified in root propagation complete update:** 3 (all three above)
 
 ---
 
@@ -105,7 +106,7 @@ A clean LLM reading the `web-view/` folder should be able to answer:
 |---|---|---|
 | Commit hash placeholder | Update after committing the Arun ACTIVE dashboard update | Mareenraj |
 | Netlify redeployment | Dashboard is updated; redeploy to Netlify to publish Arun ACTIVE status | Mareenraj |
-| Root propagation pending | Root CLAUDE.md, source-register.md, and verify-register.md not yet updated with Arun's confirmations — separate controlled task | Mareenraj |
+| Root propagation complete 2026-06-30 | CLAUDE.md §7.3/§7.4/§7.8/§14, source-register.md (SRC-ARUN-CONF-001 READY), verify-register.md (items 8, 9, 10 resolved; 9 open items remain), and kpi-axiom-context.md all updated. Item 9 scope limit preserved. Dashboard updated to reflect propagation complete. | COMPLETE |
 | Mayurika review pending | Mayurika workbench remains DRAFT | Mayurika |
 | Suman review complete | Suman workbench ACTIVE — Suman Reviewed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` | COMPLETE |
 | SRC-ADMIN-001 pending | Rajiv workbench shown as BLOCKED — unchanged | Admin Manager |
@@ -320,7 +321,44 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 **Evidence file path:** `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md`
 
-**Commit hash for this Suman ACTIVE dashboard update:** `[PLACEHOLDER — update after commit]`
+**Commit hash for this Suman ACTIVE dashboard update:** `cc9be9d`
+
+---
+
+## Arun Root Propagation Complete Dashboard Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Arun member header badge | "Root Propagation Pending" (amber) → "Root Propagation Complete" (pass) |
+| verify-explain-action boxes (items 8, 9, 10) | All updated to "Root propagation complete 2026-06-30 — source: SRC-ARUN-CONF-001" |
+| Root propagation warning box (Arun tab) | Replaced with "COMPLETE 2026-06-30" next-step box listing all updated files |
+| Arun next-step box | Updated — no longer references separate propagation task; points to Mayurika review |
+| Review Queue action 4 | Changed from "PENDING — Separate Task" (amber) to "COMPLETED 2026-06-30" (pass) |
+| AMBER 1 | Updated from "Root Propagation of Arun Confirmations Pending" to "COMPLETE 2026-06-30" with SRC-ARUN-CONF-001 reference |
+| File map verify-items-arun.md badge | "Root Propagation Pending" (amber) → "Root Propagation Complete" (pass) |
+| Root AIOS tab AMBER text | Updated to reflect propagation complete |
+| Root AIOS next-step box | Updated — actions 1, 3, 4 complete; Mayurika review next |
+| Review Queue next-step box | Updated — actions 1, 3, 4 complete; Mayurika review next |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | CORRECTLY UPDATED — 9 items open; items 8, 9, 10 resolved by SRC-ARUN-CONF-001 |
+| Item 9 scope limit | PRESERVED — "full PRC membership scope remains [VERIFY]" note in all updated text |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+
+**Commit hash for this root propagation complete dashboard update:** `[placeholder — update after commit]`
 
 ---
 
@@ -328,4 +366,4 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 **PASS — AMBER noted**
 
-Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE and Suman ACTIVE statuses. Both workbenches shown as ACTIVE across all relevant sections (tab bar, member headers, status bar, file map, review queue, AMBER items). Evidence paths shown for both. Root propagation of items 8, 9, 10 explicitly noted as pending in dashboard. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. No [VERIFY] items resolved in root register. No duplicate truth. No editing capability. Four non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Ready to commit and redeploy to Netlify.
+Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman ACTIVE, and root propagation complete. All relevant sections updated (Arun tab badges, verify-explain-action boxes, warning box, review queue action 4, AMBER 1, file map, Root AIOS tab). Root propagation of items 8, 9, 10 correctly shown as complete with SRC-ARUN-CONF-001. Item 9 scope limit preserved throughout. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). No duplicate truth. No editing capability. Non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Ready to commit and redeploy to Netlify.

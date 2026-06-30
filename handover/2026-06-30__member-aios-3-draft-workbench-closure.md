@@ -120,7 +120,7 @@ A clean LLM reading `member-aios/` after this task should be able to answer:
 | Rajiv workbench blocked | SRC-ADMIN-001 PENDING — no Admin Manager documents received | Admin Manager to supply documents |
 | Mayurika review pending | Three HR workbench files are DRAFT — [VERIFY] item 12 (tool names) can be resolved during review | Mayurika |
 | Suman review completed | Three recruitment workbench files are ACTIVE — Suman Reviewed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` | COMPLETE |
-| Arun review completed — root register update pending | Arun reviewed 2026-06-30; workbench ACTIVE; items 8, 9, 10 confirmed at member workbench layer; root `context/verify-register.md` and CLAUDE.md update is a separate pending step | Mareenraj |
+| Arun review completed — root propagation complete 2026-06-30 | Arun reviewed 2026-06-30; workbench ACTIVE; items 8, 9, 10 confirmed at member workbench layer and root propagated 2026-06-30. Source registered as SRC-ARUN-CONF-001 (READY). Root CLAUDE.md §7.3/§7.4/§7.8/§14, context/verify-register.md (items 8, 9, 10 resolved), context/kpi-axiom-context.md, and evidence/source-register.md updated. Item 9 propagated with escalation authority scope limit preserved. Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md` | COMPLETE |
 | Bonus queryability soft conflict | SRC-MD-ARUN-001 §11.11 extends §7.9 bonus conditions — relationship not yet confirmed | Varmen confirmation recommended — see validation/md-arun-discussion-conflict-check.md |
 | Skill file updates pending | md-discussion-skill-impact-check.md contains skill update candidates — not applied; require domain owner review | Domain owners (Arun, Suman, Mayurika) |
 | Suman Line Manager clarification — COMPLETE 2026-06-30 | Suman clarified Line Manager = employee's Team Lead. SRC-SUMAN-CONF-002 registered as READY; SRC-SUMAN-CONF-001 superseded for this claim. Root propagation complete: CLAUDE.md §8.11, source-register.md, verify-register.md, context/recruitment-context.md, all Suman member workbench files, and Mayurika daily-weekly-checklist.md updated 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`. Dashboard update pending. | COMPLETE |
@@ -150,7 +150,7 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 |---|---|
 | 1–5 — Admin Manager authority | Rajiv workbench blocked; blocker rule in README.md |
 | 6–7 — MD-specific requirements and final scope | All three workbenches carry DRAFT status and note this limit |
-| 8–10 — Arun wording items (ACOS, Operational Manager, ROI Officer) | verify-items-arun.md; Arun WORKBENCH.md §10 |
+| 8–10 — Arun wording items (ACOS, Operational Manager, ROI Officer) | RESOLVED by SRC-ARUN-CONF-001 (2026-06-30) — root propagation complete; see CLAUDE.md §14 and context/verify-register.md |
 | 11 — Director authority beyond leadership review | Not touched in this task |
 | 12 — Exact HR and EOD tool names | Mayurika checklist uses descriptive language with [VERIFY item 12] note |
 
@@ -194,7 +194,7 @@ One domain review remains pending:
 
 Once Mayurika confirms, update WORKBENCH.md status from DRAFT to ACTIVE.
 
-**Separate step also pending:** Mareenraj to update root `context/verify-register.md`, CLAUDE.md, and `context/kpi-axiom-context.md` with Arun's confirmed items 8 (ACOS threshold), 9 (Operational Manager escalation authority), and 10 (Implementation Officer – Arunraj; Paraparan as External Auditor).
+**Root propagation complete 2026-06-30:** Root `context/verify-register.md`, CLAUDE.md, `context/kpi-axiom-context.md`, and `evidence/source-register.md` updated with Arun's confirmed items 8 (ACOS threshold: ACOS below 25% / ROAS 4), 9 (Operational Manager escalation authority: firm commitment with deadline to achieve required ROI — escalation only; full PRC scope remains [VERIFY] pending dedicated source), and 10 (Implementation Officer – Arunraj; Paraparan as External Auditor). Source registered as SRC-ARUN-CONF-001 (READY). All propagation scope limits preserved.
 
 **Suman Line Manager clarification — COMPLETE 2026-06-30:** Suman confirmed Line Manager = employee's Team Lead. Root propagation complete. Dashboard update (`web-view/index.html`) pending as next step.
 

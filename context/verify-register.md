@@ -2,9 +2,9 @@
 name: verify-register
 type: context
 created: 2026-06-23
-last-updated: 2026-06-26
+last-updated: 2026-06-30
 extracted-from: CLAUDE.md Foundation Draft v0.1 §13
-status: ACTIVE — 12 items outstanding; 2 items resolved
+status: ACTIVE — 9 items outstanding; 5 items resolved
 ---
 
 # [VERIFY] Register
@@ -28,11 +28,8 @@ All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 | 5 | Final escalation paths (routes through Admin Manager) | §3, §13 | SRC-ADMIN-001 | Rajiv (Admin Manager) | PENDING | As above |
 | 6 | MD-specific requirements beyond Varmen relay | §1, §5, §13 | Future MD interview / registered MD source | MD-level authority; relevant Management Team member documents | PENDING | Conduct MD review meeting; document and register findings |
 | 7 | Final implementation scope | §1, §13 | MD review meeting completed | Relevant Management Team/domain owner | PENDING | MD review meeting; update CLAUDE.md after sign-off |
-| 8 | Amazon ACOS threshold wording | §7.3, §13 | Arun confirmation | Arun | PENDING | Ask Arun to confirm exact wording and threshold direction; update SRC-ARUN-001 note if confirmed. **Checked against SRC-MD-ARUN-001 (2026-06-26): no evidence found — Amazon ACOS threshold not mentioned in source. Still VERIFY.** |
-| 9 | Operational Manager PRC membership and scope | §3, §7.8, §13 | Arun or dedicated Operational Manager source | Arun | PENDING | Confirm with Arun or obtain dedicated source. **Checked against SRC-MD-ARUN-001 (2026-06-26): no evidence found — PRC composition not discussed in source. Still VERIFY.** |
-| 10 | ROI Officer identity / title in review inputs | §7.4, §13 | Arun confirmation | Arun | PENDING — VERIFY Resolved Candidate | Confirm with Arun whether "ROI officer" is a distinct role or an existing title. **Candidate resolution:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly, with Selva auditing submissions. **Checked against SRC-MD-ARUN-001 (2026-06-26): partial supporting evidence — Mayurika confirmed coordinating developer ROI validation (25/06/2026), which aligns with the candidate resolution, but "ROI Officer" title not used in this source.** [VERIFY] tag must remain until Arun directly confirms — see `validation/md-arun-discussion-impact-map.md`. |
-| 11 | Director authority beyond leadership review | §5, §13 | Dedicated Director source or interview | Relevant Management Team member | PENDING | Obtain dedicated Director source or conduct interview |
-| 12 | Exact tool names for HR and EOD systems | §9.4, §13 | Mayurika confirmation | Mayurika | PENDING | Confirm actual tool names with Mayurika; several listed as (assumed) in SRC-MAYU-001 |
+| 8 | Director authority beyond leadership review | §5, §13 | Dedicated Director source or interview | Relevant Management Team member | PENDING | Obtain dedicated Director source or conduct interview |
+| 9 | Exact tool names for HR and EOD systems | §9.4, §13 | Mayurika confirmation | Mayurika | PENDING | Confirm actual tool names with Mayurika; several listed as (assumed) in SRC-MAYU-001 |
 
 ---
 
@@ -42,6 +39,9 @@ All unresolved [VERIFY] items extracted from CLAUDE.md Foundation Draft v0.1.
 |--------------|---------------|-------------|-----------------|-----------------|
 | 12 (original) | Leave policy detail | SRC-POLICY-001 §6.0–6.5 | 2026-06-23 | Full leave framework provided in Final Approved Company Policy Manual. Documented in CLAUDE.md §10.1 and context/hr-operations-context.md §9. |
 | 11 (original) | Line Manager identity in 180-day handover | SRC-SUMAN-CONF-002 (supersedes SRC-SUMAN-CONF-001) | 2026-06-30 | Suman clarified (2026-06-30) that the Line Manager role does exist in the 180-day handover and refers to the employee's Team Lead — a role-based attendee, not a fixed named person. Confirmed attendees: Mayurika, Arun, Suman, and the employee's Team Lead (Line Manager). SRC-SUMAN-CONF-002 supersedes SRC-SUMAN-CONF-001 for this claim only. SRC-SUMAN-CONF-001 (2026-06-25) had stated the reference was a typing mistake — that position is superseded; SRC-SUMAN-CONF-001 preserved as historical record. See `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`. |
+| 8 (original) | Amazon ACOS threshold wording | SRC-ARUN-CONF-001 | 2026-06-30 | Arun confirmed (2026-06-30): Amazon ACOS threshold is ACOS below 25% / ROAS 4. Source: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. Applied in CLAUDE.md §7.3 and context/kpi-axiom-context.md §3. |
+| 9 (original) | Operational Manager escalation authority | SRC-ARUN-CONF-001 | 2026-06-30 | Arun confirmed (2026-06-30): Operational Manager may delay or avoid suspension/termination under the escalation policy if the staff member provides a firm commitment with a defined deadline to achieve the required ROI. **Scope limit:** escalation authority only — full PRC membership scope and voting rights remain unconfirmed pending a dedicated Operational Manager source. Applied in CLAUDE.md §7.8 and context/kpi-axiom-context.md §8. |
+| 10 (original) | ROI Officer identity / title in review inputs | SRC-ARUN-CONF-001 | 2026-06-30 | Arun confirmed (2026-06-30): Replace "ROI Officer" with "Implementation Officer – Arunraj". Paraparan is the External Auditor. Supersedes VERIFY Resolved Candidate from SRC-MD-SUMAN-001. Applied in CLAUDE.md §7.4 and context/kpi-axiom-context.md §4. |
 
 ---
 
@@ -65,11 +65,9 @@ Items 1–5 and the escalation path gap are all blocked by the same root cause: 
 
 ## Arun Wording Items Summary
 
-Items 8, 9, and 10 require Arun confirmation. These can be resolved by email or direct question and do not require a full document source. Once confirmed:
+Items 8, 9, and 10 — **RESOLVED 2026-06-30 by SRC-ARUN-CONF-001.** Arun directly confirmed all three items on 2026-06-30. Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. Root propagation applied to CLAUDE.md, context/kpi-axiom-context.md, and evidence/source-register.md.
 
-- Update the inline [VERIFY — Arun] tags in CLAUDE.md
-- Update `validation/claude-source-map.md`
-- Note the confirmation method (email / verbal / document) in the source register
+**Item 9 scope limit preserved:** Operational Manager escalation authority confirmed only — full PRC membership scope and voting rights remain unconfirmed pending a dedicated Operational Manager source. This scope limit is preserved in all root files.
 
 ---
 
@@ -77,14 +75,14 @@ Items 8, 9, and 10 require Arun confirmation. These can be resolved by email or 
 
 | Status | Count |
 |--------|-------|
-| PENDING | 12 |
-| RESOLVED | 2 |
+| PENDING | 9 |
+| RESOLVED | 5 |
 | TOTAL | 14 |
 
-**Note:** Original item 12 (Leave policy detail) resolved by SRC-POLICY-001 on 2026-06-23. Original item 11 (Line Manager identity in 180-day handover) — resolution history: initially resolved 2026-06-25 by SRC-SUMAN-CONF-001 (Suman said "typing mistake; no Line Manager"); resolution superseded 2026-06-30 by SRC-SUMAN-CONF-002 (Suman clarified Line Manager = employee's Team Lead). Final resolution source: SRC-SUMAN-CONF-002. Remaining open items renumbered to 11–12 (former items 12–13) in the register table above.
+**Note:** Original item 12 (Leave policy detail) resolved by SRC-POLICY-001 on 2026-06-23. Original item 11 (Line Manager identity in 180-day handover) resolved 2026-06-30 by SRC-SUMAN-CONF-002. Original items 8 (Amazon ACOS threshold), 9 (Operational Manager escalation authority), and 10 (ROI Officer identity) resolved 2026-06-30 by SRC-ARUN-CONF-001. Remaining open items renumbered to 8–9 (former items 11–12) in the register table above.
 
 ---
 
 ## Pass/Fail Result
 
-**PASS — Updated 2026-06-30** — 12 [VERIFY] items remain open. Item 11 (Line Manager identity in 180-day handover) resolution updated 2026-06-30: SRC-SUMAN-CONF-002 supersedes SRC-SUMAN-CONF-001 for this claim — Line Manager = employee's Team Lead. Item 12 (leave policy) resolved by SRC-POLICY-001 on 2026-06-23. Both resolved items are in the Resolved Items table with history preserved. No items removed without registered source evidence. All 12 remaining open items are correctly tagged.
+**PASS — Updated 2026-06-30** — 9 [VERIFY] items remain open. Items 8, 9, and 10 (Arun wording items) resolved 2026-06-30 by SRC-ARUN-CONF-001 — Arun direct confirmation. Item 9 propagated with escalation authority scope limit only; full Operational Manager PRC scope remains unconfirmed. All five resolved items are in the Resolved Items table with history preserved. No items removed without registered source evidence. All 9 remaining open items are correctly tagged.

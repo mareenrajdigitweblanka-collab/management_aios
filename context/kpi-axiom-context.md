@@ -68,7 +68,7 @@ The following conditions trigger KPI risk detection:
 |---------|-----------|--------|
 | YOY Growth | Below 30% | CONFIRMED |
 | Website ROAS | Below 400% | CONFIRMED |
-| Amazon ACOS | Below 25% **[VERIFY — Arun: source wording is "Amazon ACOSBelow 25%" — threshold direction and formatting should be confirmed with Arun]** | [VERIFY] |
+| Amazon ACOS | ACOS below 25% / ROAS 4 *(SRC-ARUN-CONF-001 — Arun confirmed 2026-06-30)* | CONFIRMED |
 | eBay ACOS | Below 20% | CONFIRMED |
 | Incident Score | Below 15/25 | CONFIRMED |
 | Incident reports | 3 or more | CONFIRMED |
@@ -84,7 +84,7 @@ The following conditions trigger KPI risk detection:
 
 *(Source: SRC-ARUN-001 — Section 4)*
 
-Revenue, Profit, YOY Growth, ROAS, ACOS, Individual Staff Net Sales, Task Completion, Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback, ROI Officer Feedback **[VERIFY — Arun: source lists "ROI officer feed back" — confirm whether this is a distinct role or a title for an existing role. VERIFY Resolved Candidate (SRC-MD-SUMAN-001, 07/05/2026): ROI Officers are identified as Arun and Mayurika jointly, with Selva auditing submissions. This candidate resolution does NOT remove the [VERIFY] tag — Arun must directly confirm before this item is formally resolved.]**
+Revenue, Profit, YOY Growth, ROAS, ACOS, Individual Staff Net Sales, Task Completion, Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback (External Auditor: Paraparan), Implementation Officer – Arunraj Feedback *(SRC-ARUN-CONF-001 — Arun confirmed 2026-06-30; replaces "ROI Officer" wording from SRC-ARUN-001)*
 
 ---
 
@@ -142,7 +142,7 @@ Collect data weekly → calculate KPI scores → assign bands → identify risks
 | Implementation Officer (Arun) | CONFIRMED |
 | Admin Manager | [VERIFY — awaiting SRC-ADMIN-001: Admin Manager's PRC role and authority within PRC not yet independently confirmed] |
 | Team Leader | CONFIRMED |
-| Operational Manager | [VERIFY — Arun: confirm Operational Manager PRC membership and scope of participation] |
+| Operational Manager | Escalation authority confirmed (SRC-ARUN-CONF-001, 2026-06-30): may delay or avoid suspension/termination under the escalation policy if the staff member provides a firm commitment with a defined deadline to achieve the required ROI. Full PRC membership scope and voting rights remain [VERIFY — awaiting dedicated Operational Manager source]. |
 
 **PRC Responsibilities:**
 
@@ -229,10 +229,12 @@ Bonuses for the Sales Team will be awarded only if work and documentation are ma
 
 | # | [VERIFY] Item | Resolution Needed From | Resolution Condition |
 |---|---------------|------------------------|---------------------|
-| 1 | Amazon ACOS threshold wording | Arun | Confirm exact threshold direction and formatting |
-| 2 | Operational Manager PRC membership scope | Arun or Operational Manager | Confirm membership and scope of participation |
-| 3 | ROI Officer feedback — role identity | Arun | Confirm whether distinct role or existing title. **VERIFY Resolved Candidate:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly. [VERIFY] tag remains until Arun directly confirms. |
-| 4 | Admin Manager PRC role and authority | Admin Manager (SRC-ADMIN-001) | Receive and review Admin Manager documents |
+| 1 | Admin Manager PRC role and authority | Admin Manager (SRC-ADMIN-001) | Receive and review Admin Manager documents |
+
+**Resolved by SRC-ARUN-CONF-001 (2026-06-30):**
+- Item 1 (original 8): Amazon ACOS threshold — ACOS below 25% / ROAS 4. Confirmed by Arun.
+- Item 2 (original 9): Operational Manager escalation authority — confirmed for delay/avoid suspension/termination on firm commitment with deadline. Scope limit preserved: full PRC membership scope and voting rights remain [VERIFY] pending dedicated Operational Manager source.
+- Item 3 (original 10): ROI Officer identity — confirmed as Implementation Officer – Arunraj; External Auditor = Paraparan.
 
 ---
 
@@ -240,7 +242,8 @@ Bonuses for the Sales Team will be awarded only if work and documentation are ma
 
 | Claim Area | Source ID | Status |
 |------------|-----------|--------|
-| All KPI, AXIOM, escalation, PRC, bonus, and dashboard claims | SRC-ARUN-001 | CONFIRMED (3 inline [VERIFY] items remain) |
+| All KPI, AXIOM, escalation, PRC, bonus, and dashboard claims | SRC-ARUN-001 | CONFIRMED |
+| Amazon ACOS threshold, Operational Manager escalation authority, ROI Officer / auditor identity | SRC-ARUN-CONF-001 | CONFIRMED — Arun reviewed 2026-06-30 |
 | KPI meeting governance (§11) | SRC-MD-ARUN-001 | CONFIRMED — Varmen reviewed by project default |
 | Bonus queryability extension (§12) | SRC-MD-ARUN-001 | CONFIRMED — Varmen reviewed by project default; Varmen confirmation of integration with §9 recommended |
 
@@ -248,4 +251,4 @@ Bonuses for the Sales Team will be awarded only if work and documentation are ma
 
 ## Pass/Fail Result
 
-**CONDITIONAL PASS** — All claims trace to SRC-ARUN-001. All three Arun [VERIFY] items and the Admin Manager PRC [VERIFY] remain correctly tagged. VERIFY Resolved Candidate noted for item 3 (ROI Officer identity) based on SRC-MD-SUMAN-001 — [VERIFY] tag preserved pending Arun direct confirmation. No new performance rules or thresholds added.
+**PASS** — All claims trace to registered sources. Arun [VERIFY] items 8, 9, and 10 (original numbering) resolved 2026-06-30 by SRC-ARUN-CONF-001. Admin Manager PRC [VERIFY] remains correctly tagged (SRC-ADMIN-001 PENDING). Operational Manager escalation authority propagated with scope limit preserved. No new performance rules or thresholds added. No sensitive personal data added.
