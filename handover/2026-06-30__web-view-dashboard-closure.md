@@ -5,10 +5,10 @@ created: 2026-06-30
 last-updated: 2026-06-30
 created-by: Mareenraj (builder)
 requirement-id: web-view-html-dashboard-creation
-status: PASS — AMBER noted; tab-based beginner-friendly dashboard updated, ready for Netlify deployment
+status: PASS — AMBER noted; tab-based dashboard with Arun ACTIVE status update, ready for Netlify deployment
 ---
 
-# Handover Closure — Web View HTML Dashboard Creation and Tab UI Update
+# Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, and Arun ACTIVE Update
 
 **Closure date:** 2026-06-30
 **Pass/Fail Rule:** PASS if the dashboard is a self-contained static HTML file showing AIOS status and folder structure without sensitive data, duplicate truth, or editing capability, and is ready for Netlify deployment. FAIL if any of those conditions are violated.
@@ -25,12 +25,12 @@ status: PASS — AMBER noted; tab-based beginner-friendly dashboard updated, rea
 
 | Asset | Path | Action |
 |---|---|---|
-| Main dashboard | `web-view/index.html` | CREATED 2026-06-30 |
-| Validation check | `validation/web-view-html-dashboard-check.md` | CREATED 2026-06-30 |
-| This closure file | `handover/2026-06-30__web-view-dashboard-closure.md` | CREATED 2026-06-30 |
+| Main dashboard | `web-view/index.html` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE) |
+| Validation check | `validation/web-view-html-dashboard-check.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE check added) |
+| This closure file | `handover/2026-06-30__web-view-dashboard-closure.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE update recorded) |
 
-**Total new files:** 3
-**Files modified:** 0
+**Total new files (original creation):** 3
+**Files modified in Arun ACTIVE update:** 3 (all three above)
 
 ---
 
@@ -59,16 +59,23 @@ Supporting evidence read during creation:
 
 **Branch:** `individual-aios`
 
-**Files created in this task:**
+**Files created in original task:**
 - `web-view/index.html` (new)
 - `validation/web-view-html-dashboard-check.md` (new)
 - `handover/2026-06-30__web-view-dashboard-closure.md` (this file — new)
 
-**Prior commit shown in dashboard:** `2d98f6312cc859b0f247ad872a3ccc2a0c548ceb`
+**Files modified in Arun ACTIVE update:**
+- `web-view/index.html` (updated — Arun status DRAFT → ACTIVE)
+- `validation/web-view-html-dashboard-check.md` (updated — Arun ACTIVE check added)
+- `handover/2026-06-30__web-view-dashboard-closure.md` (this file — Arun ACTIVE update recorded)
 
-**Commit hash for this web-view addition:** `dd3e10ca396d2b5d1fe2f6c06ae828340a49ab6a`
+**Evidence file path:** `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`
 
-*After committing these three files, update the commit hash placeholder above with the actual commit hash.*
+**Prior commit shown in dashboard:** `db06f7d`
+
+**Commit hash for this Arun ACTIVE dashboard update:** `[PLACEHOLDER — update after commit]`
+
+*After committing these three files, update the commit hash placeholder above with the actual commit hash, then redeploy to Netlify.*
 
 ---
 
@@ -96,26 +103,28 @@ A clean LLM reading the `web-view/` folder should be able to answer:
 
 | Blocker | Detail | Owner |
 |---|---|---|
-| Commit hash placeholder | This closure file uses a placeholder for the web-view addition commit hash — fill after actual commit | Mareenraj |
-| Netlify deployment not yet confirmed | Dashboard is ready; deployment depends on Netlify project setup | Mareenraj |
-| Domain reviews pending | Member workbench DRAFT status remains until Mayurika, Suman, and Arun review — this is unchanged by the dashboard creation | Domain owners |
+| Commit hash placeholder | Update after committing the Arun ACTIVE dashboard update | Mareenraj |
+| Netlify redeployment | Dashboard is updated; redeploy to Netlify to publish Arun ACTIVE status | Mareenraj |
+| Root propagation pending | Root CLAUDE.md, source-register.md, and verify-register.md not yet updated with Arun's confirmations — separate controlled task | Mareenraj |
+| Mayurika review pending | Mayurika workbench remains DRAFT | Mayurika |
+| Suman review pending | Suman workbench remains DRAFT | Suman |
 | SRC-ADMIN-001 pending | Rajiv workbench shown as BLOCKED — unchanged | Admin Manager |
 
 ---
 
 ## [VERIFY] Items Preserved
 
-All 12 open [VERIFY] items from `context/verify-register.md` are preserved:
+All 12 open [VERIFY] items from `context/verify-register.md` remain open in the root register:
 
 | Items | Shown In Dashboard As |
 |---|---|
 | 1–5 — Admin Manager authority | BLOCKED badge on Rajiv card; [VERIFY] table items 1–5 |
 | 6–7 — MD-specific requirements and final scope | [VERIFY] table items 6–7 |
-| 8–10 — Arun wording items (ACOS, Op Manager, ROI Officer) | [VERIFY] table items 8–10; AMBER 1; Review Queue action 1 |
+| 8–10 — Arun wording items (ACOS, Op Manager, ROI Officer) | Shown as CONFIRMED at member workbench layer in Arun tab; root propagation pending note displayed; AMBER 1; Review Queue action 4 |
 | 11 — Director authority beyond leadership review | [VERIFY] table item 11 |
 | 12 — Exact HR and EOD tool names | [VERIFY] table item 12; Mayurika card |
 
-**No [VERIFY] items resolved by this task.**
+**No [VERIFY] items resolved in root register by this task.** Items 8, 9, and 10 are confirmed at the member workbench layer only (Arun 2026-06-30). Root propagation is a separate pending task.
 
 ---
 
@@ -170,9 +179,49 @@ All 12 open [VERIFY] items from `context/verify-register.md` are preserved:
 ## Next Step
 
 1. **Commit** the updated files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`) to branch `individual-aios`
-2. **Update** the commit hash placeholder below with the actual commit hash from this update
+2. **Update** the commit hash placeholder in this file with the actual commit hash from this update
 3. **Deploy / redeploy** to Netlify: publish directory is `web-view/`, no build command — no build step required
-4. **After domain reviews:** Update `member-aios/*/WORKBENCH.md` status from DRAFT to ACTIVE and regenerate `web-view/index.html` to reflect the updated statuses
+4. **Root propagation (separate task):** Update root CLAUDE.md (§7.3, §7.4, §7.7/§7.8), context/verify-register.md (items 8, 9, 10), and evidence/source-register.md to formally register Arun's 2026-06-30 confirmation
+5. **After Mayurika and Suman reviews:** Update their `member-aios/*/WORKBENCH.md` statuses from DRAFT to ACTIVE and regenerate `web-view/index.html`
+
+---
+
+## Arun ACTIVE Dashboard Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Arun tab badge | Changed from DRAFT to ACTIVE (new CSS class `tab-badge-active` added) |
+| Arun member header | Status changed to ACTIVE — Arun Reviewed 2026-06-30; evidence path shown; root propagation pending note added |
+| Arun member header badges | DRAFT and "Pending Arun Review" badges replaced with ACTIVE, "Arun Reviewed 2026-06-30", and "Root Propagation Pending" badges |
+| Arun VERIFY explain boxes | Items 8, 9, 10 changed from "pending confirmation" to "CONFIRMED at member workbench layer" with root propagation pending note |
+| Arun file list | Evidence file `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md` added |
+| Arun tab warning box | Root propagation warning box added — explicitly states CLAUDE.md, source-register.md, and verify-register.md not updated |
+| Arun next step box | Updated to reflect review complete; next actions are root propagation and Mayurika/Suman reviews |
+| Status bar | Member workbenches sub-text updated: "Arun: ACTIVE · Mayurika: DRAFT · Suman: DRAFT · Rajiv: BLOCKED" |
+| Root AIOS result box | Updated to reflect Arun ACTIVE; root propagation pending noted in AMBER section |
+| Root AIOS next step box | Updated — points to root propagation and remaining domain reviews |
+| Review Queue | Action 1 (Arun) marked COMPLETED 2026-06-30 with confirmation summary; action 4 added (root propagation); action 5 added (Mayurika/Suman post-review) |
+| AMBER items | AMBER 1 replaced (root propagation pending); AMBER 2 added (Mayurika review pending); AMBER 3 added (Suman review pending); previous AMBER 2–4 renumbered as 4–5 |
+| File map | arun-implementation/ folder badge changed from DRAFT to ACTIVE; evidence confirmation file added |
+| Evidence file map | `arun-member-aios-review-2026-06-30.md` added to stakeholder-confirmations section |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no personal data, salary, health, disciplinary, grievance, or PDPA data |
+| [VERIFY] root register | NOT CHANGED — all 12 items remain open in root register |
+| DRAFT → ACTIVE promotion | DONE for Arun only — based on confirmed domain owner sign-off (arun-member-aios-review-2026-06-30.md) |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED — no policy text, KPI rules, or AXIOM bands reproduced |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
 
 ---
 
@@ -209,4 +258,4 @@ All 12 open [VERIFY] items from `context/verify-register.md` are preserved:
 
 **PASS — AMBER noted**
 
-Static HTML dashboard at `web-view/index.html` updated with tab-based beginner-friendly UI. Seven tabs added. Self-contained, no dependencies, Netlify-deployable without a build step. All required content present across tabs. No sensitive data. No [VERIFY] items resolved. No duplicate truth. No editing capability. All member workbench statuses shown correctly (3 DRAFT, 1 BLOCKED). Four non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved.
+Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE status. Arun workbench shown as ACTIVE — Arun Reviewed 2026-06-30 across all relevant sections (tab bar, Arun tab, status bar, file map, review queue, AMBER items). Evidence path shown. Root propagation of items 8, 9, 10 explicitly noted as pending in dashboard. Mayurika and Suman remain DRAFT. Rajiv remains BLOCKED. No sensitive data. No [VERIFY] items resolved in root register. No duplicate truth. No editing capability. Five non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Ready to commit and redeploy to Netlify.

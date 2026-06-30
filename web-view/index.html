@@ -101,6 +101,7 @@
     .tab-badge-draft   { background: var(--draft-bg);   color: var(--draft); }
     .tab-badge-blocked { background: var(--blocked-bg); color: var(--blocked); }
     .tab-badge-amber   { background: var(--amber-bg);   color: var(--amber); }
+    .tab-badge-active  { background: var(--pass-bg);    color: var(--pass); }
 
     /* ── Search strip ── */
     .search-strip {
@@ -419,7 +420,7 @@
   </button>
   <button class="tab-btn" data-tab="arun-implementation" role="tab" aria-selected="false">
     Arun Implementation
-    <span class="tab-badge tab-badge-draft">DRAFT</span>
+    <span class="tab-badge tab-badge-active">ACTIVE</span>
   </button>
   <button class="tab-btn" data-tab="rajiv-blocked" role="tab" aria-selected="false">
     Rajiv / Admin
@@ -513,7 +514,7 @@
       <div class="status-item">
         <span class="status-label">Member Workbenches</span>
         <span class="status-value">3 / 4</span>
-        <span class="status-sub">Created as DRAFT · 1 BLOCKED</span>
+        <span class="status-sub">Arun: ACTIVE · Mayurika: DRAFT · Suman: DRAFT · Rajiv: BLOCKED</span>
       </div>
       <div class="status-divider"></div>
       <div class="status-item">
@@ -602,20 +603,20 @@
 
     <!-- Pass/fail -->
     <div class="section-title">Overall Result</div>
-    <div class="result-box" data-searchable data-tags="pass amber result foundation draft complete">
+    <div class="result-box" data-searchable data-tags="pass amber result foundation draft active arun complete">
       <h3>Overall Result: PASS — AMBER noted</h3>
       <p>
-        The Management AIOS Foundation Draft v0.1 is structurally complete with 3 of 4 member workbenches created as DRAFT. All source pointers are correct. No [VERIFY] items are resolved. No sensitive data is stored. No policy text is duplicated. Reviewer routing is correctly configured per CLAUDE.md §18.
+        The Management AIOS Foundation Draft v0.1 is structurally complete. Arun's workbench is now ACTIVE — Arun Reviewed 2026-06-30. Mayurika and Suman workbenches remain DRAFT pending their reviews. All source pointers are correct. No sensitive data is stored. No policy text is duplicated. Reviewer routing is correctly configured per CLAUDE.md §18.
         <br><br>
         <strong>Commit:</strong> <code>db06f7d</code> — Branch: <code>individual-aios</code>
         <br><br>
-        <strong>AMBER:</strong> Domain approvals from Mayurika, Suman, and Arun are pending. Rajiv / Admin Manager workbench remains blocked pending SRC-ADMIN-001.
+        <strong>AMBER:</strong> Root propagation of Arun's confirmations (items 8, 9, 10) is pending as a separate controlled task — root CLAUDE.md, source-register.md, and verify-register.md have not yet been updated. Mayurika and Suman domain reviews remain pending. Rajiv / Admin Manager workbench remains blocked pending SRC-ADMIN-001.
       </p>
     </div>
 
     <div class="next-step-box">
       <h3>What should I do next?</h3>
-      <p>Go to the <strong>Review Queue</strong> tab to see the ordered list of actions — Arun's confirmation of three VERIFY items is the highest priority. Then check the <strong>Arun Implementation</strong> tab for plain-English explanations of what he needs to confirm.</p>
+      <p>Go to the <strong>Review Queue</strong> tab — Arun's review is complete. Next priorities are Mayurika and Suman workbench reviews (actions 2 and 3), and the separate root propagation task for Arun's item 8, 9, and 10 confirmations.</p>
     </div>
 
   </div><!-- /tab-root-aios -->
@@ -820,32 +821,35 @@
   ══════════════════════════════════ -->
   <div class="tab-panel" id="tab-arun-implementation" role="tabpanel">
 
-    <div class="member-header" data-searchable data-tags="arun implementation officer kpi axiom roi draft pending verify 8 9 10">
+    <div class="member-header" data-searchable data-tags="arun implementation officer kpi axiom roi active reviewed 2026-06-30 verify 8 9 10 confirmed">
       <div class="member-header-info">
         <h2>Arun</h2>
         <div class="role-label">Implementation Officer — KPI definitions, AXIOM band placement, incident escalation, PRC membership, KPI meeting governance</div>
         <div class="status-note">
-          <strong>Status:</strong> DRAFT — Pending Arun review.<br>
-          <span style="color:var(--muted); font-size:.8rem;">Arun holds sole authority over AXIOM band placement. His workbench covers KPI definitions, weekly AXIOM processing, incident escalation management, PRC membership, and the KPI meeting format. The workbench is DRAFT and has three open [VERIFY] items (8, 9, 10) that only Arun can resolve — these are the highest priority actions in the entire review queue.</span>
+          <strong>Status:</strong> ACTIVE — Arun Reviewed 2026-06-30.<br>
+          <span style="color:var(--muted); font-size:.8rem;">Arun reviewed and confirmed his workbench on 2026-06-30. Items 8, 9, and 10 were confirmed at the member workbench layer. Evidence: <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code></span>
+          <br><br>
+          <span style="color:var(--amber); font-size:.82rem; font-weight:600;">Root propagation pending:</span>
+          <span style="color:var(--muted); font-size:.8rem;"> Root CLAUDE.md, source-register.md, and verify-register.md have not yet been updated. Root propagation of Arun's confirmations is a separate controlled task and has not been completed in this step.</span>
         </div>
       </div>
       <div class="member-header-badges">
-        <span class="badge badge-draft">DRAFT</span>
-        <span class="badge badge-pending">Pending Arun Review</span>
-        <span class="badge badge-verify">[VERIFY] Items 8, 9, 10 — Highest Priority</span>
+        <span class="badge badge-pass">ACTIVE</span>
+        <span class="badge badge-source">Arun Reviewed 2026-06-30</span>
+        <span class="badge badge-amber">Root Propagation Pending</span>
       </div>
     </div>
 
     <!-- Files -->
     <div class="section-title">Workbench Files</div>
-    <div class="file-list-box" data-searchable data-tags="arun implementation workbench files quick reference verify items">
-      <h4>Files to review</h4>
+    <div class="file-list-box" data-searchable data-tags="arun implementation workbench files quick reference verify items reviewed active">
+      <h4>Reviewed files — ACTIVE</h4>
       <ul>
         <li>
           <span>📄</span>
           <div>
             <div class="fpath">member-aios/arun-implementation/WORKBENCH.md</div>
-            <div class="fdesc">Main workbench — KPI definitions per team, AXIOM band placement authority, weekly AXIOM workflow, incident escalation path, PRC membership, management dashboard requirements, KPI meeting format, and Meeting ID system.</div>
+            <div class="fdesc">Main workbench — KPI definitions per team, AXIOM band placement authority, weekly AXIOM workflow, incident escalation path, PRC membership, management dashboard requirements, KPI meeting format, and Meeting ID system. Status: ACTIVE — Arun Reviewed 2026-06-30.</div>
           </div>
         </li>
         <li>
@@ -859,47 +863,65 @@
           <span>📄</span>
           <div>
             <div class="fpath">member-aios/arun-implementation/verify-items-arun.md</div>
-            <div class="fdesc">PRIORITY FILE — Contains the three [VERIFY] items (8, 9, 10) that need Arun's direct confirmation. This file should be handed to Arun first.</div>
+            <div class="fdesc">Contains [VERIFY] items 8, 9, 10. Arun confirmed all three at member workbench layer on 2026-06-30. Root register update is a separate pending step.</div>
+          </div>
+        </li>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</div>
+            <div class="fdesc">Confirmation evidence — Arun's exact review text, confirmed items, and [VERIFY] resolutions at member workbench layer. Status: READY — Arun reviewed 2026-06-30.</div>
           </div>
         </li>
       </ul>
     </div>
 
-    <!-- VERIFY items explained -->
-    <div class="section-title">Highest Priority — Three VERIFY Items for Arun to Confirm</div>
-    <p style="font-size:.83rem; color:var(--muted); margin-bottom:14px;">These three items are recorded in the AIOS but are unconfirmed. Arun's direct statement is all that is needed — no formal document required. They must not be treated as resolved until Arun confirms them.</p>
+    <!-- Confirmed items -->
+    <div class="section-title">Workbench Review — Confirmed Items (2026-06-30)</div>
+    <p style="font-size:.83rem; color:var(--muted); margin-bottom:14px;">The following items were confirmed by Arun during his 2026-06-30 workbench review. These confirmations apply at the member workbench layer only. Root register and CLAUDE.md updates are pending as a separate controlled task.</p>
 
-    <div class="verify-explain" data-searchable data-tags="verify 8 amazon acos threshold direction arun">
-      <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 8</span> Amazon ACOS — Which direction is the target?</div>
+    <div class="verify-explain" data-searchable data-tags="verify 8 amazon acos threshold direction arun confirmed active 2026-06-30">
+      <div class="verify-explain-title"><span class="badge badge-pass">CONFIRMED</span> Item 8 — Amazon ACOS threshold</div>
       <div class="verify-explain-plain">
-        <strong>What we recorded:</strong> The source document (SRC-ARUN-001) states "Amazon ACOS Below 25%" — but the wording is unclear. ACOS (Advertising Cost of Sale) is a metric where lower is usually better. However, we are not certain whether the KPI target is: (a) to achieve ACOS <em>below</em> 25% (meaning you want to keep costs low), or (b) something else entirely.<br><br>
-        <strong>Why it matters:</strong> If the direction is wrong, the KPI trigger — the condition that flags a performance problem — would be applied incorrectly in all reviews.
+        <strong>Arun confirmed (2026-06-30):</strong> Amazon ACOS threshold is <strong>ACOS below 25% / ROAS 4</strong>.<br><br>
+        <strong>What was unconfirmed:</strong> The source document (SRC-ARUN-001) stated "Amazon ACOS Below 25%" but the wording was unclear on threshold direction. Arun's direct confirmation resolves this at the member workbench layer.
       </div>
-      <div class="verify-explain-action">Arun to confirm: Is the target "ACOS below 25%" (meaning ACOS under 25% is good, over 25% triggers a flag)? Or is there a different threshold or direction intended?</div>
+      <div class="verify-explain-action">Root propagation pending — context/verify-register.md and CLAUDE.md §7.3 have not yet been updated. This is a separate controlled task.</div>
     </div>
 
-    <div class="verify-explain" data-searchable data-tags="verify 9 operational manager prc role scope arun">
-      <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 9</span> Operational Manager — What do they actually do on the PRC?</div>
+    <div class="verify-explain" data-searchable data-tags="verify 9 operational manager prc escalation authority arun confirmed active 2026-06-30">
+      <div class="verify-explain-title"><span class="badge badge-pass">CONFIRMED</span> Item 9 — Operational Manager escalation authority</div>
       <div class="verify-explain-plain">
-        <strong>What we recorded:</strong> The source document lists the Operational Manager as a member of the Performance Review Committee (PRC). The PRC is the group that reviews KPI results, approves bonuses, handles escalations, and makes promotion decisions.<br><br>
-        <strong>What we do not know:</strong> We do not have a dedicated source that describes what the Operational Manager's role within the PRC actually is. Do they vote? Do they have approval authority? Are there decisions they specifically own?
+        <strong>Arun confirmed (2026-06-30):</strong> The Operational Manager has the authority to <strong>delay or avoid a suspension/termination</strong> under the escalation policy if the staff member provides a <strong>firm commitment with a defined deadline to achieve the required ROI</strong>.<br><br>
+        <strong>Scope limit:</strong> This confirmation covers the Operational Manager's escalation authority specifically. Full PRC membership scope and voting rights remain [VERIFY] in the root register until further documentation is received.
       </div>
-      <div class="verify-explain-action">Arun to confirm: What is the Operational Manager's specific role and scope of participation within the PRC?</div>
+      <div class="verify-explain-action">Root propagation pending — context/verify-register.md and CLAUDE.md §7.7/§7.8 have not yet been updated. This is a separate controlled task.</div>
     </div>
 
-    <div class="verify-explain" data-searchable data-tags="verify 10 roi officer identity title arun mayurika candidate">
-      <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 10</span> ROI Officer — Is this a job title or a description of what Arun and Mayurika do?</div>
+    <div class="verify-explain" data-searchable data-tags="verify 10 roi officer implementation officer arunraj paraparan external auditor arun confirmed active 2026-06-30">
+      <div class="verify-explain-title"><span class="badge badge-pass">CONFIRMED</span> Item 10 — ROI Officer identity / title in review inputs</div>
       <div class="verify-explain-plain">
-        <strong>What we recorded:</strong> The source document (SRC-ARUN-001) lists "ROI Officer feedback" as one of the inputs into the KPI review process. This implies there is someone with the title "ROI Officer."<br><br>
-        <strong>What we think (but cannot confirm):</strong> A later source (SRC-MD-SUMAN-001) suggests that Arun and Mayurika jointly perform the ROI Officer function — meaning "ROI Officer" may be a description of a task they share, not a separate person's job title. However, this is a candidate interpretation, not a confirmed fact.<br><br>
-        <strong>Why it matters:</strong> If "ROI Officer" is a separate role that does not exist yet, the review process has a gap. If it is just a task shared between Arun and Mayurika, that is fine — we just need to confirm it.
+        <strong>Arun confirmed (2026-06-30):</strong> Replace "ROI Officer" with <strong>Implementation Officer – Arunraj</strong>. Also record <strong>Paraparan as the External Auditor</strong>.<br><br>
+        <strong>What was unconfirmed:</strong> The source document (SRC-ARUN-001) listed "ROI Officer feedback" in review inputs. A candidate interpretation existed (SRC-MD-SUMAN-001) but Arun's direct confirmation was required. Now confirmed.
       </div>
-      <div class="verify-explain-action">Arun to confirm directly: Is "ROI Officer" a separate job role, or is it a task performed by Arun and Mayurika together? Once confirmed, this item can be removed from the [VERIFY] register.</div>
+      <div class="verify-explain-action">Root propagation pending — context/verify-register.md and CLAUDE.md §7.4 have not yet been updated. This is a separate controlled task.</div>
+    </div>
+
+    <!-- Root propagation note -->
+    <div class="warning-box" data-searchable data-tags="root propagation pending claude.md source-register verify-register arun not updated">
+      <h3>Root propagation — NOT yet completed</h3>
+      <ul>
+        <li>Root CLAUDE.md has not been updated with Arun's confirmed items 8, 9, and 10.</li>
+        <li>evidence/source-register.md has not been updated with Arun's review confirmation as a new source.</li>
+        <li>context/verify-register.md has not been updated — all 12 [VERIFY] items remain open in the root register.</li>
+        <li>Root propagation of Arun's confirmations is a separate controlled task. It requires formal source registration, CLAUDE.md update, and builder (Mareenraj) execution.</li>
+        <li>This dashboard status change (DRAFT → ACTIVE) is a navigation layer update only. It does not constitute root propagation.</li>
+      </ul>
     </div>
 
     <div class="next-step-box">
       <h3>What should I do next?</h3>
-      <p>Hand <code>member-aios/arun-implementation/verify-items-arun.md</code> to Arun and ask him to respond to the three items above. Once he confirms them in writing, register his confirmation as a new source and remove the [VERIFY] tags from items 8, 9, and 10. Then ask him to review WORKBENCH.md for the wider domain scope.</p>
+      <p>Arun's review is complete. The next steps are: (1) complete root propagation of items 8, 9, and 10 to CLAUDE.md and verify-register.md as a separate controlled task; (2) route workbench files to Mayurika and Suman for their domain reviews. See the <strong>Review Queue</strong> tab for the full ordered action list.</p>
     </div>
 
   </div><!-- /tab-arun-implementation -->
@@ -998,19 +1020,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr data-searchable data-tags="arun verify 8 9 10 amazon acos operational manager roi officer highest priority">
+          <tr data-searchable data-tags="arun verify 8 9 10 amazon acos operational manager roi officer completed reviewed 2026-06-30">
             <td><strong>1</strong></td>
             <td><strong>Arun</strong></td>
             <td>
-              Confirm three [VERIFY] items by direct statement — no formal document required:<br>
-              <em>Item 8</em> — Amazon ACOS threshold: confirm the direction (below 25% = good, or different?)<br>
-              <em>Item 9</em> — Operational Manager PRC membership: confirm scope of participation<br>
-              <em>Item 10</em> — ROI Officer: confirm whether this is a separate job role or a shared task between Arun and Mayurika
+              Arun reviewed and confirmed his workbench on 2026-06-30. Items 8, 9, and 10 confirmed at member workbench layer:<br>
+              <em>Item 8</em> — Amazon ACOS threshold: ACOS below 25% / ROAS 4 ✓<br>
+              <em>Item 9</em> — Operational Manager escalation authority: can delay/avoid suspension/termination on firm commitment with defined deadline to achieve required ROI ✓<br>
+              <em>Item 10</em> — ROI Officer: replaced with Implementation Officer – Arunraj; Paraparan recorded as External Auditor ✓<br>
+              Evidence: <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code>
             </td>
-            <td class="mono">member-aios/arun-implementation/verify-items-arun.md</td>
-            <td><span class="badge badge-amber">HIGHEST PRIORITY</span></td>
+            <td class="mono">member-aios/arun-implementation/WORKBENCH.md<br>member-aios/arun-implementation/verify-items-arun.md</td>
+            <td><span class="badge badge-pass">COMPLETED 2026-06-30</span></td>
           </tr>
-          <tr data-searchable data-tags="mayurika hr workbench eod tool names verify 12 review">
+          <tr data-searchable data-tags="mayurika hr workbench eod tool names verify 12 review pending">
             <td><strong>2</strong></td>
             <td><strong>Mayurika</strong></td>
             <td>
@@ -1020,7 +1043,7 @@
             <td class="mono">member-aios/mayurika-hr/WORKBENCH.md<br>member-aios/mayurika-hr/daily-weekly-checklist.md</td>
             <td><span class="badge badge-pending">PENDING</span></td>
           </tr>
-          <tr data-searchable data-tags="suman recruitment workbench weekly deliverables confirm review">
+          <tr data-searchable data-tags="suman recruitment workbench weekly deliverables confirm review pending">
             <td><strong>3</strong></td>
             <td><strong>Suman</strong></td>
             <td>
@@ -1030,14 +1053,23 @@
             <td class="mono">member-aios/suman-recruitment/WORKBENCH.md<br>member-aios/suman-recruitment/weekly-deliverables-checklist.md</td>
             <td><span class="badge badge-pending">PENDING</span></td>
           </tr>
-          <tr data-searchable data-tags="queryability review domain approval after 1 2 3 mareenraj builder">
+          <tr data-searchable data-tags="root propagation arun confirmations items 8 9 10 verify-register claude.md pending">
             <td><strong>4</strong></td>
             <td><strong>Mareenraj (Builder)</strong></td>
             <td>
-              After all three domain owner reviews are complete: run queryability test, update each WORKBENCH.md status from DRAFT to ACTIVE, register any [VERIFY] resolutions as new sources, and update the source register and verify register accordingly.
+              Root propagation of Arun's confirmations — update root CLAUDE.md (§7.3, §7.4, §7.7/§7.8), context/verify-register.md (items 8, 9, 10), and evidence/source-register.md to formally register the 2026-06-30 confirmation as a source. This is a separate controlled task and was not completed in the dashboard update step.
+            </td>
+            <td class="mono">context/verify-register.md<br>evidence/source-register.md<br>CLAUDE.md</td>
+            <td><span class="badge badge-amber">PENDING — Separate Task</span></td>
+          </tr>
+          <tr data-searchable data-tags="queryability review domain approval mayurika suman mareenraj builder after 2 3">
+            <td><strong>5</strong></td>
+            <td><strong>Mareenraj (Builder)</strong></td>
+            <td>
+              After Mayurika and Suman domain owner reviews are complete: update their WORKBENCH.md statuses from DRAFT to ACTIVE, register any [VERIFY] resolutions as new sources, and update the source register and verify register accordingly. Arun is already complete.
             </td>
             <td class="mono">context/verify-register.md<br>evidence/source-register.md</td>
-            <td><span class="badge badge-pending">After items 1–3</span></td>
+            <td><span class="badge badge-pending">After items 2–3</span></td>
           </tr>
         </tbody>
       </table>
@@ -1046,31 +1078,36 @@
     <!-- AMBER items summary -->
     <div class="section-title">Non-Blocking AMBER Items — Also Tracked</div>
     <div class="amber-list">
-      <div class="amber-item" data-searchable data-tags="amber verify 8 9 10 arun priority">
-        <div class="amber-item-title">AMBER 1 — [VERIFY] Items 8, 9, 10 — Arun Priority</div>
-        <div class="amber-item-body">Three [VERIFY] items can be resolved quickly by Arun's direct statement. Item 10 has a candidate resolution (ROI Officers = Arun + Mayurika jointly from SRC-MD-SUMAN-001) but Arun's direct confirmation is still required. See the Arun Implementation tab for plain-English explanations of each item.</div>
-        <div class="amber-item-action">Route verify-items-arun.md to Arun. Register confirmation as new source after receipt.</div>
+      <div class="amber-item" data-searchable data-tags="amber root propagation arun confirmations items 8 9 10 verify-register claude.md not updated separate task">
+        <div class="amber-item-title">AMBER 1 — Root Propagation of Arun Confirmations Pending</div>
+        <div class="amber-item-body">Arun confirmed items 8, 9, and 10 at the member workbench layer on 2026-06-30. However, root CLAUDE.md, context/verify-register.md, and evidence/source-register.md have not yet been updated. Root propagation is a separate controlled task. All 12 [VERIFY] items remain open in the root register. Evidence: <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code></div>
+        <div class="amber-item-action">Mareenraj to complete root propagation task: register confirmation as new source, update CLAUDE.md §7.3/§7.4/§7.7/§7.8, and resolve items 8, 9, 10 in context/verify-register.md.</div>
+      </div>
+      <div class="amber-item" data-searchable data-tags="amber mayurika hr workbench review pending draft">
+        <div class="amber-item-title">AMBER 2 — Mayurika Review Pending</div>
+        <div class="amber-item-body">The three Mayurika workbench files (WORKBENCH.md, quick-reference-sources.md, daily-weekly-checklist.md) were created based on source documents and remain DRAFT. Mayurika has not yet reviewed them. [VERIFY] item 12 (exact tool names for HR records system and EOD dashboard) requires her direct confirmation.</div>
+        <div class="amber-item-action">Route all three files to Mayurika for review. Priority: confirm tool names to resolve [VERIFY] item 12.</div>
+      </div>
+      <div class="amber-item" data-searchable data-tags="amber suman recruitment workbench review pending draft">
+        <div class="amber-item-title">AMBER 3 — Suman Review Pending</div>
+        <div class="amber-item-body">The three Suman workbench files (WORKBENCH.md, quick-reference-sources.md, weekly-deliverables-checklist.md) were created based on source documents and remain DRAFT. Suman has not yet reviewed them. The weekly deliverables checklist (4 items) is the highest priority item for his confirmation.</div>
+        <div class="amber-item-action">Route all three files to Suman for review. Confirm the weekly deliverables checklist (4 items) is operationally correct.</div>
       </div>
       <div class="amber-item" data-searchable data-tags="amber bonus queryability soft conflict src-md-arun-001 src-arun-001">
-        <div class="amber-item-title">AMBER 2 — Bonus Queryability Soft Conflict</div>
+        <div class="amber-item-title">AMBER 4 — Bonus Queryability Soft Conflict</div>
         <div class="amber-item-body">SRC-MD-ARUN-001 introduces a bonus queryability scoring framework (LLM-queryable format as a condition for Sales Team bonus eligibility) that may extend the existing bonus conditions from SRC-ARUN-001. These two sources may not be fully aligned. See <code>validation/md-arun-discussion-conflict-check.md</code>.</div>
         <div class="amber-item-action">Varmen confirmation recommended before treating the queryability condition as mandatory. Do not treat as definitively integrated until confirmed.</div>
       </div>
       <div class="amber-item" data-searchable data-tags="amber skill file updates pending domain owner review management-gap-detection recruitment kpi">
-        <div class="amber-item-title">AMBER 3 — Skill File Update Candidates Not Yet Applied</div>
+        <div class="amber-item-title">AMBER 5 — Skill File Update Candidates Not Yet Applied</div>
         <div class="amber-item-body">MD discussion sources generated skill file update candidates identified in <code>validation/md-discussion-skill-impact-check.md</code>. These were not applied — they require domain owner review. Skills affected: management-gap-detection, recruitment-quality-check, kpi-axiom-review-support.</div>
         <div class="amber-item-action">Raise with each domain owner during their workbench review. Trainee prepares draft; domain owner reviews before applying.</div>
-      </div>
-      <div class="amber-item" data-searchable data-tags="amber mayurika workbench pre-existing confirmed prior task">
-        <div class="amber-item-title">AMBER 4 — Mayurika Workbench Was Pre-Existing</div>
-        <div class="amber-item-body">The three Mayurika workbench files were created in a prior task and confirmed correct. They remain DRAFT pending Mayurika's actual review, which has not yet taken place.</div>
-        <div class="amber-item-action">Route all three files to Mayurika for review. Priority: confirm tool names to resolve [VERIFY] item 12.</div>
       </div>
     </div>
 
     <div class="next-step-box">
       <h3>What should I do next?</h3>
-      <p>Start with action 1 — route <code>member-aios/arun-implementation/verify-items-arun.md</code> to Arun. His three confirmations are the fastest wins: no formal document needed, just his direct statement. Actions 2 and 3 (Mayurika and Suman reviews) can happen in parallel with action 1.</p>
+      <p>Action 1 (Arun) is complete. Next: (a) start root propagation task for items 8, 9, and 10 (action 4); and (b) route workbench files to Mayurika (action 2) and Suman (action 3) — these can run in parallel.</p>
     </div>
 
   </div><!-- /tab-review-queue -->
@@ -1120,11 +1157,12 @@
             </div>
           </details>
           <details style="margin-top:4px;">
-            <summary style="font-size:.84rem; padding:8px 12px;">📁 arun-implementation/ <span class="badge badge-draft" style="font-size:.62rem;">DRAFT</span></summary>
+            <summary style="font-size:.84rem; padding:8px 12px;">📁 arun-implementation/ <span class="badge badge-pass" style="font-size:.62rem;">ACTIVE</span></summary>
             <div class="details-body">
-              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/WORKBENCH.md</span><span class="fdesc">— Arun domain workbench. Pending review.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/WORKBENCH.md</span><span class="fdesc">— Arun domain workbench. ACTIVE — Arun Reviewed 2026-06-30.</span><span class="badge badge-pass" style="font-size:.62rem;">ACTIVE</span></div>
               <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/quick-reference-sources.md</span><span class="fdesc">— Source quick reference for Arun's domain.</span></div>
-              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/verify-items-arun.md</span><span class="fdesc">— [VERIFY] items 8, 9, 10 — for Arun to confirm.</span><span class="badge badge-verify" style="font-size:.62rem;">[VERIFY] 8,9,10</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/verify-items-arun.md</span><span class="fdesc">— [VERIFY] items 8, 9, 10 — confirmed at member workbench layer 2026-06-30. Root register update pending.</span><span class="badge badge-amber" style="font-size:.62rem;">Root Propagation Pending</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</span><span class="fdesc">— Arun review confirmation evidence. READY — 2026-06-30.</span><span class="badge badge-source" style="font-size:.62rem;">READY</span></div>
             </div>
           </details>
           <details style="margin-top:4px;">
@@ -1162,6 +1200,7 @@
           <div class="file-entry" style="margin-top:8px;"><span>📁</span><strong style="font-size:.82rem;">stakeholder-confirmations/</strong></div>
           <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md</span><span class="fdesc">— Suman confirmed "Line Manager" in source was a typing mistake.</span></div>
           <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/mayurika-active-staff-roster-confirmation-2026-06-26.md</span><span class="fdesc">— Mayurika confirmed active staff roster details.</span></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</span><span class="fdesc">— Arun confirmed workbench accuracy and items 8, 9, 10. READY — 2026-06-30.</span><span class="badge badge-pass" style="font-size:.62rem;">READY</span></div>
         </div>
       </details>
     </div>
