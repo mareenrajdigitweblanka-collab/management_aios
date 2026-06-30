@@ -88,7 +88,7 @@ Supporting evidence used during creation:
 - `validation/member-aios-3-draft-workbench-creation-check.md` (new)
 - `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` (this file)
 
-**Commit hash:** [PENDING — to be filled after commit]
+**Commit hash:** 2d98f6312cc859b0f247ad872a3ccc2a0c548ceb
 
 ---
 
