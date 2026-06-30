@@ -73,7 +73,7 @@ Supporting evidence read during creation:
 
 **Prior commit shown in dashboard:** `db06f7d`
 
-**Commit hash for this Arun ACTIVE dashboard update:** `[PLACEHOLDER — update after commit]`
+**Commit hash for this Arun ACTIVE dashboard update:** `86e533b`
 
 *After committing these three files, update the commit hash placeholder above with the actual commit hash, then redeploy to Netlify.*
 
