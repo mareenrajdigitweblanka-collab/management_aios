@@ -6,7 +6,7 @@ last-updated: 2026-06-30
 checked-by: Mareenraj (builder)
 scope: web-view/index.html — static HTML dashboard for Netlify deployment
 status: PASS — AMBER noted
-update: Tab-based beginner-friendly UI added 2026-06-30; Arun status updated to ACTIVE 2026-06-30
+update: Tab-based beginner-friendly UI added 2026-06-30; Arun status updated to ACTIVE 2026-06-30; Suman Line Manager clarification propagated to dashboard 2026-06-30
 ---
 
 # Web View HTML Dashboard — Validation Check
@@ -303,8 +303,27 @@ After commit: update the commit hash placeholder in `handover/2026-06-30__web-vi
 
 ---
 
+## 15. Suman Line Manager Clarification Dashboard Update Check (2026-06-30)
+
+**Change:** Suman clarified (2026-06-30) that the Line Manager in the 180-day handover is the employee's Team Lead. Root propagation was completed across all root/context/member files. This section records the corresponding dashboard changes.
+
+| Check | Result |
+|---|---|
+| 180-day handover attendee list updated (Suman tab) | YES — "and the employee's Team Lead (Line Manager) at Month 6" added |
+| SRC-SUMAN-CONF-001 file map entry updated to show SUPERSEDED | YES — description updated; SUPERSEDED badge added |
+| SRC-SUMAN-CONF-002 file map entry added | YES — new entry added below SRC-SUMAN-CONF-001 with READY badge |
+| Source count updated 22 → 23 | YES — badge in evidence/ section updated |
+| Sensitive-data check | PASS — no personal data, candidate names, salary, health, disciplinary, or PDPA data added |
+| Duplicate-truth check | PASS — no policy text or process rules reproduced |
+| [VERIFY] preservation | PASS — all 12 root items unchanged; item 11 was already resolved before this update |
+| DRAFT → ACTIVE promotion | NOT DONE — Suman and Mayurika workbenches remain DRAFT |
+| Root CLAUDE.md touched | NO — dashboard is navigation layer only |
+| Overall PASS/AMBER preserved | YES — result unchanged |
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. No sensitive data. No [VERIFY] items resolved in root register. No duplicate truth. No editing capability. All 12 [VERIFY] items preserved in root register. Root propagation of Arun's confirmations (items 8, 9, 10) is pending as a separate controlled task and is documented as such in the dashboard. Mayurika and Suman remain DRAFT. Rajiv remains BLOCKED. 5 AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. No sensitive data. No [VERIFY] items resolved in root register. No duplicate truth. No editing capability. All 12 [VERIFY] items preserved in root register. Root propagation of Arun's confirmations (items 8, 9, 10) is pending as a separate controlled task and is documented as such in the dashboard. Mayurika and Suman remain DRAFT. Rajiv remains BLOCKED. 5 AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.

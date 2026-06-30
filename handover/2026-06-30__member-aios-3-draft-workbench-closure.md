@@ -27,7 +27,7 @@ status: PASS — AMBER noted; all files DRAFT pending domain owner review
 ### Created or Updated in This Task
 
 | Asset | Path | Action |
-|---|---|---|
+| --- | --- | --- |
 | member-aios README | `member-aios/README.md` | UPDATED — Suman DRAFT and Arun DRAFT added; Rajiv blocker rule added |
 | Mayurika WORKBENCH | `member-aios/mayurika-hr/WORKBENCH.md` | PRE-EXISTING — confirmed correct; no changes |
 | Mayurika quick-reference | `member-aios/mayurika-hr/quick-reference-sources.md` | PRE-EXISTING — confirmed correct; no changes |
@@ -123,6 +123,7 @@ A clean LLM reading `member-aios/` after this task should be able to answer:
 | Arun review completed — root register update pending | Arun reviewed 2026-06-30; workbench ACTIVE; items 8, 9, 10 confirmed at member workbench layer; root `context/verify-register.md` and CLAUDE.md update is a separate pending step | Mareenraj |
 | Bonus queryability soft conflict | SRC-MD-ARUN-001 §11.11 extends §7.9 bonus conditions — relationship not yet confirmed | Varmen confirmation recommended — see validation/md-arun-discussion-conflict-check.md |
 | Skill file updates pending | md-discussion-skill-impact-check.md contains skill update candidates — not applied; require domain owner review | Domain owners (Arun, Suman, Mayurika) |
+| Suman Line Manager clarification — COMPLETE 2026-06-30 | Suman clarified Line Manager = employee's Team Lead. SRC-SUMAN-CONF-002 registered as READY; SRC-SUMAN-CONF-001 superseded for this claim. Root propagation complete: CLAUDE.md §8.11, source-register.md, verify-register.md, context/recruitment-context.md, all Suman member workbench files, and Mayurika daily-weekly-checklist.md updated 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`. Dashboard update pending. | COMPLETE |
 
 ---
 
@@ -193,6 +194,8 @@ Two domain reviews remain pending:
 Once both confirm, update each WORKBENCH.md status from DRAFT to ACTIVE.
 
 **Separate step also pending:** Mareenraj to update root `context/verify-register.md`, CLAUDE.md, and `context/kpi-axiom-context.md` with Arun's confirmed items 8 (ACOS threshold), 9 (Operational Manager escalation authority), and 10 (Implementation Officer – Arunraj; Paraparan as External Auditor).
+
+**Suman Line Manager clarification — COMPLETE 2026-06-30:** Suman confirmed Line Manager = employee's Team Lead. Root propagation complete. Dashboard update (`web-view/index.html`) pending as next step.
 
 ---
 

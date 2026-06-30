@@ -5,7 +5,7 @@ member: Suman
 role: Recruitment Officer (formal designations: Head Hunter, Onboarder, 6-Month Progress ROI Reviewer)
 created: 2026-06-30
 status: DRAFT — Pending Suman review
-source-boundary: SRC-SUMAN-001-v2, SRC-MD-SUMAN-001, SRC-MAYU-001, SRC-SUMAN-CONF-001, SRC-SUMAN-002
+source-boundary: SRC-SUMAN-001-v2, SRC-MD-SUMAN-001, SRC-MAYU-001, SRC-SUMAN-CONF-001, SRC-SUMAN-CONF-002, SRC-SUMAN-002
 root-truth: CLAUDE.md — canonical; this file is a navigation pointer only
 ---
 
@@ -36,7 +36,7 @@ This file does not restate policy. It tells you where to find it.
 | Onboarder | Manages onboarding and early integration of new hires |
 | 6-Month Progress ROI Reviewer | Conducts the binary ROI audit at the 6-month mark for each hire |
 
-**Source authority:** SRC-SUMAN-001-v2 (primary), SRC-MD-SUMAN-001 (MD governance directives — Varmen Reviewed 2026-06-25), SRC-MAYU-001 (cross-reference for 180-day handover), SRC-SUMAN-CONF-001 (Line Manager typing correction)
+**Source authority:** SRC-SUMAN-001-v2 (primary), SRC-MD-SUMAN-001 (MD governance directives — Varmen Reviewed 2026-06-25), SRC-MAYU-001 (cross-reference for 180-day handover), SRC-SUMAN-CONF-002 (Line Manager = employee's Team Lead — confirmed 2026-06-30), SRC-SUMAN-CONF-001 (historical record — superseded by SRC-SUMAN-CONF-002 for Line Manager claim)
 
 **Confirmed process ownership:**
 - Recruitment pipeline management (sourcing through offer)
@@ -89,7 +89,7 @@ Each item below points to the correct source and context file. Do not treat thes
 | Month 3 review | SRC-SUMAN-001-v2 | context/recruitment-context.md §8 | §8.8 |
 | Month 6 review | SRC-SUMAN-001-v2 | context/recruitment-context.md §9 | §8.9 |
 | Source quality monitoring | SRC-SUMAN-001-v2 | context/recruitment-context.md §10 | §8.10 |
-| 180-day handover | SRC-SUMAN-001-v2, SRC-SUMAN-CONF-001, SRC-MAYU-001 | context/recruitment-context.md §11 | §8.11 |
+| 180-day handover | SRC-SUMAN-001-v2, SRC-SUMAN-CONF-002, SRC-MAYU-001 | context/recruitment-context.md §11 | §8.11 |
 | Daily knowledge capture | SRC-SUMAN-001-v2 | context/recruitment-context.md §12 | §8.12 |
 | Six-month binary ROI audit | SRC-MD-SUMAN-001 | context/recruitment-context.md §13.2 | §11.7 |
 | Weekly deliverables (4 items) | SRC-MD-SUMAN-001 | context/recruitment-context.md §13.3 | — |
@@ -204,7 +204,7 @@ The following [VERIFY] items from `context/verify-register.md` affect Suman's wo
 | 6 | MD-specific requirements beyond Varmen relay | Final scope of Suman's recruitment responsibilities may change after MD review | Future MD interview / registered MD source |
 | 7 | Final implementation scope | This workbench remains Foundation Draft v0.1 until MD review is complete | MD review meeting |
 
-No [VERIFY] items specific to Suman's recruitment domain remain open in `context/verify-register.md`. The Line Manager identity item (former item 11) was resolved 2026-06-25 by SRC-SUMAN-CONF-001.
+No [VERIFY] items specific to Suman's recruitment domain remain open in `context/verify-register.md`. The Line Manager identity item (former item 11) is resolved: SRC-SUMAN-CONF-002 (2026-06-30) confirms the Line Manager in the 180-day handover is the employee's Team Lead — a role-based attendee, not a fixed named person. SRC-SUMAN-CONF-001 (2026-06-25) is superseded for this claim and preserved as a historical record. Root propagation is complete — CLAUDE.md §8.11, source-register.md, verify-register.md, and context/recruitment-context.md all updated 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`.
 
 For the full [VERIFY] register, see `context/verify-register.md`.
 

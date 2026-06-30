@@ -137,7 +137,7 @@ At Month 6 for each hire:
 
 ## 180-Day Handover Preparation
 
-*(Source: SRC-SUMAN-001-v2 §11; SRC-SUMAN-CONF-001; SRC-MAYU-001)*
+*(Source: SRC-SUMAN-001-v2 §11; SRC-SUMAN-CONF-002; SRC-MAYU-001)*
 
 At Month 6 minus 2 weeks — Mayurika will send a proactive reminder (SRC-MAYU-001):
 
@@ -147,9 +147,9 @@ At Month 6 minus 2 weeks — Mayurika will send a proactive reminder (SRC-MAYU-0
 - [ ] Confirm KPI baseline is established and ready to hand over
 - [ ] List any outstanding issues and confirm assigned owners
 
-**Handover meeting attendees:** Mayurika, Arun, Suman (15-minute structured meeting)
+**Handover meeting attendees:** Mayurika, Arun, Suman, and the Line Manager (employee's Team Lead) — 15-minute structured meeting
 
-> **No Line Manager role in handover** — confirmed by SRC-SUMAN-CONF-001 (2026-06-25). The original SRC-SUMAN-001-v2 reference to "Line Manager" was a typing mistake confirmed by Suman.
+> Confirmed by SRC-SUMAN-CONF-002 (2026-06-30): Suman clarified the Line Manager is the employee's Team Lead — a role-based attendee, not a fixed named person. Root propagation complete — CLAUDE.md §8.11 and context/recruitment-context.md §11 updated 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`.
 
 After handover, Mayurika writes `recruitment_source_id` and `recruitment_promise_set_id` into the staff record (SRC-MAYU-001). Recruitment ownership formally concludes at this stage unless unresolved actions remain.
 

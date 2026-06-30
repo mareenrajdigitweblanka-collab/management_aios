@@ -196,11 +196,11 @@ Note: Role assignments within this process should be confirmed as current before
 ---
 
 ### 15. Month 6 Handover Receipt from Suman
-*(Source: SRC-MAYU-001; SRC-SUMAN-001-v2 §8.11; SRC-SUMAN-CONF-001)*
+*(Source: SRC-MAYU-001; SRC-SUMAN-001-v2 §8.11; SRC-SUMAN-CONF-002)*
 
 When a staff member reaches Month 6:
 
-- [ ] Receive the 180-day handover from Suman (meeting: Mayurika, Arun, Suman — no Line Manager; confirmed by SRC-SUMAN-CONF-001)
+- [ ] Receive the 180-day handover from Suman (meeting: Mayurika, Arun, Suman, and the employee's Team Lead — confirmed by SRC-SUMAN-CONF-002, 2026-06-30)
 - [ ] Review: commitment delivery summary, employee record verification, KPI baseline confirmation, outstanding issues
 - [ ] Write `recruitment_source_id` into the staff record
 - [ ] Write `recruitment_promise_set_id` into the staff record

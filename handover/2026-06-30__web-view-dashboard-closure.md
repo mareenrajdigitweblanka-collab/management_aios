@@ -254,6 +254,32 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 ---
 
+## Suman Line Manager Clarification Dashboard Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| 180-day handover attendee line (Suman tab) | Added "and the employee's Team Lead (Line Manager) at Month 6" — confirmed by SRC-SUMAN-CONF-002 |
+| SRC-SUMAN-CONF-001 file map entry | Description updated to note superseded status; SUPERSEDED badge added |
+| SRC-SUMAN-CONF-002 file map entry | New entry added below SRC-SUMAN-CONF-001; READY badge; root propagation complete note |
+| Source count badge (evidence/ section) | 22 sources → 23 sources |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 12 items remain open in root register |
+| DRAFT → ACTIVE promotion | NOT DONE — Suman and Mayurika remain DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

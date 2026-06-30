@@ -87,7 +87,7 @@ Each item below points to the correct source and context file. Do not treat thes
 | BGCT collection and folder consolidation | SRC-MD-HR-001 | context/hr-operations-context.md §10.13–§10.14 | §11.5 |
 | Developer ROI review coordination | SRC-MD-HR-001 | context/hr-operations-context.md §10.10 | §11.14 |
 | Active staff roster | SRC-STAFF-001, SRC-MAYU-CONF-002 through CONF-006 | — | evidence/source-register.md |
-| Month 6 handover from Suman | SRC-MAYU-001, SRC-SUMAN-001-v2 | context/recruitment-context.md §11 | §8.11 |
+| Month 6 handover from Suman | SRC-MAYU-001, SRC-SUMAN-001-v2, SRC-SUMAN-CONF-002 | context/recruitment-context.md §11 | §8.11 |
 
 ---
 

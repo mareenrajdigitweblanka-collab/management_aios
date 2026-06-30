@@ -425,9 +425,9 @@ All recruitment sources are monitored across two dimensions:
 
 ### 8.11 180-Day Handover
 
-At Month 6, a structured 15-minute handover meeting is conducted involving Mayurika (referred to as "Mayoorika" in source document), Arun, and Suman.
+At Month 6, a structured 15-minute handover meeting is conducted involving Mayurika (referred to as "Mayoorika" in source document), Arun, Suman, and the Line Manager (the employee's Team Lead).
 
-> **Typing correction (SRC-SUMAN-CONF-001 — 2026-06-25):** The original source document (SRC-SUMAN-001-v2) mentioned a "Line Manager" attendee. Suman confirmed this was a typing mistake. There is no Line Manager role in the 180-day handover. The [VERIFY] item for Line Manager identity (former item 11) is resolved.
+> **Source correction (SRC-SUMAN-CONF-002 — 2026-06-30):** Suman clarified that a Line Manager does attend the 180-day handover, and that the Line Manager is the employee's Team Lead — a role-based attendee, not a fixed named person. SRC-SUMAN-CONF-002 supersedes SRC-SUMAN-CONF-001 (2026-06-25) for this claim only. SRC-SUMAN-CONF-001 had stated the "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake — that position is superseded. SRC-SUMAN-CONF-001 is preserved as a historical record. See `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`.
 
 The review covers:
 
@@ -768,7 +768,7 @@ The assistant must not:
 
 The following items are unresolved and must remain tagged `[VERIFY]` until the listed condition is met.
 
-> **Resolved since Foundation Draft v0.1:** Item 12 (Leave policy detail) was resolved on 2026-06-23 by SRC-POLICY-001 §6.0–6.5. The full leave framework is documented in §10.1 and context/hr-operations-context.md §9. Item 11 (Line Manager identity in 180-day handover) was resolved on 2026-06-25 by SRC-SUMAN-CONF-001 — Suman confirmed the "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake; no Line Manager role exists in the handover. See §8.11 and evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md.
+> **Resolved since Foundation Draft v0.1:** Item 12 (Leave policy detail) was resolved on 2026-06-23 by SRC-POLICY-001 §6.0–6.5. The full leave framework is documented in §10.1 and context/hr-operations-context.md §9. Item 11 (Line Manager identity in 180-day handover) was initially resolved 2026-06-25 by SRC-SUMAN-CONF-001 (Suman said "typing mistake; no Line Manager") — that resolution was superseded on 2026-06-30 by SRC-SUMAN-CONF-002: Suman clarified the Line Manager role does exist and refers to the employee's Team Lead. Final resolution: Line Manager = employee's Team Lead. See §8.11 and `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`.
 
 | # | [VERIFY] Item | Blocked By | Resolution Condition |
 |---|---------------|-----------|----------------------|
