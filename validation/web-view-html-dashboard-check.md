@@ -386,8 +386,78 @@ After commit: update the commit hash placeholder in `handover/2026-06-30__web-vi
 
 ---
 
+## 18. Markdown Viewer Tab Check (Added 2026-06-30)
+
+**Requirement:** Add a beginner-friendly Markdown Viewer section to the dashboard as a new tab (Tab 8). Create manual safe preview cards for 6 selected files only. No raw file content. No editing feature. No sensitive data exposed.
+
+### Safe Files Shown
+
+| Card | File Path | Status |
+|---|---|---|
+| 1 | `member-aios/README.md` | ACTIVE |
+| 2 | `member-aios/mayurika-hr/WORKBENCH.md` | DRAFT |
+| 3 | `member-aios/suman-recruitment/WORKBENCH.md` | ACTIVE |
+| 4 | `member-aios/arun-implementation/WORKBENCH.md` | ACTIVE |
+| 5 | `validation/member-aios-3-draft-workbench-creation-check.md` | PASS-AMBER |
+| 6 | `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | PASS |
+
+### Files NOT Shown (Correctly Excluded)
+
+| Folder / File | Reason Excluded |
+|---|---|
+| `evidence/` and all subfiles | Raw evidence — not shown |
+| `intelligence-inbox/` and all subfiles | Raw stakeholder notes / action records — not shown |
+| `evidence/source-register.md` full content | Sensitive source register — not shown |
+| `context/verify-register.md` full content | Full verify register — not shown |
+| `staff-data/` | Staff / personal data — not shown |
+| `evidence/stakeholder-confirmations/` raw files | Raw stakeholder notes — not shown |
+
+### Card Content Check
+
+| Feature | Present in Each Card? |
+|---|---|
+| File path shown in monospace | YES — `md-card-path` style applied to all 6 cards |
+| Purpose description (short, plain English) | YES — `card-note` element in all 6 cards |
+| Status badge (ACTIVE / DRAFT / PASS-AMBER / PASS) | YES — shown in card header |
+| Owner and reviewer named | YES — `md-card-meta` element in all 6 cards |
+| "What to check" guidance | YES — `md-card-check` element in all 6 cards |
+| "View-only summary. Open / edit in VS Code." notice | YES — `md-viewonly-notice` element in all 6 cards |
+| Raw markdown content reproduced | NO — summary text only |
+| Full file content shown | NO |
+
+### Safety Checks — Markdown Viewer Tab
+
+| Check | Result |
+|---|---|
+| Sensitive data exposed | NOT PRESENT — no staff names, salary, health, disciplinary, PDPA, or candidate personal data |
+| Raw evidence files exposed | NOT PRESENT — evidence/ and intelligence-inbox/ excluded |
+| Raw stakeholder notes exposed | NOT PRESENT — stakeholder-confirmations/ raw files excluded |
+| Source register full content exposed | NOT PRESENT — summary text only in card notes |
+| Verify register full content exposed | NOT PRESENT — item references in card notes are summary only |
+| Editing feature added | NOT PRESENT — view-only summary cards only |
+| Backend, API, or database code | NOT PRESENT |
+| External CDN added | NOT PRESENT — all styles inline |
+| Full markdown content rendered | NOT PRESENT — manual summary cards only |
+| Duplicate truth introduced | NOT PRESENT — card notes are navigation-level summaries only; no policy, KPI, or AXIOM rules reproduced |
+| PASS/AMBER overall result changed | PRESERVED — PASS-AMBER maintained |
+
+### Tab Implementation Check
+
+| Check | Result |
+|---|---|
+| New tab button added to tab bar | YES — "Markdown Viewer" with "6 Files" badge (tab-badge-info) |
+| New tab panel ID correct | YES — `id="tab-md-viewer"` |
+| Tab switching JavaScript works without change | YES — uses same `data-tab="md-viewer"` attribute pattern; no JS changes needed |
+| Search works across Markdown Viewer tab | YES — all 6 cards use `data-searchable` and `data-tags` |
+| Mobile responsive | YES — cards use existing `auto-fill minmax(310px, 1fr)` grid |
+| New CSS added inline | YES — 5 new CSS rules in `<style>` block before `</style>` |
+
+**Markdown Viewer check: PASS**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.

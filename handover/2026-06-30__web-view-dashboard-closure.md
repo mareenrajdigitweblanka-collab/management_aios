@@ -5,10 +5,10 @@ created: 2026-06-30
 last-updated: 2026-06-30
 created-by: Mareenraj (builder)
 requirement-id: web-view-html-dashboard-creation
-status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; ready for Netlify deployment
+status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; ready for Netlify deployment
 ---
 
-# Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, and Arun ACTIVE Update
+# Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, Arun ACTIVE Update, and Markdown Viewer Addition
 
 **Closure date:** 2026-06-30
 **Pass/Fail Rule:** PASS if the dashboard is a self-contained static HTML file showing AIOS status and folder structure without sensitive data, duplicate truth, or editing capability, and is ready for Netlify deployment. FAIL if any of those conditions are violated.
@@ -25,9 +25,9 @@ status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Raji
 
 | Asset | Path | Action |
 |---|---|---|
-| Main dashboard | `web-view/index.html` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE); UPDATED 2026-06-30 (Suman ACTIVE); UPDATED 2026-06-30 (Arun root propagation complete) |
-| Validation check | `validation/web-view-html-dashboard-check.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE check added); UPDATED 2026-06-30 (Suman ACTIVE check §16 added); UPDATED 2026-06-30 (root propagation complete check §17 added) |
-| This closure file | `handover/2026-06-30__web-view-dashboard-closure.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE update recorded); UPDATED 2026-06-30 (Suman ACTIVE update recorded); UPDATED 2026-06-30 (root propagation complete recorded) |
+| Main dashboard | `web-view/index.html` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE); UPDATED 2026-06-30 (Suman ACTIVE); UPDATED 2026-06-30 (Arun root propagation complete); UPDATED 2026-06-30 (Markdown Viewer tab added) |
+| Validation check | `validation/web-view-html-dashboard-check.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE check added); UPDATED 2026-06-30 (Suman ACTIVE check §16 added); UPDATED 2026-06-30 (root propagation complete check §17 added); UPDATED 2026-06-30 (Markdown Viewer check §18 added) |
+| This closure file | `handover/2026-06-30__web-view-dashboard-closure.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE update recorded); UPDATED 2026-06-30 (Suman ACTIVE update recorded); UPDATED 2026-06-30 (root propagation complete recorded); UPDATED 2026-06-30 (Markdown Viewer addition recorded) |
 
 **Total new files (original creation):** 3
 **Files modified in Arun ACTIVE update:** 3 (all three above)
@@ -359,6 +359,49 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 | Netlify deployment wording | PRESERVED |
 
 **Commit hash for this root propagation complete dashboard update:** `63ec09e`
+
+---
+
+## Markdown Viewer Addition Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| New tab button added | "Markdown Viewer" tab (Tab 8) with "6 Files" badge (tab-badge-info) added to tab bar |
+| New tab panel added | `id="tab-md-viewer"` — beginner-friendly intro box, 6 safe file summary cards, next-step box |
+| New CSS added | 5 new rules in inline `<style>` block: `.tab-badge-info`, `.md-card-path`, `.md-card-check`, `.md-card-meta`, `.md-viewonly-notice` |
+| Card 1 — Root / Member Overview | `member-aios/README.md` — ACTIVE — folder overview and member list |
+| Card 2 — Mayurika HR Workbench | `member-aios/mayurika-hr/WORKBENCH.md` — DRAFT — HR domain scope; [VERIFY] 12 open; reviewer: Mayurika |
+| Card 3 — Suman Recruitment Workbench | `member-aios/suman-recruitment/WORKBENCH.md` — ACTIVE — Suman Reviewed 2026-06-30 |
+| Card 4 — Arun Implementation Workbench | `member-aios/arun-implementation/WORKBENCH.md` — ACTIVE — Arun Reviewed 2026-06-30; root propagation complete |
+| Card 5 — Validation Check | `validation/member-aios-3-draft-workbench-creation-check.md` — PASS-AMBER |
+| Card 6 — Handover Closure | `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` — PASS |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §18 added — Markdown Viewer Tab Check |
+| Closure file updated | This file — Markdown Viewer Addition Record section added |
+| Commit hash placeholder | `[COMMIT-HASH-MD-VIEWER]` — update after committing these three files |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no staff names, salary, health, disciplinary, PDPA, or candidate personal data |
+| Raw evidence files exposed | NOT PRESENT — `evidence/` and `intelligence-inbox/` excluded from viewer |
+| Raw stakeholder notes exposed | NOT PRESENT — stakeholder-confirmations/ raw files excluded |
+| Editing feature added | NOT ADDED — view-only summary cards only |
+| Full markdown file content rendered | NOT PRESENT — manual summary text only |
+| Duplicate truth | NOT ADDED — card notes are navigation summaries; no policy, KPI, or AXIOM rules reproduced |
+| Backend or CDN | NOT PRESENT |
+| [VERIFY] root register | NOT CHANGED — 9 open items remain unchanged |
+| DRAFT → ACTIVE promotion | NOT DONE — Mayurika remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Commit hash for Markdown Viewer addition:** `[COMMIT-HASH-MD-VIEWER]`
+
+*After committing `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, and this closure file, replace the placeholder above with the actual commit hash, then redeploy to Netlify.*
 
 ---
 

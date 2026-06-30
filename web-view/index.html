@@ -377,6 +377,32 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* ── Markdown Viewer ── */
+    .tab-badge-info { background: #e0f2fe; color: #0369a1; }
+    .md-card-path {
+      font-family: ui-monospace, monospace; font-size: .78rem; color: #1d4ed8;
+      background: var(--bg); padding: 4px 10px; border-radius: 4px;
+      display: inline-block; margin-bottom: 2px; word-break: break-all;
+    }
+    .md-card-check {
+      font-size: .8rem; color: #374151; background: #f9fafb;
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 8px 12px; line-height: 1.5;
+    }
+    .md-card-check strong {
+      display: block; font-size: .72rem; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--muted); margin-bottom: 4px;
+    }
+    .md-card-meta {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      align-items: center; font-size: .78rem; color: var(--muted);
+    }
+    .md-viewonly-notice {
+      font-size: .78rem; color: #374151; background: #f1f5f9;
+      border: 1px solid #e2e8f0; border-radius: 4px;
+      padding: 7px 12px; font-style: italic; text-align: center; margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -431,6 +457,10 @@
   </button>
   <button class="tab-btn" data-tab="file-map" role="tab" aria-selected="false">
     File Map
+  </button>
+  <button class="tab-btn" data-tab="md-viewer" role="tab" aria-selected="false">
+    Markdown Viewer
+    <span class="tab-badge tab-badge-info">6 Files</span>
   </button>
 </nav>
 
@@ -1297,6 +1327,171 @@
     </div>
 
   </div><!-- /tab-file-map -->
+
+
+  <!-- ══════════════════════════════════
+       TAB 8 — MARKDOWN VIEWER
+  ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-md-viewer" role="tabpanel">
+
+    <!-- Intro -->
+    <div class="how-to-box">
+      <h3>What is this Markdown Viewer?</h3>
+      <p>This section shows a safe, beginner-friendly summary of six selected markdown files from the Management AIOS repository. Each card tells you what the file is for, who owns or reviews it, its current status, and what you should check in it.</p>
+      <ul>
+        <li>This is a <strong>view-only summary</strong> — no full file content is shown here.</li>
+        <li>To read, open, or edit any file listed below, open its path directly in VS Code.</li>
+        <li>Sensitive files (evidence, raw stakeholder notes, staff data, full source-register content) are not shown here — only safe navigation-level files are included.</li>
+        <li>Each card ends with a reminder: <em>View-only summary. Open / edit the actual file in VS Code.</em></li>
+      </ul>
+    </div>
+
+    <div class="section-title">Safe File Summaries — 6 Selected Files</div>
+    <div class="cards" style="grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));">
+
+      <!-- Card 1: Root / Member Overview -->
+      <div class="card" data-searchable data-tags="markdown viewer readme member overview root status summary aios workbench list">
+        <div class="card-header">
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Card 1 of 6</div>
+            <div class="card-title">Root / Member Overview</div>
+          </div>
+          <span class="badge badge-pass">ACTIVE</span>
+        </div>
+        <div><span class="md-card-path">member-aios/README.md</span></div>
+        <div class="card-note">Folder overview of the member-aios section. Lists all four member workbenches, their current statuses, and what each one covers. A useful starting point before opening individual workbench files.</div>
+        <div class="md-card-check">
+          <strong>What to check</strong>
+          All four member workbench folders are listed (Mayurika, Suman, Arun, Rajiv). Status reflects: Arun ACTIVE, Suman ACTIVE, Mayurika DRAFT, Rajiv BLOCKED.
+        </div>
+        <div class="md-card-meta">
+          <span>Owner: Mareenraj (builder)</span>
+          <span>Reviewer: N/A — folder overview</span>
+        </div>
+        <div class="md-viewonly-notice">View-only summary. Open / edit the actual file in VS Code.</div>
+      </div>
+
+      <!-- Card 2: Mayurika HR Workbench -->
+      <div class="card" data-searchable data-tags="markdown viewer mayurika hr workbench draft pending review domain scope pdpa eod staff records skill compliance leadership">
+        <div class="card-header">
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Card 2 of 6</div>
+            <div class="card-title">Mayurika HR Workbench</div>
+          </div>
+          <span class="badge badge-draft">DRAFT</span>
+        </div>
+        <div><span class="md-card-path">member-aios/mayurika-hr/WORKBENCH.md</span></div>
+        <div class="card-note">Main workbench for the HR domain. Describes Mayurika's confirmed responsibilities — staff records, PDPA tracking, EOD monitoring, SKILL file compliance, leadership reviews, and Critic Meetings. Created from source documents; awaiting Mayurika's review.</div>
+        <div class="md-card-check">
+          <strong>What to check</strong>
+          Status is DRAFT — Mayurika has not yet reviewed this file. Confirm the domain scope list is accurate. [VERIFY] item 12 (exact names of HR records system and EOD dashboard tools) requires her direct written confirmation before status can move to ACTIVE.
+        </div>
+        <div class="md-card-meta">
+          <span class="badge badge-verify">[VERIFY] 12 Open</span>
+          <span>Owner: Mareenraj (builder)</span>
+          <span>Reviewer: Mayurika — review pending</span>
+        </div>
+        <div class="md-viewonly-notice">View-only summary. Open / edit the actual file in VS Code.</div>
+      </div>
+
+      <!-- Card 3: Suman Recruitment Workbench -->
+      <div class="card" data-searchable data-tags="markdown viewer suman recruitment workbench active reviewed 2026-06-30 pipeline 8-point screening handover weekly deliverables head hunter onboarder roi">
+        <div class="card-header">
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Card 3 of 6</div>
+            <div class="card-title">Suman Recruitment Workbench</div>
+          </div>
+          <span class="badge badge-pass">ACTIVE</span>
+        </div>
+        <div><span class="md-card-path">member-aios/suman-recruitment/WORKBENCH.md</span></div>
+        <div class="card-note">Main workbench for the recruitment domain. Covers Suman's three formal roles — Head Hunter, Onboarder, and 6-Month Progress ROI Reviewer — including pipeline management, 8-point screening, interview scoring, review milestones (7/14-day, Month 1, 3, 6), 180-day handover, and weekly deliverables.</div>
+        <div class="md-card-check">
+          <strong>What to check</strong>
+          Status is ACTIVE — Suman reviewed and confirmed on 2026-06-30. Confirmed: domain pointers accurate, 8-point screening criteria correct, Line Manager = employee's Team Lead (SRC-SUMAN-CONF-002), 4 weekly deliverables operationally correct. No further action until next domain update.
+        </div>
+        <div class="md-card-meta">
+          <span class="badge badge-source">Suman Reviewed 2026-06-30</span>
+          <span>Owner: Mareenraj (builder)</span>
+          <span>Reviewer: Suman</span>
+        </div>
+        <div class="md-viewonly-notice">View-only summary. Open / edit the actual file in VS Code.</div>
+      </div>
+
+      <!-- Card 4: Arun Implementation Workbench -->
+      <div class="card" data-searchable data-tags="markdown viewer arun implementation workbench active reviewed 2026-06-30 kpi axiom prc incident escalation kpi meeting verify 8 9 10 confirmed">
+        <div class="card-header">
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Card 4 of 6</div>
+            <div class="card-title">Arun Implementation Workbench</div>
+          </div>
+          <span class="badge badge-pass">ACTIVE</span>
+        </div>
+        <div><span class="md-card-path">member-aios/arun-implementation/WORKBENCH.md</span></div>
+        <div class="card-note">Main workbench for the implementation domain. Covers KPI definitions per team, AXIOM band placement authority, weekly AXIOM workflow, incident escalation path, PRC membership, management dashboard requirements, KPI meeting format and statistics, and Meeting ID system.</div>
+        <div class="md-card-check">
+          <strong>What to check</strong>
+          Status is ACTIVE — Arun reviewed and confirmed on 2026-06-30. [VERIFY] items 8 (Amazon ACOS threshold: below 25% / ROAS 4), 9 (Operational Manager escalation authority: firm commitment with deadline), and 10 (ROI Officer = Implementation Officer – Arunraj; External Auditor = Paraparan) were confirmed. Root propagation to CLAUDE.md, source-register.md, and context files is complete as of 2026-06-30 (SRC-ARUN-CONF-001).
+        </div>
+        <div class="md-card-meta">
+          <span class="badge badge-source">Arun Reviewed 2026-06-30</span>
+          <span>Owner: Mareenraj (builder)</span>
+          <span>Reviewer: Arun</span>
+        </div>
+        <div class="md-viewonly-notice">View-only summary. Open / edit the actual file in VS Code.</div>
+      </div>
+
+      <!-- Card 5: Validation Check -->
+      <div class="card" data-searchable data-tags="markdown viewer validation check member aios 3 draft workbench creation pass amber sensitive data verify preserved creation record">
+        <div class="card-header">
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Card 5 of 6</div>
+            <div class="card-title">Validation Check — 3-Workbench Creation</div>
+          </div>
+          <span class="badge badge-pass">PASS-AMBER</span>
+        </div>
+        <div><span class="md-card-path">validation/member-aios-3-draft-workbench-creation-check.md</span></div>
+        <div class="card-note">Validation record for the task that created the three member workbenches (Mayurika, Suman, Arun). Records what files were created, which sources were read, sensitive-data checks, duplicate-truth checks, and all AMBER items identified at creation time.</div>
+        <div class="md-card-check">
+          <strong>What to check</strong>
+          Overall result should be PASS — AMBER. No sensitive data present. No [VERIFY] items resolved. All three workbench folders confirmed as created. AMBER items listed and each assigned a resolution action. Source pointers correct.
+        </div>
+        <div class="md-card-meta">
+          <span>Owner: Mareenraj (builder)</span>
+          <span>Reviewer: domain owners (Mayurika, Suman, Arun) for workbench content accuracy</span>
+        </div>
+        <div class="md-viewonly-notice">View-only summary. Open / edit the actual file in VS Code.</div>
+      </div>
+
+      <!-- Card 6: Handover Closure -->
+      <div class="card" data-searchable data-tags="markdown viewer handover closure member aios 3 workbench creation task pass commit asset path blockers verify preserved">
+        <div class="card-header">
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Card 6 of 6</div>
+            <div class="card-title">Handover Closure — 3-Workbench Creation</div>
+          </div>
+          <span class="badge badge-pass">PASS</span>
+        </div>
+        <div><span class="md-card-path">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</span></div>
+        <div class="card-note">Handover closure record for the 3-workbench creation task completed on 2026-06-30. Records asset paths, evidence paths, the commit hash from that task, open blockers (Mayurika review, SRC-ADMIN-001), [VERIFY] items preserved, and the next step.</div>
+        <div class="md-card-check">
+          <strong>What to check</strong>
+          Status should be PASS — AMBER. A commit hash should be present. The blockers section should list Mayurika review (pending) and SRC-ADMIN-001 (pending). No sensitive data should appear in the closure record.
+        </div>
+        <div class="md-card-meta">
+          <span>Owner: Mareenraj (builder)</span>
+          <span>Reviewer: Mareenraj (builder)</span>
+        </div>
+        <div class="md-viewonly-notice">View-only summary. Open / edit the actual file in VS Code.</div>
+      </div>
+
+    </div><!-- /cards -->
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Use these cards as a guide to decide which file to open next in VS Code. To read or edit any file listed above, open its path directly in VS Code — do not try to edit from this browser view. To add more files to this viewer or update card summaries, regenerate <code>web-view/index.html</code> via Claude Code.</p>
+    </div>
+
+  </div><!-- /tab-md-viewer -->
 
 </main>
 
