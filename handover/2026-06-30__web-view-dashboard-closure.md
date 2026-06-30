@@ -201,7 +201,7 @@ All 12 open [VERIFY] items from `context/verify-register.md` are preserved:
 - No backend, CDN, or external dependency
 - Netlify deployment wording preserved in Root AIOS tab
 
-**Commit hash for this tab UI update:** `[PLACEHOLDER — update after commit]`
+**Commit hash for this tab UI update:** `8d8d3ffa6f1c3ce92c4e26bce65a5414f338e2e7`
 
 ---
 

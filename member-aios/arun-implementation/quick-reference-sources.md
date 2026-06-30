@@ -4,7 +4,7 @@ type: quick-reference
 member: Arun
 role: Implementation Officer
 created: 2026-06-30
-status: DRAFT — Pending Arun review
+status: ACTIVE — Arun Reviewed 2026-06-30
 root-truth: CLAUDE.md — canonical; this file is a pointer index only
 ---
 
@@ -32,7 +32,7 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | Limit | Detail |
 |---|---|
 | SRC-MD-ARUN-001 sensitivity | Contains individual staff names in operational context and individual performance references (08/08/2025 entry) — do not copy personal case details or individual performance references; process-level extraction only |
-| SRC-ARUN-001 — [VERIFY] items 8, 9, 10 | Three wording items in SRC-ARUN-001 remain unconfirmed: Amazon ACOS threshold direction, Operational Manager PRC membership, ROI Officer identity — see `member-aios/arun-implementation/verify-items-arun.md` |
+| SRC-ARUN-001 — [VERIFY] items 8, 9, 10 | ARUN CONFIRMED 2026-06-30 at member workbench layer: Amazon ACOS threshold = ACOS below 25% / ROAS 4; Operational Manager escalation authority confirmed (not full PRC scope); "ROI Officer" = Implementation Officer – Arunraj; Paraparan = External Auditor. Root `context/verify-register.md` update pending. See `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. |
 | SRC-MD-ARUN-001 — bonus queryability soft conflict | Bonus queryability framework (§11.11) extends §7.9 bonus conditions — relationship between the two requires Varmen confirmation; see `validation/md-arun-discussion-conflict-check.md` |
 | SRC-ADMIN-001 — PENDING | Admin Manager PRC role and authority cannot be confirmed. [VERIFY] items 1–5 remain open. PRC composition is incomplete. Do not infer Admin Manager content from any source. |
 
@@ -74,7 +74,7 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | Usage guide | `handover/management-action-records-team-usage-guide.md` |
 | Index | `intelligence-inbox/management-action-records/INDEX.md` |
 
-**[VERIFY] note for inbox records:** Records touching Amazon ACOS threshold wording, Operational Manager PRC role, or ROI Officer title must preserve [VERIFY] tags until Arun directly confirms. See `member-aios/arun-implementation/verify-items-arun.md`.
+**Arun review note (2026-06-30):** Items 8, 9, and 10 confirmed by Arun. Amazon ACOS = ACOS below 25% / ROAS 4. "ROI Officer" in review inputs = Implementation Officer – Arunraj. Paraparan = External Auditor. Operational Manager escalation authority confirmed (escalation delay/avoid on firm commitment only). Root `context/verify-register.md` update is a pending separate step. See `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.
 
 ---
 
@@ -92,15 +92,15 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 
 ## [VERIFY] Items Currently Open for Arun's Domain
 
-| # | Item | Action Needed |
+| # | Item | Status |
 |---|---|---|
-| 8 | Amazon ACOS threshold wording | Arun to confirm exact threshold direction — can resolve by direct statement |
-| 9 | Operational Manager PRC membership | Arun to confirm PRC membership and scope — can resolve by direct statement |
-| 10 | ROI Officer identity / title | Arun to confirm whether distinct role or existing title — can resolve by direct statement (VERIFY Resolved Candidate exists from SRC-MD-SUMAN-001) |
-| 6 | MD-specific requirements beyond Varmen relay | Await MD review meeting |
-| 7 | Final implementation scope | Workbench remains Foundation Draft v0.1 |
+| 8 | Amazon ACOS threshold wording | ARUN CONFIRMED 2026-06-30 — ACOS below 25% / ROAS 4. Root register update pending. |
+| 9 | Operational Manager escalation authority | ARUN CONFIRMED FOR ESCALATION AUTHORITY ONLY 2026-06-30 — can delay/avoid suspension/termination on firm commitment with deadline. Full PRC membership scope remains [VERIFY] in root register. |
+| 10 | ROI Officer identity / title | ARUN CONFIRMED 2026-06-30 — Implementation Officer – Arunraj. Paraparan = External Auditor. Root register update pending. |
+| 6 | MD-specific requirements beyond Varmen relay | PENDING — Await MD review meeting |
+| 7 | Final implementation scope | PENDING — MD review meeting |
 
-**Items 8, 9, and 10 can be resolved by Arun's direct confirmation.** Once confirmed, notify Mareenraj who will register the confirmation in `evidence/source-register.md`.
+**Items 8, 9, and 10 confirmed by Arun 2026-06-30.** Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. Root `context/verify-register.md` update requires a separate step by Mareenraj.
 
 For full [VERIFY] register, see `context/verify-register.md`.
 

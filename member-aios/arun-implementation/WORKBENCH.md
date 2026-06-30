@@ -4,7 +4,7 @@ type: workbench
 member: Arun
 role: Implementation Officer
 created: 2026-06-30
-status: DRAFT — Pending Arun review
+status: ACTIVE — Arun Reviewed 2026-06-30
 source-boundary: SRC-ARUN-001, SRC-ARUN-002, SRC-MD-ARUN-001
 root-truth: CLAUDE.md — canonical; this file is a navigation pointer only
 ---
@@ -89,7 +89,9 @@ Each item below points to the correct source and context file. Do not treat thes
 | Developer ROI review process | SRC-MD-ARUN-001 | — | §11.14 |
 | Daily operational schedule | SRC-ARUN-002 | — | — |
 
-**[VERIFY] items affecting this pointer list:** See §10 of this workbench and `member-aios/arun-implementation/verify-items-arun.md` for the three open Arun [VERIFY] items.
+**Arun confirmed (2026-06-30):** Review inputs (§7.4 pointer) include feedback from the Implementation Officer – Arunraj (Arun confirmed: replaces former "ROI Officer" wording) and External Auditor – Paraparan. See `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.
+
+**[VERIFY] items 8, 9, 10 — ARUN CONFIRMED 2026-06-30 at member workbench layer.** See §10 of this workbench and `member-aios/arun-implementation/verify-items-arun.md`. Root `context/verify-register.md` update is a separate step.
 
 ---
 
@@ -130,7 +132,7 @@ Use this folder to document:
 - `intelligence-inbox/management-action-records/templates/md-discussion-note-template.md`
 - `intelligence-inbox/management-action-records/templates/problem-solution-action-record-template.md`
 
-**[VERIFY] note for inbox records:** Any record from Arun touching Amazon ACOS threshold wording, Operational Manager PRC role, or ROI Officer title must preserve [VERIFY] tags until Arun directly confirms. See `member-aios/arun-implementation/verify-items-arun.md` and `context/verify-register.md` items 8, 9, 10.
+**Arun review note (2026-06-30):** Arun confirmed items 8, 9, and 10 during his 2026-06-30 workbench review. Amazon ACOS threshold is ACOS below 25% / ROAS 4 (item 8 confirmed). Operational Manager escalation authority confirmed — can delay or avoid suspension/termination on firm commitment with defined deadline (item 9 confirmed for escalation authority only). "ROI Officer" in review inputs context is confirmed as "Implementation Officer – Arunraj"; Paraparan is External Auditor (item 10 confirmed). Root `context/verify-register.md` update is a pending separate step — see `member-aios/arun-implementation/verify-items-arun.md` and `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.
 
 ---
 
@@ -187,13 +189,13 @@ In practice:
 
 The following [VERIFY] items from `context/verify-register.md` affect Arun's workbench. They must remain tagged until resolved through the standard process.
 
-| # | [VERIFY] Item | Impact on Arun's Work | Action Needed |
+| # | [VERIFY] Item | Impact on Arun's Work | Status |
 |---|---|---|---|
-| 8 | Amazon ACOS threshold wording | ACOS trigger in KPI detection criteria (CLAUDE.md §7.3) has unclear threshold direction — cannot be used as confirmed rule until Arun confirms | Arun to confirm exact wording: "Amazon ACOSBelow 25%" — direction and intended threshold |
-| 9 | Operational Manager PRC membership and scope | PRC composition table (CLAUDE.md §7.8) lists Operational Manager — role not yet independently confirmed | Arun to confirm Operational Manager PRC membership and scope of participation |
-| 10 | ROI Officer identity / title in review inputs | Review inputs (CLAUDE.md §7.4) list "ROI officer feed back" — distinct role or existing title? | Arun to confirm directly. Note: VERIFY Resolved Candidate from SRC-MD-SUMAN-001 identifies ROI Officers as Arun and Mayurika jointly — [VERIFY] tag must remain until Arun directly confirms |
-| 6 | MD-specific requirements beyond Varmen relay | Final scope of Arun's implementation responsibilities may change after MD review | Await MD review meeting |
-| 7 | Final implementation scope | This workbench remains Foundation Draft v0.1 until MD review is complete | MD review meeting |
+| 8 | Amazon ACOS threshold wording | ACOS trigger in KPI detection criteria (CLAUDE.md §7.3) | ARUN CONFIRMED 2026-06-30 — Amazon ACOS threshold: ACOS below 25% / ROAS 4. Root `context/verify-register.md` update pending. |
+| 9 | Operational Manager escalation authority | Escalation policy (CLAUDE.md §7.7) — Operational Manager scope | ARUN CONFIRMED FOR ESCALATION AUTHORITY ONLY 2026-06-30 — Operational Manager can delay or avoid suspension/termination under escalation policy if staff member provides firm commitment with defined deadline to achieve required ROI. Full PRC membership scope remains [VERIFY] in root register. |
+| 10 | ROI Officer identity / title in review inputs | Review inputs (CLAUDE.md §7.4) — "ROI officer feed back" wording | ARUN CONFIRMED 2026-06-30 — "ROI Officer" is replaced with "Implementation Officer – Arunraj". Paraparan is External Auditor. Root `context/verify-register.md` update pending. |
+| 6 | MD-specific requirements beyond Varmen relay | Final scope of Arun's implementation responsibilities may change after MD review | PENDING — Await MD review meeting |
+| 7 | Final implementation scope | MD review is not yet complete | PENDING — MD review meeting |
 
 **Arun can resolve items 8, 9, and 10 by direct confirmation.** These do not require a formal document source — a confirmed verbal or written statement from Arun, registered by Mareenraj, is sufficient. See `member-aios/arun-implementation/verify-items-arun.md` for the full item detail and resolution process.
 
@@ -239,8 +241,8 @@ A clean LLM reading this workbench should be able to answer:
 
 ## 13. Known Limits
 
-- This workbench is DRAFT. No content here has been reviewed and approved by Arun.
-- [VERIFY] items 8, 9, and 10 remain open — any work touching Amazon ACOS thresholds, Operational Manager PRC role, or ROI Officer identity must carry [VERIFY] tags until Arun directly confirms.
+- This workbench is ACTIVE — Arun Reviewed 2026-06-30. Arun confirmed accuracy and approved ACTIVE status.
+- [VERIFY] items 8, 9, and 10 are ARUN CONFIRMED at the member workbench layer (2026-06-30). Root `context/verify-register.md` update is a separate pending step. See `member-aios/arun-implementation/verify-items-arun.md` and `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.
 - The bonus queryability framework (§11.11 / CLAUDE.md §11.11) introduces a potential soft conflict with the §7.9 bonus conditions — Varmen confirmation recommended before treating as mandatory. See `validation/md-arun-discussion-conflict-check.md`.
 - Admin Manager PRC role ([VERIFY] item 3) remains open — PRC composition cannot be considered complete until SRC-ADMIN-001 is received.
 - Arun's detailed authority limits beyond KPI/AXIOM scope are not yet fully documented — [VERIFY] per CLAUDE.md §5.
@@ -249,13 +251,11 @@ A clean LLM reading this workbench should be able to answer:
 
 ## 14. Next Step
 
-**Arun review required.**
+**Arun review completed — 2026-06-30.**
 
-This workbench is a DRAFT pending Arun's review of:
-- Whether the KPI/AXIOM domain pointers in §4 accurately reflect his day-to-day work
-- Whether any confirmed process area is missing from the pointer list
-- **Priority:** Whether Arun can now directly confirm [VERIFY] items 8, 9, and 10 — see `member-aios/arun-implementation/verify-items-arun.md` for the three items and the resolution process
+Arun confirmed workbench accuracy and approved ACTIVE status. [VERIFY] items 8, 9, and 10 confirmed at member workbench layer. Evidence registered at `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.
 
-Once Arun reviews and confirms, update the status field from `DRAFT — Pending Arun review` to `ACTIVE — Arun Reviewed [date]`.
-
-If Arun resolves any [VERIFY] item during this review, notify Mareenraj so the confirmation can be registered as a new source in `evidence/source-register.md`.
+**Pending steps:**
+- Update root `context/verify-register.md` to reflect Arun's confirmations for items 8, 9, 10 — requires Mareenraj as builder
+- Update CLAUDE.md §7.3 (ACOS threshold), §7.4 (ROI Officer → Implementation Officer – Arunraj; Paraparan as External Auditor), §7.7/§7.8 (Operational Manager escalation authority) — requires formal source registration step
+- Mayurika and Suman workbench reviews remain pending

@@ -144,9 +144,9 @@ Files to be created or confirmed:
 | member-aios/suman-recruitment/WORKBENCH.md | Suman | PENDING — DRAFT |
 | member-aios/suman-recruitment/quick-reference-sources.md | Suman | PENDING — DRAFT |
 | member-aios/suman-recruitment/weekly-deliverables-checklist.md | Suman | PENDING — DRAFT |
-| member-aios/arun-implementation/WORKBENCH.md | Arun | PENDING — DRAFT |
-| member-aios/arun-implementation/quick-reference-sources.md | Arun | PENDING — DRAFT |
-| member-aios/arun-implementation/verify-items-arun.md | Arun — priority: items 8, 9, 10 confirmation | PENDING — DRAFT |
+| member-aios/arun-implementation/WORKBENCH.md | Arun | ACTIVE — Arun Reviewed 2026-06-30 |
+| member-aios/arun-implementation/quick-reference-sources.md | Arun | ACTIVE — Arun Reviewed 2026-06-30 |
+| member-aios/arun-implementation/verify-items-arun.md | Arun — items 8, 9, 10 CONFIRMED at member workbench layer | ACTIVE — Arun Reviewed 2026-06-30 |
 
 **No workbench file is ACTIVE until the relevant domain owner reviews and confirms.**
 
@@ -180,7 +180,7 @@ The following items are non-blocking but should be tracked:
 | AMBER Item | Detail | Action |
 |---|---|---|
 | Mayurika files pre-existed | Three mayurika-hr files were already created before this task. They were reviewed and confirmed correct. No changes were made. | Confirm in closure file. |
-| [VERIFY] items 8, 9, 10 — Arun priority | These three items can be resolved quickly by Arun's direct confirmation. They are surfaced prominently in verify-items-arun.md. | Route to Arun as priority during his WORKBENCH.md review. |
+| [VERIFY] items 8, 9, 10 — Arun confirmed 2026-06-30 | Items 8, 9, 10 are ARUN CONFIRMED at the member workbench layer. Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. Root `context/verify-register.md` update is a pending separate step. Item 9 confirmed for escalation authority only — broader PRC scope remains [VERIFY] in root register. | Mareenraj to update root register, CLAUDE.md, and context files in a separate step. |
 | Bonus queryability soft conflict | SRC-MD-ARUN-001 §11.11 potentially extends §7.9 bonus conditions — Varmen confirmation recommended. Noted in Arun workbench §8. | See validation/md-arun-discussion-conflict-check.md. Do not treat as mandatory additional condition until confirmed. |
 | Skill update recommendations for Suman and Arun | md-discussion-skill-impact-check.md contains skill update candidates from MD discussion sources. Not applied during this task — require domain owner review first. | Raise with Arun and Suman during workbench review. |
 
@@ -199,12 +199,13 @@ The following items are non-blocking but should be tracked:
 
 ## 11. One Next Step
 
-**Route all three workbench sets to the relevant domain owners for review:**
+**Arun review completed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.**
+
+Two domain reviews remain pending:
 - Mayurika reviews `member-aios/mayurika-hr/` — priority: confirm tool names ([VERIFY] item 12)
 - Suman reviews `member-aios/suman-recruitment/` — priority: confirm weekly deliverables checklist accuracy
-- Arun reviews `member-aios/arun-implementation/` — priority: confirm [VERIFY] items 8, 9, 10 via `verify-items-arun.md`
 
-Once all three confirm, update each WORKBENCH.md status from `DRAFT — Pending [member] review` to `ACTIVE — [Member] Reviewed [date]`.
+Once both confirm, update each WORKBENCH.md status to `ACTIVE — [Member] Reviewed [date]`. Separately, Mareenraj to update root `context/verify-register.md` and CLAUDE.md with Arun's confirmed items 8, 9, 10.
 
 ---
 
