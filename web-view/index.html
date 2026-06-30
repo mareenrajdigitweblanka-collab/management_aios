@@ -10,8 +10,6 @@
     :root {
       --bg:        #f0f4f8;
       --surface:   #ffffff;
-      --sidebar:   #1e293b;
-      --sidebar-active: #334155;
       --border:    #e2e8f0;
       --text:      #1e293b;
       --muted:     #64748b;
@@ -24,10 +22,10 @@
       --draft-bg:  #ede9fe;
       --blocked:   #dc2626;
       --blocked-bg:#fee2e2;
+      --topbar:    #1e293b;
       --radius:    8px;
       --shadow:    0 1px 4px rgba(0,0,0,.08), 0 2px 12px rgba(0,0,0,.06);
     }
-
     html { font-size: 15px; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -38,9 +36,9 @@
       flex-direction: column;
     }
 
-    /* ── Top header bar ── */
+    /* ── Top bar ── */
     .topbar {
-      background: var(--sidebar);
+      background: var(--topbar);
       color: #e2e8f0;
       padding: 0 24px;
       height: 56px;
@@ -54,169 +52,201 @@
       flex-shrink: 0;
     }
     .topbar-left { display: flex; align-items: center; gap: 14px; }
-    .topbar-logo {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: .3px;
-      color: #f8fafc;
-    }
+    .topbar-logo { font-size: 1rem; font-weight: 700; letter-spacing: .3px; color: #f8fafc; }
     .topbar-logo span { color: var(--accent); }
     .topbar-sep { width: 1px; height: 22px; background: #334155; }
     .topbar-sub { font-size: .8rem; color: #94a3b8; }
     .topbar-right { display: flex; align-items: center; gap: 10px; font-size: .78rem; color: #94a3b8; }
     .topbar-commit {
-      background: #0f172a;
-      border-radius: 5px;
-      padding: 3px 9px;
-      font-family: ui-monospace, monospace;
-      font-size: .74rem;
-      color: #7dd3fc;
+      background: #0f172a; border-radius: 5px; padding: 3px 9px;
+      font-family: ui-monospace, monospace; font-size: .74rem; color: #7dd3fc;
     }
 
-    /* ── Layout ── */
-    .layout {
+    /* ── Tab bar ── */
+    .tab-bar {
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
       display: flex;
-      flex: 1;
-      min-height: 0;
-    }
-
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 224px;
-      background: var(--sidebar);
+      align-items: flex-end;
+      gap: 0;
+      padding: 0 24px;
+      position: sticky;
+      top: 56px;
+      z-index: 90;
+      overflow-x: auto;
       flex-shrink: 0;
-      padding: 20px 0;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      overflow-y: auto;
     }
-    .sidebar-section {
-      padding: 10px 16px 4px;
-      font-size: .68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #475569;
-    }
-    .sidebar a {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      color: #94a3b8;
-      text-decoration: none;
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 14px 18px 11px;
       font-size: .83rem;
-      border-left: 3px solid transparent;
-      transition: background .15s, color .15s;
-    }
-    .sidebar a:hover, .sidebar a.active {
-      background: var(--sidebar-active);
-      color: #f1f5f9;
-      border-left-color: var(--accent);
-    }
-    .sidebar a .dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: .5;
-      flex-shrink: 0;
-    }
-
-    /* ── Main content ── */
-    .main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 28px 32px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
       display: flex;
-      flex-direction: column;
-      gap: 28px;
-    }
-
-    /* ── Search bar ── */
-    .search-wrap {
-      display: flex;
-      gap: 10px;
       align-items: center;
+      gap: 6px;
+      margin-bottom: -2px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-badge {
+      font-size: .65rem; font-weight: 700; padding: 1px 6px;
+      border-radius: 999px; letter-spacing: .03em;
+    }
+    .tab-badge-draft   { background: var(--draft-bg);   color: var(--draft); }
+    .tab-badge-blocked { background: var(--blocked-bg); color: var(--blocked); }
+    .tab-badge-amber   { background: var(--amber-bg);   color: var(--amber); }
+
+    /* ── Search strip ── */
+    .search-strip {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
     }
     #searchInput {
-      flex: 1;
-      max-width: 480px;
-      padding: 9px 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: .88rem;
-      background: var(--surface);
-      color: var(--text);
-      outline: none;
-      transition: border-color .15s;
+      flex: 1; max-width: 420px; padding: 8px 14px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: .85rem; background: var(--bg); color: var(--text);
+      outline: none; transition: border-color .15s;
     }
     #searchInput:focus { border-color: var(--accent); }
     #searchClear {
-      padding: 9px 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: .85rem;
-      cursor: pointer;
+      padding: 8px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--bg);
+      color: var(--muted); font-size: .82rem; cursor: pointer;
     }
-    #searchClear:hover { background: var(--bg); }
-    #searchResults {
-      font-size: .82rem;
-      color: var(--muted);
-    }
+    #searchClear:hover { background: var(--border); }
+    #searchResults { font-size: .8rem; color: var(--muted); }
+    .search-hint { font-size: .78rem; color: var(--muted); }
 
-    /* ── Section headings ── */
+    /* ── Tab panels ── */
+    .tab-main { flex: 1; }
+    .tab-panel { display: none; padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section heading ── */
     .section-title {
-      font-size: .78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--muted);
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: .78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
     }
-    .section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── Info / how-to box ── */
+    .how-to-box {
+      background: #f0f9ff; border: 1px solid #bae6fd;
+      border-left: 4px solid var(--accent); border-radius: var(--radius);
+      padding: 18px 22px; margin-bottom: 24px;
     }
+    .how-to-box h3 { font-size: .92rem; font-weight: 700; color: #075985; margin-bottom: 10px; }
+    .how-to-box p  { font-size: .84rem; color: #0c4a6e; line-height: 1.6; margin-bottom: 8px; }
+    .how-to-box ul { list-style: none; display: flex; flex-direction: column; gap: 5px; font-size: .82rem; color: #0c4a6e; }
+    .how-to-box ul li::before { content: '→ '; font-weight: 700; color: var(--accent); }
+
+    /* ── Label legend ── */
+    .label-legend {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px;
+    }
+    .legend-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px;
+      display: flex; flex-direction: column; gap: 4px; min-width: 130px;
+    }
+    .legend-item-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .legend-item-desc  { font-size: .78rem; color: var(--text); line-height: 1.4; }
+
+    /* ── Next step box ── */
+    .next-step-box {
+      background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-left: 4px solid var(--pass); border-radius: var(--radius);
+      padding: 16px 20px; margin-top: 24px;
+    }
+    .next-step-box h3 { font-size: .88rem; font-weight: 700; color: var(--pass); margin-bottom: 8px; }
+    .next-step-box p  { font-size: .83rem; color: #14532d; line-height: 1.6; }
+
+    /* ── Member header ── */
+    .member-header {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 20px 24px; margin-bottom: 24px;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .member-header-info h2 { font-size: 1.15rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .member-header-info .role-label { font-size: .82rem; color: var(--muted); margin-bottom: 10px; }
+    .member-header-info .status-note { font-size: .82rem; color: var(--text); line-height: 1.5; }
+    .member-header-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+
+    /* ── File list box ── */
+    .file-list-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 18px 20px; margin-bottom: 20px;
+    }
+    .file-list-box h4 { font-size: .82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+    .file-list-box ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .file-list-box li { display: flex; align-items: flex-start; gap: 10px; font-size: .83rem; }
+    .file-list-box li .fpath { font-family: ui-monospace, monospace; font-size: .78rem; color: #1d4ed8; background: var(--bg); padding: 3px 8px; border-radius: 4px; }
+    .file-list-box li .fdesc { color: var(--muted); font-size: .8rem; margin-top: 2px; }
+
+    /* ── Scope list ── */
+    .scope-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 18px 20px; margin-bottom: 20px;
+    }
+    .scope-box h4 { font-size: .82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+    .scope-box ul { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: .83rem; color: var(--text); }
+    .scope-box ul li::before { content: '✓ '; color: var(--pass); font-weight: 700; }
+    .scope-box p { font-size: .83rem; color: var(--text); line-height: 1.6; }
+
+    /* ── VERIFY explain box ── */
+    .verify-explain {
+      background: #fffbeb; border: 1px solid #fde68a;
+      border-left: 4px solid var(--amber); border-radius: var(--radius);
+      padding: 14px 18px; margin-bottom: 12px;
+    }
+    .verify-explain-title { font-weight: 700; font-size: .88rem; color: var(--amber); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .verify-explain-plain { font-size: .83rem; color: #78350f; line-height: 1.6; margin-bottom: 6px; }
+    .verify-explain-action { font-size: .78rem; color: var(--muted); font-style: italic; }
+
+    /* ── Blocked banner ── */
+    .blocked-banner {
+      background: var(--blocked-bg); border: 2px solid var(--blocked);
+      border-radius: var(--radius); padding: 24px 28px; margin-bottom: 24px;
+      text-align: center;
+    }
+    .blocked-banner .blocked-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .blocked-banner h2 { font-size: 1.2rem; font-weight: 800; color: var(--blocked); margin-bottom: 8px; }
+    .blocked-banner p  { font-size: .88rem; color: #7f1d1d; line-height: 1.6; }
 
     /* ── Cards grid ── */
-    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-
-    /* ── Card ── */
+    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); margin-bottom: 20px; }
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;
     }
     .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-    .card-title { font-size: .95rem; font-weight: 700; color: var(--text); }
-    .card-role  { font-size: .78rem; color: var(--muted); margin-top: 2px; }
-    .card-path  { font-family: ui-monospace, monospace; font-size: .74rem; color: var(--muted); background: var(--bg); padding: 4px 8px; border-radius: 4px; }
-    .card-note  { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+    .card-title  { font-size: .95rem; font-weight: 700; color: var(--text); }
+    .card-role   { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+    .card-note   { font-size: .82rem; color: var(--muted); line-height: 1.5; }
     .card-footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 
     /* ── Badges ── */
     .badge {
-      display: inline-flex;
-      align-items: center;
-      font-size: .71rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      padding: 2px 8px;
-      border-radius: 999px;
+      display: inline-flex; align-items: center;
+      font-size: .71rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; padding: 2px 8px; border-radius: 999px;
     }
     .badge-pass    { background: var(--pass-bg);    color: var(--pass);    }
     .badge-amber   { background: var(--amber-bg);   color: var(--amber);   }
@@ -225,173 +255,124 @@
     .badge-pending { background: #f0f9ff; color: #0369a1; }
     .badge-verify  { background: #fef9c3; color: #854d0e; }
     .badge-source  { background: #f0fdf4; color: #166534; }
+    .badge-viewonly { background: #f1f5f9; color: #475569; }
 
-    /* ── Status summary bar ── */
+    /* ── Status bar ── */
     .status-bar {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 18px 22px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 18px 22px; display: flex; flex-wrap: wrap;
+      gap: 20px; align-items: center; margin-bottom: 24px;
     }
     .status-item { display: flex; flex-direction: column; gap: 2px; }
     .status-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
-    .status-value { font-size: 1.35rem; font-weight: 800; color: var(--text); }
+    .status-value { font-size: 1.25rem; font-weight: 800; color: var(--text); }
     .status-sub   { font-size: .72rem; color: var(--muted); }
     .status-divider { width: 1px; height: 44px; background: var(--border); align-self: center; }
 
     /* ── Review queue table ── */
-    .review-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .84rem;
-    }
+    .review-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
     .review-table th {
-      text-align: left;
-      font-size: .7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      color: var(--muted);
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg);
+      text-align: left; font-size: .7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
+      padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg);
     }
-    .review-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text);
-      vertical-align: top;
-    }
+    .review-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
     .review-table tr:last-child td { border-bottom: none; }
     .review-table tr:hover td { background: #f8fafc; }
     .mono { font-family: ui-monospace, monospace; font-size: .78rem; color: var(--muted); }
 
-    /* ── Folder tree ── */
-    .folder-tree {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 20px;
-      font-size: .83rem;
-      line-height: 1.9;
-    }
-    .tree-item { display: flex; align-items: center; gap: 6px; }
-    .tree-item .icon { color: var(--muted); font-size: .85rem; }
-    .tree-item a { color: var(--accent); text-decoration: none; font-family: ui-monospace, monospace; }
-    .tree-item a:hover { text-decoration: underline; }
-    .tree-indent-1 { padding-left: 18px; }
-    .tree-indent-2 { padding-left: 36px; }
-    .tree-indent-3 { padding-left: 54px; }
-    .tree-folder { color: #f59e0b; font-weight: 600; }
-
-    /* ── Amber items ── */
-    .amber-list { display: flex; flex-direction: column; gap: 10px; }
-    .amber-item {
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-left: 4px solid var(--amber);
-      border-radius: var(--radius);
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .amber-item-title { font-weight: 700; font-size: .88rem; color: var(--amber); }
-    .amber-item-body  { font-size: .82rem; color: #78350f; line-height: 1.5; }
-    .amber-item-action { font-size: .78rem; color: var(--muted); font-style: italic; }
-
-    /* ── Safety / warning box ── */
+    /* ── Warning box ── */
     .warning-box {
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      border-left: 4px solid #ea580c;
-      border-radius: var(--radius);
-      padding: 16px 20px;
+      background: #fff7ed; border: 1px solid #fed7aa;
+      border-left: 4px solid #ea580c; border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 20px;
     }
     .warning-box h3 { font-size: .88rem; font-weight: 700; color: #c2410c; margin-bottom: 8px; }
-    .warning-box ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      font-size: .82rem;
-      color: #7c2d12;
-    }
+    .warning-box ul { list-style: none; display: flex; flex-direction: column; gap: 5px; font-size: .82rem; color: #7c2d12; }
     .warning-box ul li::before { content: '→ '; font-weight: 700; }
 
-    /* ── Deploy note ── */
+    /* ── Deploy box ── */
     .deploy-box {
-      background: #f0f9ff;
-      border: 1px solid #bae6fd;
-      border-left: 4px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 16px 20px;
+      background: #f0f9ff; border: 1px solid #bae6fd;
+      border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 20px;
     }
     .deploy-box h3 { font-size: .88rem; font-weight: 700; color: #075985; margin-bottom: 8px; }
-    .deploy-box ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      font-size: .82rem;
-      color: #0c4a6e;
-    }
+    .deploy-box ul { list-style: none; display: flex; flex-direction: column; gap: 5px; font-size: .82rem; color: #0c4a6e; }
     .deploy-box ul li::before { content: '✓ '; font-weight: 700; color: var(--pass); }
 
-    /* ── Pass/fail result ── */
+    /* ── Result box ── */
     .result-box {
-      background: var(--pass-bg);
-      border: 1px solid #bbf7d0;
-      border-left: 4px solid var(--pass);
-      border-radius: var(--radius);
-      padding: 16px 20px;
+      background: var(--pass-bg); border: 1px solid #bbf7d0;
+      border-left: 4px solid var(--pass); border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 20px;
     }
     .result-box h3 { font-size: .88rem; font-weight: 700; color: var(--pass); margin-bottom: 8px; }
     .result-box p  { font-size: .84rem; color: #14532d; line-height: 1.6; }
 
-    /* ── Source register quick-view ── */
-    .source-list { display: flex; flex-direction: column; gap: 8px; }
+    /* ── Source list ── */
+    .source-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
     .source-row {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 14px;
-      display: grid;
-      grid-template-columns: 160px 1fr auto;
-      gap: 10px;
-      align-items: center;
-      font-size: .82rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px;
+      display: grid; grid-template-columns: 160px 1fr auto;
+      gap: 10px; align-items: center; font-size: .82rem;
     }
     .source-id { font-weight: 700; font-family: ui-monospace, monospace; color: #1d4ed8; }
     .source-desc { color: var(--text); }
     .source-status-cell { text-align: right; }
 
-    /* ── Searchable items class ── */
+    /* ── Amber list ── */
+    .amber-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .amber-item {
+      background: #fffbeb; border: 1px solid #fde68a;
+      border-left: 4px solid var(--amber); border-radius: var(--radius);
+      padding: 12px 16px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .amber-item-title  { font-weight: 700; font-size: .88rem; color: var(--amber); }
+    .amber-item-body   { font-size: .82rem; color: #78350f; line-height: 1.5; }
+    .amber-item-action { font-size: .78rem; color: var(--muted); font-style: italic; }
+
+    /* ── File map (details/summary) ── */
+    .file-map-section { margin-bottom: 20px; }
+    details { margin-bottom: 8px; }
+    details > summary {
+      cursor: pointer; list-style: none; display: flex; align-items: center;
+      gap: 8px; padding: 10px 14px; font-weight: 600; font-size: .88rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); user-select: none; color: var(--text);
+    }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::before { content: '▸'; color: var(--muted); font-size: .8rem; transition: transform .15s; }
+    details[open] > summary::before { transform: rotate(90deg); }
+    details > summary:hover { background: var(--bg); }
+    .details-body { padding: 12px 14px 4px 30px; display: flex; flex-direction: column; gap: 6px; }
+    .file-entry { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--text); }
+    .file-entry .fpath { font-family: ui-monospace, monospace; font-size: .78rem; color: #1d4ed8; }
+    .file-entry .fdesc { color: var(--muted); font-size: .78rem; }
+
+    /* ── Searchable ── */
     [data-searchable] { transition: opacity .15s; }
     [data-searchable].hidden { display: none !important; }
 
+    /* ── Spacer between sections ── */
+    .gap { margin-bottom: 24px; }
+
     /* ── Responsive ── */
     @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { padding: 18px 16px; }
+      .tab-panel { padding: 18px 16px; }
       .status-bar { flex-direction: column; align-items: flex-start; }
       .status-divider { display: none; }
       .source-row { grid-template-columns: 1fr; }
+      .tab-btn { padding: 12px 12px 9px; font-size: .78rem; }
+      .member-header { flex-direction: column; }
     }
-
-    /* ── Print note ── */
     @media print {
-      .sidebar { display: none; }
+      .tab-bar { display: none; }
+      .tab-panel { display: block !important; }
       .topbar { position: static; }
     }
-
-    /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -399,582 +380,900 @@
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════
+<!-- ═══════════════════════════════════
      TOP BAR
-════════════════════════════════════════════════ -->
+═══════════════════════════════════ -->
 <header class="topbar">
   <div class="topbar-left">
     <span class="topbar-logo">Management <span>AIOS</span></span>
     <div class="topbar-sep"></div>
-    <span class="topbar-sub">Read-Only Dashboard — Vercel Deployment</span>
+    <span class="topbar-sub">Read-Only Dashboard — Netlify Deployment</span>
   </div>
   <div class="topbar-right">
+    <span class="badge badge-viewonly" style="font-size:.72rem;">VIEW ONLY</span>
+    <div class="topbar-sep" style="height:18px;"></div>
     <span>Branch: <strong style="color:#f8fafc;">individual-aios</strong></span>
-    <span class="topbar-sep" style="height:18px;"></span>
+    <div class="topbar-sep" style="height:18px;"></div>
     <span>Commit:</span>
-    <span class="topbar-commit">2d98f63</span>
-    <span class="topbar-sep" style="height:18px;"></span>
+    <span class="topbar-commit">db06f7d</span>
+    <div class="topbar-sep" style="height:18px;"></div>
     <span style="color:#94a3b8;">2026-06-30</span>
   </div>
 </header>
 
-<!-- ════════════════════════════════════════════════
-     LAYOUT
-════════════════════════════════════════════════ -->
-<div class="layout">
+<!-- ═══════════════════════════════════
+     TAB BAR
+═══════════════════════════════════ -->
+<nav class="tab-bar" role="tablist" aria-label="Dashboard tabs">
+  <button class="tab-btn active" data-tab="root-aios" role="tab" aria-selected="true">
+    Root AIOS
+    <span class="tab-badge tab-badge-amber">PASS-AMBER</span>
+  </button>
+  <button class="tab-btn" data-tab="mayurika-hr" role="tab" aria-selected="false">
+    Mayurika HR
+    <span class="tab-badge tab-badge-draft">DRAFT</span>
+  </button>
+  <button class="tab-btn" data-tab="suman-recruitment" role="tab" aria-selected="false">
+    Suman Recruitment
+    <span class="tab-badge tab-badge-draft">DRAFT</span>
+  </button>
+  <button class="tab-btn" data-tab="arun-implementation" role="tab" aria-selected="false">
+    Arun Implementation
+    <span class="tab-badge tab-badge-draft">DRAFT</span>
+  </button>
+  <button class="tab-btn" data-tab="rajiv-blocked" role="tab" aria-selected="false">
+    Rajiv / Admin
+    <span class="tab-badge tab-badge-blocked">BLOCKED</span>
+  </button>
+  <button class="tab-btn" data-tab="review-queue" role="tab" aria-selected="false">
+    Review Queue
+  </button>
+  <button class="tab-btn" data-tab="file-map" role="tab" aria-selected="false">
+    File Map
+  </button>
+</nav>
 
-  <!-- ── Sidebar ── -->
-  <nav class="sidebar" aria-label="Dashboard navigation">
-    <div class="sidebar-section">Overview</div>
-    <a href="#status"         class="active"><span class="dot"></span>Status Summary</a>
-    <a href="#member-aios">          <span class="dot"></span>Member AIOS</a>
-
-    <div class="sidebar-section">Review</div>
-    <a href="#review-queue">         <span class="dot"></span>Review Queue</a>
-    <a href="#amber-items">          <span class="dot"></span>AMBER Items</a>
-
-    <div class="sidebar-section">Structure</div>
-    <a href="#folder-structure">     <span class="dot"></span>Folder Structure</a>
-    <a href="#source-register">      <span class="dot"></span>Source Register</a>
-    <a href="#verify-register">      <span class="dot"></span>[VERIFY] Register</a>
-
-    <div class="sidebar-section">Safety</div>
-    <a href="#safety-warning">       <span class="dot"></span>Safety Rules</a>
-    <a href="#deploy-note">          <span class="dot"></span>Deployment Note</a>
-    <a href="#pass-fail">            <span class="dot"></span>Pass/Fail Result</a>
-  </nav>
-
-  <!-- ── Main ── -->
-  <main class="main">
-
-    <!-- ── Search ── -->
-    <div class="search-wrap">
-      <input id="searchInput" type="search" placeholder="Search file paths, names, statuses…" autocomplete="off" />
-      <button id="searchClear">Clear</button>
-      <span id="searchResults"></span>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 1 — STATUS SUMMARY
-    ══════════════════════════════════════ -->
-    <section id="status">
-      <div class="section-title">Status Summary</div>
-      <div class="status-bar">
-        <div class="status-item">
-          <span class="status-label">System</span>
-          <span class="status-value">Foundation Draft</span>
-          <span class="status-sub">v0.1 — Root CLAUDE.md canonical</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label">Member Workbenches</span>
-          <span class="status-value">3 / 4</span>
-          <span class="status-sub">Created as DRAFT · 1 BLOCKED</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label">Sources Registered</span>
-          <span class="status-value">22</span>
-          <span class="status-sub">12 READY · 2 PENDING · 1 SUPERSEDED</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label">[VERIFY] Items</span>
-          <span class="status-value">12</span>
-          <span class="status-sub">All open — 0 resolved this build</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label">Overall</span>
-          <span class="status-value" style="color:var(--pass);">PASS</span>
-          <span class="status-sub">AMBER — domain approvals pending</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 2 — MEMBER AIOS CARDS
-    ══════════════════════════════════════ -->
-    <section id="member-aios">
-      <div class="section-title">Member AIOS Workbenches</div>
-      <div class="cards">
-
-        <!-- Mayurika -->
-        <div class="card" data-searchable data-tags="mayurika hr workbench draft pending">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Mayurika / Mayuri</div>
-              <div class="card-role">HR Officer</div>
-            </div>
-            <span class="badge badge-draft">DRAFT</span>
-          </div>
-          <div class="card-path">member-aios/mayurika-hr/</div>
-          <div class="card-note">Staff record governance, PDPA tracking, review scheduling, EOD productivity monitoring, Critic Meetings, SKILL file compliance, Technical Team ROI, Leadership Review coordination. Source: SRC-MAYU-001, SRC-POLICY-001, SRC-MD-HR-001.</div>
-          <div class="card-footer">
-            <span class="badge badge-pending">Pending Mayurika Review</span>
-            <span class="badge badge-verify">[VERIFY] Item 12 — tool names</span>
-          </div>
-        </div>
-
-        <!-- Suman -->
-        <div class="card" data-searchable data-tags="suman recruitment workbench draft pending">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Suman</div>
-              <div class="card-role">Recruitment Officer — Head Hunter · Onboarder · 6-Month Progress ROI Reviewer</div>
-            </div>
-            <span class="badge badge-draft">DRAFT</span>
-          </div>
-          <div class="card-path">member-aios/suman-recruitment/</div>
-          <div class="card-note">Recruitment pipeline, 8-point screening, interview scoring (50pt), 7/14-day + Month 1/3/6 reviews, source quality monitoring, 180-day handover, daily knowledge capture (1hr/day), 6-month binary ROI audit, OLOS validation, weekly deliverables (4 items). Source: SRC-SUMAN-001-v2, SRC-MD-SUMAN-001.</div>
-          <div class="card-footer">
-            <span class="badge badge-pending">Pending Suman Review</span>
-            <span class="badge badge-source">Formal designations confirmed — SRC-MD-SUMAN-001</span>
-          </div>
-        </div>
-
-        <!-- Arun -->
-        <div class="card" data-searchable data-tags="arun implementation kpi axiom workbench draft pending">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Arun</div>
-              <div class="card-role">Implementation Officer — KPI / AXIOM / ROI</div>
-            </div>
-            <span class="badge badge-draft">DRAFT</span>
-          </div>
-          <div class="card-path">member-aios/arun-implementation/</div>
-          <div class="card-note">KPI definitions per role/team, AXIOM band placement (sole authority), weekly AXIOM processing, incident escalation management, PRC membership, management dashboard, KPI meeting governance, Meeting ID system. Source: SRC-ARUN-001, SRC-ARUN-002, SRC-MD-ARUN-001. Priority: [VERIFY] items 8, 9, 10 need Arun's direct confirmation.</div>
-          <div class="card-footer">
-            <span class="badge badge-pending">Pending Arun Review</span>
-            <span class="badge badge-verify">[VERIFY] Items 8, 9, 10</span>
-          </div>
-        </div>
-
-        <!-- Rajiv / Admin Manager — BLOCKED -->
-        <div class="card" data-searchable data-tags="rajiv admin manager blocked src-admin-001">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Rajiv — Admin Manager</div>
-              <div class="card-role">Admin Manager / PRC Member</div>
-            </div>
-            <span class="badge badge-blocked">BLOCKED</span>
-          </div>
-          <div class="card-path">member-aios/rajiv-admin-manager/ — NOT CREATED</div>
-          <div class="card-note">Admin Manager workbench cannot be created until SRC-ADMIN-001 is received and registered. All Admin Manager authority, escalation paths, approval chains, and PRC role content remain [VERIFY] pending that source.</div>
-          <div class="card-footer">
-            <span class="badge badge-blocked">SRC-ADMIN-001 PENDING</span>
-            <span class="badge badge-verify">[VERIFY] Items 1–5</span>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 3 — REVIEW QUEUE
-    ══════════════════════════════════════ -->
-    <section id="review-queue">
-      <div class="section-title">Open Review Actions</div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table class="review-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Owner</th>
-              <th>Action Required</th>
-              <th>File / Reference</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr data-searchable data-tags="arun verify 8 9 10 amazon acos operational manager roi officer">
-              <td><strong>1</strong></td>
-              <td><strong>Arun</strong></td>
-              <td>Confirm [VERIFY] items 8, 9, 10 by direct statement:<br>
-                  <em>8</em> — Amazon ACOS threshold direction (above or below 25%?)<br>
-                  <em>9</em> — Operational Manager PRC membership and scope<br>
-                  <em>10</em> — ROI Officer: distinct role or functional title for Arun + Mayurika?</td>
-              <td class="mono">member-aios/arun-implementation/verify-items-arun.md</td>
-              <td><span class="badge badge-pending">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="mayurika hr workbench eod tool names verify 12">
-              <td><strong>2</strong></td>
-              <td><strong>Mayurika</strong></td>
-              <td>Review HR workbench and confirm domain pointer accuracy. Priority: confirm exact tool names for HR records system and EOD dashboard to resolve [VERIFY] item 12.</td>
-              <td class="mono">member-aios/mayurika-hr/WORKBENCH.md<br>member-aios/mayurika-hr/daily-weekly-checklist.md</td>
-              <td><span class="badge badge-pending">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="suman recruitment workbench weekly deliverables">
-              <td><strong>3</strong></td>
-              <td><strong>Suman</strong></td>
-              <td>Review recruitment workbench and confirm domain pointer accuracy. Priority: confirm weekly deliverables checklist (4 items) is operationally correct.</td>
-              <td class="mono">member-aios/suman-recruitment/WORKBENCH.md<br>member-aios/suman-recruitment/weekly-deliverables-checklist.md</td>
-              <td><span class="badge badge-pending">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="queryability review domain approval">
-              <td><strong>4</strong></td>
-              <td><strong>Mareenraj (Builder)</strong></td>
-              <td>After all three domain owner reviews complete: run queryability test, update each WORKBENCH.md status from DRAFT to ACTIVE, register any [VERIFY] resolutions as new sources.</td>
-              <td class="mono">context/verify-register.md<br>evidence/source-register.md</td>
-              <td><span class="badge badge-pending">After items 1–3</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 4 — FOLDER STRUCTURE
-    ══════════════════════════════════════ -->
-    <section id="folder-structure">
-      <div class="section-title">Repository Folder Structure</div>
-      <div class="folder-tree" id="folderTree">
-
-        <div class="tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">management-aios/</span> &nbsp;<span class="badge badge-source" style="font-size:.68rem;">Root</span></div>
-
-        <div class="tree-indent-1 tree-item" data-searchable data-tags="claude.md root canonical"><span class="icon">📄</span><span>CLAUDE.md</span> &nbsp;<span class="badge badge-source" style="font-size:.66rem;">Canonical Root</span></div>
-        <div class="tree-indent-1 tree-item" data-searchable data-tags="readme"><span class="icon">📄</span><span>README.md</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">member-aios/</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="member-aios readme"><span class="icon">📄</span><span>README.md</span> &nbsp;<span class="badge badge-source" style="font-size:.66rem;">ACTIVE</span></div>
-        <div class="tree-indent-2 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">mayurika-hr/</span> &nbsp;<span class="badge badge-draft" style="font-size:.66rem;">DRAFT</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="mayurika workbench"><span class="icon">📄</span><span>WORKBENCH.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="mayurika quick reference sources"><span class="icon">📄</span><span>quick-reference-sources.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="mayurika daily weekly checklist"><span class="icon">📄</span><span>daily-weekly-checklist.md</span></div>
-        <div class="tree-indent-2 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">suman-recruitment/</span> &nbsp;<span class="badge badge-draft" style="font-size:.66rem;">DRAFT</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="suman workbench"><span class="icon">📄</span><span>WORKBENCH.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="suman quick reference sources"><span class="icon">📄</span><span>quick-reference-sources.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="suman weekly deliverables checklist"><span class="icon">📄</span><span>weekly-deliverables-checklist.md</span></div>
-        <div class="tree-indent-2 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">arun-implementation/</span> &nbsp;<span class="badge badge-draft" style="font-size:.66rem;">DRAFT</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="arun workbench"><span class="icon">📄</span><span>WORKBENCH.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="arun quick reference sources"><span class="icon">📄</span><span>quick-reference-sources.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="arun verify items"><span class="icon">📄</span><span>verify-items-arun.md</span> &nbsp;<span class="badge badge-verify" style="font-size:.66rem;">[VERIFY] 8,9,10</span></div>
-        <div class="tree-indent-2 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">rajiv-admin-manager/</span> &nbsp;<span class="badge badge-blocked" style="font-size:.66rem;">BLOCKED</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="rajiv admin manager blocked not created"><span class="icon">🚫</span><span style="color:var(--blocked);">Not created — awaiting SRC-ADMIN-001</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">context/</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="verify register context"><span class="icon">📄</span><span>verify-register.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="hr operations context"><span class="icon">📄</span><span>hr-operations-context.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="recruitment context"><span class="icon">📄</span><span>recruitment-context.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="kpi axiom context"><span class="icon">📄</span><span>kpi-axiom-context.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="management aios purpose context"><span class="icon">📄</span><span>management-aios-purpose.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="confidentiality rules context"><span class="icon">📄</span><span>confidentiality-rules.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="management action records context"><span class="icon">📄</span><span>management-action-records-context.md</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">evidence/</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="source register evidence"><span class="icon">📄</span><span>source-register.md</span> &nbsp;<span class="badge badge-source" style="font-size:.66rem;">22 sources</span></div>
-        <div class="tree-indent-2 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">stakeholder-confirmations/</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="suman line manager typing correction"><span class="icon">📄</span><span>suman-line-manager-typing-correction-2026-06-25.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="mayurika active staff roster confirmation"><span class="icon">📄</span><span>mayurika-active-staff-roster-confirmation-2026-06-26.md</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">validation/</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="member aios workbench creation check validation"><span class="icon">📄</span><span>member-aios-3-draft-workbench-creation-check.md</span> &nbsp;<span class="badge badge-pass" style="font-size:.66rem;">PASS — AMBER</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="web view html dashboard check validation"><span class="icon">📄</span><span>web-view-html-dashboard-check.md</span> &nbsp;<span class="badge badge-pass" style="font-size:.66rem;">PASS — AMBER</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="policy update impact report validation"><span class="icon">📄</span><span>policy-update-impact-report.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="md arun discussion source ingestion check validation"><span class="icon">📄</span><span>md-arun-discussion-source-ingestion-check.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="md arun discussion conflict check validation"><span class="icon">📄</span><span>md-arun-discussion-conflict-check.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="claude source map validation"><span class="icon">📄</span><span>claude-source-map.md</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">skills/</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="management gap detection skill"><span class="icon">📄</span><span>management-gap-detection.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="management problem analysis skill"><span class="icon">📄</span><span>management-problem-analysis.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="policy lookup skill"><span class="icon">📄</span><span>policy-lookup.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="recruitment quality check skill"><span class="icon">📄</span><span>recruitment-quality-check.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="kpi axiom review support skill"><span class="icon">📄</span><span>kpi-axiom-review-support.md</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">handover/</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="member aios workbench closure handover"><span class="icon">📄</span><span>2026-06-30__member-aios-3-draft-workbench-closure.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="web view dashboard closure handover"><span class="icon">📄</span><span>2026-06-30__web-view-dashboard-closure.md</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="management action records team usage guide handover"><span class="icon">📄</span><span>management-action-records-team-usage-guide.md</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">intelligence-inbox/</span></div>
-        <div class="tree-indent-2 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">management-action-records/</span> &nbsp;<span class="badge badge-source" style="font-size:.66rem;">ACTIVE FOLDER</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="management action records index inbox"><span class="icon">📄</span><span>INDEX.md</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="mayurika action records inbox"><span class="icon tree-folder">▸</span><span class="tree-folder">mayurika-hr/</span> &nbsp;<span style="font-size:.75rem; color:var(--muted);">1 record open</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="suman action records inbox"><span class="icon tree-folder">▸</span><span class="tree-folder">suman-recruitment/</span> &nbsp;<span style="font-size:.75rem; color:var(--muted);">0 records</span></div>
-        <div class="tree-indent-3 tree-item" data-searchable data-tags="arun action records inbox"><span class="icon tree-folder">▸</span><span class="tree-folder">arun-implementation/</span> &nbsp;<span style="font-size:.75rem; color:var(--muted);">0 records</span></div>
-
-        <div class="tree-indent-1 tree-item"><span class="icon tree-folder">▸</span><span class="tree-folder">web-view/</span></div>
-        <div class="tree-indent-2 tree-item" data-searchable data-tags="web view index html dashboard vercel"><span class="icon">📄</span><span>index.html</span> &nbsp;<span class="badge badge-source" style="font-size:.66rem;">This File</span></div>
-
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 5 — SOURCE REGISTER
-    ══════════════════════════════════════ -->
-    <section id="source-register">
-      <div class="section-title">Source Register Summary</div>
-      <div class="source-list">
-
-        <div class="source-row" data-searchable data-tags="SRC-VAR-001 varmen owner">
-          <div class="source-id">SRC-VAR-001</div>
-          <div class="source-desc">Varmen — Owner/Principal interview notes (2026-06-22). Primary authority source: AIOS purpose, problem areas, urgency.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-MAYU-001 mayurika hr">
-          <div class="source-id">SRC-MAYU-001</div>
-          <div class="source-desc">Mayurika HR stakeholder document. HR workflows, policies, authority lines, PDPA, EOD monitoring, Leadership Review.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-MAYU-002 org chart">
-          <div class="source-id">SRC-MAYU-002</div>
-          <div class="source-desc">DigitWeb org chart image — organisation structure reference.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-ARUN-001 kpi axiom prc">
-          <div class="source-id">SRC-ARUN-001</div>
-          <div class="source-desc">Arun — KPI definitions, AXIOM band placement, review inputs/outputs, PRC governance, management dashboard. High sensitivity.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-ARUN-002 daily checklist schedule">
-          <div class="source-id">SRC-ARUN-002</div>
-          <div class="source-desc">Arun daily operational checklist / schedule (CSV).</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-SUMAN-001-v2 recruitment quality control">
-          <div class="source-id">SRC-SUMAN-001-v2</div>
-          <div class="source-desc">Suman — Recruitment Quality Control Process (Markdown). Active version. Pipeline, screening, scoring, reviews, handover.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-SUMAN-001-v1 superseded archive">
-          <div class="source-id">SRC-SUMAN-001-v1</div>
-          <div class="source-desc">Suman — Recruitment Quality Control Process (.docx). Binary/unreadable. Superseded by v2.</div>
-          <div class="source-status-cell"><span class="badge badge-amber">SUPERSEDED</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-ADMIN-001 admin manager pending blocked">
-          <div class="source-id">SRC-ADMIN-001</div>
-          <div class="source-desc">Admin Manager stakeholder documents — not yet received. Folder exists, empty. Blocks [VERIFY] items 1–5 and Rajiv workbench.</div>
-          <div class="source-status-cell"><span class="badge badge-blocked">PENDING</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-POLICY-001 company policy manual leave onboarding">
-          <div class="source-id">SRC-POLICY-001</div>
-          <div class="source-desc">Final Approved Company Policy Manual. Leave, onboarding, offboarding, conduct, AI tools, assets, working hours. Varmen reviewed.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-MD-HR-001 md hr discussion notes governance">
-          <div class="source-id">SRC-MD-HR-001</div>
-          <div class="source-desc">MD &amp; HR Discussion Notes (19/11/2025–22/06/2026). LLM-queryable standard, Task ID standard, BGCT governance, developer ROI review. Varmen reviewed 2026-06-25.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-MD-SUMAN-001 md suman discussion notes roi olos">
-          <div class="source-id">SRC-MD-SUMAN-001</div>
-          <div class="source-desc">MD &amp; Suman Discussion Notes (24/02/2026–23/06/2026). Six-month hire ROI audit, OLOS onboarding validation, formal role designations. Varmen reviewed 2026-06-25.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-MD-ARUN-001 md arun discussion notes kpi meeting bonus queryability">
-          <div class="source-id">SRC-MD-ARUN-001</div>
-          <div class="source-desc">MD &amp; Arun Discussion Notes (24/06/2025–25/06/2026). KPI meeting format, Meeting ID system, bonus queryability framework, BGCT hierarchy, technical team escalation. Varmen reviewed by project default 2026-06-26.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-STAFF-001 staff roster data">
-          <div class="source-id">SRC-STAFF-001</div>
-          <div class="source-desc">DigitWebLanka Staff Roster CSV. 125 active staff rows confirmed by Mayurika (SRC-MAYU-CONF-002). High sensitivity — aggregate use only.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-MAYU-CONF confirmations">
-          <div class="source-id">SRC-MAYU-CONF-002 to 006</div>
-          <div class="source-desc">Mayurika stakeholder confirmations (2026-06-26): active staff roster status, department/team canonical name normalisations, Amazon mapping correction, final display-name casing.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-SUMAN-CONF-001 line manager typing correction">
-          <div class="source-id">SRC-SUMAN-CONF-001</div>
-          <div class="source-desc">Suman confirmation (2026-06-25): "Line Manager" in SRC-SUMAN-001-v2 §8.11 was a typing mistake — no Line Manager in the 180-day handover. Resolves [VERIFY] item 11.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-MD-ADMIN-001 pending admin manager">
-          <div class="source-id">SRC-MD-ADMIN-001</div>
-          <div class="source-desc">MD &amp; Admin Manager Discussion Notes — not yet received. Cannot resolve Admin Manager [VERIFY] items 1–5.</div>
-          <div class="source-status-cell"><span class="badge badge-blocked">PENDING</span></div>
-        </div>
-
-        <div class="source-row" data-searchable data-tags="SRC-SUMAN-002 7 day training gap">
-          <div class="source-id">SRC-SUMAN-002</div>
-          <div class="source-desc">Suman — Historical 7-day training gap data (CSV + source note). Evidence only; not solution authority. Varmen reviewed by project default.</div>
-          <div class="source-status-cell"><span class="badge badge-pass">READY</span></div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 6 — [VERIFY] REGISTER
-    ══════════════════════════════════════ -->
-    <section id="verify-register">
-      <div class="section-title">[VERIFY] Register — All 12 Open Items</div>
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table class="review-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>[VERIFY] Item</th>
-              <th>Blocked By</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr data-searchable data-tags="verify 1 admin manager document src-admin-001">
-              <td>1</td><td>Admin Manager document</td><td class="mono">SRC-ADMIN-001 PENDING</td><td><span class="badge badge-blocked">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 2 admin manager authority scope">
-              <td>2</td><td>Admin Manager authority scope</td><td class="mono">SRC-ADMIN-001 PENDING</td><td><span class="badge badge-blocked">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 3 admin manager prc role">
-              <td>3</td><td>Admin Manager PRC role and authority within PRC</td><td class="mono">SRC-ADMIN-001 PENDING</td><td><span class="badge badge-blocked">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 4 admin manager approval chains escalation">
-              <td>4</td><td>Admin Manager approval chains and escalation paths</td><td class="mono">SRC-ADMIN-001 PENDING</td><td><span class="badge badge-blocked">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 5 escalation paths admin manager">
-              <td>5</td><td>Final escalation paths (routes through Admin Manager)</td><td class="mono">SRC-ADMIN-001 PENDING</td><td><span class="badge badge-blocked">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 6 md requirements beyond varmen relay">
-              <td>6</td><td>MD-specific requirements beyond Varmen relay</td><td class="mono">Future MD meeting required</td><td><span class="badge badge-pending">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 7 final implementation scope md review">
-              <td>7</td><td>Final implementation scope</td><td class="mono">MD review meeting</td><td><span class="badge badge-pending">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 8 amazon acos threshold wording arun">
-              <td>8</td><td>Amazon ACOS threshold wording — direction and formatting unclear in SRC-ARUN-001</td><td class="mono">Arun direct confirmation</td><td><span class="badge badge-amber">ARUN TO CONFIRM</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 9 operational manager prc membership scope">
-              <td>9</td><td>Operational Manager PRC membership and scope of participation</td><td class="mono">Arun direct confirmation</td><td><span class="badge badge-amber">ARUN TO CONFIRM</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 10 roi officer identity title arun">
-              <td>10</td><td>ROI Officer identity / title in review inputs — distinct role or functional title? (Candidate: Arun + Mayurika jointly — SRC-MD-SUMAN-001)</td><td class="mono">Arun direct confirmation</td><td><span class="badge badge-amber">ARUN TO CONFIRM<br><span style="font-size:.66rem; color:var(--muted);">Candidate exists</span></span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 11 director authority beyond leadership review">
-              <td>11</td><td>Director authority beyond leadership review co-facilitation</td><td class="mono">Dedicated Director source or interview</td><td><span class="badge badge-pending">PENDING</span></td>
-            </tr>
-            <tr data-searchable data-tags="verify 12 hr eod tool names mayurika">
-              <td>12</td><td>Exact tool names for HR records system and EOD dashboard</td><td class="mono">Mayurika direct confirmation</td><td><span class="badge badge-amber">MAYURIKA TO CONFIRM</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 7 — AMBER ITEMS
-    ══════════════════════════════════════ -->
-    <section id="amber-items">
-      <div class="section-title">AMBER Items — Non-Blocking, Tracked</div>
-      <div class="amber-list">
-
-        <div class="amber-item" data-searchable data-tags="amber verify 8 9 10 arun priority">
-          <div class="amber-item-title">AMBER 1 — [VERIFY] Items 8, 9, 10 — Arun Priority Confirms</div>
-          <div class="amber-item-body">Three [VERIFY] items (Amazon ACOS threshold direction, Operational Manager PRC membership, ROI Officer identity) can be resolved quickly by Arun's direct statement — no formal source document required. Item 10 has a candidate resolution from SRC-MD-SUMAN-001 (ROI Officers = Arun + Mayurika jointly) but Arun's direct confirmation is still required before [VERIFY] can be removed. These items are surfaced prominently in <code>member-aios/arun-implementation/verify-items-arun.md</code>.</div>
-          <div class="amber-item-action">Action: Route verify-items-arun.md to Arun during workbench review. Mareenraj to register confirmation as new source.</div>
-        </div>
-
-        <div class="amber-item" data-searchable data-tags="amber bonus queryability soft conflict src-md-arun-001">
-          <div class="amber-item-title">AMBER 2 — Bonus Queryability Soft Conflict</div>
-          <div class="amber-item-body">SRC-MD-ARUN-001 §11.11 introduces a bonus queryability scoring framework (LLM-queryable format as a condition for Sales Team bonus eligibility) that potentially extends the §7.9 bonus conditions from SRC-ARUN-001. These two sources may not be fully aligned. Neither can be overridden without Varmen confirmation. See <code>validation/md-arun-discussion-conflict-check.md</code>.</div>
-          <div class="amber-item-action">Action: Varmen confirmation recommended before treating §11.11 as a mandatory additional bonus condition. Do not treat as definitively integrated until confirmed.</div>
-        </div>
-
-        <div class="amber-item" data-searchable data-tags="amber skill file updates pending domain owner review">
-          <div class="amber-item-title">AMBER 3 — Skill File Update Candidates Not Yet Applied</div>
-          <div class="amber-item-body">The MD discussion sources (SRC-MD-HR-001, SRC-MD-SUMAN-001, SRC-MD-ARUN-001) generated skill file update candidates identified in <code>validation/md-discussion-skill-impact-check.md</code>. These updates were not applied during the workbench creation task — they require domain owner review before any skill file is edited. Skills affected: management-gap-detection, recruitment-quality-check, kpi-axiom-review-support.</div>
-          <div class="amber-item-action">Action: Raise with each domain owner during their workbench review. Trainee prepares draft; domain owner reviews before applying.</div>
-        </div>
-
-        <div class="amber-item" data-searchable data-tags="amber mayurika workbench pre-existing confirmed">
-          <div class="amber-item-title">AMBER 4 — Mayurika Workbench Was Pre-Existing</div>
-          <div class="amber-item-body">The three Mayurika workbench files (WORKBENCH.md, quick-reference-sources.md, daily-weekly-checklist.md) were created in a prior task and confirmed correct during the 3-draft workbench creation check. No changes were made. They remain DRAFT pending Mayurika's review, which has not yet taken place in any session.</div>
-          <div class="amber-item-action">Action: Route all three files to Mayurika for review. Priority: confirm tool names to resolve [VERIFY] item 12.</div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 8 — SAFETY WARNING
-    ══════════════════════════════════════ -->
-    <section id="safety-warning">
-      <div class="warning-box">
-        <h3>Safety Rules — This Dashboard Is Read-Only</h3>
-        <ul>
-          <li>This web view is a read-only summary. It is not parent AIOS truth. Root CLAUDE.md is canonical.</li>
-          <li>No sensitive HR, staff, candidate, salary, health, disciplinary, grievance, or PDPA personal data is stored in this file.</li>
-          <li>All [VERIFY] items are preserved. This dashboard does not resolve any [VERIFY] item.</li>
-          <li>No DRAFT workbench is marked ACTIVE in this dashboard. DRAFT status is shown as-is.</li>
-          <li>No file editing or writing is possible from this dashboard. This is a static HTML file.</li>
-          <li>No full source documents are reproduced. File paths and short summaries only.</li>
-          <li>This file contains no backend, API, database, authentication, or server-side code.</li>
-          <li>This dashboard does not promote any content to parent AIOS truth. Domain owner sign-off is required for promotion.</li>
-          <li>Rajiv/Admin Manager workbench is shown as BLOCKED — it is not created and will not be shown as created until SRC-ADMIN-001 is received.</li>
-          <li>Source discipline: every claim shown here traces to a registered source or is explicitly marked [VERIFY].</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 9 — DEPLOYMENT NOTE
-    ══════════════════════════════════════ -->
-    <section id="deploy-note">
-      <div class="deploy-box">
-        <h3>Vercel Deployment Note</h3>
-        <ul>
-          <li>This is a single self-contained HTML file. No build step required.</li>
-          <li>No external CDN, no JavaScript frameworks, no server-side dependencies.</li>
-          <li>Deploy by adding this file as the root <code>web-view/index.html</code> or as <code>public/index.html</code> in a Vercel project.</li>
-          <li>All CSS and JavaScript are inline. The file is fully self-contained at deployment.</li>
-          <li>Editing is done exclusively through VS Code on the source repository. This dashboard does not expose any edit interface.</li>
-          <li>No environment variables, secrets, or API keys are required or used.</li>
-          <li>For updated content: edit the source workbench and validation files in VS Code, then regenerate this index.html through Claude Code and redeploy to Vercel.</li>
-          <li>Branch: <code>individual-aios</code> — confirm merge to main before final Vercel production deployment.</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════
-         SECTION 10 — PASS / FAIL RESULT
-    ══════════════════════════════════════ -->
-    <section id="pass-fail">
-      <div class="result-box">
-        <h3>Overall Result: PASS — AMBER noted</h3>
-        <p>
-          The Management AIOS Foundation Draft v0.1 is structurally complete with 3 of 4 member workbenches created as DRAFT.
-          All source pointers are correct. No [VERIFY] items are resolved. No sensitive data is stored.
-          No policy text is duplicated. Reviewer routing is correctly configured per CLAUDE.md §18 (updated 2026-06-26).
-          <br><br>
-          <strong>Commit:</strong> <code>2d98f6312cc859b0f247ad872a3ccc2a0c548ceb</code> — Branch: <code>individual-aios</code>
-          <br><br>
-          <strong>AMBER:</strong> 4 non-blocking items tracked above. The draft system was created safely. Domain approvals from Mayurika, Suman, and Arun are pending. Rajiv/Admin Manager workbench remains blocked pending SRC-ADMIN-001.
-          <br><br>
-          <strong>One next step:</strong> Route all three workbench sets to the relevant domain owners for review. Arun's review is highest priority — [VERIFY] items 8, 9, 10 can be resolved by his direct confirmation without requiring a formal source document.
-        </p>
-      </div>
-    </section>
-
-  </main>
+<!-- ═══════════════════════════════════
+     SEARCH STRIP
+═══════════════════════════════════ -->
+<div class="search-strip">
+  <input id="searchInput" type="search" placeholder="Search across all tabs…" autocomplete="off" />
+  <button id="searchClear">Clear</button>
+  <span id="searchResults"></span>
+  <span class="search-hint">Tip: try "verify", "blocked", "arun", "draft"</span>
 </div>
 
-<!-- ════════════════════════════════════════════════
-     INLINE JAVASCRIPT — Search only
-════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════
+     TAB PANELS
+═══════════════════════════════════ -->
+<main class="tab-main">
+
+  <!-- ══════════════════════════════════
+       TAB 1 — ROOT AIOS
+  ══════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-root-aios" role="tabpanel">
+
+    <!-- How to use -->
+    <div class="how-to-box">
+      <h3>How to use this dashboard</h3>
+      <p>This dashboard gives you a quick view of the Management AIOS — a system that tracks management gaps, HR records, recruitment, and KPI processes. It is a <strong>read-only view</strong>. You cannot change anything from here.</p>
+      <ul>
+        <li>Use the tabs above to move between different areas (Root overview, each team member's section, review actions, and the file map).</li>
+        <li>Use the search bar to find anything — file paths, names, or topics — across all tabs.</li>
+        <li>Editing is done in VS Code only, by opening the repository files directly.</li>
+        <li>Every tab has a "What should I do next?" box at the bottom — check that first if you're unsure what to do.</li>
+      </ul>
+    </div>
+
+    <!-- Label legend -->
+    <div class="section-title">What the labels mean</div>
+    <div class="label-legend">
+      <div class="legend-item">
+        <span class="legend-item-label">View Only</span>
+        <span class="badge badge-viewonly" style="margin-bottom:4px;">VIEW ONLY</span>
+        <span class="legend-item-desc">This dashboard cannot edit or save any files.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-item-label">Draft</span>
+        <span class="badge badge-draft" style="margin-bottom:4px;">DRAFT</span>
+        <span class="legend-item-desc">File created but not yet reviewed and approved by its owner.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-item-label">Pending</span>
+        <span class="badge badge-pending" style="margin-bottom:4px;">PENDING</span>
+        <span class="legend-item-desc">Waiting for a review, confirmation, or source document.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-item-label">Blocked</span>
+        <span class="badge badge-blocked" style="margin-bottom:4px;">BLOCKED</span>
+        <span class="legend-item-desc">Cannot proceed — a required document or source is missing.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-item-label">Pass-Amber</span>
+        <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+        <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+        <span class="legend-item-desc">PASS = safe to continue. AMBER = non-blocking items still to resolve.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-item-label">[VERIFY]</span>
+        <span class="badge badge-verify" style="margin-bottom:4px;">[VERIFY]</span>
+        <span class="legend-item-desc">An item that is unconfirmed. Cannot be treated as fact until resolved.</span>
+      </div>
+    </div>
+
+    <!-- Status summary -->
+    <div class="section-title">Current System Status</div>
+    <div class="status-bar" data-searchable data-tags="status summary foundation draft pass amber">
+      <div class="status-item">
+        <span class="status-label">System</span>
+        <span class="status-value">Foundation Draft</span>
+        <span class="status-sub">v0.1 — Root CLAUDE.md canonical</span>
+      </div>
+      <div class="status-divider"></div>
+      <div class="status-item">
+        <span class="status-label">Member Workbenches</span>
+        <span class="status-value">3 / 4</span>
+        <span class="status-sub">Created as DRAFT · 1 BLOCKED</span>
+      </div>
+      <div class="status-divider"></div>
+      <div class="status-item">
+        <span class="status-label">Sources Registered</span>
+        <span class="status-value">22</span>
+        <span class="status-sub">Most READY · 2 PENDING · 1 SUPERSEDED</span>
+      </div>
+      <div class="status-divider"></div>
+      <div class="status-item">
+        <span class="status-label">[VERIFY] Items Open</span>
+        <span class="status-value">12</span>
+        <span class="status-sub">All open — 0 resolved this build</span>
+      </div>
+      <div class="status-divider"></div>
+      <div class="status-item">
+        <span class="status-label">Overall</span>
+        <span class="status-value" style="color:var(--pass);">PASS</span>
+        <span class="status-sub">AMBER — domain approvals pending</span>
+      </div>
+    </div>
+
+    <!-- Root rules -->
+    <div class="section-title">Key Rules</div>
+    <div class="cards gap">
+      <div class="card" data-searchable data-tags="claude.md canonical root truth">
+        <div class="card-header">
+          <div class="card-title">CLAUDE.md is the root truth</div>
+          <span class="badge badge-source">CANONICAL</span>
+        </div>
+        <div class="card-note">The file <code>CLAUDE.md</code> in the root of the repository is the master reference. This dashboard is a summary view only — if anything here conflicts with CLAUDE.md, CLAUDE.md is correct.</div>
+      </div>
+      <div class="card" data-searchable data-tags="source register evidence authority">
+        <div class="card-header">
+          <div class="card-title">Source register controls evidence</div>
+          <span class="badge badge-source">AUTHORITY</span>
+        </div>
+        <div class="card-note">Every fact in the AIOS must trace to a source registered in <code>evidence/source-register.md</code>. If there is no registered source, the fact must be marked [VERIFY] until one is provided.</div>
+      </div>
+      <div class="card" data-searchable data-tags="verify register unresolved items">
+        <div class="card-header">
+          <div class="card-title">Verify register tracks unresolved items</div>
+          <span class="badge badge-verify">[VERIFY]</span>
+        </div>
+        <div class="card-note">The file <code>context/verify-register.md</code> lists all 12 unresolved items. A [VERIFY] item cannot be removed until registered source evidence is produced and the relevant domain owner confirms it.</div>
+      </div>
+      <div class="card" data-searchable data-tags="read only vs code editing dashboard static">
+        <div class="card-header">
+          <div class="card-title">Editing is in VS Code only</div>
+          <span class="badge badge-viewonly">VIEW ONLY</span>
+        </div>
+        <div class="card-note">This dashboard is a static HTML file. There is no edit button, no save button, and no form. All changes to the AIOS are made by editing source files in VS Code and regenerating this dashboard via Claude Code.</div>
+      </div>
+    </div>
+
+    <!-- Safety rules -->
+    <div class="section-title">Safety Rules</div>
+    <div class="warning-box" data-searchable data-tags="safety rules read only no sensitive data verify preserved">
+      <h3>What this dashboard will never do</h3>
+      <ul>
+        <li>Store or display sensitive HR, staff, candidate, salary, health, disciplinary, grievance, or PDPA personal data.</li>
+        <li>Resolve any [VERIFY] item — all 12 remain open.</li>
+        <li>Mark any DRAFT workbench as ACTIVE — that requires domain owner sign-off.</li>
+        <li>Show the Rajiv / Admin Manager workbench as created — it is BLOCKED until SRC-ADMIN-001 is received.</li>
+        <li>Reproduce policy rules, KPI band tables, recruitment criteria, or leave policy as if this file is the source of truth.</li>
+        <li>Connect to any backend, API, or database — this is a static HTML file with no server-side code.</li>
+        <li>Allow any file editing or writing from the browser.</li>
+        <li>Promote content to parent AIOS truth — domain owner sign-off is required before any promotion.</li>
+      </ul>
+    </div>
+
+    <!-- Deployment -->
+    <div class="section-title">Netlify Deployment</div>
+    <div class="deploy-box" data-searchable data-tags="netlify deployment static html no build">
+      <h3>Netlify Deployment Note</h3>
+      <ul>
+        <li>This is a single self-contained HTML file. No build step required.</li>
+        <li>No external CDN, no JavaScript frameworks, no server-side dependencies.</li>
+        <li>Deploy by connecting the repository to Netlify. Set the publish directory to <code>web-view</code> and leave the build command empty.</li>
+        <li>All CSS and JavaScript are inline. The file is fully self-contained at deployment.</li>
+        <li>Editing is done exclusively through VS Code on the source repository. This dashboard does not expose any edit interface.</li>
+        <li>No environment variables, secrets, or API keys are required or used.</li>
+        <li>For updated content: edit source files in VS Code, then regenerate this index.html through Claude Code and redeploy to Netlify.</li>
+        <li>Branch: <code>individual-aios</code> — confirm merge to main before final Netlify production deployment.</li>
+      </ul>
+    </div>
+
+    <!-- Pass/fail -->
+    <div class="section-title">Overall Result</div>
+    <div class="result-box" data-searchable data-tags="pass amber result foundation draft complete">
+      <h3>Overall Result: PASS — AMBER noted</h3>
+      <p>
+        The Management AIOS Foundation Draft v0.1 is structurally complete with 3 of 4 member workbenches created as DRAFT. All source pointers are correct. No [VERIFY] items are resolved. No sensitive data is stored. No policy text is duplicated. Reviewer routing is correctly configured per CLAUDE.md §18.
+        <br><br>
+        <strong>Commit:</strong> <code>db06f7d</code> — Branch: <code>individual-aios</code>
+        <br><br>
+        <strong>AMBER:</strong> Domain approvals from Mayurika, Suman, and Arun are pending. Rajiv / Admin Manager workbench remains blocked pending SRC-ADMIN-001.
+      </p>
+    </div>
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Go to the <strong>Review Queue</strong> tab to see the ordered list of actions — Arun's confirmation of three VERIFY items is the highest priority. Then check the <strong>Arun Implementation</strong> tab for plain-English explanations of what he needs to confirm.</p>
+    </div>
+
+  </div><!-- /tab-root-aios -->
+
+
+  <!-- ══════════════════════════════════
+       TAB 2 — MAYURIKA HR
+  ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-mayurika-hr" role="tabpanel">
+
+    <div class="member-header" data-searchable data-tags="mayurika hr officer draft pending review">
+      <div class="member-header-info">
+        <h2>Mayurika / Mayuri</h2>
+        <div class="role-label">HR Officer — Primary custodian of staff records, PDPA compliance, and HR workflows</div>
+        <div class="status-note">
+          <strong>Status:</strong> DRAFT — Pending Mayurika review.<br>
+          <span style="color:var(--muted); font-size:.8rem;">This means the workbench files have been created based on source documents, but Mayurika has not yet reviewed them to confirm they are accurate and complete. They should not be treated as approved until she has reviewed and confirmed.</span>
+        </div>
+      </div>
+      <div class="member-header-badges">
+        <span class="badge badge-draft">DRAFT</span>
+        <span class="badge badge-pending">Pending Mayurika Review</span>
+        <span class="badge badge-verify">[VERIFY] Item 12 open</span>
+      </div>
+    </div>
+
+    <!-- Files -->
+    <div class="section-title">Workbench Files</div>
+    <div class="file-list-box" data-searchable data-tags="mayurika hr workbench files quick reference daily checklist">
+      <h4>Files to review</h4>
+      <ul>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/mayurika-hr/WORKBENCH.md</div>
+            <div class="fdesc">Main workbench — domain overview, confirmed responsibilities, what Mayurika writes and does not write, linked pointers to context files.</div>
+          </div>
+        </li>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/mayurika-hr/quick-reference-sources.md</div>
+            <div class="fdesc">Short reference list — which source documents cover Mayurika's responsibilities and where to find them.</div>
+          </div>
+        </li>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/mayurika-hr/daily-weekly-checklist.md</div>
+            <div class="fdesc">Operational checklist — daily and weekly tasks Mayurika is responsible for, based on confirmed source documents.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- What to review -->
+    <div class="section-title">What Mayurika Must Review</div>
+    <div class="scope-box" data-searchable data-tags="mayurika review staff records pdpa axiom eod critic meetings skill files leadership">
+      <h4>Domain scope — confirm these are correctly described</h4>
+      <ul>
+        <li>Staff record maintenance and data stewardship (join, status changes, departure)</li>
+        <li>PDPA notice issuance and acknowledgement tracking for all staff</li>
+        <li>Review scheduling — last review date and next review due for all staff</li>
+        <li>Weekly AXIOM data submission to Arun</li>
+        <li>EOD productivity monitoring for the Website Team and PH Team</li>
+        <li>Monthly Critic Meeting co-facilitation with Muguntha and Jefri</li>
+        <li>SKILL file compliance management for Developer and Technical/N8N Teams</li>
+        <li>Technical Team ROI monitoring — weekly and monthly reports to MD</li>
+        <li>Twice-weekly Leadership Review coordination with the Director</li>
+        <li>6-month handoff receipt from Suman — writes recruitment source and promise IDs into staff record</li>
+      </ul>
+    </div>
+
+    <!-- VERIFY item 12 -->
+    <div class="section-title">Open VERIFY Item — Requires Mayurika's Confirmation</div>
+    <div class="verify-explain" data-searchable data-tags="verify 12 hr eod tool names mayurika confirm">
+      <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 12</span> Exact tool names for HR records system and EOD dashboard</div>
+      <div class="verify-explain-plain">
+        <strong>In plain English:</strong> The source documents say Mayurika manages staff records in an HR system and monitors EOD (End of Day) submissions in a dashboard — but we do not know the actual names of the tools or systems she uses. For example, is the HR records system a specific software platform? What is the EOD dashboard called? We cannot name these tools as fact until Mayurika confirms them directly.
+      </div>
+      <div class="verify-explain-action">Resolution: Mayurika confirms the exact tool names in writing. Once confirmed, register the confirmation as a new source and update this item.</div>
+    </div>
+
+    <!-- What not to store -->
+    <div class="section-title">What Must Not Be Stored Here</div>
+    <div class="warning-box" data-searchable data-tags="mayurika sensitive data not stored hr personal pdpa">
+      <h3>Sensitive data — never stored in this AIOS</h3>
+      <ul>
+        <li>Individual staff names (beyond role references for process identification)</li>
+        <li>Salary, compensation, or bonus amounts for any individual</li>
+        <li>Personal health or medical information</li>
+        <li>PDPA personal data — Mayurika holds this under PDPA-controlled access, not here</li>
+        <li>Individual AXIOM band scores by name</li>
+        <li>Disciplinary case details or grievance records</li>
+        <li>Individual performance data by name (aggregate and process-level only)</li>
+      </ul>
+    </div>
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Route all three workbench files to Mayurika for review. Ask her to confirm that the domain scope list is correct, and specifically to confirm the exact names of the HR records system and EOD dashboard tools (to resolve [VERIFY] item 12).</p>
+    </div>
+
+  </div><!-- /tab-mayurika-hr -->
+
+
+  <!-- ══════════════════════════════════
+       TAB 3 — SUMAN RECRUITMENT
+  ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-suman-recruitment" role="tabpanel">
+
+    <div class="member-header" data-searchable data-tags="suman recruitment officer head hunter onboarder roi reviewer draft pending">
+      <div class="member-header-info">
+        <h2>Suman</h2>
+        <div class="role-label">Recruitment Officer — Head Hunter · Onboarder · 6-Month Progress ROI Reviewer</div>
+        <div class="status-note">
+          <strong>Status:</strong> DRAFT — Pending Suman review.<br>
+          <span style="color:var(--muted); font-size:.8rem;">Suman's formal role has three parts: finding candidates (Head Hunter), bringing them onboard (Onboarder), and reviewing whether each new hire delivered value after six months (6-Month Progress ROI Reviewer). These designations are confirmed by MD discussion source SRC-MD-SUMAN-001. The workbench is DRAFT until Suman has reviewed and confirmed it is accurate.</span>
+        </div>
+      </div>
+      <div class="member-header-badges">
+        <span class="badge badge-draft">DRAFT</span>
+        <span class="badge badge-pending">Pending Suman Review</span>
+        <span class="badge badge-source">Formal designations confirmed — SRC-MD-SUMAN-001</span>
+      </div>
+    </div>
+
+    <!-- Files -->
+    <div class="section-title">Workbench Files</div>
+    <div class="file-list-box" data-searchable data-tags="suman recruitment workbench files quick reference weekly deliverables">
+      <h4>Files to review</h4>
+      <ul>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/suman-recruitment/WORKBENCH.md</div>
+            <div class="fdesc">Main workbench — recruitment pipeline, 8-point screening, interview scoring, review timeline, 180-day handover, daily knowledge capture, and role scope summary.</div>
+          </div>
+        </li>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/suman-recruitment/quick-reference-sources.md</div>
+            <div class="fdesc">Short reference list — which source documents cover Suman's responsibilities and where to find them.</div>
+          </div>
+        </li>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/suman-recruitment/weekly-deliverables-checklist.md</div>
+            <div class="fdesc">Weekly deliverables — the 4 items Suman must produce each week: Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop proof.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Scope -->
+    <div class="section-title">Recruitment and Onboarding Scope</div>
+    <div class="scope-box" data-searchable data-tags="suman scope pipeline screening scoring reviews handover roi olos bgct deliverables">
+      <h4>What this workbench covers — confirm these are correct</h4>
+      <ul>
+        <li>Recruitment pipeline management — internal and external sourcing channels</li>
+        <li>8-point candidate screening before interview stage</li>
+        <li>Interview scoring on a 50-point scale (5 areas, 10 marks each)</li>
+        <li>Rejected and on-hold candidate tracking for talent pooling</li>
+        <li>Commitment records for every offer made</li>
+        <li>7/14-day review, Month 1 review, Month 3 review, Month 6 review</li>
+        <li>Source quality monitoring — activity metrics and quality metrics per channel</li>
+        <li>180-day handover meeting with Mayurika and Arun at Month 6</li>
+        <li>Daily knowledge capture (1 hour per working day)</li>
+        <li>Six-month binary ROI audit for each hire — traceable contribution to revenue, margin, NNV, automation, or capacity</li>
+        <li>OLOS onboarding system validation — required documents must be confirmed before go-live</li>
+        <li>BGCT completion monitoring for new hires</li>
+        <li>4 weekly deliverables (Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop proof)</li>
+      </ul>
+    </div>
+
+    <!-- Data safety -->
+    <div class="section-title">What Must Not Be Stored Here</div>
+    <div class="warning-box" data-searchable data-tags="suman candidate personal data not stored recruitment sensitive">
+      <h3>Recruitment data safety — never stored in this AIOS</h3>
+      <ul>
+        <li>Candidate names, contact details, or personal information</li>
+        <li>Individual CV content or interview notes by candidate name</li>
+        <li>Salary offers, negotiated rates, or individual bonus amounts</li>
+        <li>Individual interview scores by name</li>
+        <li>Rejected candidate personal data beyond process-level tracking</li>
+        <li>Health, medical, or background check personal data</li>
+      </ul>
+    </div>
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Route all three workbench files to Suman for review. Ask him to confirm the recruitment pipeline scope, the weekly deliverables checklist (4 items), and the 180-day handover process. No formal source document is needed — Suman's direct confirmation is sufficient to move from DRAFT to ACTIVE.</p>
+    </div>
+
+  </div><!-- /tab-suman-recruitment -->
+
+
+  <!-- ══════════════════════════════════
+       TAB 4 — ARUN IMPLEMENTATION
+  ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-arun-implementation" role="tabpanel">
+
+    <div class="member-header" data-searchable data-tags="arun implementation officer kpi axiom roi draft pending verify 8 9 10">
+      <div class="member-header-info">
+        <h2>Arun</h2>
+        <div class="role-label">Implementation Officer — KPI definitions, AXIOM band placement, incident escalation, PRC membership, KPI meeting governance</div>
+        <div class="status-note">
+          <strong>Status:</strong> DRAFT — Pending Arun review.<br>
+          <span style="color:var(--muted); font-size:.8rem;">Arun holds sole authority over AXIOM band placement. His workbench covers KPI definitions, weekly AXIOM processing, incident escalation management, PRC membership, and the KPI meeting format. The workbench is DRAFT and has three open [VERIFY] items (8, 9, 10) that only Arun can resolve — these are the highest priority actions in the entire review queue.</span>
+        </div>
+      </div>
+      <div class="member-header-badges">
+        <span class="badge badge-draft">DRAFT</span>
+        <span class="badge badge-pending">Pending Arun Review</span>
+        <span class="badge badge-verify">[VERIFY] Items 8, 9, 10 — Highest Priority</span>
+      </div>
+    </div>
+
+    <!-- Files -->
+    <div class="section-title">Workbench Files</div>
+    <div class="file-list-box" data-searchable data-tags="arun implementation workbench files quick reference verify items">
+      <h4>Files to review</h4>
+      <ul>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/arun-implementation/WORKBENCH.md</div>
+            <div class="fdesc">Main workbench — KPI definitions per team, AXIOM band placement authority, weekly AXIOM workflow, incident escalation path, PRC membership, management dashboard requirements, KPI meeting format, and Meeting ID system.</div>
+          </div>
+        </li>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/arun-implementation/quick-reference-sources.md</div>
+            <div class="fdesc">Short reference list — which source documents (SRC-ARUN-001, SRC-ARUN-002, SRC-MD-ARUN-001) cover Arun's responsibilities and where to find them.</div>
+          </div>
+        </li>
+        <li>
+          <span>📄</span>
+          <div>
+            <div class="fpath">member-aios/arun-implementation/verify-items-arun.md</div>
+            <div class="fdesc">PRIORITY FILE — Contains the three [VERIFY] items (8, 9, 10) that need Arun's direct confirmation. This file should be handed to Arun first.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- VERIFY items explained -->
+    <div class="section-title">Highest Priority — Three VERIFY Items for Arun to Confirm</div>
+    <p style="font-size:.83rem; color:var(--muted); margin-bottom:14px;">These three items are recorded in the AIOS but are unconfirmed. Arun's direct statement is all that is needed — no formal document required. They must not be treated as resolved until Arun confirms them.</p>
+
+    <div class="verify-explain" data-searchable data-tags="verify 8 amazon acos threshold direction arun">
+      <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 8</span> Amazon ACOS — Which direction is the target?</div>
+      <div class="verify-explain-plain">
+        <strong>What we recorded:</strong> The source document (SRC-ARUN-001) states "Amazon ACOS Below 25%" — but the wording is unclear. ACOS (Advertising Cost of Sale) is a metric where lower is usually better. However, we are not certain whether the KPI target is: (a) to achieve ACOS <em>below</em> 25% (meaning you want to keep costs low), or (b) something else entirely.<br><br>
+        <strong>Why it matters:</strong> If the direction is wrong, the KPI trigger — the condition that flags a performance problem — would be applied incorrectly in all reviews.
+      </div>
+      <div class="verify-explain-action">Arun to confirm: Is the target "ACOS below 25%" (meaning ACOS under 25% is good, over 25% triggers a flag)? Or is there a different threshold or direction intended?</div>
+    </div>
+
+    <div class="verify-explain" data-searchable data-tags="verify 9 operational manager prc role scope arun">
+      <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 9</span> Operational Manager — What do they actually do on the PRC?</div>
+      <div class="verify-explain-plain">
+        <strong>What we recorded:</strong> The source document lists the Operational Manager as a member of the Performance Review Committee (PRC). The PRC is the group that reviews KPI results, approves bonuses, handles escalations, and makes promotion decisions.<br><br>
+        <strong>What we do not know:</strong> We do not have a dedicated source that describes what the Operational Manager's role within the PRC actually is. Do they vote? Do they have approval authority? Are there decisions they specifically own?
+      </div>
+      <div class="verify-explain-action">Arun to confirm: What is the Operational Manager's specific role and scope of participation within the PRC?</div>
+    </div>
+
+    <div class="verify-explain" data-searchable data-tags="verify 10 roi officer identity title arun mayurika candidate">
+      <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 10</span> ROI Officer — Is this a job title or a description of what Arun and Mayurika do?</div>
+      <div class="verify-explain-plain">
+        <strong>What we recorded:</strong> The source document (SRC-ARUN-001) lists "ROI Officer feedback" as one of the inputs into the KPI review process. This implies there is someone with the title "ROI Officer."<br><br>
+        <strong>What we think (but cannot confirm):</strong> A later source (SRC-MD-SUMAN-001) suggests that Arun and Mayurika jointly perform the ROI Officer function — meaning "ROI Officer" may be a description of a task they share, not a separate person's job title. However, this is a candidate interpretation, not a confirmed fact.<br><br>
+        <strong>Why it matters:</strong> If "ROI Officer" is a separate role that does not exist yet, the review process has a gap. If it is just a task shared between Arun and Mayurika, that is fine — we just need to confirm it.
+      </div>
+      <div class="verify-explain-action">Arun to confirm directly: Is "ROI Officer" a separate job role, or is it a task performed by Arun and Mayurika together? Once confirmed, this item can be removed from the [VERIFY] register.</div>
+    </div>
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Hand <code>member-aios/arun-implementation/verify-items-arun.md</code> to Arun and ask him to respond to the three items above. Once he confirms them in writing, register his confirmation as a new source and remove the [VERIFY] tags from items 8, 9, and 10. Then ask him to review WORKBENCH.md for the wider domain scope.</p>
+    </div>
+
+  </div><!-- /tab-arun-implementation -->
+
+
+  <!-- ══════════════════════════════════
+       TAB 5 — RAJIV / ADMIN BLOCKED
+  ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-rajiv-blocked" role="tabpanel">
+
+    <div class="blocked-banner" data-searchable data-tags="rajiv admin manager blocked not created src-admin-001 pending">
+      <div class="blocked-icon">🚫</div>
+      <h2>Rajiv / Admin Manager Workbench — NOT CREATED</h2>
+      <p>This workbench cannot be created because the source document for the Admin Manager (SRC-ADMIN-001) has not been received. No Admin Manager content may be written, assumed, or added to the AIOS until that source is registered.</p>
+    </div>
+
+    <!-- Why blocked -->
+    <div class="section-title">Why Is This Blocked?</div>
+    <div class="scope-box" data-searchable data-tags="blocked reason src-admin-001 pending missing document admin manager">
+      <h4>Root cause</h4>
+      <p style="font-size:.83rem; color:var(--text); line-height:1.6; margin-bottom:12px;">
+        The Management AIOS source discipline rule requires that every fact must trace to a registered source document. The Admin Manager's authority, responsibilities, approval rights, and role in the Performance Review Committee (PRC) are all currently unknown because no source document has been received from or about the Admin Manager.<br><br>
+        The source that would provide this information is registered as <strong>SRC-ADMIN-001</strong> — but it has a status of <strong>PENDING</strong>, meaning no document has arrived yet.
+      </p>
+      <h4 style="margin-top:8px;">What is blocked until SRC-ADMIN-001 arrives</h4>
+      <ul>
+        <li>Creating the Rajiv / Admin Manager workbench folder</li>
+        <li>Writing any content about Admin Manager authority or approval rights</li>
+        <li>Writing any escalation paths that route through the Admin Manager</li>
+        <li>Confirming the Admin Manager's PRC role or authority within the PRC</li>
+        <li>Resolving [VERIFY] items 1, 2, 3, 4, and 5 — all five are blocked by SRC-ADMIN-001</li>
+      </ul>
+    </div>
+
+    <!-- VERIFY items blocked -->
+    <div class="section-title">Open [VERIFY] Items Blocked by This Gap</div>
+    <div class="card" style="padding:0; overflow:hidden;" data-searchable data-tags="verify 1 2 3 4 5 admin manager blocked src-admin-001">
+      <table class="review-table">
+        <thead>
+          <tr><th>#</th><th>[VERIFY] Item</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Admin Manager source document</td><td><span class="badge badge-blocked">BLOCKED</span></td></tr>
+          <tr><td>2</td><td>Admin Manager authority scope</td><td><span class="badge badge-blocked">BLOCKED</span></td></tr>
+          <tr><td>3</td><td>Admin Manager PRC role and authority within PRC</td><td><span class="badge badge-blocked">BLOCKED</span></td></tr>
+          <tr><td>4</td><td>Admin Manager approval chains and escalation paths</td><td><span class="badge badge-blocked">BLOCKED</span></td></tr>
+          <tr><td>5</td><td>Final escalation paths (routes through Admin Manager)</td><td><span class="badge badge-blocked">BLOCKED</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- What to do -->
+    <div class="section-title">What to Do When SRC-ADMIN-001 Arrives</div>
+    <div class="scope-box" data-searchable data-tags="src-admin-001 next steps register resolve verify">
+      <h4>Steps after the Admin Manager document is received</h4>
+      <ul>
+        <li>Register the document as SRC-ADMIN-001 in <code>evidence/source-register.md</code></li>
+        <li>Update <code>validation/raw-source-readiness-check.md</code> — change SRC-ADMIN-001 status from PENDING to READY</li>
+        <li>Review and resolve [VERIFY] items 1–5 using the document content</li>
+        <li>Update CLAUDE.md §3, §5, and §7.8 with Admin Manager information</li>
+        <li>Update <code>validation/claude-source-map.md</code> with Admin Manager claims</li>
+        <li>Remove resolved items from <code>validation/pending-admin-manager-gaps.md</code></li>
+        <li>Create the <code>member-aios/rajiv-admin-manager/</code> workbench folder</li>
+        <li>Route to Rajiv for review before promoting workbench to ACTIVE</li>
+      </ul>
+    </div>
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Obtain the Admin Manager source document (interview notes, role description, or process document). Once received, register it as SRC-ADMIN-001 and follow the steps listed above. This is a known gap that has been open since v0.1 of the Foundation Draft.</p>
+    </div>
+
+  </div><!-- /tab-rajiv-blocked -->
+
+
+  <!-- ══════════════════════════════════
+       TAB 6 — REVIEW QUEUE
+  ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-review-queue" role="tabpanel">
+
+    <div class="how-to-box">
+      <h3>How to read this queue</h3>
+      <p>These are the four review actions that must happen before the Management AIOS can move from Foundation Draft to an approved operational system. They should be completed in order — action 4 depends on actions 1–3 being done first.</p>
+    </div>
+
+    <div class="section-title">Ordered Review Actions</div>
+    <div class="card" style="padding:0; overflow:hidden; margin-bottom:24px;">
+      <table class="review-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Owner</th>
+            <th>Action Required</th>
+            <th>File / Reference</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-searchable data-tags="arun verify 8 9 10 amazon acos operational manager roi officer highest priority">
+            <td><strong>1</strong></td>
+            <td><strong>Arun</strong></td>
+            <td>
+              Confirm three [VERIFY] items by direct statement — no formal document required:<br>
+              <em>Item 8</em> — Amazon ACOS threshold: confirm the direction (below 25% = good, or different?)<br>
+              <em>Item 9</em> — Operational Manager PRC membership: confirm scope of participation<br>
+              <em>Item 10</em> — ROI Officer: confirm whether this is a separate job role or a shared task between Arun and Mayurika
+            </td>
+            <td class="mono">member-aios/arun-implementation/verify-items-arun.md</td>
+            <td><span class="badge badge-amber">HIGHEST PRIORITY</span></td>
+          </tr>
+          <tr data-searchable data-tags="mayurika hr workbench eod tool names verify 12 review">
+            <td><strong>2</strong></td>
+            <td><strong>Mayurika</strong></td>
+            <td>
+              Review HR workbench and confirm the domain scope is accurately described.<br>
+              Priority: confirm exact tool names for HR records system and EOD dashboard to resolve [VERIFY] item 12.
+            </td>
+            <td class="mono">member-aios/mayurika-hr/WORKBENCH.md<br>member-aios/mayurika-hr/daily-weekly-checklist.md</td>
+            <td><span class="badge badge-pending">PENDING</span></td>
+          </tr>
+          <tr data-searchable data-tags="suman recruitment workbench weekly deliverables confirm review">
+            <td><strong>3</strong></td>
+            <td><strong>Suman</strong></td>
+            <td>
+              Review recruitment workbench and confirm the domain scope is accurately described.<br>
+              Priority: confirm the weekly deliverables checklist (4 items) is operationally correct.
+            </td>
+            <td class="mono">member-aios/suman-recruitment/WORKBENCH.md<br>member-aios/suman-recruitment/weekly-deliverables-checklist.md</td>
+            <td><span class="badge badge-pending">PENDING</span></td>
+          </tr>
+          <tr data-searchable data-tags="queryability review domain approval after 1 2 3 mareenraj builder">
+            <td><strong>4</strong></td>
+            <td><strong>Mareenraj (Builder)</strong></td>
+            <td>
+              After all three domain owner reviews are complete: run queryability test, update each WORKBENCH.md status from DRAFT to ACTIVE, register any [VERIFY] resolutions as new sources, and update the source register and verify register accordingly.
+            </td>
+            <td class="mono">context/verify-register.md<br>evidence/source-register.md</td>
+            <td><span class="badge badge-pending">After items 1–3</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- AMBER items summary -->
+    <div class="section-title">Non-Blocking AMBER Items — Also Tracked</div>
+    <div class="amber-list">
+      <div class="amber-item" data-searchable data-tags="amber verify 8 9 10 arun priority">
+        <div class="amber-item-title">AMBER 1 — [VERIFY] Items 8, 9, 10 — Arun Priority</div>
+        <div class="amber-item-body">Three [VERIFY] items can be resolved quickly by Arun's direct statement. Item 10 has a candidate resolution (ROI Officers = Arun + Mayurika jointly from SRC-MD-SUMAN-001) but Arun's direct confirmation is still required. See the Arun Implementation tab for plain-English explanations of each item.</div>
+        <div class="amber-item-action">Route verify-items-arun.md to Arun. Register confirmation as new source after receipt.</div>
+      </div>
+      <div class="amber-item" data-searchable data-tags="amber bonus queryability soft conflict src-md-arun-001 src-arun-001">
+        <div class="amber-item-title">AMBER 2 — Bonus Queryability Soft Conflict</div>
+        <div class="amber-item-body">SRC-MD-ARUN-001 introduces a bonus queryability scoring framework (LLM-queryable format as a condition for Sales Team bonus eligibility) that may extend the existing bonus conditions from SRC-ARUN-001. These two sources may not be fully aligned. See <code>validation/md-arun-discussion-conflict-check.md</code>.</div>
+        <div class="amber-item-action">Varmen confirmation recommended before treating the queryability condition as mandatory. Do not treat as definitively integrated until confirmed.</div>
+      </div>
+      <div class="amber-item" data-searchable data-tags="amber skill file updates pending domain owner review management-gap-detection recruitment kpi">
+        <div class="amber-item-title">AMBER 3 — Skill File Update Candidates Not Yet Applied</div>
+        <div class="amber-item-body">MD discussion sources generated skill file update candidates identified in <code>validation/md-discussion-skill-impact-check.md</code>. These were not applied — they require domain owner review. Skills affected: management-gap-detection, recruitment-quality-check, kpi-axiom-review-support.</div>
+        <div class="amber-item-action">Raise with each domain owner during their workbench review. Trainee prepares draft; domain owner reviews before applying.</div>
+      </div>
+      <div class="amber-item" data-searchable data-tags="amber mayurika workbench pre-existing confirmed prior task">
+        <div class="amber-item-title">AMBER 4 — Mayurika Workbench Was Pre-Existing</div>
+        <div class="amber-item-body">The three Mayurika workbench files were created in a prior task and confirmed correct. They remain DRAFT pending Mayurika's actual review, which has not yet taken place.</div>
+        <div class="amber-item-action">Route all three files to Mayurika for review. Priority: confirm tool names to resolve [VERIFY] item 12.</div>
+      </div>
+    </div>
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Start with action 1 — route <code>member-aios/arun-implementation/verify-items-arun.md</code> to Arun. His three confirmations are the fastest wins: no formal document needed, just his direct statement. Actions 2 and 3 (Mayurika and Suman reviews) can happen in parallel with action 1.</p>
+    </div>
+
+  </div><!-- /tab-review-queue -->
+
+
+  <!-- ══════════════════════════════════
+       TAB 7 — FILE MAP
+  ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-file-map" role="tabpanel">
+
+    <div class="how-to-box">
+      <h3>About the File Map</h3>
+      <p>This tab shows the key files and folders in the Management AIOS repository. Click any folder heading to expand or collapse it. File paths are shown in blue — these match the actual paths in the repository. This is a static snapshot; it does not scan the live repository.</p>
+    </div>
+
+    <!-- Root files -->
+    <div class="file-map-section" data-searchable data-tags="root files claude.md readme canonical">
+      <details open>
+        <summary>📁 management-aios/ — Root <span class="badge badge-source" style="font-size:.66rem;">Canonical</span></summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">CLAUDE.md</span><span class="fdesc">— Root truth. Canonical. All content verified against this file.</span><span class="badge badge-source" style="font-size:.66rem;">CANONICAL ROOT</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">README.md</span><span class="fdesc">— Repository overview and getting-started guide.</span></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Member AIOS -->
+    <div class="file-map-section" data-searchable data-tags="member aios mayurika suman arun rajiv workbench draft blocked">
+      <details open>
+        <summary>📁 member-aios/ — Member Workbenches</summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">member-aios/README.md</span><span class="fdesc">— Folder overview, member list, status summary.</span><span class="badge badge-source" style="font-size:.66rem;">ACTIVE</span></div>
+          <details style="margin-top:6px;">
+            <summary style="font-size:.84rem; padding:8px 12px;">📁 mayurika-hr/ <span class="badge badge-draft" style="font-size:.62rem;">DRAFT</span></summary>
+            <div class="details-body">
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/mayurika-hr/WORKBENCH.md</span><span class="fdesc">— Mayurika domain workbench. Pending review.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/mayurika-hr/quick-reference-sources.md</span><span class="fdesc">— Source quick reference for Mayurika's domain.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/mayurika-hr/daily-weekly-checklist.md</span><span class="fdesc">— Daily and weekly operational checklist.</span></div>
+            </div>
+          </details>
+          <details style="margin-top:4px;">
+            <summary style="font-size:.84rem; padding:8px 12px;">📁 suman-recruitment/ <span class="badge badge-draft" style="font-size:.62rem;">DRAFT</span></summary>
+            <div class="details-body">
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/WORKBENCH.md</span><span class="fdesc">— Suman domain workbench. Pending review.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/quick-reference-sources.md</span><span class="fdesc">— Source quick reference for Suman's domain.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/suman-recruitment/weekly-deliverables-checklist.md</span><span class="fdesc">— 4 weekly deliverables checklist.</span></div>
+            </div>
+          </details>
+          <details style="margin-top:4px;">
+            <summary style="font-size:.84rem; padding:8px 12px;">📁 arun-implementation/ <span class="badge badge-draft" style="font-size:.62rem;">DRAFT</span></summary>
+            <div class="details-body">
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/WORKBENCH.md</span><span class="fdesc">— Arun domain workbench. Pending review.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/quick-reference-sources.md</span><span class="fdesc">— Source quick reference for Arun's domain.</span></div>
+              <div class="file-entry"><span>📄</span><span class="fpath">member-aios/arun-implementation/verify-items-arun.md</span><span class="fdesc">— [VERIFY] items 8, 9, 10 — for Arun to confirm.</span><span class="badge badge-verify" style="font-size:.62rem;">[VERIFY] 8,9,10</span></div>
+            </div>
+          </details>
+          <details style="margin-top:4px;">
+            <summary style="font-size:.84rem; padding:8px 12px;">📁 rajiv-admin-manager/ <span class="badge badge-blocked" style="font-size:.62rem;">BLOCKED</span></summary>
+            <div class="details-body">
+              <div class="file-entry"><span>🚫</span><span style="color:var(--blocked); font-size:.82rem;">Not created — awaiting SRC-ADMIN-001</span></div>
+            </div>
+          </details>
+        </div>
+      </details>
+    </div>
+
+    <!-- Context files -->
+    <div class="file-map-section" data-searchable data-tags="context files verify register hr operations recruitment kpi management action records">
+      <details>
+        <summary>📁 context/ — Domain Context Files</summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">context/verify-register.md</span><span class="fdesc">— All 12 open [VERIFY] items with resolution conditions.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">context/hr-operations-context.md</span><span class="fdesc">— Extended HR operations context (Mayurika domain).</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">context/recruitment-context.md</span><span class="fdesc">— Extended recruitment context (Suman domain).</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">context/kpi-axiom-context.md</span><span class="fdesc">— Extended KPI and AXIOM context (Arun domain).</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">context/management-aios-purpose.md</span><span class="fdesc">— AIOS purpose, scope, and problem areas (root level).</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">context/confidentiality-rules.md</span><span class="fdesc">— Data safety and confidentiality rules.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">context/management-action-records-context.md</span><span class="fdesc">— Usage rules for the management-action-records inbox folder.</span></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Evidence files -->
+    <div class="file-map-section" data-searchable data-tags="evidence source register stakeholder confirmations suman line manager mayurika roster">
+      <details>
+        <summary>📁 evidence/ — Source Register and Confirmations</summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">evidence/source-register.md</span><span class="fdesc">— All 22 registered sources with IDs, statuses, and descriptions.</span><span class="badge badge-source" style="font-size:.62rem;">22 sources</span></div>
+          <div class="file-entry" style="margin-top:8px;"><span>📁</span><strong style="font-size:.82rem;">stakeholder-confirmations/</strong></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md</span><span class="fdesc">— Suman confirmed "Line Manager" in source was a typing mistake.</span></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">evidence/stakeholder-confirmations/mayurika-active-staff-roster-confirmation-2026-06-26.md</span><span class="fdesc">— Mayurika confirmed active staff roster details.</span></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Validation files -->
+    <div class="file-map-section" data-searchable data-tags="validation files member workbench creation web view dashboard policy md arun source map">
+      <details>
+        <summary>📁 validation/ — Validation and Check Files</summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/member-aios-3-draft-workbench-creation-check.md</span><span class="fdesc">— Validation for 3-workbench creation task.</span><span class="badge badge-pass" style="font-size:.62rem;">PASS-AMBER</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/web-view-html-dashboard-check.md</span><span class="fdesc">— Validation for this web dashboard (current file).</span><span class="badge badge-pass" style="font-size:.62rem;">PASS-AMBER</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/policy-update-impact-report.md</span><span class="fdesc">— Impact report for SRC-POLICY-001 integration.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/md-arun-discussion-source-ingestion-check.md</span><span class="fdesc">— Ingestion check for SRC-MD-ARUN-001.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/md-arun-discussion-conflict-check.md</span><span class="fdesc">— Soft conflict check — bonus queryability vs §7.9.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/md-arun-discussion-impact-map.md</span><span class="fdesc">— Impact map for SRC-MD-ARUN-001 integration.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/md-arun-discussion-ingestion-final-report.md</span><span class="fdesc">— Final ingestion report for SRC-MD-ARUN-001.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/md-discussion-source-ingestion-check.md</span><span class="fdesc">— Ingestion check for SRC-MD-HR-001 and SRC-MD-SUMAN-001.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/md-discussion-skill-impact-check.md</span><span class="fdesc">— Skill file update candidates from MD discussion sources.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">validation/claude-source-map.md</span><span class="fdesc">— Map of which CLAUDE.md claims trace to which source IDs.</span></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Handover files -->
+    <div class="file-map-section" data-searchable data-tags="handover files closure web view dashboard member workbench management action records team usage">
+      <details>
+        <summary>📁 handover/ — Closure and Handover Files</summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</span><span class="fdesc">— Closure for 3-workbench creation task.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">handover/2026-06-30__web-view-dashboard-closure.md</span><span class="fdesc">— Closure for this web dashboard task.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">handover/management-action-records-team-usage-guide.md</span><span class="fdesc">— Usage guide for the management-action-records inbox.</span></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Intelligence inbox -->
+    <div class="file-map-section" data-searchable data-tags="intelligence inbox management action records mayurika suman arun index active folder">
+      <details>
+        <summary>📁 intelligence-inbox/ — Ongoing Action Records Inbox</summary>
+        <div class="details-body">
+          <div class="file-entry" style="margin-bottom:6px;"><span>📁</span><strong style="font-size:.82rem;">management-action-records/</strong><span class="badge badge-source" style="font-size:.62rem; margin-left:8px;">ACTIVE FOLDER</span></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📄</span><span class="fpath">intelligence-inbox/management-action-records/INDEX.md</span><span class="fdesc">— Index of all records and usage rules.</span></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📁</span><span class="fpath">intelligence-inbox/management-action-records/mayurika-hr/</span><span class="fdesc">— 1 record open</span></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📁</span><span class="fpath">intelligence-inbox/management-action-records/suman-recruitment/</span><span class="fdesc">— 0 records</span></div>
+          <div class="file-entry" style="padding-left:16px;"><span>📁</span><span class="fpath">intelligence-inbox/management-action-records/arun-implementation/</span><span class="fdesc">— 0 records</span></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Skills -->
+    <div class="file-map-section" data-searchable data-tags="skills management gap detection problem analysis policy lookup recruitment quality kpi axiom">
+      <details>
+        <summary>📁 skills/ — AIOS Skill Files</summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">skills/management-gap-detection.md</span><span class="fdesc">— Skill for detecting management and operational gaps.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">skills/management-problem-analysis.md</span><span class="fdesc">— Skill for analysing recorded management problems.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">skills/policy-lookup.md</span><span class="fdesc">— Skill for looking up company policy from confirmed sources.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">skills/recruitment-quality-check.md</span><span class="fdesc">— Skill for checking recruitment process quality.</span></div>
+          <div class="file-entry"><span>📄</span><span class="fpath">skills/kpi-axiom-review-support.md</span><span class="fdesc">— Skill for supporting KPI and AXIOM review processes.</span></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Web-view -->
+    <div class="file-map-section" data-searchable data-tags="web view index html dashboard netlify this file">
+      <details open>
+        <summary>📁 web-view/ — This Dashboard File</summary>
+        <div class="details-body">
+          <div class="file-entry"><span>📄</span><span class="fpath">web-view/index.html</span><span class="fdesc">— This file. Static HTML dashboard for Netlify deployment. Read-only.</span><span class="badge badge-source" style="font-size:.62rem;">THIS FILE</span></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="next-step-box">
+      <h3>What should I do next?</h3>
+      <p>Use this File Map as a reference when opening files in VS Code. All editing happens in VS Code directly — not from this dashboard. After domain owner reviews are complete, regenerate this dashboard via Claude Code so the file map stays up to date.</p>
+    </div>
+
+  </div><!-- /tab-file-map -->
+
+</main>
+
+<!-- ═══════════════════════════════════
+     INLINE JAVASCRIPT
+═══════════════════════════════════ -->
 <script>
 (function () {
   'use strict';
 
-  var searchInput  = document.getElementById('searchInput');
-  var searchClear  = document.getElementById('searchClear');
+  /* ── Tab switching ── */
+  var tabBtns   = document.querySelectorAll('.tab-btn');
+  var tabPanels = document.querySelectorAll('.tab-panel');
+
+  function activateTab(targetId) {
+    tabBtns.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === targetId);
+      btn.setAttribute('aria-selected', btn.getAttribute('data-tab') === targetId ? 'true' : 'false');
+    });
+    tabPanels.forEach(function (panel) {
+      panel.classList.toggle('active', panel.id === 'tab-' + targetId);
+    });
+  }
+
+  tabBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      activateTab(btn.getAttribute('data-tab'));
+    });
+  });
+
+  /* ── Search (across all panels) ── */
+  var searchInput   = document.getElementById('searchInput');
+  var searchClear   = document.getElementById('searchClear');
   var searchResults = document.getElementById('searchResults');
 
   function normalize(str) {
@@ -985,74 +1284,27 @@
     query = normalize(query);
     var items = document.querySelectorAll('[data-searchable]');
     var shown = 0;
-
     items.forEach(function (el) {
       var tags = normalize(el.getAttribute('data-tags') || '');
       var text = normalize(el.textContent || '');
       var match = !query || tags.indexOf(query) !== -1 || text.indexOf(query) !== -1;
-      if (match) {
-        el.classList.remove('hidden');
-        shown++;
-      } else {
-        el.classList.add('hidden');
-      }
+      if (match) { el.classList.remove('hidden'); shown++; }
+      else        { el.classList.add('hidden'); }
     });
-
     if (query) {
-      searchResults.textContent = shown + ' result' + (shown === 1 ? '' : 's');
+      searchResults.textContent = shown + ' result' + (shown === 1 ? '' : 's') + ' across all tabs';
     } else {
       searchResults.textContent = '';
     }
   }
 
-  searchInput.addEventListener('input', function () {
-    doSearch(searchInput.value);
-  });
-
+  searchInput.addEventListener('input', function () { doSearch(searchInput.value); });
   searchClear.addEventListener('click', function () {
     searchInput.value = '';
     doSearch('');
     searchInput.focus();
   });
 
-  // Sidebar smooth scroll
-  document.querySelectorAll('.sidebar a[href^="#"]').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      var target = document.querySelector(link.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      document.querySelectorAll('.sidebar a').forEach(function (a) { a.classList.remove('active'); });
-      link.classList.add('active');
-    });
-  });
-
-  // Highlight active section on scroll
-  var sections = document.querySelectorAll('main section[id]');
-  var sidebarLinks = document.querySelectorAll('.sidebar a[href^="#"]');
-
-  function onScroll() {
-    var scrollY = document.querySelector('.main').scrollTop;
-    var current = '';
-    sections.forEach(function (sec) {
-      if (sec.offsetTop - 60 <= scrollY) {
-        current = '#' + sec.id;
-      }
-    });
-    sidebarLinks.forEach(function (a) {
-      if (a.getAttribute('href') === current) {
-        a.classList.add('active');
-      } else {
-        a.classList.remove('active');
-      }
-    });
-  }
-
-  var mainEl = document.querySelector('.main');
-  if (mainEl) {
-    mainEl.addEventListener('scroll', onScroll, { passive: true });
-  }
 }());
 </script>
 </body>

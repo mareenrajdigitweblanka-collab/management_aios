@@ -2,21 +2,22 @@
 name: web-view-dashboard-closure
 type: handover-closure
 created: 2026-06-30
+last-updated: 2026-06-30
 created-by: Mareenraj (builder)
 requirement-id: web-view-html-dashboard-creation
-status: PASS — AMBER noted; static dashboard created, ready for Vercel deployment
+status: PASS — AMBER noted; tab-based beginner-friendly dashboard updated, ready for Netlify deployment
 ---
 
-# Handover Closure — Web View HTML Dashboard Creation
+# Handover Closure — Web View HTML Dashboard Creation and Tab UI Update
 
 **Closure date:** 2026-06-30
-**Pass/Fail Rule:** PASS if the dashboard is a self-contained static HTML file showing AIOS status and folder structure without sensitive data, duplicate truth, or editing capability, and is ready for Vercel deployment. FAIL if any of those conditions are violated.
+**Pass/Fail Rule:** PASS if the dashboard is a self-contained static HTML file showing AIOS status and folder structure without sensitive data, duplicate truth, or editing capability, and is ready for Netlify deployment. FAIL if any of those conditions are violated.
 
 ---
 
 ## Requirement ID
 
-`web-view-html-dashboard-creation` — Create a static HTML-only web dashboard at `web-view/index.html` for read-only viewing of the Management AIOS folder structure and member workbench statuses. Intended for Vercel deployment. No backend. No editing. No sensitive data.
+`web-view-html-dashboard-creation` — Create a static HTML-only web dashboard at `web-view/index.html` for read-only viewing of the Management AIOS folder structure and member workbench statuses. Intended for Netlify deployment. No backend. No editing. No sensitive data.
 
 ---
 
@@ -84,7 +85,7 @@ A clean LLM reading the `web-view/` folder should be able to answer:
 | What commit hash does it reference? | YES — topbar and pass/fail section |
 | What [VERIFY] items are open? | YES — [VERIFY] register section |
 | What are the AMBER items? | YES — AMBER Items section |
-| Can it be deployed to Vercel without a build step? | YES — deployment note section confirms YES |
+| Can it be deployed to Netlify without a build step? | YES — deployment note section confirms YES |
 | Is this file the root AIOS truth? | YES — safety warning says NO explicitly |
 
 **Queryability result: PASS**
@@ -96,7 +97,7 @@ A clean LLM reading the `web-view/` folder should be able to answer:
 | Blocker | Detail | Owner |
 |---|---|---|
 | Commit hash placeholder | This closure file uses a placeholder for the web-view addition commit hash — fill after actual commit | Mareenraj |
-| Vercel deployment not yet confirmed | Dashboard is ready; deployment depends on Vercel project setup | Mareenraj |
+| Netlify deployment not yet confirmed | Dashboard is ready; deployment depends on Netlify project setup | Mareenraj |
 | Domain reviews pending | Member workbench DRAFT status remains until Mayurika, Suman, and Arun review — this is unchanged by the dashboard creation | Domain owners |
 | SRC-ADMIN-001 pending | Rajiv workbench shown as BLOCKED — unchanged | Admin Manager |
 
@@ -160,7 +161,7 @@ All 12 open [VERIFY] items from `context/verify-register.md` are preserved:
 | [VERIFY] register (12 items) | YES |
 | AMBER items (4) | YES |
 | Safety warning | YES |
-| Vercel deployment note | YES |
+| Netlify deployment note | YES |
 | Pass/fail result section | YES |
 | Mobile responsive | YES |
 
@@ -168,10 +169,39 @@ All 12 open [VERIFY] items from `context/verify-register.md` are preserved:
 
 ## Next Step
 
-1. **Commit** the three new files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`) to branch `individual-aios`
-2. **Update** the commit hash placeholder in this file with the actual commit hash
-3. **Deploy** to Vercel: point Vercel project root to `web-view/` or copy `index.html` to the Vercel project public root — no build step required
+1. **Commit** the updated files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`) to branch `individual-aios`
+2. **Update** the commit hash placeholder below with the actual commit hash from this update
+3. **Deploy / redeploy** to Netlify: publish directory is `web-view/`, no build command — no build step required
 4. **After domain reviews:** Update `member-aios/*/WORKBENCH.md` status from DRAFT to ACTIVE and regenerate `web-view/index.html` to reflect the updated statuses
+
+---
+
+## Tab-Based UI Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| UI layout | Replaced sidebar + single-page layout with 7-tab navigation |
+| Tabs added | Root AIOS, Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv / Admin Blocked, Review Queue, File Map |
+| Beginner-friendly additions | "How to use this dashboard" box (Root AIOS tab), label legend with descriptions for all 6 label types, "What should I do next?" box in every tab |
+| VERIFY plain-English | Items 8, 9, 10 explained in plain English with "what we recorded", "what we do not know", and resolution action (Arun Implementation tab) |
+| File Map | Converted to collapsible `<details>`/`<summary>` sections — 9 folder groups, no JS required |
+| Search | Retained — searches across all tab panels regardless of active tab |
+| VIEW ONLY badge | Added to topbar for immediate clarity |
+| Tab status badges | Each tab button shows status badge (PASS-AMBER, DRAFT ×3, BLOCKED) |
+
+**Safety checks — all preserved:**
+
+- No sensitive data added
+- No [VERIFY] items resolved
+- No DRAFT workbench marked ACTIVE
+- Rajiv / Admin workbench shown as BLOCKED throughout
+- No duplicate truth — file paths and short summaries only
+- No backend, CDN, or external dependency
+- Netlify deployment wording preserved in Root AIOS tab
+
+**Commit hash for this tab UI update:** `[PLACEHOLDER — update after commit]`
 
 ---
 
@@ -179,4 +209,4 @@ All 12 open [VERIFY] items from `context/verify-register.md` are preserved:
 
 **PASS — AMBER noted**
 
-Static HTML dashboard created at `web-view/index.html`. Self-contained, no dependencies, Vercel-deployable without a build step. All required UI sections present. No sensitive data. No [VERIFY] items resolved. No duplicate truth. No editing capability. All member workbench statuses shown correctly. Commit hash referenced from prior task — update after this task's commit. Four non-blocking AMBER items tracked in `validation/web-view-html-dashboard-check.md`.
+Static HTML dashboard at `web-view/index.html` updated with tab-based beginner-friendly UI. Seven tabs added. Self-contained, no dependencies, Netlify-deployable without a build step. All required content present across tabs. No sensitive data. No [VERIFY] items resolved. No duplicate truth. No editing capability. All member workbench statuses shown correctly (3 DRAFT, 1 BLOCKED). Four non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved.

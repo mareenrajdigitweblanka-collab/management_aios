@@ -2,16 +2,18 @@
 name: web-view-html-dashboard-check
 type: validation
 created: 2026-06-30
+last-updated: 2026-06-30
 checked-by: Mareenraj (builder)
-scope: web-view/index.html — static HTML dashboard for Vercel deployment
+scope: web-view/index.html — static HTML dashboard for Netlify deployment
 status: PASS — AMBER noted
+update: Tab-based beginner-friendly UI added 2026-06-30
 ---
 
 # Web View HTML Dashboard — Validation Check
 
-**Purpose:** Validate that the static HTML dashboard at `web-view/index.html` was created correctly as a read-only viewer without sensitive data, duplicate truth, resolved [VERIFY] items, or any backend/editing capability.
+**Purpose:** Validate that the static HTML dashboard at `web-view/index.html` was created correctly as a read-only viewer without sensitive data, duplicate truth, resolved [VERIFY] items, or any backend/editing capability. Updated 2026-06-30 to record tab-based UI and beginner-friendly improvements.
 
-**Pass/Fail Rule:** PASS if the dashboard is static HTML only, shows file paths and short summaries only, preserves all [VERIFY] items, contains no sensitive personal data, creates no duplicate truth, and is deployable to Vercel without a build step. FAIL if any of these conditions are violated.
+**Pass/Fail Rule:** PASS if the dashboard is static HTML only, shows file paths and short summaries only, preserves all [VERIFY] items, contains no sensitive personal data, creates no duplicate truth, and is deployable to Netlify without a build step. FAIL if any of these conditions are violated.
 
 ---
 
@@ -26,7 +28,7 @@ Create a static HTML-only web dashboard at `web-view/index.html` that shows:
 - [VERIFY] register (all 12 open items)
 - AMBER items (4 non-blocking tracked items)
 - Safety warning section
-- Vercel deployment note
+- Netlify deployment note
 - Pass/fail result section
 - Commit hash and branch reference
 
@@ -121,9 +123,9 @@ No DRAFT workbench is shown as ACTIVE. Rajiv's workbench is shown as BLOCKED —
 
 ---
 
-## 7. Vercel Deployment Check
+## 7. Netlify Deployment Check
 
-**Rule:** The file must be deployable to Vercel as a static site without a build step, without external CDN dependencies, and without any backend component.
+**Rule:** The file must be deployable to Netlify as a static site without a build step, without external CDN dependencies, and without any backend component.
 
 | Check | Result |
 |---|---|
@@ -137,7 +139,7 @@ No DRAFT workbench is shown as ACTIVE. Rajiv's workbench is shown as BLOCKED —
 | Mobile responsive | YES — media queries at 768px breakpoint |
 | Build step required? | NO — deploy as static file |
 
-**Vercel deployment check: PASS**
+**Netlify deployment check: PASS**
 
 ---
 
@@ -172,7 +174,7 @@ No DRAFT workbench is shown as ACTIVE. Rajiv's workbench is shown as BLOCKED —
 | [VERIFY] register section | YES — all 12 items with resolution path |
 | AMBER items section | YES — 4 AMBER items with detail and action |
 | Safety warning section | YES — 10 safety rules listed |
-| Deployment note for Vercel | YES — 8 deployment guidance points |
+| Deployment note for Netlify | YES — 8 deployment guidance points |
 | Pass/fail status section | YES — PASS-AMBER result with commit reference |
 | Mobile responsive layout | YES — sidebar hides below 768px |
 
@@ -212,9 +214,63 @@ A clean LLM reading or viewing this dashboard should be able to answer:
 
 ## 12. One Next Step
 
-**Commit this web-view addition to `individual-aios` and deploy to Vercel.**
+**Commit the tab-based dashboard update to `individual-aios` and redeploy to Netlify.**
 
-After commit: update the commit hash placeholder in `handover/2026-06-30__web-view-dashboard-closure.md` with the actual commit hash from the web-view addition commit.
+After commit: update the commit hash placeholder in `handover/2026-06-30__web-view-dashboard-closure.md` with the actual commit hash.
+
+---
+
+## 13. Tab-Based UI Check (Added 2026-06-30)
+
+**Requirement:** Add 7 tabs to the dashboard with beginner-friendly content, plain-English VERIFY explanations, "What should I do next?" sections in every tab, and a label legend.
+
+| Tab | Present? | Key Content Check |
+|---|---|---|
+| Root AIOS | YES | How-to box, label legend, status bar, safety rules, deploy note, pass/fail result |
+| Mayurika HR | YES | Owner header, 3 file paths, scope list, VERIFY item 12 plain-English explanation, data safety warning |
+| Suman Recruitment | YES | Owner header, 3 file paths, scope list (13 items), data safety warning |
+| Arun Implementation | YES | Owner header, 3 file paths, VERIFY 8/9/10 each with plain-English explanation and resolution action |
+| Rajiv / Admin Blocked | YES | Blocked banner, 5 VERIFY items table, steps after SRC-ADMIN-001 arrives |
+| Review Queue | YES | 4-action ordered table, 4 AMBER items |
+| File Map | YES | 9 collapsible folder sections using native HTML details/summary |
+
+**Beginner-friendly check:**
+
+| Feature | Present? |
+|---|---|
+| "How to use this dashboard" section | YES — Root AIOS tab, top position |
+| Label legend (DRAFT, PENDING, BLOCKED, PASS-AMBER, VERIFY, VIEW ONLY) | YES — Root AIOS tab with descriptions |
+| Plain-English VERIFY explanations (items 8, 9, 10) | YES — Arun Implementation tab |
+| "What should I do next?" box in every tab | YES — all 7 tabs |
+| Short explanations under status labels | YES — status-sub text and member-header status-note |
+| VIEW ONLY badge in topbar | YES |
+| Tab badges showing status at a glance | YES — PASS-AMBER, DRAFT (×3), BLOCKED |
+
+**Safety checks — unchanged:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT PRESENT — same rules applied to all 7 tabs |
+| Duplicate truth | NOT PRESENT — file paths and short summaries only |
+| [VERIFY] preservation | PASS — all 12 items preserved, none resolved |
+| DRAFT → ACTIVE promotion | NOT DONE — all 3 workbenches remain DRAFT |
+| Rajiv workbench shown as created | NO — shown as BLOCKED throughout |
+| Backend, API, or database code | NOT PRESENT |
+| Edit/save/write feature | NOT PRESENT |
+| Login system | NOT PRESENT |
+| External CDN | NOT PRESENT — all CSS and JS inline |
+| Netlify deployment wording | PRESERVED — Root AIOS tab, deploy-box section |
+
+**Tab implementation check:**
+
+| Check | Result |
+|---|---|
+| Tabs implemented with HTML/CSS/JS only | YES — no framework |
+| Tab switching via inline JavaScript | YES — classList toggle, no external dependency |
+| Search works across all tabs | YES — searches all [data-searchable] elements regardless of active tab |
+| File Map uses collapsible sections | YES — native HTML `<details>`/`<summary>` elements, no JS required |
+| Mobile responsive | YES — tab bar scrolls horizontally below 768px |
+| Sidebar removed (replaced by tabs) | YES — sidebar CSS and HTML removed |
 
 ---
 
@@ -222,4 +278,4 @@ After commit: update the commit hash placeholder in `handover/2026-06-30__web-vi
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. No sensitive data. No [VERIFY] items resolved. No duplicate truth. No editing capability. All 12 [VERIFY] items preserved. All 4 member workbench statuses shown correctly. Deployable to Vercel without a build step. All required UI sections are present. 4 AMBER items are non-blocking and documented.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. No sensitive data. No [VERIFY] items resolved. No duplicate truth. No editing capability. All 12 [VERIFY] items preserved. All 4 member workbench statuses shown correctly (3 DRAFT, 1 BLOCKED). Deployable to Netlify without a build step. 4 AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
