@@ -456,8 +456,88 @@ After commit: update the commit hash placeholder in `handover/2026-06-30__web-vi
 
 ---
 
+## 19. Mayurika HR Daily Control Panel Check (Added 2026-07-01)
+
+**Requirement:** Add an HR Daily Control Panel read-only section to the Mayurika HR tab in `web-view/index.html`, based on Mayurika's 5-question UI intent capture (2026-07-01).
+
+**Evidence source:** `evidence/stakeholder-confirmations/mayurika-ui-intent-capture-2026-07-01.md`
+**Screen list validation:** `validation/mayurika-ui-screen-list-check.md`
+
+### Cards Added
+
+| Card | Item | Priority Tier |
+|---|---|---|
+| 1 | Attendance Dashboard | Priority (Q2) |
+| 2 | Leave Requests | Priority (Q2 + Q5 cross-source) |
+| 3 | Task Tool Management | Priority (Q4) |
+| 4 | EOD Submissions | Standard daily check |
+| 5 | Probation Reminders | Standard daily check |
+| 6 | New Joiners | Standard daily check |
+| 7 | HR Inbox | Standard daily check |
+| 8 | Pending Approvals | Standard daily check |
+| 9 | Document Verification | Standard daily check |
+| 10 | Missing Employee Documents | Standard daily check |
+| 11 | Developer/Technical — Daily Requirement & Skill File Quantity | Standard daily check |
+| 12 | Developer/Technical — Daily ROI & User Benefit | Standard daily check |
+
+### Secondary Screens Listed (not built)
+
+Probation review overview; Confirmation recommendation overview; Training completion overview; Employee complaints overview; Performance review overview — listed as future design candidates only.
+
+### Submission Form Candidates Listed (not built)
+
+Leave request submission; Probation review request; Confirmation recommendation; Training completion; Employee complaint; Performance review — listed as future candidates only. No active forms built.
+
+### Safety Checks — HR Daily Control Panel
+
+| Check | Result |
+|---|---|
+| Sensitive data (staff names, salary, health, disciplinary, PDPA, employee IDs) | NOT PRESENT |
+| Submission forms built | NO — deferred; correctly listed as future candidates only |
+| Write capability or backend code added | NOT PRESENT |
+| External CDN added | NOT PRESENT |
+| Duplicate truth (policy text, KPI rules, AXIOM bands) | NOT PRESENT |
+| Mayurika marked ACTIVE | NO — remains DRAFT |
+| [VERIFY] items resolved | NO — none resolved |
+| Note shown to user | YES — "This panel is based on Mayurika's UI intent capture. It is read-only. It does not submit or update HR records yet." |
+| DWC sanity check status | PENDING — screen list awaits DWC review |
+
+**Read-only check: PASS**
+**Sensitive-data check: PASS**
+**No submission form added: PASS**
+**PASS/AMBER preserved: YES — overall result remains PASS-AMBER**
+
+---
+
+## 20. Mayurika Checklist Correction Update Dashboard Check (2026-07-01)
+
+**Change:** Mayurika checklist updated with 17 new sections (correction feedback, 2026-07-01). Dashboard updated to reflect checklist as DRAFT — Corrections Applied; Re-review Pending.
+
+| Check | Result |
+|---|---|
+| Checklist file description in Mayurika HR tab updated | YES — shows "DRAFT — Corrections Applied; Re-review Pending" and 17 new sections note |
+| AMBER 2 text updated to reflect correction pass | YES — title and body updated to reference corrections applied 2026-07-01 |
+| Review Queue action 2 description updated | YES — references 17 applied sections; re-review pending note added; checklist status shown |
+| Mayurika tab badge remains DRAFT | YES — unchanged |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| [VERIFY] item 12 resolved | NO — preserved; re-review still required |
+| [VERIFY] root register changed | NO — all 9 open items unchanged |
+| Sensitive data added | NOT PRESENT |
+| Duplicate truth added | NOT PRESENT |
+| Source-register entry added | NOT ADDED — no new source registered in this task |
+| Root CLAUDE.md updated | NO — dashboard is navigation layer only |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Arun remains ACTIVE | YES — unchanged |
+| Suman remains ACTIVE | YES — unchanged |
+| PASS/AMBER preserved | YES — overall result unchanged |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.

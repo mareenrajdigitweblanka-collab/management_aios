@@ -31,7 +31,7 @@ status: PASS — AMBER noted; all files DRAFT pending domain owner review
 | member-aios README | `member-aios/README.md` | UPDATED — Suman DRAFT and Arun DRAFT added; Rajiv blocker rule added |
 | Mayurika WORKBENCH | `member-aios/mayurika-hr/WORKBENCH.md` | PRE-EXISTING — confirmed correct; no changes |
 | Mayurika quick-reference | `member-aios/mayurika-hr/quick-reference-sources.md` | PRE-EXISTING — confirmed correct; no changes |
-| Mayurika checklist | `member-aios/mayurika-hr/daily-weekly-checklist.md` | PRE-EXISTING — confirmed correct; no changes |
+| Mayurika checklist | `member-aios/mayurika-hr/daily-weekly-checklist.md` | PRE-EXISTING — confirmed correct; no changes in original task. UPDATED 2026-07-01 — Mayurika correction feedback applied; 17 new sections added; status updated to DRAFT — corrections applied; re-review pending |
 | Suman WORKBENCH | `member-aios/suman-recruitment/WORKBENCH.md` | CREATED 2026-06-30 |
 | Suman quick-reference | `member-aios/suman-recruitment/quick-reference-sources.md` | CREATED 2026-06-30 |
 | Suman checklist | `member-aios/suman-recruitment/weekly-deliverables-checklist.md` | CREATED 2026-06-30 |
@@ -118,7 +118,8 @@ A clean LLM reading `member-aios/` after this task should be able to answer:
 | Blocker | Detail | Owner |
 |---|---|---|
 | Rajiv workbench blocked | SRC-ADMIN-001 PENDING — no Admin Manager documents received | Admin Manager to supply documents |
-| Mayurika review pending | Three HR workbench files are DRAFT — [VERIFY] item 12 (tool names) can be resolved during review | Mayurika |
+| Mayurika checklist correction pass | Checklist corrections applied 2026-07-01 — 17 sections added; status DRAFT — corrections applied; re-review pending. Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-correction-feedback-2026-07-01.md` | COMPLETE — re-review pending |
+| Mayurika re-review pending | Checklist corrected; WORKBENCH.md and quick-reference-sources.md still DRAFT — Mayurika must re-review all three files before ACTIVE | Mayurika |
 | Suman review completed | Three recruitment workbench files are ACTIVE — Suman Reviewed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` | COMPLETE |
 | Arun review completed — root propagation complete 2026-06-30 | Arun reviewed 2026-06-30; workbench ACTIVE; items 8, 9, 10 confirmed at member workbench layer and root propagated 2026-06-30. Source registered as SRC-ARUN-CONF-001 (READY). Root CLAUDE.md §7.3/§7.4/§7.8/§14, context/verify-register.md (items 8, 9, 10 resolved), context/kpi-axiom-context.md, and evidence/source-register.md updated. Item 9 propagated with escalation authority scope limit preserved. Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md` | COMPLETE |
 | Bonus queryability soft conflict | SRC-MD-ARUN-001 §11.11 extends §7.9 bonus conditions — relationship not yet confirmed | Varmen confirmation recommended — see validation/md-arun-discussion-conflict-check.md |
@@ -188,9 +189,11 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 **Suman review completed 2026-06-30.** Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md`. Suman confirmed domain pointers, 8-point screening criteria quick reference, Line Manager = employee's Team Lead, and weekly deliverables checklist accuracy. All three Suman workbench files are ACTIVE.
 
+**Checklist correction pass completed 2026-07-01.** Mayurika provided correction feedback requesting 17 new sections. All 17 sections applied to `member-aios/mayurika-hr/daily-weekly-checklist.md`. Status updated to `DRAFT — Mayurika corrections applied; re-review pending 2026-07-01`. No [VERIFY] items resolved. No source-register entry created. Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-correction-feedback-2026-07-01.md`. Validation: `validation/mayurika-checklist-correction-update-check.md`.
+
 One domain review remains pending:
 
-1. **Mayurika:** Review `member-aios/mayurika-hr/` — confirm HR domain pointer accuracy; confirm tool names to resolve [VERIFY] item 12
+1. **Mayurika:** Re-review `member-aios/mayurika-hr/daily-weekly-checklist.md` — confirm 17 applied sections are accurate; confirm tool names to resolve [VERIFY] item 12; then confirm WORKBENCH.md and quick-reference-sources.md
 
 Once Mayurika confirms, update WORKBENCH.md status from DRAFT to ACTIVE.
 

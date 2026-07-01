@@ -207,8 +207,10 @@ The following items are non-blocking but should be tracked:
 
 Suman confirmed: recruitment domain pointers are accurate; 8-point screening criteria quick reference is correct; Line Manager = employee's Team Lead (consistent with SRC-SUMAN-CONF-002); weekly deliverables checklist (4 items) is operationally correct. All three Suman workbench files updated to ACTIVE — Suman Reviewed 2026-06-30.
 
+**Checklist correction pass completed 2026-07-01.** Mayurika provided correction feedback requesting 17 new sections. All 17 sections applied to `member-aios/mayurika-hr/daily-weekly-checklist.md`. Checklist status updated to `DRAFT — Mayurika corrections applied; re-review pending 2026-07-01`. Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-correction-feedback-2026-07-01.md`. Validation: `validation/mayurika-checklist-correction-update-check.md`. No [VERIFY] items resolved. No source-register entry created. Checklist remains DRAFT.
+
 One domain review remains pending:
-- Mayurika reviews `member-aios/mayurika-hr/` — priority: confirm tool names ([VERIFY] item 12)
+- Mayurika re-reviews `member-aios/mayurika-hr/daily-weekly-checklist.md` — confirm 17 applied sections are accurate; confirm tool names ([VERIFY] item 12)
 
 Once Mayurika confirms, update each WORKBENCH.md status to `ACTIVE — Mayurika Reviewed [date]`. Separately, Mareenraj to update root `context/verify-register.md` and CLAUDE.md with Arun's confirmed items 8, 9, 10.
 

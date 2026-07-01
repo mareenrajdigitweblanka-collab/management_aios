@@ -4,7 +4,8 @@ type: checklist
 member: Mayurika / Mayuri
 role: HR Officer
 created: 2026-06-30
-status: DRAFT — Pending Mayurika review
+last-updated: 2026-07-01
+status: DRAFT — Mayurika corrections applied; re-review pending 2026-07-01
 source-boundary: SRC-MAYU-001, SRC-POLICY-001, SRC-MD-HR-001
 root-truth: CLAUDE.md — canonical; this file is a checklist pointer only
 ---
@@ -16,6 +17,8 @@ root-truth: CLAUDE.md — canonical; this file is a checklist pointer only
 **Sensitive Data Rule:** This checklist does not store individual staff names, salary data, health data, disciplinary details, or personal candidate information. It describes process steps only. See `context/confidentiality-rules.md`.
 
 **[VERIFY] Rule:** Items marked [VERIFY] must not be treated as confirmed until the relevant source is registered and the domain owner confirms. See `context/verify-register.md`.
+
+**Corrections Note (2026-07-01):** Sections 4–8 (daily), 14–17 (weekly), and 25–33 (monthly/periodic) were added following Mayurika's correction feedback on 2026-07-01. These sections are pending Mayurika re-review before ACTIVE. Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-correction-feedback-2026-07-01.md`.
 
 ---
 
@@ -60,9 +63,69 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
+### 4. EOD Follow-up Closure
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review any EOD follow-up actions raised today — confirm each has a recorded outcome or a carried-forward note
+- [ ] Close completed follow-up items with a brief outcome note
+- [ ] Move unresolved follow-up items to the Pending Action Tracker (section 8)
+- [ ] Confirm no follow-up action from the prior working day is left without an owner
+
+**Evidence to save:** Date, number of follow-up items reviewed, number closed, number carried forward.
+
+---
+
+### 5. Daily Exception Register
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Record any exceptions observed today — policy breaches, missed submissions, non-compliance flags, or escalation triggers
+- [ ] Assign a brief description, the team or role affected, and the action taken for each exception
+- [ ] If the same exception type has appeared 3 or more times in the past 2 weeks, flag it as a recurring issue
+
+**Evidence to save:** Date, exception type, team/role, action taken, recurring flag (yes/no).
+
+**When to create an action record:** Any recurring exception must be documented in `intelligence-inbox/management-action-records/mayurika-hr/`.
+
+---
+
+### 6. Escalation Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Check whether any open escalation items require a status update today
+- [ ] Confirm each open escalation has a next action and an owner
+- [ ] If an escalation has been open for 7 or more working days without progress, flag it for management attention
+- [ ] Note any escalations resolved today and record the resolution
+
+**Evidence to save:** Date, open escalation count, resolved today (count), stale escalations flagged.
+
+---
+
+### 7. HR Communication Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review any HR-related communications received today (queries, requests, notifications)
+- [ ] Confirm each item is actioned, deferred with a date, or routed to the appropriate owner
+- [ ] No HR communication should be left without a recorded next step by end of day
+
+**Evidence to save:** Date, communications reviewed (count), actioned (count), deferred (count), routed to other owner (count).
+
+---
+
+### 8. Pending Action Tracker
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review the pending action list — confirm all items have a due date and an owner
+- [ ] Check whether any pending action is overdue
+- [ ] Update the status of each pending action reviewed today
+- [ ] Items overdue by 3 or more working days must be flagged and escalated if the owner has not responded
+
+**Evidence to save:** Date, pending actions reviewed, overdue items flagged, escalations triggered.
+
+---
+
 ## Weekly Checklist
 
-### 4. AXIOM Data Submission to Arun
+### 9. AXIOM Data Submission to Arun
 *(Source: SRC-MAYU-001 §1; SRC-ARUN-001 — AXIOM workflow)*
 
 - [ ] Collect this week's staff performance data for AXIOM submission
@@ -75,7 +138,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 5. Review Schedule Check
+### 10. Review Schedule Check
 *(Source: SRC-MAYU-001 §1; context/hr-operations-context.md §3)*
 
 - [ ] Check `last_review_date` and `next_review_due` for all staff
@@ -88,7 +151,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 6. PDPA Compliance Check
+### 11. PDPA Compliance Check
 *(Source: SRC-MAYU-001 §1; context/hr-operations-context.md §2)*
 
 - [ ] Check for any new joiners who have not yet received their PDPA notice
@@ -99,7 +162,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 7. ROI Data Collection — PH, Digital Marketing, Technical Teams
+### 12. ROI Data Collection — PH, Digital Marketing, Technical Teams
 *(Source: SRC-MAYU-001 §2)*
 
 - [ ] Collect weekly ROI data from the PH Team
@@ -111,7 +174,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 8. Leadership Review Sessions (Twice Weekly)
+### 13. Leadership Review Sessions (Twice Weekly)
 *(Source: SRC-MAYU-001 §3)*
 
 - [ ] Schedule and prepare framework for twice-weekly Leadership Review sessions (co-facilitated with the Director)
@@ -128,7 +191,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 9. New Employee ROI Check (for all staff within first 3 months)
+### 14. New Employee ROI Check (for all staff within first 3 months)
 *(Source: SRC-MD-HR-001 §10.9)*
 
 - [ ] For all employees in their first week: confirm Week 1 ROI review is scheduled or completed
@@ -140,9 +203,56 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
+### 15. Previous Week Action Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review all action items raised in the previous week (from daily registers, escalation logs, and session records)
+- [ ] Confirm each action item is either closed with a recorded outcome, carried forward with a revised due date, or escalated
+- [ ] Identify any action items that have been carried forward for 2 or more consecutive weeks — document and flag
+
+**Evidence to save:** Week ending date, total actions reviewed, closed (count), carried forward (count), escalated (count), 2+ week carry-overs flagged.
+
+---
+
+### 16. Governance Trend Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review the week's governance indicators — PDPA compliance, review schedule status, SKILL file compliance, EOD submission compliance
+- [ ] Identify any indicator that has deteriorated compared to the prior week
+- [ ] Record the trend direction for each indicator (improving / stable / deteriorating)
+- [ ] If any indicator is deteriorating for 2 or more consecutive weeks, flag it as a governance risk
+
+**Evidence to save:** Week ending date, indicator name, trend direction, governance risks flagged.
+
+---
+
+### 17. HR Risk Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review any open HR risk items — overdue reviews, PDPA non-compliance, probation milestones approaching, recurring exceptions
+- [ ] Assign a risk level to each open item (Low / Medium / High)
+- [ ] Confirm High-risk items have an escalation plan or owner
+- [ ] Record whether any new risks emerged this week
+
+**Evidence to save:** Week ending date, open risks reviewed, new risks identified, High-risk items with escalation plan confirmed.
+
+---
+
+### 18. Documentation Audit
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Select one HR process area per week for a targeted documentation audit
+- [ ] Confirm that all activity in that process area this week is documented in LLM-queryable format (SRC-MD-HR-001 — LLM-queryable standard)
+- [ ] Flag any activity found without a Task ID (SRC-MD-HR-001 — Task ID standard)
+- [ ] Record the process area audited, the scope, and the outcome
+
+**Evidence to save:** Week ending date, process area audited, items checked, compliant (count), non-compliant (count), Task ID gaps flagged.
+
+---
+
 ## Monthly / Periodic Checklist
 
-### 10. Monthly PDPA Compliance Report
+### 19. Monthly PDPA Compliance Report
 *(Source: SRC-MAYU-001 §1)*
 
 - [ ] Prepare monthly PDPA compliance report for management
@@ -150,7 +260,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 11. Monthly Critic Meeting Coordination
+### 20. Monthly Critic Meeting Coordination
 *(Source: SRC-MAYU-001 §5)*
 
 - [ ] Coordinate monthly Critic Meeting with Muguntha and Jefri
@@ -164,7 +274,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 12. Monthly Review Schedule Refresh
+### 21. Monthly Review Schedule Refresh
 *(Source: SRC-MAYU-001 §1)*
 
 - [ ] Perform monthly review schedule refresh for all active staff
@@ -173,7 +283,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 13. Monthly ROI Performance Report for MD
+### 22. Monthly ROI Performance Report for MD
 *(Source: SRC-MAYU-001 §2)*
 
 - [ ] Aggregate weekly ROI data collected from PH, Digital Marketing, and Technical Teams
@@ -182,7 +292,7 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 14. Developer ROI Review Coordination (Monthly)
+### 23. Developer ROI Review Coordination (Monthly)
 *(Source: SRC-MD-HR-001 §10 — Developer ROI Review Process, 25/06/2026)*
 
 - [ ] Coordinate the monthly review of developer work from the past 30 days
@@ -195,7 +305,7 @@ Note: Role assignments within this process should be confirmed as current before
 
 ---
 
-### 15. Month 6 Handover Receipt from Suman
+### 24. Month 6 Handover Receipt from Suman
 *(Source: SRC-MAYU-001; SRC-SUMAN-001-v2 §8.11; SRC-SUMAN-CONF-002)*
 
 When a staff member reaches Month 6:
@@ -210,12 +320,94 @@ Mayurika proactively reminds Suman 2 weeks before the 6-month handover is due (S
 
 ---
 
-### 16. BGCT Documentation Check
+### 25. BGCT Documentation Check
 *(Source: SRC-MD-HR-001 §10.13 — BGCT Collection)*
 
 - [ ] Confirm BGCT (Best Practices, Guidelines, Checklists, Tutorials) documents are collected and stored centrally
 - [ ] Flag any gaps in the BGCT collection — missing BGCT for an active process area is a management file gap
 - [ ] Confirm Management Team Google Sheets are identified, listed, and consolidated (SRC-MD-HR-001 §10.14)
+
+---
+
+### 26. Monthly HR Dashboard
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Prepare the monthly HR dashboard — aggregate view of key HR governance indicators for the month
+- [ ] Include: PDPA compliance rate, review schedule status (overdue vs on-track), SKILL file compliance trend, EOD submission compliance trend, new joiner ROI milestone status
+- [ ] Submit to the MD as part of the monthly HR governance report (SRC-MAYU-001 §1 — monthly HR governance reporting)
+- [ ] No individual staff performance scores, salary data, health data, or personal data included
+
+**Evidence to save:** Month, date submitted, dashboard reference.
+
+---
+
+### 27. Process Improvement Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review the prior month's action records, exception register entries, and escalation log for recurring patterns
+- [ ] Identify at least one process improvement candidate — a repeated problem that could be prevented by a process change
+- [ ] Document the improvement candidate with: problem description, frequency, proposed improvement, and owner
+- [ ] Route improvement proposals to the relevant domain owner for review
+
+**Evidence to save:** Month, improvement candidates identified (count), documented (count), routed (count).
+
+---
+
+### 28. Checklist Validation
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review this checklist against the current source register and CLAUDE.md — confirm all items still trace to a registered source or carry a clear pending-re-review note
+- [ ] Identify any checklist item where the source status has changed (source added, superseded, or resolved [VERIFY])
+- [ ] Flag any checklist item that no longer reflects current process and route it to the relevant domain owner for update
+
+**Evidence to save:** Month, items reviewed (count), source status changes identified, items flagged for update.
+
+---
+
+### 29. Checklist Completion Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] At the end of each month: review checklist completion rates across daily, weekly, and monthly sections
+- [ ] Identify any checklist item that was consistently skipped or not completed
+- [ ] For each skipped item: determine whether the skip was justified (e.g., not applicable this period) or a gap
+- [ ] Document the outcome and update the pending action tracker if a corrective action is needed
+
+**Evidence to save:** Month, daily completion rate (%), weekly completion rate (%), monthly completion rate (%), gaps identified and documented.
+
+---
+
+### 30. Source Verification
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Check the evidence/source-register.md for any source status changes relevant to the HR domain since the last monthly verification
+- [ ] Confirm that any newly registered source relevant to HR is reflected in this checklist or the WORKBENCH.md source-boundary list
+- [ ] Flag any [VERIFY] items in context/verify-register.md that Mayurika can resolve through direct confirmation
+
+**Evidence to save:** Month, source register checked (date), new HR-relevant sources identified, [VERIFY] items flagged for Mayurika confirmation.
+
+---
+
+### 31. Recurring Issue Monitoring
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Review the daily exception register entries and weekly governance trend records for the month
+- [ ] Identify any issue type that appeared in 3 or more separate weeks
+- [ ] Document each recurring issue: issue type, frequency, teams affected, actions taken to date
+- [ ] If a recurring issue has not improved after 4 weeks of documented action, escalate to management
+
+**Evidence to save:** Month, recurring issues identified (count), escalations triggered, improvement trends noted.
+
+---
+
+### 32. Evidence Quality Review
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+- [ ] Select a sample of evidence records created during the month (from action records, session notes, and compliance checks)
+- [ ] Confirm each record includes: date, created by, domain, evidence/source reference, action taken, and next step
+- [ ] Flag any evidence record that is missing required fields
+- [ ] Route poorly formatted records to the owner for correction
+
+**Evidence to save:** Month, records sampled (count), compliant (count), non-compliant (count), records routed for correction.
 
 ---
 
@@ -228,6 +420,26 @@ For any checklist item that identifies a problem, gap, or governance failure:
 3. Include all required fields: Date, Created by, Role/Domain, Problem or Discussion, Evidence/Source, Action taken, Reviewer/Approval status, Sensitivity check, Status, Next step, Pass/Fail rule, Known limits
 
 **For the full required-fields list:** See `handover/management-action-records-team-usage-guide.md`.
+
+---
+
+## Standard Evidence Template
+*(Source status: Mayurika checklist correction feedback, 2026-07-01 — pending re-review before ACTIVE.)*
+
+Use the following structure when saving evidence for any checklist completion or exception:
+
+```
+Date:
+Checklist item:
+Team / Role affected:
+Outcome / Finding:
+Action taken:
+Next step:
+Evidence file (if created):
+Sensitivity check: [No personal data / role-level only]
+```
+
+All evidence must be saved in LLM-queryable format (SRC-MD-HR-001 — LLM-queryable standard). Do not include individual staff names, salary data, health data, disciplinary details, or PDPA personal data in any evidence record saved via this checklist.
 
 ---
 
@@ -276,6 +488,7 @@ Do not ask Claude to:
 | This checklist needs updating | Mayurika reviews; Mareenraj updates the file |
 | Action record needs domain owner sign-off | Mayurika reviews her own records |
 | Cross-domain question (e.g., recruitment + HR + KPI) | Route to the relevant domain owners separately |
+| Sections 4–8, 15–18, 26–33 need confirming | Mayurika — pending re-review 2026-07-01 |
 
 ---
 
@@ -283,9 +496,9 @@ Do not ask Claude to:
 
 PASS if a clean LLM reading this checklist can identify:
 - What the process step is
-- Which source backs it
+- Which source backs it (or that it is pending re-review)
 - What evidence to save
 - What not to record
 - Who to route to when a decision or review is needed
 
-FAIL if any item is invented (no source backing), resolves a [VERIFY], stores personal data, or implies a decision authority that is not confirmed.
+FAIL if any item is invented (no source backing and no pending re-review note), resolves a [VERIFY], stores personal data, or implies a decision authority that is not confirmed.

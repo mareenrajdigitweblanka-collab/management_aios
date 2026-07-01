@@ -2,13 +2,13 @@
 name: web-view-dashboard-closure
 type: handover-closure
 created: 2026-06-30
-last-updated: 2026-06-30
+last-updated: 2026-07-01
 created-by: Mareenraj (builder)
 requirement-id: web-view-html-dashboard-creation
-status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; ready for Netlify deployment
+status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; Mayurika HR Daily Control Panel added 2026-07-01; DWC sanity check pending; ready for Netlify deployment
 ---
 
-# Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, Arun ACTIVE Update, and Markdown Viewer Addition
+# Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, Arun ACTIVE Update, Markdown Viewer Addition, and Mayurika HR Daily Control Panel
 
 **Closure date:** 2026-06-30
 **Pass/Fail Rule:** PASS if the dashboard is a self-contained static HTML file showing AIOS status and folder structure without sensitive data, duplicate truth, or editing capability, and is ready for Netlify deployment. FAIL if any of those conditions are violated.
@@ -402,6 +402,46 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 **Commit hash for Markdown Viewer addition:** `2fe3c8a`
 
 *Files committed: `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, and this closure file. Redeploy to Netlify to publish the Markdown Viewer tab.*
+
+---
+
+## Mayurika HR Daily Control Panel Addition Record (2026-07-01)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| HR Daily Control Panel section added | `web-view/index.html` — Mayurika HR tab — new section added after sensitive-data warning box |
+| Priority cards (3) | Attendance Dashboard, Leave Requests, Task Tool Management — marked AMBER/Priority |
+| Standard daily check cards (9) | EOD Submissions, Probation Reminders, New Joiners, HR Inbox, Pending Approvals, Document Verification, Missing Employee Documents, Developer/Technical Daily Requirement & Skill File Quantity, Developer/Technical Daily ROI & User Benefit |
+| Secondary screens listed | 5 items — future design candidates only; not built |
+| Submission form candidates listed | 6 items — deferred; not built |
+| Read-only notice added | "This panel is based on Mayurika's UI intent capture. It is read-only. It does not submit or update HR records yet." |
+| Cross-source note shown | Leave requests currently from task management tool AND mail — pending workflow design |
+| DWC sanity check status | PENDING — screen list must be reviewed by DWC before screens are built |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-ui-intent-capture-2026-07-01.md` |
+| Validation file created | `validation/mayurika-ui-screen-list-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` — §19 Mayurika HR Daily Control Panel Check added |
+| Commit hash placeholder | `[COMMIT-HASH-MAYURIKA-CONTROL-PANEL]` — update after committing |
+| Netlify redeploy required | YES — after commit; publish directory `web-view/`; no build step |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (staff names, salary, health, PDPA, disciplinary, employee IDs) | NOT ADDED |
+| Submission forms built | NO — deferred; listed as future candidates only |
+| Write capability or backend code | NOT PRESENT |
+| External CDN | NOT PRESENT |
+| Duplicate truth (policy text, KPI rules, AXIOM bands) | NOT ADDED |
+| Mayurika marked ACTIVE | NO — remains DRAFT |
+| [VERIFY] items resolved | NO — none resolved |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
 
 ---
 
