@@ -538,6 +538,135 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 ---
 
+## Mayurika Attendance Dashboard Card Removal Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Attendance Dashboard card (Mayurika HR tab, Priority Cards section) | Card HTML block removed — no longer visible in dashboard |
+| Closed info-box (below Priority Cards section) | Removed — record held in evidence and handover files instead |
+| Replacement feature | NOT INVENTED — no replacement required; not built |
+
+**Historical evidence retained:**
+
+| File | Status |
+|---|---|
+| `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-not-needed-2026-07-02.md` | RETAINED |
+| `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md` | RETAINED |
+| `validation/mayurika-attendance-dashboard-pause-check.md` | RETAINED |
+| `validation/mayurika-attendance-dashboard-no-replacement-check.md` | RETAINED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-card-remove-request-2026-07-02.md`
+**Validation path:** `validation/mayurika-attendance-dashboard-card-removal-check.md`
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Other Mayurika HR cards changed | NO — all other cards unchanged |
+| Dashboard read-only status | PRESERVED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika tab badge | NOT CHANGED — remains DRAFT |
+| Suman / Arun / Rajiv statuses | NOT CHANGED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files; redeploy to Netlify. No further action on Attendance Dashboard unless Mayurika raises a new, separate requirement.
+
+---
+
+## Mayurika Attendance Dashboard No-Replacement Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Attendance Dashboard card (Mayurika HR tab, Priority Cards section) | Status changed from NOT REQUIRED NOW (pending) to NOT REQUIRED (blocked/closed) |
+| Card role | Updated to "Not required — no replacement required" |
+| Card note | Updated to "Mayurika confirmed this feature is not required. No replacement feature is required for this card." |
+| Footer badge 2 | Changed from "Replacement Pending" to "Closed — Not Required" |
+| "Replacement HR Feature Pending" info-box | Replaced with "Attendance Dashboard — Closed (2026-07-02)" note; no replacement pending wording remains |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md` |
+| Validation file created | `validation/mayurika-attendance-dashboard-no-replacement-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` §26 added |
+
+**Replacement feature:** NOT INVENTED — no replacement required per Mayurika's confirmed update. No feature built.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Dashboard read-only status | PRESERVED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md`
+**Validation path:** `validation/mayurika-attendance-dashboard-no-replacement-check.md`
+
+**Next step:** Commit updated files; redeploy to Netlify. No further action on Attendance Dashboard unless Mayurika raises a new, separate requirement.
+
+---
+
+## Mayurika Attendance Dashboard Pause Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Attendance Dashboard card (Mayurika HR tab, Priority Cards section) | Status changed from AMBER / Priority to pending / NOT REQUIRED NOW |
+| Card role | Updated to "Not required now — replacement feature pending clarification" |
+| Card note | Updated to "Mayurika confirmed this is not needed now. Replacement feature is pending clarification. Do not build until the exact requirement is provided." |
+| Footer badge 2 | Changed from "Pending source connection" to "Replacement Pending" |
+| Replacement pending note | Added below Priority Cards section in Mayurika HR tab — references evidence path; states requirement not yet confirmed |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-not-needed-2026-07-02.md` |
+| Validation file created | `validation/mayurika-attendance-dashboard-pause-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` §25 added |
+
+**Replacement feature:** NOT INVENTED — pending Mayurika clarification. No feature built.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Dashboard read-only status | PRESERVED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files; redeploy to Netlify. Then ask Mayurika for the exact replacement feature requirement (feature name, business question, evidence needed, pass/fail rule) before any further build work.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

@@ -214,9 +214,36 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 - No assumptions added. No sensitive data stored. No [VERIFY] items resolved. Raw HR skill file not edited.
 - Next step: Route candidate to Mayurika / MD for review. Once confirmed, apply merge to `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md`.
 
-One domain review remains pending:
+**Mayurika busy — operation paused 2026-07-02.** Mayurika is currently busy. The following Mayurika items are paused pending her availability:
+- Re-review of `member-aios/mayurika-hr/daily-weekly-checklist.md` (exact wording, Standard Evidence Template, tool name confirmation for [VERIFY] item 12)
+- Review of WORKBENCH.md and quick-reference-sources.md
+- Confirmation of the 5 preview HR useful tables
+- Confirmation of NSLP skill update candidate
 
-1. **Mayurika:** Re-review `member-aios/mayurika-hr/daily-weekly-checklist.md` — confirm exact wording in all 17 sections is correct; confirm Standard Evidence Template fields; confirm tool names to resolve [VERIFY] item 12; then confirm WORKBENCH.md and quick-reference-sources.md; and confirm the 5 preview HR useful tables are accurate.
+**Attendance Dashboard — NOT REQUIRED NOW (2026-07-02 — pause state).** Mayurika confirmed she does not need the Attendance Dashboard feature. Card updated to NOT REQUIRED NOW; replacement pending note added.
+
+- Evidence (pause state): `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-not-needed-2026-07-02.md`
+- Validation (pause state): `validation/mayurika-attendance-dashboard-pause-check.md`
+
+**Attendance Dashboard — CLOSED / NOT REQUIRED (2026-07-02 — final).** Mayurika clarified there is no replacement feature needed for the Attendance Dashboard. The Attendance Dashboard feature request is closed as NOT REQUIRED — no replacement required.
+
+- Evidence: `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md`
+- Validation: `validation/mayurika-attendance-dashboard-no-replacement-check.md`
+- Dashboard: `web-view/index.html` — Attendance Dashboard card updated to NOT REQUIRED; all replacement pending wording removed; no replacement feature invented or built.
+- No [VERIFY] items resolved. No sensitive data added. Dashboard remains read-only.
+
+**Attendance Dashboard — CARD REMOVED (2026-07-02).** Visible Attendance Dashboard card removed from the Mayurika HR tab in `web-view/index.html`. The card is no longer shown. Historical evidence files retained for traceability. No replacement feature built.
+
+- Evidence: `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-card-remove-request-2026-07-02.md`
+- Validation: `validation/mayurika-attendance-dashboard-card-removal-check.md`
+- Dashboard: `web-view/index.html` — card HTML block removed from Priority Cards section; closed info-box removed; no other cards changed.
+- No [VERIFY] items resolved. No sensitive data added. Dashboard remains read-only.
+
+One domain review remains pending (paused):
+
+1. **Mayurika:** When available — re-review `member-aios/mayurika-hr/daily-weekly-checklist.md`; confirm WORKBENCH.md and quick-reference-sources.md; confirm 5 preview HR useful tables; confirm NSLP skill update candidate.
+
+**No further work on Attendance Dashboard** unless Mayurika raises a new, separate requirement in the future. If she does, treat it as a new feature request from scratch.
 
 Once Mayurika confirms, update WORKBENCH.md status from DRAFT to ACTIVE and update preview table statuses to ACTIVE.
 

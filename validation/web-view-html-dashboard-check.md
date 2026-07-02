@@ -664,8 +664,105 @@ Leave request submission; Probation review request; Confirmation recommendation;
 
 ---
 
+## 25. Mayurika Attendance Dashboard Pause Check (2026-07-02)
+
+**Change:** Attendance Dashboard card in Mayurika HR tab updated from Priority/active state to NOT REQUIRED NOW. Replacement pending note added. No replacement feature invented or built.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-not-needed-2026-07-02.md`
+**Validation:** `validation/mayurika-attendance-dashboard-pause-check.md`
+
+| Check | Result |
+|---|---|
+| Attendance Dashboard card status changed to NOT REQUIRED NOW | YES — badge-amber / "Priority" replaced with badge-pending / "NOT REQUIRED NOW"; card role updated; card note updated |
+| Priority emphasis removed | YES — badge-amber and card-role "Priority" label removed |
+| Card kept (decision traceable, not deleted) | YES — card remains in dashboard; decision is visible |
+| Replacement pending note added below Priority Cards section | YES — note says replacement feature not yet confirmed; references evidence path |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT PRESENT |
+| Dashboard remains read-only | YES — no write capability, no form, no backend code added |
+| [VERIFY] items resolved | NO — all 9 open items preserved |
+| Mayurika tab badge changed from DRAFT | NO — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Suman status changed | NO — remains ACTIVE |
+| Arun status changed | NO — remains ACTIVE |
+| Rajiv status changed | NO — remains BLOCKED |
+| Root CLAUDE.md updated | NO — dashboard is navigation layer only |
+| source-register.md updated | NO — not touched |
+| Duplicate truth added | NOT PRESENT |
+| External CDN added | NOT PRESENT |
+| PASS/AMBER overall result changed | NO — preserved |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS — AMBER until replacement feature is clarified by Mayurika**
+
+---
+
+## 26. Mayurika Attendance Dashboard No-Replacement Check (2026-07-02)
+
+**Change:** Attendance Dashboard card updated from NOT REQUIRED NOW (replacement pending) to NOT REQUIRED (no replacement). All replacement pending wording removed. No replacement feature invented or built.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md`
+**Validation:** `validation/mayurika-attendance-dashboard-no-replacement-check.md`
+
+| Check | Result |
+|---|---|
+| Attendance Dashboard card status changed to NOT REQUIRED | YES — badge changed from badge-pending / NOT REQUIRED NOW to badge-blocked / NOT REQUIRED |
+| Card role updated — no replacement required | YES — card role reads "Not required — no replacement required" |
+| Card note updated — no replacement required | YES — note reads "Mayurika confirmed this feature is not required. No replacement feature is required for this card." |
+| "Replacement Pending" footer badge removed | YES — replaced with "Closed — Not Required" |
+| "Replacement HR Feature Pending" info-box removed | YES — replaced with "Attendance Dashboard — Closed (2026-07-02)" note referencing new evidence file |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Card kept (decision traceable, not deleted) | YES — card remains in dashboard |
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT PRESENT |
+| Dashboard remains read-only | YES — no write capability, no form, no backend code added |
+| [VERIFY] items resolved | NO — all 9 open items preserved |
+| Mayurika tab badge changed from DRAFT | NO — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Suman status changed | NO — remains ACTIVE |
+| Arun status changed | NO — remains ACTIVE |
+| Rajiv status changed | NO — remains BLOCKED |
+| Root CLAUDE.md updated | NO — dashboard is navigation layer only |
+| source-register.md updated | NO — not touched |
+| Duplicate truth added | NOT PRESENT |
+| External CDN added | NOT PRESENT |
+| PASS/AMBER overall result changed | NO — preserved |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS**
+
+---
+
+## 27. Mayurika Attendance Dashboard Card Removal Check (2026-07-02)
+
+**Change:** Attendance Dashboard card removed from visible Mayurika HR tab. Closed info-box also removed. Historical evidence files retained. No replacement feature added.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-card-remove-request-2026-07-02.md`
+**Validation:** `validation/mayurika-attendance-dashboard-card-removal-check.md`
+
+| Check | Result |
+|---|---|
+| Attendance Dashboard card removed from Priority Cards section | YES — HTML block removed |
+| NOT REQUIRED card no longer visible | YES |
+| Closed info-box removed | YES — no visible note remains; record held in evidence/handover |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Other Mayurika HR cards unchanged | YES — Leave Requests, Task Tool Management, all daily check cards unchanged |
+| Historical evidence retained | YES — all three prior evidence/validation files preserved |
+| Sensitive data added | NOT PRESENT |
+| Dashboard remains read-only | YES |
+| [VERIFY] items resolved | NO — all 9 open items preserved |
+| Mayurika tab badge changed from DRAFT | NO — remains DRAFT |
+| Suman / Arun / Rajiv statuses changed | NO — all unchanged |
+| PASS/AMBER overall result changed | NO — preserved |
+
+**Check result: PASS**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Mayurika checklist verbatim wording applied 2026-07-02 — dashboard updated to reflect verbatim wording applied; confirmation pending; labels A–E preserved; no synonym substitution. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Mayurika checklist verbatim wording applied 2026-07-02 — dashboard updated to reflect verbatim wording applied; confirmation pending; labels A–E preserved; no synonym substitution. Attendance Dashboard card removed 2026-07-02 — card passed through NOT REQUIRED NOW (pause), NOT REQUIRED (no replacement), then removed from visible dashboard per user request; historical evidence files retained; no replacement feature built. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
