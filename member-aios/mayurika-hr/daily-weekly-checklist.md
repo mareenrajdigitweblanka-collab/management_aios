@@ -5,7 +5,7 @@ member: Mayurika / Mayuri
 role: HR Officer
 created: 2026-06-30
 last-updated: 2026-07-02
-status: DRAFT — exact user-provided checklist text applied; Mayurika confirmation pending 2026-07-01
+status: DRAFT — Mayurika verbatim checklist wording applied; confirmation pending 2026-07-02
 source-boundary: SRC-MAYU-001, SRC-POLICY-001, SRC-MD-HR-001
 root-truth: CLAUDE.md — canonical; this file is a checklist pointer only
 ---
@@ -61,53 +61,6 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 - [ ] For any HR or management task completed today: confirm it is documented in LLM-queryable format
 - [ ] Any activity not documented in LLM-queryable format is treated as "not happened" under the MD governance standard
-
----
-
-### EOD Follow-up Closure
-
-- [ ] Confirm all missing EOD submissions have been followed up.
-- [ ] Verify delayed submissions are now completed.
-- [ ] Record unresolved cases for the next working day.
-- [ ] Escalate repeated non-compliance where required.
-Reason:
- Current checklist identifies missing submissions but doesn't verify whether they were actually resolved.
-
----
-
-### Daily Exception Register
-
-- [ ] Record any HR process exceptions encountered today.
-- [ ] Identify the owner for each exception.
-- [ ] Assign expected completion date.
-- [ ] Verify previous exceptions have been closed.
-
-This creates accountability.
-
----
-
-### Escalation Review
-
-- [ ] Check whether today's escalations require management action.
-- [ ] Confirm escalations include supporting evidence.
-- [ ] Update escalation status.
-
----
-
-### HR Communication Review
-
-- [ ] Review HR email inbox.
-- [ ] Review Teams/Slack HR requests.
-- [ ] Respond to pending HR queries.
-- [ ] Archive completed requests.
-
----
-
-### Pending Action Tracker
-
-- [ ] Review open HR action items.
-- [ ] Close completed tasks.
-- [ ] Update pending actions.
 
 ---
 
@@ -191,38 +144,6 @@ This creates accountability.
 
 ---
 
-### Previous Week Action Review
-
-- [ ] Review all outstanding action records.
-- [ ] Confirm completed actions.
-- [ ] Carry forward unresolved actions.
-
----
-
-### Governance Trend Review
-
-- [ ] Identify repeated compliance failures.
-- [ ] Compared with the previous week's compliance.
-- [ ] Highlight improving and declining trends.
-
----
-
-### HR Risk Review
-
-- [ ] Identify upcoming compliance risks.
-- [ ] Identify overdue HR activities.
-- [ ] Prepare mitigation actions.
-
----
-
-### Documentation Audit
-
-- [ ] Verify evidence exists for completed activities.
-- [ ] Verify mandatory documents are attached.
-- [ ] Identify missing documentation.
-
----
-
 ## Monthly / Periodic Checklist
 
 ### 10. Monthly PDPA Compliance Report
@@ -302,6 +223,84 @@ Mayurika proactively reminds Suman 2 weeks before the 6-month handover is due (S
 
 ---
 
+1. Daily Checklist
+A. Follow-up Closure Verification (Recommended)
+After EOD Submission Compliance add:
+### EOD Follow-up Closure
+
+- [ ] Confirm all missing EOD submissions have been followed up.
+- [ ] Verify delayed submissions are now completed.
+- [ ] Record unresolved cases for the next working day.
+- [ ] Escalate repeated non-compliance where required.
+Reason:
+ Current checklist identifies missing submissions but doesn't verify whether they were actually resolved.
+
+B. Exception Register
+### Daily Exception Register
+
+- [ ] Record any HR process exceptions encountered today.
+- [ ] Identify the owner for each exception.
+- [ ] Assign expected completion date.
+- [ ] Verify previous exceptions have been closed.
+This creates accountability.
+
+C. Management Escalation Review
+### Escalation Review
+
+- [ ] Check whether today's escalations require management action.
+- [ ] Confirm escalations include supporting evidence.
+- [ ] Update escalation status.
+
+D. HR Inbox Review
+### HR Communication Review
+
+- [ ] Review HR email inbox.
+- [ ] Review Teams/Slack HR requests.
+- [ ] Respond to pending HR queries.
+- [ ] Archive completed requests.
+
+E. Pending Action Revie
+### Pending Action Tracker
+
+- [ ] Review open HR action items.
+- [ ] Close completed tasks.
+- [ ] Update pending actions.
+
+2. Weekly Checklist
+
+Review Previous Week Actions
+### Previous Week Action Review
+
+- [ ] Review all outstanding action records.
+- [ ] Confirm completed actions.
+- [ ] Carry forward unresolved actions.
+
+Governance Trend Analysis
+Instead of only checking issues:
+### Governance Trend Review
+
+- [ ] Identify repeated compliance failures.
+- [ ] Compared with the previous week's compliance.
+- [ ] Highlight improving and declining trends.
+
+HR Risk Review
+### HR Risk Review
+
+- [ ] Identify upcoming compliance risks.
+- [ ] Identify overdue HR activities.
+- [ ] Prepare mitigation actions.
+
+Documentation Completeness
+### Documentation Audit
+
+- [ ] Verify evidence exists for completed activities.
+- [ ] Verify mandatory documents are attached.
+- [ ] Identify missing documentation.
+
+3. Monthly Checklist
+
+Management Dashboard
+Highly recommended.
 ### Monthly HR Dashboard
 
 - [ ] Overall EOD Compliance %
@@ -311,19 +310,17 @@ Mayurika proactively reminds Suman 2 weeks before the 6-month handover is due (S
 - [ ] PDPA Compliance %
 - [ ] Action Records Created
 - [ ] Action Records Closed
-
 This gives management one-page visibility.
 
----
-
+Continuous Improvement Review
 ### Process Improvement Review
 
 - [ ] Identify inefficient HR processes.
 - [ ] Recommend improvements.
 - [ ] Document approved improvements.
 
----
-
+Checklist Quality Review
+Since this checklist is governance-driven, include:
 ### Checklist Validation
 
 - [ ] Review checklist for outdated items.
@@ -331,22 +328,8 @@ This gives management one-page visibility.
 - [ ] Add newly approved processes.
 - [ ] Verify all sources remain valid.
 
----
-
-## Evidence to Save
-
-For any checklist item that identifies a problem, gap, or governance failure:
-
-1. Create an action record in `intelligence-inbox/management-action-records/mayurika-hr/`
-2. Use the correct template — `md-discussion-note-template.md` for MD-direction items, `problem-solution-action-record-template.md` for operational gaps
-3. Include all required fields: Date, Created by, Role/Domain, Problem or Discussion, Evidence/Source, Action taken, Reviewer/Approval status, Sensitivity check, Status, Next step, Pass/Fail rule, Known limits
-
-**For the full required-fields list:** See `handover/management-action-records-team-usage-guide.md`.
-
----
-
-## Standard Evidence Template
-
+4. Evidence Section (Enhancement)
+The document already specifies evidence to save, but adding a standard evidence template would improve consistency:
 Evidence should include:
 
 - Date
@@ -358,12 +341,8 @@ Evidence should include:
 - Status
 - Follow-up Required (Yes/No)
 
----
-
-## Missing Governance Controls
-
+5. Missing Governance Controls
 These are not currently covered.
-
 Checklist Completion Review
 - [ ] Confirm today's checklist is 100% completed.
 - [ ] Record incomplete items with reason.
@@ -383,6 +362,18 @@ Evidence Quality Review
 - [ ] Verify evidence is complete.
 - [ ] Verify evidence is readable.
 - [ ] Verify evidence matches the recorded activity.
+
+---
+
+## Evidence to Save
+
+For any checklist item that identifies a problem, gap, or governance failure:
+
+1. Create an action record in `intelligence-inbox/management-action-records/mayurika-hr/`
+2. Use the correct template — `md-discussion-note-template.md` for MD-direction items, `problem-solution-action-record-template.md` for operational gaps
+3. Include all required fields: Date, Created by, Role/Domain, Problem or Discussion, Evidence/Source, Action taken, Reviewer/Approval status, Sensitivity check, Status, Next step, Pass/Fail rule, Known limits
+
+**For the full required-fields list:** See `handover/management-action-records-team-usage-guide.md`.
 
 ---
 
@@ -431,7 +422,7 @@ Do not ask Claude to:
 | This checklist needs updating | Mayurika reviews; Mareenraj updates the file |
 | Action record needs domain owner sign-off | Mayurika reviews her own records |
 | Cross-domain question (e.g., recruitment + HR + KPI) | Route to the relevant domain owners separately |
-| New checklist sections need confirming | Mayurika — pending confirmation 2026-07-01 |
+| New checklist sections need confirming | Mayurika — pending confirmation 2026-07-02 |
 
 ---
 
