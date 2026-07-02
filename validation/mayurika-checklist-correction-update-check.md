@@ -204,12 +204,14 @@ All original section content is preserved. Renumbering is consistent with the in
 
 **Exact wording pass completed 2026-07-01.** The 17 sections added in this pass were subsequently found to be paraphrased rather than using Mayurika's exact wording. Exact wording was applied in a follow-up pass — see `validation/mayurika-checklist-exact-wording-correction-check.md`. Checklist status updated to `DRAFT — Mayurika exact wording applied; re-review pending 2026-07-01`.
 
-Route `member-aios/mayurika-hr/daily-weekly-checklist.md` to Mayurika for re-review. She should confirm:
-1. The exact wording in all 17 sections is correct
+**User-provided text replacement completed 2026-07-02.** The exact wording pass was also found to be wrong/paraphrased. All 17 sections removed and replaced with exact user-provided text. Damaged EOD line fixed. Original sections renumbered (9–25 → 4–16). Standard Evidence Template and Missing Governance Controls section inserted from exact user-provided text. Checklist status updated to `DRAFT — exact user-provided checklist text applied; Mayurika confirmation pending 2026-07-01`. Validation: `validation/mayurika-checklist-user-text-replacement-check.md`.
+
+Route `member-aios/mayurika-hr/daily-weekly-checklist.md` to Mayurika for confirmation. She should confirm:
+1. The exact text in all sections is correct
 2. The Standard Evidence Template fields match her intent
 3. Any [VERIFY] items she can resolve by direct confirmation (especially item 12 — tool names)
 
-After Mayurika confirms, Mareenraj updates checklist status to `ACTIVE — Mayurika Reviewed [date]` and updates WORKBENCH.md and the dashboard accordingly.
+After Mayurika confirms, Mareenraj updates checklist status to `ACTIVE — Mayurika Confirmed [date]` and updates WORKBENCH.md and the dashboard accordingly.
 
 ---
 

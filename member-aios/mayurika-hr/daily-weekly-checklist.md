@@ -4,8 +4,8 @@ type: checklist
 member: Mayurika / Mayuri
 role: HR Officer
 created: 2026-06-30
-last-updated: 2026-07-01
-status: DRAFT — Mayurika exact wording applied; re-review pending 2026-07-01
+last-updated: 2026-07-02
+status: DRAFT — exact user-provided checklist text applied; Mayurika confirmation pending 2026-07-01
 source-boundary: SRC-MAYU-001, SRC-POLICY-001, SRC-MD-HR-001
 root-truth: CLAUDE.md — canonical; this file is a checklist pointer only
 ---
@@ -19,7 +19,7 @@ root-truth: CLAUDE.md — canonical; this file is a checklist pointer only
 **[VERIFY] Rule:** Items marked [VERIFY] must not be treated as confirmed until the relevant source is registered and the domain owner confirms. See `context/verify-register.md`.
 
 **Exact Wording Note:**
-The checklist additions below use Mayurika's wording exactly from her 2026-07-01 correction feedback. They remain pending Mayurika re-review before ACTIVE.
+The checklist additions below use the exact text provided by the user on 2026-07-02, replacing previously paraphrased sections. They remain pending Mayurika confirmation before ACTIVE.
 
 ---
 
@@ -28,7 +28,7 @@ The checklist additions below use Mayurika's wording exactly from her 2026-07-01
 ### 1. EOD Submission Compliance Check
 *(Source: SRC-MAYU-001 §4; SRC-MD-HR-001 — EOD strengthening directive)*
 
-- [ ] Check whether   staff have submitted their daily task reports via the EOD submission workspace [VERIFY item 12 — tool name not confirmed; use descriptive reference until confirmed]
+- [ ] Check whether Website Team and PH Team staff have submitted their daily task reports via the EOD submission workspace [VERIFY item 12 — tool name not confirmed; use descriptive reference until confirmed]
 - [ ] Flag any missing or late submissions immediately
 - [ ] Sync the day's submission data with the EOD dashboard [VERIFY item 12 — tool name not confirmed]
 - [ ] Note any staff with missing submissions for follow-up — document the pattern if it is recurring
@@ -64,19 +64,18 @@ Note: Quality depth assessment (reusability, BLOS alignment, evidence quality) i
 
 ---
 
-### 4. EOD Follow-up Closure
+### EOD Follow-up Closure
 
 - [ ] Confirm all missing EOD submissions have been followed up.
 - [ ] Verify delayed submissions are now completed.
 - [ ] Record unresolved cases for the next working day.
 - [ ] Escalate repeated non-compliance where required.
-
 Reason:
  Current checklist identifies missing submissions but doesn't verify whether they were actually resolved.
 
 ---
 
-### 5. Daily Exception Register
+### Daily Exception Register
 
 - [ ] Record any HR process exceptions encountered today.
 - [ ] Identify the owner for each exception.
@@ -87,7 +86,7 @@ This creates accountability.
 
 ---
 
-### 6. Escalation Review
+### Escalation Review
 
 - [ ] Check whether today's escalations require management action.
 - [ ] Confirm escalations include supporting evidence.
@@ -95,7 +94,7 @@ This creates accountability.
 
 ---
 
-### 7. HR Communication Review
+### HR Communication Review
 
 - [ ] Review HR email inbox.
 - [ ] Review Teams/Slack HR requests.
@@ -104,7 +103,7 @@ This creates accountability.
 
 ---
 
-### 8. Pending Action Tracker
+### Pending Action Tracker
 
 - [ ] Review open HR action items.
 - [ ] Close completed tasks.
@@ -114,7 +113,7 @@ This creates accountability.
 
 ## Weekly Checklist
 
-### 9. AXIOM Data Submission to Arun
+### 4. AXIOM Data Submission to Arun
 *(Source: SRC-MAYU-001 §1; SRC-ARUN-001 — AXIOM workflow)*
 
 - [ ] Collect this week's staff performance data for AXIOM submission
@@ -127,7 +126,7 @@ This creates accountability.
 
 ---
 
-### 10. Review Schedule Check
+### 5. Review Schedule Check
 *(Source: SRC-MAYU-001 §1; context/hr-operations-context.md §3)*
 
 - [ ] Check `last_review_date` and `next_review_due` for all staff
@@ -140,7 +139,7 @@ This creates accountability.
 
 ---
 
-### 11. PDPA Compliance Check
+### 6. PDPA Compliance Check
 *(Source: SRC-MAYU-001 §1; context/hr-operations-context.md §2)*
 
 - [ ] Check for any new joiners who have not yet received their PDPA notice
@@ -151,7 +150,7 @@ This creates accountability.
 
 ---
 
-### 12. ROI Data Collection — PH, Digital Marketing, Technical Teams
+### 7. ROI Data Collection — PH, Digital Marketing, Technical Teams
 *(Source: SRC-MAYU-001 §2)*
 
 - [ ] Collect weekly ROI data from the PH Team
@@ -163,7 +162,7 @@ This creates accountability.
 
 ---
 
-### 13. Leadership Review Sessions (Twice Weekly)
+### 8. Leadership Review Sessions (Twice Weekly)
 *(Source: SRC-MAYU-001 §3)*
 
 - [ ] Schedule and prepare framework for twice-weekly Leadership Review sessions (co-facilitated with the Director)
@@ -180,7 +179,7 @@ This creates accountability.
 
 ---
 
-### 14. New Employee ROI Check (for all staff within first 3 months)
+### 9. New Employee ROI Check (for all staff within first 3 months)
 *(Source: SRC-MD-HR-001 §10.9)*
 
 - [ ] For all employees in their first week: confirm Week 1 ROI review is scheduled or completed
@@ -192,7 +191,7 @@ This creates accountability.
 
 ---
 
-### 15. Previous Week Action Review
+### Previous Week Action Review
 
 - [ ] Review all outstanding action records.
 - [ ] Confirm completed actions.
@@ -200,7 +199,7 @@ This creates accountability.
 
 ---
 
-### 16. Governance Trend Review
+### Governance Trend Review
 
 - [ ] Identify repeated compliance failures.
 - [ ] Compared with the previous week's compliance.
@@ -208,7 +207,7 @@ This creates accountability.
 
 ---
 
-### 17. HR Risk Review
+### HR Risk Review
 
 - [ ] Identify upcoming compliance risks.
 - [ ] Identify overdue HR activities.
@@ -216,7 +215,7 @@ This creates accountability.
 
 ---
 
-### 18. Documentation Audit
+### Documentation Audit
 
 - [ ] Verify evidence exists for completed activities.
 - [ ] Verify mandatory documents are attached.
@@ -226,7 +225,7 @@ This creates accountability.
 
 ## Monthly / Periodic Checklist
 
-### 19. Monthly PDPA Compliance Report
+### 10. Monthly PDPA Compliance Report
 *(Source: SRC-MAYU-001 §1)*
 
 - [ ] Prepare monthly PDPA compliance report for management
@@ -234,7 +233,7 @@ This creates accountability.
 
 ---
 
-### 20. Monthly Critic Meeting Coordination
+### 11. Monthly Critic Meeting Coordination
 *(Source: SRC-MAYU-001 §5)*
 
 - [ ] Coordinate monthly Critic Meeting with Muguntha and Jefri
@@ -248,7 +247,7 @@ This creates accountability.
 
 ---
 
-### 21. Monthly Review Schedule Refresh
+### 12. Monthly Review Schedule Refresh
 *(Source: SRC-MAYU-001 §1)*
 
 - [ ] Perform monthly review schedule refresh for all active staff
@@ -257,7 +256,7 @@ This creates accountability.
 
 ---
 
-### 22. Monthly ROI Performance Report for MD
+### 13. Monthly ROI Performance Report for MD
 *(Source: SRC-MAYU-001 §2)*
 
 - [ ] Aggregate weekly ROI data collected from PH, Digital Marketing, and Technical Teams
@@ -266,7 +265,7 @@ This creates accountability.
 
 ---
 
-### 23. Developer ROI Review Coordination (Monthly)
+### 14. Developer ROI Review Coordination (Monthly)
 *(Source: SRC-MD-HR-001 §10 — Developer ROI Review Process, 25/06/2026)*
 
 - [ ] Coordinate the monthly review of developer work from the past 30 days
@@ -279,7 +278,7 @@ Note: Role assignments within this process should be confirmed as current before
 
 ---
 
-### 24. Month 6 Handover Receipt from Suman
+### 15. Month 6 Handover Receipt from Suman
 *(Source: SRC-MAYU-001; SRC-SUMAN-001-v2 §8.11; SRC-SUMAN-CONF-002)*
 
 When a staff member reaches Month 6:
@@ -294,7 +293,7 @@ Mayurika proactively reminds Suman 2 weeks before the 6-month handover is due (S
 
 ---
 
-### 25. BGCT Documentation Check
+### 16. BGCT Documentation Check
 *(Source: SRC-MD-HR-001 §10.13 — BGCT Collection)*
 
 - [ ] Confirm BGCT (Best Practices, Guidelines, Checklists, Tutorials) documents are collected and stored centrally
@@ -303,7 +302,7 @@ Mayurika proactively reminds Suman 2 weeks before the 6-month handover is due (S
 
 ---
 
-### 26. Monthly HR Dashboard
+### Monthly HR Dashboard
 
 - [ ] Overall EOD Compliance %
 - [ ] Skill File Compliance %
@@ -317,7 +316,7 @@ This gives management one-page visibility.
 
 ---
 
-### 27. Process Improvement Review
+### Process Improvement Review
 
 - [ ] Identify inefficient HR processes.
 - [ ] Recommend improvements.
@@ -325,43 +324,12 @@ This gives management one-page visibility.
 
 ---
 
-### 28. Checklist Validation
+### Checklist Validation
 
 - [ ] Review checklist for outdated items.
 - [ ] Remove obsolete tasks.
 - [ ] Add newly approved processes.
 - [ ] Verify all sources remain valid.
-
----
-
-### 29. Checklist Completion Review
-
-- [ ] Confirm today's checklist is 100% completed.
-- [ ] Record incomplete items with reason.
-- [ ] Carry forward pending items.
-
----
-
-### 30. Source Verification
-
-- [ ] Verify new tasks have registered source references.
-- [ ] Mark unverified tasks as [VERIFY].
-
----
-
-### 31. Recurring Issue Monitoring
-
-- [ ] Identify recurring issues.
-- [ ] Compare with previous records.
-- [ ] Escalate if recurrence threshold is exceeded.
-
----
-
-### 32. Evidence Quality Review
-
-- [ ] Verify evidence is complete.
-- [ ] Verify evidence is readable.
-- [ ] Verify evidence matches the recorded activity.
 
 ---
 
@@ -389,6 +357,32 @@ Evidence should include:
 - Reviewer
 - Status
 - Follow-up Required (Yes/No)
+
+---
+
+## Missing Governance Controls
+
+These are not currently covered.
+
+Checklist Completion Review
+- [ ] Confirm today's checklist is 100% completed.
+- [ ] Record incomplete items with reason.
+- [ ] Carry forward pending items.
+
+Source Verification
+Because the document emphasizes source-backed processes:
+- [ ] Verify new tasks have registered source references.
+- [ ] Mark unverified tasks as [VERIFY].
+
+Recurring Issue Monitoring
+- [ ] Identify recurring issues.
+- [ ] Compare with previous records.
+- [ ] Escalate if recurrence threshold is exceeded.
+
+Evidence Quality Review
+- [ ] Verify evidence is complete.
+- [ ] Verify evidence is readable.
+- [ ] Verify evidence matches the recorded activity.
 
 ---
 
@@ -437,7 +431,7 @@ Do not ask Claude to:
 | This checklist needs updating | Mayurika reviews; Mareenraj updates the file |
 | Action record needs domain owner sign-off | Mayurika reviews her own records |
 | Cross-domain question (e.g., recruitment + HR + KPI) | Route to the relevant domain owners separately |
-| Sections 4–8, 15–18, 26–33 need confirming | Mayurika — pending re-review 2026-07-01 |
+| New checklist sections need confirming | Mayurika — pending confirmation 2026-07-01 |
 
 ---
 
@@ -445,9 +439,9 @@ Do not ask Claude to:
 
 PASS if a clean LLM reading this checklist can identify:
 - What the process step is
-- Which source backs it (or that it is pending re-review)
+- Which source backs it (or that it is pending confirmation)
 - What evidence to save
 - What not to record
 - Who to route to when a decision or review is needed
 
-FAIL if any item is invented (no source backing and no pending re-review note), resolves a [VERIFY], stores personal data, or implies a decision authority that is not confirmed.
+FAIL if any item is invented (no source backing and no pending confirmation note), resolves a [VERIFY], stores personal data, or implies a decision authority that is not confirmed.

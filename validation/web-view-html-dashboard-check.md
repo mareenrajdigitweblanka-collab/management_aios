@@ -561,8 +561,83 @@ Leave request submission; Probation review request; Confirmation recommendation;
 
 ---
 
+## 22. Mayurika Checklist User-Provided Text Replacement Dashboard Check (2026-07-02)
+
+**Change:** Mayurika checklist corrected with exact user-provided text (2026-07-02). All wrong/paraphrased sections removed and replaced. Dashboard updated to reflect: Mayurika checklist corrected with exact user-provided text; Mayurika confirmation pending.
+
+| Check | Result |
+|---|---|
+| Checklist file description in Mayurika HR tab updated | YES — shows "DRAFT — Exact user-provided text applied; Mayurika confirmation pending" |
+| AMBER 2 title and body updated to reflect replacement pass | YES — title changed to "Exact User-Provided Text Applied 2026-07-02"; body updated |
+| Review Queue action 2 description updated | YES — references corrected with exact user-provided text; confirmation pending |
+| Mayurika tab badge remains DRAFT | YES — unchanged |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| [VERIFY] item 12 resolved | NO — preserved; confirmation still required |
+| [VERIFY] root register changed | NO — all 9 open items unchanged |
+| Sensitive data added | NOT PRESENT |
+| Duplicate truth added | NOT PRESENT |
+| Source-register entry added | NOT ADDED — no new source registered in this task |
+| Root CLAUDE.md updated | NO — dashboard is navigation layer only |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Arun remains ACTIVE | YES — unchanged |
+| Suman remains ACTIVE | YES — unchanged |
+| PASS/AMBER preserved | YES — overall result unchanged |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS**
+
+---
+
+## 23. Mayurika HR Useful Tables Preview Build Check (2026-07-02)
+
+**Change:** 5 read-only PREVIEW tables added to the Mayurika HR tab in `web-view/index.html`. Tables built from the source discovery (`evidence/table-discovery/mayurika-hr-useful-tables-source-check-2026-07-02.md`). Month 1 Status Categories excluded (AMBER — Suman's domain).
+
+**Tables added:**
+
+| # | Table Name | Source |
+|---|---|---|
+| 1 | Leave Notice Periods & Approval Levels | SRC-POLICY-001 §6.1–§6.2 |
+| 2 | Leave Types at a Glance | SRC-POLICY-001 §6.1–§6.5 |
+| 3 | Employment Status Reference & PDPA Compliance Indicator | SRC-MAYU-001 |
+| 4 | Staff Review Milestone Calendar | SRC-MD-HR-001 §10.9; SRC-MAYU-001 |
+| 5 | Probation Record Monitoring | SRC-MAYU-001; SRC-POLICY-001 §6.2 |
+
+| Check | Result |
+|---|---|
+| All 5 PASS tables added as PREVIEW | YES |
+| Section heading labels tables as PREVIEW | YES |
+| Section subtitle states "Preview only; not final approved HR truth" | YES |
+| Month 1 Status Categories excluded | YES — AMBER note shown in dashboard |
+| Sensitive data (staff names, salary, health, disciplinary, PDPA personal data, employee IDs) | NOT PRESENT |
+| AXIOM/KPI/incident escalation/PRC/Admin Manager content | NOT PRESENT |
+| Suman process steps included in Month 6 milestone row | NO — Mayurika's receipt role only |
+| Rajiv authority on "suspended" status noted | YES — in table and boundary note |
+| Tool names named for HR/EOD systems ([VERIFY] item 9) | NO — "staff record system" (descriptive) used |
+| [VERIFY] items resolved | NO — all 9 open items preserved |
+| Mayurika workbench tab badge changed from DRAFT | NO — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Duplicate truth introduced | NOT PRESENT — tables are view extracts of registered sources |
+| Backend, API, or database code added | NOT PRESENT |
+| Edit/save/write feature added | NOT PRESENT |
+| External CDN added | NOT PRESENT |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Arun remains ACTIVE | YES — unchanged |
+| Suman remains ACTIVE | YES — unchanged |
+| PASS/AMBER overall result preserved | YES — result unchanged |
+| Netlify deployment wording preserved | YES |
+| Evidence path shown | YES — build note path shown in section intro |
+| Validation path shown | YES — validation file path shown in section intro |
+| Next-step box updated | YES — step 2 now references preview table review |
+
+**Build note:** `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md`
+**Validation:** `validation/mayurika-hr-useful-tables-preview-build-check.md`
+
+**Check result: PASS — AMBER until Mayurika reviews and confirms all 5 preview tables**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
