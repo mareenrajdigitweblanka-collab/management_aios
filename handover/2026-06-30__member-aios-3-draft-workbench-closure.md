@@ -239,6 +239,14 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 - Dashboard: `web-view/index.html` — card HTML block removed from Priority Cards section; closed info-box removed; no other cards changed.
 - No [VERIFY] items resolved. No sensitive data added. Dashboard remains read-only.
 
+**Mayurika checklist full body replacement completed 2026-07-02.** Mayurika instructed that the entire checklist body should be replaced with her provided checklist text. The old source-backed body (EOD Submission Compliance Check, SKILL File Compliance Check, LLM-Queryable Documentation Check, AXIOM Data Submission to Arun, Review Schedule Check, PDPA Compliance Check, ROI Data Collection, Leadership Review Sessions, New Employee ROI Check, Monthly / Periodic sections, Evidence to Save, What Not to Record, When to Ask GPT/Claude, Reviewer Routing table, Pass/Fail Rule) has been removed from the active file. The checklist body now contains only Mayurika's provided text, exactly as instructed. Safety footer added outside the exact text. Frontmatter updated. Checklist remains DRAFT — pending Mayurika confirmation.
+
+- Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-full-replacement-request-2026-07-02.md`
+- Validation: `validation/mayurika-checklist-full-replacement-check.md`
+- Checklist: `member-aios/mayurika-hr/daily-weekly-checklist.md` — body replaced; status DRAFT — Mayurika replacement checklist text applied; confirmation pending 2026-07-02
+- No [VERIFY] items resolved. No sensitive data added. No words substituted. Checklist remains DRAFT.
+- Next step: Route checklist to Mayurika for confirmation. Once confirmed, update status to ACTIVE.
+
 One domain review remains pending (paused):
 
 1. **Mayurika:** When available — re-review `member-aios/mayurika-hr/daily-weekly-checklist.md`; confirm WORKBENCH.md and quick-reference-sources.md; confirm 5 preview HR useful tables; confirm NSLP skill update candidate.

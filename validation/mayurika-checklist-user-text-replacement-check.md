@@ -202,17 +202,12 @@ Note: Original sections were renumbered to fill gaps left by removing the paraph
 
 **Updated 2026-07-02 — Verbatim Wording Pass completed.** This replacement pass has been superseded by the verbatim wording pass (2026-07-02). See `validation/mayurika-checklist-verbatim-wording-check.md` for the current validation record. Key change: the verbatim pass preserved labels A, B, C, D, E and all instruction/contextual lines that the previous replacement pass had treated as structural instructions rather than content. The block is now placed as one contiguous unit after section 16 (BGCT Documentation Check).
 
-Route `member-aios/mayurika-hr/daily-weekly-checklist.md` to Mayurika for confirmation. She should confirm:
-1. The verbatim text in all sections (daily, weekly, monthly, evidence, governance controls) is correct
-2. The evidence template fields (section 4 in the block) match her intent
-3. Any [VERIFY] items she can resolve by direct confirmation (especially item 12 — tool names)
-
-After Mayurika confirms, Mareenraj updates checklist status to `ACTIVE — Mayurika Confirmed [date]` and updates WORKBENCH.md, dashboard, and handover closure accordingly.
+**Updated 2026-07-02 — Superseded by full checklist body replacement.** The verbatim wording pass is itself now superseded by a full checklist body replacement on 2026-07-02. Mayurika instructed that the entire checklist body should be replaced with her provided checklist text. The old source-backed sections have been removed from the active file entirely. The checklist body now contains only Mayurika's provided text. See `validation/mayurika-checklist-full-replacement-check.md` for the current validation record.
 
 ---
 
 ## Overall Result
 
-**AMBER — superseded by verbatim wording pass 2026-07-02**
+**AMBER — superseded by full checklist body replacement 2026-07-02**
 
-Wrong/paraphrased sections removed: YES. Exact user-provided text inserted: YES. Damaged EOD line fixed: YES. Checklist status is correctly DRAFT. No [VERIFY] items resolved. No sensitive data added. No policy text duplicated. Reviewer routing correct. See `validation/mayurika-checklist-verbatim-wording-check.md` for the current (verbatim) validation result.
+Wrong/paraphrased sections removed: YES. Exact user-provided text inserted: YES. Damaged EOD line fixed: YES. Checklist status is correctly DRAFT. No [VERIFY] items resolved. No sensitive data added. No policy text duplicated. Reviewer routing correct. Superseded by verbatim wording pass (2026-07-02), which is itself superseded by full body replacement (2026-07-02). See `validation/mayurika-checklist-full-replacement-check.md` for the current validation result.

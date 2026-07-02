@@ -538,6 +538,42 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 ---
 
+## Mayurika Checklist Full Body Replacement Dashboard Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR tab — checklist file description | Updated to "DRAFT — Mayurika checklist replaced with Mayurika-provided text; confirmation pending" |
+| Review Queue action 2 | Updated to reference replacement with Mayurika-provided text; confirmation pending |
+| AMBER 2 title | Changed to "Mayurika Confirmation Pending (Checklist Replaced with Mayurika-Provided Text 2026-07-02)" |
+| AMBER 2 body | Updated to reflect old source-backed sections removed; replacement text inserted exactly; no words substituted |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §28 added |
+| Closure file updated | This file — Full Body Replacement Dashboard Update Record added |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-checklist-full-replacement-request-2026-07-02.md`
+**Validation path:** `validation/mayurika-checklist-full-replacement-check.md`
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+---
+
 ## Mayurika Attendance Dashboard Card Removal Record (2026-07-02)
 
 **What changed in this update:**

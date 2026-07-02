@@ -301,3 +301,13 @@ Markdown linting warnings (MD022/blanks-around-headings, MD036/no-emphasis-as-he
 Verbatim text preserved: YES. Exact match: YES. Any changed word: NONE. Any missing heading: NONE. Any added wording inside exact block: NONE. Check/confirm/verify/record substitution: NO. Checklist status: DRAFT. Sensitive-data check: PASS. [VERIFY] items: 0 resolved. All original source-backed sections preserved. Block placed after section 16 as one contiguous unit.
 
 **PASS/AMBER: AMBER — until Mayurika confirms**
+
+---
+
+## Supersession Note — 2026-07-02
+
+The previous verbatim block insertion recorded in this file is superseded by a full checklist body replacement on 2026-07-02.
+
+Mayurika instructed that the entire checklist body should be replaced with her provided checklist text. The old source-backed sections (EOD Submission Compliance Check, SKILL File Compliance Check, and all other original sections) have been removed from the active file. The checklist body now contains only Mayurika's provided text.
+
+See `validation/mayurika-checklist-full-replacement-check.md` for the current validation record.
