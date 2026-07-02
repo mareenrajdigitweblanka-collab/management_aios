@@ -196,11 +196,18 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 **User-provided text replacement completed 2026-07-02.** All 17 wrong/paraphrased sections removed and replaced with exact user-provided text. Damaged EOD line (`Check whether   staff have submitted...`) fixed to full correct wording. Original sections renumbered (9–25 → 4–16) after paraphrased extras removed. Standard Evidence Template and Missing Governance Controls section inserted from exact user-provided text. Checklist status updated to `DRAFT — exact user-provided checklist text applied; Mayurika confirmation pending 2026-07-01`. Dashboard, validation, and handover updated to reflect: Mayurika checklist corrected with exact user-provided text; Mayurika confirmation pending. Validation: `validation/mayurika-checklist-user-text-replacement-check.md`.
 
+**Mayurika HR Useful Tables preview build completed 2026-07-02.** 5 read-only PREVIEW tables added to the Mayurika HR tab in `web-view/index.html`. Tables are source-backed view extracts from registered sources. Mayurika is currently busy — tables built as PREVIEW for later review. Month 1 Status Categories excluded (AMBER — Suman's domain; build only after Mayurika confirms and Suman is notified). No sensitive data. No [VERIFY] items resolved. No AXIOM/KPI/Admin/PRC escalation content.
+
+- Evidence: `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md`
+- Validation: `validation/mayurika-hr-useful-tables-preview-build-check.md`
+- Commit hash: [TBC — fill after commit]
+- Next step: Netlify redeploy after commit; then route preview tables to Mayurika for review when she is available.
+
 One domain review remains pending:
 
-1. **Mayurika:** Re-review `member-aios/mayurika-hr/daily-weekly-checklist.md` — confirm exact wording in all 17 sections is correct; confirm Standard Evidence Template fields; confirm tool names to resolve [VERIFY] item 12; then confirm WORKBENCH.md and quick-reference-sources.md
+1. **Mayurika:** Re-review `member-aios/mayurika-hr/daily-weekly-checklist.md` — confirm exact wording in all 17 sections is correct; confirm Standard Evidence Template fields; confirm tool names to resolve [VERIFY] item 12; then confirm WORKBENCH.md and quick-reference-sources.md; and confirm the 5 preview HR useful tables are accurate.
 
-Once Mayurika confirms, update WORKBENCH.md status from DRAFT to ACTIVE.
+Once Mayurika confirms, update WORKBENCH.md status from DRAFT to ACTIVE and update preview table statuses to ACTIVE.
 
 **Root propagation complete 2026-06-30:** Root `context/verify-register.md`, CLAUDE.md, `context/kpi-axiom-context.md`, and `evidence/source-register.md` updated with Arun's confirmed items 8 (ACOS threshold: ACOS below 25% / ROAS 4), 9 (Operational Manager escalation authority: firm commitment with deadline to achieve required ROI — escalation only; full PRC scope remains [VERIFY] pending dedicated source), and 10 (Implementation Officer – Arunraj; Paraparan as External Auditor). Source registered as SRC-ARUN-CONF-001 (READY). All propagation scope limits preserved.
 

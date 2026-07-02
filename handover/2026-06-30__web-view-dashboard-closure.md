@@ -445,8 +445,68 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 ---
 
+## Mayurika HR Useful Tables Preview Build Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| New section added to Mayurika HR tab | `web-view/index.html` — "Mayurika HR Useful Tables — Preview" section added after Future Submission Form Candidates section |
+| Tables added | 5 read-only PREVIEW tables (see below) |
+| Month 1 Status Categories | NOT BUILT — AMBER note shown in dashboard; Suman's domain |
+| Section intro box | PREVIEW / READ ONLY warning shown; evidence and validation paths linked |
+| Next-step box updated | Step 2 added — route 5 preview tables to Mayurika for review |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §23 added |
+| Build note created | `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md` |
+| Validation check created | `validation/mayurika-hr-useful-tables-preview-build-check.md` |
+
+**Tables added (all PREVIEW / READ ONLY):**
+
+| # | Table Name | Source |
+|---|---|---|
+| 1 | Leave Notice Periods & Approval Levels | SRC-POLICY-001 §6.1–§6.2 |
+| 2 | Leave Types at a Glance | SRC-POLICY-001 §6.1–§6.5 |
+| 3 | Employment Status Reference & PDPA Compliance Indicator | SRC-MAYU-001 |
+| 4 | Staff Review Milestone Calendar | SRC-MD-HR-001 §10.9; SRC-MAYU-001 |
+| 5 | Probation Record Monitoring | SRC-MAYU-001; SRC-POLICY-001 §6.2 |
+
+**Tables excluded:**
+
+| Table | Status | Reason |
+|---|---|---|
+| Month 1 Status Categories | AMBER — not built | Primary domain is Suman's recruitment/handover process; build only after Mayurika confirms and Suman is notified |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md`
+**Validation path:** `validation/mayurika-hr-useful-tables-preview-build-check.md`
+**Mayurika review:** PENDING — all 5 tables remain PREVIEW until Mayurika confirms
+**Commit hash:** [TBC — fill after commit]
+**Next step:** Commit; redeploy to Netlify (publish directory `web-view/`, no build step); route preview tables to Mayurika for review when available.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (staff names, salary, health, PDPA personal data, disciplinary, employee IDs) | NOT ADDED |
+| AXIOM bands or KPI trigger rules | NOT ADDED |
+| Incident escalation / PRC / Admin Manager content | NOT ADDED |
+| Suman process steps (Month 6 scoped to Mayurika's receipt role) | CONFIRMED |
+| Backend write capability | NOT PRESENT |
+| External CDN | NOT PRESENT |
+| [VERIFY] items resolved | NO — all 9 open items preserved |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| Duplicate truth | NOT ADDED — tables are view extracts of registered sources |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman ACTIVE, and root propagation complete. All relevant sections updated (Arun tab badges, verify-explain-action boxes, warning box, review queue action 4, AMBER 1, file map, Root AIOS tab). Root propagation of items 8, 9, 10 correctly shown as complete with SRC-ARUN-CONF-001. Item 9 scope limit preserved throughout. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). No duplicate truth. No editing capability. Non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Ready to commit and redeploy to Netlify.
+Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman ACTIVE, and root propagation complete. All relevant sections updated (Arun tab badges, verify-explain-action boxes, warning box, review queue action 4, AMBER 1, file map, Root AIOS tab). Root propagation of items 8, 9, 10 correctly shown as complete with SRC-ARUN-CONF-001. Item 9 scope limit preserved throughout. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). No duplicate truth. No editing capability. Non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Ready to commit and redeploy to Netlify.
