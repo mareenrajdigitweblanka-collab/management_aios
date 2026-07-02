@@ -250,3 +250,15 @@ This workbench is a DRAFT pending Mayurika's review of:
 Once Mayurika reviews and confirms, the status field in this file's frontmatter should be updated from `DRAFT — Pending Mayurika review` to `ACTIVE — Mayurika Reviewed [date]`.
 
 **[VERIFY] item 12 resolution:** If Mayurika confirms the exact tool names she uses for HR records and the EOD dashboard during this review, notify Mareenraj so the confirmation can be registered.
+
+---
+
+## 14. Skill Update Candidates
+
+The following skill update candidates have been created for Mayurika's domain. These are DRAFT files pending Mayurika / MD confirmation before merge into the raw HR skill file.
+
+| Candidate | Path | Status | Created |
+|---|---|---|---|
+| New Skill Learning Program — HR Follow-up, Verification & Implementation Responsibility | `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md` | DRAFT — MD-requested update candidate | 2026-07-02 |
+
+**Rule:** These candidates do not update root AIOS truth. Raw HR.Mayu.Skill.md is not edited until Mayurika / MD confirms merge. Validation: `validation/hr-nslp-skill-update-candidate-check.md`. Evidence: `evidence/stakeholder-confirmations/hr-nslp-md-update-request-2026-07-02.md`.

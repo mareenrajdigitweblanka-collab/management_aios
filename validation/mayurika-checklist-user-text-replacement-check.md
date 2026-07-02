@@ -200,9 +200,11 @@ Note: Original sections were renumbered to fill gaps left by removing the paraph
 
 ## 12. One Next Step
 
+**Updated 2026-07-02 — Verbatim Wording Pass completed.** This replacement pass has been superseded by the verbatim wording pass (2026-07-02). See `validation/mayurika-checklist-verbatim-wording-check.md` for the current validation record. Key change: the verbatim pass preserved labels A, B, C, D, E and all instruction/contextual lines that the previous replacement pass had treated as structural instructions rather than content. The block is now placed as one contiguous unit after section 16 (BGCT Documentation Check).
+
 Route `member-aios/mayurika-hr/daily-weekly-checklist.md` to Mayurika for confirmation. She should confirm:
-1. The exact text in all sections (daily, weekly, monthly, evidence, governance controls) is correct
-2. The Standard Evidence Template fields match her intent
+1. The verbatim text in all sections (daily, weekly, monthly, evidence, governance controls) is correct
+2. The evidence template fields (section 4 in the block) match her intent
 3. Any [VERIFY] items she can resolve by direct confirmation (especially item 12 — tool names)
 
 After Mayurika confirms, Mareenraj updates checklist status to `ACTIVE — Mayurika Confirmed [date]` and updates WORKBENCH.md, dashboard, and handover closure accordingly.
@@ -211,6 +213,6 @@ After Mayurika confirms, Mareenraj updates checklist status to `ACTIVE — Mayur
 
 ## Overall Result
 
-**AMBER — Mayurika confirmation pending**
+**AMBER — superseded by verbatim wording pass 2026-07-02**
 
-Wrong/paraphrased sections removed: YES. Exact user-provided text inserted: YES. Damaged EOD line fixed: YES. Checklist status is correctly DRAFT. No [VERIFY] items resolved. No sensitive data added. No policy text duplicated. Reviewer routing correct. Three AMBER items are non-blocking and documented above.
+Wrong/paraphrased sections removed: YES. Exact user-provided text inserted: YES. Damaged EOD line fixed: YES. Checklist status is correctly DRAFT. No [VERIFY] items resolved. No sensitive data added. No policy text duplicated. Reviewer routing correct. See `validation/mayurika-checklist-verbatim-wording-check.md` for the current (verbatim) validation result.

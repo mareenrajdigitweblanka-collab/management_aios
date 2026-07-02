@@ -505,6 +505,39 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 ---
 
+## Mayurika Checklist Verbatim Wording Dashboard Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR tab — checklist file description | Updated from "DRAFT — Exact user-provided text applied; Mayurika confirmation pending" to "DRAFT — Mayurika checklist verbatim wording applied; confirmation pending" |
+| Review Queue action 2 | Updated to reference verbatim wording (2026-07-02); confirmation pending |
+| AMBER 2 title | Changed to "Mayurika Confirmation Pending (Verbatim Wording Applied 2026-07-02)" |
+| AMBER 2 body | Updated to reflect labels A–E preserved; no synonym substitution; no spelling correction |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §24 added |
+| Closure file updated | This file — Verbatim Wording Dashboard Update Record added |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

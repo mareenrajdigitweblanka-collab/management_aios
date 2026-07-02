@@ -196,12 +196,23 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 **User-provided text replacement completed 2026-07-02.** All 17 wrong/paraphrased sections removed and replaced with exact user-provided text. Damaged EOD line (`Check whether   staff have submitted...`) fixed to full correct wording. Original sections renumbered (9–25 → 4–16) after paraphrased extras removed. Standard Evidence Template and Missing Governance Controls section inserted from exact user-provided text. Checklist status updated to `DRAFT — exact user-provided checklist text applied; Mayurika confirmation pending 2026-07-01`. Dashboard, validation, and handover updated to reflect: Mayurika checklist corrected with exact user-provided text; Mayurika confirmation pending. Validation: `validation/mayurika-checklist-user-text-replacement-check.md`.
 
+**Verbatim wording pass completed 2026-07-02.** Mayurika requested her exact wording be used. Previous replacement pass had treated labels A, B, C, D, E and contextual instruction lines as structural markers rather than content. This verbatim pass corrects that: entire block pasted exactly as Mayurika provided; labels A–E preserved; no synonym substitution; no spelling correction; no heading removed. Block placed as one contiguous unit after section 16 (BGCT Documentation Check). Checklist status updated to `DRAFT — Mayurika verbatim checklist wording applied; confirmation pending 2026-07-02`. Dashboard, validation, and handover updated to say: Mayurika checklist verbatim wording applied; confirmation pending. Validation: `validation/mayurika-checklist-verbatim-wording-check.md`.
+
 **Mayurika HR Useful Tables preview build completed 2026-07-02.** 5 read-only PREVIEW tables added to the Mayurika HR tab in `web-view/index.html`. Tables are source-backed view extracts from registered sources. Mayurika is currently busy — tables built as PREVIEW for later review. Month 1 Status Categories excluded (AMBER — Suman's domain; build only after Mayurika confirms and Suman is notified). No sensitive data. No [VERIFY] items resolved. No AXIOM/KPI/Admin/PRC escalation content.
 
 - Evidence: `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md`
 - Validation: `validation/mayurika-hr-useful-tables-preview-build-check.md`
 - Commit hash: [TBC — fill after commit]
 - Next step: Netlify redeploy after commit; then route preview tables to Mayurika for review when she is available.
+
+**NSLP HR skill update candidate created 2026-07-02.** MD requested HR responsibilities for the New Skill Learning Program be added to the HR skill file. Raw HR.Mayu.Skill.md was NOT edited. An update candidate was created for Mayurika / MD review and merge decision.
+
+- Evidence: `evidence/stakeholder-confirmations/hr-nslp-md-update-request-2026-07-02.md`
+- Candidate: `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md`
+- Validation: `validation/hr-nslp-skill-update-candidate-check.md`
+- WORKBENCH.md §14 (Skill Update Candidates) updated with pointer.
+- No assumptions added. No sensitive data stored. No [VERIFY] items resolved. Raw HR skill file not edited.
+- Next step: Route candidate to Mayurika / MD for review. Once confirmed, apply merge to `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md`.
 
 One domain review remains pending:
 
