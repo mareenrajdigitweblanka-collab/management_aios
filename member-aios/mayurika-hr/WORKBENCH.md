@@ -247,7 +247,11 @@ This workbench is a DRAFT pending Mayurika's review of:
 - Whether any confirmed process area is missing from the pointer list
 - Whether the checklist at `member-aios/mayurika-hr/daily-weekly-checklist.md` is operationally accurate
 
-Once Mayurika reviews and confirms, the status field in this file's frontmatter should be updated from `DRAFT — Pending Mayurika review` to `ACTIVE — Mayurika Reviewed [date]`.
+**Checklist status:** `daily-weekly-checklist.md — ACTIVE — Mayurika confirmed replacement checklist 2026-07-02`
+
+Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md`
+
+Once Mayurika reviews and confirms WORKBENCH.md and quick-reference-sources.md, the status field in this file's frontmatter should be updated from `DRAFT — Pending Mayurika review` to `ACTIVE — Mayurika Reviewed [date]`.
 
 **[VERIFY] item 12 resolution:** If Mayurika confirms the exact tool names she uses for HR records and the EOD dashboard during this review, notify Mareenraj so the confirmation can be registered.
 

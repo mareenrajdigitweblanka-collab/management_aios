@@ -703,6 +703,45 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 ---
 
+## Mayurika Checklist Final Activation Dashboard Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR tab — checklist file description | Updated to "ACTIVE — Mayurika confirmed replacement checklist 2026-07-02"; evidence path shown |
+| Review Queue action 2 — checklist status span | Updated from DRAFT/amber to ACTIVE/pass colour; text updated to "ACTIVE — Mayurika confirmed replacement checklist 2026-07-02" |
+| AMBER 2 title | Changed to "Mayurika Checklist ACTIVE — WORKBENCH.md and quick-reference-sources.md Remain DRAFT (2026-07-02)" |
+| AMBER 2 body | Updated to reflect confirmed checklist; WORKBENCH.md and quick-reference-sources.md remain DRAFT; [VERIFY] item 12 still open |
+| AMBER 2 action | Updated to route WORKBENCH.md and quick-reference-sources.md for review |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §29 added |
+| Closure file updated | This file — Final Activation Dashboard Update Record added |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md`
+**Validation path:** `validation/mayurika-checklist-final-activation-check.md`
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT (WORKBENCH.md not yet confirmed) |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT until full workbench review |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files; redeploy to Netlify to publish the Mayurika checklist ACTIVE status.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

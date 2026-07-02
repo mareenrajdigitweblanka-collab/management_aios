@@ -5,7 +5,7 @@ member: Mayurika / Mayuri
 role: HR Officer
 created: 2026-06-30
 last-updated: 2026-07-02
-status: DRAFT — Mayurika replacement checklist text applied; confirmation pending 2026-07-02
+status: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02
 source-boundary: Mayurika-provided checklist replacement text 2026-07-02; source mapping pending
 root-truth: CLAUDE.md — canonical; this file is a checklist pointer only
 ---

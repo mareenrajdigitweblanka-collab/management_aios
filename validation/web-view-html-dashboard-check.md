@@ -792,6 +792,39 @@ Leave request submission; Probation review request; Confirmation recommendation;
 
 ---
 
+## 29. Mayurika Checklist Final Activation Check (2026-07-02)
+
+**Change:** Mayurika confirmed the replacement checklist 2026-07-02. Dashboard updated to reflect checklist ACTIVE. WORKBENCH.md and quick-reference-sources.md remain DRAFT.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md`
+**Validation:** `validation/mayurika-checklist-final-activation-check.md`
+
+| Check | Result |
+|---|---|
+| Checklist file description in Mayurika HR tab updated to ACTIVE | YES — shows "ACTIVE — Mayurika confirmed replacement checklist 2026-07-02" |
+| Evidence path shown in checklist description | YES — confirmation file path shown |
+| Review Queue action 2 checklist status span updated to ACTIVE | YES — colour changed to pass; text updated to ACTIVE |
+| AMBER 2 title updated to reflect checklist confirmed / workbench still DRAFT | YES — title changed to "Mayurika Checklist ACTIVE — WORKBENCH.md and quick-reference-sources.md Remain DRAFT (2026-07-02)" |
+| AMBER 2 body updated to reflect confirmed checklist and pending workbench review | YES |
+| AMBER 2 action updated to route remaining files | YES |
+| Mayurika tab badge changed from DRAFT | NO — remains DRAFT (WORKBENCH.md not yet confirmed) |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT until full workbench review |
+| [VERIFY] item 12 resolved | NO — preserved; tool name confirmation still required |
+| [VERIFY] root register changed | NO — all 9 open items unchanged |
+| Sensitive data added | NOT PRESENT |
+| Duplicate truth added | NOT PRESENT |
+| Source-register entry added | NOT ADDED — no new source registered in this task |
+| Root CLAUDE.md updated | NO — dashboard is navigation layer only |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Arun remains ACTIVE | YES — unchanged |
+| Suman remains ACTIVE | YES — unchanged |
+| PASS/AMBER preserved | YES — overall result unchanged |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

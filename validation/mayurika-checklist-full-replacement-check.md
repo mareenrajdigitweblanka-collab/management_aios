@@ -270,3 +270,19 @@ Old checklist body removed: YES. Replacement text inserted exactly: YES. Frontma
 **PASS for safe replacement. AMBER until Mayurika confirms final status.**
 
 One next step: Route `member-aios/mayurika-hr/daily-weekly-checklist.md` to Mayurika for confirmation. Once she confirms, update checklist status to ACTIVE and update WORKBENCH.md, dashboard, and handover accordingly.
+
+---
+
+## 12. Final Activation Note (2026-07-02)
+
+Mayurika confirmed the replaced checklist on 2026-07-02. Status may now be treated as ACTIVE in the Mayurika HR subfolder.
+
+| Item | Detail |
+|---|---|
+| Confirmation date | 2026-07-02 |
+| Confirmed by | Mayurika via user |
+| Checklist status | ACTIVE — Mayurika confirmed replacement checklist 2026-07-02 |
+| Evidence file | `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md` |
+| Activation validation | `validation/mayurika-checklist-final-activation-check.md` |
+| Checklist body changed | NO — unchanged from replacement applied 2026-07-02 |
+| [VERIFY] items resolved | NO — all 9 open items remain open in root register |

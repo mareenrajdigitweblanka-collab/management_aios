@@ -247,6 +247,15 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 - No [VERIFY] items resolved. No sensitive data added. No words substituted. Checklist remains DRAFT.
 - Next step: Route checklist to Mayurika for confirmation. Once confirmed, update status to ACTIVE.
 
+**Mayurika checklist final activation completed 2026-07-02.** Mayurika confirmed the replaced checklist on 2026-07-02. `member-aios/mayurika-hr/daily-weekly-checklist.md` marked ACTIVE. Checklist body not changed. No [VERIFY] items resolved. No sensitive data added. No root files edited.
+
+- Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md`
+- Validation: `validation/mayurika-checklist-final-activation-check.md`
+- Checklist: `member-aios/mayurika-hr/daily-weekly-checklist.md` — status: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02
+- WORKBENCH.md and quick-reference-sources.md remain DRAFT pending full workbench review
+- Dashboard: `web-view/index.html` — checklist description, Review Queue action 2, and AMBER 2 updated to reflect ACTIVE checklist
+- Next step: commit and redeploy dashboard to Netlify
+
 One domain review remains pending (paused):
 
 1. **Mayurika:** When available — re-review `member-aios/mayurika-hr/daily-weekly-checklist.md`; confirm WORKBENCH.md and quick-reference-sources.md; confirm 5 preview HR useful tables; confirm NSLP skill update candidate.
