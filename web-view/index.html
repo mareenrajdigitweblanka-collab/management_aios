@@ -1396,6 +1396,10 @@
       Skills Register
       <span class="tab-badge tab-badge-preview">PREVIEW</span>
     </button>
+    <button class="tab-btn" data-tab="handover-preview" role="tab" aria-selected="false">
+      Handover Preview
+      <span class="tab-badge tab-badge-preview">PREVIEW</span>
+    </button>
   </nav>
 
   <!-- ═══════════════════════════════════
@@ -3861,6 +3865,236 @@
       </div>
 
     </div><!-- /tab-skills-register -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 11 — HANDOVER PREVIEW
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-handover-preview" role="tabpanel">
+
+      <div class="how-to-box">
+        <h3>Handover Preview</h3>
+        <p>This is a read-only preview of the Management AIOS handover metadata. Each row shows the status, evidence path, validation path, owner, and next step for key handover assets and scope decisions. No raw sensitive HR data is exposed.</p>
+        <ul>
+          <li>Built from real <code>handover/</code>, <code>evidence/stakeholder-confirmations/</code>, and <code>validation/</code> folder files only</li>
+          <li>No personal HR data, staff names, leave records, salary, health, PDPA, candidate, or disciplinary data</li>
+          <li>No Varmen draft sample handover values used — all rows derived from actual repository files</li>
+          <li>No new handover truth created — this is a metadata view only</li>
+        </ul>
+        <p style="margin-top:10px;font-size:.8rem;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;padding:8px 12px;border-radius:5px;"><strong>This handover view shows metadata only. It does not expose raw sensitive HR data.</strong></p>
+        <p style="margin-top:8px;font-size:.8rem;color:#b45309;background:#fef3c7;border:1px solid #fde68a;padding:8px 12px;border-radius:5px;"><strong>Varmen visual review is pending. This preview is not final approval.</strong></p>
+      </div>
+
+      <!-- SUMMARY CARDS -->
+      <div class="section-title">Current Handover Summary</div>
+      <div data-searchable data-tags="handover summary safe sections built pending visual review blocked gated verify count">
+        <div class="status-bar" style="margin-bottom:28px;">
+          <div class="stat-card">
+            <div class="stat-label">Safe Sections Built</div>
+            <div class="stat-value">3</div>
+            <div class="stat-sub">Doc Register · Skills · Handover</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending Visual Reviews</div>
+            <div class="stat-value" style="color:var(--amber);">3</div>
+            <div class="stat-sub">All 3 PREVIEW tabs — Varmen review pending</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Blocked / Gated Sections</div>
+            <div class="stat-value" style="color:var(--blocked);">4</div>
+            <div class="stat-sub">Team Table (FAIL) · Onboarding · KPI Sched · Leave (out of scope)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Open [VERIFY] Items</div>
+            <div class="stat-value" style="color:var(--amber);">9</div>
+            <div class="stat-sub">Root register — items 1–5, 6–7, 8, 9</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Handover Closure Files</div>
+            <div class="stat-value">2</div>
+            <div class="stat-sub">Member AIOS · Web-view dashboard</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HANDOVER TABLE -->
+      <div class="section-title">Handover Table — Asset / Area Register</div>
+      <div data-searchable data-tags="handover table asset area status evidence validation owner reviewer next step web-view dashboard document register skills register mayurika checklist varmen discovery leave attendance closure">
+        <table class="review-table" style="margin-bottom:28px;">
+          <thead>
+            <tr>
+              <th>Asset / Area</th>
+              <th>Status</th>
+              <th>Evidence</th>
+              <th>Validation</th>
+              <th>Owner / Reviewer</th>
+              <th>Next Step</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Web-view Dashboard Closure</strong><br><code class="mono">handover/2026-06-30__web-view-dashboard-closure.md</code></td>
+              <td><span class="badge badge-amber">PASS — AMBER</span></td>
+              <td><code class="mono">handover/2026-06-30__web-view-dashboard-closure.md</code></td>
+              <td><code class="mono">validation/web-view-html-dashboard-check.md</code></td>
+              <td>Mareenraj (builder)<br>Varmen (visual review pending)</td>
+              <td>Commit; redeploy to Netlify; Varmen visual review</td>
+            </tr>
+            <tr>
+              <td><strong>Member AIOS — 3 Draft Workbench Closure</strong><br><code class="mono">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</code></td>
+              <td><span class="badge badge-amber">PASS — AMBER</span></td>
+              <td><code class="mono">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</code></td>
+              <td><code class="mono">validation/member-aios-3-draft-workbench-creation-check.md</code></td>
+              <td>Mareenraj (builder)<br>Mayurika (review pending)<br>Rajiv (BLOCKED)</td>
+              <td>Mayurika review of WORKBENCH.md and quick-reference-sources.md; then Rajiv after SRC-ADMIN-001 received</td>
+            </tr>
+            <tr>
+              <td><strong>Document Register Preview</strong><br><code class="mono">web-view/index.html — tab-doc-register</code></td>
+              <td><span class="badge badge-preview">PASS — PREVIEW</span></td>
+              <td><code class="mono">evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md</code></td>
+              <td><code class="mono">validation/varmen-document-register-preview-build-check.md</code></td>
+              <td>Mareenraj (builder)<br>Varmen (visual review pending)</td>
+              <td>Varmen visual layout review when available; confirm 20 rows correct</td>
+            </tr>
+            <tr>
+              <td><strong>Skills Register Preview</strong><br><code class="mono">web-view/index.html — tab-skills-register</code></td>
+              <td><span class="badge badge-preview">PASS — PREVIEW</span></td>
+              <td><code class="mono">evidence/stakeholder-confirmations/dashboard-skills-register-next-build-choice-2026-07-02.md</code></td>
+              <td><code class="mono">validation/dashboard-skills-register-preview-build-check.md</code></td>
+              <td>Mareenraj (builder)<br>Varmen (visual review pending)</td>
+              <td>Varmen visual layout review when available; usage counts hidden until tracking source confirmed</td>
+            </tr>
+            <tr>
+              <td><strong>Handover Preview</strong><br><code class="mono">web-view/index.html — tab-handover-preview</code></td>
+              <td><span class="badge badge-preview">PASS — PREVIEW</span></td>
+              <td><code class="mono">evidence/stakeholder-confirmations/dashboard-handover-preview-next-build-choice-2026-07-02.md</code></td>
+              <td><code class="mono">validation/dashboard-handover-preview-build-check.md</code></td>
+              <td>Mareenraj (builder)<br>Varmen (visual review pending)</td>
+              <td>Commit; redeploy to Netlify; Varmen visual review; then choose next safe section</td>
+            </tr>
+            <tr>
+              <td><strong>Mayurika Checklist Activation</strong><br><code class="mono">member-aios/mayurika-hr/daily-weekly-checklist.md</code></td>
+              <td><span class="badge badge-active">ACTIVE</span></td>
+              <td><code class="mono">evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code></td>
+              <td><code class="mono">validation/mayurika-checklist-final-activation-check.md</code></td>
+              <td>Mayurika (domain owner — confirmed)<br>Mareenraj (builder)</td>
+              <td>Route WORKBENCH.md and quick-reference-sources.md for Mayurika review; [VERIFY] item 9 (exact HR/EOD tool names) still open</td>
+            </tr>
+            <tr>
+              <td><strong>Varmen Draft Dashboard Discovery</strong><br><code class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code></td>
+              <td><span class="badge badge-active">COMPLETE — Discovery</span></td>
+              <td><code class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code></td>
+              <td><code class="mono">validation/varmen-draft-dashboard-data-requirements-check.md</code></td>
+              <td>Mareenraj (builder)<br>Varmen (source)</td>
+              <td>Continue safe build order — Recurring Issues next after Handover; AMBER/FAIL sections gated</td>
+            </tr>
+            <tr>
+              <td><strong>Leave Tables — Excluded from Scope</strong><br>Leave Requests table not required for current build</td>
+              <td><span class="badge badge-blocked">OUT OF SCOPE</span></td>
+              <td><code class="mono">evidence/stakeholder-confirmations/varmen-dashboard-no-leave-tables-2026-07-02.md</code></td>
+              <td><code class="mono">validation/varmen-dashboard-no-leave-tables-scope-check.md</code></td>
+              <td>Varmen (decision 2026-07-02)</td>
+              <td>Do not build unless new requirement received from Varmen</td>
+            </tr>
+            <tr>
+              <td><strong>Attendance Dashboard Card — Removed</strong><br>Card removed from Mayurika HR tab; no replacement required</td>
+              <td><span class="badge badge-blocked">CLOSED — Removed</span></td>
+              <td><code class="mono">evidence/stakeholder-confirmations/mayurika-attendance-dashboard-card-remove-request-2026-07-02.md</code></td>
+              <td><code class="mono">validation/mayurika-attendance-dashboard-card-removal-check.md</code></td>
+              <td>Mayurika (decision 2026-07-02)</td>
+              <td>No further action required; historical evidence files retained</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- HANDOVER FILE LIST -->
+      <div class="section-title">Handover Folder — Real Files</div>
+      <div data-searchable data-tags="handover folder files closure readme rollout note staff roster confirmation request">
+        <div class="file-list-box">
+          <h4>handover/ — confirmed file list</h4>
+          <ul>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/README.md</div>
+                <div class="fdesc">Handover folder governance — explains purpose, usage, and rules for all closure files in this folder.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/2026-06-23-closure.md</div>
+                <div class="fdesc">Early policy source ingestion closure — SRC-POLICY-001 integrated 2026-06-23.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</div>
+                <div class="fdesc">Member AIOS 3-draft workbench creation closure — Mayurika DRAFT, Suman ACTIVE, Arun ACTIVE, Rajiv BLOCKED.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/2026-06-30__web-view-dashboard-closure.md</div>
+                <div class="fdesc">Web-view dashboard closure — ongoing update record for all dashboard changes since 2026-06-30. Most recently updated with Skills Register Preview and Professional UI Polish (2026-07-03).</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/management-action-records-team-usage-guide.md</div>
+                <div class="fdesc">Usage guide for the management-action-records folder — how team members submit and query records.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/management-action-records-rollout-note.md</div>
+                <div class="fdesc">Rollout note for management action records — context on folder structure and initial setup.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/staff-roster-department-canonical-confirmation-request.md</div>
+                <div class="fdesc">Request for canonical department name confirmation — staff roster department normalisation.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">handover/staff-roster-department-final-casing-confirmation-request.md</div>
+                <div class="fdesc">Request for final department name casing confirmation — final normalisation step for staff roster.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- LIMITS BOX -->
+      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;">
+        <h3 style="color:#15803d;">Handover Preview Limits</h3>
+        <ul style="color:#166534;">
+          <li>This preview is not final approval — Varmen visual review is still pending</li>
+          <li>No sensitive HR data — no staff names, leave records, salary, health, PDPA, candidate, or disciplinary data are shown</li>
+          <li>No blocked sections were built — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, and Decisions remain correctly excluded</li>
+          <li>No Varmen draft sample handover values used — all rows derived from real repository files only</li>
+          <li>No [VERIFY] items were resolved to build this preview — all 9 open items preserved</li>
+          <li>All file paths shown are real repository paths — no invented or placeholder paths</li>
+          <li>Dates shown are from existing closure/evidence files — no invented dates</li>
+          <li>Dashboard remains read-only — no forms, no edit/save/delete buttons, no backend</li>
+        </ul>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>Commit the updated files (<code>web-view/index.html</code>, <code>validation/web-view-html-dashboard-check.md</code>, <code>handover/2026-06-30__web-view-dashboard-closure.md</code>, plus the new evidence and validation files); redeploy to Netlify (publish directory <code>web-view/</code>, no build step); visually inspect the Handover Preview tab; then route to Varmen for visual layout review when available. After Varmen confirms, choose the next safe PASS section: Recurring Issues or Overview.</p>
+      </div>
+
+    </div><!-- /tab-handover-preview -->
 
   </main>
 

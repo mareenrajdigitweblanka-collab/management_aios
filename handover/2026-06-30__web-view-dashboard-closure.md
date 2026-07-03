@@ -912,6 +912,61 @@ Next step: Commit updated files; redeploy to Netlify (publish directory `web-vie
 
 ---
 
+## Handover Preview Addition Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Request source | User — "next Handover" (2026-07-03) |
+| Build choice | Handover Preview — next safe PASS section after Skills Register |
+| Evidence path | `evidence/stakeholder-confirmations/dashboard-handover-preview-next-build-choice-2026-07-02.md` |
+| Validation path | `validation/dashboard-handover-preview-build-check.md` |
+| New tab button added | "Handover Preview" tab (`data-tab="handover-preview"`) with PREVIEW badge |
+| New tab panel added | `id="tab-handover-preview"` |
+| Summary cards | 5 cards: Safe sections built (3), Pending visual reviews (3), Blocked/gated (4), Open [VERIFY] count (9), Handover closure files (2) |
+| Handover table | 9 rows — Web-view Dashboard Closure, Member AIOS Workbench Closure, Document Register Preview, Skills Register Preview, Handover Preview (this build), Mayurika Checklist Activation, Varmen Draft Dashboard Discovery, Leave Tables (excluded), Attendance Dashboard (removed) |
+| Handover file list | 8 real files from `handover/` folder — all confirmed as existing repository files |
+| Metadata-only note | "This handover view shows metadata only. It does not expose raw sensitive HR data." shown in teal info box |
+| Varmen review pending note | "Varmen visual review is pending. This preview is not final approval." shown in amber warning box |
+| Limits box | Green info box listing: real paths only, no sample values, no sensitive data, no blocked sections, no [VERIFY] resolved |
+| Varmen draft sample values used | NO — draft Owner=Mayurika, Test=Passed, "Month 4" placeholder values not used |
+| Sensitive-data check | PASS — no staff names, leave records, salary, health, PDPA, candidate, or disciplinary data |
+| Read-only check | PASS — no forms, no edit/save/delete buttons, no backend |
+| Validation file created | `validation/dashboard-handover-preview-build-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` — §33 added |
+| Netlify redeploy required | YES — after commit; publish directory `web-view/`; no build step |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (staff names, salary, health, PDPA, leave records, disciplinary, employee IDs) | NOT ADDED |
+| Varmen draft sample handover values used as real | NO |
+| New blocked table built | NO — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, Decisions, Attendance Dashboard all correctly excluded |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| Document Register 20 rows | UNCHANGED |
+| Skills Register metadata | UNCHANGED |
+| Mayurika checklist ACTIVE status | UNCHANGED |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Attendance Dashboard card | NOT RE-ADDED — remains removed |
+| Dashboard read-only status | PRESERVED — no forms, no buttons, no backend |
+| Duplicate truth | NOT ADDED — file metadata and short summaries only |
+| Backend or CDN | NOT PRESENT |
+| Varmen visual review | STILL PENDING — not marked complete |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`, plus `evidence/stakeholder-confirmations/dashboard-handover-preview-next-build-choice-2026-07-02.md` and `validation/dashboard-handover-preview-build-check.md`); redeploy to Netlify; visually inspect the Handover Preview tab in browser; then route to Varmen for visual layout review when available. After Varmen confirms, choose the next safe PASS section: Recurring Issues or Overview.
+
+---
+
 ## Skills Register Preview Addition Record (2026-07-03)
 
 **What changed in this update:**
