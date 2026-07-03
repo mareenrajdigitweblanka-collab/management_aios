@@ -38,9 +38,9 @@
       --topbar-border: #1e2d3d;
       --radius: 8px;
       --radius-sm: 5px;
-      --shadow: 0 1px 3px rgba(0,0,0,.07), 0 2px 10px rgba(0,0,0,.05);
-      --shadow-md: 0 2px 6px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.07);
-      --shadow-hover: 0 4px 18px rgba(0,0,0,.13), 0 2px 6px rgba(0,0,0,.08);
+      --shadow: 0 1px 3px rgba(0, 0, 0, .07), 0 2px 10px rgba(0, 0, 0, .05);
+      --shadow-md: 0 2px 6px rgba(0, 0, 0, .08), 0 4px 16px rgba(0, 0, 0, .07);
+      --shadow-hover: 0 4px 18px rgba(0, 0, 0, .13), 0 2px 6px rgba(0, 0, 0, .08);
     }
 
     html {
@@ -69,7 +69,7 @@
       top: 0;
       z-index: 100;
       border-bottom: 1px solid var(--topbar-border);
-      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
       flex-shrink: 0;
     }
 
@@ -96,7 +96,7 @@
       height: 8px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 8px rgba(37,99,235,.7);
+      box-shadow: 0 0 8px rgba(37, 99, 235, .7);
     }
 
     .topbar-logo span {
@@ -124,7 +124,7 @@
     }
 
     .topbar-commit {
-      background: rgba(255,255,255,.07);
+      background: rgba(255, 255, 255, .07);
       border: 1px solid #334155;
       border-radius: var(--radius-sm);
       padding: 3px 9px;
@@ -147,7 +147,7 @@
       z-index: 90;
       overflow-x: hidden;
       flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,.05);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .05);
     }
 
     .tab-btn {
@@ -231,11 +231,13 @@
       transition: border-color .15s, box-shadow .15s;
     }
 
-    #searchInput::placeholder { color: #94a3b8; }
+    #searchInput::placeholder {
+      color: #94a3b8;
+    }
 
     #searchInput:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
       background: var(--surface);
     }
 
@@ -898,7 +900,7 @@
       border-radius: var(--radius);
       padding: 18px 22px;
       margin-bottom: 20px;
-      box-shadow: 0 1px 4px rgba(21,128,61,.08);
+      box-shadow: 0 1px 4px rgba(21, 128, 61, .08);
     }
 
     .result-box h3 {
@@ -938,7 +940,7 @@
 
     .source-row:hover {
       background: #f8fafc;
-      box-shadow: 0 1px 6px rgba(0,0,0,.06);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
     }
 
     .source-id {
@@ -976,7 +978,7 @@
     }
 
     .amber-item:hover {
-      box-shadow: 0 2px 8px rgba(180,83,9,.12);
+      box-shadow: 0 2px 8px rgba(180, 83, 9, .12);
     }
 
     .amber-item-title {
@@ -1271,7 +1273,7 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background: rgba(255,255,255,.06);
+      background: rgba(255, 255, 255, .06);
       border: 1px solid #334155;
       border-radius: 4px;
       padding: 2px 8px;
@@ -1340,11 +1342,30 @@
       transform: translateY(-2px);
     }
 
-    .hov-card-pass  { border-top-color: var(--pass);   background: linear-gradient(to bottom, #f0fdf4 0%, #fff 55%); }
-    .hov-card-amber { border-top-color: var(--amber);  background: linear-gradient(to bottom, #fffbeb 0%, #fff 55%); }
-    .hov-card-blocked { border-top-color: var(--blocked); background: linear-gradient(to bottom, #fff1f2 0%, #fff 55%); }
-    .hov-card-verify { border-top-color: #7c3aed;     background: linear-gradient(to bottom, #f5f3ff 0%, #fff 55%); }
-    .hov-card-meta  { border-top-color: var(--accent); background: linear-gradient(to bottom, var(--accent-light) 0%, #fff 55%); }
+    .hov-card-pass {
+      border-top-color: var(--pass);
+      background: linear-gradient(to bottom, #f0fdf4 0%, #fff 55%);
+    }
+
+    .hov-card-amber {
+      border-top-color: var(--amber);
+      background: linear-gradient(to bottom, #fffbeb 0%, #fff 55%);
+    }
+
+    .hov-card-blocked {
+      border-top-color: var(--blocked);
+      background: linear-gradient(to bottom, #fff1f2 0%, #fff 55%);
+    }
+
+    .hov-card-verify {
+      border-top-color: #7c3aed;
+      background: linear-gradient(to bottom, #f5f3ff 0%, #fff 55%);
+    }
+
+    .hov-card-meta {
+      border-top-color: var(--accent);
+      background: linear-gradient(to bottom, var(--accent-light) 0%, #fff 55%);
+    }
 
     .hov-card-label {
       font-size: .62rem;
@@ -1363,11 +1384,25 @@
       color: var(--text);
     }
 
-    .hov-card-pass    .hov-card-number { color: var(--pass); }
-    .hov-card-amber   .hov-card-number { color: var(--amber); }
-    .hov-card-blocked .hov-card-number { color: var(--blocked); }
-    .hov-card-verify  .hov-card-number { color: #7c3aed; }
-    .hov-card-meta    .hov-card-number { color: var(--accent); }
+    .hov-card-pass .hov-card-number {
+      color: var(--pass);
+    }
+
+    .hov-card-amber .hov-card-number {
+      color: var(--amber);
+    }
+
+    .hov-card-blocked .hov-card-number {
+      color: var(--blocked);
+    }
+
+    .hov-card-verify .hov-card-number {
+      color: #7c3aed;
+    }
+
+    .hov-card-meta .hov-card-number {
+      color: var(--accent);
+    }
 
     .hov-card-desc {
       font-size: .73rem;
@@ -1396,10 +1431,23 @@
         flex-direction: column;
         align-items: flex-start;
       }
-      .safety-strip { flex-wrap: wrap; }
-      .topbar-right { display: none; }
-      .topbar-logo::before { display: none; }
-      .handover-summary-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+
+      .safety-strip {
+        flex-wrap: wrap;
+      }
+
+      .topbar-right {
+        display: none;
+      }
+
+      .topbar-logo::before {
+        display: none;
+      }
+
+      .handover-summary-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+      }
     }
   </style>
 </head>
@@ -1498,7 +1546,8 @@
 ═══════════════════════════════════ -->
   <div class="safety-strip" role="note" aria-label="Read-only safety note">
     <span class="safety-strip-icon">&#128274;</span>
-    <span class="safety-strip-text"><strong>Read-only Management AIOS preview.</strong> Sensitive HR data, leave records, onboarding records, KPI scores, and staff personal data are not shown.</span>
+    <span class="safety-strip-text"><strong>Read-only Management AIOS preview.</strong> Sensitive HR data, leave
+      records, onboarding records, KPI scores, and staff personal data are not shown.</span>
   </div>
 
   <!-- ═══════════════════════════════════
@@ -1616,7 +1665,8 @@
           </div>
           <div class="card-note">Every fact in the AIOS must trace to a source registered in
             <code>evidence/source-register.md</code>. If there is no registered source, the fact must be marked [VERIFY]
-            until one is provided.</div>
+            until one is provided.
+          </div>
         </div>
         <div class="card" data-searchable data-tags="verify register unresolved items">
           <div class="card-header">
@@ -1755,7 +1805,10 @@
             <div>
               <div class="fpath">member-aios/mayurika-hr/daily-weekly-checklist.md</div>
               <div class="fdesc">Operational checklist — daily and weekly tasks Mayurika is responsible for.
-                <strong>ACTIVE — Mayurika confirmed replacement checklist 2026-07-02.</strong> Evidence: <code>evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code>. WORKBENCH.md and quick-reference-sources.md remain DRAFT pending full workbench review.</div>
+                <strong>ACTIVE — Mayurika confirmed replacement checklist 2026-07-02.</strong> Evidence:
+                <code>evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code>.
+                WORKBENCH.md and quick-reference-sources.md remain DRAFT pending full workbench review.
+              </div>
             </div>
           </li>
         </ul>
@@ -2425,7 +2478,8 @@
           <strong>AMBER</strong> because it touches Suman's recruitment/handover domain. The table content (On Track /
           Watch / Concern / Critical) is defined in Suman's recruitment process (SRC-SUMAN-001-v2 §8.7) — not in
           Mayurika's HR operations. Build only after Mayurika confirms she wants this context in her tab AND Suman is
-          notified. Do not include without a domain-boundary note and both confirmations.</p>
+          notified. Do not include without a domain-boundary note and both confirmations.
+        </p>
       </div>
 
       <div class="next-step-box">
@@ -2882,7 +2936,8 @@
                 workbench files are accurate.<br>
                 Priority: confirm replacement checklist text is correct; confirm evidence template fields; confirm exact
                 tool names for HR records system and EOD dashboard to resolve [VERIFY] item 12.<br>
-                <span style="font-size:.8rem;color:var(--pass);">Checklist status: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02</span>
+                <span style="font-size:.8rem;color:var(--pass);">Checklist status: ACTIVE — Mayurika confirmed
+                  replacement checklist 2026-07-02</span>
               </td>
               <td class="mono">
                 member-aios/mayurika-hr/WORKBENCH.md<br>member-aios/mayurika-hr/daily-weekly-checklist.md<br>member-aios/mayurika-hr/quick-reference-sources.md
@@ -2947,17 +3002,24 @@
             2026-06-30: CLAUDE.md §7.3/§7.4/§7.8/§14 updated; context/verify-register.md items 8, 9, 10 resolved (9 open
             items remain); SRC-ARUN-CONF-001 registered; context/kpi-axiom-context.md updated. Item 9 scope limit
             preserved — Operational Manager escalation authority only; full PRC scope remains [VERIFY]. Evidence:
-            <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code></div>
+            <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code>
+          </div>
           <div class="amber-item-action">COMPLETE — no further action required for items 8, 9, 10.</div>
         </div>
         <div class="amber-item" data-searchable
           data-tags="amber mayurika hr workbench checklist active confirmed 2026-07-02 workbench quick-reference draft pending">
-          <div class="amber-item-title">AMBER 2 — Mayurika Checklist ACTIVE — WORKBENCH.md and quick-reference-sources.md
+          <div class="amber-item-title">AMBER 2 — Mayurika Checklist ACTIVE — WORKBENCH.md and
+            quick-reference-sources.md
             Remain DRAFT (2026-07-02)</div>
-          <div class="amber-item-body">Mayurika confirmed the replacement checklist 2026-07-02. Checklist status: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02. Evidence: <code>evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code>. WORKBENCH.md and
-            quick-reference-sources.md remain DRAFT pending Mayurika's full workbench review. [VERIFY] item 12 (exact tool names)
+          <div class="amber-item-body">Mayurika confirmed the replacement checklist 2026-07-02. Checklist status: ACTIVE
+            — Mayurika confirmed replacement checklist 2026-07-02. Evidence:
+            <code>evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code>.
+            WORKBENCH.md and
+            quick-reference-sources.md remain DRAFT pending Mayurika's full workbench review. [VERIFY] item 12 (exact
+            tool names)
             requires her direct confirmation.</div>
-          <div class="amber-item-action">Route WORKBENCH.md and quick-reference-sources.md to Mayurika for confirmation when available. Confirm tool names to resolve [VERIFY]
+          <div class="amber-item-action">Route WORKBENCH.md and quick-reference-sources.md to Mayurika for confirmation
+            when available. Confirm tool names to resolve [VERIFY]
             item 12.</div>
         </div>
         <div class="amber-item" data-searchable
@@ -2966,7 +3028,8 @@
           <div class="amber-item-body">SRC-MD-ARUN-001 introduces a bonus queryability scoring framework (LLM-queryable
             format as a condition for Sales Team bonus eligibility) that may extend the existing bonus conditions from
             SRC-ARUN-001. These two sources may not be fully aligned. See
-            <code>validation/md-arun-discussion-conflict-check.md</code>.</div>
+            <code>validation/md-arun-discussion-conflict-check.md</code>.
+          </div>
           <div class="amber-item-action">Varmen confirmation recommended before treating the queryability condition as
             mandatory. Do not treat as definitively integrated until confirmed.</div>
         </div>
@@ -2976,7 +3039,8 @@
           <div class="amber-item-body">MD discussion sources generated skill file update candidates identified in
             <code>validation/md-discussion-skill-impact-check.md</code>. These were not applied — they require domain
             owner review. Skills affected: management-gap-detection, recruitment-quality-check,
-            kpi-axiom-review-support.</div>
+            kpi-axiom-review-support.
+          </div>
           <div class="amber-item-action">Raise with each domain owner during their workbench review. Trainee prepares
             draft; domain owner reviews before applying.</div>
         </div>
@@ -2985,7 +3049,8 @@
       <div class="next-step-box">
         <h3>What should I do next?</h3>
         <p>Actions 1 (Arun), 3 (Suman), and 4 (root propagation) are complete. Next: route workbench files to
-          <strong>Mayurika</strong> (action 2).</p>
+          <strong>Mayurika</strong> (action 2).
+        </p>
       </div>
 
     </div><!-- /tab-review-queue -->
@@ -3503,14 +3568,17 @@
 
       <div class="how-to-box">
         <h3>Document Register Preview</h3>
-        <p>This is a read-only preview of key Management AIOS documents. Each row shows file metadata only — path, owner, status, and evidence basis. No raw sensitive document contents are shown.</p>
+        <p>This is a read-only preview of key Management AIOS documents. Each row shows file metadata only — path,
+          owner, status, and evidence basis. No raw sensitive document contents are shown.</p>
         <ul>
           <li>Built from real repository file paths only — no draft sample names used</li>
-          <li>No personal HR data, leave records, staff names, salary, health, PDPA, candidate, or disciplinary data</li>
+          <li>No personal HR data, leave records, staff names, salary, health, PDPA, candidate, or disciplinary data
+          </li>
           <li>Status reflects the last confirmed review state for each file</li>
           <li>Last Updated dates are derived from git metadata</li>
         </ul>
-        <p style="margin-top:10px;font-size:.8rem;color:#0369a1;"><strong>Sensitivity note:</strong> This register shows metadata only. It does not expose raw sensitive document contents.</p>
+        <p style="margin-top:10px;font-size:.8rem;color:#0369a1;"><strong>Sensitivity note:</strong> This register shows
+          metadata only. It does not expose raw sensitive document contents.</p>
       </div>
 
       <div class="section-title">Root &amp; Governance Documents</div>
@@ -3712,7 +3780,9 @@
               <td>Static read-only dashboard; Netlify deployment; no backend</td>
             </tr>
             <tr>
-              <td><code class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code>
+              </td>
               <td><code class="mono">evidence/dashboard-discovery/</code></td>
               <td>Mareenraj / Varmen</td>
               <td><span class="badge badge-pass">CONFIRMED</span></td>
@@ -3748,7 +3818,9 @@
               <td>Dashboard creation closure record; all update records appended here</td>
             </tr>
             <tr>
-              <td><code class="mono">evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md</code>
+              </td>
               <td><code class="mono">evidence/stakeholder-confirmations/</code></td>
               <td>Mareenraj / Varmen</td>
               <td><span class="badge badge-pass">CONFIRMED</span></td>
@@ -3774,16 +3846,20 @@
         <ul style="color:#166534;">
           <li>This register is a PREVIEW — it shows file metadata only and does not expose raw document contents</li>
           <li>All file paths listed have been verified as existing in the repository</li>
-          <li>No Varmen draft sample file names (e.g. kpi-meeting-format.md, leave-tracking-proposal.md) are used — those do not exist in the repo</li>
+          <li>No Varmen draft sample file names (e.g. kpi-meeting-format.md, leave-tracking-proposal.md) are used —
+            those do not exist in the repo</li>
           <li>Last Updated dates are derived from git metadata — not manually estimated</li>
-          <li>Status labels reflect the last confirmed review state; DRAFT sections require domain owner review before promotion</li>
+          <li>Status labels reflect the last confirmed review state; DRAFT sections require domain owner review before
+            promotion</li>
           <li>No [VERIFY] items were resolved to build this register</li>
         </ul>
       </div>
 
       <div class="next-step-box">
         <h3>What should I do next?</h3>
-        <p>Route this Document Register Preview to Varmen for visual layout review. Once confirmed, the next safe PASS section (Skills, Handover, Recurring Issues, or Overview) can be chosen and built. To open any file listed above, navigate to its path in VS Code — do not attempt to edit from this browser view.</p>
+        <p>Route this Document Register Preview to Varmen for visual layout review. Once confirmed, the next safe PASS
+          section (Skills, Handover, Recurring Issues, or Overview) can be chosen and built. To open any file listed
+          above, navigate to its path in VS Code — do not attempt to edit from this browser view.</p>
       </div>
 
     </div><!-- /tab-doc-register -->
@@ -3796,19 +3872,27 @@
 
       <div class="how-to-box">
         <h3>Skills Register Preview</h3>
-        <p>This is a read-only preview of the Management AIOS skill files. Each row shows skill metadata only — name, tier, purpose, owner, status, and source path. No raw skill file content is reproduced.</p>
+        <p>This is a read-only preview of the Management AIOS skill files. Each row shows skill metadata only — name,
+          tier, purpose, owner, status, and source path. No raw skill file content is reproduced.</p>
         <ul>
           <li>Built from real <code>skills/</code> folder files only — 5 skill files confirmed in repository</li>
-          <li>No personal HR data, staff names, leave records, salary, health, PDPA, candidate, or disciplinary data</li>
+          <li>No personal HR data, staff names, leave records, salary, health, PDPA, candidate, or disciplinary data
+          </li>
           <li>All 5 skills are currently DRAFT — not approved for operational use until Varmen validates</li>
-          <li>Skill file wrappers exist in <code>.claude/skills/</code> as empty stubs — no implementation files yet</li>
+          <li>Skill file wrappers exist in <code>.claude/skills/</code> as empty stubs — no implementation files yet
+          </li>
         </ul>
-        <p style="margin-top:10px;font-size:.8rem;color:#b45309;background:#fef3c7;border:1px solid #fde68a;padding:8px 12px;border-radius:5px;"><strong>Usage counts are hidden</strong> because no confirmed usage-tracking source exists yet. No Varmen draft sample counts (41, 89, 14, 9, 6, 18) have been used.</p>
-        <p style="margin-top:8px;font-size:.8rem;color:#0369a1;"><strong>Individual staff usage is not shown.</strong> This view shows skill metadata only. It does not show individual staff usage.</p>
+        <p
+          style="margin-top:10px;font-size:.8rem;color:#b45309;background:#fef3c7;border:1px solid #fde68a;padding:8px 12px;border-radius:5px;">
+          <strong>Usage counts are hidden</strong> because no confirmed usage-tracking source exists yet. No Varmen
+          draft sample counts (41, 89, 14, 9, 6, 18) have been used.</p>
+        <p style="margin-top:8px;font-size:.8rem;color:#0369a1;"><strong>Individual staff usage is not shown.</strong>
+          This view shows skill metadata only. It does not show individual staff usage.</p>
       </div>
 
       <div class="section-title">Tier 1 Skills — Core Operational Support</div>
-      <div data-searchable data-tags="skills register tier 1 management gap detection kpi axiom policy lookup recruitment quality">
+      <div data-searchable
+        data-tags="skills register tier 1 management gap detection kpi axiom policy lookup recruitment quality">
         <table class="review-table" style="margin-bottom:28px;">
           <thead>
             <tr>
@@ -3825,38 +3909,46 @@
             <tr>
               <td><code class="mono">management-gap-detection</code></td>
               <td><span class="badge badge-pending">Tier 1</span></td>
-              <td>Identifies operational gaps, missing processes, documentation issues, and recurring management problems across the four confirmed problem areas</td>
+              <td>Identifies operational gaps, missing processes, documentation issues, and recurring management
+                problems across the four confirmed problem areas</td>
               <td>Varmen (validation);<br>Mayurika (operational)</td>
               <td><span class="badge badge-draft">DRAFT</span></td>
               <td><code class="mono">skills/management-gap-detection.md</code></td>
-              <td>Surfaces gap observations for human review only. Does not close gaps, make decisions, or escalate autonomously. Not operational until Varmen validates.</td>
+              <td>Surfaces gap observations for human review only. Does not close gaps, make decisions, or escalate
+                autonomously. Not operational until Varmen validates.</td>
             </tr>
             <tr>
               <td><code class="mono">kpi-axiom-review-support</code></td>
               <td><span class="badge badge-pending">Tier 1</span></td>
-              <td>KPI and AXIOM band review support — surfaces structured assessment of KPI thresholds, incident escalation steps, band placements, and review outputs for human review</td>
+              <td>KPI and AXIOM band review support — surfaces structured assessment of KPI thresholds, incident
+                escalation steps, band placements, and review outputs for human review</td>
               <td>Varmen (validation);<br>Arun (KPI content);<br>Mayurika (operational)</td>
               <td><span class="badge badge-draft">DRAFT</span></td>
               <td><code class="mono">skills/kpi-axiom-review-support.md</code></td>
-              <td>Does not make employee decisions or perform escalation actions. Does not invent KPI thresholds. All outputs require human review. Not operational until Varmen validates.</td>
+              <td>Does not make employee decisions or perform escalation actions. Does not invent KPI thresholds. All
+                outputs require human review. Not operational until Varmen validates.</td>
             </tr>
             <tr>
               <td><code class="mono">policy-lookup</code></td>
               <td><span class="badge badge-pending">Tier 1</span></td>
-              <td>Policy explanation and reference lookup — answers process-level questions from the company policy manual (SRC-POLICY-001)</td>
+              <td>Policy explanation and reference lookup — answers process-level questions from the company policy
+                manual (SRC-POLICY-001)</td>
               <td>Varmen (validation);<br>Mayurika (operational)</td>
               <td><span class="badge badge-draft">DRAFT</span></td>
               <td><code class="mono">skills/policy-lookup.md</code></td>
-              <td>Policy source is SRC-POLICY-001 only. Does not infer beyond registered policy. Does not make HR decisions. Does not expose personal employee case data. Not operational until Varmen validates.</td>
+              <td>Policy source is SRC-POLICY-001 only. Does not infer beyond registered policy. Does not make HR
+                decisions. Does not expose personal employee case data. Not operational until Varmen validates.</td>
             </tr>
             <tr>
               <td><code class="mono">recruitment-quality-check</code></td>
               <td><span class="badge badge-pending">Tier 1</span></td>
-              <td>Recruitment process quality assurance — checks against 8-point screening, 50-point interview scoring, review milestones (7/14-day, Month 1, 3, 6), and 180-day handover requirements</td>
+              <td>Recruitment process quality assurance — checks against 8-point screening, 50-point interview scoring,
+                review milestones (7/14-day, Month 1, 3, 6), and 180-day handover requirements</td>
               <td>Varmen (validation);<br>Suman (domain);<br>Mayurika (operational)</td>
               <td><span class="badge badge-draft">DRAFT</span></td>
               <td><code class="mono">skills/recruitment-quality-check.md</code></td>
-              <td>Does not make hiring decisions. Does not store personal candidate data. All outputs require human review. Not operational until Varmen validates.</td>
+              <td>Does not make hiring decisions. Does not store personal candidate data. All outputs require human
+                review. Not operational until Varmen validates.</td>
             </tr>
           </tbody>
         </table>
@@ -3880,11 +3972,14 @@
             <tr>
               <td><code class="mono">management-problem-analysis</code></td>
               <td><span class="badge badge-verify">Tier 2</span></td>
-              <td>Problem intake and evidence routing — structured analysis across all management domains; surfaces the problem, domain, evidence needed, and routing path for human action</td>
+              <td>Problem intake and evidence routing — structured analysis across all management domains; surfaces the
+                problem, domain, evidence needed, and routing path for human action</td>
               <td>Varmen (validation before any operational use)</td>
               <td><span class="badge badge-draft">DRAFT — Pending Varmen Review</span></td>
               <td><code class="mono">skills/management-problem-analysis.md</code></td>
-              <td>Higher-complexity cross-domain skill. Pending Varmen review before any operational use. Control plan at <code>validation/management-problem-analysis-skill-plan.md</code>. Does not resolve [VERIFY] items or make management decisions.</td>
+              <td>Higher-complexity cross-domain skill. Pending Varmen review before any operational use. Control plan
+                at <code>validation/management-problem-analysis-skill-plan.md</code>. Does not resolve [VERIFY] items or
+                make management decisions.</td>
             </tr>
           </tbody>
         </table>
@@ -3899,28 +3994,33 @@
               <span>📁</span>
               <div>
                 <div class="fpath">skills/README.md</div>
-                <div class="fdesc">Skills folder governance — confirms folder is operational (skeleton stage complete); each skill file must reference an approved context source and validation record.</div>
+                <div class="fdesc">Skills folder governance — confirms folder is operational (skeleton stage complete);
+                  each skill file must reference an approved context source and validation record.</div>
               </div>
             </li>
             <li>
               <span>📁</span>
               <div>
                 <div class="fpath">.claude/skills/ (5 subdirectories)</div>
-                <div class="fdesc">Claude Code skill wrapper stubs — empty directories for: kpi-axiom-review-support, management-gap-detection, management-problem-analysis, policy-lookup, recruitment-quality-check. No implementation files yet.</div>
+                <div class="fdesc">Claude Code skill wrapper stubs — empty directories for: kpi-axiom-review-support,
+                  management-gap-detection, management-problem-analysis, policy-lookup, recruitment-quality-check. No
+                  implementation files yet.</div>
               </div>
             </li>
             <li>
               <span>📄</span>
               <div>
                 <div class="fpath">validation/management-problem-analysis-skill-plan.md</div>
-                <div class="fdesc">Control plan for the Tier 2 management-problem-analysis skill — governs when and how it may be used.</div>
+                <div class="fdesc">Control plan for the Tier 2 management-problem-analysis skill — governs when and how
+                  it may be used.</div>
               </div>
             </li>
             <li>
               <span>📄</span>
               <div>
                 <div class="fpath">validation/tier-1-skill-draft-readiness.md</div>
-                <div class="fdesc">Readiness check for the 4 Tier 1 skills — confirms DRAFT conditional PASS status.</div>
+                <div class="fdesc">Readiness check for the 4 Tier 1 skills — confirms DRAFT conditional PASS status.
+                </div>
               </div>
             </li>
           </ul>
@@ -3942,7 +4042,9 @@
 
       <div class="next-step-box">
         <h3>What should I do next?</h3>
-        <p>Route this Skills Register Preview to Varmen for visual layout review when available. Once confirmed, the next safe PASS section (Handover, Recurring Issues, or Overview) can be chosen and built. To open any skill file listed above, navigate to its path in VS Code — do not attempt to edit from this browser view.</p>
+        <p>Route this Skills Register Preview to Varmen for visual layout review when available. Once confirmed, the
+          next safe PASS section (Handover, Recurring Issues, or Overview) can be chosen and built. To open any skill
+          file listed above, navigate to its path in VS Code — do not attempt to edit from this browser view.</p>
       </div>
 
     </div><!-- /tab-skills-register -->
@@ -3955,20 +4057,28 @@
 
       <div class="how-to-box">
         <h3>Handover Preview</h3>
-        <p>This is a read-only preview of the Management AIOS handover metadata. Each row shows the status, evidence path, validation path, owner, and next step for key handover assets and scope decisions. No raw sensitive HR data is exposed.</p>
+        <p>This is a read-only preview of the Management AIOS handover metadata. Each row shows the status, evidence
+          path, validation path, owner, and next step for key handover assets and scope decisions. No raw sensitive HR
+          data is exposed.</p>
         <ul>
-          <li>Built from real <code>handover/</code>, <code>evidence/stakeholder-confirmations/</code>, and <code>validation/</code> folder files only</li>
-          <li>No personal HR data, staff names, leave records, salary, health, PDPA, candidate, or disciplinary data</li>
+          <li>Built from real <code>handover/</code>, <code>evidence/stakeholder-confirmations/</code>, and
+            <code>validation/</code> folder files only</li>
+          <li>No personal HR data, staff names, leave records, salary, health, PDPA, candidate, or disciplinary data
+          </li>
           <li>No Varmen draft sample handover values used — all rows derived from actual repository files</li>
           <li>No new handover truth created — this is a metadata view only</li>
         </ul>
-        <p style="margin-top:10px;font-size:.8rem;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;padding:8px 12px;border-radius:5px;"><strong>This handover view shows metadata only. It does not expose raw sensitive HR data.</strong></p>
-        <div class="hov-amber-notice">&#9888; Varmen visual review is pending — this preview is not final approval.</div>
+        <p
+          style="margin-top:10px;font-size:.8rem;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;padding:8px 12px;border-radius:5px;">
+          <strong>This handover view shows metadata only. It does not expose raw sensitive HR data.</strong></p>
+        <div class="hov-amber-notice">&#9888; Varmen visual review is pending — this preview is not final approval.
+        </div>
       </div>
 
       <!-- SUMMARY CARDS -->
       <div class="section-title">Current Handover Summary</div>
-      <div data-searchable data-tags="handover summary safe sections built pending visual review blocked gated verify count">
+      <div data-searchable
+        data-tags="handover summary safe sections built pending visual review blocked gated verify count">
         <div class="handover-summary-grid">
 
           <div class="hov-card hov-card-pass">
@@ -4006,7 +4116,8 @@
 
       <!-- HANDOVER TABLE -->
       <div class="section-title" style="margin-top:8px;">Handover Table — Asset / Area Register</div>
-      <div data-searchable data-tags="handover table asset area status evidence validation owner reviewer next step web-view dashboard document register skills register mayurika checklist varmen discovery leave attendance closure">
+      <div data-searchable
+        data-tags="handover table asset area status evidence validation owner reviewer next step web-view dashboard document register skills register mayurika checklist varmen discovery leave attendance closure">
         <table class="review-table" style="margin-bottom:28px;">
           <thead>
             <tr>
@@ -4020,7 +4131,8 @@
           </thead>
           <tbody>
             <tr>
-              <td><strong>Web-view Dashboard Closure</strong><br><code class="mono">handover/2026-06-30__web-view-dashboard-closure.md</code></td>
+              <td><strong>Web-view Dashboard Closure</strong><br><code
+                  class="mono">handover/2026-06-30__web-view-dashboard-closure.md</code></td>
               <td><span class="badge badge-amber">PASS — AMBER</span></td>
               <td><code class="mono">handover/2026-06-30__web-view-dashboard-closure.md</code></td>
               <td><code class="mono">validation/web-view-html-dashboard-check.md</code></td>
@@ -4028,65 +4140,90 @@
               <td>Commit; redeploy to Netlify; Varmen visual review</td>
             </tr>
             <tr>
-              <td><strong>Member AIOS — 3 Draft Workbench Closure</strong><br><code class="mono">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</code></td>
+              <td><strong>Member AIOS — 3 Draft Workbench Closure</strong><br><code
+                  class="mono">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</code></td>
               <td><span class="badge badge-amber">PASS — AMBER</span></td>
               <td><code class="mono">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</code></td>
               <td><code class="mono">validation/member-aios-3-draft-workbench-creation-check.md</code></td>
               <td>Mareenraj (builder)<br>Mayurika (review pending)<br>Rajiv (BLOCKED)</td>
-              <td>Mayurika review of WORKBENCH.md and quick-reference-sources.md; then Rajiv after SRC-ADMIN-001 received</td>
+              <td>Mayurika review of WORKBENCH.md and quick-reference-sources.md; then Rajiv after SRC-ADMIN-001
+                received</td>
             </tr>
             <tr>
-              <td><strong>Document Register Preview</strong><br><code class="mono">web-view/index.html — tab-doc-register</code></td>
+              <td><strong>Document Register Preview</strong><br><code
+                  class="mono">web-view/index.html — tab-doc-register</code></td>
               <td><span class="badge badge-preview">PASS — PREVIEW</span></td>
-              <td><code class="mono">evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md</code>
+              </td>
               <td><code class="mono">validation/varmen-document-register-preview-build-check.md</code></td>
               <td>Mareenraj (builder)<br>Varmen (visual review pending)</td>
               <td>Varmen visual layout review when available; confirm 20 rows correct</td>
             </tr>
             <tr>
-              <td><strong>Skills Register Preview</strong><br><code class="mono">web-view/index.html — tab-skills-register</code></td>
+              <td><strong>Skills Register Preview</strong><br><code
+                  class="mono">web-view/index.html — tab-skills-register</code></td>
               <td><span class="badge badge-preview">PASS — PREVIEW</span></td>
-              <td><code class="mono">evidence/stakeholder-confirmations/dashboard-skills-register-next-build-choice-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/stakeholder-confirmations/dashboard-skills-register-next-build-choice-2026-07-02.md</code>
+              </td>
               <td><code class="mono">validation/dashboard-skills-register-preview-build-check.md</code></td>
               <td>Mareenraj (builder)<br>Varmen (visual review pending)</td>
               <td>Varmen visual layout review when available; usage counts hidden until tracking source confirmed</td>
             </tr>
             <tr>
-              <td><strong>Handover Preview</strong><br><code class="mono">web-view/index.html — tab-handover-preview</code></td>
+              <td><strong>Handover Preview</strong><br><code
+                  class="mono">web-view/index.html — tab-handover-preview</code></td>
               <td><span class="badge badge-preview">PASS — PREVIEW</span></td>
-              <td><code class="mono">evidence/stakeholder-confirmations/dashboard-handover-preview-next-build-choice-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/stakeholder-confirmations/dashboard-handover-preview-next-build-choice-2026-07-02.md</code>
+              </td>
               <td><code class="mono">validation/dashboard-handover-preview-build-check.md</code></td>
               <td>Mareenraj (builder)<br>Varmen (visual review pending)</td>
               <td>Commit; redeploy to Netlify; Varmen visual review; then choose next safe section</td>
             </tr>
             <tr>
-              <td><strong>Mayurika Checklist Activation</strong><br><code class="mono">member-aios/mayurika-hr/daily-weekly-checklist.md</code></td>
+              <td><strong>Mayurika Checklist Activation</strong><br><code
+                  class="mono">member-aios/mayurika-hr/daily-weekly-checklist.md</code></td>
               <td><span class="badge badge-active">ACTIVE</span></td>
-              <td><code class="mono">evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code>
+              </td>
               <td><code class="mono">validation/mayurika-checklist-final-activation-check.md</code></td>
               <td>Mayurika (domain owner — confirmed)<br>Mareenraj (builder)</td>
-              <td>Route WORKBENCH.md and quick-reference-sources.md for Mayurika review; [VERIFY] item 9 (exact HR/EOD tool names) still open</td>
+              <td>Route WORKBENCH.md and quick-reference-sources.md for Mayurika review; [VERIFY] item 9 (exact HR/EOD
+                tool names) still open</td>
             </tr>
             <tr>
-              <td><strong>Varmen Draft Dashboard Discovery</strong><br><code class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code></td>
+              <td><strong>Varmen Draft Dashboard Discovery</strong><br><code
+                  class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code>
+              </td>
               <td><span class="badge badge-active">COMPLETE — Discovery</span></td>
-              <td><code class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code>
+              </td>
               <td><code class="mono">validation/varmen-draft-dashboard-data-requirements-check.md</code></td>
               <td>Mareenraj (builder)<br>Varmen (source)</td>
               <td>Continue safe build order — Recurring Issues next after Handover; AMBER/FAIL sections gated</td>
             </tr>
             <tr>
-              <td><strong>Leave Tables — Excluded from Scope</strong><br>Leave Requests table not required for current build</td>
+              <td><strong>Leave Tables — Excluded from Scope</strong><br>Leave Requests table not required for current
+                build</td>
               <td><span class="badge badge-blocked">OUT OF SCOPE</span></td>
-              <td><code class="mono">evidence/stakeholder-confirmations/varmen-dashboard-no-leave-tables-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/stakeholder-confirmations/varmen-dashboard-no-leave-tables-2026-07-02.md</code>
+              </td>
               <td><code class="mono">validation/varmen-dashboard-no-leave-tables-scope-check.md</code></td>
               <td>Varmen (decision 2026-07-02)</td>
               <td>Do not build unless new requirement received from Varmen</td>
             </tr>
             <tr>
-              <td><strong>Attendance Dashboard Card — Removed</strong><br>Card removed from Mayurika HR tab; no replacement required</td>
+              <td><strong>Attendance Dashboard Card — Removed</strong><br>Card removed from Mayurika HR tab; no
+                replacement required</td>
               <td><span class="badge badge-blocked">CLOSED — Removed</span></td>
-              <td><code class="mono">evidence/stakeholder-confirmations/mayurika-attendance-dashboard-card-remove-request-2026-07-02.md</code></td>
+              <td><code
+                  class="mono">evidence/stakeholder-confirmations/mayurika-attendance-dashboard-card-remove-request-2026-07-02.md</code>
+              </td>
               <td><code class="mono">validation/mayurika-attendance-dashboard-card-removal-check.md</code></td>
               <td>Mayurika (decision 2026-07-02)</td>
               <td>No further action required; historical evidence files retained</td>
@@ -4097,7 +4234,8 @@
 
       <!-- HANDOVER FILE LIST -->
       <div class="section-title">Handover Folder — Real Files</div>
-      <div data-searchable data-tags="handover folder files closure readme rollout note staff roster confirmation request">
+      <div data-searchable
+        data-tags="handover folder files closure readme rollout note staff roster confirmation request">
         <div class="file-list-box">
           <h4>handover/ — confirmed file list</h4>
           <ul>
@@ -4105,7 +4243,8 @@
               <span>📄</span>
               <div>
                 <div class="fpath">handover/README.md</div>
-                <div class="fdesc">Handover folder governance — explains purpose, usage, and rules for all closure files in this folder.</div>
+                <div class="fdesc">Handover folder governance — explains purpose, usage, and rules for all closure files
+                  in this folder.</div>
               </div>
             </li>
             <li>
@@ -4119,42 +4258,49 @@
               <span>📄</span>
               <div>
                 <div class="fpath">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</div>
-                <div class="fdesc">Member AIOS 3-draft workbench creation closure — Mayurika DRAFT, Suman ACTIVE, Arun ACTIVE, Rajiv BLOCKED.</div>
+                <div class="fdesc">Member AIOS 3-draft workbench creation closure — Mayurika DRAFT, Suman ACTIVE, Arun
+                  ACTIVE, Rajiv BLOCKED.</div>
               </div>
             </li>
             <li>
               <span>📄</span>
               <div>
                 <div class="fpath">handover/2026-06-30__web-view-dashboard-closure.md</div>
-                <div class="fdesc">Web-view dashboard closure — ongoing update record for all dashboard changes since 2026-06-30. Most recently updated with Skills Register Preview and Professional UI Polish (2026-07-03).</div>
+                <div class="fdesc">Web-view dashboard closure — ongoing update record for all dashboard changes since
+                  2026-06-30. Most recently updated with Skills Register Preview and Professional UI Polish
+                  (2026-07-03).</div>
               </div>
             </li>
             <li>
               <span>📄</span>
               <div>
                 <div class="fpath">handover/management-action-records-team-usage-guide.md</div>
-                <div class="fdesc">Usage guide for the management-action-records folder — how team members submit and query records.</div>
+                <div class="fdesc">Usage guide for the management-action-records folder — how team members submit and
+                  query records.</div>
               </div>
             </li>
             <li>
               <span>📄</span>
               <div>
                 <div class="fpath">handover/management-action-records-rollout-note.md</div>
-                <div class="fdesc">Rollout note for management action records — context on folder structure and initial setup.</div>
+                <div class="fdesc">Rollout note for management action records — context on folder structure and initial
+                  setup.</div>
               </div>
             </li>
             <li>
               <span>📄</span>
               <div>
                 <div class="fpath">handover/staff-roster-department-canonical-confirmation-request.md</div>
-                <div class="fdesc">Request for canonical department name confirmation — staff roster department normalisation.</div>
+                <div class="fdesc">Request for canonical department name confirmation — staff roster department
+                  normalisation.</div>
               </div>
             </li>
             <li>
               <span>📄</span>
               <div>
                 <div class="fpath">handover/staff-roster-department-final-casing-confirmation-request.md</div>
-                <div class="fdesc">Request for final department name casing confirmation — final normalisation step for staff roster.</div>
+                <div class="fdesc">Request for final department name casing confirmation — final normalisation step for
+                  staff roster.</div>
               </div>
             </li>
           </ul>
@@ -4166,8 +4312,10 @@
         <h3 style="color:#15803d;">Handover Preview Limits</h3>
         <ul style="color:#166534;">
           <li>This preview is not final approval — Varmen visual review is still pending</li>
-          <li>No sensitive HR data — no staff names, leave records, salary, health, PDPA, candidate, or disciplinary data are shown</li>
-          <li>No blocked sections were built — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, and Decisions remain correctly excluded</li>
+          <li>No sensitive HR data — no staff names, leave records, salary, health, PDPA, candidate, or disciplinary
+            data are shown</li>
+          <li>No blocked sections were built — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, and
+            Decisions remain correctly excluded</li>
           <li>No Varmen draft sample handover values used — all rows derived from real repository files only</li>
           <li>No [VERIFY] items were resolved to build this preview — all 9 open items preserved</li>
           <li>All file paths shown are real repository paths — no invented or placeholder paths</li>
@@ -4178,7 +4326,12 @@
 
       <div class="next-step-box">
         <h3>What should I do next?</h3>
-        <p>Commit the updated files (<code>web-view/index.html</code>, <code>validation/web-view-html-dashboard-check.md</code>, <code>handover/2026-06-30__web-view-dashboard-closure.md</code>, plus the new evidence and validation files); redeploy to Netlify (publish directory <code>web-view/</code>, no build step); visually inspect the Handover Preview tab; then route to Varmen for visual layout review when available. After Varmen confirms, choose the next safe PASS section: Recurring Issues or Overview.</p>
+        <p>Commit the updated files (<code>web-view/index.html</code>,
+          <code>validation/web-view-html-dashboard-check.md</code>,
+          <code>handover/2026-06-30__web-view-dashboard-closure.md</code>, plus the new evidence and validation files);
+          redeploy to Netlify (publish directory <code>web-view/</code>, no build step); visually inspect the Handover
+          Preview tab; then route to Varmen for visual layout review when available. After Varmen confirms, choose the
+          next safe PASS section: Recurring Issues or Overview.</p>
       </div>
 
     </div><!-- /tab-handover-preview -->
@@ -4191,13 +4344,18 @@
 
       <div class="how-to-box">
         <h3>Overview Preview — Read-Only</h3>
-        <p>This tab shows aggregate metadata about the Management AIOS dashboard build. It is <strong>read-only</strong> and uses only real repository metadata — no Varmen draft sample counts are used here.</p>
+        <p>This tab shows aggregate metadata about the Management AIOS dashboard build. It is <strong>read-only</strong>
+          and uses only real repository metadata — no Varmen draft sample counts are used here.</p>
         <ul>
-          <li>All counts on this tab are derived from real repository files: <code>evidence/source-register.md</code>, validation records, handover files, the <code>skills/</code> folder, and section tracking in this dashboard.</li>
-          <li>Sensitive HR data is not shown. No personal staff names, leave records, KPI scores, salary, health, PDPA, or candidate data appear on this tab.</li>
+          <li>All counts on this tab are derived from real repository files: <code>evidence/source-register.md</code>,
+            validation records, handover files, the <code>skills/</code> folder, and section tracking in this dashboard.
+          </li>
+          <li>Sensitive HR data is not shown. No personal staff names, leave records, KPI scores, salary, health, PDPA,
+            or candidate data appear on this tab.</li>
           <li>Varmen visual review of all PREVIEW tabs is still pending — this tab is not final approval.</li>
         </ul>
-        <p style="margin-top:10px;font-size:.78rem;color:#0c4a6e;font-style:italic;">This view uses aggregate/process-level metadata only. Sensitive HR data is not shown.</p>
+        <p style="margin-top:10px;font-size:.78rem;color:#0c4a6e;font-style:italic;">This view uses
+          aggregate/process-level metadata only. Sensitive HR data is not shown.</p>
       </div>
 
       <div class="section-title">Dashboard Build Summary</div>
@@ -4227,7 +4385,8 @@
         </div>
       </div>
 
-      <div class="status-bar" data-searchable data-tags="overview sources registered member workbenches active draft blocked document register skills">
+      <div class="status-bar" data-searchable
+        data-tags="overview sources registered member workbenches active draft blocked document register skills">
         <div class="status-item">
           <span class="status-label">Sources Registered</span>
           <span class="status-value">22</span>
@@ -4249,12 +4408,16 @@
         <div class="status-item">
           <span class="status-label">Skills in Register</span>
           <span class="status-value">5</span>
-          <span class="status-sub">management-gap-detection · kpi-axiom-review-support · policy-lookup · recruitment-quality-check · management-problem-analysis</span>
+          <span class="status-sub">management-gap-detection · kpi-axiom-review-support · policy-lookup ·
+            recruitment-quality-check · management-problem-analysis</span>
         </div>
       </div>
 
       <div class="section-title">All Dashboard Sections — Build Status</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;" data-searchable data-tags="overview section build status table team leave onboarding kpi decisions pass fail amber blocked out">
+      <div
+        style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;"
+        data-searchable
+        data-tags="overview section build status table team leave onboarding kpi decisions pass fail amber blocked out">
         <table class="review-table" style="width:100%;">
           <thead>
             <tr>
@@ -4299,7 +4462,8 @@
               <td><strong>Team Table</strong></td>
               <td><span class="badge badge-blocked">FAIL — BLOCKED</span></td>
               <td>Not built</td>
-              <td>RED — individual names, leave balances, KPI dates, onboarding steps; HR data access rules required before any build</td>
+              <td>RED — individual names, leave balances, KPI dates, onboarding steps; HR data access rules required
+                before any build</td>
             </tr>
             <tr>
               <td><strong>Leave Requests</strong></td>
@@ -4311,7 +4475,8 @@
               <td><strong>Onboarding Tracker</strong></td>
               <td><span class="badge badge-amber">AMBER</span></td>
               <td>Not built</td>
-              <td>Domain boundary (Suman vs Mayurika) unconfirmed; 5-step definition not source-backed; individual names add RED layer</td>
+              <td>Domain boundary (Suman vs Mayurika) unconfirmed; 5-step definition not source-backed; individual names
+                add RED layer</td>
             </tr>
             <tr>
               <td><strong>KPI Schedule</strong></td>
@@ -4329,11 +4494,13 @@
         </table>
       </div>
 
-      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;" data-searchable data-tags="overview limits read only no sensitive data no varmen sample counts">
+      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;"
+        data-searchable data-tags="overview limits read only no sensitive data no varmen sample counts">
         <h3 style="color:#15803d;">Overview Preview Limits</h3>
         <ul style="color:#166534;">
           <li>This view uses aggregate/process-level metadata only — no personal staff or HR data is shown</li>
-          <li>All counts derived from real repository files: <code>evidence/source-register.md</code>, validation records, handover files, <code>skills/</code> folder, and section tracking in this dashboard</li>
+          <li>All counts derived from real repository files: <code>evidence/source-register.md</code>, validation
+            records, handover files, <code>skills/</code> folder, and section tracking in this dashboard</li>
           <li>Varmen draft sample counts (23, 3, 6/6, "4d ago", Day 187) are not used anywhere on this tab</li>
           <li>No [VERIFY] items were resolved to build this preview — all 9 open items preserved</li>
           <li>Varmen visual review of all PREVIEW tabs is still pending — this tab is not final approval</li>
@@ -4343,7 +4510,9 @@
 
       <div class="next-step-box">
         <h3>What should I do next?</h3>
-        <p>Commit the updated files; redeploy to Netlify (publish directory <code>web-view/</code>, no build step); visually inspect all five PREVIEW tabs (Document Register, Skills Register, Handover, Overview, Recurring Issues) in the browser; then route to Varmen for visual layout review when available.</p>
+        <p>Commit the updated files; redeploy to Netlify (publish directory <code>web-view/</code>, no build step);
+          visually inspect all five PREVIEW tabs (Document Register, Skills Register, Handover, Overview, Recurring
+          Issues) in the browser; then route to Varmen for visual layout review when available.</p>
       </div>
 
     </div><!-- /tab-overview-preview -->
@@ -4356,16 +4525,22 @@
 
       <div class="how-to-box">
         <h3>Recurring Issues Preview — Read-Only</h3>
-        <p>This tab shows process-level scope blockers, outstanding review items, and recorded management action patterns. It is <strong>read-only</strong> and uses only real repository records.</p>
+        <p>This tab shows process-level scope blockers, outstanding review items, and recorded management action
+          patterns. It is <strong>read-only</strong> and uses only real repository records.</p>
         <ul>
-          <li>Sources used: <code>intelligence-inbox/recurring-issues/</code>, <code>intelligence-inbox/management-action-records/</code>, validation records, and handover files.</li>
-          <li>Varmen draft issue titles and report counts ("KPI meetings late — 11 reports", "Duplicate onboarding docs — 4 reports", "Leave requests lost — 3 reports") are <strong>not used</strong> — those are sample placeholder data only.</li>
+          <li>Sources used: <code>intelligence-inbox/recurring-issues/</code>,
+            <code>intelligence-inbox/management-action-records/</code>, validation records, and handover files.</li>
+          <li>Varmen draft issue titles and report counts ("KPI meetings late — 11 reports", "Duplicate onboarding docs
+            — 4 reports", "Leave requests lost — 3 reports") are <strong>not used</strong> — those are sample
+            placeholder data only.</li>
           <li>No personal staff names, leave records, KPI scores, disciplinary details, or PDPA data appear here.</li>
         </ul>
-        <p style="margin-top:10px;font-size:.78rem;color:#0c4a6e;font-style:italic;">Issue counts are shown only when backed by real records. Varmen draft sample counts are not used.</p>
+        <p style="margin-top:10px;font-size:.78rem;color:#0c4a6e;font-style:italic;">Issue counts are shown only when
+          backed by real records. Varmen draft sample counts are not used.</p>
       </div>
 
-      <div class="warning-box" data-searchable data-tags="recurring issues safety note no personal data no varmen sample counts sensitive data check">
+      <div class="warning-box" data-searchable
+        data-tags="recurring issues safety note no personal data no varmen sample counts sensitive data check">
         <h3>What this tab does NOT show</h3>
         <ul>
           <li>Staff names, individual leave records, or medical/sick details</li>
@@ -4376,7 +4551,10 @@
       </div>
 
       <div class="section-title">Dashboard Scope — Process-Level Records</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;margin-bottom:20px;" data-searchable data-tags="recurring issues scope blockers team table leave onboarding kpi decisions verify pending management action records">
+      <div
+        style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;margin-bottom:20px;"
+        data-searchable
+        data-tags="recurring issues scope blockers team table leave onboarding kpi decisions verify pending management action records">
         <table class="review-table" style="width:100%;min-width:900px;">
           <thead>
             <tr>
@@ -4392,109 +4570,144 @@
             <tr>
               <td>
                 <strong>Team Table — BLOCKED</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">Individual staff data is RED — names, leave balances, KPI dates, onboarding steps</span>
+                <span style="font-size:.76rem;color:var(--muted);">Individual staff data is RED — names, leave balances,
+                  KPI dates, onboarding steps</span>
               </td>
               <td><span class="badge badge-blocked">FAIL</span></td>
               <td>Mareenraj / HR</td>
-              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
-              <td>Build only after HR data access rules confirmed and anonymisation approach agreed with domain owner</td>
-              <td>Individual names, leave balances, KPI dates, and onboarding steps must never be shown without approved access rules</td>
+              <td class="mono">
+                evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td>Build only after HR data access rules confirmed and anonymisation approach agreed with domain owner
+              </td>
+              <td>Individual names, leave balances, KPI dates, and onboarding steps must never be shown without approved
+                access rules</td>
             </tr>
             <tr>
               <td>
                 <strong>Leave Requests — Out of Scope</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">Varmen confirmed not required for current dashboard build (2026-07-02)</span>
+                <span style="font-size:.76rem;color:var(--muted);">Varmen confirmed not required for current dashboard
+                  build (2026-07-02)</span>
               </td>
               <td><span class="badge badge-blocked">OUT</span></td>
               <td>Varmen</td>
-              <td class="mono">evidence/stakeholder-confirmations/<br>varmen-dashboard-no-leave-tables-2026-07-02.md</td>
+              <td class="mono">evidence/stakeholder-confirmations/<br>varmen-dashboard-no-leave-tables-2026-07-02.md
+              </td>
               <td>Do not build; do not collect leave data for dashboard purposes</td>
               <td>Leave source and access questions are no longer required for this dashboard build</td>
             </tr>
             <tr>
               <td>
                 <strong>Onboarding Tracker — Domain Boundary Unconfirmed</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">Suman vs Mayurika boundary unconfirmed; 5-step definition not source-backed</span>
+                <span style="font-size:.76rem;color:var(--muted);">Suman vs Mayurika boundary unconfirmed; 5-step
+                  definition not source-backed</span>
               </td>
               <td><span class="badge badge-amber">AMBER</span></td>
               <td>Suman / Mayurika</td>
-              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
-              <td>Confirm Suman–Mayurika domain boundary; confirm 5-step definition against OLOS (SRC-MD-SUMAN-001) before any build</td>
+              <td class="mono">
+                evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td>Confirm Suman–Mayurika domain boundary; confirm 5-step definition against OLOS (SRC-MD-SUMAN-001)
+                before any build</td>
               <td>Individual new joiner names add RED layer; step definitions must be source-backed</td>
             </tr>
             <tr>
               <td>
                 <strong>KPI Schedule — Source Not Confirmed</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">Lead names and review dates need source confirmation; Arun scope required</span>
+                <span style="font-size:.76rem;color:var(--muted);">Lead names and review dates need source confirmation;
+                  Arun scope required</span>
               </td>
               <td><span class="badge badge-amber">AMBER</span></td>
               <td>Arun / Mayurika</td>
-              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
-              <td>Confirm KPI date source with Mayurika (scheduling) and Arun (KPI scope); confirm whether lead names can be shown</td>
-              <td>Team name and cadence are PASS-safe; lead names and actual review dates remain AMBER until confirmed</td>
+              <td class="mono">
+                evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td>Confirm KPI date source with Mayurika (scheduling) and Arun (KPI scope); confirm whether lead names
+                can be shown</td>
+              <td>Team name and cadence are PASS-safe; lead names and actual review dates remain AMBER until confirmed
+              </td>
             </tr>
             <tr>
               <td>
                 <strong>Decisions — Approval Attribution Required</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">CLAUDE.md §18 routing required; Varmen valid for historical decisions only</span>
+                <span style="font-size:.76rem;color:var(--muted);">CLAUDE.md §18 routing required; Varmen valid for
+                  historical decisions only</span>
               </td>
               <td><span class="badge badge-amber">AMBER</span></td>
               <td>Domain owner per CLAUDE.md §18</td>
-              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td class="mono">
+                evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
               <td>Route new decisions to domain owners per CLAUDE.md §18 before publishing in dashboard</td>
-              <td>Historical Varmen approvals are valid for past decisions only; new decisions must cite current domain owner</td>
+              <td>Historical Varmen approvals are valid for past decisions only; new decisions must cite current domain
+                owner</td>
             </tr>
             <tr>
               <td>
                 <strong>Varmen Visual Review — Pending</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">All 5 built PREVIEW sections await Varmen visual layout confirmation</span>
+                <span style="font-size:.76rem;color:var(--muted);">All 5 built PREVIEW sections await Varmen visual
+                  layout confirmation</span>
               </td>
               <td><span class="badge badge-amber">AMBER</span></td>
               <td>Varmen</td>
               <td class="mono">handover/2026-06-30__web-view-dashboard-closure.md</td>
-              <td>Route to Varmen for visual layout review when available; no content changes required — layout review only</td>
+              <td>Route to Varmen for visual layout review when available; no content changes required — layout review
+                only</td>
               <td>Not a data or safety issue — pending visual layout approval only; not final approval</td>
             </tr>
             <tr>
               <td>
                 <strong>Open [VERIFY] Items — 9 Unresolved</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">Admin Manager (1–5), MD requirements (6–7), Director authority (8), HR/EOD tool names (9)</span>
+                <span style="font-size:.76rem;color:var(--muted);">Admin Manager (1–5), MD requirements (6–7), Director
+                  authority (8), HR/EOD tool names (9)</span>
               </td>
               <td><span class="badge badge-verify">[VERIFY]</span></td>
               <td>Domain owners per CLAUDE.md §14 &amp; §18</td>
               <td class="mono">context/verify-register.md</td>
-              <td>Items 1–5: receive SRC-ADMIN-001; Items 6–7: conduct MD review meeting; Item 8: Director interview; Item 9: Mayurika confirms tool names</td>
+              <td>Items 1–5: receive SRC-ADMIN-001; Items 6–7: conduct MD review meeting; Item 8: Director interview;
+                Item 9: Mayurika confirms tool names</td>
               <td>No [VERIFY] items were resolved by this dashboard build — all 9 remain open</td>
             </tr>
             <tr>
               <td>
                 <strong>Management Action Items Open — MD Discussion 22 June 2026</strong><br>
-                <span style="font-size:.76rem;color:var(--muted);">11 action items: management documentation, Rajiv visibility, Technical Team stand-ups, Developer monitoring, LLM compliance</span>
+                <span style="font-size:.76rem;color:var(--muted);">11 action items: management documentation, Rajiv
+                  visibility, Technical Team stand-ups, Developer monitoring, LLM compliance</span>
               </td>
               <td><span class="badge badge-amber">AMBER</span></td>
               <td>Mayurika (HR domain owner)</td>
-              <td class="mono">intelligence-inbox/management-action-records/<br>mayurika-hr/2026-06-22_mayurika-hr_md-discussion_management-structure-llm-compliance.md</td>
-              <td>Mayurika to review record, assign due dates to all 11 action items, and begin tracking progress in the folder</td>
-              <td>Record not yet reviewed by Mayurika; no due dates assigned; reviewer confirmation [VERIFY] pending</td>
+              <td class="mono">
+                intelligence-inbox/management-action-records/<br>mayurika-hr/2026-06-22_mayurika-hr_md-discussion_management-structure-llm-compliance.md
+              </td>
+              <td>Mayurika to review record, assign due dates to all 11 action items, and begin tracking progress in the
+                folder</td>
+              <td>Record not yet reviewed by Mayurika; no due dates assigned; reviewer confirmation [VERIFY] pending
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="section-title">Recurring Issues Folder Status</div>
-      <div class="scope-box" data-searchable data-tags="recurring issues folder skeleton readme status intelligence-inbox">
+      <div class="scope-box" data-searchable
+        data-tags="recurring issues folder skeleton readme status intelligence-inbox">
         <h4>intelligence-inbox/recurring-issues/</h4>
-        <p><strong>Status: SKELETON ONLY</strong> — This folder contains a README only. No recurring issue pattern files have been filed yet. Items must originate from real observations or stakeholder statements before being added here. The folder is intentionally empty at this stage per the README pass/fail rule.</p>
-        <p style="margin-top:8px;font-size:.8rem;color:var(--muted);">When real recurring patterns are observed or reported during stakeholder engagement, they should be added to this folder with date, description, and observation source. No issue should be treated as confirmed until reviewed by the relevant domain owner.</p>
+        <p><strong>Status: SKELETON ONLY</strong> — This folder contains a README only. No recurring issue pattern files
+          have been filed yet. Items must originate from real observations or stakeholder statements before being added
+          here. The folder is intentionally empty at this stage per the README pass/fail rule.</p>
+        <p style="margin-top:8px;font-size:.8rem;color:var(--muted);">When real recurring patterns are observed or
+          reported during stakeholder engagement, they should be added to this folder with date, description, and
+          observation source. No issue should be treated as confirmed until reviewed by the relevant domain owner.</p>
       </div>
 
-      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;" data-searchable data-tags="recurring issues limits read only no personal data no varmen sample counts">
+      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;"
+        data-searchable data-tags="recurring issues limits read only no personal data no varmen sample counts">
         <h3 style="color:#15803d;">Recurring Issues Preview Limits</h3>
         <ul style="color:#166534;">
-          <li>Issue counts shown only when backed by real records — Varmen draft sample counts (11, 4, 3 reports) are not used anywhere on this tab</li>
-          <li>No personal staff names, leave records, salary, health, PDPA, candidate, or disciplinary data are shown</li>
-          <li>Scope blockers derive from real discovery and validation records only (<code>evidence/dashboard-discovery/</code>, <code>evidence/stakeholder-confirmations/</code>)</li>
-          <li>Management action record item derives from a real filed record in <code>intelligence-inbox/management-action-records/mayurika-hr/</code> (2026-06-22)</li>
+          <li>Issue counts shown only when backed by real records — Varmen draft sample counts (11, 4, 3 reports) are
+            not used anywhere on this tab</li>
+          <li>No personal staff names, leave records, salary, health, PDPA, candidate, or disciplinary data are shown
+          </li>
+          <li>Scope blockers derive from real discovery and validation records only
+            (<code>evidence/dashboard-discovery/</code>, <code>evidence/stakeholder-confirmations/</code>)</li>
+          <li>Management action record item derives from a real filed record in
+            <code>intelligence-inbox/management-action-records/mayurika-hr/</code> (2026-06-22)</li>
           <li>No [VERIFY] items were resolved to build this preview — all 9 open items preserved</li>
           <li>Varmen visual review of this tab is still pending — not final approval</li>
           <li>Dashboard remains read-only — no forms, no edit/save/delete buttons, no backend</li>
@@ -4503,7 +4716,10 @@
 
       <div class="next-step-box">
         <h3>What should I do next?</h3>
-        <p>Commit the updated files; redeploy to Netlify (publish directory <code>web-view/</code>, no build step); visually inspect the Recurring Issues Preview tab; then route to Varmen for visual layout review when available. When real recurring issues are observed or reported, add them to <code>intelligence-inbox/recurring-issues/</code> with date and observation source.</p>
+        <p>Commit the updated files; redeploy to Netlify (publish directory <code>web-view/</code>, no build step);
+          visually inspect the Recurring Issues Preview tab; then route to Varmen for visual layout review when
+          available. When real recurring issues are observed or reported, add them to
+          <code>intelligence-inbox/recurring-issues/</code> with date and observation source.</p>
       </div>
 
     </div><!-- /tab-recurring-issues -->
@@ -4516,10 +4732,12 @@
   <footer class="dashboard-footer" role="contentinfo">
     <div class="dashboard-footer-left">
       <span class="dashboard-footer-badge">&#128274; Read-only</span>
-      <span>Management AIOS — Foundation Draft v0.1 &nbsp;&middot;&nbsp; No sensitive HR data, leave records, KPI scores, or staff personal data are shown in this preview</span>
+      <span>Management AIOS — Foundation Draft v0.1 &nbsp;&middot;&nbsp; No sensitive HR data, leave records, KPI
+        scores, or staff personal data are shown in this preview</span>
     </div>
     <div class="dashboard-footer-right">
-      Branch: individual-aios &nbsp;&middot;&nbsp; Netlify static deployment &nbsp;&middot;&nbsp; Varmen visual review pending
+      Branch: individual-aios &nbsp;&middot;&nbsp; Netlify static deployment &nbsp;&middot;&nbsp; Varmen visual review
+      pending
     </div>
   </footer>
 
