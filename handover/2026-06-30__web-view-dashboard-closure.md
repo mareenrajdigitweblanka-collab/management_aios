@@ -742,6 +742,115 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 
 ---
 
+## Varmen Dashboard — No Leave Tables Scope Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Varmen clarification received | Varmen confirmed no leave-related tables needed for current dashboard build |
+| Leave Requests table | Excluded from current build scope — NOT REQUIRED / OUT OF CURRENT BUILD SCOPE |
+| Leave source/access question (Mayurika) | No longer required as the next step for this dashboard task |
+| Next step updated | Confirm which PASS section Varmen wants built first: Document Register, Skills, Handover, Overview, or Recurring Issues |
+| Evidence file created | `evidence/stakeholder-confirmations/varmen-dashboard-no-leave-tables-2026-07-02.md` |
+| Validation file created | `validation/varmen-dashboard-no-leave-tables-scope-check.md` |
+| Discovery file updated | `evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md` — scope update note added; Leave Requests reclassified OUT OF CURRENT BUILD SCOPE in TASK 3 and TASK 5 |
+| Validation check updated | `validation/varmen-draft-dashboard-data-requirements-check.md` — §13 added; overall status updated; §12 next step replaced |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Leave table built | NO — excluded from current scope |
+| Leave data collected | NO |
+| HR leave processes removed from company truth | NO — CLAUDE.md §10.1, SRC-POLICY-001, and Mayurika's responsibilities unchanged |
+| Sensitive data (leave records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| [VERIFY] item 9 (exact HR and EOD tool names) | NOT RESOLVED — leave source question is no longer the dashboard next step, but root [VERIFY] item 9 remains open |
+| CLAUDE.md | NOT UPDATED |
+| evidence/source-register.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| web-view/index.html | NOT UPDATED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items preserved |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/varmen-dashboard-no-leave-tables-2026-07-02.md`
+**Validation path:** `validation/varmen-dashboard-no-leave-tables-scope-check.md`
+
+---
+
+## Varmen Document Register Preview Build Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Varmen selected Document Register as first safe build | Varmen chose No. 1 from PASS build options 2026-07-02; evidence: `evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md` |
+| Document Register Preview tab added | `web-view/index.html` — new tab button ("Document Register / PREVIEW") and panel (`id="tab-doc-register"`) added after Markdown Viewer tab |
+| Register sections built (4) | Root & Governance Documents (4 rows); Context Documents (4 rows); Member Workbench Documents (5 rows); Dashboard & Discovery Documents (7 rows) — 20 rows total |
+| Metadata-only note | "This register shows metadata only. It does not expose raw sensitive document contents." shown in intro box and register limits box |
+| Only real repo paths used | All 20 file rows verified against actual repository; no Varmen draft sample file names used |
+| Register Limits box | Green info box listing: real paths only, no draft sample names, git-metadata dates, sensitivity note, no [VERIFY] resolved |
+| Next-step box | Routes to Varmen for visual layout review; then choose next PASS section |
+| Evidence file created | `evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md` |
+| Validation file created | `validation/varmen-document-register-preview-build-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` — §30 Varmen Document Register Preview Build Check added |
+| Commit hash placeholder | [TBC — fill after commit] |
+| Netlify redeploy required | YES — after commit; publish directory `web-view/`; no build step |
+
+**Sensitive-data check:**
+
+| Category | Present? |
+|---|---|
+| Individual staff names | NO — role titles and confirmed management names only |
+| Leave balances or leave records | NO — excluded per Varmen 2026-07-02 and CLAUDE.md §6 |
+| KPI scores or AXIOM band placements | NO |
+| Onboarding step completion per person | NO |
+| Salary or compensation data | NO |
+| Health or medical data | NO |
+| PDPA personal data | NO |
+| Disciplinary case details | NO |
+| Candidate personal data | NO |
+| Varmen draft sample file names used as real | NO — excluded; draft-invented paths do not appear |
+
+**Forbidden tables check:**
+
+| Table | Built? |
+|---|---|
+| Team Table | NO — FAIL classification; not built |
+| Leave Requests | NO — OUT OF CURRENT BUILD SCOPE (Varmen confirmed 2026-07-02) |
+| Onboarding Tracker | NO — AMBER; domain boundary not confirmed |
+| KPI Schedule | NO — AMBER; review date source not confirmed |
+| Decisions | NO — AMBER; approval attribution routing required |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED — no new source registered |
+| context/verify-register.md | NOT UPDATED — no [VERIFY] items touched |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Attendance Dashboard card | NOT RE-ADDED — remains removed |
+| Dashboard read-only status | PRESERVED — no forms, no buttons, no backend |
+| Duplicate truth | NOT ADDED — file metadata only; no policy/KPI/AXIOM rules reproduced |
+| Backend or CDN | NOT PRESENT |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md`
+**Validation path:** `validation/varmen-document-register-preview-build-check.md`
+
+**Next step:** Commit updated files; redeploy to Netlify to publish the Document Register Preview tab. Then route to Varmen for visual layout review. After Varmen confirms, choose the next PASS section (Skills, Handover, Recurring Issues, or Overview) to build.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

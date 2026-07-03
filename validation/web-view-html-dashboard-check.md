@@ -825,6 +825,42 @@ Leave request submission; Probation review request; Confirmation recommendation;
 
 ---
 
+## 30. Varmen Document Register Preview Build Check (2026-07-02)
+
+**Change:** Varmen chose Document Register as the first safe PASS dashboard section. Document Register Preview tab added to `web-view/index.html` — read-only, file metadata only, real repo paths only.
+
+**Evidence:** `evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md`
+**Validation:** `validation/varmen-document-register-preview-build-check.md`
+
+| Check | Result |
+|---|---|
+| Document Register Preview tab added to dashboard | YES — new tab button ("Document Register / PREVIEW") and panel (`id="tab-doc-register"`) added |
+| Section clearly labelled "Document Register Preview" | YES — section heading and how-to box use "Document Register Preview" label |
+| Metadata-only note shown | YES — "This register shows metadata only. It does not expose raw sensitive document contents." |
+| Only real repo file paths used | YES — all 16 rows verified against actual repository |
+| Varmen draft sample file names (kpi-meeting-format.md, leave-tracking-proposal.md) not used | YES — excluded; those files do not exist in the repo |
+| No raw sensitive document contents reproduced | YES — file metadata only |
+| No personal HR data (staff names, leave, salary, health, PDPA, candidate, disciplinary) | NOT PRESENT |
+| No Team Table built | YES — FAIL classification; not built |
+| No Leave Requests table built | YES — OUT OF CURRENT BUILD SCOPE; not built |
+| No Onboarding Tracker built | YES — AMBER classification; not built |
+| No KPI Schedule built | YES — AMBER classification; not built |
+| No Decisions table built | YES — AMBER classification; not built |
+| No edit/save/delete buttons or form elements added | YES — read-only table only |
+| No backend code or external CDN added | YES — static HTML only |
+| [VERIFY] root register changed | NO — all 9 open items unchanged |
+| CLAUDE.md updated | NO — dashboard is navigation layer only |
+| evidence/source-register.md updated | NO — no new source registered |
+| context/verify-register.md updated | NO — no [VERIFY] items touched |
+| Existing member workbench statuses unchanged | YES — Mayurika DRAFT; Suman ACTIVE; Arun ACTIVE; Rajiv BLOCKED |
+| Attendance Dashboard card not re-added | YES — removed in prior task; not restored |
+| PASS/AMBER preserved | YES — overall result unchanged |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS — AMBER until Varmen reviews the visual layout**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

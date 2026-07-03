@@ -1154,6 +1154,10 @@
       Markdown Viewer
       <span class="tab-badge tab-badge-info">6 Files</span>
     </button>
+    <button class="tab-btn" data-tab="doc-register" role="tab" aria-selected="false">
+      Document Register
+      <span class="tab-badge tab-badge-amber">PREVIEW</span>
+    </button>
   </nav>
 
   <!-- ═══════════════════════════════════
@@ -3160,6 +3164,298 @@
       </div>
 
     </div><!-- /tab-md-viewer -->
+
+    <!-- ═══════════════════════════════════
+       DOCUMENT REGISTER TAB
+    ═══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-doc-register" role="tabpanel">
+
+      <div class="how-to-box">
+        <h3>Document Register Preview</h3>
+        <p>This is a read-only preview of key Management AIOS documents. Each row shows file metadata only — path, owner, status, and evidence basis. No raw sensitive document contents are shown.</p>
+        <ul>
+          <li>Built from real repository file paths only — no draft sample names used</li>
+          <li>No personal HR data, leave records, staff names, salary, health, PDPA, candidate, or disciplinary data</li>
+          <li>Status reflects the last confirmed review state for each file</li>
+          <li>Last Updated dates are derived from git metadata</li>
+        </ul>
+        <p style="margin-top:10px;font-size:.8rem;color:#0369a1;"><strong>Sensitivity note:</strong> This register shows metadata only. It does not expose raw sensitive document contents.</p>
+      </div>
+
+      <div class="section-title">Root &amp; Governance Documents</div>
+      <div data-searchable data-tags="document register root governance claude source verify">
+        <table class="review-table" style="margin-bottom:28px;">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Folder / Path</th>
+              <th>Owner / Domain</th>
+              <th>Status</th>
+              <th>Evidence / Basis</th>
+              <th>Last Updated</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="mono">CLAUDE.md</code></td>
+              <td><code class="mono">/ (root)</code></td>
+              <td>All domain owners</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>SRC-VAR-001 + all registered sources</td>
+              <td class="mono">2026-06-30</td>
+              <td>Root canonical truth — do not edit without domain owner review</td>
+            </tr>
+            <tr>
+              <td><code class="mono">evidence/source-register.md</code></td>
+              <td><code class="mono">evidence/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>CLAUDE.md §2</td>
+              <td class="mono">2026-06-30</td>
+              <td>All SRC-* source registrations; 13 sources registered</td>
+            </tr>
+            <tr>
+              <td><code class="mono">context/verify-register.md</code></td>
+              <td><code class="mono">context/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>CLAUDE.md §14</td>
+              <td class="mono">2026-06-30</td>
+              <td>9 open [VERIFY] items; items 8–10 resolved 2026-06-30 by SRC-ARUN-CONF-001</td>
+            </tr>
+            <tr>
+              <td><code class="mono">context/management-aios-purpose.md</code></td>
+              <td><code class="mono">context/</code></td>
+              <td>Mareenraj / Varmen</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>SRC-VAR-001</td>
+              <td class="mono">2026-06-22</td>
+              <td>AIOS purpose, four problem areas, urgency statement</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Context Documents</div>
+      <div data-searchable data-tags="document register context hr recruitment kpi axiom operations">
+        <table class="review-table" style="margin-bottom:28px;">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Folder / Path</th>
+              <th>Owner / Domain</th>
+              <th>Status</th>
+              <th>Evidence / Basis</th>
+              <th>Last Updated</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="mono">context/hr-operations-context.md</code></td>
+              <td><code class="mono">context/</code></td>
+              <td>Mayurika (HR)</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>SRC-MAYU-001</td>
+              <td class="mono">2026-06-30</td>
+              <td>HR processes reference; staff records, PDPA, review scheduling, EOD monitoring</td>
+            </tr>
+            <tr>
+              <td><code class="mono">context/recruitment-context.md</code></td>
+              <td><code class="mono">context/</code></td>
+              <td>Suman (Recruitment)</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>SRC-SUMAN-001-v2, SRC-MD-SUMAN-001</td>
+              <td class="mono">2026-06-25</td>
+              <td>Recruitment pipeline, 8-point screening, 180-day handover; Suman ACTIVE</td>
+            </tr>
+            <tr>
+              <td><code class="mono">context/kpi-axiom-context.md</code></td>
+              <td><code class="mono">context/</code></td>
+              <td>Arun (Implementation)</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>SRC-ARUN-001, SRC-ARUN-CONF-001</td>
+              <td class="mono">2026-06-30</td>
+              <td>KPI/AXIOM context; updated 2026-06-30 with Arun confirmations (ACOS threshold, Paraparan)</td>
+            </tr>
+            <tr>
+              <td><code class="mono">context/confidentiality-rules.md</code></td>
+              <td><code class="mono">context/</code></td>
+              <td>Mareenraj / All</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>CLAUDE.md §6; SRC-POLICY-001 §14.0</td>
+              <td class="mono">2026-06-23</td>
+              <td>Data handling rules; sensitivity boundaries; PDPA note</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Member Workbench Documents</div>
+      <div data-searchable data-tags="document register member workbench mayurika suman arun rajiv checklist">
+        <table class="review-table" style="margin-bottom:28px;">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Folder / Path</th>
+              <th>Owner / Domain</th>
+              <th>Status</th>
+              <th>Evidence / Basis</th>
+              <th>Last Updated</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="mono">member-aios/README.md</code></td>
+              <td><code class="mono">member-aios/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>CLAUDE.md §3, §5</td>
+              <td class="mono">2026-06-30</td>
+              <td>Member workbench overview; folder guide for all four domains</td>
+            </tr>
+            <tr>
+              <td><code class="mono">member-aios/mayurika-hr/WORKBENCH.md</code></td>
+              <td><code class="mono">member-aios/mayurika-hr/</code></td>
+              <td>Mayurika (HR)</td>
+              <td><span class="badge badge-draft">DRAFT</span></td>
+              <td>SRC-MAYU-001</td>
+              <td class="mono">2026-07-02</td>
+              <td>HR domain workbench; WORKBENCH.md and quick-reference-sources.md pending Mayurika review</td>
+            </tr>
+            <tr>
+              <td><code class="mono">member-aios/mayurika-hr/daily-weekly-checklist.md</code></td>
+              <td><code class="mono">member-aios/mayurika-hr/</code></td>
+              <td>Mayurika (HR)</td>
+              <td><span class="badge badge-pass">ACTIVE</span></td>
+              <td>SRC-MAYU-001; Mayurika confirmed 2026-07-02</td>
+              <td class="mono">2026-07-02</td>
+              <td>Mayurika-provided text confirmed; daily and weekly HR checklist</td>
+            </tr>
+            <tr>
+              <td><code class="mono">member-aios/suman-recruitment/WORKBENCH.md</code></td>
+              <td><code class="mono">member-aios/suman-recruitment/</code></td>
+              <td>Suman (Recruitment)</td>
+              <td><span class="badge badge-pass">ACTIVE</span></td>
+              <td>SRC-SUMAN-001-v2; Suman Reviewed 2026-06-30</td>
+              <td class="mono">2026-06-30</td>
+              <td>Recruitment workbench; Suman confirmed 2026-06-30</td>
+            </tr>
+            <tr>
+              <td><code class="mono">member-aios/arun-implementation/WORKBENCH.md</code></td>
+              <td><code class="mono">member-aios/arun-implementation/</code></td>
+              <td>Arun (Implementation)</td>
+              <td><span class="badge badge-pass">ACTIVE</span></td>
+              <td>SRC-ARUN-001; Arun Reviewed 2026-06-30</td>
+              <td class="mono">2026-06-30</td>
+              <td>Implementation workbench; Arun confirmed 2026-06-30; root propagation complete</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Dashboard &amp; Discovery Documents</div>
+      <div data-searchable data-tags="document register dashboard discovery validation handover web-view">
+        <table class="review-table" style="margin-bottom:28px;">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Folder / Path</th>
+              <th>Owner / Domain</th>
+              <th>Status</th>
+              <th>Evidence / Basis</th>
+              <th>Last Updated</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="mono">web-view/index.html</code></td>
+              <td><code class="mono">web-view/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-amber">PASS-AMBER</span></td>
+              <td>validation/web-view-html-dashboard-check.md</td>
+              <td class="mono">2026-07-02</td>
+              <td>Static read-only dashboard; Netlify deployment; no backend</td>
+            </tr>
+            <tr>
+              <td><code class="mono">evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md</code></td>
+              <td><code class="mono">evidence/dashboard-discovery/</code></td>
+              <td>Mareenraj / Varmen</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>Dashboard discovery — read-only</td>
+              <td class="mono">2026-07-02</td>
+              <td>Data requirements map; 10 sections; Document Register classified PASS</td>
+            </tr>
+            <tr>
+              <td><code class="mono">validation/varmen-draft-dashboard-data-requirements-check.md</code></td>
+              <td><code class="mono">validation/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+              <td>Check against discovery evidence</td>
+              <td class="mono">2026-07-02</td>
+              <td>13-section validation; PASS overall; leave tables excluded from scope</td>
+            </tr>
+            <tr>
+              <td><code class="mono">validation/web-view-html-dashboard-check.md</code></td>
+              <td><code class="mono">validation/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-amber">PASS-AMBER</span></td>
+              <td>Check against web-view/index.html</td>
+              <td class="mono">2026-07-02</td>
+              <td>Dashboard validation; 29 sections; AMBER until Mayurika confirms</td>
+            </tr>
+            <tr>
+              <td><code class="mono">handover/2026-06-30__web-view-dashboard-closure.md</code></td>
+              <td><code class="mono">handover/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-amber">PASS-AMBER</span></td>
+              <td>Handover evidence</td>
+              <td class="mono">2026-07-02</td>
+              <td>Dashboard creation closure record; all update records appended here</td>
+            </tr>
+            <tr>
+              <td><code class="mono">evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md</code></td>
+              <td><code class="mono">evidence/stakeholder-confirmations/</code></td>
+              <td>Mareenraj / Varmen</td>
+              <td><span class="badge badge-pass">CONFIRMED</span></td>
+              <td>Varmen build choice 2026-07-02</td>
+              <td class="mono">2026-07-02</td>
+              <td>Varmen chose Document Register as first safe PASS build section</td>
+            </tr>
+            <tr>
+              <td><code class="mono">validation/varmen-document-register-preview-build-check.md</code></td>
+              <td><code class="mono">validation/</code></td>
+              <td>Mareenraj</td>
+              <td><span class="badge badge-amber">PASS-AMBER</span></td>
+              <td>This build task 2026-07-02</td>
+              <td class="mono">2026-07-02</td>
+              <td>Document Register preview build validation; AMBER until Varmen visual review</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;">
+        <h3 style="color:#15803d;">Register Limits</h3>
+        <ul style="color:#166534;">
+          <li>This register is a PREVIEW — it shows file metadata only and does not expose raw document contents</li>
+          <li>All file paths listed have been verified as existing in the repository</li>
+          <li>No Varmen draft sample file names (e.g. kpi-meeting-format.md, leave-tracking-proposal.md) are used — those do not exist in the repo</li>
+          <li>Last Updated dates are derived from git metadata — not manually estimated</li>
+          <li>Status labels reflect the last confirmed review state; DRAFT sections require domain owner review before promotion</li>
+          <li>No [VERIFY] items were resolved to build this register</li>
+        </ul>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>Route this Document Register Preview to Varmen for visual layout review. Once confirmed, the next safe PASS section (Skills, Handover, Recurring Issues, or Overview) can be chosen and built. To open any file listed above, navigate to its path in VS Code — do not attempt to edit from this browser view.</p>
+      </div>
+
+    </div><!-- /tab-doc-register -->
 
   </main>
 
