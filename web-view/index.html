@@ -1392,6 +1392,10 @@
       Document Register
       <span class="tab-badge tab-badge-preview">PREVIEW</span>
     </button>
+    <button class="tab-btn" data-tab="skills-register" role="tab" aria-selected="false">
+      Skills Register
+      <span class="tab-badge tab-badge-preview">PREVIEW</span>
+    </button>
   </nav>
 
   <!-- ═══════════════════════════════════
@@ -3698,6 +3702,165 @@
       </div>
 
     </div><!-- /tab-doc-register -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 10 — SKILLS REGISTER PREVIEW
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-skills-register" role="tabpanel">
+
+      <div class="how-to-box">
+        <h3>Skills Register Preview</h3>
+        <p>This is a read-only preview of the Management AIOS skill files. Each row shows skill metadata only — name, tier, purpose, owner, status, and source path. No raw skill file content is reproduced.</p>
+        <ul>
+          <li>Built from real <code>skills/</code> folder files only — 5 skill files confirmed in repository</li>
+          <li>No personal HR data, staff names, leave records, salary, health, PDPA, candidate, or disciplinary data</li>
+          <li>All 5 skills are currently DRAFT — not approved for operational use until Varmen validates</li>
+          <li>Skill file wrappers exist in <code>.claude/skills/</code> as empty stubs — no implementation files yet</li>
+        </ul>
+        <p style="margin-top:10px;font-size:.8rem;color:#b45309;background:#fef3c7;border:1px solid #fde68a;padding:8px 12px;border-radius:5px;"><strong>Usage counts are hidden</strong> because no confirmed usage-tracking source exists yet. No Varmen draft sample counts (41, 89, 14, 9, 6, 18) have been used.</p>
+        <p style="margin-top:8px;font-size:.8rem;color:#0369a1;"><strong>Individual staff usage is not shown.</strong> This view shows skill metadata only. It does not show individual staff usage.</p>
+      </div>
+
+      <div class="section-title">Tier 1 Skills — Core Operational Support</div>
+      <div data-searchable data-tags="skills register tier 1 management gap detection kpi axiom policy lookup recruitment quality">
+        <table class="review-table" style="margin-bottom:28px;">
+          <thead>
+            <tr>
+              <th>Skill Name</th>
+              <th>Category / Tier</th>
+              <th>Purpose</th>
+              <th>Owner / Domain</th>
+              <th>Status</th>
+              <th>Source Path</th>
+              <th>Known Limit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="mono">management-gap-detection</code></td>
+              <td><span class="badge badge-pending">Tier 1</span></td>
+              <td>Identifies operational gaps, missing processes, documentation issues, and recurring management problems across the four confirmed problem areas</td>
+              <td>Varmen (validation);<br>Mayurika (operational)</td>
+              <td><span class="badge badge-draft">DRAFT</span></td>
+              <td><code class="mono">skills/management-gap-detection.md</code></td>
+              <td>Surfaces gap observations for human review only. Does not close gaps, make decisions, or escalate autonomously. Not operational until Varmen validates.</td>
+            </tr>
+            <tr>
+              <td><code class="mono">kpi-axiom-review-support</code></td>
+              <td><span class="badge badge-pending">Tier 1</span></td>
+              <td>KPI and AXIOM band review support — surfaces structured assessment of KPI thresholds, incident escalation steps, band placements, and review outputs for human review</td>
+              <td>Varmen (validation);<br>Arun (KPI content);<br>Mayurika (operational)</td>
+              <td><span class="badge badge-draft">DRAFT</span></td>
+              <td><code class="mono">skills/kpi-axiom-review-support.md</code></td>
+              <td>Does not make employee decisions or perform escalation actions. Does not invent KPI thresholds. All outputs require human review. Not operational until Varmen validates.</td>
+            </tr>
+            <tr>
+              <td><code class="mono">policy-lookup</code></td>
+              <td><span class="badge badge-pending">Tier 1</span></td>
+              <td>Policy explanation and reference lookup — answers process-level questions from the company policy manual (SRC-POLICY-001)</td>
+              <td>Varmen (validation);<br>Mayurika (operational)</td>
+              <td><span class="badge badge-draft">DRAFT</span></td>
+              <td><code class="mono">skills/policy-lookup.md</code></td>
+              <td>Policy source is SRC-POLICY-001 only. Does not infer beyond registered policy. Does not make HR decisions. Does not expose personal employee case data. Not operational until Varmen validates.</td>
+            </tr>
+            <tr>
+              <td><code class="mono">recruitment-quality-check</code></td>
+              <td><span class="badge badge-pending">Tier 1</span></td>
+              <td>Recruitment process quality assurance — checks against 8-point screening, 50-point interview scoring, review milestones (7/14-day, Month 1, 3, 6), and 180-day handover requirements</td>
+              <td>Varmen (validation);<br>Suman (domain);<br>Mayurika (operational)</td>
+              <td><span class="badge badge-draft">DRAFT</span></td>
+              <td><code class="mono">skills/recruitment-quality-check.md</code></td>
+              <td>Does not make hiring decisions. Does not store personal candidate data. All outputs require human review. Not operational until Varmen validates.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Tier 2 Skills — Cross-Domain Analysis</div>
+      <div data-searchable data-tags="skills register tier 2 management problem analysis cross-domain evidence routing">
+        <table class="review-table" style="margin-bottom:28px;">
+          <thead>
+            <tr>
+              <th>Skill Name</th>
+              <th>Category / Tier</th>
+              <th>Purpose</th>
+              <th>Owner / Domain</th>
+              <th>Status</th>
+              <th>Source Path</th>
+              <th>Known Limit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="mono">management-problem-analysis</code></td>
+              <td><span class="badge badge-verify">Tier 2</span></td>
+              <td>Problem intake and evidence routing — structured analysis across all management domains; surfaces the problem, domain, evidence needed, and routing path for human action</td>
+              <td>Varmen (validation before any operational use)</td>
+              <td><span class="badge badge-draft">DRAFT — Pending Varmen Review</span></td>
+              <td><code class="mono">skills/management-problem-analysis.md</code></td>
+              <td>Higher-complexity cross-domain skill. Pending Varmen review before any operational use. Control plan at <code>validation/management-problem-analysis-skill-plan.md</code>. Does not resolve [VERIFY] items or make management decisions.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Skills Folder Reference</div>
+      <div data-searchable data-tags="skills folder readme wrapper claude skills stub infrastructure">
+        <div class="file-list-box">
+          <h4>Repository skill infrastructure</h4>
+          <ul>
+            <li>
+              <span>📁</span>
+              <div>
+                <div class="fpath">skills/README.md</div>
+                <div class="fdesc">Skills folder governance — confirms folder is operational (skeleton stage complete); each skill file must reference an approved context source and validation record.</div>
+              </div>
+            </li>
+            <li>
+              <span>📁</span>
+              <div>
+                <div class="fpath">.claude/skills/ (5 subdirectories)</div>
+                <div class="fdesc">Claude Code skill wrapper stubs — empty directories for: kpi-axiom-review-support, management-gap-detection, management-problem-analysis, policy-lookup, recruitment-quality-check. No implementation files yet.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">validation/management-problem-analysis-skill-plan.md</div>
+                <div class="fdesc">Control plan for the Tier 2 management-problem-analysis skill — governs when and how it may be used.</div>
+              </div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div>
+                <div class="fpath">validation/tier-1-skill-draft-readiness.md</div>
+                <div class="fdesc">Readiness check for the 4 Tier 1 skills — confirms DRAFT conditional PASS status.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;">
+        <h3 style="color:#15803d;">Skills Register Limits</h3>
+        <ul style="color:#166534;">
+          <li>This register is a PREVIEW — skill metadata only; no raw skill file content is reproduced</li>
+          <li>All 5 skill files are DRAFT — Foundation Draft v0.1; none are approved for operational use</li>
+          <li>Usage counts are hidden — no confirmed usage-tracking source exists in this repository</li>
+          <li>No Varmen draft sample slash commands or sample counts have been used in this register</li>
+          <li>Tier 2 skill (management-problem-analysis) requires Varmen review before any operational use</li>
+          <li>No [VERIFY] items were resolved to build this register</li>
+          <li>Individual staff usage is not shown — this register shows skill metadata only</li>
+        </ul>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>Route this Skills Register Preview to Varmen for visual layout review when available. Once confirmed, the next safe PASS section (Handover, Recurring Issues, or Overview) can be chosen and built. To open any skill file listed above, navigate to its path in VS Code — do not attempt to edit from this browser view.</p>
+      </div>
+
+    </div><!-- /tab-skills-register -->
 
   </main>
 

@@ -5,7 +5,7 @@ created: 2026-06-30
 last-updated: 2026-07-03
 created-by: Mareenraj (builder)
 requirement-id: web-view-html-dashboard-creation
-status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; Mayurika HR Daily Control Panel added 2026-07-01; DWC sanity check pending; Professional UI polish applied 2026-07-03; Varmen visual review pending; ready for Netlify deployment
+status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; Mayurika HR Daily Control Panel added 2026-07-01; DWC sanity check pending; Professional UI polish applied 2026-07-03; Skills Register Preview added 2026-07-03; Varmen visual review pending; ready for Netlify deployment
 ---
 
 # Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, Arun ACTIVE Update, Markdown Viewer Addition, and Mayurika HR Daily Control Panel
@@ -912,8 +912,57 @@ Next step: Commit updated files; redeploy to Netlify (publish directory `web-vie
 
 ---
 
+## Skills Register Preview Addition Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Request source | User — "next build skills, varmen is busy" (2026-07-02) |
+| Build choice | Skills Register Preview — next safe PASS section after Document Register |
+| Evidence path | `evidence/stakeholder-confirmations/dashboard-skills-register-next-build-choice-2026-07-02.md` |
+| Validation path | `validation/dashboard-skills-register-preview-build-check.md` |
+| New tab button added | "Skills Register / PREVIEW" — `data-tab="skills-register"` |
+| New tab panel added | `id="tab-skills-register"` |
+| Skills shown | 5 real skill files from `skills/` folder: management-gap-detection, kpi-axiom-review-support, policy-lookup, recruitment-quality-check, management-problem-analysis |
+| Columns shown | Skill Name, Category/Tier, Purpose, Owner/Domain, Status, Source Path, Known Limit |
+| Usage counts | HIDDEN — no confirmed usage-tracking source exists in the repository |
+| Varmen draft usage counts used | NO — 41, 89, 14, 9, 6, 18 not used anywhere in Skills Register tab |
+| Individual staff usage | NOT SHOWN — note displayed in how-to box |
+| New blocked tables built | NO — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, Decisions, Attendance Dashboard all correctly excluded |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no staff names, salary, health, PDPA, candidate, or disciplinary data |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| Document Register 20 rows | UNCHANGED |
+| Mayurika checklist ACTIVE status | UNCHANGED |
+| Mayurika workbench tab badge | UNCHANGED — remains DRAFT |
+| Suman workbench | UNCHANGED — remains ACTIVE |
+| Arun workbench | UNCHANGED — remains ACTIVE |
+| Rajiv workbench | UNCHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED — skill metadata and short descriptions only |
+| Backend or CDN | NOT PRESENT |
+| Edit/save/write feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+| PASS/AMBER overall result | PRESERVED |
+
+**AMBER notes:**
+
+- Usage counts hidden — no confirmed usage-tracking source exists yet
+- Varmen visual layout review pending (same AMBER as Document Register)
+
+**Next step:** Commit the Skills Register Preview update (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`, plus new evidence and validation files); redeploy to Netlify; visually inspect both the Document Register Preview and Skills Register Preview tabs; then route to Varmen for visual layout review when available.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman ACTIVE, and root propagation complete. All relevant sections updated (Arun tab badges, verify-explain-action boxes, warning box, review queue action 4, AMBER 1, file map, Root AIOS tab). Root propagation of items 8, 9, 10 correctly shown as complete with SRC-ARUN-CONF-001. Item 9 scope limit preserved throughout. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). No duplicate truth. No editing capability. Non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Ready to commit and redeploy to Netlify.
+Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman ACTIVE, and root propagation complete. All relevant sections updated (Arun tab badges, verify-explain-action boxes, warning box, review queue action 4, AMBER 1, file map, Root AIOS tab). Root propagation of items 8, 9, 10 correctly shown as complete with SRC-ARUN-CONF-001. Item 9 scope limit preserved throughout. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). No duplicate truth. No editing capability. Non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Skills Register Preview added 2026-07-03 — 5 real skill files from `skills/` folder; usage counts hidden (no tracking source); no Varmen draft sample counts used; no individual staff usage shown; no blocked tables built; all existing sections unchanged. Ready to commit and redeploy to Netlify.

@@ -896,6 +896,48 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## 32. Dashboard Skills Register Preview Build Check (2026-07-03)
+
+**Change:** User chose next safe build (Varmen unavailable). Skills Register Preview tab added to `web-view/index.html` — read-only, skill metadata only, real `skills/` folder files only.
+
+**Evidence:** `evidence/stakeholder-confirmations/dashboard-skills-register-next-build-choice-2026-07-02.md`
+**Validation:** `validation/dashboard-skills-register-preview-build-check.md`
+
+| Check | Result |
+|---|---|
+| Skills Register Preview tab added to dashboard | YES — new tab button ("Skills Register / PREVIEW") and panel (`id="tab-skills-register"`) added |
+| Section clearly labelled "Skills Register Preview" | YES — how-to box and section headings use this label |
+| Only real `skills/` folder files used | YES — 5 files: management-gap-detection, kpi-axiom-review-support, policy-lookup, recruitment-quality-check, management-problem-analysis |
+| Varmen draft slash commands not used (`/team-brief`, `/onboarding-checklist`, etc.) | YES — not present; those files do not exist in the repo |
+| Usage counts shown | NO — hidden; note displayed: "Usage counts are hidden because no confirmed usage-tracking source exists yet." |
+| Varmen draft sample counts used (41, 89, 14, 9, 6, 18) | NO — not present |
+| Individual staff usage shown | NO — note displayed: "This view shows skill metadata only. It does not show individual staff usage." |
+| No personal HR data (staff names, leave, salary, health, PDPA, candidate, disciplinary) | NOT PRESENT |
+| No Team Table built | YES — FAIL classification; not built |
+| No Leave Requests table built | YES — out of current build scope; not built |
+| No Onboarding Tracker built | YES — AMBER classification; not built |
+| No KPI Schedule built | YES — AMBER classification; not built |
+| No Decisions table built | YES — AMBER classification; not built |
+| Attendance Dashboard not re-added | YES — removed in prior task; not restored |
+| No edit/save/delete buttons or form elements added | YES — read-only tables only |
+| No backend code or external CDN added | YES — static HTML only |
+| [VERIFY] root register changed | NO — all 9 open items unchanged |
+| CLAUDE.md updated | NO — dashboard is navigation layer only |
+| evidence/source-register.md updated | NO — no new source registered |
+| context/verify-register.md updated | NO — no [VERIFY] items touched |
+| Document Register 20 rows unchanged | YES — not touched |
+| Mayurika checklist ACTIVE status unchanged | YES — unchanged |
+| Mayurika tab badge remains DRAFT | YES — unchanged |
+| Suman status remains ACTIVE | YES — unchanged |
+| Arun status remains ACTIVE | YES — unchanged |
+| Rajiv remains BLOCKED | YES — unchanged |
+| PASS/AMBER preserved | YES — overall result unchanged |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS — AMBER until Varmen reviews the visual layout**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
