@@ -1016,6 +1016,116 @@ Next step: Commit updated files; redeploy to Netlify (publish directory `web-vie
 
 ---
 
+## Skills/Handover Tab Visibility Fix Record (2026-07-03)
+
+**Issue reported:** User visual inspection at 127.0.0.1:5500/web-view/index.html confirmed only tabs 1–9 visible. Skills Register and Handover Preview tabs not reachable.
+
+**Root cause identified:** `.tab-bar` CSS had `overflow-x: auto` combined with `::-webkit-scrollbar { height: 0; }`. The 11-tab bar overflowed the viewport to the right, but the scrollbar was invisible — no visual indicator that more tabs existed. Tabs 10 (Skills Register) and 11 (Handover Preview) were rendered off-screen and unreachable.
+
+**Fix applied:** `flex-wrap: wrap` added to `.tab-bar`; `overflow-x` changed from `auto` to `hidden`; `::-webkit-scrollbar` rule removed. All 11 tabs now wrap to a second row and are visible and reachable without scrolling.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `web-view/index.html` | `.tab-bar` CSS block — `flex-wrap: wrap` added; `overflow-x: hidden`; scrollbar rule removed |
+| `validation/web-view-html-dashboard-check.md` | §34 — Dashboard Skills/Handover Tab Visibility Check added |
+| `handover/2026-06-30__web-view-dashboard-closure.md` | This section — fix record added |
+| `validation/dashboard-skills-handover-tab-visibility-check.md` | CREATED — full visibility check with root cause, fix, and safety checks |
+
+**Safety checks:**
+
+| Check | Result |
+|---|---|
+| Skills Register tab visible/reachable after fix | YES |
+| Handover Preview tab visible/reachable after fix | YES |
+| Panels existed before fix | YES — both were already in the HTML with correct IDs |
+| Document Register content changed | NO |
+| Blocked table built | NO |
+| Sensitive data added | NO |
+| [VERIFY] items resolved | NO |
+| Dashboard read-only status | PRESERVED |
+| Duplicate truth added | NO |
+| CLAUDE.md / source-register.md / verify-register.md | NOT TOUCHED |
+
+**Validation path:** `validation/dashboard-skills-handover-tab-visibility-check.md`
+
+**Next step:** Refresh the local server (127.0.0.1:5500/web-view/index.html) and confirm that Skills Register and Handover Preview tabs are now visible in the top navigation bar.
+
+---
+
+## Overview Preview and Recurring Issues Preview Addition Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Request source | User — "Overview, and Recurring Issues build those" (2026-07-03) |
+| Build choice | Overview Preview and Recurring Issues Preview — next two safe PASS sections |
+| Evidence path | `evidence/stakeholder-confirmations/dashboard-overview-recurring-issues-build-choice-2026-07-03.md` |
+| Validation path | `validation/dashboard-overview-recurring-issues-preview-build-check.md` |
+| New tab buttons added | "Overview" (PREVIEW badge) and "Recurring Issues" (PREVIEW badge) added to tab nav |
+| New tab panels added | `id="tab-overview-preview"` and `id="tab-recurring-issues"` |
+| Overview: aggregate stats shown | PASS Sections Built (5), Pending Varmen Review (5), Excluded/Blocked/AMBER (5), Open [VERIFY] Items (9), Sources Registered (22), Member Workbenches (2/4), Document Register Rows (20), Skills in Register (5) |
+| Overview: section build status table | 10 sections — PASS ×5 (Doc Register, Skills, Handover, Overview, Recurring Issues); FAIL ×1 (Team Table); OUT ×1 (Leave Requests); AMBER ×3 (Onboarding, KPI Schedule, Decisions) |
+| Recurring Issues: 8 process-level records shown | Team Table (FAIL), Leave Requests (OUT), Onboarding Tracker (AMBER), KPI Schedule (AMBER), Decisions (AMBER), Varmen Visual Review (AMBER), Open [VERIFY] Items ([VERIFY]), Management Action Items (AMBER) |
+| Recurring Issues folder status shown | SKELETON ONLY — README only; no issue files filed yet |
+| Varmen draft sample counts used | NO — counts 23, 3, 6/6, "4d ago", Day 187, 11 reports, 4 reports, 3 reports not present anywhere |
+| Varmen draft issue names used | NO — "KPI meetings late", "Duplicate onboarding docs", "Leave requests lost" not present |
+| Management action record row | Derives from real filed record: `intelligence-inbox/management-action-records/mayurika-hr/2026-06-22_mayurika-hr_md-discussion_management-structure-llm-compliance.md` |
+| Aggregate/process-level metadata note (Overview) | YES — italic note: "This view uses aggregate/process-level metadata only. Sensitive HR data is not shown." |
+| Issue counts note (Recurring Issues) | YES — italic note: "Issue counts are shown only when backed by real records. Varmen draft sample counts are not used." |
+| "What this tab does NOT show" box (Recurring Issues) | YES — lists staff names, leave records, Varmen draft counts, invented issues |
+| Total PREVIEW tabs now | 5 (Document Register, Skills Register, Handover Preview, Overview Preview, Recurring Issues Preview) |
+
+**Sensitive-data check:**
+
+| Category | Present? |
+|---|---|
+| Individual staff names | NO — role titles only |
+| Leave balances or leave records | NO |
+| KPI scores or AXIOM band placements | NO |
+| Onboarding step completion per person | NO |
+| Salary or compensation data | NO |
+| Health or medical data | NO |
+| PDPA personal data | NO |
+| Disciplinary case details | NO |
+| Candidate personal data | NO |
+| Varmen draft sample values used as real | NO |
+| Varmen draft report counts used (11, 4, 3) | NO |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no personal data, salary, health, disciplinary, grievance, or PDPA data |
+| Varmen draft sample counts | NOT USED — not present anywhere in new tabs |
+| Fake issue counts | NOT ADDED — no invented issue counts |
+| New blocked table built | NO — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, Decisions, Attendance Dashboard all correctly excluded |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED — no new source registered |
+| context/verify-register.md | NOT UPDATED — no [VERIFY] items touched |
+| Document Register 20 rows | UNCHANGED |
+| Skills Register metadata | UNCHANGED |
+| Handover Preview data | UNCHANGED |
+| Mayurika checklist ACTIVE status | UNCHANGED |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Attendance Dashboard card | NOT RE-ADDED — remains removed |
+| Dashboard read-only status | PRESERVED — no forms, no buttons, no backend |
+| Duplicate truth | NOT ADDED — aggregate metadata and process-level records only; no policy/KPI/AXIOM rules reproduced |
+| Backend or CDN | NOT PRESENT |
+| Varmen visual review | STILL PENDING — not marked complete |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`, plus new evidence and validation files); redeploy to Netlify (publish directory `web-view/`, no build step); visually inspect all five PREVIEW tabs in the browser; then route to Varmen for visual layout review when available.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

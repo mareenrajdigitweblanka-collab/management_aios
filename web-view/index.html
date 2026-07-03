@@ -139,17 +139,16 @@
       border-bottom: 2px solid var(--border);
       display: flex;
       align-items: flex-end;
+      flex-wrap: wrap;
       gap: 0;
       padding: 0 28px;
       position: sticky;
       top: 60px;
       z-index: 90;
-      overflow-x: auto;
+      overflow-x: hidden;
       flex-shrink: 0;
       box-shadow: 0 2px 6px rgba(0,0,0,.05);
     }
-
-    .tab-bar::-webkit-scrollbar { height: 0; }
 
     .tab-btn {
       background: none;
@@ -1398,6 +1397,14 @@
     </button>
     <button class="tab-btn" data-tab="handover-preview" role="tab" aria-selected="false">
       Handover Preview
+      <span class="tab-badge tab-badge-preview">PREVIEW</span>
+    </button>
+    <button class="tab-btn" data-tab="overview-preview" role="tab" aria-selected="false">
+      Overview
+      <span class="tab-badge tab-badge-preview">PREVIEW</span>
+    </button>
+    <button class="tab-btn" data-tab="recurring-issues" role="tab" aria-selected="false">
+      Recurring Issues
       <span class="tab-badge tab-badge-preview">PREVIEW</span>
     </button>
   </nav>
@@ -4095,6 +4102,331 @@
       </div>
 
     </div><!-- /tab-handover-preview -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 12 — OVERVIEW PREVIEW
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-overview-preview" role="tabpanel">
+
+      <div class="how-to-box">
+        <h3>Overview Preview — Read-Only</h3>
+        <p>This tab shows aggregate metadata about the Management AIOS dashboard build. It is <strong>read-only</strong> and uses only real repository metadata — no Varmen draft sample counts are used here.</p>
+        <ul>
+          <li>All counts on this tab are derived from real repository files: <code>evidence/source-register.md</code>, validation records, handover files, the <code>skills/</code> folder, and section tracking in this dashboard.</li>
+          <li>Sensitive HR data is not shown. No personal staff names, leave records, KPI scores, salary, health, PDPA, or candidate data appear on this tab.</li>
+          <li>Varmen visual review of all PREVIEW tabs is still pending — this tab is not final approval.</li>
+        </ul>
+        <p style="margin-top:10px;font-size:.78rem;color:#0c4a6e;font-style:italic;">This view uses aggregate/process-level metadata only. Sensitive HR data is not shown.</p>
+      </div>
+
+      <div class="section-title">Dashboard Build Summary</div>
+      <div class="status-bar" data-searchable data-tags="overview summary build status pass preview sections verify">
+        <div class="status-item">
+          <span class="status-label">PASS Sections Built</span>
+          <span class="status-value" style="color:var(--pass);">5</span>
+          <span class="status-sub">Doc Register · Skills · Handover · Overview · Recurring Issues</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Pending Varmen Review</span>
+          <span class="status-value" style="color:var(--amber);">5</span>
+          <span class="status-sub">All PREVIEW tabs — visual layout review outstanding</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Excluded / Blocked / AMBER</span>
+          <span class="status-value" style="color:var(--blocked);">5</span>
+          <span class="status-sub">Team Table · Leave Requests · Onboarding · KPI Schedule · Decisions</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Open [VERIFY] Items</span>
+          <span class="status-value">9</span>
+          <span class="status-sub">Admin Manager (1–5) · MD requirements (6–7) · Director (8) · HR/EOD tools (9)</span>
+        </div>
+      </div>
+
+      <div class="status-bar" data-searchable data-tags="overview sources registered member workbenches active draft blocked document register skills">
+        <div class="status-item">
+          <span class="status-label">Sources Registered</span>
+          <span class="status-value">22</span>
+          <span class="status-sub">Most READY · 2 PENDING · 1 SUPERSEDED</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Member Workbenches</span>
+          <span class="status-value">2 / 4</span>
+          <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: DRAFT · Rajiv: BLOCKED</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Document Register Rows</span>
+          <span class="status-value">20</span>
+          <span class="status-sub">Real repo file metadata only — no draft paths used</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Skills in Register</span>
+          <span class="status-value">5</span>
+          <span class="status-sub">management-gap-detection · kpi-axiom-review-support · policy-lookup · recruitment-quality-check · management-problem-analysis</span>
+        </div>
+      </div>
+
+      <div class="section-title">All Dashboard Sections — Build Status</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;" data-searchable data-tags="overview section build status table team leave onboarding kpi decisions pass fail amber blocked out">
+        <table class="review-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Section</th>
+              <th>Build Status</th>
+              <th>Tab / Location</th>
+              <th>Reason / Known Limit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Document Register Preview</strong></td>
+              <td><span class="badge badge-pass">PASS — PREVIEW</span></td>
+              <td>Document Register tab</td>
+              <td>20 rows — real repo file metadata only; no Varmen draft paths used</td>
+            </tr>
+            <tr>
+              <td><strong>Skills Register Preview</strong></td>
+              <td><span class="badge badge-pass">PASS — PREVIEW</span></td>
+              <td>Skills Register tab</td>
+              <td>5 skills — metadata only; usage counts hidden (no tracking source confirmed)</td>
+            </tr>
+            <tr>
+              <td><strong>Handover Preview</strong></td>
+              <td><span class="badge badge-pass">PASS — PREVIEW</span></td>
+              <td>Handover Preview tab</td>
+              <td>Real handover/evidence/validation file metadata; no Varmen sample values used</td>
+            </tr>
+            <tr>
+              <td><strong>Overview Preview</strong></td>
+              <td><span class="badge badge-pass">PASS — PREVIEW</span></td>
+              <td>Overview tab (this tab)</td>
+              <td>Aggregate/process-level metadata only; no individual or HR data; built 2026-07-03</td>
+            </tr>
+            <tr>
+              <td><strong>Recurring Issues Preview</strong></td>
+              <td><span class="badge badge-pass">PASS — PREVIEW</span></td>
+              <td>Recurring Issues tab</td>
+              <td>Process-level scope records only; no personal names; no Varmen sample counts; built 2026-07-03</td>
+            </tr>
+            <tr>
+              <td><strong>Team Table</strong></td>
+              <td><span class="badge badge-blocked">FAIL — BLOCKED</span></td>
+              <td>Not built</td>
+              <td>RED — individual names, leave balances, KPI dates, onboarding steps; HR data access rules required before any build</td>
+            </tr>
+            <tr>
+              <td><strong>Leave Requests</strong></td>
+              <td><span class="badge badge-blocked">OUT OF SCOPE</span></td>
+              <td>Not built</td>
+              <td>Varmen confirmed 2026-07-02 — not required for current dashboard build; do not collect leave data</td>
+            </tr>
+            <tr>
+              <td><strong>Onboarding Tracker</strong></td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Not built</td>
+              <td>Domain boundary (Suman vs Mayurika) unconfirmed; 5-step definition not source-backed; individual names add RED layer</td>
+            </tr>
+            <tr>
+              <td><strong>KPI Schedule</strong></td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Not built</td>
+              <td>Lead names and actual review dates need source confirmation; Arun scope required before build</td>
+            </tr>
+            <tr>
+              <td><strong>Decisions</strong></td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Not built</td>
+              <td>Approval attribution requires CLAUDE.md §18 routing; Varmen valid for historical decisions only</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;" data-searchable data-tags="overview limits read only no sensitive data no varmen sample counts">
+        <h3 style="color:#15803d;">Overview Preview Limits</h3>
+        <ul style="color:#166534;">
+          <li>This view uses aggregate/process-level metadata only — no personal staff or HR data is shown</li>
+          <li>All counts derived from real repository files: <code>evidence/source-register.md</code>, validation records, handover files, <code>skills/</code> folder, and section tracking in this dashboard</li>
+          <li>Varmen draft sample counts (23, 3, 6/6, "4d ago", Day 187) are not used anywhere on this tab</li>
+          <li>No [VERIFY] items were resolved to build this preview — all 9 open items preserved</li>
+          <li>Varmen visual review of all PREVIEW tabs is still pending — this tab is not final approval</li>
+          <li>Dashboard remains read-only — no forms, no edit/save/delete buttons, no backend</li>
+        </ul>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>Commit the updated files; redeploy to Netlify (publish directory <code>web-view/</code>, no build step); visually inspect all five PREVIEW tabs (Document Register, Skills Register, Handover, Overview, Recurring Issues) in the browser; then route to Varmen for visual layout review when available.</p>
+      </div>
+
+    </div><!-- /tab-overview-preview -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 13 — RECURRING ISSUES PREVIEW
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-recurring-issues" role="tabpanel">
+
+      <div class="how-to-box">
+        <h3>Recurring Issues Preview — Read-Only</h3>
+        <p>This tab shows process-level scope blockers, outstanding review items, and recorded management action patterns. It is <strong>read-only</strong> and uses only real repository records.</p>
+        <ul>
+          <li>Sources used: <code>intelligence-inbox/recurring-issues/</code>, <code>intelligence-inbox/management-action-records/</code>, validation records, and handover files.</li>
+          <li>Varmen draft issue titles and report counts ("KPI meetings late — 11 reports", "Duplicate onboarding docs — 4 reports", "Leave requests lost — 3 reports") are <strong>not used</strong> — those are sample placeholder data only.</li>
+          <li>No personal staff names, leave records, KPI scores, disciplinary details, or PDPA data appear here.</li>
+        </ul>
+        <p style="margin-top:10px;font-size:.78rem;color:#0c4a6e;font-style:italic;">Issue counts are shown only when backed by real records. Varmen draft sample counts are not used.</p>
+      </div>
+
+      <div class="warning-box" data-searchable data-tags="recurring issues safety note no personal data no varmen sample counts sensitive data check">
+        <h3>What this tab does NOT show</h3>
+        <ul>
+          <li>Staff names, individual leave records, or medical/sick details</li>
+          <li>Disciplinary narrative, candidate personal data, or salary information</li>
+          <li>Varmen draft report counts (11, 4, 3) — those are placeholder sample data; no real file confirms them</li>
+          <li>Invented or assumed recurring issues — only real repository records are shown here</li>
+        </ul>
+      </div>
+
+      <div class="section-title">Dashboard Scope — Process-Level Records</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;margin-bottom:20px;" data-searchable data-tags="recurring issues scope blockers team table leave onboarding kpi decisions verify pending management action records">
+        <table class="review-table" style="width:100%;min-width:900px;">
+          <thead>
+            <tr>
+              <th>Issue / Scope Item</th>
+              <th>Status</th>
+              <th>Owner / Domain</th>
+              <th>Evidence Path</th>
+              <th>Next Step</th>
+              <th>Known Limit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>Team Table — BLOCKED</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">Individual staff data is RED — names, leave balances, KPI dates, onboarding steps</span>
+              </td>
+              <td><span class="badge badge-blocked">FAIL</span></td>
+              <td>Mareenraj / HR</td>
+              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td>Build only after HR data access rules confirmed and anonymisation approach agreed with domain owner</td>
+              <td>Individual names, leave balances, KPI dates, and onboarding steps must never be shown without approved access rules</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Leave Requests — Out of Scope</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">Varmen confirmed not required for current dashboard build (2026-07-02)</span>
+              </td>
+              <td><span class="badge badge-blocked">OUT</span></td>
+              <td>Varmen</td>
+              <td class="mono">evidence/stakeholder-confirmations/<br>varmen-dashboard-no-leave-tables-2026-07-02.md</td>
+              <td>Do not build; do not collect leave data for dashboard purposes</td>
+              <td>Leave source and access questions are no longer required for this dashboard build</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Onboarding Tracker — Domain Boundary Unconfirmed</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">Suman vs Mayurika boundary unconfirmed; 5-step definition not source-backed</span>
+              </td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Suman / Mayurika</td>
+              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td>Confirm Suman–Mayurika domain boundary; confirm 5-step definition against OLOS (SRC-MD-SUMAN-001) before any build</td>
+              <td>Individual new joiner names add RED layer; step definitions must be source-backed</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>KPI Schedule — Source Not Confirmed</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">Lead names and review dates need source confirmation; Arun scope required</span>
+              </td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Arun / Mayurika</td>
+              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td>Confirm KPI date source with Mayurika (scheduling) and Arun (KPI scope); confirm whether lead names can be shown</td>
+              <td>Team name and cadence are PASS-safe; lead names and actual review dates remain AMBER until confirmed</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Decisions — Approval Attribution Required</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">CLAUDE.md §18 routing required; Varmen valid for historical decisions only</span>
+              </td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Domain owner per CLAUDE.md §18</td>
+              <td class="mono">evidence/dashboard-discovery/<br>varmen-draft-dashboard-table-data-requirements-2026-07-02.md</td>
+              <td>Route new decisions to domain owners per CLAUDE.md §18 before publishing in dashboard</td>
+              <td>Historical Varmen approvals are valid for past decisions only; new decisions must cite current domain owner</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Varmen Visual Review — Pending</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">All 5 built PREVIEW sections await Varmen visual layout confirmation</span>
+              </td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Varmen</td>
+              <td class="mono">handover/2026-06-30__web-view-dashboard-closure.md</td>
+              <td>Route to Varmen for visual layout review when available; no content changes required — layout review only</td>
+              <td>Not a data or safety issue — pending visual layout approval only; not final approval</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Open [VERIFY] Items — 9 Unresolved</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">Admin Manager (1–5), MD requirements (6–7), Director authority (8), HR/EOD tool names (9)</span>
+              </td>
+              <td><span class="badge badge-verify">[VERIFY]</span></td>
+              <td>Domain owners per CLAUDE.md §14 &amp; §18</td>
+              <td class="mono">context/verify-register.md</td>
+              <td>Items 1–5: receive SRC-ADMIN-001; Items 6–7: conduct MD review meeting; Item 8: Director interview; Item 9: Mayurika confirms tool names</td>
+              <td>No [VERIFY] items were resolved by this dashboard build — all 9 remain open</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Management Action Items Open — MD Discussion 22 June 2026</strong><br>
+                <span style="font-size:.76rem;color:var(--muted);">11 action items: management documentation, Rajiv visibility, Technical Team stand-ups, Developer monitoring, LLM compliance</span>
+              </td>
+              <td><span class="badge badge-amber">AMBER</span></td>
+              <td>Mayurika (HR domain owner)</td>
+              <td class="mono">intelligence-inbox/management-action-records/<br>mayurika-hr/2026-06-22_mayurika-hr_md-discussion_management-structure-llm-compliance.md</td>
+              <td>Mayurika to review record, assign due dates to all 11 action items, and begin tracking progress in the folder</td>
+              <td>Record not yet reviewed by Mayurika; no due dates assigned; reviewer confirmation [VERIFY] pending</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Recurring Issues Folder Status</div>
+      <div class="scope-box" data-searchable data-tags="recurring issues folder skeleton readme status intelligence-inbox">
+        <h4>intelligence-inbox/recurring-issues/</h4>
+        <p><strong>Status: SKELETON ONLY</strong> — This folder contains a README only. No recurring issue pattern files have been filed yet. Items must originate from real observations or stakeholder statements before being added here. The folder is intentionally empty at this stage per the README pass/fail rule.</p>
+        <p style="margin-top:8px;font-size:.8rem;color:var(--muted);">When real recurring patterns are observed or reported during stakeholder engagement, they should be added to this folder with date, description, and observation source. No issue should be treated as confirmed until reviewed by the relevant domain owner.</p>
+      </div>
+
+      <div class="warning-box" style="background:#f0fdf4;border-color:#bbf7d0;border-left-color:#16a34a;" data-searchable data-tags="recurring issues limits read only no personal data no varmen sample counts">
+        <h3 style="color:#15803d;">Recurring Issues Preview Limits</h3>
+        <ul style="color:#166534;">
+          <li>Issue counts shown only when backed by real records — Varmen draft sample counts (11, 4, 3 reports) are not used anywhere on this tab</li>
+          <li>No personal staff names, leave records, salary, health, PDPA, candidate, or disciplinary data are shown</li>
+          <li>Scope blockers derive from real discovery and validation records only (<code>evidence/dashboard-discovery/</code>, <code>evidence/stakeholder-confirmations/</code>)</li>
+          <li>Management action record item derives from a real filed record in <code>intelligence-inbox/management-action-records/mayurika-hr/</code> (2026-06-22)</li>
+          <li>No [VERIFY] items were resolved to build this preview — all 9 open items preserved</li>
+          <li>Varmen visual review of this tab is still pending — not final approval</li>
+          <li>Dashboard remains read-only — no forms, no edit/save/delete buttons, no backend</li>
+        </ul>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>Commit the updated files; redeploy to Netlify (publish directory <code>web-view/</code>, no build step); visually inspect the Recurring Issues Preview tab; then route to Varmen for visual layout review when available. When real recurring issues are observed or reported, add them to <code>intelligence-inbox/recurring-issues/</code> with date and observation source.</p>
+      </div>
+
+    </div><!-- /tab-recurring-issues -->
 
   </main>
 
