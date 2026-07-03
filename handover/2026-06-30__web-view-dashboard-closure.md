@@ -2,10 +2,10 @@
 name: web-view-dashboard-closure
 type: handover-closure
 created: 2026-06-30
-last-updated: 2026-07-01
+last-updated: 2026-07-03
 created-by: Mareenraj (builder)
 requirement-id: web-view-html-dashboard-creation
-status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; Mayurika HR Daily Control Panel added 2026-07-01; DWC sanity check pending; ready for Netlify deployment
+status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; Mayurika HR Daily Control Panel added 2026-07-01; DWC sanity check pending; Professional UI polish applied 2026-07-03; Varmen visual review pending; ready for Netlify deployment
 ---
 
 # Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, Arun ACTIVE Update, Markdown Viewer Addition, and Mayurika HR Daily Control Panel
@@ -848,6 +848,67 @@ All 12 open [VERIFY] items from `context/verify-register.md` remain open in the 
 **Validation path:** `validation/varmen-document-register-preview-build-check.md`
 
 **Next step:** Commit updated files; redeploy to Netlify to publish the Document Register Preview tab. Then route to Varmen for visual layout review. After Varmen confirms, choose the next PASS section (Skills, Handover, Recurring Issues, or Overview) to build.
+
+---
+
+## Professional UI Polish Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| CSS variables | Added `--preview`, `--preview-bg`, `--shadow-md`, `--shadow-hover`, `--text-secondary`, `--accent-light`, `--topbar-border`, `--radius-sm`; tightened `--border`, `--accent`, `--pass`, `--amber` colours |
+| Topbar | Gradient background (`#0f172a → #1e293b`), taller (60px), dot indicator on logo, subtitle updated to "Foundation Draft v0.1 — Read-Only Preview", badge changed to "READ ONLY", date updated to 2026-07-03 |
+| Tab bar | Hover bg tint, active tab bg tint (`--accent-light`), `top` updated to 60px, horizontal scrollbar hidden |
+| Cards | Hover shadow lift + `translateY(-2px)` transition added |
+| Tables | Zebra striping on even rows, darker header bg (`#f1f5f9`), 2px bottom border on `th`, accent-tinted row hover (`#f0f6ff`) |
+| Badges | All badge classes now have a 1px border for professional differentiation |
+| New `badge-preview` CSS | Teal/sky colour — distinct from amber |
+| New `tab-badge-preview` CSS | Applied to Document Register tab (replaced `tab-badge-amber`) |
+| Status bar | Better label/value sizing, `min-width: 100px`, `--shadow-md` |
+| Member header | Larger h2, uppercase role-label, better status note colour |
+| Blocked banner | Gradient bg, `border-top: 4px`, centred text with `max-width: 560px` |
+| Amber items | Hover shadow, better title/body/action colours |
+| File list / scope boxes | h4 gets bottom border separator, path bg changed to `#eff6ff` with blue border |
+| Details/summary (file map) | Open state: accent bg tint, `.details-body` has light bg, bottom border radius |
+| How-to / next-step / result boxes | Gradient backgrounds, stronger heading weights |
+| Source rows | Transition + hover state |
+| Safety strip | Added between search strip and tab panels — "Read-only Management AIOS preview. Sensitive HR data, leave records, onboarding records, KPI scores, and staff personal data are not shown." |
+| Dashboard footer | Added above JS block — reads: "Management AIOS — Foundation Draft v0.1 · No sensitive HR data, leave records, KPI scores, or staff personal data are shown in this preview" |
+| Mobile | Topbar-right hidden on ≤640px; safety strip wraps |
+
+**Evidence path:** `evidence/stakeholder-confirmations/dashboard-professional-ui-polish-request-2026-07-02.md`
+**Validation path:** `validation/dashboard-professional-ui-polish-check.md`
+**Dashboard check updated:** `validation/web-view-html-dashboard-check.md` — §31 added
+
+**Sensitive-data check:**
+
+| Category | Present? |
+|---|---|
+| Individual staff names | NO |
+| Salary or compensation data | NO |
+| KPI scores or AXIOM band placements | NO |
+| Leave balances or leave records | NO |
+| Health, medical, or grievance data | NO |
+| PDPA personal data | NO |
+| Candidate personal data | NO |
+| Varmen sample HR rows or draft file names | NO |
+
+**Read-only check:**
+
+| Check | Result |
+|---|---|
+| No forms added | CONFIRMED |
+| No edit/save/delete buttons added | CONFIRMED |
+| No backend or external data calls | CONFIRMED |
+| Static HTML/CSS/JS only | CONFIRMED |
+| Table data unchanged | CONFIRMED |
+| [VERIFY] items resolved | NONE |
+| CLAUDE.md, source-register.md, verify-register.md | NOT TOUCHED |
+
+Overall result: PASS — AMBER until Varmen reviews the updated visual layout
+
+Next step: Commit updated files; redeploy to Netlify (publish directory `web-view/`, no build step); visually inspect the dashboard in browser; then route to Varmen for visual layout review when available.
 
 ---
 

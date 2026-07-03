@@ -861,8 +861,43 @@ Leave request submission; Probation review request; Confirmation recommendation;
 
 ---
 
+## § 31 — Dashboard Professional UI Polish Check (2026-07-03)
+
+**Task:** Apply professional, executive-ready visual polish to `web-view/index.html`. UI-only — no data or truth changes.
+**Evidence path:** `evidence/stakeholder-confirmations/dashboard-professional-ui-polish-request-2026-07-02.md`
+**Validation path:** `validation/dashboard-professional-ui-polish-check.md`
+
+| Check | Result |
+|---|---|
+| UI polish completed (CSS and HTML improvements) | YES |
+| Business / data truth changed | NO |
+| New blocked table built | NO |
+| Fake / sample HR data added | NO |
+| Document Register rows changed | NO — 20 rows unchanged |
+| Sensitive data (staff names, salary, health, PDPA, KPI scores, leave records) added | NO |
+| [VERIFY] items resolved | NONE — all 9 open items preserved |
+| CLAUDE.md changed | NO |
+| evidence/source-register.md changed | NO |
+| context/verify-register.md changed | NO |
+| Mayurika workbench tab badge changed | NO — remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Backend or external CDN added | NO |
+| Edit/save/delete buttons added | NO |
+| Safety note added (strip + footer) | YES — "Read-only Management AIOS preview. Sensitive HR data, leave records, onboarding records, KPI scores, and staff personal data are not shown." |
+| `tab-badge-preview` (teal/sky) added for Document Register | YES — distinct from amber |
+| Topbar date updated to 2026-07-03 | YES |
+| Dashboard read-only status | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+| PASS/AMBER preserved | YES |
+
+Check result: PASS — AMBER until Varmen reviews the updated visual layout
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Mayurika checklist verbatim wording applied 2026-07-02 — dashboard updated to reflect verbatim wording applied; confirmation pending; labels A–E preserved; no synonym substitution. Attendance Dashboard card removed 2026-07-02 — card passed through NOT REQUIRED NOW (pause), NOT REQUIRED (no replacement), then removed from visible dashboard per user request; historical evidence files retained; no replacement feature built. Mayurika checklist full body replacement applied 2026-07-02 — entire old checklist body removed; Mayurika-provided text inserted exactly; dashboard updated to reflect replacement; confirmation pending. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Mayurika checklist verbatim wording applied 2026-07-02 — dashboard updated to reflect verbatim wording applied; confirmation pending; labels A–E preserved; no synonym substitution. Attendance Dashboard card removed 2026-07-02 — card passed through NOT REQUIRED NOW (pause), NOT REQUIRED (no replacement), then removed from visible dashboard per user request; historical evidence files retained; no replacement feature built. Mayurika checklist full body replacement applied 2026-07-02 — entire old checklist body removed; Mayurika-provided text inserted exactly; dashboard updated to reflect replacement; confirmation pending. Professional UI polish applied 2026-07-03 — CSS/HTML visual improvements only; gradient topbar, card hover effects, table zebra rows, improved badges with borders, new preview badge (teal), safety strip, dashboard footer, better typography; no data truth changed; no sensitive data added; no [VERIFY] items resolved. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
