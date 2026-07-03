@@ -1126,6 +1126,49 @@ Next step: Commit updated files; redeploy to Netlify (publish directory `web-vie
 
 ---
 
+## Handover Preview UI Polish Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+| --- | --- |
+| Request source | User — screenshot with instruction "change this Ugly ui to good" |
+| Section affected | Handover Preview tab — Current Handover Summary area only |
+| CSS added | `.handover-summary-grid` (responsive grid), `.hov-card` family (5 colour-coded variants: pass, amber, blocked, verify, meta), `.hov-amber-notice` (compact amber pill), mobile breakpoint rule |
+| HTML change | `.status-bar` / `.stat-card` summary block replaced with `.handover-summary-grid` / `.hov-card` professional metric cards |
+| Amber warning | Heavy yellow paragraph replaced with compact `.hov-amber-notice` pill — same wording, lighter visual weight |
+| Table spacing | `margin-top: 8px` added to Handover Table section title |
+| Summary values | UNCHANGED — 3, 3, 4, 9, 2 preserved exactly |
+| Handover table rows | UNCHANGED — all 9 rows preserved |
+| Evidence/validation paths | UNCHANGED — all paths preserved |
+| Evidence file created | `evidence/stakeholder-confirmations/dashboard-handover-ui-polish-request-2026-07-03.md` |
+| Validation file created | `validation/dashboard-handover-ui-polish-check.md` |
+| Dashboard check updated | `validation/web-view-html-dashboard-check.md` — §36 added |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+| --- | --- |
+| Sensitive data (staff names, salary, health, PDPA, leave records, disciplinary) | NOT ADDED |
+| Business / data truth changed | NO |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| New blocked table built | NO |
+| CLAUDE.md / source-register.md / verify-register.md | NOT TOUCHED |
+| Dashboard read-only status | PRESERVED |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/dashboard-handover-ui-polish-request-2026-07-03.md`
+**Validation path:** `validation/dashboard-handover-ui-polish-check.md`
+
+**Next step:** Refresh the browser (127.0.0.1:5500/web-view/index.html) and visually inspect the Handover Preview tab to confirm the new metric card grid and amber notice pill display correctly.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
