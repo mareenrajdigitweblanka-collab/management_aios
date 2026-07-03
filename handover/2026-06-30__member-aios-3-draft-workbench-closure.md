@@ -120,7 +120,7 @@ A clean LLM reading `member-aios/` after this task should be able to answer:
 | Rajiv workbench blocked | SRC-ADMIN-001 PENDING — no Admin Manager documents received | Admin Manager to supply documents |
 | Mayurika checklist exact wording pass | Checklist corrections applied 2026-07-01 — 17 sections added. Exact wording applied 2026-07-01 — Mayurika's wording applied to all 17 sections; Standard Evidence Template replaced; Exact Wording Note at top; status DRAFT — Mayurika exact wording applied; re-review pending. Validation: `validation/mayurika-checklist-exact-wording-correction-check.md` | COMPLETE — re-review pending |
 | Mayurika checklist user-provided text replacement | All 17 wrong/paraphrased sections removed and replaced with exact user-provided text (2026-07-02). Damaged EOD line fixed. Original sections renumbered (9–25 → 4–16). Standard Evidence Template and Missing Governance Controls inserted from exact user-provided text. Status updated to `DRAFT — exact user-provided checklist text applied; Mayurika confirmation pending 2026-07-01`. Validation: `validation/mayurika-checklist-user-text-replacement-check.md` | COMPLETE — Mayurika confirmation pending |
-| Mayurika re-review pending | Checklist corrected; WORKBENCH.md and quick-reference-sources.md still DRAFT — Mayurika must re-review all three files before ACTIVE | Mayurika |
+| Mayurika workbench and quick reference activated 2026-07-03 | Mayurika approved WORKBENCH.md and quick-reference-sources.md on 2026-07-03. Both files marked ACTIVE. Evidence: `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md`. Validation: `validation/mayurika-workbench-quick-reference-activation-check.md`. [VERIFY] item 12 (exact tool names) remains open. | COMPLETE |
 | Suman review completed | Three recruitment workbench files are ACTIVE — Suman Reviewed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` | COMPLETE |
 | Arun review completed — root propagation complete 2026-06-30 | Arun reviewed 2026-06-30; workbench ACTIVE; items 8, 9, 10 confirmed at member workbench layer and root propagated 2026-06-30. Source registered as SRC-ARUN-CONF-001 (READY). Root CLAUDE.md §7.3/§7.4/§7.8/§14, context/verify-register.md (items 8, 9, 10 resolved), context/kpi-axiom-context.md, and evidence/source-register.md updated. Item 9 propagated with escalation authority scope limit preserved. Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md` | COMPLETE |
 | Bonus queryability soft conflict | SRC-MD-ARUN-001 §11.11 extends §7.9 bonus conditions — relationship not yet confirmed | Varmen confirmation recommended — see validation/md-arun-discussion-conflict-check.md |
@@ -133,7 +133,7 @@ A clean LLM reading `member-aios/` after this task should be able to answer:
 
 | Domain | Reviewer | Status |
 |---|---|---|
-| HR / leave / staff records / PDPA / EOD / SKILL compliance | Mayurika / Mayuri | PENDING |
+| HR / leave / staff records / PDPA / EOD / SKILL compliance | Mayurika / Mayuri | ACTIVE — Mayurika Reviewed 2026-07-03 |
 | Recruitment / onboarding / probation / 6-month ROI | Suman | ACTIVE — Suman Reviewed 2026-06-30 |
 | KPI / AXIOM / ROI / implementation / incident management | Arun | ACTIVE — Arun Reviewed 2026-06-30 |
 | Admin Manager / escalation / PRC | Rajiv — only after SRC-ADMIN-001 received | BLOCKED |
@@ -256,13 +256,19 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 - Dashboard: `web-view/index.html` — checklist description, Review Queue action 2, and AMBER 2 updated to reflect ACTIVE checklist
 - Next step: commit and redeploy dashboard to Netlify
 
-One domain review remains pending (paused):
+**Mayurika workbench review completed 2026-07-03.** Mayurika approved WORKBENCH.md and quick-reference-sources.md on 2026-07-03. Both files marked ACTIVE.
 
-1. **Mayurika:** When available — re-review `member-aios/mayurika-hr/daily-weekly-checklist.md`; confirm WORKBENCH.md and quick-reference-sources.md; confirm 5 preview HR useful tables; confirm NSLP skill update candidate.
+- Evidence: `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md`
+- Validation: `validation/mayurika-workbench-quick-reference-activation-check.md`
+- [VERIFY] item 12 (exact tool names for HR records system and EOD dashboard) remains open — not separately confirmed during this review.
 
 **No further work on Attendance Dashboard** unless Mayurika raises a new, separate requirement in the future. If she does, treat it as a new feature request from scratch.
 
-Once Mayurika confirms, update WORKBENCH.md status from DRAFT to ACTIVE and update preview table statuses to ACTIVE.
+**Remaining open items for Mayurika's domain:**
+- Confirm 5 preview HR useful tables when available.
+- Confirm NSLP skill update candidate when available.
+- Confirm exact tool names for HR records system and EOD dashboard to resolve [VERIFY] item 12.
+- Commit and redeploy dashboard to Netlify to publish Mayurika ACTIVE status.
 
 **Root propagation complete 2026-06-30:** Root `context/verify-register.md`, CLAUDE.md, `context/kpi-axiom-context.md`, and `evidence/source-register.md` updated with Arun's confirmed items 8 (ACOS threshold: ACOS below 25% / ROAS 4), 9 (Operational Manager escalation authority: firm commitment with deadline to achieve required ROI — escalation only; full PRC scope remains [VERIFY] pending dedicated source), and 10 (Implementation Officer – Arunraj; Paraparan as External Auditor). Source registered as SRC-ARUN-CONF-001 (READY). All propagation scope limits preserved.
 

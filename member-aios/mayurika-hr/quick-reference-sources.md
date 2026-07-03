@@ -4,7 +4,7 @@ type: quick-reference
 member: Mayurika / Mayuri
 role: HR Officer
 created: 2026-06-30
-status: DRAFT — Pending Mayurika review
+status: ACTIVE — Mayurika Reviewed 2026-07-03
 root-truth: CLAUDE.md — canonical; this file is a pointer index only
 ---
 

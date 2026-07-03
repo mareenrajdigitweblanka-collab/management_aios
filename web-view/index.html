@@ -1485,7 +1485,7 @@
     </button>
     <button class="tab-btn" data-tab="mayurika-hr" role="tab" aria-selected="false">
       Mayurika HR
-      <span class="tab-badge tab-badge-draft">DRAFT</span>
+      <span class="tab-badge tab-badge-active">ACTIVE</span>
     </button>
     <button class="tab-btn" data-tab="suman-recruitment" role="tab" aria-selected="false">
       Suman Recruitment
@@ -1624,7 +1624,7 @@
         <div class="status-item">
           <span class="status-label">Member Workbenches</span>
           <span class="status-value">3 / 4</span>
-          <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: DRAFT · Rajiv: BLOCKED</span>
+          <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: ACTIVE · Rajiv: BLOCKED</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
@@ -1732,23 +1732,22 @@
         <h3>Overall Result: PASS — AMBER noted</h3>
         <p>
           The Management AIOS Foundation Draft v0.1 is structurally complete. Arun's workbench is ACTIVE — Arun Reviewed
-          2026-06-30. Suman's workbench is now ACTIVE — Suman Reviewed 2026-06-30. Mayurika workbench remains DRAFT
-          pending her review. All source pointers are correct. No sensitive data is stored. No policy text is
+          2026-06-30. Suman's workbench is ACTIVE — Suman Reviewed 2026-06-30. Mayurika's workbench is now ACTIVE —
+          Mayurika Reviewed 2026-07-03. All source pointers are correct. No sensitive data is stored. No policy text is
           duplicated. Reviewer routing is correctly configured per CLAUDE.md §18.
           <br><br>
           <strong>Commit:</strong> <code>db06f7d</code> — Branch: <code>individual-aios</code>
           <br><br>
           <strong>AMBER:</strong> Root propagation of Arun's confirmations (items 8, 9, 10) complete 2026-06-30 —
           SRC-ARUN-CONF-001 registered; CLAUDE.md, source-register.md, verify-register.md, and kpi-axiom-context.md
-          updated. Mayurika domain review remains pending. Rajiv / Admin Manager workbench remains blocked pending
+          updated. Mayurika domain review complete 2026-07-03. Rajiv / Admin Manager workbench remains blocked pending
           SRC-ADMIN-001.
         </p>
       </div>
 
       <div class="next-step-box">
         <h3>What should I do next?</h3>
-        <p>Go to the <strong>Review Queue</strong> tab — Arun and Suman reviews are complete; root propagation (action
-          4) is complete. Next priority: <strong>Mayurika's workbench review</strong> (action 2).</p>
+        <p>All domain owner workbench reviews are complete (Arun, Suman, Mayurika). Rajiv workbench remains blocked pending SRC-ADMIN-001. Next: commit and redeploy to Netlify to publish Mayurika ACTIVE status.</p>
       </div>
 
     </div><!-- /tab-root-aios -->
@@ -1759,21 +1758,19 @@
   ══════════════════════════════════ -->
     <div class="tab-panel" id="tab-mayurika-hr" role="tabpanel">
 
-      <div class="member-header" data-searchable data-tags="mayurika hr officer draft pending review">
+      <div class="member-header" data-searchable data-tags="mayurika hr officer active reviewed 2026-07-03">
         <div class="member-header-info">
           <h2>Mayurika / Mayuri</h2>
           <div class="role-label">HR Officer — Primary custodian of staff records, PDPA compliance, and HR workflows
           </div>
           <div class="status-note">
-            <strong>Status:</strong> DRAFT — Pending Mayurika review.<br>
-            <span style="color:var(--muted); font-size:.8rem;">This means the workbench files have been created based on
-              source documents, but Mayurika has not yet reviewed them to confirm they are accurate and complete. They
-              should not be treated as approved until she has reviewed and confirmed.</span>
+            <strong>Status:</strong> ACTIVE — Mayurika Reviewed 2026-07-03.<br>
+            <span style="color:var(--muted); font-size:.8rem;">Mayurika approved WORKBENCH.md and quick-reference-sources.md on 2026-07-03. Evidence: <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code>. [VERIFY] item 12 (exact tool names) remains open.</span>
           </div>
         </div>
         <div class="member-header-badges">
-          <span class="badge badge-draft">DRAFT</span>
-          <span class="badge badge-pending">Pending Mayurika Review</span>
+          <span class="badge badge-pass">ACTIVE</span>
+          <span class="badge badge-pass">Mayurika Reviewed 2026-07-03</span>
           <span class="badge badge-verify">[VERIFY] Item 12 open</span>
         </div>
       </div>
@@ -1807,7 +1804,7 @@
               <div class="fdesc">Operational checklist — daily and weekly tasks Mayurika is responsible for.
                 <strong>ACTIVE — Mayurika confirmed replacement checklist 2026-07-02.</strong> Evidence:
                 <code>evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code>.
-                WORKBENCH.md and quick-reference-sources.md remain DRAFT pending full workbench review.
+                WORKBENCH.md and quick-reference-sources.md — ACTIVE — Mayurika Reviewed 2026-07-03.
               </div>
             </div>
           </li>
@@ -2928,21 +2925,21 @@
               <td><span class="badge badge-pass">COMPLETED 2026-06-30</span></td>
             </tr>
             <tr data-searchable
-              data-tags="mayurika hr workbench checklist replacement provided text eod tool names verify 12 pending 2026-07-02">
+              data-tags="mayurika hr workbench quick-reference active reviewed 2026-07-03 completed">
               <td><strong>2</strong></td>
               <td><strong>Mayurika</strong></td>
               <td>
-                Confirm HR checklist replaced with Mayurika-provided text (2026-07-02) and confirm all three
-                workbench files are accurate.<br>
-                Priority: confirm replacement checklist text is correct; confirm evidence template fields; confirm exact
-                tool names for HR records system and EOD dashboard to resolve [VERIFY] item 12.<br>
-                <span style="font-size:.8rem;color:var(--pass);">Checklist status: ACTIVE — Mayurika confirmed
-                  replacement checklist 2026-07-02</span>
+                Mayurika reviewed and confirmed WORKBENCH.md and quick-reference-sources.md on 2026-07-03.<br>
+                <em>WORKBENCH.md</em> — ACTIVE — Mayurika Reviewed 2026-07-03 ✓<br>
+                <em>quick-reference-sources.md</em> — ACTIVE — Mayurika Reviewed 2026-07-03 ✓<br>
+                <em>daily-weekly-checklist.md</em> — ACTIVE — Mayurika confirmed replacement checklist 2026-07-02 ✓<br>
+                Evidence: <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code><br>
+                <span style="font-size:.8rem;color:var(--muted);">[VERIFY] item 12 (exact tool names) remains open — not separately confirmed during this review.</span>
               </td>
               <td class="mono">
                 member-aios/mayurika-hr/WORKBENCH.md<br>member-aios/mayurika-hr/daily-weekly-checklist.md<br>member-aios/mayurika-hr/quick-reference-sources.md
               </td>
-              <td><span class="badge badge-pending">PENDING</span></td>
+              <td><span class="badge badge-pass">COMPLETED 2026-07-03</span></td>
             </tr>
             <tr data-searchable
               data-tags="suman recruitment workbench weekly deliverables confirm review completed active 2026-06-30 8-point screening line manager">
@@ -2977,16 +2974,14 @@
               <td><span class="badge badge-pass">COMPLETED 2026-06-30</span></td>
             </tr>
             <tr data-searchable
-              data-tags="queryability review domain approval mayurika suman mareenraj builder after 2 3">
+              data-tags="queryability review domain approval mayurika suman arun all complete 2026-07-03">
               <td><strong>5</strong></td>
               <td><strong>Mareenraj (Builder)</strong></td>
               <td>
-                After Mayurika and Suman domain owner reviews are complete: update their WORKBENCH.md statuses from
-                DRAFT to ACTIVE, register any [VERIFY] resolutions as new sources, and update the source register and
-                verify register accordingly. Arun is already complete.
+                All domain owner workbench reviews now complete. Arun ACTIVE (2026-06-30), Suman ACTIVE (2026-06-30), Mayurika ACTIVE (2026-07-03). Rajiv remains BLOCKED pending SRC-ADMIN-001. Next: commit and redeploy to Netlify to publish Mayurika ACTIVE status.
               </td>
               <td class="mono">context/verify-register.md<br>evidence/source-register.md</td>
-              <td><span class="badge badge-pending">After items 2–3</span></td>
+              <td><span class="badge badge-pass">COMPLETED 2026-07-03</span></td>
             </tr>
           </tbody>
         </table>
@@ -3007,20 +3002,12 @@
           <div class="amber-item-action">COMPLETE — no further action required for items 8, 9, 10.</div>
         </div>
         <div class="amber-item" data-searchable
-          data-tags="amber mayurika hr workbench checklist active confirmed 2026-07-02 workbench quick-reference draft pending">
-          <div class="amber-item-title">AMBER 2 — Mayurika Checklist ACTIVE — WORKBENCH.md and
-            quick-reference-sources.md
-            Remain DRAFT (2026-07-02)</div>
-          <div class="amber-item-body">Mayurika confirmed the replacement checklist 2026-07-02. Checklist status: ACTIVE
-            — Mayurika confirmed replacement checklist 2026-07-02. Evidence:
-            <code>evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md</code>.
-            WORKBENCH.md and
-            quick-reference-sources.md remain DRAFT pending Mayurika's full workbench review. [VERIFY] item 12 (exact
-            tool names)
-            requires her direct confirmation.</div>
-          <div class="amber-item-action">Route WORKBENCH.md and quick-reference-sources.md to Mayurika for confirmation
-            when available. Confirm tool names to resolve [VERIFY]
-            item 12.</div>
+          data-tags="amber mayurika hr workbench quick-reference active reviewed 2026-07-03 verify 12 tool names open">
+          <div class="amber-item-title">AMBER 2 — Mayurika Workbench ACTIVE (2026-07-03) — [VERIFY] Item 12 Still Open</div>
+          <div class="amber-item-body">Mayurika approved WORKBENCH.md and quick-reference-sources.md on 2026-07-03. Both files are now ACTIVE. Evidence:
+            <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code>.
+            Checklist: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02. [VERIFY] item 12 (exact tool names for HR records system and EOD dashboard) was not separately confirmed during this review and remains open.</div>
+          <div class="amber-item-action">To resolve [VERIFY] item 12: ask Mayurika to confirm exact names of her HR records system and EOD dashboard tool. Once confirmed, notify Mareenraj to register as a new source in evidence/source-register.md.</div>
         </div>
         <div class="amber-item" data-searchable
           data-tags="amber bonus queryability soft conflict src-md-arun-001 src-arun-001">
@@ -3085,7 +3072,7 @@
 
       <!-- Member AIOS -->
       <div class="file-map-section" data-searchable
-        data-tags="member aios mayurika suman arun rajiv workbench draft blocked">
+        data-tags="member aios mayurika suman arun rajiv workbench active blocked">
         <details open>
           <summary>📁 member-aios/ — Member Workbenches</summary>
           <div class="details-body">
@@ -3093,15 +3080,17 @@
                 Folder overview, member list, status summary.</span><span class="badge badge-source"
                 style="font-size:.66rem;">ACTIVE</span></div>
             <details style="margin-top:6px;">
-              <summary style="font-size:.84rem; padding:8px 12px;">📁 mayurika-hr/ <span class="badge badge-draft"
-                  style="font-size:.62rem;">DRAFT</span></summary>
+              <summary style="font-size:.84rem; padding:8px 12px;">📁 mayurika-hr/ <span class="badge badge-pass"
+                  style="font-size:.62rem;">ACTIVE</span></summary>
               <div class="details-body">
                 <div class="file-entry"><span>📄</span><span
                     class="fpath">member-aios/mayurika-hr/WORKBENCH.md</span><span class="fdesc">— Mayurika domain
-                    workbench. Pending review.</span></div>
+                    workbench. ACTIVE — Mayurika Reviewed 2026-07-03.</span><span class="badge badge-pass"
+                    style="font-size:.62rem;">ACTIVE</span></div>
                 <div class="file-entry"><span>📄</span><span
                     class="fpath">member-aios/mayurika-hr/quick-reference-sources.md</span><span class="fdesc">— Source
-                    quick reference for Mayurika's domain.</span></div>
+                    quick reference for Mayurika's domain. ACTIVE — Mayurika Reviewed 2026-07-03.</span><span class="badge badge-pass"
+                    style="font-size:.62rem;">ACTIVE</span></div>
                 <div class="file-entry"><span>📄</span><span
                     class="fpath">member-aios/mayurika-hr/daily-weekly-checklist.md</span><span class="fdesc">— Daily
                     and weekly operational checklist.</span></div>
@@ -3392,7 +3381,7 @@
           <div class="md-card-check">
             <strong>What to check</strong>
             All four member workbench folders are listed (Mayurika, Suman, Arun, Rajiv). Status reflects: Arun ACTIVE,
-            Suman ACTIVE, Mayurika DRAFT, Rajiv BLOCKED.
+            Suman ACTIVE, Mayurika ACTIVE (reviewed 2026-07-03), Rajiv BLOCKED.
           </div>
           <div class="md-card-meta">
             <span>Owner: Mareenraj (builder)</span>
@@ -3403,7 +3392,7 @@
 
         <!-- Card 2: Mayurika HR Workbench -->
         <div class="card" data-searchable
-          data-tags="markdown viewer mayurika hr workbench draft pending review domain scope pdpa eod staff records skill compliance leadership">
+          data-tags="markdown viewer mayurika hr workbench active reviewed 2026-07-03 domain scope pdpa eod staff records skill compliance leadership">
           <div class="card-header">
             <div>
               <div
@@ -3411,22 +3400,21 @@
                 Card 2 of 6</div>
               <div class="card-title">Mayurika HR Workbench</div>
             </div>
-            <span class="badge badge-draft">DRAFT</span>
+            <span class="badge badge-pass">ACTIVE</span>
           </div>
           <div><span class="md-card-path">member-aios/mayurika-hr/WORKBENCH.md</span></div>
           <div class="card-note">Main workbench for the HR domain. Describes Mayurika's confirmed responsibilities —
             staff records, PDPA tracking, EOD monitoring, SKILL file compliance, leadership reviews, and Critic
-            Meetings. Created from source documents; awaiting Mayurika's review.</div>
+            Meetings. Mayurika reviewed and approved 2026-07-03.</div>
           <div class="md-card-check">
             <strong>What to check</strong>
-            Status is DRAFT — Mayurika has not yet reviewed this file. Confirm the domain scope list is accurate.
-            [VERIFY] item 12 (exact names of HR records system and EOD dashboard tools) requires her direct written
-            confirmation before status can move to ACTIVE.
+            Status is ACTIVE — Mayurika Reviewed 2026-07-03. Evidence: evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md.
+            [VERIFY] item 12 (exact names of HR records system and EOD dashboard tools) remains open — not separately confirmed during this review.
           </div>
           <div class="md-card-meta">
             <span class="badge badge-verify">[VERIFY] 12 Open</span>
             <span>Owner: Mareenraj (builder)</span>
-            <span>Reviewer: Mayurika — review pending</span>
+            <span>Reviewer: Mayurika — reviewed 2026-07-03</span>
           </div>
           <div class="md-viewonly-notice">View-only summary. Open / edit the actual file in VS Code.</div>
         </div>
@@ -3719,10 +3707,10 @@
               <td><code class="mono">member-aios/mayurika-hr/WORKBENCH.md</code></td>
               <td><code class="mono">member-aios/mayurika-hr/</code></td>
               <td>Mayurika (HR)</td>
-              <td><span class="badge badge-draft">DRAFT</span></td>
+              <td><span class="badge badge-pass">ACTIVE</span></td>
               <td>SRC-MAYU-001</td>
-              <td class="mono">2026-07-02</td>
-              <td>HR domain workbench; WORKBENCH.md and quick-reference-sources.md pending Mayurika review</td>
+              <td class="mono">2026-07-03</td>
+              <td>HR domain workbench; WORKBENCH.md and quick-reference-sources.md — ACTIVE — Mayurika Reviewed 2026-07-03</td>
             </tr>
             <tr>
               <td><code class="mono">member-aios/mayurika-hr/daily-weekly-checklist.md</code></td>
@@ -4258,7 +4246,7 @@
               <span>📄</span>
               <div>
                 <div class="fpath">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</div>
-                <div class="fdesc">Member AIOS 3-draft workbench creation closure — Mayurika DRAFT, Suman ACTIVE, Arun
+                <div class="fdesc">Member AIOS 3-draft workbench creation closure — Mayurika ACTIVE (2026-07-03), Suman ACTIVE, Arun
                   ACTIVE, Rajiv BLOCKED.</div>
               </div>
             </li>
@@ -4395,8 +4383,8 @@
         <div class="status-divider"></div>
         <div class="status-item">
           <span class="status-label">Member Workbenches</span>
-          <span class="status-value">2 / 4</span>
-          <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: DRAFT · Rajiv: BLOCKED</span>
+          <span class="status-value">3 / 4</span>
+          <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: ACTIVE · Rajiv: BLOCKED</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">

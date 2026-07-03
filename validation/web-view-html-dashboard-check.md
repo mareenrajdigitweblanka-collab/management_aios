@@ -1091,6 +1091,54 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## §37 — Mayurika Workbench and Quick Reference Activation Check (2026-07-03)
+
+**Change:** Mayurika approved WORKBENCH.md and quick-reference-sources.md on 2026-07-03. Both files marked ACTIVE. Dashboard updated throughout to reflect Mayurika ACTIVE status.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md`
+**Validation:** `validation/mayurika-workbench-quick-reference-activation-check.md`
+
+| Check | Result |
+|---|---|
+| Mayurika approval received | YES — user confirmed 2026-07-03 |
+| WORKBENCH.md status updated to ACTIVE | YES — frontmatter and §13 Next Step updated |
+| quick-reference-sources.md status updated to ACTIVE | YES — frontmatter updated |
+| Content body rewritten | NO — body preserved in both files |
+| [VERIFY] item 12 resolved | NO — remains open; tool names not separately confirmed |
+| CLAUDE.md updated | NO — not touched |
+| source-register.md updated | NO — not touched |
+| verify-register.md updated | NO — not touched |
+| Sensitive data added | NOT PRESENT |
+| Parent AIOS truth promoted | NO |
+| daily-weekly-checklist.md changed | NO — remains ACTIVE — Mayurika confirmed replacement checklist 2026-07-02 |
+| Mayurika tab badge changed to ACTIVE | YES — tab-badge-draft → tab-badge-active |
+| Member header status updated | YES — DRAFT → ACTIVE — Mayurika Reviewed 2026-07-03 |
+| File list WORKBENCH.md description updated | YES — no longer shows "pending full workbench review" |
+| Review Queue action 2 changed to COMPLETED | YES — COMPLETED 2026-07-03 |
+| Review Queue action 5 updated | YES — reflects Mayurika review now complete |
+| AMBER 2 updated to ACTIVE status | YES — reflects both files now ACTIVE; [VERIFY] item 12 still open |
+| File map mayurika-hr/ badge changed to ACTIVE | YES |
+| File map WORKBENCH.md and quick-reference entries updated | YES |
+| Markdown Viewer Card 2 badge changed to ACTIVE | YES |
+| Document Register row updated | YES |
+| Overview status bar Mayurika sub-text updated | YES — DRAFT → ACTIVE |
+| Overview member workbench count updated | YES — 2 / 4 → 3 / 4 |
+| Root AIOS overall result text updated | YES — reflects Mayurika now ACTIVE |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Arun remains ACTIVE | YES — unchanged |
+| Suman remains ACTIVE | YES — unchanged |
+| Sensitive-data check | PASS — no personal data, salary, health, disciplinary, or PDPA data added |
+| Duplicate-truth check | PASS — no policy text, KPI rules, or AXIOM bands reproduced |
+| [VERIFY] root register | 9 open items unchanged — none resolved |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| PASS/AMBER preserved | YES — overall result unchanged |
+| Netlify deployment wording | PRESERVED |
+
+**Check result: PASS**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

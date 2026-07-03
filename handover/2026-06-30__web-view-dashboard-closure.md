@@ -1126,6 +1126,57 @@ Next step: Commit updated files; redeploy to Netlify (publish directory `web-vie
 
 ---
 
+## Mayurika ACTIVE Dashboard Update Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika tab badge | Changed from DRAFT (tab-badge-draft) to ACTIVE (tab-badge-active) |
+| Mayurika member header | Status changed to ACTIVE — Mayurika Reviewed 2026-07-03; evidence path shown |
+| Mayurika member header badges | DRAFT and "Pending Mayurika Review" badges replaced with ACTIVE and "Mayurika Reviewed 2026-07-03" badges |
+| File list description (WORKBENCH.md and quick-reference-sources.md) | Updated — no longer shows "remain DRAFT pending full workbench review" |
+| Review Queue action 2 | Changed from PENDING to COMPLETED 2026-07-03 with evidence path |
+| Review Queue action 5 | Updated — Mayurika review now complete; Suman already complete; no further workbench reviews needed |
+| AMBER 2 | Updated title and body — both files now ACTIVE; [VERIFY] item 12 still open |
+| File map mayurika-hr/ folder badge | Changed from DRAFT to ACTIVE |
+| File map WORKBENCH.md and quick-reference-sources.md entries | Updated — "Pending review" → "ACTIVE — Mayurika Reviewed 2026-07-03" |
+| Markdown Viewer Card 2 badge | Changed from DRAFT to ACTIVE |
+| Markdown Viewer Card 2 description and what-to-check | Updated to reflect ACTIVE status |
+| Document Register row (mayurika-hr/WORKBENCH.md) | Status badge changed from DRAFT to ACTIVE; notes column updated |
+| Root AIOS overall result text | Updated to reflect Mayurika now ACTIVE |
+| Root AIOS next step box | Updated — all domain reviews now complete |
+| Status bar sub-text (Root AIOS tab) | "Mayurika: DRAFT" → "Mayurika: ACTIVE" |
+| Overview status bar sub-text | "Mayurika: DRAFT" → "Mayurika: ACTIVE" |
+| Overview member workbench count | 2 / 4 → 3 / 4 |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md` |
+| Validation file created | `validation/mayurika-workbench-quick-reference-activation-check.md` |
+| Dashboard check updated | `validation/web-view-html-dashboard-check.md` — §37 Mayurika ACTIVE check added |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no personal data, salary, health, disciplinary, grievance, or PDPA data |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| [VERIFY] item 12 resolved | NO — remains open; tool names not separately confirmed |
+| DRAFT → ACTIVE promotion | DONE for Mayurika only — based on confirmed domain owner approval 2026-07-03 |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED — no policy text, KPI rules, or AXIOM bands reproduced |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+
+**Evidence file path:** `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md`
+**Validation path:** `validation/mayurika-workbench-quick-reference-activation-check.md`
+
+**Next step:** Commit updated files and redeploy to Netlify to publish Mayurika ACTIVE status. Then confirm 5 preview HR useful tables and NSLP skill update candidate with Mayurika when available.
+
+---
+
 ## Handover Preview UI Polish Record (2026-07-03)
 
 **What changed in this update:**
