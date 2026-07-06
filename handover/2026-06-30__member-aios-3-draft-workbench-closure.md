@@ -547,6 +547,26 @@ Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
 
 ---
 
+## Mayurika NSLP Final Integration Closure — 2026-07-06
+
+**Task:** Final closure validation for the Mayurika NSLP integration chain (Mayurika confirmation → MD approval → merge → queryability review → source registration → CLAUDE.md §5 update → operating pack build → dashboard build → operational acceptance).
+
+**Validation path:** `validation/hr-nslp-final-integration-closure-check-2026-07-06.md`
+
+**Status:** PASS — ACTIVE
+
+**Latest commit:** `84810aa`
+
+**Commit chain:** `289674d`, `09011cb`, `5d46a29`, `2c0bbce`, `d8e9331`, `065fb49`, `144361e`, `84810aa`
+
+**Remaining safety limits:** No live automation approved. No real staff data storage approved. Dashboard remains read-only.
+
+**Safety preserved:** No blocked files touched at any stage of the chain. No sensitive staff data added. No automation, API, or database workflow created. No PostgreSQL changes. No BLOS/threshold/KPI/AXIOM changes.
+
+**Next step:** Monitor real usage and collect change requests separately.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

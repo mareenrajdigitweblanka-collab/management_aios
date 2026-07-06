@@ -253,6 +253,22 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 ---
 
+## 17. NSLP Final Integration Closure
+
+**Validation:** `validation/hr-nslp-final-integration-closure-check-2026-07-06.md`
+
+**Status:** PASS — ACTIVE — FINAL CLOSURE READY
+
+**Latest commit:** `84810aa`
+
+Full commit chain and evidence chain (Mayurika confirmation → MD approval → merge → queryability review → source registration → CLAUDE.md §5 update → operating pack build → dashboard build → operational acceptance) documented in the validation file above.
+
+**Remaining limits:** No live automation approved; no real staff data storage approved; dashboard remains read-only.
+
+**Next step:** Monitor real usage and collect change requests separately.
+
+---
+
 ## 16. NSLP Control System Dashboard
 
 **Dashboard location:** `web-view/index.html` — Mayurika HR tab — "NSLP Control System — Internal Build" section
