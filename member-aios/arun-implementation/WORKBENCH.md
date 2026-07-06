@@ -298,6 +298,34 @@ A clean LLM reading this workbench should be able to answer:
 
 ---
 
+## 17. Arun PH Live Report Data-Source Mapping
+
+**Status:** AMBER — factual sources missing; access approvals absent
+
+**File path:** `member-aios/arun-implementation/data-source-maps/arun-ph-live-report-data-source-map-2026-07-06.md`
+
+**Summary:**
+A read-only discovery report (2026-07-06) confirmed the PH report structure (SRC-ARUN-PH-001) and KPI thresholds (SRC-ARUN-001, SRC-ARUN-CONF-001), but identified that 6 of 8 factual data areas are undocumented or missing, 1 area is partial (TL/Auditor feedback — roles confirmed, format/path unknown), and 1 area is blocked (exchange-rate data — multi-currency scope not confirmed). No access approvals exist for any data area.
+
+**Data area mapping summary:**
+
+| # | Data Area | Status |
+| --- | --- | --- |
+| A | Sales data | MISSING |
+| B | Inventory / stock data | MISSING |
+| C | Advertising / PPC data | MISSING |
+| D | Pricing data | MISSING |
+| E | Marketplace / listing data | MISSING |
+| F | Exchange-rate data | BLOCKED |
+| G | TL / Auditor feedback | PARTIAL |
+| H | Historical performance baseline | MISSING |
+
+**Live workflow:** Remains blocked. Do not build live report generation until Arun confirms all 8 data areas.
+
+**Next step:** Route data-source map to Arun for confirmation of source systems, owners, and access status for each of the 8 data areas.
+
+---
+
 ## 14. Next Step
 
 **Arun review completed — 2026-06-30.**

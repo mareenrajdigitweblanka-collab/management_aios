@@ -338,6 +338,36 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 ---
 
+## Arun PH Live Report Data-Source Map — 2026-07-06
+
+**Task:** Create data-source map documenting the 8 factual data areas required before live PH report generation can begin.
+
+**Status:** AMBER — data-source map created; live report generation remains blocked
+
+**Data-source map:** `member-aios/arun-implementation/data-source-maps/arun-ph-live-report-data-source-map-2026-07-06.md`
+
+| File | Action |
+| --- | --- |
+| `member-aios/arun-implementation/data-source-maps/arun-ph-live-report-data-source-map-2026-07-06.md` | CREATED — 8-area data-source map; AMBER status; live workflow gate documented |
+| `member-aios/arun-implementation/WORKBENCH.md` | EDITED — §17 added (PH live report data-source mapping section) |
+| `member-aios/arun-implementation/quick-reference-sources.md` | EDITED — data-source map pointer added |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Discovery findings (read-only report, 2026-07-06):**
+
+- PH report structure known (SRC-ARUN-PH-001 — 16 sections, 15 worksheets)
+- KPI thresholds confirmed (SRC-ARUN-001, SRC-ARUN-CONF-001)
+- 6 of 8 data areas MISSING (sales, inventory, PPC, pricing, listing, historical baseline)
+- 1 data area PARTIAL (TL/Auditor feedback — roles confirmed; format/path unknown)
+- 1 data area BLOCKED (exchange-rate — multi-currency scope not confirmed; SRC-ARUN-002 rows 44–52 excluded)
+- No access approvals exist for any data area
+
+**Safety preserved:** No real data added. No API connected. No PostgreSQL objects edited. No KPI/AXIOM/bonus/PRC/warning/PIP logic changed. No [VERIFY] items resolved. CLAUDE.md, source-register.md, verify-register.md, and web-view/index.html not touched.
+
+**Next required action:** Route data-source map to Arun for confirmation of source systems, owners, and access status for each of the 8 data areas. Live report generation remains blocked until all 8 areas are source-mapped, owner-confirmed, access-approved, evidence-path documented, and display-layer approved by Arun.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

@@ -126,6 +126,20 @@ For full [VERIFY] register, see `context/verify-register.md`.
 
 ---
 
+## Arun PH Live Report Data-Source Map
+
+| Item | Detail |
+|---|---|
+| Path | `member-aios/arun-implementation/data-source-maps/arun-ph-live-report-data-source-map-2026-07-06.md` |
+| What it is | Data-source map only — documents the 8 factual data areas required before live PH report generation can begin |
+| What it is NOT | Not source-register truth. Not live report approval. Not a new performance rule or KPI threshold. |
+| Source basis | SRC-ARUN-PH-001 (PH report structure); SRC-ARUN-001 (KPI/AXIOM framework); SRC-ARUN-CONF-001 (Arun confirmation); discovery report (2026-07-06) |
+| Status | **AMBER** — 6 of 8 data areas MISSING; 1 PARTIAL (TL/Auditor feedback — format/path unknown); 1 BLOCKED (exchange-rate — multi-currency scope unconfirmed); no access approvals exist |
+| Live workflow | Remains blocked until Arun confirms all 8 data areas |
+| Next step | Route to Arun for confirmation of source systems, owners, and access status |
+
+---
+
 ## Pass/Fail Rule
 
 PASS if a reader can locate the correct source, context file, skill, or inbox for any Arun KPI/implementation domain question without verbal guidance.
