@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Management AIOS — Dashboard</title>
+  <title>Management AIOS — Dashboard v0.1 | Internal Build</title>
   <style>
     /* ── Reset & base ── */
     *,
@@ -1461,7 +1461,7 @@
     <div class="topbar-left">
       <span class="topbar-logo">Management <span>AIOS</span></span>
       <div class="topbar-sep"></div>
-      <span class="topbar-sub">Foundation Draft v0.1 — Read-Only Preview</span>
+      <span class="topbar-sub">Dashboard v0.1 — Internal Build</span>
     </div>
     <div class="topbar-right">
       <span class="badge badge-viewonly" style="font-size:.7rem;letter-spacing:.07em;">READ ONLY</span>
@@ -1471,7 +1471,7 @@
       <span>Commit:</span>
       <span class="topbar-commit">db06f7d</span>
       <div class="topbar-sep" style="height:18px;"></div>
-      <span style="color:#64748b;">2026-07-03</span>
+      <span style="color:#64748b;">2026-07-06</span>
     </div>
   </header>
 
@@ -1529,6 +1529,10 @@
       Recurring Issues
       <span class="tab-badge tab-badge-preview">PREVIEW</span>
     </button>
+    <button class="tab-btn" data-tab="gated-modules" role="tab" aria-selected="false">
+      Blocked / Gated Modules
+      <span class="tab-badge tab-badge-blocked">6 GATED</span>
+    </button>
   </nav>
 
   <!-- ═══════════════════════════════════
@@ -1546,8 +1550,7 @@
 ═══════════════════════════════════ -->
   <div class="safety-strip" role="note" aria-label="Read-only safety note">
     <span class="safety-strip-icon">&#128274;</span>
-    <span class="safety-strip-text"><strong>Read-only Management AIOS preview.</strong> Sensitive HR data, leave
-      records, onboarding records, KPI scores, and staff personal data are not shown.</span>
+    <span class="safety-strip-text"><strong>This dashboard is a read-only internal build.</strong> Sensitive HR data, leave records, onboarding records, KPI scores, staff personal data, salary, health, PDPA, candidate, disciplinary, and production data are not shown.</span>
   </div>
 
   <!-- ═══════════════════════════════════
@@ -1635,8 +1638,8 @@
         <div class="status-divider"></div>
         <div class="status-item">
           <span class="status-label">[VERIFY] Items Open</span>
-          <span class="status-value">12</span>
-          <span class="status-sub">All open — 0 resolved this build</span>
+          <span class="status-value">9</span>
+          <span class="status-sub">9 open — items 8–10 resolved 2026-06-30 by SRC-ARUN-CONF-001</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
@@ -1673,9 +1676,7 @@
             <div class="card-title">Verify register tracks unresolved items</div>
             <span class="badge badge-verify">[VERIFY]</span>
           </div>
-          <div class="card-note">The file <code>context/verify-register.md</code> lists all 12 unresolved items. A
-            [VERIFY] item cannot be removed until registered source evidence is produced and the relevant domain owner
-            confirms it.</div>
+          <div class="card-note">The file <code>context/verify-register.md</code> lists all 9 open items (items 8–10 from the original list were resolved 2026-06-30 by SRC-ARUN-CONF-001). A [VERIFY] item cannot be removed until registered source evidence is produced and the relevant domain owner confirms it.</div>
         </div>
         <div class="card" data-searchable data-tags="read only vs code editing dashboard static">
           <div class="card-header">
@@ -1728,20 +1729,15 @@
 
       <!-- Pass/fail -->
       <div class="section-title">Overall Result</div>
-      <div class="result-box" data-searchable data-tags="pass amber result foundation draft active arun complete">
+      <div class="result-box" data-searchable data-tags="pass amber result internal build active arun suman mayurika system build 2026-07-06">
         <h3>Overall Result: PASS — AMBER noted</h3>
         <p>
-          The Management AIOS Foundation Draft v0.1 is structurally complete. Arun's workbench is ACTIVE — Arun Reviewed
-          2026-06-30. Suman's workbench is ACTIVE — Suman Reviewed 2026-06-30. Mayurika's workbench is now ACTIVE —
-          Mayurika Reviewed 2026-07-03. All source pointers are correct. No sensitive data is stored. No policy text is
-          duplicated. Reviewer routing is correctly configured per CLAUDE.md §18.
+          Management AIOS Dashboard v0.1 — Internal Build. System interface build applied 2026-07-06 (build-first, validate-later). Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is ACTIVE — Suman Reviewed 2026-06-30. Mayurika's workbench is ACTIVE — Mayurika Reviewed 2026-07-03. [VERIFY] count corrected to 9 (items 8–10 resolved 2026-06-30). Blocked/Gated Modules tab added with 6 gated section cards. Safety note updated. All source pointers correct. No sensitive data shown. No policy text duplicated.
           <br><br>
-          <strong>Commit:</strong> <code>db06f7d</code> — Branch: <code>individual-aios</code>
+          <strong>Build evidence:</strong> <code>evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md</code>
+          <br><strong>Validation:</strong> <code>validation/management-aios-system-build-check.md</code>
           <br><br>
-          <strong>AMBER:</strong> Root propagation of Arun's confirmations (items 8, 9, 10) complete 2026-06-30 —
-          SRC-ARUN-CONF-001 registered; CLAUDE.md, source-register.md, verify-register.md, and kpi-axiom-context.md
-          updated. Mayurika domain review complete 2026-07-03. Rajiv / Admin Manager workbench remains blocked pending
-          SRC-ADMIN-001.
+          <strong>AMBER:</strong> Future user validation pending — Mayurika, Varmen, Management Team must inspect and confirm. Rajiv / Admin Manager section blocked pending SRC-ADMIN-001. 9 [VERIFY] items remain open. Dashboard remains read-only.
         </p>
       </div>
 
@@ -1771,7 +1767,7 @@
         <div class="member-header-badges">
           <span class="badge badge-pass">ACTIVE</span>
           <span class="badge badge-pass">Mayurika Reviewed 2026-07-03</span>
-          <span class="badge badge-verify">[VERIFY] Item 12 open</span>
+          <span class="badge badge-verify">[VERIFY] Item 9 open (formerly item 12)</span>
         </div>
       </div>
 
@@ -1832,8 +1828,8 @@
 
       <!-- VERIFY item 12 -->
       <div class="section-title">Open VERIFY Item — Requires Mayurika's Confirmation</div>
-      <div class="verify-explain" data-searchable data-tags="verify 12 hr eod tool names mayurika confirm">
-        <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 12</span> Exact tool names for HR
+      <div class="verify-explain" data-searchable data-tags="verify 9 formerly 12 hr eod tool names mayurika confirm">
+        <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 9 (formerly item 12)</span> Exact tool names for HR
           records system and EOD dashboard</div>
         <div class="verify-explain-plain">
           <strong>In plain English:</strong> The source documents say Mayurika manages staff records in an HR system and
@@ -3157,7 +3153,7 @@
           <summary>📁 context/ — Domain Context Files</summary>
           <div class="details-body">
             <div class="file-entry"><span>📄</span><span class="fpath">context/verify-register.md</span><span
-                class="fdesc">— All 12 open [VERIFY] items with resolution conditions.</span></div>
+                class="fdesc">— All 9 open [VERIFY] items with resolution conditions (items 8–10 resolved 2026-06-30).</span></div>
             <div class="file-entry"><span>📄</span><span class="fpath">context/hr-operations-context.md</span><span
                 class="fdesc">— Extended HR operations context (Mayurika domain).</span></div>
             <div class="file-entry"><span>📄</span><span class="fpath">context/recruitment-context.md</span><span
@@ -3409,10 +3405,10 @@
           <div class="md-card-check">
             <strong>What to check</strong>
             Status is ACTIVE — Mayurika Reviewed 2026-07-03. Evidence: evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md.
-            [VERIFY] item 12 (exact names of HR records system and EOD dashboard tools) remains open — not separately confirmed during this review.
+            [VERIFY] item 9 (formerly item 12 — exact names of HR records system and EOD dashboard tools) remains open — not separately confirmed during this review.
           </div>
           <div class="md-card-meta">
-            <span class="badge badge-verify">[VERIFY] 12 Open</span>
+            <span class="badge badge-verify">[VERIFY] 9 Open (formerly 12)</span>
             <span>Owner: Mareenraj (builder)</span>
             <span>Reviewer: Mayurika — reviewed 2026-07-03</span>
           </div>
@@ -4712,6 +4708,195 @@
 
     </div><!-- /tab-recurring-issues -->
 
+    <!-- ══════════════════════════════════
+       TAB — BLOCKED / GATED MODULES
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-gated-modules" role="tabpanel">
+
+      <div class="how-to-box">
+        <h3>Blocked / Gated Modules — Internal Build</h3>
+        <p>These modules are <strong>not yet built</strong> in the live dashboard. Each card explains why the section is blocked or gated, and what condition must be met before it can be built. No data tables are shown for any of these modules.</p>
+        <ul>
+          <li><strong>BLOCKED</strong> means a required source document or authority confirmation is missing — the section cannot proceed until that dependency is resolved.</li>
+          <li><strong>OUT OF SCOPE</strong> means the feature is deliberately excluded from the current build scope.</li>
+          <li><strong>GATED</strong> means the feature requires domain owner agreement, source definition, or boundary confirmation before it can be built.</li>
+          <li>These cards are tracking markers only. They do not contain real HR, staff, leave, KPI, or personal data.</li>
+        </ul>
+      </div>
+
+      <div class="section-title">Blocked Sections</div>
+      <div class="cards" data-searchable data-tags="blocked gated modules team table leave onboarding kpi decisions rajiv admin">
+
+        <!-- Team Table -->
+        <div class="card" data-searchable data-tags="team table blocked hr access anonymisation staff names">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Team Table</div>
+              <div class="card-role">Staff roster view</div>
+            </div>
+            <span class="badge badge-blocked">BLOCKED</span>
+          </div>
+          <div class="card-note">A team roster table requires display of staff names or identifiers. This directly conflicts with the sensitive-data exclusion rule: no individually identifiable HR data may appear in this dashboard without explicit MD and HR owner approval with access controls in place.</div>
+          <div class="card-footer">
+            <span class="badge badge-blocked">Requires: HR access approval</span>
+            <span class="badge badge-viewonly">Anonymisation rule needed</span>
+          </div>
+        </div>
+
+        <!-- Leave Requests -->
+        <div class="card" data-searchable data-tags="leave requests out of scope leave records policy">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Leave Requests</div>
+              <div class="card-role">Leave management view</div>
+            </div>
+            <span class="badge badge-blocked">OUT OF SCOPE</span>
+          </div>
+          <div class="card-note">Leave request management is out of the current build scope. Leave records contain personal attendance and health-adjacent data. This section requires a separate scoping decision, system integration plan, and HR owner sign-off before it can be considered for build.</div>
+          <div class="card-footer">
+            <span class="badge badge-blocked">Out of current build scope</span>
+            <span class="badge badge-pending">Requires: future scoping session</span>
+          </div>
+        </div>
+
+        <!-- Onboarding Tracker -->
+        <div class="card" data-searchable data-tags="onboarding tracker gated suman mayurika boundary source definition">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Onboarding Tracker</div>
+              <div class="card-role">New joiner tracking view</div>
+            </div>
+            <span class="badge badge-amber">GATED</span>
+          </div>
+          <div class="card-note">Onboarding data spans Suman's recruitment domain (pipeline, candidate records) and Mayurika's HR domain (staff record creation, PDPA, training). The boundary between these two domain owners must be agreed and the source definition confirmed before any onboarding table is built. No new joiner personal data may be shown.</div>
+          <div class="card-footer">
+            <span class="badge badge-amber">Gated: Suman / Mayurika boundary</span>
+            <span class="badge badge-pending">Source definition required</span>
+          </div>
+        </div>
+
+        <!-- KPI Schedule -->
+        <div class="card" data-searchable data-tags="kpi schedule gated mayurika scheduling arun kpi scope axiom">
+          <div class="card-header">
+            <div>
+              <div class="card-title">KPI Schedule</div>
+              <div class="card-role">KPI meeting and review calendar</div>
+            </div>
+            <span class="badge badge-amber">GATED</span>
+          </div>
+          <div class="card-note">KPI scheduling involves Mayurika's review calendar management (CLAUDE.md §9.3) and Arun's KPI definitions and AXIOM band placement authority (CLAUDE.md §5, §7). Displaying KPI scores or AXIOM bands for individuals is forbidden. Mayurika must confirm the scheduling scope and Arun must confirm which KPI metadata (if any) can be shown without exposing individual performance data.</div>
+          <div class="card-footer">
+            <span class="badge badge-amber">Gated: Mayurika scheduling + Arun KPI scope</span>
+            <span class="badge badge-pending">No individual KPI scores shown</span>
+          </div>
+        </div>
+
+        <!-- Decisions -->
+        <div class="card" data-searchable data-tags="decisions gated approval attribution source-backed management decision log">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Decisions</div>
+              <div class="card-role">Management decision log</div>
+            </div>
+            <span class="badge badge-amber">GATED</span>
+          </div>
+          <div class="card-note">Management decisions shown in a dashboard must be attributed to a registered source and approved by the relevant domain owner. Displaying decisions without source attribution could create false policy truth. No decision record may be shown here until its source ID is registered in <code>evidence/source-register.md</code> and the relevant domain owner has confirmed it.</div>
+          <div class="card-footer">
+            <span class="badge badge-amber">Gated: approval attribution required</span>
+            <span class="badge badge-pending">Source ID must be registered first</span>
+          </div>
+        </div>
+
+        <!-- Rajiv / Admin -->
+        <div class="card" data-searchable data-tags="rajiv admin blocked src-admin-001 admin manager authority prc escalation">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Rajiv / Admin Manager</div>
+              <div class="card-role">Admin authority and escalation view</div>
+            </div>
+            <span class="badge badge-blocked">BLOCKED</span>
+          </div>
+          <div class="card-note">The Admin Manager's authority scope, approval rights, PRC role, and escalation paths are all <strong>[VERIFY] items 1–5</strong> in CLAUDE.md §14 — pending receipt of <code>SRC-ADMIN-001</code>. No Admin Manager authority, approval chain, or escalation logic may be built into the dashboard until that source document is received, registered, and reviewed. See the <em>Rajiv / Admin</em> tab for full detail.</div>
+          <div class="card-footer">
+            <span class="badge badge-blocked">BLOCKED until SRC-ADMIN-001</span>
+            <span class="badge badge-verify">[VERIFY] items 1–5 open</span>
+          </div>
+        </div>
+
+      </div><!-- /cards -->
+
+      <div class="section-title">What Unblocks These Sections</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;" data-searchable data-tags="gated modules unblock conditions resolution path">
+        <table class="review-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Status</th>
+              <th>Required to Unblock</th>
+              <th>Domain Owner</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Team Table</strong></td>
+              <td><span class="badge badge-blocked">BLOCKED</span></td>
+              <td>MD + HR owner approval; anonymisation rule defined and documented</td>
+              <td>Mayurika / MD</td>
+            </tr>
+            <tr>
+              <td><strong>Leave Requests</strong></td>
+              <td><span class="badge badge-blocked">OUT OF SCOPE</span></td>
+              <td>Separate scoping decision; HR owner sign-off; system integration plan</td>
+              <td>Mayurika / Varmen</td>
+            </tr>
+            <tr>
+              <td><strong>Onboarding Tracker</strong></td>
+              <td><span class="badge badge-amber">GATED</span></td>
+              <td>Suman / Mayurika domain boundary agreed; source definition confirmed; no personal candidate data</td>
+              <td>Suman + Mayurika</td>
+            </tr>
+            <tr>
+              <td><strong>KPI Schedule</strong></td>
+              <td><span class="badge badge-amber">GATED</span></td>
+              <td>Mayurika confirms scheduling scope; Arun confirms displayable KPI metadata; no individual scores</td>
+              <td>Mayurika + Arun</td>
+            </tr>
+            <tr>
+              <td><strong>Decisions</strong></td>
+              <td><span class="badge badge-amber">GATED</span></td>
+              <td>Source ID registered for each decision; domain owner confirms before display</td>
+              <td>Relevant domain owner per decision</td>
+            </tr>
+            <tr>
+              <td><strong>Rajiv / Admin</strong></td>
+              <td><span class="badge badge-blocked">BLOCKED</span></td>
+              <td>Receive SRC-ADMIN-001; register in source-register.md; resolve [VERIFY] items 1–5</td>
+              <td>Rajiv (after SRC-ADMIN-001)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box" data-searchable data-tags="gated modules safety sensitive data no real data no tables built">
+        <h3>Safety Confirmation — No Data Tables Built</h3>
+        <ul>
+          <li>No Team Table is built — no staff names, role, or personal data are shown</li>
+          <li>No Leave Requests table is built — no leave records, health, or personal data are shown</li>
+          <li>No Onboarding Tracker is built — no candidate names, interview scores, or new joiner data are shown</li>
+          <li>No KPI Schedule is built — no individual KPI scores, AXIOM bands, or performance data are shown</li>
+          <li>No Decisions table is built — no unattributed management decisions are shown</li>
+          <li>Rajiv / Admin section not built — no Admin Manager authority, escalation, or PRC data are shown</li>
+          <li>All [VERIFY] items 1–9 remain open in the root register — none resolved by this build</li>
+        </ul>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>Commit the updated dashboard and redeploy to Netlify (<code>web-view/</code> directory, no build step). Then route to Mayurika, Varmen, and the Management Team for visual validation. To unblock any gated section, follow the conditions in the table above — receive the required document, register it in <code>evidence/source-register.md</code>, and get domain owner confirmation before building the section.</p>
+      </div>
+
+    </div><!-- /tab-gated-modules -->
+
   </main>
 
   <!-- ═══════════════════════════════════
@@ -4720,12 +4905,10 @@
   <footer class="dashboard-footer" role="contentinfo">
     <div class="dashboard-footer-left">
       <span class="dashboard-footer-badge">&#128274; Read-only</span>
-      <span>Management AIOS — Foundation Draft v0.1 &nbsp;&middot;&nbsp; No sensitive HR data, leave records, KPI
-        scores, or staff personal data are shown in this preview</span>
+      <span>Management AIOS — Dashboard v0.1 — Internal Build &nbsp;&middot;&nbsp; Sensitive HR data, leave records, KPI scores, PDPA, salary, health, candidate, disciplinary, and production data are not shown</span>
     </div>
     <div class="dashboard-footer-right">
-      Branch: individual-aios &nbsp;&middot;&nbsp; Netlify static deployment &nbsp;&middot;&nbsp; Varmen visual review
-      pending
+      Branch: individual-aios &nbsp;&middot;&nbsp; Internal Build — build-first / validate-later &nbsp;&middot;&nbsp; Future validation: Mayurika, Varmen, Management Team
     </div>
   </footer>
 

@@ -1139,6 +1139,55 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## §38 — Management AIOS System Interface Build Check (2026-07-06)
+
+**Task:** Build the Management AIOS web system interface in build-first / validate-later mode. System name updated to "Dashboard v0.1 — Internal Build". New Blocked/Gated Modules tab added. [VERIFY] count corrected. Safety note updated.
+
+**Evidence path:** `evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md`
+**Validation path:** `validation/management-aios-system-build-check.md`
+
+| Check | Result |
+|---|---|
+| System interface built / polished | YES — title, topbar, safety strip, footer, result box all updated |
+| Title updated to "Dashboard v0.1 \| Internal Build" | YES |
+| Topbar subtitle updated to "Dashboard v0.1 — Internal Build" | YES |
+| Topbar date updated to 2026-07-06 | YES |
+| [VERIFY] count corrected: 12 → 9 in Root AIOS status bar | YES — stale count fixed; CLAUDE.md §14 confirms 9 open items |
+| Mayurika [VERIFY] badge updated: "Item 12" → "Item 9 (formerly item 12)" | YES |
+| Verify-explain tags and title updated | YES |
+| File map context/verify-register.md description updated | YES |
+| MD viewer [VERIFY] badge and text updated | YES |
+| Safety strip updated with full sensitive-data exclusion list | YES — includes PDPA, salary, health, candidate, disciplinary, production data |
+| "Blocked / Gated Modules" tab button added | YES |
+| "Blocked / Gated Modules" panel added — 6 gated cards | YES — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, Decisions, Rajiv/Admin |
+| Unblock conditions table added | YES |
+| Safety confirmation list in gated panel | YES |
+| Result box updated to reflect system build | YES |
+| Footer updated — "Internal Build" label and validation pending note | YES |
+| Build-first / validate-later mode applied | YES |
+| Safe sections present (Overview, HR, Doc Register, Skills, Handover, Recurring Issues, File Map, Markdown Viewer) | YES |
+| Blocked/gated sections shown as cards only — no data tables | YES |
+| Sensitive data (staff names, leave, salary, health, PDPA, KPI scores, candidate, disciplinary, production) added | NOT PRESENT |
+| Fake Varmen sample data used | NO |
+| source-register.md changed | NO |
+| CLAUDE.md changed | NO |
+| context/verify-register.md changed | NO |
+| [VERIFY] items resolved | NONE — all 9 open items preserved |
+| NSLP merged | NO |
+| staff-skill-learning.md created | NO |
+| Database or PostgreSQL changed | NO |
+| Dashboard read-only | YES — no forms, no edit/save/delete, no backend, no external CDN |
+| Mayurika workbench tab badge changed | NO — remains ACTIVE |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Arun remains ACTIVE | YES — unchanged |
+| Suman remains ACTIVE | YES — unchanged |
+| PASS/AMBER preserved | YES |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS — AMBER until Mayurika, Varmen, and Management Team validate**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

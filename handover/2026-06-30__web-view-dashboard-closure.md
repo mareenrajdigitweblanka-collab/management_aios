@@ -100,6 +100,53 @@ A clean LLM reading the `web-view/` folder should be able to answer:
 
 ---
 
+## Management AIOS System Interface Build — Applied 2026-07-06
+
+**Task:** Build the Management AIOS web system interface in build-first / validate-later mode.
+
+**Evidence path:** `evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md`
+
+**Validation path:** `validation/management-aios-system-build-check.md`
+
+### Changes Applied to web-view/index.html
+
+| Change | Applied? |
+|---|---|
+| Title updated to "Dashboard v0.1 \| Internal Build" | YES |
+| Topbar subtitle updated to "Dashboard v0.1 — Internal Build" | YES |
+| Date updated to 2026-07-06 | YES |
+| [VERIFY] count corrected: 12 → 9 (stale count fixed) | YES |
+| Mayurika [VERIFY] badge updated: "Item 12" → "Item 9 (formerly item 12)" | YES |
+| Safety strip updated with full sensitive-data exclusion list | YES |
+| "Blocked / Gated Modules" tab added — 6 gated cards | YES |
+| Result box updated to reflect system build | YES |
+| Footer updated with "Internal Build" label | YES |
+
+### Build Mode
+
+Build-first, validate-later. The dashboard was built without waiting for step-by-step user validation. User validation is the next step.
+
+### Safety Limits
+
+- No sensitive HR data, leave records, KPI scores, AXIOM bands, PDPA, salary, health, disciplinary, candidate, employee IDs, or production data added.
+- No blocked/gated sections built with real data — shown as tracking cards only.
+- No source-register.md, CLAUDE.md, or verify-register.md edits.
+- No [VERIFY] items resolved.
+- No NSLP merge.
+- No staff-skill-learning.md created.
+- No database or PostgreSQL changes.
+- Dashboard remains read-only.
+
+### Future Validation Users
+
+Mayurika, Varmen, Management Team
+
+### Next Step — 2026-07-06
+
+Commit the updated files to `individual-aios`, redeploy to Netlify (`web-view/` directory, no build step), inspect the dashboard — especially the new Blocked/Gated Modules tab — then continue system build only inside safe UI scope.
+
+---
+
 ## Blockers
 
 | Blocker | Detail | Owner |
