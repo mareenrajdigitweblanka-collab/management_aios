@@ -567,6 +567,36 @@ Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
 
 ---
 
+## Mayurika NSLP Table 6 ROI / Company Value Field — 2026-07-06
+
+**Change request:** Mayurika requested ROI/company value field in NSLP Table 6 — `evidence/stakeholder-confirmations/mayurika-nslp-table-6-roi-company-value-change-request-2026-07-06.md`
+
+- Field added as reporting-only placeholder in Table 6 / Monthly NSLP Management Report Control and the management report template
+- No ROI formula/calculation approved
+- No real values added
+- Validation updated: `validation/hr-nslp-system-pack-build-check-2026-07-06.md`
+
+---
+
+## Full System Dashboard/File Sync Check — 2026-07-06
+
+**Task:** Whole-system sync check covering all member workbench/quick-reference files against `web-view/index.html` and each other. Full report: `validation/management-aios-full-system-dashboard-sync-check-2026-07-06.md`.
+
+- `member-aios/suman-recruitment/WORKBENCH.md` §180-day handover line corrected: attendee list was missing the Team Lead (Line Manager), already resolved elsewhere by SRC-SUMAN-CONF-002 (2026-06-30) and reflected in `weekly-deliverables-checklist.md` and CLAUDE.md §8.11 — WORKBENCH.md now matches
+- Mayurika, Arun workbench/quick-reference files checked against the dashboard — no further mismatches found
+- Rajiv workbench confirmed correctly absent/blocked (no `member-aios/rajiv-admin*` folder exists on disk); dashboard's "NOT CREATED" framing is accurate
+
+---
+
+## Source Register — NSLP Stale Note Correction — 2026-07-06
+
+- `evidence/source-register.md` stale note corrected: it previously claimed CLAUDE.md §5 was not updated for NSLP; CLAUDE.md §5 was in fact updated in commit `d8e9331` to reference SRC-MAYURIKA-NSLP-001
+- Validation: `validation/source-register-nslp-stale-note-correction-check-2026-07-06.md`
+- Source count (26) unchanged — was already correct
+- No changes made to CLAUDE.md, HR.Mayu.Skill.md, or `web-view/index.html` in this task
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
