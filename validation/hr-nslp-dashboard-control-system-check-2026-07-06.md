@@ -191,3 +191,14 @@ Mayurika accepted the NSLP dashboard/control system in `web-view/index.html` (Ma
 **Safety preserved:** No blocked files touched. No sensitive staff data added. No automation/API/database workflow created. No [VERIFY] items resolved. Dashboard remains static/read-only.
 
 **Next step:** Final coordinator/queryability acceptance.
+
+---
+
+## 13. Table 6 ROI / Company Value Field Update — 2026-07-06
+
+**Change request:** `evidence/stakeholder-confirmations/mayurika-nslp-table-6-roi-company-value-change-request-2026-07-06.md`
+
+- Table 6 — Monthly NSLP Management Report Control updated with a new **ROI / Company Value from Skill Implementation** field
+- Reporting-only field; no ROI formula or financial calculation added
+- No real values entered — placeholder text only
+- Dashboard remains read-only static HTML — no forms, no `fetch()`, no API, no calculation script

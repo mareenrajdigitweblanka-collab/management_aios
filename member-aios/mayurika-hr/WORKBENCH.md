@@ -269,6 +269,17 @@ Full commit chain and evidence chain (Mayurika confirmation → MD approval → 
 
 ---
 
+## 18. NSLP Table 6 Change Request — ROI / Company Value Field
+
+**Change request:** Mayurika requested "ROI or Company value from implementing the New Skill Learning Programme" be added to Table 6 / Monthly NSLP Management Report Control.
+
+- Table 6 / Monthly NSLP Management Report Control updated per Mayurika request
+- Added **ROI / Company Value from Skill Implementation** placeholder field
+- Evidence path: `evidence/stakeholder-confirmations/mayurika-nslp-table-6-roi-company-value-change-request-2026-07-06.md`
+- No formula/automation added — reporting-only field, no calculation method approved
+
+---
+
 ## 16. NSLP Control System Dashboard
 
 **Dashboard location:** `web-view/index.html` — Mayurika HR tab — "NSLP Control System — Internal Build" section

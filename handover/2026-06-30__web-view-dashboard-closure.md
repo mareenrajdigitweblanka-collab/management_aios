@@ -1436,6 +1436,32 @@ Mayurika operationally accepted the NSLP dashboard/control system in `web-view/i
 
 ---
 
+## Mayurika NSLP Table 6 ROI / Company Value Field — 2026-07-06
+
+**Change request:** Mayurika requested ROI/company value field in NSLP Table 6 — `evidence/stakeholder-confirmations/mayurika-nslp-table-6-roi-company-value-change-request-2026-07-06.md`
+
+- Field added as reporting-only placeholder in Table 6 / Monthly NSLP Management Report Control
+- No ROI formula/calculation approved
+- No real values added
+- Validation updated: `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md`
+
+---
+
+## Full System Dashboard/File Sync Check — 2026-07-06
+
+**Task:** Whole-system sync check (not limited to NSLP) covering all member tabs and general dashboard tabs against saved source files. Full report: `validation/management-aios-full-system-dashboard-sync-check-2026-07-06.md`.
+
+- Corrected stale "Sources Registered" count (was showing 22/23/13 in different tabs) to 26, matching `evidence/source-register.md`
+- Corrected stale "[VERIFY] items ... all 12 remain open" line to "all 9 remain open" in the Root AIOS Safety Rules box
+- Fixed self-contradicting Arun tab text ("Root propagation pending" shown next to a "Root Propagation Complete" badge) — text now confirms propagation is complete
+- Added a footnote under the Arun tab's Table 2 (KPI Data Source Readiness) citing the canonical `arun-ph-live-report-data-source-map-2026-07-06.md` AMBER status (0/8 confirmed) — no table rows rewritten
+- Corrected a stale internal HTML comment in the Mayurika NSLP section that still said "INTERNAL_BUILD_PENDING..." after the visible status had already moved to ACTIVE
+- Suman, Rajiv/Admin, and all remaining dashboard tabs checked — no dashboard-vs-source mismatches found
+- Dashboard safety re-confirmed: no forms, no `fetch()`, no XMLHttpRequest, no API/backend code, no sensitive staff/candidate/salary/health data, no invented numbers
+- AMBER items remaining (require separate approval, not fixed in this task): `evidence/source-register.md` row 42 note is stale relative to CLAUDE.md §5 (blocked file — not edited); `validation/arun-implementation-source-intake-check-2026-07-06.md` references an incorrect `rajiv-admin` path (not in approved edit list)
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

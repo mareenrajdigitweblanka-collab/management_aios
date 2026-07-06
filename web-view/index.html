@@ -1634,8 +1634,8 @@
         <div class="status-divider"></div>
         <div class="status-item">
           <span class="status-label">Sources Registered</span>
-          <span class="status-value">22</span>
-          <span class="status-sub">Most READY · 2 PENDING · 1 SUPERSEDED</span>
+          <span class="status-value">26</span>
+          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
@@ -1700,7 +1700,7 @@
         <ul>
           <li>Store or display sensitive HR, staff, candidate, salary, health, disciplinary, grievance, or PDPA personal
             data.</li>
-          <li>Resolve any [VERIFY] item — all 12 remain open.</li>
+          <li>Resolve any [VERIFY] item — all 9 remain open.</li>
           <li>Mark any DRAFT workbench as ACTIVE — that requires domain owner sign-off.</li>
           <li>Show the Rajiv / Admin Manager workbench as created — it is BLOCKED until SRC-ADMIN-001 is received.</li>
           <li>Reproduce policy rules, KPI band tables, recruitment criteria, or leave policy as if this file is the
@@ -2128,7 +2128,7 @@
            Canonical: HR.Mayu.Skill.md Section 9
            Pack: member-aios/mayurika-hr/nslp/
            Validation: validation/hr-nslp-dashboard-control-system-check-2026-07-06.md
-           Status: INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE
+           Status: ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED
       ══════════════════════════════════ -->
 
       <div class="section-title" style="margin-top:32px;">NSLP Control System — Internal Build</div>
@@ -2591,7 +2591,9 @@
         </summary>
         <div style="padding:12px 16px;overflow-x:auto;">
           <p style="font-size:.78rem;color:var(--muted);margin-bottom:8px;font-style:italic;">All figures are
-            placeholders. Do not invent counts or percentages. Fill when operational data exists.</p>
+            placeholders. Do not invent counts or percentages. Fill when operational data exists. No ROI formula or
+            financial calculation is approved. The ROI / Company Value field is for reporting/control description
+            only.</p>
           <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
             <thead>
               <tr style="background:#f1f5f9;">
@@ -2699,6 +2701,15 @@
                 <td style="padding:5px 8px;border:1px solid var(--border);font-weight:600;">Evidence Paths</td>
                 <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[Paths
                   to register / exception register / evidence folder]</td>
+                <td style="padding:5px 8px;border:1px solid var(--border);"><span
+                    style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:.74rem;font-weight:600;">Pending</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:5px 8px;border:1px solid var(--border);font-weight:600;">ROI / Company Value from
+                  Skill Implementation</td>
+                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[ROI /
+                  company value placeholder]</td>
                 <td style="padding:5px 8px;border:1px solid var(--border);"><span
                     style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:.74rem;font-weight:600;">Pending</span>
                 </td>
@@ -2894,10 +2905,10 @@
               Items 8, 9, and 10 were confirmed at the member workbench layer. Evidence:
               <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code></span>
             <br><br>
-            <span style="color:var(--amber); font-size:.82rem; font-weight:600;">Root propagation pending:</span>
-            <span style="color:var(--muted); font-size:.8rem;"> Root CLAUDE.md, source-register.md, and
-              verify-register.md have not yet been updated. Root propagation of Arun's confirmations is a separate
-              controlled task and has not been completed in this step.</span>
+            <span style="color:var(--pass); font-size:.82rem; font-weight:600;">Root propagation complete (2026-06-30):</span>
+            <span style="color:var(--muted); font-size:.8rem;"> Root CLAUDE.md (§7.3, §7.4, §7.8), evidence/source-register.md
+              (SRC-ARUN-CONF-001), and context/verify-register.md (items 8, 9, 10) have been updated with Arun's
+              confirmations. See <code>context/verify-register.md</code> Resolved Items table.</span>
           </div>
         </div>
         <div class="member-header-badges">
@@ -3334,6 +3345,12 @@
                 </tr>
               </tbody>
             </table>
+            <p style="font-size:.76rem;color:var(--muted);margin-top:8px;">Canonical readiness status:
+              <code>member-aios/arun-implementation/data-source-maps/arun-ph-live-report-data-source-map-2026-07-06.md</code>
+              — <strong>AMBER</strong>. Of the 8 required data areas: 6 MISSING (sales, inventory, PPC, pricing,
+              marketplace/listing, historical baseline), 1 PARTIAL (TL/auditor feedback — roles confirmed, format/path
+              not documented), 1 BLOCKED (exchange-rate — multi-currency scope not confirmed). 0 of 8 areas confirmed.
+              No access approvals exist for any area. This table and that file agree: nothing is confirmed yet.</p>
           </div>
         </details>
 
@@ -4289,8 +4306,8 @@
           <summary>📁 evidence/ — Source Register and Confirmations</summary>
           <div class="details-body">
             <div class="file-entry"><span>📄</span><span class="fpath">evidence/source-register.md</span><span
-                class="fdesc">— All 23 registered sources with IDs, statuses, and descriptions.</span><span
-                class="badge badge-source" style="font-size:.62rem;">23 sources</span></div>
+                class="fdesc">— All 26 registered sources with IDs, statuses, and descriptions.</span><span
+                class="badge badge-source" style="font-size:.62rem;">26 sources</span></div>
             <div class="file-entry" style="margin-top:8px;"><span>📁</span><strong
                 style="font-size:.82rem;">stakeholder-confirmations/</strong></div>
             <div class="file-entry" style="padding-left:16px;"><span>📄</span><span
@@ -4709,7 +4726,7 @@
               <td><span class="badge badge-pass">CONFIRMED</span></td>
               <td>CLAUDE.md §2</td>
               <td class="mono">2026-06-30</td>
-              <td>All SRC-* source registrations; 13 sources registered</td>
+              <td>All SRC-* source registrations; 26 sources registered</td>
             </tr>
             <tr>
               <td><code class="mono">context/verify-register.md</code></td>
@@ -5492,8 +5509,8 @@
         data-tags="overview sources registered member workbenches active draft blocked document register skills">
         <div class="status-item">
           <span class="status-label">Sources Registered</span>
-          <span class="status-value">22</span>
-          <span class="status-sub">Most READY · 2 PENDING · 1 SUPERSEDED</span>
+          <span class="status-value">26</span>
+          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">

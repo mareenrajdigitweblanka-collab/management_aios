@@ -130,7 +130,7 @@ Built from SRC-MAYURIKA-NSLP-001. All files are documentation-only, placeholder-
 | Before & After Evidence Template | `member-aios/mayurika-hr/nslp/nslp-before-after-evidence-template-2026-07-06.md` | Evidence capture and HR verification record |
 | 2-Week Evaluation Template | `member-aios/mayurika-hr/nslp/nslp-2-week-evaluation-template-2026-07-06.md` | Formal 2-week evaluation — outcome label assigned |
 | Exception Register Template | `member-aios/mayurika-hr/nslp/nslp-exception-register-template-2026-07-06.md` | Tracks all 7 NSLP exception types |
-| Management Report Template | `member-aios/mayurika-hr/nslp/nslp-management-report-template-2026-07-06.md` | Monthly evidence-backed report to management |
+| Management Report Template | `member-aios/mayurika-hr/nslp/nslp-management-report-template-2026-07-06.md` | Monthly evidence-backed report to management — Table 6 includes ROI / Company Value placeholder. Source: Mayurika change request evidence (`evidence/stakeholder-confirmations/mayurika-nslp-table-6-roi-company-value-change-request-2026-07-06.md`). Status: ACTIVE — FIELD UPDATE APPLIED |
 | Query Pack | `member-aios/mayurika-hr/nslp/nslp-query-pack-2026-07-06.md` | 8 reusable LLM queries for daily/weekly/monthly NSLP review |
 | Pack Build Validation | `validation/hr-nslp-system-pack-build-check-2026-07-06.md` | PASS — Mayurika operationally accepted 2026-07-06 |
 

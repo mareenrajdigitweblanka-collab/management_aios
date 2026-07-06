@@ -184,4 +184,14 @@ Mayurika accepted all NSLP operating pack files/templates in `member-aios/mayuri
 
 **Safety preserved:** No blocked files touched. No sensitive staff data added. No automation/API/database workflow created. No [VERIFY] items resolved.
 
+---
+
+## 12. Table 6 ROI / Company Value Field Update — 2026-07-06
+
+**Change request:** `evidence/stakeholder-confirmations/mayurika-nslp-table-6-roi-company-value-change-request-2026-07-06.md`
+
+- Management report template (`nslp-management-report-template-2026-07-06.md`) updated with an **ROI / Company Value from Skill Implementation** placeholder field under Section 6 — Business Impact
+- No calculation method added — descriptive/reporting-only until separately approved
+- Still a safe template-only asset — no real values, no automation
+
 **Next step:** Final coordinator/queryability acceptance.

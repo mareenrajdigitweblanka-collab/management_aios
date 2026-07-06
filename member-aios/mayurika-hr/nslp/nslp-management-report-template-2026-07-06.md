@@ -125,6 +125,10 @@ status: INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE
 
 > [Brief aggregate statement of business value delivered by NSLP this period — quantified where possible. Placeholder: "Overall business impact pending full evidence review for [X] participants."]
 
+**ROI / Company Value from Skill Implementation:** [Placeholder — describe measurable company value, savings, revenue impact, productivity gain, quality improvement, or other business value. No formula approved yet.]
+
+> Note: ROI/company value is descriptive/reporting-only until a calculation method is separately approved.
+
 ---
 
 ## Section 7 — Evidence Paths

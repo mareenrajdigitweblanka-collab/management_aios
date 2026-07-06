@@ -47,7 +47,7 @@ This file does not restate policy. It tells you where to find it.
 - 7/14-day review
 - Month 1, Month 3, and Month 6 reviews
 - Source quality monitoring
-- 180-day handover preparation and facilitation (attendees: Mayurika, Arun, Suman)
+- 180-day handover preparation and facilitation (attendees: Mayurika, Arun, Suman, and the employee's Team Lead — Line Manager; SRC-SUMAN-CONF-002)
 - Daily knowledge capture (1 hour per working day)
 - Six-month binary ROI audit per hire
 - OLOS onboarding system validation

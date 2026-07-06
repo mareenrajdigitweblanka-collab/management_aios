@@ -1331,6 +1331,27 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## §42 — Full System Dashboard/File Sync Check — 2026-07-06
+
+**Task:** Whole-system sync check (not limited to NSLP) between `web-view/index.html` and current saved files across all member tabs and general dashboard tabs. Full report: `validation/management-aios-full-system-dashboard-sync-check-2026-07-06.md`.
+
+| Fix | Location | Result |
+|---|---|---|
+| Sources Registered count corrected 22/23/13 → 26 (matches `evidence/source-register.md` total) | Root AIOS status bar, Overview Preview status bar, File Map evidence entry, Handover Preview table | FIXED |
+| [VERIFY] Safety Rules line corrected "all 12 remain open" → "all 9 remain open" | Root AIOS Safety Rules box | FIXED |
+| Arun tab self-contradiction — "Root propagation pending" text next to "Root Propagation Complete" badge | Arun Implementation tab header | FIXED — text now confirms propagation complete, matching `context/verify-register.md` |
+| Arun Table 2 (KPI Data Source Readiness) did not reference the canonical 8-area AMBER data-source-map | Arun Implementation tab, Table 2 | FIXED — added read-only footnote citing `arun-ph-live-report-data-source-map-2026-07-06.md` status (0/8 confirmed, 6 missing, 1 partial, 1 blocked); existing 9-row table left unchanged (no invented content) |
+| Stale internal HTML comment said `INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE` while visible text already said ACTIVE | Mayurika HR tab, NSLP Control System comment block | FIXED — comment updated to match visible ACTIVE status |
+| Suman/Rajiv/general tabs, NSLP Table 6 ROI field, safety (no forms/fetch/API/sensitive data) | All other areas | NO ISSUE — verified consistent with source files |
+
+**AMBER — not fixed (outside approved edit scope or requires human approval):**
+- `evidence/source-register.md` row 42 note still says CLAUDE.md §5 was not updated for NSLP, but CLAUDE.md §5 already lists it — this file is blocked from editing in this task.
+- `validation/arun-implementation-source-intake-check-2026-07-06.md` references a `member-aios/rajiv-admin/` path that does not match the canonical `rajiv-admin-manager` naming — not in approved edit list.
+
+**Check result: PASS — AMBER items above require separate human-approved edits to blocked/out-of-scope files**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
