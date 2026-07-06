@@ -270,7 +270,9 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 **Open [VERIFY]:** HR priority scale (High/Medium/Low vs numeric); daily HR schedule categories; which recurring blocks belong to HR; whether Mayurika manages interview/session scheduling; CST meaning; exact durations; who can edit the HR schedule; whether this replaces or runs alongside the existing HR/meeting schedule.
 
-**Next step:** Ask Mayurika / Varmen the eight HR schedule confirmation questions above, then resolve the [VERIFY] fields and re-validate. Do not expand to full Management Team schedules until separately requested.
+**Confirmation request sent (2026-07-06):** A written confirmation request covering all 8 open [VERIFY] items was created and routed to Mayurika / Varmen. Evidence: `evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md`. Status remains AMBER until answered.
+
+**Next step:** Collect Mayurika / Varmen's written answers to the eight HR schedule confirmation questions, then resolve the [VERIFY] fields and re-validate. Do not expand to full Management Team schedules until separately requested.
 
 ---
 

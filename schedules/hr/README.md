@@ -127,3 +127,13 @@ All unconfirmed fields in the pilot files are tagged `[VERIFY]`.
 ## 10. Next Step
 
 Ask Mayurika / Varmen the HR schedule confirmation questions in §7 (priority scale, HR categories, recurring-block ownership, interview/session scheduling ownership, CST meaning, durations, edit rights, replace-or-parallel). Once confirmed, resolve the [VERIFY] fields and re-validate. Do not expand to full Management Team schedules until separately requested.
+
+---
+
+## 11. Confirmation Request Sent (2026-07-06)
+
+A written confirmation request covering all 8 [VERIFY] items in §7 has been created and routed to Mayurika / Varmen.
+
+**Evidence file:** `evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md`
+
+**Status:** remains **AMBER** until Mayurika / Varmen answer. No [VERIFY] item is resolved by this note.

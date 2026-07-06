@@ -89,3 +89,4 @@ Last updated: [date/time] by [who]
 - Week-of, times, durations, priorities, and categories are all [VERIFY] — see `README.md` §7.
 - Whether Mayurika manages interview / session scheduling is [VERIFY]; the interview placeholder row above is conditional ("if confirmed").
 - No real staff names, candidate personal data, salary, health, PDPA, or disciplinary data belong in this file (CLAUDE.md §6).
+- **Confirmation request created 2026-07-06:** all [VERIFY] fields above are pending written answers from Mayurika / Varmen. Evidence: `evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md`. Status remains AMBER until answered.

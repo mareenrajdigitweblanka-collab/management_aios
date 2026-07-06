@@ -626,3 +626,20 @@ This closure record is committed on branch `individual-aios`. Commit hash to be 
 **Safety:** static skeleton + read-only dashboard preview only; no Google Calendar API, no `fetch()`/backend/database, no automation, no forms, no editable events, no real staff/candidate data, no invented HR tasks; no [VERIFY] items resolved; blocked files (CLAUDE.md, source-register.md, verify-register.md, HR.Mayu.Skill.md, other member folders) untouched.
 
 **Next step:** Ask Mayurika/Varmen the eight HR schedule confirmation questions, then resolve [VERIFY] fields and re-validate. Do not expand to full Management Team schedules until separately requested.
+
+---
+
+## HR Schedule Pilot Confirmation Request — Closure Note (2026-07-06)
+
+**Task:** Create a written HR Schedule Pilot confirmation request for Mayurika/Varmen covering the 8 open [VERIFY] questions.
+
+| Item | Detail |
+|---|---|
+| HR schedule confirmation request created | YES — `evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md` |
+| Questions included | 8 (priority scale, HR categories, recurring-block ownership, interview/session scheduling ownership, CST meaning, durations, edit rights, replace-or-parallel) |
+| [VERIFY] items pending | All 8 remain open pending Mayurika/Varmen written answers |
+| Files updated | `schedules/hr/README.md`, `schedules/hr/mayurika.md`, `schedules/hr/priority-queue.md` — short notes referencing the confirmation request; `member-aios/mayurika-hr/WORKBENCH.md` — confirmation request path and next step added |
+| Status | AWAITING_MAYURIKA_VARMEN_ANSWERS — pilot remains PASS — AMBER |
+| Blocked files touched | NONE — CLAUDE.md, source-register.md, verify-register.md, HR.Mayu.Skill.md, web-view/index.html, other member folders untouched |
+
+**Next step:** Collect Mayurika/Varmen's written answers to the 8 questions, then resolve the corresponding [VERIFY] fields in the HR schedule pilot files and re-validate.

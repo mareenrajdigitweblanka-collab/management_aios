@@ -59,3 +59,4 @@ Source: schedules/hr/mayurika.md
 - Suggested placeholder task types only (do not treat as owned tasks): `[HR follow-up task]`, `[NSLP review task]`, `[Interview scheduling task — if confirmed]`, `[Policy / documentation task]`, `[Management reporting task]`.
 - Whether Mayurika manages interview / session scheduling is [VERIFY].
 - No real staff names, no candidate personal data, no salary / health / PDPA data in this file (CLAUDE.md §6).
+- **Confirmation request created 2026-07-06:** priority scale and all other [VERIFY] items are pending written answers from Mayurika / Varmen. Evidence: `evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md`. Status remains AMBER until answered.
