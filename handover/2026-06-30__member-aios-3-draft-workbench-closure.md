@@ -151,6 +151,28 @@ Supporting evidence used during creation:
 
 ---
 
+## Mayurika NSLP Section 9 — Queryability Review — 2026-07-06
+
+**Task:** Queryability review for merged NSLP Section 9 in HR.Mayu.Skill.md.
+
+**Validation:** `validation/hr-nslp-section-9-queryability-review-2026-07-06.md`
+
+**Result:** PASS — all 12 queryability questions answerable from saved files. AMBER for source-register only.
+
+**Gaps found:** 4 AMBER/informational gaps — no FAIL-level gaps. Source-register not updated (intentional). context/hr-operations-context.md not updated (informational). WORKBENCH.md domain pointer table not updated (informational). Merge footer does not reference original MD request evidence file (low/informational).
+
+| File | Action |
+|---|---|
+| `validation/hr-nslp-section-9-queryability-review-2026-07-06.md` | CREATED — 12-question queryability checklist; all YES; PASS result |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — queryability review path and result added to §14 |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Safety preserved:** HR.Mayu.Skill.md not edited. CLAUDE.md not touched. source-register.md not touched. verify-register.md not touched. web-view/index.html not touched. No blocked files changed.
+
+**Next step:** Source-register update — only if separately approved. Reviewer: Mayurika (content sign-off) + Mareenraj (source-register entry).
+
+---
+
 ## Mayurika NSLP Skill Merge — 2026-07-06
 
 **Task:** Merge Mayurika-confirmed NSLP HR skill update candidate into canonical HR skill file.

@@ -271,4 +271,5 @@ The following skill update candidates have been created for Mayurika's domain. T
 - **Validation:** `validation/hr-nslp-skill-merge-check-2026-07-06.md`
 - **Status:** MERGED_INTO_CANONICAL_HR_SKILL
 - **Result:** PASS — Section 9 appended; Known Limits block excluded; blocked files untouched
-- **Next step:** Queryability review / source-register update — only if separately approved
+- **Queryability review:** `validation/hr-nslp-section-9-queryability-review-2026-07-06.md` — PASS (AMBER for source-register only); all 12 queryability questions answerable from saved files; 2026-07-06
+- **Next step:** Source-register update — only if separately approved. Reviewer: Mayurika (content) + Mareenraj (source-register entry)
