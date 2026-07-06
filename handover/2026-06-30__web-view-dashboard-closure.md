@@ -1529,3 +1529,25 @@ Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman A
 | Netlify deployment wording | PRESERVED |
 
 **Next step:** Commit; redeploy to Netlify (publish directory `web-view/`, no build step). Ask Mayurika/Varmen the eight HR schedule confirmation questions before expanding the pilot. Do not build full Management Team schedules until separately requested.
+
+---
+
+## HR Schedule Pilot — Professional Calendar-Style UI Redesign (2026-07-06)
+
+**Reason:** User feedback said the existing "HR Schedule Pilot — Internal Calendar Preview" looked table-heavy and unprofessional. This update redesigns the same section's presentation into a Google Calendar-style, card-based UI (per `Mareenraj_Schedule_Build_Guide.docx`, which references the MD's shared Google Calendar month-view target look). UI/UX presentation only.
+
+**What changed in `web-view/index.html`:**
+
+- Replaced the plain [VERIFY] banner, raw CSS-grid time table, and the two `<table>`-based preview blocks (priority queue, weekly schedule skeleton) with a professional header card, a non-functional calendar toolbar mock, a Mon–Fri × Morning/Midday/Afternoon/Follow-up event-card grid, an MD-screenshot reference-blocks panel, a "Today's Priority Queue" lane panel, and a checklist-style [VERIFY] panel.
+- Section title kept unchanged: "HR Schedule Pilot — Internal Calendar Preview".
+- Added scoped CSS (`.hr-cal-*`, `.hr-chip*`, `.hr-priority-*`, `.hr-event-card*`, `.hr-verify-*`) inside the existing inline `<style>` block — no external stylesheet.
+- Evidence/source paths moved into a collapsible "Evidence / source details" `<details>` block instead of being removed.
+- Safety footer line kept: "Static preview only. No Google Calendar connection. No automation. No live editing. No staff data stored."
+
+**Validation path:** `validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md` (and the new section in `validation/web-view-html-dashboard-check.md`).
+
+**No source truth changed. No schedule facts resolved.** All 8 [VERIFY] items remain open; MD screenshot blocks remain labelled reference-only/HR-applicability-[VERIFY]; no real staff/candidate data added; no forms/fetch/API/automation added (grep-confirmed).
+
+**Result:** PASS — AMBER remains until Mayurika/Varmen answer the HR schedule questions and visually approve the new UI.
+
+**Next step:** Visual review by the user/Varmen of the redesigned section, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).

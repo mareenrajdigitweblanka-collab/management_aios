@@ -1740,6 +1740,312 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ═══ HR Schedule Pilot — professional calendar-style UI ═══ */
+    .hr-cal-header {
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 60%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
+    }
+
+    .hr-cal-header h3 {
+      font-size: 1.02rem;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .hr-cal-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 10px;
+    }
+
+    .hr-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .hr-chip-amber {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border-color: #fbbf24;
+    }
+
+    .hr-chip-scope {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-color: #bfdbfe;
+    }
+
+    .hr-chip-safe {
+      background: var(--pass-bg);
+      color: var(--pass);
+      border-color: #86efac;
+    }
+
+    .hr-cal-purpose {
+      font-size: .82rem;
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* Toolbar (visual-only, no forms) */
+    .hr-cal-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      margin-bottom: 16px;
+    }
+
+    .hr-cal-toolbar-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: .76rem;
+      color: var(--muted);
+    }
+
+    .hr-cal-toolbar-meta strong {
+      color: var(--text);
+    }
+
+    .hr-cal-toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .hr-chip-action {
+      cursor: default;
+      background: #f8fafc;
+    }
+
+    .hr-chip-action:hover {
+      background: #f1f5f9;
+    }
+
+    /* Weekly grid */
+    .hr-cal-grid-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .05);
+    }
+
+    .hr-cal-grid {
+      min-width: 720px;
+      display: grid;
+      grid-template-columns: 96px repeat(5, 1fr);
+    }
+
+    .hr-cal-grid > * {
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 8px;
+    }
+
+    .hr-cal-corner {
+      background: #f8fafc;
+    }
+
+    .hr-cal-day-head {
+      background: #f8fafc;
+      text-align: center;
+      font-weight: 700;
+      font-size: .78rem;
+      color: var(--text);
+    }
+
+    .hr-cal-slot-label {
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      background: #fafbfc;
+    }
+
+    .hr-cal-cell {
+      min-height: 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hr-event-card {
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: .7rem;
+      line-height: 1.35;
+      border-left: 3px solid var(--accent);
+      background: var(--accent-light);
+      color: var(--text-secondary);
+    }
+
+    .hr-event-card.ref {
+      border-left-color: #94a3b8;
+      background: #f8fafc;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .hr-event-card.verify::after {
+      content: " [VERIFY]";
+      color: var(--amber);
+      font-style: normal;
+      font-weight: 600;
+    }
+
+    /* Priority queue side panel */
+    .hr-priority-panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 14px 16px;
+      margin-bottom: 18px;
+    }
+
+    .hr-priority-panel h4 {
+      font-size: .88rem;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .hr-priority-lanes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .hr-priority-lane {
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      background: #fafbfc;
+      border: 1px solid var(--border);
+    }
+
+    .hr-priority-lane-title {
+      font-size: .74rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .hr-priority-lane.high .hr-priority-lane-title {
+      background: var(--blocked-bg);
+      color: var(--blocked);
+    }
+
+    .hr-priority-lane.medium .hr-priority-lane-title {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
+    .hr-priority-lane.low .hr-priority-lane-title {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    .hr-priority-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: .74rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 6px;
+    }
+
+    .hr-priority-card:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Verification checklist panel */
+    .hr-verify-panel {
+      border: 1px solid #fbbf24;
+      border-left: 4px solid #d97706;
+      border-radius: var(--radius);
+      background: #fffbeb;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+    }
+
+    .hr-verify-panel h4 {
+      font-size: .86rem;
+      color: #92400e;
+      margin-bottom: 10px;
+    }
+
+    .hr-verify-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 6px 16px;
+      list-style: none;
+    }
+
+    .hr-verify-list li {
+      font-size: .78rem;
+      color: #78350f;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .hr-verify-list li::before {
+      content: "\2610";
+      flex-shrink: 0;
+    }
+
+    /* Footer */
+    .hr-cal-footer {
+      font-size: .76rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 10px 14px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .hr-cal-grid {
+        min-width: 640px;
+      }
+
+      .hr-priority-lanes {
+        grid-template-columns: 1fr;
+      }
+
+      .hr-verify-list {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 
@@ -3192,211 +3498,162 @@
 
       <!-- ══════════════════════════════════
          HR SCHEDULE PILOT — INTERNAL CALENDAR PREVIEW
+         Professional calendar-style UI — redesigned 2026-07-06
+         See validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md
       ══════════════════════════════════ -->
       <div class="section-title" style="margin-top:32px;">HR Schedule Pilot — Internal Calendar Preview</div>
 
-      <!-- [VERIFY] banner -->
-      <div
-        style="background:#fffbeb;border:1px solid #fbbf24;border-left:4px solid #d97706;border-radius:var(--radius);padding:14px 18px;margin-bottom:18px;"
-        data-searchable
+      <!-- 1. Professional header card -->
+      <div class="hr-cal-header" data-searchable
         data-tags="hr schedule pilot mayurika calendar preview verify amber md request read only static">
-        <div style="font-weight:700;font-size:.88rem;color:#92400e;margin-bottom:6px;">&#9888; HR Schedule Pilot —
-          Read-Only Static Preview (HR / Mayurika only)</div>
-        <p style="font-size:.83rem;color:#78350f;line-height:1.6;margin-bottom:4px;">
-          HR schedule pilot only. Static preview. No Google Calendar connection. No automation. No live editing.
-          This is the HR-only first build of the MD-requested schedule structure — it is <strong>not</strong> the full
-          Management Team schedule. All rows are placeholders. Unconfirmed HR schedule rules are marked [VERIFY].
-        </p>
-        <p style="font-size:.78rem;color:var(--muted);margin:0;">
-          Source: <span style="font-family:ui-monospace,monospace;">MD schedule request relayed to Mayurika, 6 July
-            2026</span> &nbsp;|&nbsp;
-          Folder: <span style="font-family:ui-monospace,monospace;">schedules/hr/</span> &nbsp;|&nbsp;
-          Evidence: <span
-            style="font-family:ui-monospace,monospace;">evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md</span>
-          &nbsp;|&nbsp;
-          Validation: <span
-            style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md</span><br>
-          Status: <strong>HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION</strong>
-        </p>
-      </div>
-
-      <!-- Unconfirmed HR schedule rules — [VERIFY] list -->
-      <div
-        style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;"
-        data-searchable data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights">
-        <div style="font-weight:600;font-size:.85rem;margin-bottom:6px;color:var(--text);">Unconfirmed HR schedule rules
-          — [VERIFY]</div>
-        <ul style="font-size:.8rem;color:var(--muted);line-height:1.6;margin:0;padding-left:18px;">
-          <li>HR priority scale — High / Medium / Low or numeric? [VERIFY]</li>
-          <li>Mayurika's daily HR schedule categories [VERIFY]</li>
-          <li>Which recurring blocks belong to HR [VERIFY]</li>
-          <li>Whether Mayurika manages interview / session scheduling [VERIFY]</li>
-          <li>CST meaning [VERIFY]</li>
-          <li>Exact durations [VERIFY]</li>
-          <li>Who can edit the HR schedule [VERIFY]</li>
-          <li>Whether this replaces or runs alongside the existing HR / meeting schedule [VERIFY]</li>
-        </ul>
-      </div>
-
-      <!-- Calendar-style weekly preview grid -->
-      <div style="overflow-x:auto;margin-bottom:18px;">
-        <div style="min-width:640px;display:grid;grid-template-columns:64px repeat(5,1fr);gap:6px;">
-          <div style="font-size:.72rem;font-weight:700;color:var(--muted);padding:6px;">Time</div>
-          <div style="font-size:.74rem;font-weight:700;color:var(--text);text-align:center;padding:6px;background:#f1f5f9;border-radius:6px;">Mon</div>
-          <div style="font-size:.74rem;font-weight:700;color:var(--text);text-align:center;padding:6px;background:#f1f5f9;border-radius:6px;">Tue</div>
-          <div style="font-size:.74rem;font-weight:700;color:var(--text);text-align:center;padding:6px;background:#f1f5f9;border-radius:6px;">Wed</div>
-          <div style="font-size:.74rem;font-weight:700;color:var(--text);text-align:center;padding:6px;background:#f1f5f9;border-radius:6px;">Thu</div>
-          <div style="font-size:.74rem;font-weight:700;color:var(--text);text-align:center;padding:6px;background:#f1f5f9;border-radius:6px;">Fri</div>
-
-          <!-- 06:30 row -->
-          <div style="font-size:.72rem;color:var(--muted);padding:6px;">06:30</div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;padding:4px 6px;font-size:.68rem;color:var(--muted);">Technical sessions <em>(reference only · HR applicability [VERIFY])</em></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-
-          <!-- 10:00 row -->
-          <div style="font-size:.72rem;color:var(--muted);padding:6px;">10:00</div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;padding:4px 6px;font-size:.68rem;color:var(--muted);">Team Leader Review <em>(reference only · HR applicability [VERIFY])</em></div>
-          <div style="min-height:44px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;padding:4px 6px;font-size:.68rem;color:var(--muted);">Technical interviews <em>(reference only · HR applicability [VERIFY])</em></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-
-          <!-- 11:30 row -->
-          <div style="font-size:.72rem;color:var(--muted);padding:6px;">11:30</div>
-          <div style="min-height:44px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;padding:4px 6px;font-size:.68rem;color:var(--muted);">Merchandising <em>(reference only · HR applicability [VERIFY])</em></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-
-          <!-- 12:00 row -->
-          <div style="font-size:.72rem;color:var(--muted);padding:6px;">12:00</div>
-          <div style="min-height:44px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;padding:4px 6px;font-size:.68rem;color:var(--muted);">CST call <em>(reference only · CST meaning [VERIFY])</em></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
-          <div style="min-height:44px;border:1px dashed var(--border);border-radius:6px;"></div>
+        <h3>HR Schedule Pilot</h3>
+        <div class="hr-cal-badge-row">
+          <span class="hr-chip hr-chip-amber">AMBER — Awaiting Mayurika/Varmen answers</span>
+          <span class="hr-chip hr-chip-scope">HR only</span>
+          <span class="hr-chip hr-chip-safe">Read-only static preview</span>
         </div>
-        <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:8px;">
-          Grid blocks are the MD screenshot recurring blocks shown as <strong>reference only</strong> — not
-          Mayurika-owned events. Dashed cells are empty placeholders. Exact durations are [VERIFY]. Source:
+        <p class="hr-cal-purpose">
+          Plan Mayurika's HR work by priority and schedule block without creating live calendar automation.
+        </p>
+      </div>
+
+      <!-- 2. Calendar toolbar mock (visual-only, no forms) -->
+      <div class="hr-cal-toolbar" data-searchable data-tags="hr schedule pilot toolbar week view owner priority mode">
+        <div class="hr-cal-toolbar-meta">
+          <span>Week of: <strong>[VERIFY]</strong></span>
+          <span>View: <strong>Week</strong></span>
+          <span>Owner: <strong>Mayurika / HR</strong></span>
+          <span>Priority mode: <strong>[VERIFY]</strong></span>
+        </div>
+        <div class="hr-cal-toolbar-actions">
+          <span class="hr-chip hr-chip-action">Today</span>
+          <span class="hr-chip hr-chip-action">Week</span>
+          <span class="hr-chip hr-chip-action">Priority</span>
+          <span class="hr-chip hr-chip-action">Verify Items</span>
+        </div>
+      </div>
+
+      <!-- 3. Week calendar grid -->
+      <div class="hr-cal-grid-wrap" data-searchable data-tags="hr schedule pilot weekly calendar grid placeholder cards">
+        <div class="hr-cal-grid">
+          <div class="hr-cal-corner"></div>
+          <div class="hr-cal-day-head">Monday</div>
+          <div class="hr-cal-day-head">Tuesday</div>
+          <div class="hr-cal-day-head">Wednesday</div>
+          <div class="hr-cal-day-head">Thursday</div>
+          <div class="hr-cal-day-head">Friday</div>
+
+          <div class="hr-cal-slot-label">Morning</div>
+          <div class="hr-cal-cell"><span class="hr-event-card">[High priority HR task]</span></div>
+          <div class="hr-cal-cell"><span class="hr-event-card">[NSLP follow-up]</span></div>
+          <div class="hr-cal-cell"></div>
+          <div class="hr-cal-cell"><span class="hr-event-card ref">Technical sessions — reference only</span></div>
+          <div class="hr-cal-cell"></div>
+
+          <div class="hr-cal-slot-label">Midday</div>
+          <div class="hr-cal-cell"><span class="hr-event-card ref">Merchandising — reference only</span></div>
+          <div class="hr-cal-cell"><span class="hr-event-card ref">Team Leader Review — reference only</span></div>
+          <div class="hr-cal-cell"><span class="hr-event-card ref">Technical interviews — reference only</span></div>
+          <div class="hr-cal-cell"></div>
+          <div class="hr-cal-cell"></div>
+
+          <div class="hr-cal-slot-label">Afternoon</div>
+          <div class="hr-cal-cell"><span class="hr-event-card ref">CST call — reference only</span></div>
+          <div class="hr-cal-cell"><span class="hr-event-card">[HR documentation]</span></div>
+          <div class="hr-cal-cell"><span class="hr-event-card verify">[Interview/session scheduling]</span></div>
+          <div class="hr-cal-cell"><span class="hr-event-card">[Management reporting]</span></div>
+          <div class="hr-cal-cell"></div>
+
+          <div class="hr-cal-slot-label">Follow-up / Carry-over</div>
+          <div class="hr-cal-cell"></div>
+          <div class="hr-cal-cell"></div>
+          <div class="hr-cal-cell"></div>
+          <div class="hr-cal-cell"></div>
+          <div class="hr-cal-cell"><span class="hr-event-card">[Management reporting]</span></div>
+        </div>
+      </div>
+      <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-bottom:18px;">
+        Placeholder cards only. No invented HR tasks. No real staff data. Source:
+        <span style="font-family:ui-monospace,monospace;">schedules/hr/mayurika.md</span>,
+        <span style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span>
+      </p>
+
+      <!-- 4. MD screenshot reference blocks -->
+      <div class="hr-priority-panel" data-searchable data-tags="md screenshot reference blocks hr applicability verify cst merchandising team leader review technical interviews technical sessions">
+        <h4>MD screenshot reference blocks — HR applicability [VERIFY]</h4>
+        <div class="hr-cal-badge-row" style="margin-bottom:0;">
+          <span class="hr-event-card ref" style="display:inline-block;">Monday 11:30 — Merchandising <em>(reference only)</em></span>
+          <span class="hr-event-card ref verify" style="display:inline-block;">Monday 12:00 — CST call <em>(reference only · CST meaning)</em></span>
+          <span class="hr-event-card ref" style="display:inline-block;">Tuesday 10:00 — Team Leader Review <em>(reference only)</em></span>
+          <span class="hr-event-card ref verify" style="display:inline-block;">Wednesday 10:00 — Technical interviews — Saranya, Kajith, Pirija, Kayal <em>(reference only · role/status)</em></span>
+          <span class="hr-event-card ref verify" style="display:inline-block;">Thursday 06:30 — Technical sessions — Vithusali, Dilaxshan, Mithula, Sakithiya, Gishor <em>(reference only · role/status)</em></span>
+        </div>
+        <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:10px;">
+          Reference only — not Mayurika-owned tasks. Source:
           <span style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
         </p>
       </div>
 
-      <!-- Priority queue preview -->
-      <details
-        style="margin-bottom:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);"
-        data-searchable data-tags="hr priority queue preview high medium low placeholder mayurika schedule pilot">
-        <summary style="padding:10px 16px;font-weight:600;font-size:.88rem;cursor:pointer;color:var(--text);">
-          Priority Queue Preview — HR / Mayurika
-          <span style="font-weight:400;color:var(--muted);font-size:.8rem;margin-left:8px;">Placeholder rows only — priority scale [VERIFY]</span>
-        </summary>
-        <div style="padding:12px 16px;overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
-            <thead>
-              <tr style="background:#f1f5f9;">
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Priority</th>
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Task (placeholder)</th>
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Due</th>
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);"><span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:.72rem;font-weight:600;">High</span></td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[High priority HR task]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);"><span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:.72rem;font-weight:600;">Medium</span></td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[NSLP follow-up]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);"><span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:.72rem;font-weight:600;">Medium</span></td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[HR documentation]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);"><span style="background:#dcfce7;color:#166534;padding:2px 6px;border-radius:4px;font-size:.72rem;font-weight:600;">Low</span></td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[Management reporting]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[Interview/session scheduling — VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-            </tbody>
-          </table>
-          <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:8px;">Placeholder rows only. No
-            invented HR tasks. Source: <span style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span></p>
+      <!-- 5. Priority lane panel -->
+      <div class="hr-priority-panel" data-searchable data-tags="hr priority queue preview high medium low placeholder mayurika schedule pilot today priority queue">
+        <h4>Today's Priority Queue</h4>
+        <div class="hr-priority-lanes">
+          <div class="hr-priority-lane high">
+            <span class="hr-priority-lane-title">High Priority</span>
+            <div class="hr-priority-card">[HR task pending confirmation]</div>
+          </div>
+          <div class="hr-priority-lane medium">
+            <span class="hr-priority-lane-title">Medium Priority</span>
+            <div class="hr-priority-card">[NSLP follow-up placeholder]</div>
+          </div>
+          <div class="hr-priority-lane low">
+            <span class="hr-priority-lane-title">Low Priority</span>
+            <div class="hr-priority-card">[Documentation / reporting placeholder]</div>
+          </div>
         </div>
-      </details>
+        <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:10px;">
+          Placeholder cards only. No real tasks. No real staff names. Priority scale [VERIFY]. Source:
+          <span style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span>
+        </p>
+      </div>
 
-      <!-- Mayurika weekly schedule skeleton -->
-      <details
-        style="margin-bottom:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);"
-        data-searchable data-tags="mayurika weekly schedule skeleton hr schedule pilot placeholder this week recurring">
-        <summary style="padding:10px 16px;font-weight:600;font-size:.88rem;cursor:pointer;color:var(--text);">
-          Mayurika Weekly Schedule Skeleton
-          <span style="font-weight:400;color:var(--muted);font-size:.8rem;margin-left:8px;">Week of [VERIFY] — placeholder rows only</span>
+      <!-- 6. Verification checklist panel -->
+      <div class="hr-verify-panel" data-searchable data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights checklist active">
+        <h4>Before this becomes ACTIVE, confirm:</h4>
+        <ul class="hr-verify-list">
+          <li>Priority scale — High / Medium / Low or numeric?</li>
+          <li>HR schedule categories</li>
+          <li>Recurring-block ownership</li>
+          <li>Interview/session scheduling ownership</li>
+          <li>CST meaning</li>
+          <li>Durations</li>
+          <li>Edit rights</li>
+          <li>Replace-or-parallel schedule rule</li>
+        </ul>
+      </div>
+
+      <!-- 7. Safety footer -->
+      <div class="hr-cal-footer">
+        Static preview only. No Google Calendar connection. No automation. No live editing. No staff data stored.
+      </div>
+
+      <!-- 9. Evidence / source details — collapsible -->
+      <details style="margin-bottom:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);"
+        data-searchable data-tags="hr schedule pilot evidence source validation folder">
+        <summary style="padding:10px 16px;font-weight:600;font-size:.85rem;cursor:pointer;color:var(--text);">
+          Evidence / source details
         </summary>
-        <div style="padding:12px 16px;overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
-            <thead>
-              <tr style="background:#f1f5f9;">
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Day</th>
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Block (placeholder)</th>
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Priority</th>
-                <th style="padding:6px 8px;text-align:left;border:1px solid var(--border);">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--text);">Monday</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[HR follow-up task]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--text);">Tuesday</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[NSLP review task]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--text);">Wednesday</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[Interview scheduling task — if confirmed]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--text);">Thursday</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[Policy / documentation task]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-              <tr style="background:#fafafa;">
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--text);">Friday</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);font-style:italic;">[Management reporting task]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[VERIFY]</td>
-                <td style="padding:5px 8px;border:1px solid var(--border);color:var(--muted);">[placeholder]</td>
-              </tr>
-            </tbody>
-          </table>
-          <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:8px;">No real staff data. No real
-            employee names. No invented HR tasks. Source: <span
-              style="font-family:ui-monospace,monospace;">schedules/hr/mayurika.md</span></p>
+        <div style="padding:12px 16px;font-size:.78rem;color:var(--muted);line-height:1.7;">
+          Source: <span style="font-family:ui-monospace,monospace;">MD schedule request relayed to Mayurika, 6 July
+            2026</span><br>
+          Folder: <span style="font-family:ui-monospace,monospace;">schedules/hr/</span><br>
+          Evidence: <span
+            style="font-family:ui-monospace,monospace;">evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md</span><br>
+          Validation (skeleton): <span
+            style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md</span><br>
+          Validation (UI redesign): <span
+            style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md</span><br>
+          Status: <strong>HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION</strong>
         </div>
       </details>
 

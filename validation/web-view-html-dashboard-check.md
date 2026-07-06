@@ -1413,6 +1413,23 @@ An HR Schedule Pilot — Internal Calendar Preview subsection was added to the M
 
 ---
 
+## HR Schedule Pilot Professional UI Check (2026-07-06)
+
+**Task:** User feedback said the HR Schedule Pilot preview looked table-heavy and unprofessional. Redesigned the same section into a Google Calendar-style, card-based UI. UI presentation only — no schedule source truth changed, no [VERIFY] items resolved. Full detail: `validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md`.
+
+| Check | Result |
+|---|---|
+| Table-heavy view redesigned | YES — the two `<table>` blocks (priority queue, weekly skeleton) and the raw CSS-grid time table were replaced with card-based components (`hr-cal-*` / `hr-priority-*` / `hr-event-card` classes) |
+| Calendar-style preview present | YES — header card, non-functional toolbar, Mon–Fri × Morning/Midday/Afternoon/Follow-up grid with color-coded event cards |
+| HR-only scope preserved | YES — title, badges, and copy all say "HR only"; no Management Team/full-org schedule added |
+| [VERIFY] preserved | YES — same 8 items shown as a checklist panel; MD screenshot blocks still labelled "reference only · HR applicability [VERIFY]" |
+| Dashboard remains static/read-only | YES — chips/cards are `<span>`/`<div>` only; no `<form>`, `onsubmit`, `action=`, `fetch(`, `XMLHttpRequest`, `axios`, `WebSocket`, `googleapis`, `calendar.google`, `localStorage`, `sessionStorage`, or `indexedDB` (grep confirmed zero matches) |
+| No Google Calendar API/forms/automation | YES — none added |
+
+**Check result: PASS — AMBER remains until Mayurika/Varmen answer the HR schedule questions and visually approve the new UI.**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
