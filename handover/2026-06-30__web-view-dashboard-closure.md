@@ -1462,6 +1462,30 @@ Mayurika operationally accepted the NSLP dashboard/control system in `web-view/i
 
 ---
 
+## User-Friendly UI Update — 2026-07-06
+
+**Task:** Make the dashboard more user-friendly while keeping it read-only, source-backed, and safe. UI/UX presentation improvements only — no source truth, business rules, KPI/AXIOM/BLOS/threshold logic, automation, backend, or data changed.
+
+**What changed in `web-view/index.html` (additive, presentation-only):**
+
+- Added a **clear landing summary** at the top of the Root AIOS tab — dashboard name, build status, read-only safety note, last sync note (2026-07-06 · commit 98644e2), a plain-language "What you can do here" list, and a "What is still gated" list.
+- Added a **member navigation snapshot** — one scannable card per member (Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv/Admin) showing status badge, main system/module, next action, and gated items; each card jumps to that member's tab (UI-only JS, no network/storage/calculation).
+- Extended the **status legend** with the plain-language terms ACTIVE, PASS, AMBER, GATED, READ-ONLY (existing legend items kept).
+- Added a reusable table helper style and **responsive refinements** — tab navigation becomes a single swipeable row on small screens; wide tables keep readable column widths inside their existing scroll wrappers; member/snapshot cards and card grids stack to one column.
+- Synced the topbar commit hash to the landing hero (98644e2).
+
+**Preserved:** all existing sections, member tabs, NSLP 6 tables (including Table 6 ROI / Company Value field and the "no ROI formula approved" note), Arun control/data-source tables, Rajiv BLOCKED / NOT CREATED banner, and all evidence/source paths.
+
+**Safety:** dashboard remains read-only; no forms, `fetch()`, `XMLHttpRequest`, `axios`, `WebSocket`, `onsubmit`, backend, storage, or sensitive/real data added; no [VERIFY] items resolved; member statuses unchanged.
+
+**Validation path:** `validation/web-view-user-friendly-ui-check-2026-07-06.md` (and §43 in `validation/web-view-html-dashboard-check.md`).
+
+**Result:** PASS — AMBER (dashboard remains read-only; AMBER only for user review / visual preview feedback).
+
+**Next step:** User review / Netlify preview check — confirm the landing summary, member snapshot navigation, legend, and small-screen layout read clearly, then close the AMBER.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

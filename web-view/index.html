@@ -1449,6 +1449,297 @@
         gap: 10px;
       }
     }
+
+    /* ═══════════════════════════════════════════
+       USER-FRIENDLY UI LAYER — added 2026-07-06
+       Presentation-only. No data, no logic, no network.
+    ═══════════════════════════════════════════ */
+
+    /* ── Landing summary hero ── */
+    .landing-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #1e3a5f 100%);
+      border-radius: var(--radius);
+      padding: 26px 28px 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+      color: #e2e8f0;
+    }
+
+    .landing-hero h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: -.01em;
+      margin-bottom: 4px;
+    }
+
+    .landing-hero h1 span {
+      color: #60a5fa;
+    }
+
+    .landing-hero .lh-sub {
+      font-size: .86rem;
+      color: #cbd5e1;
+      line-height: 1.55;
+      max-width: 720px;
+    }
+
+    .landing-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 4px;
+    }
+
+    .lh-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .74rem;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid #334155;
+      color: #cbd5e1;
+    }
+
+    .lh-pill strong {
+      color: #f1f5f9;
+      font-weight: 700;
+    }
+
+    .lh-pill-ok {
+      background: rgba(21, 128, 61, .18);
+      border-color: #15803d;
+      color: #bbf7d0;
+    }
+
+    .lh-pill-amber {
+      background: rgba(180, 83, 9, .2);
+      border-color: #b45309;
+      color: #fde68a;
+    }
+
+    .lh-pill-lock {
+      background: rgba(37, 99, 235, .16);
+      border-color: #2563eb;
+      color: #bfdbfe;
+    }
+
+    .landing-hero-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .lh-col {
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid #334155;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .lh-col h4 {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .lh-col-do h4 {
+      color: #7dd3fc;
+    }
+
+    .lh-col-gated h4 {
+      color: #fca5a5;
+    }
+
+    .lh-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: .81rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .lh-col-do ul li::before {
+      content: '✓ ';
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    .lh-col-gated ul li::before {
+      content: '🔒 ';
+      font-size: .75rem;
+    }
+
+    /* ── Member snapshot grid (navigation cards) ── */
+    .member-snap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .member-snap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid #cbd5e1;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      font: inherit;
+      color: inherit;
+      transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+    }
+
+    .member-snap:hover,
+    .member-snap:focus-visible {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+      border-color: #c7d2e0;
+      outline: none;
+    }
+
+    .member-snap:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .18);
+    }
+
+    .member-snap-active {
+      border-top-color: var(--pass);
+    }
+
+    .member-snap-blocked {
+      border-top-color: var(--blocked);
+    }
+
+    .member-snap-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .member-snap-name {
+      font-size: .98rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .member-snap-role {
+      font-size: .76rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .member-snap-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      font-size: .8rem;
+    }
+
+    .member-snap-row .msr-label {
+      font-size: .63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #94a3b8;
+    }
+
+    .member-snap-row .msr-val {
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .member-snap-cta {
+      margin-top: auto;
+      padding-top: 4px;
+      font-size: .77rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .member-snap-cta::after {
+      content: '→';
+    }
+
+    /* ── Reusable table helper text ── */
+    .table-helper {
+      font-size: .8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+      background: #f8fafc;
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 8px 12px;
+    }
+
+    /* ── Scroll affordance for wide tables on touch ── */
+    .tab-panel [style*="overflow-x"],
+    .table-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ═══ Responsive refinements ═══ */
+    @media (max-width: 820px) {
+      .landing-hero-cols {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      /* Keep the tab navigation on one clean, swipeable row */
+      .tab-bar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+
+      .tab-btn {
+        flex: 0 0 auto;
+      }
+
+      .landing-hero {
+        padding: 20px 18px;
+      }
+
+      .landing-hero h1 {
+        font-size: 1.15rem;
+      }
+
+      .member-snap-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Any wide table in a horizontal-scroll wrapper keeps readable columns */
+      .tab-panel [style*="overflow-x"] table {
+        min-width: 560px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 
@@ -1469,7 +1760,7 @@
       <span>Branch: <strong style="color:#e2e8f0;">individual-aios</strong></span>
       <div class="topbar-sep" style="height:18px;"></div>
       <span>Commit:</span>
-      <span class="topbar-commit">db06f7d</span>
+      <span class="topbar-commit">98644e2</span>
       <div class="topbar-sep" style="height:18px;"></div>
       <span style="color:#64748b;">2026-07-06</span>
     </div>
@@ -1565,6 +1856,137 @@
   ══════════════════════════════════ -->
     <div class="tab-panel active" id="tab-root-aios" role="tabpanel">
 
+      <!-- Landing summary hero -->
+      <div class="landing-hero" data-searchable
+        data-tags="landing summary welcome overview read only internal build what you can do gated pass amber">
+        <h1>Management <span>AIOS</span> Dashboard</h1>
+        <p class="lh-sub">A plain-language, read-only window into the Management AIOS — the system that watches for
+          management gaps and tracks HR records, recruitment, and KPI processes. Nothing here can be edited, saved, or
+          sent. Use it to check status at a glance and see what each team member is working on.</p>
+
+        <div class="landing-hero-meta">
+          <span class="lh-pill lh-pill-ok">&#9679; Build status: <strong>Internal Build v0.1 · PASS</strong></span>
+          <span class="lh-pill lh-pill-amber">&#9679; <strong>AMBER</strong> — user review pending</span>
+          <span class="lh-pill lh-pill-lock">&#128274; <strong>READ-ONLY</strong> · no data saved or changed</span>
+          <span class="lh-pill">Last sync: <strong>2026-07-06</strong> · commit <strong>98644e2</strong></span>
+        </div>
+
+        <div class="landing-hero-cols">
+          <div class="lh-col lh-col-do">
+            <h4>&#128161; What you can do here</h4>
+            <ul>
+              <li>Read the current status of each area and team member.</li>
+              <li>Open a member tab to see their systems, tables, and next actions.</li>
+              <li>Search across every tab for a name, topic, or file path.</li>
+              <li>Follow evidence and source pointers back to the real files.</li>
+            </ul>
+          </div>
+          <div class="lh-col lh-col-gated">
+            <h4>&#128274; What is still gated</h4>
+            <ul>
+              <li>Rajiv / Admin Manager section — BLOCKED until SRC-ADMIN-001 arrives.</li>
+              <li>All 9 open [VERIFY] items — cannot be resolved from this dashboard.</li>
+              <li>Live KPI, AXIOM, ROI and leave figures — no real data is shown.</li>
+              <li>Any editing, saving, or sending — done in VS Code only.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member snapshot — quick navigation -->
+      <div class="section-title">Team Members at a Glance</div>
+      <div class="member-snap-grid">
+
+        <button type="button" class="member-snap member-snap-active" data-goto="mayurika-hr" data-searchable
+          data-tags="mayurika hr officer active nslp control system snapshot navigation">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Mayurika</span>
+            <span class="badge badge-pass">ACTIVE</span>
+          </div>
+          <div class="member-snap-role">HR Officer — staff records, PDPA, HR workflows</div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">NSLP Control System (6 tables) · HR Daily Control Panel</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Confirm exact HR / EOD tool names to close [VERIFY] item 9</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val">HR table formats pending Mayurika input</span>
+          </div>
+          <span class="member-snap-cta">Open Mayurika HR</span>
+        </button>
+
+        <button type="button" class="member-snap member-snap-active" data-goto="suman-recruitment" data-searchable
+          data-tags="suman recruitment officer active snapshot navigation head hunter onboarder">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Suman</span>
+            <span class="badge badge-pass">ACTIVE</span>
+          </div>
+          <div class="member-snap-role">Recruitment Officer — Head Hunter · Onboarder · ROI Reviewer</div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">Recruitment workbench · 8-point screening · review timeline</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Review complete — no open action until MD review</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val">None — no candidate personal data shown</span>
+          </div>
+          <span class="member-snap-cta">Open Suman Recruitment</span>
+        </button>
+
+        <button type="button" class="member-snap member-snap-active" data-goto="arun-implementation" data-searchable
+          data-tags="arun implementation officer active snapshot navigation kpi axiom control tables">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Arun</span>
+            <span class="badge badge-pass">ACTIVE</span>
+          </div>
+          <div class="member-snap-role">Implementation Officer — KPI, AXIOM, incident escalation</div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">Day-to-Day Control Tables · PH KPI review template</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Map factual data sources before any live PH report</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val">Live PH report is AMBER — 6 of 8 data sources missing</span>
+          </div>
+          <span class="member-snap-cta">Open Arun Implementation</span>
+        </button>
+
+        <button type="button" class="member-snap member-snap-blocked" data-goto="rajiv-blocked" data-searchable
+          data-tags="rajiv admin manager blocked gated snapshot navigation src-admin-001 not created">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Rajiv / Admin</span>
+            <span class="badge badge-blocked">BLOCKED</span>
+          </div>
+          <div class="member-snap-role">Admin Manager — authority scope not yet sourced</div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">Not created — workbench intentionally not built</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Receive and register SRC-ADMIN-001 source document</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val">[VERIFY] items 1–5 · PRC authority not established</span>
+          </div>
+          <span class="member-snap-cta">Open Rajiv / Admin</span>
+        </button>
+
+      </div>
+
       <!-- How to use -->
       <div class="how-to-box">
         <h3>How to use this dashboard</h3>
@@ -1584,6 +2006,31 @@
       <!-- Label legend -->
       <div class="section-title">What the labels mean</div>
       <div class="label-legend">
+        <div class="legend-item">
+          <span class="legend-item-label">Active</span>
+          <span class="badge badge-pass" style="margin-bottom:4px;">ACTIVE</span>
+          <span class="legend-item-desc">Approved by its owner for current internal use.</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-item-label">Pass</span>
+          <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+          <span class="legend-item-desc">Validation complete — this check has passed.</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-item-label">Amber</span>
+          <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+          <span class="legend-item-desc">Needs review, a source, or approval before it is final.</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-item-label">Gated</span>
+          <span class="badge badge-blocked" style="margin-bottom:4px;">GATED</span>
+          <span class="legend-item-desc">Intentionally blocked until a required document or sign-off arrives.</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-item-label">Read-Only</span>
+          <span class="badge badge-viewonly" style="margin-bottom:4px;">READ-ONLY</span>
+          <span class="legend-item-desc">No data is saved or changed — this is a view only.</span>
+        </div>
         <div class="legend-item">
           <span class="legend-item-label">View Only</span>
           <span class="badge badge-viewonly" style="margin-bottom:4px;">VIEW ONLY</span>
@@ -6110,6 +6557,14 @@
       tabBtns.forEach(function (btn) {
         btn.addEventListener('click', function () {
           activateTab(btn.getAttribute('data-tab'));
+        });
+      });
+
+      /* ── Member snapshot cards jump to a tab (UI-only, no network) ── */
+      document.querySelectorAll('[data-goto]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          activateTab(el.getAttribute('data-goto'));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         });
       });
 
