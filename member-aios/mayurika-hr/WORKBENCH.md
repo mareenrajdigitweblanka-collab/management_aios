@@ -256,8 +256,17 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 The following skill update candidates have been created for Mayurika's domain. These are DRAFT files pending Mayurika / MD confirmation before merge into the raw HR skill file.
 
-| Candidate | Path | Status | Created |
-|---|---|---|---|
-| New Skill Learning Program — HR Follow-up, Verification & Implementation Responsibility | `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md` | DRAFT — MD-requested update candidate | 2026-07-02 |
+| Candidate | Path | Status | Created | Confirmation Evidence |
+|---|---|---|---|---|
+| New Skill Learning Program — HR Follow-up, Verification & Implementation Responsibility | `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md` | MAYURIKA_CONFIRMED_CANDIDATE — Final merge pending MD/coordinator approval | 2026-07-02 | `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md` |
 
-**Rule:** These candidates do not update root AIOS truth. Raw HR.Mayu.Skill.md is not edited until Mayurika / MD confirms merge. Validation: `validation/hr-nslp-skill-update-candidate-check.md`. Evidence: `evidence/stakeholder-confirmations/hr-nslp-md-update-request-2026-07-02.md`.
+**Rule:** These candidates do not update root AIOS truth. Raw HR.Mayu.Skill.md is not edited until MD/coordinator approves final merge. Validation: `validation/hr-nslp-skill-update-candidate-check.md`. Original request evidence: `evidence/stakeholder-confirmations/hr-nslp-md-update-request-2026-07-02.md`.
+
+**NSLP Candidate — Mayurika Confirmation (2026-07-06):**
+
+- **Candidate path:** `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md`
+- **Confirmation evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md`
+- **Status:** MAYURIKA_CONFIRMED_CANDIDATE
+- **Raw HR.Mayu.Skill.md:** NOT edited — unchanged
+- **Final merge:** PENDING MD/coordinator approval
+- **Next step:** Ask coordinator/MD whether this Mayurika-confirmed candidate should be merged into `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md`

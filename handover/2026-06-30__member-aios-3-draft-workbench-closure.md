@@ -324,11 +324,20 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 **No further work on Attendance Dashboard** unless Mayurika raises a new, separate requirement in the future. If she does, treat it as a new feature request from scratch.
 
+**Mayurika confirmed NSLP skill update candidate — 2026-07-06.**
+
+- **Candidate:** `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md`
+- **Confirmation evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md`
+- **Raw HR.Mayu.Skill.md:** NOT edited — unchanged
+- **Status:** MAYURIKA_CONFIRMED_CANDIDATE
+- **Final merge:** PENDING MD/coordinator approval
+- **Next step:** Ask coordinator/MD whether this Mayurika-confirmed candidate should be merged into the canonical HR skill file.
+
 **Remaining open items for Mayurika's domain:**
 - Confirm 5 preview HR useful tables when available.
-- Confirm NSLP skill update candidate when available.
 - Confirm exact tool names for HR records system and EOD dashboard to resolve [VERIFY] item 12.
 - Commit and redeploy dashboard to Netlify to publish Mayurika ACTIVE status.
+- Obtain MD/coordinator approval for final merge of NSLP skill update candidate into `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md`.
 
 **Root propagation complete 2026-06-30:** Root `context/verify-register.md`, CLAUDE.md, `context/kpi-axiom-context.md`, and `evidence/source-register.md` updated with Arun's confirmed items 8 (ACOS threshold: ACOS below 25% / ROAS 4), 9 (Operational Manager escalation authority: firm commitment with deadline to achieve required ROI — escalation only; full PRC scope remains [VERIFY] pending dedicated source), and 10 (Implementation Officer – Arunraj; Paraparan as External Auditor). Source registered as SRC-ARUN-CONF-001 (READY). All propagation scope limits preserved.
 
