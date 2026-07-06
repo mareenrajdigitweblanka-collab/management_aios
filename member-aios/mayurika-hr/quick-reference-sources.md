@@ -136,6 +136,23 @@ Built from SRC-MAYURIKA-NSLP-001. All files are documentation-only, placeholder-
 
 ---
 
+## HR Schedule Pilot
+
+HR-only first build of the MD-requested schedule structure (priority queue + Google Calendar-style visual layer). HR / Mayurika only — not the full Management Team schedule. Static skeleton + read-only dashboard preview. Placeholder rows only; no real staff data; no invented HR tasks; no Google Calendar API/automation/database. Status: **HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION**.
+
+| File | Path | Purpose |
+|---|---|---|
+| HR Schedule Pilot README | `schedules/hr/README.md` | Pilot overview, scope, status, confirmed/[VERIFY] split, safety boundaries |
+| Mayurika HR Schedule | `schedules/hr/mayurika.md` | Weekly HR schedule skeleton — placeholder rows only |
+| HR Priority Queue | `schedules/hr/priority-queue.md` | HR priority queue skeleton (High / Medium / Low) — placeholder rows only |
+| Recurring Templates | `schedules/hr/recurring-templates/` | Reusable HR block template + MD screenshot recurring blocks (reference only, HR applicability [VERIFY]) |
+| Schedule Pilot Validation | `validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md` | Build check — PASS/AMBER; safety and scope checks |
+| Schedule Pilot Evidence | `evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md` | MD schedule request + HR-only scope correction + [VERIFY] items |
+
+**Open [VERIFY]:** priority scale; HR categories; recurring-block ownership; interview/session scheduling ownership; CST meaning; durations; edit rights; replace-or-parallel. Ask Mayurika/Varmen before resolving.
+
+---
+
 ## Pass/Fail Rule
 
 PASS if a reader can locate the correct source, context file, skill, or inbox for any Mayurika HR domain question without verbal guidance.

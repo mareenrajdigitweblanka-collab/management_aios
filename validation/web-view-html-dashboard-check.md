@@ -1386,6 +1386,33 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## HR Schedule Pilot Calendar Preview Check (2026-07-06)
+
+An HR Schedule Pilot — Internal Calendar Preview subsection was added to the Mayurika HR tab in `web-view/index.html`. It contains a [VERIFY] banner, a static calendar-style weekly grid, a priority queue preview, a Mayurika weekly schedule skeleton, and the MD screenshot recurring blocks shown as "reference only / HR applicability [VERIFY]".
+
+| Check | Result |
+|---|---|
+| HR-only schedule preview exists | YES — added to Mayurika HR tab |
+| Not full management team schedule | YES — no full Management Team schedule tab or section added |
+| Calendar-style HR preview grid present | YES — static weekly grid (Mon–Fri, time rows) |
+| Priority queue preview present | YES — High/Medium/Low placeholder rows |
+| Mayurika weekly schedule skeleton present | YES — placeholder rows only |
+| [VERIFY] banner for unconfirmed HR schedule rules | YES — 8 [VERIFY] items listed |
+| MD screenshot blocks shown as reference only (not Mayurika-owned) | YES — labelled "reference only · HR applicability [VERIFY]" |
+| [VERIFY] items preserved | YES — none resolved; all unconfirmed fields [VERIFY] |
+| Dashboard remains read-only | YES — no forms, no edit buttons |
+| No Google Calendar API | YES — none added |
+| No forms | YES — none added |
+| No automation | YES — none added |
+| No `fetch()` / backend / database | YES — none added |
+| No sensitive data | YES — placeholder rows only; no real staff/candidate data |
+| No invented HR tasks | YES — placeholder task types only |
+| Read-only static preview note shown | YES — "HR schedule pilot only. Static preview. No Google Calendar connection. No automation. No live editing." |
+
+**Check result: PASS — AMBER until Mayurika/Varmen confirm HR schedule rules and recurring-block ownership.** Full build validation: `validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md`.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

@@ -604,3 +604,25 @@ Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
 All approved workbench files created. Mayurika's pre-existing files confirmed correct. Suman and Arun workbenches are source-pointer only, [VERIFY]-preserving, sensitive-data-free, and correctly routed for review. Rajiv workbench is correctly blocked. No policy truth duplicated. No [VERIFY] items resolved. Three AMBER items are non-blocking and documented in the validation check.
 
 This closure record is committed on branch `individual-aios`. Commit hash to be filled after commit.
+
+---
+
+## HR Schedule Pilot Build — Closure Note (2026-07-06)
+
+**Task:** Build an HR-only schedule pilot for Mayurika (not the full Management Team schedule system).
+
+| Item | Detail |
+|---|---|
+| HR schedule pilot built | YES — `schedules/hr/` (README, priority-queue, mayurika, recurring-templates/, archive/) |
+| Full management schedule built | NO — HR / Mayurika only; no files for Arun, Suman, Rajiv/Admin, Varmen, or others |
+| Source guide used | `Mareenraj_Schedule_Build_Guide.docx` — direct MD request relayed to Mayurika, 6 July 2026 |
+| Evidence | `evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md` |
+| Validation | `validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md` |
+| Dashboard | `web-view/index.html` — Mayurika HR tab — "HR Schedule Pilot — Internal Calendar Preview" (read-only static preview) |
+| Workbench updated | `member-aios/mayurika-hr/WORKBENCH.md` + `quick-reference-sources.md` — HR Schedule Pilot section/rows added |
+| Status | HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION |
+| [VERIFY] items pending | Priority scale; HR categories; recurring-block ownership; interview/session scheduling ownership; CST meaning; durations; edit rights; replace-or-parallel |
+
+**Safety:** static skeleton + read-only dashboard preview only; no Google Calendar API, no `fetch()`/backend/database, no automation, no forms, no editable events, no real staff/candidate data, no invented HR tasks; no [VERIFY] items resolved; blocked files (CLAUDE.md, source-register.md, verify-register.md, HR.Mayu.Skill.md, other member folders) untouched.
+
+**Next step:** Ask Mayurika/Varmen the eight HR schedule confirmation questions, then resolve [VERIFY] fields and re-validate. Do not expand to full Management Team schedules until separately requested.

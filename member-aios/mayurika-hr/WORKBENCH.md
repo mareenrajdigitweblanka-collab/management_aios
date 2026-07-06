@@ -253,6 +253,27 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 ---
 
+## 19. HR Schedule Pilot
+
+**What:** HR-only first build of the MD-requested schedule structure (priority-based task queue + Google Calendar-style visual layer). HR / Mayurika only — not the full Management Team schedule.
+
+| Item | Path / Value |
+|---|---|
+| Schedule folder | `schedules/hr/` (README, priority-queue.md, mayurika.md, recurring-templates/, archive/) |
+| Dashboard | `web-view/index.html` — Mayurika HR tab — "HR Schedule Pilot — Internal Calendar Preview" (read-only static preview) |
+| Evidence | `evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md` |
+| Validation | `validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md` |
+| Source | MD schedule request relayed to Mayurika, 6 July 2026 (`Mareenraj_Schedule_Build_Guide.docx`) |
+| Status | HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION |
+
+**Limits:** Static skeleton + read-only preview only. Placeholder rows only — no real staff data, no invented HR tasks. No Google Calendar API, no automation, no forms, no database. MD screenshot recurring blocks are shown as reference only; HR ownership/applicability is [VERIFY].
+
+**Open [VERIFY]:** HR priority scale (High/Medium/Low vs numeric); daily HR schedule categories; which recurring blocks belong to HR; whether Mayurika manages interview/session scheduling; CST meaning; exact durations; who can edit the HR schedule; whether this replaces or runs alongside the existing HR/meeting schedule.
+
+**Next step:** Ask Mayurika / Varmen the eight HR schedule confirmation questions above, then resolve the [VERIFY] fields and re-validate. Do not expand to full Management Team schedules until separately requested.
+
+---
+
 ## 17. NSLP Final Integration Closure
 
 **Validation:** `validation/hr-nslp-final-integration-closure-check-2026-07-06.md`

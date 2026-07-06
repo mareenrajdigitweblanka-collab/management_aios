@@ -1491,3 +1491,41 @@ Mayurika operationally accepted the NSLP dashboard/control system in `web-view/i
 **PASS — AMBER noted**
 
 Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman ACTIVE, and root propagation complete. All relevant sections updated (Arun tab badges, verify-explain-action boxes, warning box, review queue action 4, AMBER 1, file map, Root AIOS tab). Root propagation of items 8, 9, 10 correctly shown as complete with SRC-ARUN-CONF-001. Item 9 scope limit preserved throughout. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). No duplicate truth. No editing capability. Non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Skills Register Preview added 2026-07-03 — 5 real skill files from `skills/` folder; usage counts hidden (no tracking source); no Varmen draft sample counts used; no individual staff usage shown; no blocked tables built; all existing sections unchanged. Ready to commit and redeploy to Netlify.
+
+---
+
+## HR Schedule Pilot — Internal Calendar Preview Added (2026-07-06)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| New subsection (Mayurika HR tab) | "HR Schedule Pilot — Internal Calendar Preview" added before the tab's next-step box |
+| [VERIFY] banner | 8 unconfirmed HR schedule rules listed (priority scale, HR categories, recurring-block ownership, interview/session scheduling ownership, CST meaning, durations, edit rights, replace-or-parallel) |
+| Calendar-style grid | Static Mon–Fri weekly grid with time rows; MD screenshot blocks shown as "reference only · HR applicability [VERIFY]"; dashed placeholder cells |
+| Priority queue preview | High/Medium/Low + [VERIFY] placeholder rows; no invented HR tasks |
+| Weekly schedule skeleton | Mon–Fri placeholder rows; no real staff data |
+| Read-only note | "HR schedule pilot only. Static preview. No Google Calendar connection. No automation. No live editing." |
+| Full Management Team schedule tab | NOT built — HR / Mayurika only |
+| Source | `Mareenraj_Schedule_Build_Guide.docx` — direct MD request relayed to Mayurika, 6 July 2026 |
+| Folder | `schedules/hr/` |
+| Evidence | `evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md` |
+| Validation | `validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md`; dashboard §HR Schedule Pilot Calendar Preview Check in `validation/web-view-html-dashboard-check.md` |
+| Status | HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive/real staff or candidate data | NOT ADDED — placeholder rows only |
+| Invented HR tasks | NONE — placeholder task types only |
+| Google Calendar API / `fetch()` / backend / database | NOT PRESENT |
+| Forms / editable events / automation | NOT PRESENT |
+| Full Management Team schedule files | NOT CREATED (only `schedules/hr/`) |
+| Dashboard read-only | PRESERVED |
+| [VERIFY] items resolved | NO — all unconfirmed fields tagged [VERIFY] |
+| Blocked files (CLAUDE.md, source-register.md, verify-register.md, HR.Mayu.Skill.md, other member folders) | NOT EDITED |
+| Member statuses | UNCHANGED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit; redeploy to Netlify (publish directory `web-view/`, no build step). Ask Mayurika/Varmen the eight HR schedule confirmation questions before expanding the pilot. Do not build full Management Team schedules until separately requested.
