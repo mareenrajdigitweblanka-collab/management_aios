@@ -2,9 +2,10 @@
 name: mayurika-hr-useful-tables-preview-build-check
 type: validation
 created: 2026-07-02
+last-updated: 2026-07-06
 checked-by: Mareenraj (builder)
 scope: Preview build of 5 Mayurika HR useful tables into web-view/index.html
-status: PASS — AMBER noted (Mayurika review pending)
+status: SUPERSEDED — 2026-07-06. See supersession note below.
 root-truth: CLAUDE.md — canonical; this validation file is a build check only
 references:
   - evidence/table-discovery/mayurika-hr-useful-tables-source-check-2026-07-02.md
@@ -13,6 +14,28 @@ references:
 ---
 
 # Validation: Mayurika HR Useful Tables — Preview Build Check (2026-07-02)
+
+---
+
+## SUPERSESSION NOTE — 2026-07-06
+
+**Superseded on 2026-07-06.**
+
+Mayurika will provide final HR table format and table content in the future. The existing 5 preview tables were removed from the visible dashboard (`web-view/index.html`) on 2026-07-06 and should not be treated as approved.
+
+- Previous preview tables (Tables 1–5) are no longer visible in the dashboard.
+- No replacement HR table has been built.
+- No table format has been invented.
+- Historical evidence files from the original 2026-07-02 build are retained and must not be deleted.
+- This validation file is preserved as a historical record of the original build check.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-hr-tables-future-format-update-2026-07-06.md`
+
+**Removal validation:** `validation/mayurika-hr-tables-preview-removal-check.md`
+
+**Next step:** Wait for Mayurika to provide exact table format and content before building any HR tables.
+
+---
 
 **Purpose:** Confirm that the 5 PASS tables from the source discovery were added to the Mayurika HR dashboard tab correctly — as read-only previews, source-backed, without sensitive data, without [VERIFY] resolution, without policy duplication, and without escalation/PRC/AXIOM/KPI content.
 

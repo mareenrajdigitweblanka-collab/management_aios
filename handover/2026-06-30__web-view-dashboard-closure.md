@@ -147,6 +147,42 @@ Commit the updated files to `individual-aios`, redeploy to Netlify (`web-view/` 
 
 ---
 
+## Mayurika HR Tables Preview Removal — Applied 2026-07-06
+
+**Task:** Remove existing Mayurika HR useful table previews from visible dashboard. Mayurika will provide table format and table contents in the future.
+
+**Reason:** Mayurika will provide final HR table format and content herself. Existing 5 preview tables (built 2026-07-02) were removed from the visible dashboard pending Mayurika's input.
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-hr-tables-future-format-update-2026-07-06.md`
+
+**Validation path:** `validation/mayurika-hr-tables-preview-removal-check.md`
+
+### Changes Applied
+
+| Change | Applied? |
+|---|---|
+| 5 HR useful table previews removed from Mayurika HR tab | YES |
+| "Not Built — Month 1 Status Categories" amber note removed | YES |
+| "PREVIEW — Read-Only Source-Backed HR Reference Tables" banner removed | YES |
+| Placeholder note added: "HR table formats pending Mayurika input" | YES |
+| Next-step-box updated — reference to routing 5 tables removed | YES |
+| Historical evidence files retained (not deleted) | CONFIRMED |
+
+### Historical Preview Evidence Retained
+
+The following files from the original 2026-07-02 build are retained as historical records and must not be deleted:
+
+- `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md`
+- `validation/mayurika-hr-useful-tables-preview-build-check.md` (supersession note added)
+- `evidence/table-discovery/mayurika-hr-useful-tables-source-check-2026-07-02.md`
+- `validation/mayurika-hr-useful-tables-discovery-check.md`
+
+### Next Step — HR Tables
+
+Wait for Mayurika to provide exact HR table format and content. Do not build any HR table until Mayurika's table format and content are received.
+
+---
+
 ## Blockers
 
 | Blocker | Detail | Owner |

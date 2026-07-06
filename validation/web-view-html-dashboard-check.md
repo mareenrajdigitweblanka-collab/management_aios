@@ -1188,6 +1188,45 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## §39 — Mayurika HR Tables Preview Removal Check (2026-07-06)
+
+**Task:** Remove existing Mayurika HR useful table previews from visible dashboard. Mayurika will provide table format and table contents in the future.
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-hr-tables-future-format-update-2026-07-06.md`
+
+**Validation path:** `validation/mayurika-hr-tables-preview-removal-check.md`
+
+| Check | Result |
+|---|---|
+| User update received and recorded | YES — Mayurika will provide table format and content in the future |
+| All 5 HR useful table previews removed from visible dashboard | YES — Tables 1–5 removed from web-view/index.html |
+| "Not Built — Month 1 Status Categories" amber note removed | YES — part of same preview block |
+| "PREVIEW — Read-Only Source-Backed HR Reference Tables" header banner removed | YES |
+| Placeholder note added: "HR table formats pending Mayurika input" | YES |
+| Placeholder links to evidence and validation files | YES |
+| No replacement HR table built | CONFIRMED |
+| No fake table format invented | CONFIRMED |
+| Next-step-box updated — reference to "5 preview tables" removed | YES |
+| Historical evidence files retained (not deleted) | CONFIRMED |
+| Mayurika WORKBENCH.md status ACTIVE — unchanged | CONFIRMED |
+| Mayurika workbench tab badge unchanged | CONFIRMED |
+| Document Register, Skills, Handover, Overview, Recurring Issues unchanged | CONFIRMED |
+| HR Daily Control Panel cards unchanged | CONFIRMED |
+| Sensitive data (staff names, leave, salary, health, PDPA, KPI, candidate, disciplinary) added | NOT PRESENT |
+| No blocked real data tables built (Team Table, Leave Requests, Onboarding, KPI Schedule, Decisions) | CONFIRMED |
+| source-register.md changed | NO |
+| CLAUDE.md changed | NO |
+| context/verify-register.md changed | NO |
+| [VERIFY] items resolved | NONE — all 9 open items preserved |
+| Dashboard read-only | YES — no forms, no edit/save/delete, no backend, no external CDN |
+| Rajiv remains BLOCKED | YES — unchanged |
+| Arun remains ACTIVE | YES — unchanged |
+| Suman remains ACTIVE | YES — unchanged |
+
+**Check result: PASS**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
