@@ -112,6 +112,20 @@ For full [VERIFY] register, see `context/verify-register.md`.
 
 ---
 
+## Arun Day-to-Day Useful Tables Map
+
+| Item | Detail |
+|---|---|
+| Path | `member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md` |
+| What it supports | Day-to-day PH review preparation tracking; KPI data source readiness check; 15-worksheet output checklist; risk / coaching / action plan follow-up; dashboard requirement gating |
+| What it cannot answer | Live KPI scores; AXIOM band results; bonus eligibility outcome; PRC decisions; warning or PIP results; real staff performance data; real sales / inventory / PPC figures |
+| Source basis | SRC-ARUN-PH-001 (PH review structure); SRC-ARUN-001 (KPI definitions, dashboard requirements); SRC-MD-ARUN-001 (meeting governance) |
+| Status | INTERNAL BUILD — placeholder/control tables; no real data |
+| Validation path | `validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md` |
+| Evidence path | `evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md` |
+
+---
+
 ## Pass/Fail Rule
 
 PASS if a reader can locate the correct source, context file, skill, or inbox for any Arun KPI/implementation domain question without verbal guidance.

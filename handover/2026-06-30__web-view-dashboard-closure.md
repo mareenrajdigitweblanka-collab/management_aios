@@ -147,6 +147,48 @@ Commit the updated files to `individual-aios`, redeploy to Netlify (`web-view/` 
 
 ---
 
+## Arun Day-to-Day Useful Tables — Added 2026-07-06
+
+**Task:** Add 5 Arun day-to-day control tables to the Arun Implementation tab in `web-view/index.html`. Tables are planning/control templates only — no live KPI/AXIOM data.
+
+**Evidence path:** `evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md`
+
+**Table map path:** `member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md`
+
+**Validation path:** `validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md`
+
+### Five Tables Added
+
+| # | Table Name | Safe to Show? |
+|---|---|---|
+| 1 | Portfolio Holder Review Preparation Tracker | YES — placeholder rows only |
+| 2 | KPI Data Source Readiness Table | YES — source metadata only |
+| 3 | PH Monthly Review Output Checklist | YES — 15-worksheet structure (SRC-ARUN-PH-001) |
+| 4 | Risk / Coaching / Action Plan Tracker | YES — process-level placeholders; no staff names |
+| 5 | Arun Dashboard Requirement Tracker | YES — gate status reference only |
+
+### Safety Limits
+
+- No real staff names, no real sales / inventory / PPC values added.
+- No AXIOM band results calculated.
+- No bonus eligibility determination.
+- No PRC decision output.
+- No warning / PIP decision output.
+- No CSV exchange-rate rows (SRC-ARUN-002 rows 44–52 excluded).
+- Dashboard remains read-only — no forms, no edit buttons, no backend.
+- No source-register.md, CLAUDE.md, or verify-register.md changes.
+- No [VERIFY] items resolved.
+
+### Safety note added in dashboard
+
+> "These Arun tables are day-to-day control templates only. They do not calculate KPI, AXIOM, bonus, PRC, warning, or PIP outcomes. Real report generation requires approved factual data sources."
+
+### Next Step
+
+Map factual data sources (sales, inventory, advertising, pricing, feedback) and confirm access approval before building live report generation.
+
+---
+
 ## Mayurika HR Tables Preview Removal — Applied 2026-07-06
 
 **Task:** Remove existing Mayurika HR useful table previews from visible dashboard. Mayurika will provide table format and table contents in the future.

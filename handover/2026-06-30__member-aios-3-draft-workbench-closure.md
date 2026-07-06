@@ -123,6 +123,34 @@ Supporting evidence used during creation:
 
 ---
 
+## Arun Day-to-Day Useful Tables Preview/Control Build — 2026-07-06
+
+**Task:** Build 5 Arun day-to-day control tables and update Arun member workbench files.
+
+**Status:** PASS — AMBER until factual data-source mapping is approved for live reporting
+
+**Evidence:** `evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md`
+**Table map:** `member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md`
+**Validation:** `validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md`
+
+| File | Action |
+|---|---|
+| `evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md` | CREATED — evidence of user request |
+| `member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md` | CREATED — 5 control tables documented |
+| `validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md` | CREATED — PASS/AMBER validation |
+| `web-view/index.html` | EDITED — 5 tables added to Arun Implementation tab |
+| `member-aios/arun-implementation/WORKBENCH.md` | EDITED — §16 added |
+| `member-aios/arun-implementation/quick-reference-sources.md` | EDITED — table map pointer added |
+| `validation/web-view-html-dashboard-check.md` | EDITED — §40 added |
+| `handover/2026-06-30__web-view-dashboard-closure.md` | EDITED — Arun tables section added |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Safety preserved:** No real staff data. No KPI/AXIOM calculation. No bonus/PRC/warning/PIP automation. No CSV exchange-rate rows. Dashboard read-only. CLAUDE.md not touched. source-register.md not touched. verify-register.md not touched.
+
+**Next step:** Map factual data sources before live report generation.
+
+---
+
 ## Queryability Result
 
 A clean LLM reading `member-aios/` after this task should be able to answer:

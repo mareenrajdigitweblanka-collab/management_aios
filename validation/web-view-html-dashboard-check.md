@@ -1256,6 +1256,54 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## §40 — Arun Day-to-Day Useful Tables Preview Check (2026-07-06)
+
+**Change:** 5 Arun day-to-day control tables added to the Arun Implementation tab in `web-view/index.html`. Tables are planning/control templates only — no live KPI/AXIOM data, no real staff data.
+
+**Evidence path:** `evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md`
+**Table map:** `member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md`
+**Validation:** `validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md`
+
+### Tables Added
+
+| # | Table Name | Dashboard Section |
+|---|---|---|
+| 1 | Portfolio Holder Review Preparation Tracker | Arun Implementation tab — collapsible |
+| 2 | KPI Data Source Readiness Table | Arun Implementation tab — collapsible |
+| 3 | PH Monthly Review Output Checklist | Arun Implementation tab — collapsible |
+| 4 | Risk / Coaching / Action Plan Tracker | Arun Implementation tab — collapsible |
+| 5 | Arun Dashboard Requirement Tracker | Arun Implementation tab — collapsible |
+
+### Safety Checks
+
+| Check | Result |
+|---|---|
+| Section heading: "Arun Day-to-Day Control Tables — Internal Build" | YES |
+| Safety note added in dashboard | YES |
+| Placeholder rows only — no real data | YES |
+| No edit buttons or forms added | YES — read-only only |
+| Real staff names added | NOT PRESENT |
+| Real sales / inventory / PPC values added | NOT PRESENT |
+| KPI / AXIOM live calculation added | NOT PRESENT |
+| Bonus eligibility result calculated | NOT PRESENT |
+| PRC decision result produced | NOT PRESENT |
+| Warning / PIP decision result produced | NOT PRESENT |
+| CSV exchange-rate rows used | NOT PRESENT |
+| Sensitive data (salary, health, PDPA, employee IDs, candidate, disciplinary) | NOT PRESENT |
+| source-register.md changed | NO |
+| CLAUDE.md changed | NO |
+| context/verify-register.md changed | NO |
+| [VERIFY] items resolved | NONE — all 9 open items preserved |
+| Dashboard read-only | YES — no forms, no edit/save/delete, no backend, no external CDN |
+| Mayurika / Suman / Rajiv files changed | NO — unchanged |
+| Arun ACTIVE status | YES — unchanged |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Check result: PASS — AMBER until factual data-source mapping is approved for live reporting**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

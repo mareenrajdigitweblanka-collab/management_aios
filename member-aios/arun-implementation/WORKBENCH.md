@@ -264,6 +264,40 @@ A clean LLM reading this workbench should be able to answer:
 
 ---
 
+## 16. Arun Day-to-Day Dashboard Tables
+
+**Status:** INTERNAL BUILD — preview/control tables only (2026-07-06)
+
+**Table map path:** `member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md`
+
+**Dashboard visibility:** Arun Implementation tab in `web-view/index.html` — "Arun Day-to-Day Control Tables — Internal Build" section
+
+**Source basis:** SRC-ARUN-PH-001 (PH review structure), SRC-ARUN-001 (KPI definitions, dashboard requirements), SRC-MD-ARUN-001 (meeting governance)
+
+**Five tables built:**
+
+| # | Table | Purpose |
+|---|---|---|
+| 1 | Portfolio Holder Review Preparation Tracker | Track which PH monthly reviews are ready, waiting, or blocked |
+| 2 | KPI Data Source Readiness Table | Pre-flight check — confirm data sources before generating review |
+| 3 | PH Monthly Review Output Checklist | Check all 15 SRC-ARUN-PH-001 worksheets are complete |
+| 4 | Risk / Coaching / Action Plan Tracker | Day-to-day follow-up at process level |
+| 5 | Arun Dashboard Requirement Tracker | Track which dashboard views are safe now vs. gated |
+
+**Limits:**
+- No real staff data, no real sales / inventory / PPC values
+- No live KPI calculation, no AXIOM band assignment
+- No bonus / PRC / warning / PIP automation
+- No CSV exchange-rate rows (SRC-ARUN-002 rows 44–52 excluded)
+- Placeholder rows only — control/planning template
+
+**Next step:** Map factual data sources (sales, inventory, advertising, pricing, feedback) and confirm access approval before building the live report generation workflow.
+
+**Evidence:** `evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md`
+**Validation:** `validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md`
+
+---
+
 ## 14. Next Step
 
 **Arun review completed — 2026-06-30.**
