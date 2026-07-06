@@ -173,6 +173,30 @@ Supporting evidence used during creation:
 
 ---
 
+## Mayurika NSLP — Source-Register Registration — 2026-07-06
+
+**Task:** Register NSLP Section 9 as SRC-MAYURIKA-NSLP-001 in evidence/source-register.md; update context/hr-operations-context.md §11; update Mayurika workbench files.
+
+**Source ID registered:** SRC-MAYURIKA-NSLP-001 — READY — MD Approved; Mayurika Confirmed 2026-07-06; Merged commit 09011cb; Queryability PASS 5d46a29
+
+**Source count:** 25 → 26
+
+| File | Action |
+|---|---|
+| `evidence/source-register.md` | EDITED — SRC-MAYURIKA-NSLP-001 row added; count updated 25 → 26; Notes section updated |
+| `context/hr-operations-context.md` | EDITED — §11 (NSLP) added; Source IDs table updated; Pass/Fail result updated |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — SRC-MAYURIKA-NSLP-001 added to §4 domain pointer table; §14 status updated to REGISTERED_CANONICAL_SECTION |
+| `member-aios/mayurika-hr/quick-reference-sources.md` | EDITED — queryability review row added; SRC-MAYURIKA-NSLP-001 row added; context entry row added |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Safety preserved:** HR.Mayu.Skill.md not edited. CLAUDE.md not edited. verify-register.md not edited. web-view/index.html not edited. No sensitive staff data added. No automation created. No KPI/AXIOM/BLOS/threshold changes. No PostgreSQL changes.
+
+**AMBER remaining:** CLAUDE.md §5 (Mayurika role table) not yet updated to list NSLP as a confirmed responsibility — requires separate approval.
+
+**Next step:** If separately approved — update CLAUDE.md §5 Mayurika role row to include NSLP as a confirmed responsibility under SRC-MAYURIKA-NSLP-001.
+
+---
+
 ## Mayurika NSLP Skill Merge — 2026-07-06
 
 **Task:** Merge Mayurika-confirmed NSLP HR skill update candidate into canonical HR skill file.

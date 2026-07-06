@@ -35,7 +35,10 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | NSLP Confirmation Evidence | `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md` | Mayurika confirmation record for NSLP skill update candidate — 2026-07-06 | READY — Mayurika Confirmed 2026-07-06 |
 | NSLP MD Approval Evidence | `evidence/stakeholder-confirmations/mayurika-nslp-skill-merge-md-approval-2026-07-06.md` | MD approval evidence for NSLP Section 9 merge into HR.Mayu.Skill.md — user statement 2026-07-06 | MD_APPROVED_FOR_CANONICAL_HR_SKILL_MERGE |
 | NSLP Merge Canonical Target | `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md` | Canonical HR skill file — Section 9 (NSLP) appended 2026-07-06; Known Limits block excluded | MERGED — Section 9 added 2026-07-06 |
-| NSLP Merge Validation | `validation/hr-nslp-skill-merge-check-2026-07-06.md` | Validation record for NSLP Section 9 merge — 2026-07-06; source-register not updated in this task | PASS — AMBER for source-register only |
+| NSLP Merge Validation | `validation/hr-nslp-skill-merge-check-2026-07-06.md` | Validation record for NSLP Section 9 merge — 2026-07-06 | PASS |
+| NSLP Queryability Review | `validation/hr-nslp-section-9-queryability-review-2026-07-06.md` | Queryability review — all 12 questions YES; 2026-07-06 | PASS — AMBER for source-register resolved 2026-07-06 |
+| SRC-MAYURIKA-NSLP-001 | `evidence/source-register.md` — entry row for SRC-MAYURIKA-NSLP-001 | Registered source ID for NSLP Section 9 in HR.Mayu.Skill.md — full evidence chain linked; 2026-07-06 | READY — Registered 2026-07-06 |
+| NSLP Context Entry | `context/hr-operations-context.md` §11 | Process-level summary of NSLP HR responsibilities — sourced from SRC-MAYURIKA-NSLP-001; 2026-07-06 | READY — Added 2026-07-06 |
 
 ---
 

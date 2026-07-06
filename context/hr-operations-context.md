@@ -346,6 +346,48 @@ The following management documentation consolidation tasks are MD-directed:
 
 ---
 
+## 11. New Skill Learning Program — HR Follow-up, Verification & Implementation Responsibility
+
+*(Source: SRC-MAYURIKA-NSLP-001 — HR.Mayu.Skill.md Section 9; MD approved 2026-07-06; Mayurika confirmed 2026-07-06)*
+
+HR is responsible for follow-up, verification, evidence collection, adoption tracking, and management reporting for all New Skill Learning Program activities.
+
+**Core HR responsibilities:**
+
+- Confirming each new skill is assigned a unique Skill ID
+- Ensuring each new skill has a dedicated BGCT (Business Guideline & Company Training) document
+- Verifying staff have implemented the learned skill via Before & After evidence collection
+- Tracking adoption, implementation, and business impact across departments
+- Reporting NSLP implementation status, adoption rate, and business impact to management with evidence
+
+**NSLP is not complete when the meeting ends. It is complete only when the skill is applied in daily work, measurable improvement is proven, and improvement is sustained over time.**
+
+**Process flow:** New Skill Meeting → Skill Application in Work → Measurable Improvement → HR Verification → Success Story / Escalation
+
+**HR responsibilities by stage:**
+- Before the meeting: confirm skill is new and relevant; send guideline; record attendees; add to Skill Learning Register
+- During the meeting: ensure trainer teaches a new skill; ensure participants submit an Action Plan Card before leaving
+- After the meeting: start 2-week countdown; remind participants; collect Before & After evidence at 2-week mark
+- 2-week evaluation: compare Before vs After; check whether improvement is measurable and sustained
+
+**Outcome labels:** SUCCESS STORY / NOT EFFECTIVE / FAILURE / UNSUSTAINED
+
+**Exception monitoring:** skill not applied; opinion-only proof; improvement for 1–2 days only; no proof provided; senior staff repeats old skill; trainer gives theory not applicable skill
+
+**Activity cadence:** daily — check Skill IDs, BGCT documents, Action Plan Cards, pending evidence; weekly — review Skill Learning Register, validate evidence, identify exceptions; monthly — prepare NSLP status report; report adoption and business impact to management
+
+**Documents maintained:** Skill Learning Register; Skill ID Register; BGCT Document Register; Action Plan Card Register; Before & After Evidence Register; 2-Week Evaluation Log; Adoption & Implementation Tracker; NSLP Exception Register; Success Story Database; NSLP Management Report
+
+**Boundaries (what HR does NOT do):**
+- Does not approve old skills as NSLP
+- Does not mark attendance as success without implementation evidence
+- Does not accept opinion-only proof
+- Does not mark NSLP complete without measurable Before & After improvement
+- Does not create technical skill content unless separately assigned
+- Does not replace management decision-making
+
+---
+
 ## Source IDs Used in This File
 
 | Claim Area | Source ID | Status |
@@ -354,9 +396,10 @@ The following management documentation consolidation tasks are MD-directed:
 | Leave policy framework (§9.1–§9.5) | SRC-POLICY-001 | CONFIRMED |
 | Offboarding exit interview and checklist (§9.6) | SRC-POLICY-001 | CONFIRMED |
 | MD-Directed HR Governance (§10.1–§10.14) | SRC-MD-HR-001 | CONFIRMED — Varmen Reviewed 2026-06-25 |
+| New Skill Learning Program HR responsibilities (§11) | SRC-MAYURIKA-NSLP-001 | CONFIRMED — MD Approved; Mayurika Confirmed 2026-07-06 |
 
 ---
 
 ## Pass/Fail Result
 
-**PASS** — All claims trace to SRC-MAYU-001, SRC-POLICY-001, or SRC-MD-HR-001. MD-directed governance section (§10) is Varmen Reviewed 2026-06-25. No personal employee data included. No salary, disciplinary, or health data included. Process-level only. [VERIFY] item 12 resolved by SRC-POLICY-001 §6.0–6.5.
+**PASS** — All claims trace to SRC-MAYU-001, SRC-POLICY-001, SRC-MD-HR-001, or SRC-MAYURIKA-NSLP-001. MD-directed governance section (§10) is Varmen Reviewed 2026-06-25. NSLP section (§11) is MD Approved and Mayurika Confirmed 2026-07-06. No personal employee data included. No salary, disciplinary, or health data included. Process-level only. [VERIFY] item 12 resolved by SRC-POLICY-001 §6.0–6.5.
