@@ -151,6 +151,31 @@ Supporting evidence used during creation:
 
 ---
 
+## Mayurika NSLP Skill Merge — 2026-07-06
+
+**Task:** Merge Mayurika-confirmed NSLP HR skill update candidate into canonical HR skill file.
+
+**MD approval:** User stated "MD/coordinator approval no need for approval it is already come from MD." — treated as MD approval evidence.
+
+**MD approval evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-skill-merge-md-approval-2026-07-06.md`
+
+**Validation:** `validation/hr-nslp-skill-merge-check-2026-07-06.md`
+
+| File | Action |
+|---|---|
+| `evidence/stakeholder-confirmations/mayurika-nslp-skill-merge-md-approval-2026-07-06.md` | CREATED — MD approval evidence recorded |
+| `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md` | EDITED — Section 9 (NSLP) appended; Known Limits block excluded |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — NSLP status updated to MERGED_INTO_CANONICAL_HR_SKILL |
+| `member-aios/mayurika-hr/quick-reference-sources.md` | EDITED — NSLP rows updated; MD approval and validation pointers added |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+| `validation/hr-nslp-skill-merge-check-2026-07-06.md` | CREATED — PASS (AMBER for source-register only) |
+
+**Safety preserved:** MD approval evidence recorded before edit. Section 9 appended exactly once. Known Limits block excluded. Blocked files untouched (CLAUDE.md, source-register.md, verify-register.md, web-view/index.html, Arun files, Suman files, Rajiv/Admin files). No sensitive personal staff data added. No automation created. No KPI/AXIOM/BLOS/threshold changes. No PostgreSQL changes.
+
+**Next step:** Queryability review / source-register update — only if separately approved.
+
+---
+
 ## Queryability Result
 
 A clean LLM reading `member-aios/` after this task should be able to answer:

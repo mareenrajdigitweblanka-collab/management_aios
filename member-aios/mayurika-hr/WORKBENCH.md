@@ -258,15 +258,17 @@ The following skill update candidates have been created for Mayurika's domain. T
 
 | Candidate | Path | Status | Created | Confirmation Evidence |
 |---|---|---|---|---|
-| New Skill Learning Program — HR Follow-up, Verification & Implementation Responsibility | `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md` | MAYURIKA_CONFIRMED_CANDIDATE — Final merge pending MD/coordinator approval | 2026-07-02 | `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md` |
+| New Skill Learning Program — HR Follow-up, Verification & Implementation Responsibility | `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md` | MERGED_INTO_CANONICAL_HR_SKILL — 2026-07-06 | 2026-07-02 | `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md` |
 
 **Rule:** These candidates do not update root AIOS truth. Raw HR.Mayu.Skill.md is not edited until MD/coordinator approves final merge. Validation: `validation/hr-nslp-skill-update-candidate-check.md`. Original request evidence: `evidence/stakeholder-confirmations/hr-nslp-md-update-request-2026-07-02.md`.
 
-**NSLP Candidate — Mayurika Confirmation (2026-07-06):**
+**NSLP Candidate — Merge Completed (2026-07-06):**
 
 - **Candidate path:** `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md`
 - **Confirmation evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md`
-- **Status:** MAYURIKA_CONFIRMED_CANDIDATE
-- **Raw HR.Mayu.Skill.md:** NOT edited — unchanged
-- **Final merge:** PENDING MD/coordinator approval
-- **Next step:** Ask coordinator/MD whether this Mayurika-confirmed candidate should be merged into `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md`
+- **MD approval evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-skill-merge-md-approval-2026-07-06.md`
+- **Canonical target:** `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md`
+- **Validation:** `validation/hr-nslp-skill-merge-check-2026-07-06.md`
+- **Status:** MERGED_INTO_CANONICAL_HR_SKILL
+- **Result:** PASS — Section 9 appended; Known Limits block excluded; blocked files untouched
+- **Next step:** Queryability review / source-register update — only if separately approved

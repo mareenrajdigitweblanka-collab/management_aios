@@ -31,8 +31,11 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | SRC-MAYU-CONF-005 | `evidence/stakeholder-confirmations/mayurika-department-final-casing-and-amazon-correction-2026-06-26.md` | Amazon and Amazon PPC confirmed as separate normalized values — supersedes Amazon row in CONF-004 | READY |
 | SRC-MAYU-CONF-006 | `evidence/stakeholder-confirmations/mayurika-department-final-casing-confirmation-2026-06-26.md` | Final display-name/casing confirmed for all 13 pending department/team labels | READY |
 | MGMT-ACTION-RECORDS-FOLDER | `intelligence-inbox/management-action-records/` | Ongoing management action records inbox — Mayurika's subfolder is `mayurika-hr/` | ACTIVE |
-| NSLP Skill Update Candidate | `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md` | NSLP HR skill update candidate — Mayurika confirmed correct 2026-07-06; not parent AIOS truth; final merge pending MD/coordinator approval | MAYURIKA_CONFIRMED_CANDIDATE |
-| NSLP Confirmation Evidence | `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md` | Mayurika confirmation record for NSLP skill update candidate — 2026-07-06; raw HR.Mayu.Skill.md not edited; final merge pending | READY — Mayurika Confirmed 2026-07-06 |
+| NSLP Skill Update Candidate | `member-aios/mayurika-hr/skill-update-candidates/new-skill-learning-program-hr-update-candidate-2026-07-02.md` | NSLP HR skill update candidate — Mayurika confirmed correct 2026-07-06; merged into canonical HR skill file 2026-07-06 | MERGED_INTO_CANONICAL_HR_SKILL |
+| NSLP Confirmation Evidence | `evidence/stakeholder-confirmations/mayurika-nslp-skill-update-candidate-confirmation-2026-07-06.md` | Mayurika confirmation record for NSLP skill update candidate — 2026-07-06 | READY — Mayurika Confirmed 2026-07-06 |
+| NSLP MD Approval Evidence | `evidence/stakeholder-confirmations/mayurika-nslp-skill-merge-md-approval-2026-07-06.md` | MD approval evidence for NSLP Section 9 merge into HR.Mayu.Skill.md — user statement 2026-07-06 | MD_APPROVED_FOR_CANONICAL_HR_SKILL_MERGE |
+| NSLP Merge Canonical Target | `intelligence-inbox/raw-stakeholder-documents/mayurika-hr/HR.Mayu.Skill.md` | Canonical HR skill file — Section 9 (NSLP) appended 2026-07-06; Known Limits block excluded | MERGED — Section 9 added 2026-07-06 |
+| NSLP Merge Validation | `validation/hr-nslp-skill-merge-check-2026-07-06.md` | Validation record for NSLP Section 9 merge — 2026-07-06; source-register not updated in this task | PASS — AMBER for source-register only |
 
 ---
 
