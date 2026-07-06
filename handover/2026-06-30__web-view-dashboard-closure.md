@@ -1551,3 +1551,25 @@ Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman A
 **Result:** PASS — AMBER remains until Mayurika/Varmen answer the HR schedule questions and visually approve the new UI.
 
 **Next step:** Visual review by the user/Varmen of the redesigned section, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## HR Schedule Pilot — Role Desk Views UI Alignment (2026-07-06)
+
+**Reason:** User uploaded a reference file, `aios_role_desk_views.html`, and asked that the HR Schedule Pilot section be visually aligned to its style. The uploaded file was used strictly as a UI/style reference — its role-desk sample data (owners, priorities, statuses, member schedules) is illustrative layout data only and was not copied in as fact. Approved scope stayed HR-only; no full Management Team schedule was built.
+
+**What changed in `web-view/index.html`:**
+
+- Added a navy MD-request/HR-pilot banner (styled after the reference's `md-request-banner`) stating the MD request source (6 July 2026), that current scope is HR pilot only, that the full Management Team schedule is not built yet, and that all open fields remain [VERIFY].
+- Added a compact colour legend above the calendar grid (HR placeholder task / MD screenshot reference-only / [VERIFY] unresolved field), matching the reference's `cal-legend` pattern.
+- Added a distinct "Recurring Template Reference" panel pointing to the two real source files `schedules/hr/recurring-templates/hr-schedule-block-template.md` and `schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md`.
+- Expanded the "Evidence / source details" block to list the exact paths: `schedules/hr/README.md`, `schedules/hr/mayurika.md`, `schedules/hr/priority-queue.md`, and `evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md`.
+- Section title kept unchanged: "HR Schedule Pilot — Internal Calendar Preview". Existing calendar grid, MD screenshot reference cards, priority queue lanes, and 8-item [VERIFY] checklist were left as previously built and are unchanged in content.
+
+**Validation path:** `validation/hr-schedule-pilot-role-desk-ui-alignment-check-2026-07-06.md` (and the new section in `validation/web-view-html-dashboard-check.md`).
+
+**No schedule facts resolved. No source truth changed.** All 8 [VERIFY] items remain open; MD screenshot blocks remain reference-only/HR-applicability-[VERIFY]; no real staff/candidate data added; no forms/fetch/API/automation added (grep-confirmed); no `schedules/members/` or Arun/Suman/Rajiv/Varmen schedule files created.
+
+**Result:** PASS — AMBER remains until Mayurika/Varmen give visual sign-off.
+
+**Next step:** Visual review of the Role-Desk-aligned section by the user/Varmen/Mayurika, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).

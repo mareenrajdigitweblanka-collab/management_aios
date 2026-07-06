@@ -1803,6 +1803,64 @@
       margin: 0;
     }
 
+    /* MD request / HR pilot banner — Role Desk style reference */
+    .hr-md-banner {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: #152238;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      color: #DCE2EE;
+      font-size: .8rem;
+      line-height: 1.6;
+    }
+
+    .hr-md-banner .hr-md-banner-icon {
+      font-size: 1rem;
+      color: #F1DBAF;
+      flex-shrink: 0;
+    }
+
+    .hr-md-banner strong {
+      color: #fff;
+    }
+
+    .hr-md-banner ul {
+      margin: 6px 0 0;
+      padding-left: 18px;
+    }
+
+    .hr-md-banner li {
+      margin-bottom: 2px;
+    }
+
+    /* Compact colour legend for calendar chips */
+    .hr-cal-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .hr-cal-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hr-cal-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
     /* Toolbar (visual-only, no forms) */
     .hr-cal-toolbar {
       display: flex;
@@ -3517,6 +3575,22 @@
         </p>
       </div>
 
+      <!-- 1b. MD request / HR pilot banner — Role Desk style reference -->
+      <div class="hr-md-banner" data-searchable
+        data-tags="hr schedule pilot md request banner source mayurika hr only pilot scope management team not built verify">
+        <span class="hr-md-banner-icon">&#128172;</span>
+        <div>
+          <strong>Source:</strong> MD schedule request relayed to Mayurika, 6 July 2026 — build a folder structure so
+          each management team member's tasks are scheduled on a priority basis.
+          <ul>
+            <li>Current scope: <strong>HR pilot only</strong> — Mayurika's schedule.</li>
+            <li>Full Management Team schedule (Arun, Suman, Rajiv, Varmen) is <strong>not built yet</strong> and is not
+              approved for this pass.</li>
+            <li>All open fields on this page remain <strong>[VERIFY]</strong> until Mayurika and Varmen confirm.</li>
+          </ul>
+        </div>
+      </div>
+
       <!-- 2. Calendar toolbar mock (visual-only, no forms) -->
       <div class="hr-cal-toolbar" data-searchable data-tags="hr schedule pilot toolbar week view owner priority mode">
         <div class="hr-cal-toolbar-meta">
@@ -3534,7 +3608,12 @@
       </div>
 
       <!-- 3. Week calendar grid -->
-      <div class="hr-cal-grid-wrap" data-searchable data-tags="hr schedule pilot weekly calendar grid placeholder cards">
+      <div class="hr-cal-grid-wrap" data-searchable data-tags="hr schedule pilot weekly calendar grid placeholder cards legend">
+        <div class="hr-cal-legend">
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span> HR placeholder task</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#94a3b8;"></span> MD screenshot — reference only</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--amber);"></span> [VERIFY] — unresolved field</span>
+        </div>
         <div class="hr-cal-grid">
           <div class="hr-cal-corner"></div>
           <div class="hr-cal-day-head">Monday</div>
@@ -3594,6 +3673,25 @@
         </p>
       </div>
 
+      <!-- 4b. Recurring template reference -->
+      <div class="hr-priority-panel" data-searchable
+        data-tags="hr recurring template reference schedule block template md screenshot recurring blocks verify">
+        <h4>Recurring Template Reference</h4>
+        <ul class="hr-verify-list" style="grid-template-columns:1fr;">
+          <li>
+            <strong>HR schedule block template</strong> —
+            <span style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/hr-schedule-block-template.md</span>
+            — reusable block shape for Mayurika's own HR tasks. Field names and cadence <span class="verify">[VERIFY]</span>.
+          </li>
+          <li>
+            <strong>MD screenshot recurring blocks reference</strong> —
+            <span style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
+            — the 5 recurring blocks read off the MD's shared calendar screenshot (Merchandising, CST call, Team Leader
+            Review, Technical interviews, Technical sessions). Reference only — HR applicability <span class="verify">[VERIFY]</span>.
+          </li>
+        </ul>
+      </div>
+
       <!-- 5. Priority lane panel -->
       <div class="hr-priority-panel" data-searchable data-tags="hr priority queue preview high medium low placeholder mayurika schedule pilot today priority queue">
         <h4>Today's Priority Queue</h4>
@@ -3646,13 +3744,19 @@
         <div style="padding:12px 16px;font-size:.78rem;color:var(--muted);line-height:1.7;">
           Source: <span style="font-family:ui-monospace,monospace;">MD schedule request relayed to Mayurika, 6 July
             2026</span><br>
-          Folder: <span style="font-family:ui-monospace,monospace;">schedules/hr/</span><br>
-          Evidence: <span
+          Folder: <span style="font-family:ui-monospace,monospace;">schedules/hr/README.md</span><br>
+          Owner file: <span style="font-family:ui-monospace,monospace;">schedules/hr/mayurika.md</span><br>
+          Priority queue source: <span style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span><br>
+          Evidence — confirmation request: <span
+            style="font-family:ui-monospace,monospace;">evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md</span><br>
+          Evidence — MD request: <span
             style="font-family:ui-monospace,monospace;">evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md</span><br>
           Validation (skeleton): <span
             style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md</span><br>
           Validation (UI redesign): <span
             style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md</span><br>
+          Validation (Role Desk alignment): <span
+            style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-role-desk-ui-alignment-check-2026-07-06.md</span><br>
           Status: <strong>HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION</strong>
         </div>
       </details>

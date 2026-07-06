@@ -1430,6 +1430,25 @@ An HR Schedule Pilot — Internal Calendar Preview subsection was added to the M
 
 ---
 
+## HR Schedule Pilot Role Desk UI Alignment Check (2026-07-06)
+
+**Task:** Align the visual style of the HR Schedule Pilot section with the uploaded `aios_role_desk_views.html` Role Desk Views reference (used for UI/style only — its sample rows are illustrative layout data, not source truth). Scope stayed HR-only per current approval; no full Management Team schedule was built. Full detail: `validation/hr-schedule-pilot-role-desk-ui-alignment-check-2026-07-06.md`.
+
+| Check | Result |
+|---|---|
+| Uploaded Role Desk Views HTML used as UI reference only | YES — no sample rows, owners, priorities, statuses, or member schedules copied as fact; header/banner/legend/priority-queue/recurring-template/checklist shapes borrowed for style only |
+| HR-only scope preserved | YES — banner text explicitly states "Current scope: HR pilot only"; no Arun/Suman/Rajiv/Varmen schedule content added |
+| Full Management Team schedule not created | YES — no `schedules/members/` folder, no per-person schedule files created |
+| [VERIFY] preserved | YES — same 8-item verification checklist retained verbatim; MD screenshot blocks still labelled "reference only · HR applicability [VERIFY]" |
+| Dashboard remains read-only/static | YES — all new elements are `<div>`/`<span>`/`<ul>` only; no `<form>`, `onsubmit`, or interactive JS added |
+| No APIs/forms/automation | YES — grep for `fetch(`, `XMLHttpRequest`, `axios`, `WebSocket`, `googleapis`, `calendar.google`, `<form`, `onsubmit`, `localStorage`, `sessionStorage`, `indexedDB` returned zero matches |
+
+**Additions made:** (1) navy MD-request/HR-pilot banner stating source, HR-only scope, and Management Team schedule not-built status; (2) compact colour legend for calendar chips; (3) a distinct "Recurring Template Reference" panel pointing to `schedules/hr/recurring-templates/hr-schedule-block-template.md` and `schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md`; (4) evidence/source details block expanded to list `schedules/hr/README.md`, `schedules/hr/mayurika.md`, `schedules/hr/priority-queue.md`, and the confirmation-request evidence file by exact path.
+
+**Check result: PASS — AMBER remains until Mayurika/Varmen give visual sign-off and answer the 8 open HR schedule questions.**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
