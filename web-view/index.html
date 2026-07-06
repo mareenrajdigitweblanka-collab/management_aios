@@ -1708,6 +1708,7 @@
     }
 
     @media (max-width: 768px) {
+
       /* Keep the tab navigation on one clean, swipeable row */
       .tab-bar {
         flex-wrap: nowrap;
@@ -1919,7 +1920,7 @@
       grid-template-columns: 96px repeat(5, 1fr);
     }
 
-    .hr-cal-grid > * {
+    .hr-cal-grid>* {
       border-bottom: 1px solid var(--border);
       border-right: 1px solid var(--border);
       padding: 8px;
@@ -3608,11 +3609,15 @@
       </div>
 
       <!-- 3. Week calendar grid -->
-      <div class="hr-cal-grid-wrap" data-searchable data-tags="hr schedule pilot weekly calendar grid placeholder cards legend">
+      <div class="hr-cal-grid-wrap" data-searchable
+        data-tags="hr schedule pilot weekly calendar grid placeholder cards legend">
         <div class="hr-cal-legend">
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span> HR placeholder task</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#94a3b8;"></span> MD screenshot — reference only</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--amber);"></span> [VERIFY] — unresolved field</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span> HR
+            placeholder task</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#94a3b8;"></span> MD
+            screenshot — reference only</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--amber);"></span>
+            [VERIFY] — unresolved field</span>
         </div>
         <div class="hr-cal-grid">
           <div class="hr-cal-corner"></div>
@@ -3658,18 +3663,25 @@
       </p>
 
       <!-- 4. MD screenshot reference blocks -->
-      <div class="hr-priority-panel" data-searchable data-tags="md screenshot reference blocks hr applicability verify cst merchandising team leader review technical interviews technical sessions">
+      <div class="hr-priority-panel" data-searchable
+        data-tags="md screenshot reference blocks hr applicability verify cst merchandising team leader review technical interviews technical sessions">
         <h4>MD screenshot reference blocks — HR applicability [VERIFY]</h4>
         <div class="hr-cal-badge-row" style="margin-bottom:0;">
-          <span class="hr-event-card ref" style="display:inline-block;">Monday 11:30 — Merchandising <em>(reference only)</em></span>
-          <span class="hr-event-card ref verify" style="display:inline-block;">Monday 12:00 — CST call <em>(reference only · CST meaning)</em></span>
-          <span class="hr-event-card ref" style="display:inline-block;">Tuesday 10:00 — Team Leader Review <em>(reference only)</em></span>
-          <span class="hr-event-card ref verify" style="display:inline-block;">Wednesday 10:00 — Technical interviews — Saranya, Kajith, Pirija, Kayal <em>(reference only · role/status)</em></span>
-          <span class="hr-event-card ref verify" style="display:inline-block;">Thursday 06:30 — Technical sessions — Vithusali, Dilaxshan, Mithula, Sakithiya, Gishor <em>(reference only · role/status)</em></span>
+          <span class="hr-event-card ref" style="display:inline-block;">Monday 11:30 — Merchandising <em>(reference
+              only)</em></span>
+          <span class="hr-event-card ref verify" style="display:inline-block;">Monday 12:00 — CST call <em>(reference
+              only · CST meaning)</em></span>
+          <span class="hr-event-card ref" style="display:inline-block;">Tuesday 10:00 — Team Leader Review
+            <em>(reference only)</em></span>
+          <span class="hr-event-card ref verify" style="display:inline-block;">Wednesday 10:00 — Technical interviews —
+            Saranya, Kajith, Pirija, Kayal <em>(reference only · role/status)</em></span>
+          <span class="hr-event-card ref verify" style="display:inline-block;">Thursday 06:30 — Technical sessions —
+            Vithusali, Dilaxshan, Mithula, Sakithiya, Gishor <em>(reference only · role/status)</em></span>
         </div>
         <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:10px;">
           Reference only — not Mayurika-owned tasks. Source:
-          <span style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
+          <span
+            style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
         </p>
       </div>
 
@@ -3680,20 +3692,25 @@
         <ul class="hr-verify-list" style="grid-template-columns:1fr;">
           <li>
             <strong>HR schedule block template</strong> —
-            <span style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/hr-schedule-block-template.md</span>
-            — reusable block shape for Mayurika's own HR tasks. Field names and cadence <span class="verify">[VERIFY]</span>.
+            <span
+              style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/hr-schedule-block-template.md</span>
+            — reusable block shape for Mayurika's own HR tasks. Field names and cadence <span
+              class="verify">[VERIFY]</span>.
           </li>
           <li>
             <strong>MD screenshot recurring blocks reference</strong> —
-            <span style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
+            <span
+              style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
             — the 5 recurring blocks read off the MD's shared calendar screenshot (Merchandising, CST call, Team Leader
-            Review, Technical interviews, Technical sessions). Reference only — HR applicability <span class="verify">[VERIFY]</span>.
+            Review, Technical interviews, Technical sessions). Reference only — HR applicability <span
+              class="verify">[VERIFY]</span>.
           </li>
         </ul>
       </div>
 
       <!-- 5. Priority lane panel -->
-      <div class="hr-priority-panel" data-searchable data-tags="hr priority queue preview high medium low placeholder mayurika schedule pilot today priority queue">
+      <div class="hr-priority-panel" data-searchable
+        data-tags="hr priority queue preview high medium low placeholder mayurika schedule pilot today priority queue">
         <h4>Today's Priority Queue</h4>
         <div class="hr-priority-lanes">
           <div class="hr-priority-lane high">
@@ -3716,7 +3733,8 @@
       </div>
 
       <!-- 6. Verification checklist panel -->
-      <div class="hr-verify-panel" data-searchable data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights checklist active">
+      <div class="hr-verify-panel" data-searchable
+        data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights checklist active">
         <h4>Before this becomes ACTIVE, confirm:</h4>
         <ul class="hr-verify-list">
           <li>Priority scale — High / Medium / Low or numeric?</li>
@@ -3736,7 +3754,8 @@
       </div>
 
       <!-- 9. Evidence / source details — collapsible -->
-      <details style="margin-bottom:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);"
+      <details
+        style="margin-bottom:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);"
         data-searchable data-tags="hr schedule pilot evidence source validation folder">
         <summary style="padding:10px 16px;font-weight:600;font-size:.85rem;cursor:pointer;color:var(--text);">
           Evidence / source details
@@ -3746,7 +3765,8 @@
             2026</span><br>
           Folder: <span style="font-family:ui-monospace,monospace;">schedules/hr/README.md</span><br>
           Owner file: <span style="font-family:ui-monospace,monospace;">schedules/hr/mayurika.md</span><br>
-          Priority queue source: <span style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span><br>
+          Priority queue source: <span
+            style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span><br>
           Evidence — confirmation request: <span
             style="font-family:ui-monospace,monospace;">evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md</span><br>
           Evidence — MD request: <span
@@ -3923,8 +3943,10 @@
               Items 8, 9, and 10 were confirmed at the member workbench layer. Evidence:
               <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code></span>
             <br><br>
-            <span style="color:var(--pass); font-size:.82rem; font-weight:600;">Root propagation complete (2026-06-30):</span>
-            <span style="color:var(--muted); font-size:.8rem;"> Root CLAUDE.md (§7.3, §7.4, §7.8), evidence/source-register.md
+            <span style="color:var(--pass); font-size:.82rem; font-weight:600;">Root propagation complete
+              (2026-06-30):</span>
+            <span style="color:var(--muted); font-size:.8rem;"> Root CLAUDE.md (§7.3, §7.4, §7.8),
+              evidence/source-register.md
               (SRC-ARUN-CONF-001), and context/verify-register.md (items 8, 9, 10) have been updated with Arun's
               confirmations. See <code>context/verify-register.md</code> Resolved Items table.</span>
           </div>
@@ -4014,7 +4036,8 @@
               <div class="fdesc">Template with placeholder fields only (<code>{Staff Name}</code>,
                 <code>{Review Month}</code>). Does not contain real sales, inventory, pricing, or staff performance
                 data. No AXIOM band assignments. No bonus or PRC automation. Factual data sources must be mapped and
-                access-approved separately before a live report can be generated.</div>
+                access-approved separately before a live report can be generated.
+              </div>
             </div>
           </li>
           <li>
@@ -4368,7 +4391,8 @@
               — <strong>AMBER</strong>. Of the 8 required data areas: 6 MISSING (sales, inventory, PPC, pricing,
               marketplace/listing, historical baseline), 1 PARTIAL (TL/auditor feedback — roles confirmed, format/path
               not documented), 1 BLOCKED (exchange-rate — multi-currency scope not confirmed). 0 of 8 areas confirmed.
-              No access approvals exist for any area. This table and that file agree: nothing is confirmed yet.</p>
+              No access approvals exist for any area. This table and that file agree: nothing is confirmed yet.
+            </p>
           </div>
         </details>
 
@@ -6979,7 +7003,8 @@
           <div class="card-note">Management decisions shown in a dashboard must be attributed to a registered source and
             approved by the relevant domain owner. Displaying decisions without source attribution could create false
             policy truth. No decision record may be shown here until its source ID is registered in
-            <code>evidence/source-register.md</code> and the relevant domain owner has confirmed it.</div>
+            <code>evidence/source-register.md</code> and the relevant domain owner has confirmed it.
+          </div>
           <div class="card-footer">
             <span class="badge badge-amber">Gated: approval attribution required</span>
             <span class="badge badge-pending">Source ID must be registered first</span>
@@ -7000,7 +7025,8 @@
             are all <strong>[VERIFY] items 1–5</strong> in CLAUDE.md §14 — pending receipt of
             <code>SRC-ADMIN-001</code>. No Admin Manager authority, approval chain, or escalation logic may be built
             into the dashboard until that source document is received, registered, and reviewed. See the <em>Rajiv /
-              Admin</em> tab for full detail.</div>
+              Admin</em> tab for full detail.
+          </div>
           <div class="card-footer">
             <span class="badge badge-blocked">BLOCKED until SRC-ADMIN-001</span>
             <span class="badge badge-verify">[VERIFY] items 1–5 open</span>
@@ -7082,7 +7108,8 @@
         <p>Commit the updated dashboard and redeploy to Netlify (<code>web-view/</code> directory, no build step). Then
           route to Mayurika, Varmen, and the Management Team for visual validation. To unblock any gated section, follow
           the conditions in the table above — receive the required document, register it in
-          <code>evidence/source-register.md</code>, and get domain owner confirmation before building the section.</p>
+          <code>evidence/source-register.md</code>, and get domain owner confirmation before building the section.
+        </p>
       </div>
 
     </div><!-- /tab-gated-modules -->
