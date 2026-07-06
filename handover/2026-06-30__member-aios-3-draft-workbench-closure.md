@@ -450,6 +450,29 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 ---
 
+## Mayurika NSLP — CLAUDE.md §5 Role Reference Update — 2026-07-06
+
+**Task:** Update CLAUDE.md §5 Mayurika role table to include NSLP as a confirmed HR responsibility under SRC-MAYURIKA-NSLP-001.
+
+**Approval basis:** Separately approved — NSLP section confirmed by Mayurika, approved by MD, merged into HR.Mayu.Skill.md, queryability reviewed (PASS), and source registered as SRC-MAYURIKA-NSLP-001 in commit 2c0bbce.
+
+**Validation:** `validation/hr-nslp-claude-role-update-check-2026-07-06.md`
+
+| File | Action |
+|---|---|
+| `CLAUDE.md` | EDITED — §5 Mayurika row: NSLP responsibility added to Confirmed Responsibilities; SRC-MAYURIKA-NSLP-001 added to Source ID column |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — §4 NSLP domain pointer updated (AMBER removed; CLAUDE.md §5 updated noted); §14 AMBER note replaced with CLAUDE_ROLE_REFERENCE_UPDATED status |
+| `validation/hr-nslp-claude-role-update-check-2026-07-06.md` | CREATED — PASS/AMBER validation |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Safety preserved:** No source-register change (already completed in commit 2c0bbce). No verify-register change. No web-view/index.html change. No HR.Mayu.Skill.md edit. No sensitive staff data. No automation. No KPI/AXIOM/BLOS/threshold changes. No PostgreSQL changes. No unrelated CLAUDE.md content rewritten. No [VERIFY] items affected.
+
+**AMBER remaining:** Final coordinator/queryability acceptance of CLAUDE.md §5 role reference update is pending.
+
+**Next step:** Final coordinator/queryability acceptance.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

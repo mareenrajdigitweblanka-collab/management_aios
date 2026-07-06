@@ -88,7 +88,7 @@ Each item below points to the correct source and context file. Do not treat thes
 | Developer ROI review coordination | SRC-MD-HR-001 | context/hr-operations-context.md §10.10 | §11.14 |
 | Active staff roster | SRC-STAFF-001, SRC-MAYU-CONF-002 through CONF-006 | — | evidence/source-register.md |
 | Month 6 handover from Suman | SRC-MAYU-001, SRC-SUMAN-001-v2, SRC-SUMAN-CONF-002 | context/recruitment-context.md §11 | §8.11 |
-| New Skill Learning Program (NSLP) — HR follow-up, verification, evidence, adoption tracking, reporting | SRC-MAYURIKA-NSLP-001 | context/hr-operations-context.md §11 | AMBER — CLAUDE.md §5 not yet updated |
+| New Skill Learning Program (NSLP) — HR follow-up, verification, evidence, adoption tracking, reporting | SRC-MAYURIKA-NSLP-001 | context/hr-operations-context.md §11 | CLAUDE.md §5 updated 2026-07-06 — SRC-MAYURIKA-NSLP-001 |
 
 ---
 
@@ -276,5 +276,7 @@ The following skill update candidates have been created for Mayurika's domain. T
 - **Source ID:** SRC-MAYURIKA-NSLP-001 — registered in `evidence/source-register.md` 2026-07-06
 - **Context file:** `context/hr-operations-context.md` §11 — NSLP section added 2026-07-06
 - **Status:** REGISTERED_CANONICAL_SECTION
-- **AMBER remaining:** CLAUDE.md §5 (Mayurika role table) not yet updated — requires separate approval
-- **Next step:** CLAUDE.md §5 update to list NSLP as a confirmed Mayurika responsibility — only if separately approved
+- **CLAUDE.md §5 updated:** 2026-07-06 — NSLP responsibility and SRC-MAYURIKA-NSLP-001 added to Mayurika role row. Validation: `validation/hr-nslp-claude-role-update-check-2026-07-06.md`
+- **Status:** CLAUDE_ROLE_REFERENCE_UPDATED
+- **Source-register:** Already completed in commit 2c0bbce — no further source-register change required
+- **Next step:** Final coordinator/queryability acceptance
