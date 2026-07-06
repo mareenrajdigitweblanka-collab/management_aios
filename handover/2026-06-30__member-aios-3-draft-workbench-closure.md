@@ -482,6 +482,32 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 ---
 
+## Mayurika NSLP Control System Dashboard Build — 2026-07-06
+
+**Task:** Add NSLP Control System read-only dashboard preview to `web-view/index.html` Mayurika HR tab.
+
+**Source basis:** SRC-MAYURIKA-NSLP-001 | HR.Mayu.Skill.md Section 9 | Operating pack: `member-aios/mayurika-hr/nslp/`
+
+**Validation:** `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` — PASS (AMBER pending Mayurika acceptance)
+
+| File | Action |
+|---|---|
+| `web-view/index.html` | EDITED — NSLP Control System section added to Mayurika HR tab |
+| `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` | CREATED |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — §16 NSLP dashboard section added |
+| `member-aios/mayurika-hr/quick-reference-sources.md` | EDITED — NSLP dashboard pointer added |
+| `handover/2026-06-30__web-view-dashboard-closure.md` | EDITED — NSLP dashboard closure note added |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+| `validation/web-view-html-dashboard-check.md` | EDITED — NSLP check section added |
+
+**Safety preserved:** Dashboard read-only. No real staff data. No API/automation/database. No blocked files touched. No [VERIFY] items resolved. No source-register, CLAUDE.md, verify-register, or HR.Mayu.Skill.md changes. No Arun/Suman/Rajiv files touched. No KPI/AXIOM/BLOS/threshold changes.
+
+**AMBER remaining:** Mayurika operational acceptance of NSLP templates and dashboard is pending.
+
+**Next step:** Route NSLP templates to Mayurika for operational review. Once confirmed, update all NSLP statuses to ACTIVE.
+
+---
+
 ## Mayurika NSLP — CLAUDE.md §5 Role Reference Update — 2026-07-06
 
 **Task:** Update CLAUDE.md §5 Mayurika role table to include NSLP as a confirmed HR responsibility under SRC-MAYURIKA-NSLP-001.

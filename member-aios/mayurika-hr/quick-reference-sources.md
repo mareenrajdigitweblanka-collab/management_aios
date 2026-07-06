@@ -103,6 +103,19 @@ All three items must remain tagged [VERIFY] until the resolution conditions in `
 
 ---
 
+## NSLP Control System Dashboard
+
+| Item | Detail |
+|---|---|
+| Dashboard | `web-view/index.html` — Mayurika HR tab — "NSLP Control System — Internal Build" |
+| Source | SRC-MAYURIKA-NSLP-001 |
+| Operating pack | `member-aios/mayurika-hr/nslp/` |
+| Dashboard validation | `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` |
+| Status | INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE |
+| Note | Read-only static HTML preview. 6 control tables. No real staff data. No automation. |
+
+---
+
 ## NSLP Operating System Pack — Template Pointers
 
 Built from SRC-MAYURIKA-NSLP-001. All files are documentation-only, placeholder-only. Status: INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE.

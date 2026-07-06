@@ -1304,6 +1304,33 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## §41 — NSLP Control System Preview Check — 2026-07-06
+
+**Task:** NSLP Control System section added to Mayurika HR tab. Source: SRC-MAYURIKA-NSLP-001.
+
+| Check | Result |
+|---|---|
+| Section title "NSLP Control System — Internal Build" present | PASS |
+| Amber safety note with read-only statement present | PASS |
+| Table 1 — NSLP Skill Register Control present (10 columns) | PASS |
+| Table 2 — Action Plan Card Follow-Up present (8 columns) | PASS |
+| Table 3 — Before / After Evidence Tracker present (8 columns) | PASS |
+| Table 4 — 2-Week Evaluation Queue present (8 columns, 4 outcome labels) | PASS |
+| Table 5 — NSLP Exception Register Preview present (all 7 exception types) | PASS |
+| Table 6 — Monthly NSLP Management Report Control present (13 rows) | PASS |
+| Source/validation strip present | PASS |
+| Dashboard read-only — no forms, no submit, no fetch(), no API, no backend | PASS |
+| No real staff names, employee IDs, salary, health, PDPA, or personal data | PASS |
+| No invented counts, percentages, or HR outcome numbers | PASS |
+| All placeholder rows use italic/muted style | PASS |
+| data-searchable and data-tags on all 6 tables | PASS |
+| Blocked files untouched (CLAUDE.md, source-register, verify-register, HR.Mayu.Skill.md) | PASS |
+| Status: INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE | PASS |
+
+**Check result: PASS — AMBER until Mayurika operationally accepts NSLP templates and dashboard**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

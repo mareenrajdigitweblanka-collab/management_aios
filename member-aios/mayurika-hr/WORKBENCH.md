@@ -253,6 +253,32 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 ---
 
+## 16. NSLP Control System Dashboard
+
+**Dashboard location:** `web-view/index.html` — Mayurika HR tab — "NSLP Control System — Internal Build" section
+
+**Source ID:** SRC-MAYURIKA-NSLP-001
+
+**Operating pack:** `member-aios/mayurika-hr/nslp/`
+
+**Validation:** `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md`
+
+**Status:** INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE
+
+**Note:** Read-only preview only. Static HTML. No forms, no API, no fetch(), no database, no automation. All table rows use placeholders — no real staff data.
+
+6 control tables in the dashboard:
+1. NSLP Skill Register Control — Skill ID, BGCT doc, attendees, Action Plan Cards, status
+2. Action Plan Card Follow-Up — per-participant tracking, evidence promised, due date
+3. Before / After Evidence Tracker — evidence paths, measurement, HR verification result
+4. 2-Week Evaluation Queue — outcome labels (SUCCESS STORY / NOT EFFECTIVE / FAILURE / UNSUSTAINED)
+5. NSLP Exception Register Preview — all 7 exception types
+6. Monthly NSLP Management Report Control — adoption rate, completion rates, exception count, business impact
+
+**Next step:** Route `member-aios/mayurika-hr/nslp/` to Mayurika for operational review. Once confirmed, update NSLP file and dashboard statuses to ACTIVE.
+
+---
+
 ## 15. NSLP Operating System Pack
 
 **Source:** SRC-MAYURIKA-NSLP-001

@@ -1396,6 +1396,32 @@ Template only. No live Portfolio Holder KPI report generation. Real report gener
 
 ---
 
+## Mayurika NSLP Control System Dashboard — 2026-07-06
+
+**Task:** Add NSLP Control System read-only dashboard preview to Mayurika HR tab in `web-view/index.html`.
+
+**Source:** SRC-MAYURIKA-NSLP-001 | Operating pack: `member-aios/mayurika-hr/nslp/` (commit 065fb49)
+
+**Validation:** `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` — PASS (AMBER pending Mayurika acceptance)
+
+| File | Action |
+|---|---|
+| `web-view/index.html` | EDITED — "NSLP Control System — Internal Build" section added; amber safety note; 6 collapsible control tables; source/validation strip; next-step updated |
+| `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` | CREATED — PASS/AMBER validation |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — §16 NSLP Control System Dashboard added |
+| `member-aios/mayurika-hr/quick-reference-sources.md` | EDITED — NSLP dashboard pointer added |
+| `handover/2026-06-30__web-view-dashboard-closure.md` | EDITED (this file) |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED — NSLP dashboard build record added |
+| `validation/web-view-html-dashboard-check.md` | EDITED — NSLP Control System Preview Check section added |
+
+**Dashboard remains read-only:** Static HTML only. No forms, no API, no fetch(), no backend, no database. All table rows are placeholders. No real staff data.
+
+**AMBER remaining:** Mayurika operational acceptance of NSLP templates and dashboard pending. Status: INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE.
+
+**Next step:** Route `member-aios/mayurika-hr/nslp/` to Mayurika for operational review. Once confirmed, update NSLP statuses to ACTIVE.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
