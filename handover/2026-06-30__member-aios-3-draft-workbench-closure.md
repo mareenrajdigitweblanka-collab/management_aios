@@ -366,6 +366,8 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 **Next required action:** Route data-source map to Arun for confirmation of source systems, owners, and access status for each of the 8 data areas. Live report generation remains blocked until all 8 areas are source-mapped, owner-confirmed, access-approved, evidence-path documented, and display-layer approved by Arun.
 
+**Confirmation request created (2026-07-06):** `evidence/stakeholder-confirmations/arun-ph-live-report-source-confirmation-request-2026-07-06.md` — PENDING Arun written response. Request covers all 8 data areas with per-area questions on source system, owner, access owner, export format, date range, evidence path, staff-level data presence, and display approval. Exchange-rate scope question (Area F) is a prerequisite gate before that area can be mapped further.
+
 ---
 
 ## Overall Result

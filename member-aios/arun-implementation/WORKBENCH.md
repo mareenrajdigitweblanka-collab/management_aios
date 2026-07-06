@@ -322,7 +322,9 @@ A read-only discovery report (2026-07-06) confirmed the PH report structure (SRC
 
 **Live workflow:** Remains blocked. Do not build live report generation until Arun confirms all 8 data areas.
 
-**Next step:** Route data-source map to Arun for confirmation of source systems, owners, and access status for each of the 8 data areas.
+**Confirmation request:** `evidence/stakeholder-confirmations/arun-ph-live-report-source-confirmation-request-2026-07-06.md` — PENDING Arun written response (2026-07-06)
+
+**Next step:** Arun to review and respond to the confirmation request. Once written responses received, record as evidence and update data-source map status per confirmed area.
 
 ---
 
