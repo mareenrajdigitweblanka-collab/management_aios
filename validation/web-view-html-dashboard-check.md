@@ -1227,8 +1227,37 @@ Check result: PASS — AMBER until Varmen reviews the updated visual layout
 
 ---
 
+## §38 — Arun PH Team Source Integration Check (2026-07-06)
+
+**Task:** Add SRC-ARUN-PH-001 source visibility card to Arun Implementation tab.
+
+| Check | Status |
+|---|---|
+| SRC-ARUN-PH-001 source card visible in Arun tab | YES |
+| Source ID shown | YES — SRC-ARUN-PH-001 |
+| Treated as template / process source (not live data) | YES — "template only" limit stated explicitly |
+| Marketplaces listed (Amazon UK, eBay UK, eBay DE, B&Q) | YES — in card description |
+| 15-worksheet output format noted | YES |
+| Factual data source requirement noted | YES — "data sources must be mapped separately" |
+| No KPI scores or AXIOM bands added | CONFIRMED — not present |
+| No staff performance data added | CONFIRMED — not present |
+| No salary, health, or PDPA data added | CONFIRMED — not present |
+| No CSV exchange-rate rows shown | CONFIRMED — not included |
+| Dashboard read-only maintained | YES — no forms, no edit/save/delete, no backend |
+| Approval evidence path shown | YES |
+| Source map and query pack paths shown | YES |
+| Validation path shown | YES |
+| [VERIFY] items resolved | NONE — all 9 open items preserved |
+| CLAUDE.md changed | NO |
+| source-register.md changed | YES — SRC-ARUN-PH-001 added (source-register edit is separate from dashboard) |
+| Duplicate truth added | NO — metadata and limit descriptions only |
+
+**Check result: PASS**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
 
-The dashboard is static HTML only. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Mayurika checklist verbatim wording applied 2026-07-02 — dashboard updated to reflect verbatim wording applied; confirmation pending; labels A–E preserved; no synonym substitution. Attendance Dashboard card removed 2026-07-02 — card passed through NOT REQUIRED NOW (pause), NOT REQUIRED (no replacement), then removed from visible dashboard per user request; historical evidence files retained; no replacement feature built. Mayurika checklist full body replacement applied 2026-07-02 — entire old checklist body removed; Mayurika-provided text inserted exactly; dashboard updated to reflect replacement; confirmation pending. Professional UI polish applied 2026-07-03 — CSS/HTML visual improvements only; gradient topbar, card hover effects, table zebra rows, improved badges with borders, new preview badge (teal), safety strip, dashboard footer, better typography; no data truth changed; no sensitive data added; no [VERIFY] items resolved. Handover Preview added 2026-07-03 — read-only tab using real repository handover/evidence/validation metadata only; 5-card summary section, 9-row handover table, 8-file handover folder list, limits box; no Varmen draft sample values used; no sensitive HR data; no blocked tables built; no [VERIFY] items resolved; all existing sections unchanged. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.
+The dashboard is static HTML only. SRC-ARUN-PH-001 (Arun PH Team / Portfolio Holder KPI Review Prompt) integrated 2026-07-06 — source card added to Arun Implementation tab; template-only limit stated; no live KPI/AXIOM data; no staff performance data; no sensitive data; no [VERIFY] items resolved; source-register.md updated (25 sources); dashboard read-only preserved. Tab-based beginner-friendly UI added 2026-06-30. Arun status updated to ACTIVE — Arun Reviewed 2026-06-30. Suman status updated to ACTIVE — Suman Reviewed 2026-06-30. Suman Line Manager clarification propagated 2026-06-30 — handover attendee list, source count (23), and file map updated. Root propagation of Arun's confirmations (items 8, 9, 10) completed 2026-06-30 — SRC-ARUN-CONF-001 registered; CLAUDE.md, verify-register.md, kpi-axiom-context.md, and source-register.md updated; dashboard reflects propagation complete. Markdown Viewer tab added 2026-06-30 — 6 safe file summary cards; no raw evidence or sensitive data exposed; no editing feature added. Mayurika HR Daily Control Panel added 2026-07-01 — 12 read-only placeholder cards based on Mayurika's 5-question UI intent capture; no submission forms built; DWC sanity check pending; sensitive-data check PASS. Mayurika checklist exact wording correction applied 2026-07-01 — checklist description updated to show "DRAFT — Exact Wording Applied; Re-review Pending". Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Mayurika checklist verbatim wording applied 2026-07-02 — dashboard updated to reflect verbatim wording applied; confirmation pending; labels A–E preserved; no synonym substitution. Attendance Dashboard card removed 2026-07-02 — card passed through NOT REQUIRED NOW (pause), NOT REQUIRED (no replacement), then removed from visible dashboard per user request; historical evidence files retained; no replacement feature built. Mayurika checklist full body replacement applied 2026-07-02 — entire old checklist body removed; Mayurika-provided text inserted exactly; dashboard updated to reflect replacement; confirmation pending. Professional UI polish applied 2026-07-03 — CSS/HTML visual improvements only; gradient topbar, card hover effects, table zebra rows, improved badges with borders, new preview badge (teal), safety strip, dashboard footer, better typography; no data truth changed; no sensitive data added; no [VERIFY] items resolved. Handover Preview added 2026-07-03 — read-only tab using real repository handover/evidence/validation metadata only; 5-card summary section, 9-row handover table, 8-file handover folder list, limits box; no Varmen draft sample values used; no sensitive HR data; no blocked tables built; no [VERIFY] items resolved; all existing sections unchanged. No sensitive data. No duplicate truth. No editing capability. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). Mayurika remains DRAFT. Rajiv remains BLOCKED. AMBER items are non-blocking and documented. Netlify deployment wording preserved in Root AIOS tab.

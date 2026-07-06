@@ -38,6 +38,7 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 | SRC-MAYU-CONF-005 | `evidence/stakeholder-confirmations/mayurika-department-final-casing-and-amazon-correction-2026-06-26.md` | Mayurika / HR owner | HR Officer | Stakeholder Confirmation — Mayurika verbal correction: Amazon and Amazon PPC are separate normalized department values; the combined mapping Amazon / Amazon PPC → Amazon and CPPC (SRC-MAYU-CONF-004) is incorrect; correct mapping is Amazon → Amazon and Amazon PPC → Amazon and CPPC — 2026-06-26 | YES — HR owner verbal confirmation | INTERNAL | YES — limited to staff roster department normalization and Amazon mapping correction; supersedes the Amazon/Amazon PPC combined mapping row in SRC-MAYU-CONF-004 for normalization purposes; does not grant reporting authority; does not resolve Admin Manager [VERIFY] items or project-level [VERIFY] items | READY — Current Confirmation Source |
 | SRC-MAYU-CONF-006 | `evidence/stakeholder-confirmations/mayurika-department-final-casing-confirmation-2026-06-26.md` | Mayurika / HR owner | HR Officer | Stakeholder Confirmation — Mayurika confirmed final display-name/casing for all 13 pending department/team labels from handover/staff-roster-department-final-casing-confirmation-request.md; draft labels accepted as-listed — 2026-06-26 | YES — HR owner confirmation | INTERNAL | YES — limited to staff roster department display-name normalization; does not grant reporting authority; does not resolve Admin Manager [VERIFY] items or project-level [VERIFY] items | READY — Current Confirmation Source |
 | SRC-ARUN-CONF-001 | `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md` | Arun | Implementation Officer | Stakeholder Confirmation — Arun confirmed KPI / AXIOM / Implementation workbench accuracy and resolved [VERIFY] items 8 (Amazon ACOS threshold: ACOS below 25% / ROAS 4), 9 (Operational Manager escalation authority: may delay or avoid suspension/termination on firm commitment with defined deadline to achieve required ROI — escalation authority only, not full PRC scope), and 10 (ROI Officer = Implementation Officer – Arunraj; External Auditor = Paraparan) — 2026-06-30 | YES — Arun direct confirmation; project standard applied | INTERNAL — management process; no personal staff data | YES — limited to items 8, 9, 10 resolution; does not resolve Admin Manager [VERIFY] items 1–5; does not broaden Operational Manager beyond escalation authority; does not resolve bonus-queryability soft conflict | READY — Arun confirmed 2026-06-30 |
+| SRC-ARUN-PH-001 | `intelligence-inbox/raw-stakeholder-documents/arun-implementation/Arun-PH-Team.md` | Arun | Implementation Officer | Process Template — Portfolio Holder KPI Performance Review Prompt; 16-section LLM prompt template for generating monthly PH KPI review reports covering YOY performance (Amazon UK, eBay UK, eBay DE, B&Q), SKU analysis, stock health, coaching questions, appreciation, strengths/weaknesses, and 15-worksheet Excel output format | YES — user-approved integration 2026-07-06; see `evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md` | LOW-MEDIUM — template document with placeholder fields only (`{Staff Name}`, `{Review Month}`); no individual staff data, salary, PDPA, or performance scores embedded; sensitivity rises to MEDIUM when instantiated with real staff and sales data | YES — Portfolio Holder KPI review methodology (process-level only); does not approve KPI threshold changes, AXIOM/bonus/PRC automation, or real staff performance data display; CSV exchange-rate rows (SRC-ARUN-002 rows 44–52) excluded | ACTIVE — user-approved integration 2026-07-06 |
 
 ---
 
@@ -45,14 +46,15 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 
 | Status | Count |
 |--------|-------|
-| READY (Full) | 12 |
+| READY (Full) | 13 |
 | READY — Conditional (Varmen review pending) | 0 |
 | SUPERSEDED | 2 |
 | PENDING | 2 |
 | ACTIVE FOLDER STANDARD | 1 |
 | READY — HR-Confirmed | 1 |
 | READY — Confirmation Sources | 7 |
-| TOTAL | 24 |
+| ACTIVE | 1 |
+| TOTAL | 25 |
 
 ---
 

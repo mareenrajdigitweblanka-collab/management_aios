@@ -1303,6 +1303,57 @@ Next step: Commit updated files; redeploy to Netlify (publish directory `web-vie
 
 ---
 
+## Arun PH Team Source Integration Record (2026-07-06)
+
+**Task:** Integrate SRC-ARUN-PH-001 (Arun PH Team / Portfolio Holder KPI Review Prompt) into the Management AIOS system.
+
+**Approval basis:** User instruction — "No need confirm just integrate with my system" (2026-07-06)
+
+**Evidence path:** `evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md`
+
+**Validation path:** `validation/arun-ph-team-system-integration-check-2026-07-06.md`
+
+### Dashboard Update Applied
+
+| Change | Applied? |
+|---|---|
+| SRC-ARUN-PH-001 source card added to Arun Implementation tab | YES |
+| Source shown as template only — no live data | YES |
+| Marketplaces (Amazon UK, eBay UK, eBay DE, B&Q) listed | YES |
+| 15-worksheet output format noted | YES |
+| Data source requirement stated | YES |
+| Safety / limit statements included | YES |
+| No KPI scores, AXIOM bands, bonus, or PRC logic added | CONFIRMED |
+| No staff performance data added | CONFIRMED |
+| No CSV exchange-rate rows integrated | CONFIRMED |
+| Dashboard read-only maintained | CONFIRMED |
+
+### Source Register Update
+
+- SRC-ARUN-PH-001 added to `evidence/source-register.md` — status: ACTIVE
+- Source count updated: 24 → 25 (READY Full: 12 → 13; ACTIVE: 0 → 1)
+
+### Safety Checks — Preserved
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| KPI/AXIOM calculation logic | NOT CHANGED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items preserved |
+| CLAUDE.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| Mayurika workbench | NOT CHANGED |
+| Suman workbench | NOT CHANGED |
+| Arun workbench | UPDATED — SRC-ARUN-PH-001 entry added |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Dashboard read-only status | PRESERVED |
+
+### Limit
+
+Template only. No live Portfolio Holder KPI report generation. Real report generation requires factual data sources (sales, inventory, advertising, pricing) to be separately mapped and access-approved before build begins.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

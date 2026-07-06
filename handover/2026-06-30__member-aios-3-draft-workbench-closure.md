@@ -35,9 +35,11 @@ status: PASS — AMBER noted; all files DRAFT pending domain owner review
 | Suman WORKBENCH | `member-aios/suman-recruitment/WORKBENCH.md` | CREATED 2026-06-30 |
 | Suman quick-reference | `member-aios/suman-recruitment/quick-reference-sources.md` | CREATED 2026-06-30 |
 | Suman checklist | `member-aios/suman-recruitment/weekly-deliverables-checklist.md` | CREATED 2026-06-30 |
-| Arun WORKBENCH | `member-aios/arun-implementation/WORKBENCH.md` | CREATED 2026-06-30 |
-| Arun quick-reference | `member-aios/arun-implementation/quick-reference-sources.md` | CREATED 2026-06-30 |
+| Arun WORKBENCH | `member-aios/arun-implementation/WORKBENCH.md` | CREATED 2026-06-30; UPDATED 2026-07-06 — SRC-ARUN-PH-001 entry added (§15 and domain pointer table) |
+| Arun quick-reference | `member-aios/arun-implementation/quick-reference-sources.md` | CREATED 2026-06-30; UPDATED 2026-07-06 — SRC-ARUN-PH-001 row added to source table and limits table |
 | Arun [VERIFY] items | `member-aios/arun-implementation/verify-items-arun.md` | CREATED 2026-06-30 |
+| Arun source map — PH Team | `member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md` | CREATED 2026-07-06 — SRC-ARUN-PH-001 source map |
+| Arun query pack — PH KPI Review | `member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md` | CREATED 2026-07-06 — reusable PH KPI review query pack |
 | Validation check | `validation/member-aios-3-draft-workbench-creation-check.md` | CREATED 2026-06-30 |
 | This closure file | `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | CREATED 2026-06-30 |
 
@@ -89,6 +91,35 @@ Supporting evidence used during creation:
 - `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` (this file)
 
 **Commit hash:** 2d98f6312cc859b0f247ad872a3ccc2a0c548ceb
+
+---
+
+## Arun Source Integration Update — 2026-07-06
+
+**Task:** Integrate SRC-ARUN-PH-001 into Arun/Implementation member workbench.
+
+**Approval basis:** User instruction — "No need confirm just integrate with my system" (2026-07-06)
+
+| Source ID | Status | Next Step |
+|---|---|---|
+| SRC-ARUN-PH-001 — Arun PH Team / Portfolio Holder KPI Review Prompt | ACTIVE — user-approved integration 2026-07-06 | Map factual data sources before building live PH report generation workflow |
+
+**Files updated in this step:**
+
+| File | Action |
+|---|---|
+| `evidence/source-register.md` | SRC-ARUN-PH-001 row added; count updated 24 → 25 |
+| `member-aios/arun-implementation/WORKBENCH.md` | §15 added; domain pointer table updated; source-boundary updated |
+| `member-aios/arun-implementation/quick-reference-sources.md` | SRC-ARUN-PH-001 row and limits row added; validation references added |
+| `member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md` | CREATED — 16-section map, marketplace scope, data requirements, output format, limits |
+| `member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md` | CREATED — 5 query sets, reusable PH KPI review questions |
+| `evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md` | CREATED — user approval evidence |
+| `validation/arun-ph-team-system-integration-check-2026-07-06.md` | CREATED — PASS (AMBER for live report generation) |
+| `web-view/index.html` | SRC-ARUN-PH-001 source card added to Arun Implementation tab |
+| `validation/web-view-html-dashboard-check.md` | §38 added |
+| `handover/2026-06-30__web-view-dashboard-closure.md` | Arun PH Team integration record added |
+
+**Safety preserved:** No KPI/AXIOM logic changed. No sensitive data added. No [VERIFY] items affected. Dashboard read-only. CLAUDE.md not edited.
 
 ---
 

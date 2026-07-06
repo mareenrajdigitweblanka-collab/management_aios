@@ -5,7 +5,7 @@ member: Arun
 role: Implementation Officer
 created: 2026-06-30
 status: ACTIVE — Arun Reviewed 2026-06-30
-source-boundary: SRC-ARUN-001, SRC-ARUN-002, SRC-MD-ARUN-001
+source-boundary: SRC-ARUN-001, SRC-ARUN-002, SRC-MD-ARUN-001, SRC-ARUN-PH-001
 root-truth: CLAUDE.md — canonical; this file is a navigation pointer only
 ---
 
@@ -88,6 +88,9 @@ Each item below points to the correct source and context file. Do not treat thes
 | BGCT documentation hierarchy | SRC-MD-ARUN-001 | — | §11.13 |
 | Developer ROI review process | SRC-MD-ARUN-001 | — | §11.14 |
 | Daily operational schedule | SRC-ARUN-002 | — | — |
+| Portfolio Holder KPI review methodology | SRC-ARUN-PH-001 | member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md | — |
+
+**SRC-ARUN-PH-001 integrated (2026-07-06 — user-approved):** Portfolio Holder KPI review prompt. Template only — no live KPI calculations, no sensitive data. Use for PH monthly review structure. See `member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md` and query pack `member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md`. Next step: map data sources before building live report generation workflow.
 
 **Arun confirmed (2026-06-30):** Review inputs (§7.4 pointer) include feedback from the Implementation Officer – Arunraj (Arun confirmed: replaces former "ROI Officer" wording) and External Auditor – Paraparan. See `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.
 
@@ -246,6 +249,18 @@ A clean LLM reading this workbench should be able to answer:
 - The bonus queryability framework (§11.11 / CLAUDE.md §11.11) introduces a potential soft conflict with the §7.9 bonus conditions — Varmen confirmation recommended before treating as mandatory. See `validation/md-arun-discussion-conflict-check.md`.
 - Admin Manager PRC role ([VERIFY] item 3) remains open — PRC composition cannot be considered complete until SRC-ADMIN-001 is received.
 - Arun's detailed authority limits beyond KPI/AXIOM scope are not yet fully documented — [VERIFY] per CLAUDE.md §5.
+
+---
+
+## 15. SRC-ARUN-PH-001 — Portfolio Holder Source
+
+**Status:** ACTIVE — user-approved integration 2026-07-06
+**Use:** PH monthly KPI review report structure — 16 sections, 15 Excel worksheets
+**Limit:** Template only. No live KPI calculations. No real staff performance data. No AXIOM band assignments. No bonus/PRC automation. Requires factual data sources (sales, inventory, advertising) mapped separately before report generation.
+**Source map:** `member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md`
+**Query pack:** `member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md`
+**Approval evidence:** `evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md`
+**Next step:** Build report-generation workflow only after approved factual data sources are mapped and access-approved.
 
 ---
 

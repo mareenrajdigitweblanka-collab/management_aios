@@ -21,6 +21,7 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | Source ID | File Path | What It Covers for Arun | Status |
 |---|---|---|---|
 | SRC-ARUN-001 | `intelligence-inbox/raw-stakeholder-documents/arun-implementation/KPI Definitions, AXIOM Band Placement, Review Input_Output & Management Tracking Framework.md` | KPI definitions per team; AXIOM band placement authority and band tables; KPI detection criteria; review inputs and outputs; weekly AXIOM workflow; incident management (time-based and count-based); PRC governance and membership; bonus eligibility conditions; management dashboard requirements | READY |
+| SRC-ARUN-PH-001 | `intelligence-inbox/raw-stakeholder-documents/arun-implementation/Arun-PH-Team.md` | Portfolio Holder monthly KPI review report structure; 16-section report template; YOY performance (Amazon UK, eBay UK, eBay DE, B&Q); SKU analysis; stock health; coaching questions; appreciation categories; 15 Excel-friendly worksheets — template only; no live data embedded | ACTIVE — user-approved 2026-07-06 |
 | SRC-ARUN-002 | `intelligence-inbox/raw-stakeholder-documents/arun-implementation/my day check list-arun - shedule.csv` | Daily operational schedule and checklist across teams | READY |
 | SRC-MD-ARUN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & Arun Discussion Notes.md` | KPI meeting format and governance; meeting ID system; bonus queryability evaluation framework; technical team escalation standard; BGCT documentation hierarchy (four-step: BGCT → Handbook → Skill file → Rule book); developer ROI review process | READY — Varmen Reviewed by project default 2026-06-26 |
 | MGMT-ACTION-RECORDS-FOLDER | `intelligence-inbox/management-action-records/` | Ongoing management action records inbox — Arun's subfolder is `arun-implementation/` | ACTIVE |
@@ -35,6 +36,7 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | SRC-ARUN-001 — [VERIFY] items 8, 9, 10 | ARUN CONFIRMED 2026-06-30 at member workbench layer: Amazon ACOS threshold = ACOS below 25% / ROAS 4; Operational Manager escalation authority confirmed (not full PRC scope); "ROI Officer" = Implementation Officer – Arunraj; Paraparan = External Auditor. Root `context/verify-register.md` update pending. See `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. |
 | SRC-MD-ARUN-001 — bonus queryability soft conflict | Bonus queryability framework (§11.11) extends §7.9 bonus conditions — relationship between the two requires Varmen confirmation; see `validation/md-arun-discussion-conflict-check.md` |
 | SRC-ADMIN-001 — PENDING | Admin Manager PRC role and authority cannot be confirmed. [VERIFY] items 1–5 remain open. PRC composition is incomplete. Do not infer Admin Manager content from any source. |
+| SRC-ARUN-PH-001 — template only | Template document with placeholder fields (`{Staff Name}`, `{Review Month}`) — no live data embedded; sensitivity rises to MEDIUM when instantiated with real staff and sales data; do not populate template with real staff names or scores without separate data source approval; CSV exchange-rate data (SRC-ARUN-002 rows 44–52) excluded from this source |
 
 ---
 
@@ -87,6 +89,10 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | `validation/md-arun-discussion-conflict-check.md` | Soft conflict #1 — bonus queryability vs §7.9 bonus conditions |
 | `validation/md-arun-discussion-ingestion-final-report.md` | Final ingestion report for SRC-MD-ARUN-001 |
 | `member-aios/arun-implementation/verify-items-arun.md` | Three open [VERIFY] items specific to Arun's domain — full detail and resolution process |
+| `member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md` | Source map for SRC-ARUN-PH-001 — report sections, marketplace scope, required data sources, output format, limits |
+| `member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md` | Query pack for SRC-ARUN-PH-001 — reusable questions for PH KPI review structure, data requirements, coaching questions, source limits |
+| `evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md` | User approval evidence for SRC-ARUN-PH-001 integration (2026-07-06) |
+| `validation/arun-ph-team-system-integration-check-2026-07-06.md` | Full integration validation for SRC-ARUN-PH-001 — PASS (AMBER for live report generation) |
 
 ---
 
