@@ -531,6 +531,22 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 ---
 
+## Mayurika NSLP Files/Templates Operational Acceptance — 2026-07-06
+
+**User report:** "She approved every files."
+
+Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
+
+**Status updated:** ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`
+
+**Safety preserved:** No blocked files touched. No sensitive staff data added. No automation created.
+
+**Next step:** Coordinator/queryability final closure.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

@@ -173,3 +173,21 @@ AMBER remains because Mayurika has not yet operationally reviewed and accepted t
 ## 11. Next Step
 
 Route `member-aios/mayurika-hr/nslp/` to Mayurika for operational review. Once she confirms the templates, update all NSLP file statuses to ACTIVE and clear the dashboard AMBER note.
+
+---
+
+## 12. Mayurika Operational Acceptance Update — 2026-07-06
+
+**User report:** "She approved every files."
+
+Mayurika accepted the NSLP dashboard/control system in `web-view/index.html` (Mayurika HR tab).
+
+**Status updated:** PASS — AMBER for Mayurika operational acceptance → **ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED**
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`
+
+**Files updated:** `web-view/index.html` (visible AMBER status text updated to ACTIVE), `member-aios/mayurika-hr/WORKBENCH.md`, `member-aios/mayurika-hr/quick-reference-sources.md`
+
+**Safety preserved:** No blocked files touched. No sensitive staff data added. No automation/API/database workflow created. No [VERIFY] items resolved. Dashboard remains static/read-only.
+
+**Next step:** Final coordinator/queryability acceptance.

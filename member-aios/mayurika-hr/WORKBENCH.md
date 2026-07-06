@@ -263,7 +263,9 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 **Validation:** `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md`
 
-**Status:** INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE
+**Status:** ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED
+
+**Acceptance evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`
 
 **Note:** Read-only preview only. Static HTML. No forms, no API, no fetch(), no database, no automation. All table rows use placeholders — no real staff data.
 
@@ -275,7 +277,7 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 5. NSLP Exception Register Preview — all 7 exception types
 6. Monthly NSLP Management Report Control — adoption rate, completion rates, exception count, business impact
 
-**Next step:** Route `member-aios/mayurika-hr/nslp/` to Mayurika for operational review. Once confirmed, update NSLP file and dashboard statuses to ACTIVE.
+**Next step:** Final coordinator/queryability acceptance, or close the NSLP integration chain as ACTIVE if the coordinator accepts.
 
 ---
 
@@ -285,9 +287,11 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 **Folder:** `member-aios/mayurika-hr/nslp/`
 
-**Status:** INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE
+**Status:** ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED
 
 **Validation:** `validation/hr-nslp-system-pack-build-check-2026-07-06.md`
+
+**Acceptance evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`
 
 Templates in this folder are derived from HR.Mayu.Skill.md Section 9. They are documentation-only, placeholder-only, and not connected to any live system.
 
@@ -303,7 +307,7 @@ Templates in this folder are derived from HR.Mayu.Skill.md Section 9. They are d
 | Management Report Template | `nslp/nslp-management-report-template-2026-07-06.md` | Monthly evidence-backed report to management |
 | Query Pack | `nslp/nslp-query-pack-2026-07-06.md` | 8 reusable LLM queries for daily/weekly/monthly review |
 
-**Next step:** Route to Mayurika for operational review. Once confirmed, update all NSLP file statuses to ACTIVE.
+**Next step:** Final coordinator/queryability acceptance.
 
 ---
 

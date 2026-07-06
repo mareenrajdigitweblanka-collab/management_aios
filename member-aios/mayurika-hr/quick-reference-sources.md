@@ -111,14 +111,15 @@ All three items must remain tagged [VERIFY] until the resolution conditions in `
 | Source | SRC-MAYURIKA-NSLP-001 |
 | Operating pack | `member-aios/mayurika-hr/nslp/` |
 | Dashboard validation | `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` |
-| Status | INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE |
+| Status | ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED |
+| Acceptance evidence | `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md` |
 | Note | Read-only static HTML preview. 6 control tables. No real staff data. No automation. |
 
 ---
 
 ## NSLP Operating System Pack — Template Pointers
 
-Built from SRC-MAYURIKA-NSLP-001. All files are documentation-only, placeholder-only. Status: INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE.
+Built from SRC-MAYURIKA-NSLP-001. All files are documentation-only, placeholder-only. Status: ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED. Acceptance evidence: `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`.
 
 | File | Path | Purpose |
 |---|---|---|
@@ -131,7 +132,7 @@ Built from SRC-MAYURIKA-NSLP-001. All files are documentation-only, placeholder-
 | Exception Register Template | `member-aios/mayurika-hr/nslp/nslp-exception-register-template-2026-07-06.md` | Tracks all 7 NSLP exception types |
 | Management Report Template | `member-aios/mayurika-hr/nslp/nslp-management-report-template-2026-07-06.md` | Monthly evidence-backed report to management |
 | Query Pack | `member-aios/mayurika-hr/nslp/nslp-query-pack-2026-07-06.md` | 8 reusable LLM queries for daily/weekly/monthly NSLP review |
-| Pack Build Validation | `validation/hr-nslp-system-pack-build-check-2026-07-06.md` | PASS/AMBER — all templates created; Mayurika review pending |
+| Pack Build Validation | `validation/hr-nslp-system-pack-build-check-2026-07-06.md` | PASS — Mayurika operationally accepted 2026-07-06 |
 
 ---
 

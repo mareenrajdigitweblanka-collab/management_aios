@@ -1422,6 +1422,20 @@ Template only. No live Portfolio Holder KPI report generation. Real report gener
 
 ---
 
+## Mayurika NSLP Dashboard Operational Acceptance — 2026-07-06
+
+**User report:** "She approved every files."
+
+Mayurika operationally accepted the NSLP dashboard/control system in `web-view/index.html` (Mayurika HR tab).
+
+**Status updated:** INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE → **ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED**
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`
+
+**Safety preserved:** No live automation or data added. Dashboard remains static/read-only. No blocked files touched.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

@@ -167,3 +167,21 @@ AMBER remains because:
 ## 10. Next Step
 
 Route `member-aios/mayurika-hr/nslp/` folder to Mayurika for operational review. Once Mayurika confirms the templates match her working style, update all NSLP file statuses from INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE to ACTIVE.
+
+---
+
+## 11. Mayurika Operational Acceptance Update — 2026-07-06
+
+**User report:** "She approved every files."
+
+Mayurika accepted all NSLP operating pack files/templates in `member-aios/mayurika-hr/nslp/`.
+
+**Status updated:** PASS — AMBER for final coordinator/queryability acceptance → **ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED**
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`
+
+**Files updated:** `member-aios/mayurika-hr/nslp/README.md`, `member-aios/mayurika-hr/WORKBENCH.md`, `member-aios/mayurika-hr/quick-reference-sources.md`
+
+**Safety preserved:** No blocked files touched. No sensitive staff data added. No automation/API/database workflow created. No [VERIFY] items resolved.
+
+**Next step:** Final coordinator/queryability acceptance.

@@ -5,7 +5,7 @@ member: Mayurika / Mayuri
 role: HR Officer
 created: 2026-07-06
 source-id: SRC-MAYURIKA-NSLP-001
-status: INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE
+status: ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED
 root-truth: CLAUDE.md §5; HR.Mayu.Skill.md Section 9
 ---
 
@@ -37,6 +37,7 @@ The NSLP is not completed when the meeting ends. It is completed only when the s
 | Queryability review | `validation/hr-nslp-section-9-queryability-review-2026-07-06.md` |
 | CLAUDE.md §5 update validation | `validation/hr-nslp-claude-role-update-check-2026-07-06.md` |
 | Pack build validation | `validation/hr-nslp-system-pack-build-check-2026-07-06.md` |
+| Operational acceptance evidence | `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md` |
 
 ---
 
@@ -73,12 +74,12 @@ All fields use placeholders. Mayurika fills in real operational values when runn
 
 ## Status
 
-**INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE**
+**ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED**
 
-Templates are built from SRC-MAYURIKA-NSLP-001 and are ready for operational use. Final coordinator/queryability acceptance of the CLAUDE.md §5 role reference (commit d8e9331) is still AMBER and will be resolved separately.
+Mayurika operationally approved all NSLP operating pack files/templates on 2026-07-06. Evidence: `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`. Final coordinator/queryability acceptance of the CLAUDE.md §5 role reference (commit d8e9331) remains a separate, non-blocking item.
 
 ---
 
 ## Next Step
 
-Route this folder to Mayurika for operational review. Confirm templates match her working style. Once confirmed, update status to ACTIVE.
+Final coordinator/queryability acceptance, or close the NSLP integration chain as ACTIVE if the coordinator accepts.
