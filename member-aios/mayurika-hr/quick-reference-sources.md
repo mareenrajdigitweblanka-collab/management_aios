@@ -103,6 +103,25 @@ All three items must remain tagged [VERIFY] until the resolution conditions in `
 
 ---
 
+## NSLP Operating System Pack — Template Pointers
+
+Built from SRC-MAYURIKA-NSLP-001. All files are documentation-only, placeholder-only. Status: INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE.
+
+| File | Path | Purpose |
+|---|---|---|
+| NSLP Folder README | `member-aios/mayurika-hr/nslp/README.md` | Index, source basis, safety boundaries |
+| NSLP Operating Guide | `member-aios/mayurika-hr/nslp/nslp-operating-guide-2026-07-06.md` | Full HR process guide — flow, responsibilities, rhythm, outcome labels, boundaries |
+| NSLP Register Template | `member-aios/mayurika-hr/nslp/nslp-register-template-2026-07-06.md` | Master register — one row per participant per session |
+| Action Plan Card Template | `member-aios/mayurika-hr/nslp/nslp-action-plan-card-template-2026-07-06.md` | Per-participant card collected before session end |
+| Before & After Evidence Template | `member-aios/mayurika-hr/nslp/nslp-before-after-evidence-template-2026-07-06.md` | Evidence capture and HR verification record |
+| 2-Week Evaluation Template | `member-aios/mayurika-hr/nslp/nslp-2-week-evaluation-template-2026-07-06.md` | Formal 2-week evaluation — outcome label assigned |
+| Exception Register Template | `member-aios/mayurika-hr/nslp/nslp-exception-register-template-2026-07-06.md` | Tracks all 7 NSLP exception types |
+| Management Report Template | `member-aios/mayurika-hr/nslp/nslp-management-report-template-2026-07-06.md` | Monthly evidence-backed report to management |
+| Query Pack | `member-aios/mayurika-hr/nslp/nslp-query-pack-2026-07-06.md` | 8 reusable LLM queries for daily/weekly/monthly NSLP review |
+| Pack Build Validation | `validation/hr-nslp-system-pack-build-check-2026-07-06.md` | PASS/AMBER — all templates created; Mayurika review pending |
+
+---
+
 ## Pass/Fail Rule
 
 PASS if a reader can locate the correct source, context file, skill, or inbox for any Mayurika HR domain question without verbal guidance.

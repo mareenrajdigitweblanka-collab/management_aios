@@ -450,6 +450,38 @@ All 12 open [VERIFY] items from context/verify-register.md are preserved in this
 
 ---
 
+## Mayurika NSLP — Operating System Pack Build — 2026-07-06
+
+**Task:** Build the Mayurika NSLP operating system pack from SRC-MAYURIKA-NSLP-001 / HR.Mayu.Skill.md Section 9.
+
+**Source basis:** SRC-MAYURIKA-NSLP-001 — READY (registered commit 2c0bbce). All content derived from HR.Mayu.Skill.md Section 9.
+
+**Validation:** `validation/hr-nslp-system-pack-build-check-2026-07-06.md` — PASS (AMBER for final acceptance)
+
+| File | Action |
+|---|---|
+| `member-aios/mayurika-hr/nslp/README.md` | CREATED — folder index, source basis, safety boundaries |
+| `member-aios/mayurika-hr/nslp/nslp-operating-guide-2026-07-06.md` | CREATED — full HR process guide |
+| `member-aios/mayurika-hr/nslp/nslp-register-template-2026-07-06.md` | CREATED — master register template |
+| `member-aios/mayurika-hr/nslp/nslp-action-plan-card-template-2026-07-06.md` | CREATED — per-participant action plan card |
+| `member-aios/mayurika-hr/nslp/nslp-before-after-evidence-template-2026-07-06.md` | CREATED — evidence capture and verification |
+| `member-aios/mayurika-hr/nslp/nslp-2-week-evaluation-template-2026-07-06.md` | CREATED — 2-week evaluation and outcome label |
+| `member-aios/mayurika-hr/nslp/nslp-exception-register-template-2026-07-06.md` | CREATED — all 7 exception types |
+| `member-aios/mayurika-hr/nslp/nslp-management-report-template-2026-07-06.md` | CREATED — monthly management report |
+| `member-aios/mayurika-hr/nslp/nslp-query-pack-2026-07-06.md` | CREATED — 8 reusable LLM queries |
+| `validation/hr-nslp-system-pack-build-check-2026-07-06.md` | CREATED — PASS/AMBER validation |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — §15 NSLP pack section added |
+| `member-aios/mayurika-hr/quick-reference-sources.md` | EDITED — NSLP pack template pointers added |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Safety preserved:** No real staff data. No live automation or API connections. No PostgreSQL changes. No BLOS/KPI/AXIOM/bonus/PRC/warning/PIP logic changed. No [VERIFY] items resolved. CLAUDE.md, source-register.md, verify-register.md, web-view/index.html, HR.Mayu.Skill.md, and all Arun/Suman/Rajiv/Admin files untouched.
+
+**AMBER remaining:** Final coordinator/queryability acceptance of CLAUDE.md §5 role reference (commit d8e9331) still pending. Mayurika operational review of NSLP templates still pending — all files carry status INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE.
+
+**Next step:** Route `member-aios/mayurika-hr/nslp/` folder to Mayurika for operational review. Once confirmed, update NSLP file statuses to ACTIVE. Final coordinator/queryability acceptance to close the AMBER on CLAUDE.md §5.
+
+---
+
 ## Mayurika NSLP — CLAUDE.md §5 Role Reference Update — 2026-07-06
 
 **Task:** Update CLAUDE.md §5 Mayurika role table to include NSLP as a confirmed HR responsibility under SRC-MAYURIKA-NSLP-001.

@@ -253,6 +253,34 @@ Evidence: `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmat
 
 ---
 
+## 15. NSLP Operating System Pack
+
+**Source:** SRC-MAYURIKA-NSLP-001
+
+**Folder:** `member-aios/mayurika-hr/nslp/`
+
+**Status:** INTERNAL_BUILD_PENDING_FINAL_ACCEPTANCE
+
+**Validation:** `validation/hr-nslp-system-pack-build-check-2026-07-06.md`
+
+Templates in this folder are derived from HR.Mayu.Skill.md Section 9. They are documentation-only, placeholder-only, and not connected to any live system.
+
+| Template | File | Purpose |
+|---|---|---|
+| Folder README | `nslp/README.md` | Index, source basis, safety boundaries |
+| Operating Guide | `nslp/nslp-operating-guide-2026-07-06.md` | Full HR process guide — flow, responsibilities, rhythm, outcomes, boundaries |
+| Register Template | `nslp/nslp-register-template-2026-07-06.md` | Master log — one row per participant per session |
+| Action Plan Card Template | `nslp/nslp-action-plan-card-template-2026-07-06.md` | Per-participant card collected at session end |
+| Before & After Evidence Template | `nslp/nslp-before-after-evidence-template-2026-07-06.md` | Evidence capture and HR verification record |
+| 2-Week Evaluation Template | `nslp/nslp-2-week-evaluation-template-2026-07-06.md` | Formal 2-week evaluation — outcome label assigned |
+| Exception Register Template | `nslp/nslp-exception-register-template-2026-07-06.md` | Tracks all 7 NSLP exception types |
+| Management Report Template | `nslp/nslp-management-report-template-2026-07-06.md` | Monthly evidence-backed report to management |
+| Query Pack | `nslp/nslp-query-pack-2026-07-06.md` | 8 reusable LLM queries for daily/weekly/monthly review |
+
+**Next step:** Route to Mayurika for operational review. Once confirmed, update all NSLP file statuses to ACTIVE.
+
+---
+
 ## 14. Skill Update Candidates
 
 The following skill update candidates have been created for Mayurika's domain. These are DRAFT files pending Mayurika / MD confirmation before merge into the raw HR skill file.
