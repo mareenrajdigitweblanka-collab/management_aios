@@ -272,22 +272,24 @@ A clean LLM reading this workbench should be able to answer:
 
 ---
 
-## 13a. Candidate Source Intake — Onboarding & Queryability Gap Documents (2026-07-07)
+## 13a. Registered Sources — Onboarding & Queryability Gap Documents (2026-07-07)
 
-Two new raw documents from Suman are under intake review. **Neither is registered as a Source ID yet.**
+Suman confirmed both raw documents as current and accurate, and approved both Source IDs. Both are now registered in `evidence/source-register.md`.
 
-| Document | Candidate Source ID | Intake Evidence | Status |
+| Document | Source ID | Registration Evidence | Status |
 |---|---|---|---|
-| `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/On Boarding gaps by Suman.md` | SRC-SUMAN-ONBOARD-001 (candidate) | `evidence/source-intake/suman-onboarding-gaps-source-intake-candidate-2026-07-07.md` | AWAITING SUMAN CONFIRMATION |
-| `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Quaryable gaps by Suman.md` | SRC-SUMAN-QUERY-001 (candidate) | `evidence/source-intake/suman-queryability-gaps-source-intake-candidate-2026-07-07.md` | AWAITING SUMAN CONFIRMATION |
+| `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/On Boarding gaps by Suman.md` | SRC-SUMAN-ONBOARD-001 | `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md` | READY — Suman Confirmed 2026-07-07 |
+| `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Quaryable gaps by Suman.md` | SRC-SUMAN-QUERY-001 | `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md` | READY — Suman Confirmed 2026-07-07 |
 
-**Confirmation request:** `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md`
+**Confirmation record:** `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md`
 
-**Confidentiality note:** The onboarding gaps document names four individuals in the raw source. These names do not appear in any intake evidence, workbench, or quick-reference file — all reusable summaries use role/team-level descriptors only, per CLAUDE.md §6.
+**Confidentiality note:** The onboarding gaps document names four individuals in the raw source. These names do not appear in this workbench, the quick-reference file, or any other reusable file — all reusable summaries use role/team-level descriptors only, per Suman's confirmed privacy rule and CLAUDE.md §6.
 
-**Do not treat as resolved:** The "Informed to MD / Admin Manager / Team Leader" notes recorded in Suman's raw document are her own routing notes only — not confirmation that those parties reviewed or actioned anything, and not an AIOS-confirmed resolution of any [VERIFY] item.
+**Raised to MD/Admin Manager/Team Leader — not recorded as resolved unless later confirmation is provided.** Suman confirmed that "Informed to MD," "Informed to Admin Manager," and "Informed to Team Leader" rows in her raw document are her own raised/routed-only notes — not confirmation that those parties reviewed or actioned anything, and not an AIOS-confirmed resolution of any [VERIFY] item.
 
-**No registration, no canonical skill-file merge, and no dashboard content have been created from either document.** Next step: Suman's written response to the confirmation request.
+**Reusable documentation must use role/team descriptors only.**
+
+**No canonical skill-file merge and no dashboard content have been created from either document.** Registration detail: `validation/suman-source-registration-check-2026-07-07.md`.
 
 ---
 

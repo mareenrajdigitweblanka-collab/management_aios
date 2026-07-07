@@ -731,3 +731,31 @@ This closure record is committed on branch `individual-aios`. Commit hash to be 
 | Blocked files touched | NONE — CLAUDE.md, source-register.md, verify-register.md, HR.Mayu.Skill.md, web-view/index.html, other member folders untouched |
 
 **Next step:** Collect Mayurika/Varmen's written answers to the 8 questions, then resolve the corresponding [VERIFY] fields in the HR schedule pilot files and re-validate.
+
+---
+
+## Suman Onboarding & Queryability Gap Documents — Source Registration — 2026-07-07
+
+**Task:** Register `SRC-SUMAN-ONBOARD-001` and `SRC-SUMAN-QUERY-001` in `evidence/source-register.md` following Suman's written confirmation, and update the Suman member workbench references from candidate/pending to registered/approved.
+
+**Suman confirmed:**
+- The onboarding gaps document (10 observation/action rows) and the queryability gaps document (3 observations) are current and accurate as submitted.
+- Both candidate Source IDs are approved.
+- "Informed to MD," "Informed to Admin Manager," and "Informed to Team Leader" rows remain her own raised/routed-only notes — not resolved or fully actioned unless a later update confirms action.
+- Privacy rule confirmed: only role/team-level descriptors may appear in reusable files; individual names from the original observations must be redacted from reusable intake/workbench/context/dashboard files.
+
+**Validation:** `validation/suman-source-registration-check-2026-07-07.md` — PASS
+
+| File | Action |
+|---|---|
+| `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md` | EDITED — status updated to `SUMAN_CONFIRMED_APPROVED_FOR_SOURCE_REGISTRATION`; response section appended |
+| `evidence/source-register.md` | EDITED — SRC-SUMAN-ONBOARD-001 and SRC-SUMAN-QUERY-001 rows added; count updated 40 → 42 |
+| `validation/raw-source-readiness-check.md` | EDITED — §8 addendum added (bookkeeping only) |
+| `member-aios/suman-recruitment/WORKBENCH.md` | EDITED — §13a converted from candidate intake to registered source references |
+| `member-aios/suman-recruitment/quick-reference-sources.md` | EDITED — source table rows added; candidate section converted to registered-sources section |
+| `validation/suman-source-registration-check-2026-07-07.md` | CREATED — PASS validation |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Safety preserved:** No canonical recruitment skill file merged (`Recruitment_Quality_Control_Process.md` untouched). No dashboard change (`web-view/index.html` untouched). No [VERIFY] item resolved (`context/verify-register.md` and `CLAUDE.md` untouched). Individual names from the raw onboarding source do not appear in any reusable file. Routed items remain recorded as raised-only, not resolved.
+
+**Next step:** Optional future dashboard sync to reflect the two newly registered sources, if separately requested. No dashboard update performed in this task.

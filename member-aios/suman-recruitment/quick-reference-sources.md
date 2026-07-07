@@ -28,6 +28,8 @@ root-truth: CLAUDE.md — canonical; this file is a pointer index only
 | SRC-SUMAN-002 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/historical-action-data/suman-7-day-training-gap-action-data-2026-06-25.md` (source note); raw CSV: `historical-action-data/On Boarding - Gaps in 7 days trainning.csv` | Historical raw onboarding gap/action data — 7-day training gaps, informed-to path at the time | READY — evidence only; not solution authority |
 | SRC-POLICY-001 | `intelligence-inbox/raw-stakeholder-documents/company-policy/Draft DIGIT WEB LANKA - Company Policy Manual.md` | Probation leave restriction (§6.2); onboarding policy (§3.0, §17.0); AI tools mandatory compliance (§17.0); offboarding and termination (§10.0–10.8) | READY — Final Approved |
 | MGMT-ACTION-RECORDS-FOLDER | `intelligence-inbox/management-action-records/` | Ongoing management action records inbox — Suman's subfolder is `suman-recruitment/` | ACTIVE |
+| SRC-SUMAN-ONBOARD-001 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/On Boarding gaps by Suman.md` | Onboarding gaps — 10 observation/action rows; raised-only routing notes to MD/Admin Manager/Team Leader | READY — Suman Confirmed 2026-07-07 |
+| SRC-SUMAN-QUERY-001 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Quaryable gaps by Suman.md` | Queryability gaps — 3 observations | READY — Suman Confirmed 2026-07-07 |
 
 ### 8-Point Screening Criteria — Quick Reference (SRC-SUMAN-001-v2)
 
@@ -48,20 +50,18 @@ All candidates are assessed against these 8 criteria before progressing to inter
 
 ---
 
-## Candidate Source Intake — Not Yet Registered (2026-07-07)
+## Registered Sources — Onboarding & Queryability Gap Documents (2026-07-07)
 
-| Candidate Source ID | File Path | Status | Intake Evidence |
+| Source ID | File Path | Status | Confirmation Evidence |
 |---|---|---|---|
-| SRC-SUMAN-ONBOARD-001 (candidate) | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/On Boarding gaps by Suman.md` | AWAITING SUMAN CONFIRMATION — not registered | `evidence/source-intake/suman-onboarding-gaps-source-intake-candidate-2026-07-07.md` |
-| SRC-SUMAN-QUERY-001 (candidate) | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Quaryable gaps by Suman.md` | AWAITING SUMAN CONFIRMATION — not registered | `evidence/source-intake/suman-queryability-gaps-source-intake-candidate-2026-07-07.md` |
+| SRC-SUMAN-ONBOARD-001 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/On Boarding gaps by Suman.md` | READY — Suman Confirmed 2026-07-07 — registered in `evidence/source-register.md` | `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md` |
+| SRC-SUMAN-QUERY-001 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Quaryable gaps by Suman.md` | READY — Suman Confirmed 2026-07-07 — registered in `evidence/source-register.md` | `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md` |
 
-**Confirmation request:** `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md`
+**Confidentiality note:** Onboarding gaps document names four individuals in the raw source — not reproduced in this file or any other reusable summary; role/team descriptors only, per Suman's confirmed privacy rule and CLAUDE.md §6.
 
-**Confidentiality note:** Onboarding gaps document names four individuals in the raw source — not reproduced in this file or any other reusable summary; role/team-level descriptors only, per CLAUDE.md §6.
+**"Informed to X" note:** Raised to MD/Admin Manager/Team Leader — not recorded as resolved unless later confirmation is provided. Routing notes in Suman's raw document ("Informed to MD/Admin Manager/Team Leader") are her own reported status only — not treated as resolved AIOS action.
 
-**"Informed to X" note:** Routing notes in Suman's raw document ("Informed to MD/Admin Manager/Team Leader") are her own reported status only — not treated as resolved AIOS action.
-
-Do not cite either candidate ID as a registered source until `evidence/source-register.md` is updated following Suman's confirmation.
+Registration detail: `validation/suman-source-registration-check-2026-07-07.md`.
 
 ---
 

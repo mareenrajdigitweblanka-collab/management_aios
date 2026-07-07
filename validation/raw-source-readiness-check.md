@@ -146,3 +146,16 @@ This section is a bookkeeping addendum only. It does not change the Foundation D
 - Numbering basis: chronological batch registration per `validation/mayurika-conf-id-chronological-batch-numbering-plan-2026-07-07.md` (Mayurika-confirmed approach).
 - No [VERIFY] items are resolved by this registration. No CLAUDE.md sections are affected.
 - Full registration detail: `validation/mayurika-conf-id-batch-registration-check-2026-07-07.md`.
+
+---
+
+## 8. Suman Source Registration — Onboarding & Queryability Gaps (2026-07-07)
+
+This section is a bookkeeping addendum only. It does not change the Foundation Draft v0.1 readiness decision above.
+
+- `SRC-SUMAN-ONBOARD-001` — READY — Suman Confirmed 2026-07-07
+- `SRC-SUMAN-QUERY-001` — READY — Suman Confirmed 2026-07-07
+- Privacy/redaction check: PASS — individual names from the onboarding gaps raw document do not appear in any reusable intake, workbench, quick-reference, context, or dashboard file; role/team-level descriptors only, per Suman's confirmed privacy rule.
+- Raised-only routing-note preservation check: PASS — "Informed to MD," "Informed to Admin Manager," and "Informed to Team Leader" rows remain recorded as raised/routed-only, not resolved or fully actioned, per Suman's confirmation.
+- No [VERIFY] items resolved by this registration. No CLAUDE.md sections affected. No canonical recruitment skill file merged.
+- Full registration detail: `validation/suman-source-registration-check-2026-07-07.md`.

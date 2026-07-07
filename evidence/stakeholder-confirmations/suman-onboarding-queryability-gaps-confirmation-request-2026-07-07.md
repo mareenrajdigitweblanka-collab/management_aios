@@ -4,7 +4,7 @@ type: stakeholder-confirmation-request
 date: 2026-07-07
 stakeholder: Suman
 role: Recruitment Officer
-status: AWAITING SUMAN RESPONSE
+status: SUMAN_CONFIRMED_APPROVED_FOR_SOURCE_REGISTRATION
 ---
 
 # Confirmation Request — Suman Onboarding & Queryability Gap Documents (2026-07-07)
@@ -49,3 +49,22 @@ status: AWAITING SUMAN RESPONSE
 ## Next Step
 
 Once Suman responds, update this file's `status` field to reflect her answer and proceed to registration (if approved) as a separate, explicitly authorized step.
+
+---
+
+## Suman Response Received (2026-07-07)
+
+| Question | Suman's Answer |
+|---|---|
+| Onboarding gaps document (10 observation/action rows) current and accurate as submitted? | YES |
+| Queryability gaps document (3 observations) current and accurate as submitted? | YES |
+| `SRC-SUMAN-ONBOARD-001` approved? | YES |
+| `SRC-SUMAN-QUERY-001` approved? | YES |
+| "Informed to MD" rows — resolved or raised-only? | Raised-only records. Not resolved or fully actioned unless a later update confirms action. |
+| "Informed to Admin Manager" rows — resolved or raised-only? | Factual routing notes raised for awareness/potential action. Not resolved action. Does not touch Admin Manager [VERIFY] items 1–5. |
+| "Informed to Team Leader" row — resolved or raised-only? | Raised training-gap note requiring attention. Not resolved action. |
+| Individual names / privacy rule | Only role/team-level descriptors may appear in reusable files. Individual names from the original observations must be redacted from reusable intake/workbench/context/dashboard files. |
+
+**Status update:** `SUMAN_CONFIRMED_APPROVED_FOR_SOURCE_REGISTRATION`. Registration of `SRC-SUMAN-ONBOARD-001` and `SRC-SUMAN-QUERY-001` in `evidence/source-register.md` proceeds as the explicitly authorized next step per this confirmation.
+
+**Preserved limits:** This response does not resolve any [VERIFY] item. It does not treat "Informed to MD / Admin Manager / Team Leader" as completed action. It does not authorize canonical recruitment skill-file merge or dashboard content changes.
