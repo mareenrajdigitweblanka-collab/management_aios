@@ -1515,6 +1515,111 @@ An HR Schedule Pilot — Internal Calendar Preview subsection was added to the M
 
 ---
 
+## §45 — Mayurika HR Tables — MD/Varmen Confirmation Pending Notice Update (2026-07-07)
+
+**Task:** User reported that Mayurika will create her own HR table formats and send them to MD; only after MD confirms will MD or Varmen provide the confirmed tables back for AIOS/dashboard use. Update the Mayurika HR tab so it shows no unapproved HR table preview and instead shows a simple, non-technical placeholder notice reflecting this MD/Varmen confirmation flow. UI/wording cleanup only — no new HR table format invented, no source truth changed.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-hr-tables-md-review-pending-removal-request-2026-07-07.md`
+**Validation:** `validation/mayurika-hr-tab-table-removal-check-2026-07-07.md`
+
+**Finding:** No live HR table preview (leave/PDPA/employment-status style tables) was present in the Mayurika HR tab at the time of this task — the 5 original preview tables were already removed 2026-07-06 (`validation/mayurika-hr-tables-preview-removal-check.md`) and replaced with a "pending Mayurika input" placeholder box. This task updates that existing placeholder's wording to reflect the newly reported MD/Varmen confirmation step, and updates two other stale references to the same fact for consistency.
+
+| Change | Location | Before | After |
+|---|---|---|---|
+| Section title | Mayurika HR tab | "Mayurika HR Tables" | "HR Tables — Pending MD/Varmen Confirmation" |
+| Placeholder notice body | Same section | "HR table formats pending Mayurika input. Tables will be built after Mayurika provides final table format and content." | "Mayurika will prepare the HR table formats and send them to MD. After MD or Varmen confirms the table structure, the confirmed tables will be added here. No HR table format is approved in this dashboard yet." |
+| Evidence/technical paths | Same section | Shown as plain italic text | Moved into a collapsed `<details>` "Evidence / Technical Details" block; now points to the 2026-07-07 evidence/validation files (prior 2026-07-06 file kept as a "Prior removal" reference) |
+| Mayurika snapshot card "Gated" line | Team Members at a Glance — Mayurika card | "HR table formats pending Mayurika input" | "HR tables pending MD/Varmen confirmation — no format approved yet" |
+| Mayurika tab "What should I do next?" step 3 | Mayurika HR tab next-step box | "Wait for Mayurika to provide final HR table format and content before building any HR tables." | "Wait for Mayurika to send her HR table formats to MD, and for MD or Varmen to confirm them, before adding any HR tables back to this tab." |
+
+**Sections intentionally preserved (not part of this change):**
+
+| Section | Reason Preserved |
+|---|---|
+| NSLP Control System — Internal Build (6 tables) | Separately approved via `SRC-MAYURIKA-NSLP-001`; not a "future HR table format" candidate — explicitly out of scope per task instruction |
+| HR Schedule Pilot — Internal Calendar Preview (calendar grid, Priority Queue table, Recurring Templates Register table) | Schedule-pilot preview, not a "Mayurika HR data table"; still AMBER pending its own separate Mayurika/Varmen sign-off (§ HR Schedule Pilot checks above) |
+| HR Daily Control Panel (12 placeholder cards) | Screen-list cards, not data tables; unaffected by this instruction |
+
+**Safety checks:**
+
+| Check | Result |
+|---|---|
+| New HR table format, column set, or structure invented | NOT PRESENT — only wording/notice text changed |
+| Sensitive data added | NOT PRESENT |
+| `evidence/source-register.md` edited | NO |
+| `CLAUDE.md` edited | NO |
+| `context/verify-register.md` edited | NO |
+| `member-aios/` edited | NO |
+| `schedules/hr/` edited | NO |
+| `[VERIFY]` items resolved | NO — all 9 open items unchanged |
+| NSLP Control System tables removed or altered | NO — untouched |
+| HR Schedule Pilot section removed or altered | NO — untouched |
+| Arun / Suman / Rajiv / BLOS / KPI / AXIOM files touched | NO |
+| Backend, API, form, or write capability added | NOT PRESENT |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS — placeholder notice updated to reflect MD/Varmen confirmation flow; no HR table format invented; NSLP and HR Schedule Pilot sections untouched.**
+
+---
+
+## §46 — Mayurika HR Tab — Full Table UI Removal Correction (2026-07-07)
+
+**Task:** A browser screenshot showed that §45's change had not gone far enough — the 6 NSLP table accordions ("Table 1 — NSLP Skill Register Control" through "Table 6 — Monthly NSLP Management Report Control") were still visibly collapsed/expandable in the Mayurika HR tab. The user instructed: "Remove all tables." Corrective full-table-UI removal check: `validation/mayurika-hr-tab-all-table-headings-removal-check-2026-07-07.md`.
+
+**User scope decision:** Asked whether to also remove the HR Schedule Pilot's 2 tables (Priority Queue, Recurring Templates Register) or leave them as a separately-tracked feature. User selected: remove all `<table>` elements in the Mayurika HR tab, including HR Schedule Pilot's 2 tables.
+
+**Changes applied to `web-view/index.html` (all inside `id="tab-mayurika-hr"`):**
+
+| Change | Location | Before | After |
+|---|---|---|---|
+| NSLP 6-table accordion block (Tables 1–6, full `<details>`/`<table>` markup, ~590 lines) | NSLP Control System section | 6 collapsed `<details>` accordions, each containing a full `<table>` with placeholder rows | Removed entirely; replaced with a single non-technical summary card: "NSLP Control System — Active, Table Display Hidden" with a 4-line status list (System: Active / Table display: Hidden / HR table format: Pending Mayurika draft and MD/Varmen confirmation / Dashboard action: No table shown until confirmed) and a collapsed "Evidence / Technical Details" block |
+| Section title | Same area | "NSLP Control System — Internal Build" | "NSLP Control System" |
+| HR Schedule Pilot "Priority Queue — Today (Placeholder)" `<table>` | HR Schedule Pilot section, card 3 of 4 | Full `<table>` with High/Medium/Low placeholder rows | Table markup removed; replaced with a short text summary card retaining the same [VERIFY] status and "no real tasks/staff names" note |
+| HR Schedule Pilot "Recurring Templates Register (Reference Only)" `<table>` | HR Schedule Pilot section, card 4 of 4 | Full `<table>` with 5 recurring-block rows | Table markup removed; replaced with a short text summary card retaining the same [VERIFY] status note |
+
+**Exact visible table headings removed:** "Table 1 — NSLP Skill Register Control", "Table 2 — Action Plan Card Follow-Up", "Table 3 — Before / After Evidence Tracker", "Table 4 — 2-Week Evaluation Queue", "Table 5 — NSLP Exception Register Preview", "Table 6 — Monthly NSLP Management Report Control".
+
+**Replacement summary card added (NSLP):** "NSLP Control System — Active, Table Display Hidden" — states the NSLP system remains active/approved, table layouts are hidden pending Mayurika → MD → MD/Varmen confirmation, and lists the 4 status lines exactly as specified in the task.
+
+**Verification — inside `id="tab-mayurika-hr"` (lines 2536–3193 at time of check):**
+
+| Check | Result |
+|---|---|
+| Visible text "Table 1" | 0 matches |
+| Visible text "Table 2" | 0 matches |
+| Visible text "Table 3" | 0 matches |
+| Visible text "Table 4" | 0 matches |
+| Visible text "Table 5" | 0 matches |
+| Visible text "Table 6" | 0 matches |
+| `<table>` tags | 0 matches |
+| `<summary>` starting with "Table" | 0 matches |
+| NSLP shown as active system (summary only) | YES — "NSLP Control System — Active, Table Display Hidden" card present |
+| `<div>` / `</div>` balance in tab | 217 / 217 — balanced |
+| `<details>` / `</details>` balance in tab | 3 / 3 — balanced |
+| Root [VERIFY] count unaffected | YES — still 9 open sitewide |
+
+**Sections intentionally preserved:** HR Schedule Pilot's month-view calendar grid (CSS grid, no `<table>` tag), its 8-item "Still awaiting confirmation" checklist, its MD-request banner, its safety footer, and its collapsed Evidence / Technical Details block — only its 2 `<table>` elements were converted to non-table text summaries; no other HR Schedule Pilot content was removed.
+
+**Safety checks:**
+
+| Check | Result |
+|---|---|
+| New HR table format, column set, or structure invented | NOT PRESENT — content condensed to text summaries; no new fields, no new data |
+| Sensitive data added | NOT PRESENT |
+| `evidence/source-register.md` edited | NO |
+| `CLAUDE.md` edited | NO |
+| `context/verify-register.md` edited | NO |
+| `member-aios/` edited | NO |
+| `schedules/hr/` edited | NO |
+| `[VERIFY]` items resolved | NO — all 9 open items unchanged |
+| Arun / Suman / Rajiv / BLOS / KPI / AXIOM files touched | NO |
+| Other tabs' tables touched | NO — only `id="tab-mayurika-hr"` was edited |
+| Netlify deployment wording preserved | YES |
+
+**Check result: PASS — all visible table headings, accordions, and `<table>` elements removed from the Mayurika HR tab; NSLP shown as an active system summary only; HR Schedule Pilot content preserved except its 2 tables converted to text.**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

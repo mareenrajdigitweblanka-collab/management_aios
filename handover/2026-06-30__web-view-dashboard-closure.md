@@ -1634,3 +1634,98 @@ A visual sign-off request was created for the HR Schedule Pilot Role Desk calend
 **Result:** PASS — stale display values corrected; no source truth or [VERIFY] item resolved by this refresh.
 
 **Next step:** Commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and `validation/index-file-system-sync-refresh-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## Mayurika HR Tables — MD/Varmen Confirmation Pending Notice Update (2026-07-07)
+
+**Reason:** User reported that Mayurika will create her own HR table formats and send them to MD. Only after MD confirms will MD or Varmen provide the confirmed tables back for AIOS/dashboard use. The Mayurika HR tab's existing "pending Mayurika input" placeholder (in place since the 2026-07-06 removal of 5 preview tables) was updated to reflect this fuller MD/Varmen confirmation flow.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-hr-tables-md-review-pending-removal-request-2026-07-07.md`
+
+**Validation:** `validation/mayurika-hr-tab-table-removal-check-2026-07-07.md`; `validation/web-view-html-dashboard-check.md` §45
+
+**What changed in `web-view/index.html`:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR table previews removed from HR tab | No live table markup existed to remove — the 5 original preview tables were already removed 2026-07-06. This pass updates the placeholder notice text only |
+| Section title | "Mayurika HR Tables" → "HR Tables — Pending MD/Varmen Confirmation" |
+| Placeholder notice body | Updated to: "Mayurika will prepare the HR table formats and send them to MD. After MD or Varmen confirms the table structure, the confirmed tables will be added here. No HR table format is approved in this dashboard yet." |
+| Evidence paths | Moved into a collapsed "Evidence / Technical Details" `<details>` block |
+| Mayurika snapshot card "Gated" line | Updated to "HR tables pending MD/Varmen confirmation — no format approved yet" |
+| Mayurika tab next-step box, step 3 | Updated to reference the send-to-MD / MD-or-Varmen-confirm flow |
+
+**Reason:** Mayurika will create table formats and send to MD; MD/Varmen confirmation is pending; no HR table format is approved yet.
+
+**Future action:** Once MD/Varmen confirmation is received and registered as a stakeholder confirmation, add only the confirmed HR tables to this section — replacing the placeholder notice.
+
+**Sections intentionally preserved:** NSLP Control System — Internal Build (6 tables, separately approved via `SRC-MAYURIKA-NSLP-001`); HR Schedule Pilot — Internal Calendar Preview (its own separate AMBER item); HR Daily Control Panel (screen-list cards, not data tables).
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| New HR table format invented | NOT PRESENT — wording/notice change only |
+| Source-register.md | NOT EDITED |
+| CLAUDE.md | NOT EDITED |
+| context/verify-register.md | NOT EDITED — all 9 open [VERIFY] items unchanged |
+| member-aios/ | NOT EDITED |
+| schedules/hr/ | NOT EDITED |
+| evidence/source-intake/, intelligence-inbox/raw-stakeholder-documents/, HR.Mayu.Skill.md | NOT EDITED |
+| Arun / Suman / Rajiv / BLOS / KPI / AXIOM files | NOT EDITED |
+| NSLP Control System tables | NOT CHANGED — untouched |
+| HR Schedule Pilot section | NOT CHANGED — untouched |
+| Dashboard read-only status | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Result:** PASS
+
+**Next step:** Commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, `evidence/stakeholder-confirmations/mayurika-hr-tables-md-review-pending-removal-request-2026-07-07.md`, and `validation/mayurika-hr-tab-table-removal-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## Mayurika HR Tab — Full Table UI Removal Correction (2026-07-07)
+
+**Reason:** Corrective removal completed after a browser screenshot showed that the previous pass had only collapsed the NSLP tables, not removed them — the 6 numbered NSLP table headings (Table 1 — NSLP Skill Register Control through Table 6 — Monthly NSLP Management Report Control) were still visibly present as collapsed accordions in the Mayurika HR tab. The user instructed: "Remove all tables." The user was asked whether to also remove HR Schedule Pilot's 2 tables (Priority Queue, Recurring Templates Register) and selected yes — remove all `<table>` elements in the tab.
+
+**Validation:** `validation/mayurika-hr-tab-all-table-headings-removal-check-2026-07-07.md`; `validation/web-view-html-dashboard-check.md` §46
+
+**What changed in `web-view/index.html` (inside `id="tab-mayurika-hr"` only):**
+
+| Item | Detail |
+|---|---|
+| NSLP 6-table accordion block | Fully removed (all 6 `<details>`/`<table>` accordions, ~590 lines) — replaced with a single summary card: "NSLP Control System — Active, Table Display Hidden" |
+| HR Schedule Pilot "Priority Queue" table | `<table>` markup removed; replaced with a short text summary retaining the same [VERIFY] status |
+| HR Schedule Pilot "Recurring Templates Register" table | `<table>` markup removed; replaced with a short text summary retaining the same [VERIFY] status |
+| Section title | "NSLP Control System — Internal Build" → "NSLP Control System" |
+
+**Result:** Mayurika HR tab no longer displays "Table 1" through "Table 6" headings, no `<table>` tag of any kind remains anywhere inside `id="tab-mayurika-hr"`, and no table-accordion UI remains visible.
+
+**NSLP remains active:** The NSLP system's ACTIVE / MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED status (`SRC-MAYURIKA-NSLP-001`) is preserved and stated explicitly in the new summary card — only the 6-table visual display was removed, not the system's approved/active status. Source, canonical file, pack path, and validation references remain available in a collapsed "Evidence / Technical Details" section.
+
+**Future action:** Add confirmed HR tables (NSLP and/or HR Schedule Pilot) back to the dashboard only after Mayurika prepares formats, sends them to MD, and MD or Varmen confirms the final table structure — following the same Mayurika → MD → MD/Varmen confirmation flow already recorded for the general HR Tables placeholder.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| New HR table format invented | NOT PRESENT — content condensed to text summaries only |
+| Source-register.md | NOT EDITED |
+| CLAUDE.md | NOT EDITED |
+| context/verify-register.md | NOT EDITED — all 9 open [VERIFY] items unchanged |
+| member-aios/ | NOT EDITED |
+| schedules/hr/ | NOT EDITED |
+| evidence/source-intake/, intelligence-inbox/raw-stakeholder-documents/, HR.Mayu.Skill.md | NOT EDITED |
+| Arun / Suman / Rajiv / BLOS / KPI / AXIOM files | NOT EDITED |
+| Other tabs' tables (Arun, Review Queue, File Map, Markdown Viewer) | NOT TOUCHED |
+| Dashboard read-only status | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Result:** PASS
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** After review, commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and `validation/mayurika-hr-tab-all-table-headings-removal-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
