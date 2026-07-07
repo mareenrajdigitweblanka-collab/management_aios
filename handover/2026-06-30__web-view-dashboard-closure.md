@@ -1729,3 +1729,21 @@ A visual sign-off request was created for the HR Schedule Pilot Role Desk calend
 **Not committed** — per task instruction, this change is staged for review only.
 
 **Next step:** After review, commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and `validation/mayurika-hr-tab-all-table-headings-removal-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## 2026-07-07 — Dashboard Professional UI Polish (CSS-only)
+
+A visual-polish-only pass was applied to `web-view/index.html` to make the dashboard read as more professional/executive for non-technical management users: warmer off-white background and warmer neutral borders/chrome (replacing the previous cool blue-gray palette), softer and slightly larger card shadows, marginally larger corner radius, neater/smaller tab badges, and added `:focus-visible` states on tabs/search/details for accessibility. Card and grid spacing was increased marginally in places (never decreased).
+
+**No source truth changed:** All KPI/AXIOM figures, member statuses (Mayurika ACTIVE, Arun ACTIVE, Suman ACTIVE, Rajiv BLOCKED), badge-to-item mappings (Arun's "Live PH report is AMBER", Rajiv's 5 `badge-blocked` cells, HR Schedule Pilot's `hr-chip-amber` AMBER chip), and all 9 open [VERIFY] items (64 `[VERIFY]` token occurrences, unchanged before/after) are byte-identical to the pre-edit version.
+
+**No HR tables reintroduced:** `id="tab-mayurika-hr"` still contains 0 `<table>` tags (confirmed by grep), and the "NSLP Control System — Active, Table Display Hidden" summary card remains a clean non-table card, consistent with the 2026-07-07 table-removal work recorded earlier in this file.
+
+**Files touched:** `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and the new `validation/dashboard-professional-ui-polish-check-2026-07-07.md`. `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not touched.
+
+**Result:** PASS
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser to visually confirm the new warm-neutral theme, card spacing, and tab bar before this is committed and pushed — a visual/CSS change of this size cannot be fully verified from source text alone.

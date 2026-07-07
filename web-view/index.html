@@ -16,12 +16,12 @@
     }
 
     :root {
-      --bg: #f0f4f8;
+      --bg: #f7f5f1;
       --surface: #ffffff;
-      --border: #dde3eb;
+      --border: #e6e1d8;
       --text: #1e293b;
-      --text-secondary: #374151;
-      --muted: #64748b;
+      --text-secondary: #44403c;
+      --muted: #78716c;
       --accent: #2563eb;
       --accent-light: #eff6ff;
       --pass: #15803d;
@@ -36,11 +36,11 @@
       --preview-bg: #e0f2fe;
       --topbar: #0f172a;
       --topbar-border: #1e2d3d;
-      --radius: 8px;
-      --radius-sm: 5px;
-      --shadow: 0 1px 3px rgba(0, 0, 0, .07), 0 2px 10px rgba(0, 0, 0, .05);
-      --shadow-md: 0 2px 6px rgba(0, 0, 0, .08), 0 4px 16px rgba(0, 0, 0, .07);
-      --shadow-hover: 0 4px 18px rgba(0, 0, 0, .13), 0 2px 6px rgba(0, 0, 0, .08);
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 1px 3px rgba(30, 25, 15, .05), 0 3px 14px rgba(30, 25, 15, .045);
+      --shadow-md: 0 2px 7px rgba(30, 25, 15, .06), 0 6px 20px rgba(30, 25, 15, .06);
+      --shadow-hover: 0 6px 22px rgba(30, 25, 15, .11), 0 3px 9px rgba(30, 25, 15, .07);
     }
 
     html {
@@ -54,6 +54,8 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     /* ── Top bar ── */
@@ -82,7 +84,7 @@
     .topbar-logo {
       font-size: 1.05rem;
       font-weight: 800;
-      letter-spacing: .2px;
+      letter-spacing: .3px;
       color: #f1f5f9;
       display: flex;
       align-items: center;
@@ -154,8 +156,8 @@
       background: none;
       border: none;
       border-bottom: 3px solid transparent;
-      padding: 14px 18px 11px;
-      font-size: .82rem;
+      padding: 14px 15px 11px;
+      font-size: .81rem;
       font-weight: 600;
       color: var(--muted);
       cursor: pointer;
@@ -163,28 +165,34 @@
       transition: color .15s, border-color .15s, background .15s;
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
       margin-bottom: -2px;
       border-radius: var(--radius-sm) var(--radius-sm) 0 0;
     }
 
     .tab-btn:hover {
       color: var(--text);
-      background: #f8fafc;
+      background: #f6f3ee;
     }
 
     .tab-btn.active {
       color: var(--accent);
+      font-weight: 700;
       border-bottom-color: var(--accent);
       background: var(--accent-light);
     }
 
+    .tab-btn:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(37, 99, 235, .35);
+    }
+
     .tab-badge {
-      font-size: .65rem;
+      font-size: .6rem;
       font-weight: 700;
-      padding: 1px 6px;
+      padding: 1px 5px;
       border-radius: 999px;
-      letter-spacing: .03em;
+      letter-spacing: .02em;
     }
 
     .tab-badge-draft {
@@ -225,14 +233,14 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       font-size: .84rem;
-      background: #f8fafc;
+      background: #f6f3ee;
       color: var(--text);
       outline: none;
       transition: border-color .15s, box-shadow .15s;
     }
 
     #searchInput::placeholder {
-      color: #94a3b8;
+      color: #a8a29e;
     }
 
     #searchInput:focus {
@@ -253,8 +261,13 @@
     }
 
     #searchClear:hover {
-      background: #f1f5f9;
-      border-color: #94a3b8;
+      background: #f0ede6;
+      border-color: #a8a29e;
+    }
+
+    #searchClear:focus-visible,
+    #searchInput:focus-visible {
+      outline: none;
     }
 
     #searchResults {
@@ -264,7 +277,7 @@
 
     .search-hint {
       font-size: .75rem;
-      color: #94a3b8;
+      color: #a8a29e;
     }
 
     /* ── Tab panels ── */
@@ -285,13 +298,13 @@
 
     /* ── Section heading ── */
     .section-title {
-      font-size: .72rem;
-      font-weight: 700;
+      font-size: .73rem;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: .09em;
-      color: #64748b;
-      margin-bottom: 14px;
-      margin-top: 6px;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 16px;
+      margin-top: 8px;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -453,18 +466,18 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 18px 20px;
+      padding: 19px 22px;
       margin-bottom: 18px;
     }
 
     .file-list-box h4 {
       font-size: .7rem;
       font-weight: 700;
-      color: #94a3b8;
+      color: #a8a29e;
       text-transform: uppercase;
       letter-spacing: .08em;
       margin-bottom: 12px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid #efece4;
       padding-bottom: 8px;
     }
 
@@ -504,18 +517,18 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 18px 20px;
+      padding: 19px 22px;
       margin-bottom: 18px;
     }
 
     .scope-box h4 {
       font-size: .7rem;
       font-weight: 700;
-      color: #94a3b8;
+      color: #a8a29e;
       text-transform: uppercase;
       letter-spacing: .08em;
       margin-bottom: 12px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid #efece4;
       padding-bottom: 8px;
     }
 
@@ -609,9 +622,9 @@
     /* ── Cards grid ── */
     .cards {
       display: grid;
-      gap: 16px;
+      gap: 18px;
       grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
 
     .card {
@@ -619,7 +632,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 18px 20px;
+      padding: 19px 21px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -629,7 +642,7 @@
     .card:hover {
       box-shadow: var(--shadow-hover);
       transform: translateY(-2px);
-      border-color: #c7d2e0;
+      border-color: #d6d0c2;
     }
 
     .card-header {
@@ -721,9 +734,9 @@
     }
 
     .badge-viewonly {
-      background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #e2e8f0;
+      background: #f0ede6;
+      color: #57534e;
+      border: 1px solid #e3ded3;
     }
 
     .badge-preview {
@@ -758,7 +771,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .09em;
-      color: #94a3b8;
+      color: #a8a29e;
     }
 
     .status-value {
@@ -796,23 +809,23 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .08em;
-      color: #475569;
-      padding: 9px 13px;
+      color: #57534e;
+      padding: 10px 14px;
       border-bottom: 2px solid var(--border);
-      background: #f1f5f9;
+      background: #f0ede6;
       white-space: nowrap;
     }
 
     .review-table td {
-      padding: 10px 13px;
-      border-bottom: 1px solid #edf0f4;
+      padding: 11px 14px;
+      border-bottom: 1px solid #efece4;
       color: var(--text);
       vertical-align: top;
       line-height: 1.45;
     }
 
     .review-table tbody tr:nth-child(even) td {
-      background: #fafbfc;
+      background: #faf8f4;
     }
 
     .review-table tr:last-child td {
@@ -820,7 +833,7 @@
     }
 
     .review-table tbody tr:hover td {
-      background: #f0f6ff;
+      background: #eef4ff;
     }
 
     .mono {
@@ -939,8 +952,8 @@
     }
 
     .source-row:hover {
-      background: #f8fafc;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, .06);
+      background: #f6f3ee;
+      box-shadow: 0 1px 6px rgba(30, 25, 15, .06);
     }
 
     .source-id {
@@ -1049,11 +1062,16 @@
     }
 
     details>summary:hover {
-      background: #f8fafc;
+      background: #f6f3ee;
     }
 
     details[open]>summary:hover {
       background: var(--accent-light);
+    }
+
+    details>summary:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(37, 99, 235, .3);
     }
 
     .details-body {
@@ -1061,7 +1079,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      background: #fafbfc;
+      background: #faf8f4;
       border: 1px solid var(--border);
       border-top: none;
       border-radius: 0 0 var(--radius) var(--radius);
@@ -1153,7 +1171,7 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
+      background: #d6d2c8;
       border-radius: 3px;
     }
 
@@ -1177,8 +1195,8 @@
 
     .md-card-check {
       font-size: .8rem;
-      color: #374151;
-      background: #f9fafb;
+      color: #44403c;
+      background: #f8f6f1;
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 12px;
@@ -1205,9 +1223,9 @@
 
     .md-viewonly-notice {
       font-size: .78rem;
-      color: #374151;
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
+      color: #44403c;
+      background: #f0ede6;
+      border: 1px solid #e3ded3;
       border-radius: 4px;
       padding: 7px 12px;
       font-style: italic;
@@ -1223,9 +1241,9 @@
 
     /* ── Safety note strip ── */
     .safety-strip {
-      background: #f8fafc;
+      background: #f6f3ee;
       border-bottom: 1px solid var(--border);
-      padding: 6px 28px;
+      padding: 7px 28px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1234,18 +1252,18 @@
 
     .safety-strip-icon {
       font-size: .82rem;
-      color: #64748b;
+      color: #78716c;
       flex-shrink: 0;
     }
 
     .safety-strip-text {
       font-size: .74rem;
-      color: #475569;
+      color: #57534e;
       line-height: 1.3;
     }
 
     .safety-strip-text strong {
-      color: #334155;
+      color: #3f3a34;
     }
 
     /* ── Dashboard footer ── */
@@ -1323,14 +1341,14 @@
     .handover-summary-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 14px;
+      gap: 16px;
       margin-bottom: 36px;
     }
 
     .hov-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-top: 3px solid #cbd5e1;
+      border-top: 3px solid #d6d2c8;
       border-radius: var(--radius);
       padding: 18px 20px 16px;
       box-shadow: var(--shadow);
@@ -1585,14 +1603,14 @@
     .member-snap-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
-      gap: 14px;
+      gap: 16px;
       margin-bottom: 24px;
     }
 
     .member-snap {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-top: 3px solid #cbd5e1;
+      border-top: 3px solid #d6d2c8;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 16px 18px 14px;
@@ -1611,7 +1629,7 @@
     .member-snap:focus-visible {
       box-shadow: var(--shadow-hover);
       transform: translateY(-2px);
-      border-color: #c7d2e0;
+      border-color: #d6d0c2;
       outline: none;
     }
 
@@ -1659,7 +1677,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .07em;
-      color: #94a3b8;
+      color: #a8a29e;
     }
 
     .member-snap-row .msr-val {
@@ -1688,7 +1706,7 @@
       color: var(--text-secondary);
       line-height: 1.5;
       margin-bottom: 10px;
-      background: #f8fafc;
+      background: #f6f3ee;
       border-left: 3px solid var(--accent);
       border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       padding: 8px 12px;
@@ -1894,7 +1912,7 @@
     .hr-table-num {
       font-size: .68rem;
       color: var(--muted);
-      background: #f1f5f9;
+      background: #f0ede6;
       padding: 2px 8px;
       border-radius: 999px;
       white-space: nowrap;
@@ -1929,15 +1947,15 @@
       color: var(--muted);
       font-weight: 700;
       border-bottom: 1px solid var(--border);
-      background: #f8fafc;
+      background: #f6f3ee;
       text-align: left;
     }
 
     .hr-cal-month-cell {
       min-height: 66px;
       padding: 5px 6px;
-      border-right: 1px solid #eef1f5;
-      border-bottom: 1px solid #eef1f5;
+      border-right: 1px solid #efece4;
+      border-bottom: 1px solid #efece4;
       vertical-align: top;
     }
 
@@ -3559,7 +3577,7 @@
               — no real staff or sales data. Fill in when factual data sources are confirmed.</p>
             <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
               <thead>
-                <tr style="background:#f1f5f9;">
+                <tr style="background:#f0ede6;">
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Review Month</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Portfolio Holder / Team
                   </th>
@@ -3617,7 +3635,7 @@
               no real values. Update when data sources are confirmed and access-approved.</p>
             <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
               <thead>
-                <tr style="background:#f1f5f9;">
+                <tr style="background:#f0ede6;">
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Data Source Area</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Required For</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Source System / File
@@ -3797,7 +3815,7 @@
               SRC-ARUN-PH-001. Status fields — Not Started / In Progress / Complete / Issue Found / Blocked.</p>
             <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
               <thead>
-                <tr style="background:#f1f5f9;">
+                <tr style="background:#f0ede6;">
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">No.</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Worksheet Name</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Required Input</th>
@@ -3989,7 +4007,7 @@
               Implementation Officer).</p>
             <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
               <thead>
-                <tr style="background:#f1f5f9;">
+                <tr style="background:#f0ede6;">
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Review Area</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Risk Type</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Evidence Needed</th>
@@ -4160,7 +4178,7 @@
           <div style="padding:12px 16px; overflow-x:auto;">
             <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
               <thead>
-                <tr style="background:#f1f5f9;">
+                <tr style="background:#f0ede6;">
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Dashboard View</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Source Basis</th>
                   <th style="padding:6px 8px; text-align:left; border:1px solid var(--border);">Current Build Status
