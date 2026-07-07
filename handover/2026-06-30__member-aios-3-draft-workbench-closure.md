@@ -641,6 +641,17 @@ Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
 
 ---
 
+## GAP-42 — Formal Gap Log — D09 — 2026-07-07
+
+**Task:** Formally log GAP-42 (`SRC-MAYU-CONF-007` mapping ambiguity) without registering the source.
+
+- GAP-42 formally logged in `validation/gap-42-src-mayu-conf-007-mapping-check-2026-07-07.md`
+- `evidence/source-register.md` untouched
+- Decision: **LOG_OPEN_GAP**
+- Next step: user/coordinator to decide CONF-ID numbering strategy (strict chronological batch vs. explicit assignment to the 2026-07-03 workbench/quick-reference confirmation)
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
