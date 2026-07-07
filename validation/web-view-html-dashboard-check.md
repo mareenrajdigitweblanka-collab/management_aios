@@ -1467,6 +1467,54 @@ An HR Schedule Pilot — Internal Calendar Preview subsection was added to the M
 
 ---
 
+## §44 — Index/File-System Sync Refresh Check (2026-07-07)
+
+**Task:** Apply the safe dashboard-refresh recommendations from `validation/index-file-system-sync-audit-2026-07-07.md` (a read-only sync audit committed at `d649652`). Display refresh only — no source truth, [VERIFY] item, or blocked file touched.
+
+**Changes applied to `web-view/index.html`:**
+
+| Change | Location | Before | After |
+|---|---|---|---|
+| Registered source count | Status bar (2 occurrences) | 26 | 40, with sub-text noting "+14 Mayurika confirmations (GAP-42, 2026-07-07)" |
+| Document Register row for `evidence/source-register.md` | Document Register table | "2026-06-30" / "26 sources registered" | "2026-07-07" / "40 sources registered (GAP-42 batch: SRC-MAYU-CONF-007–020 added 2026-07-07)" |
+| Topbar commit hash / date | Topbar | `98644e2` / 2026-07-06 | `d649652` / 2026-07-07 |
+| Landing-hero "Last sync" pill | Root AIOS landing hero | `2026-07-06` / `98644e2` | `2026-07-07` / `d649652` |
+| Suman "Next action" snapshot line | Team Members at a Glance — Suman card | "Review complete — no open action until MD review" | "Await Suman confirmation for two candidate sources before source registration." |
+| Mayurika GAP-42 status note | Team Members at a Glance — Mayurika card (new row) | not present | "GAP-42 closed — Mayurika confirmation batch SRC-MAYU-CONF-007 to SRC-MAYU-CONF-020 registered." |
+| HR Schedule Pilot sign-off note | HR Schedule Pilot — "Still awaiting confirmation" panel (new line) | not present | "HR Schedule Pilot visual sign-off request pending Mayurika/Varmen response." |
+| HR Schedule Pilot sign-off evidence path | HR Schedule Pilot — collapsed Evidence / Technical Details (new line) | not present | `evidence/stakeholder-confirmations/hr-schedule-pilot-role-desk-calendar-ui-signoff-request-2026-07-07.md` |
+
+**Values intentionally preserved (not touched by this refresh):**
+
+| Item | State Preserved |
+|---|---|
+| [VERIFY] count | 9 open — unchanged everywhere |
+| Arun PH live-report/data-source status | AMBER — 6 of 8 data sources missing — unchanged |
+| Rajiv/Admin workbench | BLOCKED — not created — unchanged |
+| HR Schedule Pilot schedule-truth status | AMBER / `HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION` — unchanged |
+| HR Schedule Pilot 8-item confirmation checklist | Unchanged — all 8 items still shown as open |
+| Suman candidate sources (SRC-SUMAN-ONBOARD-001, SRC-SUMAN-QUERY-001) | Still shown as NOT registered — no registered-source claim added |
+
+**Safety checks:**
+
+| Check | Result |
+|---|---|
+| Sensitive data added | NOT PRESENT |
+| Duplicate truth added | NOT PRESENT — refresh is count/date/status-line text only |
+| [VERIFY] items resolved | NO — all 9 open items preserved |
+| Suman candidate sources marked registered | NO — remain candidate-only |
+| HR Schedule Pilot marked approved/resolved | NO — remains AMBER, pending sign-off |
+| `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md` edited | NO |
+| `member-aios/`, `schedules/hr/`, `evidence/source-intake/`, `evidence/stakeholder-confirmations/` edited | NO — read-only reference only |
+| Backend, API, form, or write capability added | NOT PRESENT |
+| Netlify deployment wording preserved | YES |
+
+**Source of truth for this refresh:** `validation/index-file-system-sync-audit-2026-07-07.md`, `evidence/source-register.md`, `member-aios/suman-recruitment/WORKBENCH.md` §13a, `git log`/HEAD at time of refresh.
+
+**Check result: PASS — stale display values corrected; no source truth or [VERIFY] item touched.**
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

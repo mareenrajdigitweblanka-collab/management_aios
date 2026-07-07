@@ -1605,3 +1605,32 @@ Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman A
 A visual sign-off request was created for the HR Schedule Pilot Role Desk calendar UI update: `evidence/stakeholder-confirmations/hr-schedule-pilot-role-desk-calendar-ui-signoff-request-2026-07-07.md`. It asks Mayurika and Varmen 8 UI-only questions (visual match, non-technical readability, HR-only scope, [VERIFY] display, collapsed evidence section, and push/Netlify-preview approval) about the calendar committed in `542d800` (`542d800bd7a06b51fb3c559152162e03f28968a8`).
 
 **AMBER remains** pending Mayurika/Varmen response. **No remote push has been performed.** No source truth changed, no [VERIFY] item resolved, and no new source ID registered by this request.
+
+---
+
+## Index/File-System Sync Refresh (2026-07-07)
+
+**Reason:** A read-only sync audit (`validation/index-file-system-sync-audit-2026-07-07.md`, committed at `d649652`) found that `web-view/index.html` was running on a stale snapshot: the registered-source count (26 vs. actual 40), the topbar commit hash/date (13 commits stale), and Suman's "next action" line (stale — two candidate sources now await her confirmation) all needed refreshing. This closure records the corresponding display-only refresh applied per the audit's "Safe Update Recommendation" list.
+
+**What changed in `web-view/index.html`:**
+
+| Item | Detail |
+|---|---|
+| Registered source count | 26 → 40 in both status-bar occurrences; sub-text now notes "+14 Mayurika confirmations (GAP-42, 2026-07-07)" |
+| Document Register row (`evidence/source-register.md`) | Date 2026-06-30 → 2026-07-07; description updated to "40 sources registered (GAP-42 batch: SRC-MAYU-CONF-007–020 added 2026-07-07)" |
+| Topbar commit hash / date | `98644e2` / 2026-07-06 → `d649652` / 2026-07-07 |
+| Landing-hero "Last sync" pill | `2026-07-06` / `98644e2` → `2026-07-07` / `d649652` |
+| Suman "Next action" snapshot line | "Review complete — no open action until MD review" → "Await Suman confirmation for two candidate sources before source registration." |
+| Mayurika snapshot card | New "Sources" row added: "GAP-42 closed — Mayurika confirmation batch SRC-MAYU-CONF-007 to SRC-MAYU-CONF-020 registered." |
+| HR Schedule Pilot "Still awaiting confirmation" panel | New note added: "HR Schedule Pilot visual sign-off request pending Mayurika/Varmen response." |
+| HR Schedule Pilot Evidence / Technical Details | New line added pointing to `evidence/stakeholder-confirmations/hr-schedule-pilot-role-desk-calendar-ui-signoff-request-2026-07-07.md` |
+
+**Validation path:** `validation/web-view-html-dashboard-check.md` §44; new standalone check: `validation/index-file-system-sync-refresh-check-2026-07-07.md`.
+
+**Preserved, not touched by this refresh:** [VERIFY] count (9 open), Arun PH live-report AMBER state, Rajiv/Admin BLOCKED state, HR Schedule Pilot schedule-truth AMBER status and 8-item confirmation checklist, and Suman's two candidate sources remain shown as NOT registered.
+
+**Blocked files confirmed untouched:** `web-view/index.html` was the only dashboard file edited for content; `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, `member-aios/`, `schedules/hr/`, `evidence/source-intake/`, and `evidence/stakeholder-confirmations/` were read-only reference sources for this refresh and were not modified.
+
+**Result:** PASS — stale display values corrected; no source truth or [VERIFY] item resolved by this refresh.
+
+**Next step:** Commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and `validation/index-file-system-sync-refresh-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
