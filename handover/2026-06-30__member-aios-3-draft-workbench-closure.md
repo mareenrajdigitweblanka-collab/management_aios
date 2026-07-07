@@ -759,3 +759,56 @@ This closure record is committed on branch `individual-aios`. Commit hash to be 
 **Safety preserved:** No canonical recruitment skill file merged (`Recruitment_Quality_Control_Process.md` untouched). No dashboard change (`web-view/index.html` untouched). No [VERIFY] item resolved (`context/verify-register.md` and `CLAUDE.md` untouched). Individual names from the raw onboarding source do not appear in any reusable file. Routed items remain recorded as raised-only, not resolved.
 
 **Next step:** Optional future dashboard sync to reflect the two newly registered sources, if separately requested. No dashboard update performed in this task.
+
+---
+
+## Rajiv Admin Manager Governance Framework — Source Intake Candidate — 2026-07-07
+
+**Task:** Perform safe source intake for the first-ever Admin Manager document (`Rajiv Doc.md`), submitted into the previously empty `intelligence-inbox/raw-stakeholder-documents/admin-manager/` folder tracked as SRC-ADMIN-001 PENDING since Foundation Draft v0.1.
+
+**Received:** Rajiv Admin Manager document received — "Digit Web Lanka Governance Framework" (governance principles, department structure, reporting structure, approval authority matrix, escalation matrix, KPI/ROI/AI governance, core operational policies, accountability framework, governance meetings, management drift assessment, Admin Manager responsibilities, KPI meetings and staff management responsibilities).
+
+**Candidate Source ID:** SRC-ADMIN-001 — status CANDIDATE_PENDING_RAJIV_CONFIRMATION.
+
+**Validation:** `validation/admin-manager-source-intake-check-2026-07-07.md` — PASS (AMBER: Rajiv workbench files do not yet exist, correctly not created)
+
+| File | Action |
+|---|---|
+| `evidence/source-intake/admin-manager-governance-framework-source-intake-candidate-2026-07-07.md` | CREATED — intake summary; flags 8 parent-AIOS overlap areas (KPI/escalation content overlaps Arun's domain; Core Operational Policies overlaps SRC-POLICY-001; undefined "HRM"/"Manager" roles) |
+| `evidence/stakeholder-confirmations/rajiv-admin-governance-framework-confirmation-request-2026-07-07.md` | CREATED — 10-question confirmation request routed to Rajiv |
+| `validation/admin-manager-source-intake-check-2026-07-07.md` | CREATED — PASS validation |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Registration pending Rajiv confirmation:** SRC-ADMIN-001 is NOT registered in `evidence/source-register.md`. It remains status PENDING there. Registration is a separate, explicitly authorized step after Rajiv's written response.
+
+**Safety preserved:** Dashboard/UI untouched (`web-view/index.html` not opened). CLAUDE.md not touched. `context/verify-register.md` not touched. `evidence/source-register.md` not touched. Raw stakeholder document not edited. No [VERIFY] item resolved (items 1–5 remain open). No parent-AIOS promotion performed — all overlap areas (KPI governance, escalation matrix, core operational policies, approval authority matrix) are flagged as candidate-only, not merged into any canonical file. `member-aios/rajiv-admin/` folder still does not exist — not created in this task, consistent with the existing blocked status.
+
+**Next step:** Await Rajiv's written response to the confirmation request. Only after that response: register SRC-ADMIN-001, resolve applicable [VERIFY] items 1–5 with root propagation, route KPI/escalation content to Arun for review, and reconcile Core Operational Policies content against SRC-POLICY-001 before any merge.
+
+---
+
+## Rajiv/Admin Draft Workbench Build — 2026-07-07
+
+**Task:** Build a draft Rajiv/Admin Manager workbench from `Rajiv Doc.md` now, rather than waiting for Rajiv's confirmation, because Rajiv is currently busy. Verification will happen later.
+
+**User decision:** Explicit instruction to build first, verify later — "Rajiv is busy... do not wait for Rajiv confirmation before creating draft workbench files. But do NOT register SRC-ADMIN-001 yet."
+
+**Validation:** `validation/rajiv-admin-draft-workbench-build-check-2026-07-07.md` — PASS
+
+| File | Action |
+|---|---|
+| `member-aios/rajiv-admin/WORKBENCH.md` | CREATED — domain overview, 13 governance/responsibility areas mapped, known limits, duplicate/parent-truth risk, reviewer routing |
+| `member-aios/rajiv-admin/quick-reference-sources.md` | CREATED — SRC-ADMIN-001 candidate pointer; allowed/not-allowed use |
+| `member-aios/rajiv-admin/governance-framework-draft-map.md` | CREATED — section-by-section map of all 15 Rajiv Doc.md sections; Approval Authority Matrix and Escalation Matrix marked NEEDS_RAJIV_MD_CONFIRMATION; KPI Governance flagged for Arun boundary review; Core Operational Policies flagged for SRC-POLICY-001 duplicate check |
+| `member-aios/rajiv-admin/admin-manager-responsibility-map-draft.md` | CREATED — 11 draft responsibility categories, no invented content, all traced to raw source |
+| `member-aios/rajiv-admin/admin-manager-query-pack-draft.md` | CREATED — 8 reusable draft queries, each carrying the "use only draft status unless SRC-ADMIN-001 is later registered and confirmed" rule |
+| `validation/rajiv-admin-draft-workbench-build-check-2026-07-07.md` | CREATED — PASS validation, queryability check included |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Status:** All 5 workbench files carry DRAFT_FROM_RAJIV_DOC / NEEDS_RAJIV_OR_MD_CONFIRMATION / NOT_REGISTERED / NOT_PARENT_TRUTH / NOT_DASHBOARD_VISIBLE in frontmatter and an inline warning banner.
+
+**SRC-ADMIN-001 remains candidate/not registered.** `evidence/source-register.md` not touched — folder-status row remains PENDING.
+
+**Safety preserved:** Dashboard untouched (`web-view/index.html` not opened). CLAUDE.md not touched. `context/verify-register.md` not touched. Raw `Rajiv Doc.md` not edited. No [VERIFY] item resolved. No approval authority, escalation, KPI, or policy content marked final — Approval Authority Matrix and Escalation Matrix explicitly flagged NEEDS_RAJIV_MD_CONFIRMATION; KPI Governance flagged as possible overlap with Arun's domain; Core Operational Policies flagged as possible overlap with SRC-POLICY-001. No HR/Suman/Arun/BLOS/threshold/KPI/AXIOM/database files touched.
+
+**Next step:** Verify with Rajiv (and MD/Arun for overlapping sections) later. Only after written confirmation: register SRC-ADMIN-001, update workbench status fields, and route overlap areas to the relevant domain owners before any CLAUDE.md propagation or dashboard visibility.
