@@ -1597,3 +1597,11 @@ Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman A
 **Result:** PASS — AMBER remains until Mayurika/Varmen give visual sign-off on the calendar-matched section.
 
 **Next step:** Visual review of the month-view HR Schedule Pilot section by the user/Varmen/Mayurika, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## HR Schedule Pilot — Role Desk Calendar Visual Sign-Off Request Created (2026-07-07)
+
+A visual sign-off request was created for the HR Schedule Pilot Role Desk calendar UI update: `evidence/stakeholder-confirmations/hr-schedule-pilot-role-desk-calendar-ui-signoff-request-2026-07-07.md`. It asks Mayurika and Varmen 8 UI-only questions (visual match, non-technical readability, HR-only scope, [VERIFY] display, collapsed evidence section, and push/Netlify-preview approval) about the calendar committed in `542d800` (`542d800bd7a06b51fb3c559152162e03f28968a8`).
+
+**AMBER remains** pending Mayurika/Varmen response. **No remote push has been performed.** No source truth changed, no [VERIFY] item resolved, and no new source ID registered by this request.
