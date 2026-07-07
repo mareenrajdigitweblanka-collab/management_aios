@@ -664,6 +664,27 @@ Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
 
 ---
 
+## GAP-42 — Mayurika CONF-ID Batch Registration — 2026-07-07
+
+**Task:** Register the approved chronological batch (`SRC-MAYU-CONF-007` through `SRC-MAYU-CONF-020`) in `evidence/source-register.md`, using the exact proposed ID table from `validation/mayurika-conf-id-chronological-batch-numbering-plan-2026-07-07.md` — no reordering, no invented IDs.
+
+**Validation:** `validation/mayurika-conf-id-batch-registration-check-2026-07-07.md` — PASS
+
+| File | Action |
+|---|---|
+| `evidence/source-register.md` | EDITED — 14 rows added (`SRC-MAYU-CONF-007`–`020`); Source Count Summary updated (Confirmation Sources 7→21; TOTAL 26→40); Notes entry added |
+| `validation/raw-source-readiness-check.md` | EDITED — §7 addendum added noting the batch registration; does not change the Foundation Draft v0.1 readiness decision |
+| `validation/mayurika-conf-id-batch-registration-check-2026-07-07.md` | CREATED — PASS validation |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Result:** `SRC-MAYU-CONF-007`–`020` (14 IDs) now registered as stakeholder-confirmation evidence — bookkeeping only, no new business rules. The original GAP-42 candidate file (2026-07-03 workbench/quick-reference confirmation) is registered as `SRC-MAYU-CONF-015`, confirming the original mapping-ambiguity concern was valid.
+
+**Safety preserved:** No [VERIFY] items resolved. No source content changed. CLAUDE.md, context/verify-register.md, web-view/index.html, member-aios/, schedules/hr/, raw stakeholder documents, HR.Mayu.Skill.md, and all NSLP/Arun/Suman/BLOS/thresholds/KPI/AXIOM files untouched.
+
+**Next step:** GAP-42 closed at the source-register level. Commit this registration.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
