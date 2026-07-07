@@ -597,6 +597,50 @@ Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
 
 ---
 
+## Suman Onboarding & Queryability Gap Documents — Source Intake Candidate — 2026-07-07
+
+**Task:** Begin source intake for two new raw Suman documents (`On Boarding gaps by Suman.md`, `Quaryable gaps by Suman.md`), following the Full Source Closure Chain discovery pattern used for Arun-PH-Team.md (D08). Candidate proposal stage only — no registration.
+
+**Candidate Source IDs proposed (not registered):**
+- `SRC-SUMAN-ONBOARD-001` → `On Boarding gaps by Suman.md`
+- `SRC-SUMAN-QUERY-001` → `Quaryable gaps by Suman.md`
+
+**Validation:** `validation/suman-source-intake-candidate-check-2026-07-07.md` — PASS (AMBER: registration pending Suman's response)
+
+| File | Action |
+|---|---|
+| `evidence/source-intake/suman-onboarding-gaps-source-intake-candidate-2026-07-07.md` | CREATED — intake summary, anonymized |
+| `evidence/source-intake/suman-queryability-gaps-source-intake-candidate-2026-07-07.md` | CREATED — intake summary |
+| `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md` | CREATED — confirmation request routed to Suman |
+| `validation/suman-source-intake-candidate-check-2026-07-07.md` | CREATED — PASS/AMBER validation |
+| `member-aios/suman-recruitment/WORKBENCH.md` | EDITED — §13a candidate intake section added |
+| `member-aios/suman-recruitment/quick-reference-sources.md` | EDITED — candidate source intake table added |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Confidentiality:** Onboarding gaps raw document names four individuals (Vaishnavy, Sarbavi, Jathisha, Dilakshiga). None of these names appear in any file created or edited in this task — all reusable summaries use role/team-level descriptors only, per CLAUDE.md §6.
+
+**"Informed to X" notes:** Suman's own routing notes ("Informed to MD," "Informed to Admin Manager," "Informed to Team Leader") are recorded as her self-reported status only — not treated as resolved AIOS action, and do not affect Admin Manager [VERIFY] items 1–5 or any other [VERIFY] item.
+
+**Safety preserved:** `evidence/source-register.md` not touched. CLAUDE.md not touched. `context/verify-register.md` not touched. `web-view/index.html` not touched. No canonical recruitment skill file merged. No Mayurika, Arun, or Rajiv files touched. No HR Schedule Pilot content touched.
+
+**Next step:** Await Suman's written response to the confirmation request. Registration of either candidate Source ID requires a separate, explicitly authorized step.
+
+---
+
+## GAP-42 — SRC-MAYU-CONF-007 Status — Discovery and Decision — 2026-07-07
+
+**Task:** Determine whether `SRC-MAYU-CONF-007` (Mayurika workbench/quick-reference confirmation) should be registered now or logged as an open gap.
+
+**Discovery finding:** No `SRC-MAYU-CONF-007` entry exists in `evidence/source-register.md`. A candidate evidence file exists — `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md` — but at least 12 other Mayurika stakeholder-confirmation files dated 2026-07-01 through 2026-07-06 are also unregistered, several predating the 2026-07-03 file. The correct chronological CONF-ID mapping cannot be determined from repo evidence alone.
+
+**Decision: LOG_OPEN_GAP — not registered.**
+
+**Files touched for this decision:** NONE. `evidence/source-register.md` not edited. `CLAUDE.md` not edited. `validation/raw-source-readiness-check.md` not edited. `web-view/index.html` not edited. No file was created to formally log the gap, as no gap-log file path was authorized for this task — the decision is recorded here and in the discovery report only.
+
+**Next step:** A single batch-numbering decision is needed for all unregistered Mayurika confirmation files (2026-07-01 through 2026-07-06) before any one of them — including the 2026-07-03 workbench/quick-reference confirmation — is assigned a CONF-ID and registered.
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**

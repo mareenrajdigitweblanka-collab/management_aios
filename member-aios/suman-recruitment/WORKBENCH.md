@@ -272,6 +272,25 @@ A clean LLM reading this workbench should be able to answer:
 
 ---
 
+## 13a. Candidate Source Intake — Onboarding & Queryability Gap Documents (2026-07-07)
+
+Two new raw documents from Suman are under intake review. **Neither is registered as a Source ID yet.**
+
+| Document | Candidate Source ID | Intake Evidence | Status |
+|---|---|---|---|
+| `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/On Boarding gaps by Suman.md` | SRC-SUMAN-ONBOARD-001 (candidate) | `evidence/source-intake/suman-onboarding-gaps-source-intake-candidate-2026-07-07.md` | AWAITING SUMAN CONFIRMATION |
+| `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Quaryable gaps by Suman.md` | SRC-SUMAN-QUERY-001 (candidate) | `evidence/source-intake/suman-queryability-gaps-source-intake-candidate-2026-07-07.md` | AWAITING SUMAN CONFIRMATION |
+
+**Confirmation request:** `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md`
+
+**Confidentiality note:** The onboarding gaps document names four individuals in the raw source. These names do not appear in any intake evidence, workbench, or quick-reference file — all reusable summaries use role/team-level descriptors only, per CLAUDE.md §6.
+
+**Do not treat as resolved:** The "Informed to MD / Admin Manager / Team Leader" notes recorded in Suman's raw document are her own routing notes only — not confirmation that those parties reviewed or actioned anything, and not an AIOS-confirmed resolution of any [VERIFY] item.
+
+**No registration, no canonical skill-file merge, and no dashboard content have been created from either document.** Next step: Suman's written response to the confirmation request.
+
+---
+
 ## 14. Next Step
 
 **Suman review required.**

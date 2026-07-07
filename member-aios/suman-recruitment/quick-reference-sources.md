@@ -48,6 +48,23 @@ All candidates are assessed against these 8 criteria before progressing to inter
 
 ---
 
+## Candidate Source Intake — Not Yet Registered (2026-07-07)
+
+| Candidate Source ID | File Path | Status | Intake Evidence |
+|---|---|---|---|
+| SRC-SUMAN-ONBOARD-001 (candidate) | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/On Boarding gaps by Suman.md` | AWAITING SUMAN CONFIRMATION — not registered | `evidence/source-intake/suman-onboarding-gaps-source-intake-candidate-2026-07-07.md` |
+| SRC-SUMAN-QUERY-001 (candidate) | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Quaryable gaps by Suman.md` | AWAITING SUMAN CONFIRMATION — not registered | `evidence/source-intake/suman-queryability-gaps-source-intake-candidate-2026-07-07.md` |
+
+**Confirmation request:** `evidence/stakeholder-confirmations/suman-onboarding-queryability-gaps-confirmation-request-2026-07-07.md`
+
+**Confidentiality note:** Onboarding gaps document names four individuals in the raw source — not reproduced in this file or any other reusable summary; role/team-level descriptors only, per CLAUDE.md §6.
+
+**"Informed to X" note:** Routing notes in Suman's raw document ("Informed to MD/Admin Manager/Team Leader") are her own reported status only — not treated as resolved AIOS action.
+
+Do not cite either candidate ID as a registered source until `evidence/source-register.md` is updated following Suman's confirmation.
+
+---
+
 ## Known Source Limits
 
 | Limit | Detail |
