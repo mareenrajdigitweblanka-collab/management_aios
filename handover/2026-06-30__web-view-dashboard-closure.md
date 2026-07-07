@@ -1747,3 +1747,21 @@ A visual-polish-only pass was applied to `web-view/index.html` to make the dashb
 **Not committed** — per task instruction, this change is staged for review only.
 
 **Next step:** A human should open the dashboard in a browser to visually confirm the new warm-neutral theme, card spacing, and tab bar before this is committed and pushed — a visual/CSS change of this size cannot be fully verified from source text alone.
+
+---
+
+## 2026-07-07 — Dashboard Simplified for Non-Technical Users (Wording and Visibility Only)
+
+A wording-and-visibility-only pass was applied to `web-view/index.html` so non-technical management users see less confirmed/verified/source/evidence/status jargon in the main visible UI. The tab bar, Root AIOS, Mayurika HR (incl. HR Schedule Pilot), Suman, Arun, and Rajiv/Admin tabs were reworded: bare technical tags such as `[VERIFY]`, `PASS-AMBER`, `CANONICAL`, `AUTHORITY`, and `6 GATED` now show plain labels ("Needs Confirmation", "Master Reference", "6 Locked") in the visible badge/label text, with the original technical wording preserved via a `title="Technical label: ..."` attribute or inside a collapsed `Evidence / Technical Details` block. The Root AIOS "Overall Result" box and part of the Arun tab's evidence file list were restructured to lead with a short plain-language status sentence, with the original audit-style paragraph moved into a collapsed details block underneath, byte-identical to the original wording. The search hint was changed from technical example terms ("verify", "blocked", "arun", "draft") to plain instructional text, with the original examples preserved in a `title` attribute.
+
+**The visible UI now focuses on useful action/status:** what is active, what is blocked, what still needs confirmation, and what to do next — rather than leading with internal audit vocabulary. Technical evidence (source IDs, validation file paths, resolution history) is retained in full, either inline (unchanged) elsewhere on the same tab or inside collapsed `Evidence / Technical Details` sections, exactly matching the pattern already established in the HR Schedule Pilot section from the prior session.
+
+**Source truth unchanged:** No badge CSS class, status meaning, member status, KPI/AXIOM figure, source count, or `[VERIFY]` resolution was altered. The same 9 open confirmation items tracked in `context/verify-register.md` remain represented in the dashboard, just with friendlier wording. `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not touched (all `git diff --stat` empty). Mayurika HR tab still has 0 `<table>` tags. No forbidden network/JS/storage tokens were introduced.
+
+**Files touched:** `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and the new `validation/dashboard-non-technical-ui-simplification-check-2026-07-07.md`.
+
+**Result:** PASS — AMBER noted (human visual sign-off pending)
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser to visually confirm the simplified wording reads naturally across tabs, before this is committed and pushed.

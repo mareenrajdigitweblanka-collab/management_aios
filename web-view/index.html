@@ -2107,7 +2107,7 @@
   <nav class="tab-bar" role="tablist" aria-label="Dashboard tabs">
     <button class="tab-btn active" data-tab="root-aios" role="tab" aria-selected="true">
       Root AIOS
-      <span class="tab-badge tab-badge-amber">PASS-AMBER</span>
+      <span class="tab-badge tab-badge-amber" title="Technical result: PASS-AMBER">Needs Confirmation</span>
     </button>
     <button class="tab-btn" data-tab="mayurika-hr" role="tab" aria-selected="false">
       Mayurika HR
@@ -2157,7 +2157,7 @@
     </button>
     <button class="tab-btn" data-tab="gated-modules" role="tab" aria-selected="false">
       Blocked / Gated Modules
-      <span class="tab-badge tab-badge-blocked">6 GATED</span>
+      <span class="tab-badge tab-badge-blocked" title="Technical label: 6 GATED">6 Locked</span>
     </button>
   </nav>
 
@@ -2168,7 +2168,7 @@
     <input id="searchInput" type="search" placeholder="Search across all tabs…" autocomplete="off" />
     <button id="searchClear">Clear</button>
     <span id="searchResults"></span>
-    <span class="search-hint">Tip: try "verify", "blocked", "arun", "draft"</span>
+    <span class="search-hint" title="Examples: verify, blocked, arun, draft">Search by person, topic, task, or status.</span>
   </div>
 
   <!-- ═══════════════════════════════════
@@ -2220,7 +2220,7 @@
             <h4>&#128274; What is still gated</h4>
             <ul>
               <li>Rajiv / Admin Manager section — BLOCKED until SRC-ADMIN-001 arrives.</li>
-              <li>All 9 open [VERIFY] items — cannot be resolved from this dashboard.</li>
+              <li>All 9 open confirmation items — cannot be resolved from this dashboard.</li>
               <li>Live KPI, AXIOM, ROI and leave figures — no real data is shown.</li>
               <li>Any editing, saving, or sending — done in VS Code only.</li>
             </ul>
@@ -2245,7 +2245,7 @@
           </div>
           <div class="member-snap-row">
             <span class="msr-label">Next action</span>
-            <span class="msr-val">Confirm exact HR / EOD tool names to close [VERIFY] item 9</span>
+            <span class="msr-val">Confirm exact HR / EOD tool names to close open confirmation item 9</span>
           </div>
           <div class="member-snap-row">
             <span class="msr-label">Gated</span>
@@ -2297,7 +2297,7 @@
           </div>
           <div class="member-snap-row">
             <span class="msr-label">Gated</span>
-            <span class="msr-val">Live PH report is AMBER — 6 of 8 data sources missing</span>
+            <span class="msr-val" title="Technical status: Live PH report is AMBER — 6 of 8 data sources missing">Live report not ready yet — data sources still need confirmation (6 of 8 missing)</span>
           </div>
           <span class="member-snap-cta">Open Arun Implementation</span>
         </button>
@@ -2319,7 +2319,7 @@
           </div>
           <div class="member-snap-row">
             <span class="msr-label">Gated</span>
-            <span class="msr-val">[VERIFY] items 1–5 · PRC authority not established</span>
+            <span class="msr-val">Items 1–5 need confirmation · PRC authority not established</span>
           </div>
           <span class="member-snap-cta">Open Rajiv / Admin</span>
         </button>
@@ -2343,8 +2343,9 @@
       </div>
 
       <!-- Label legend -->
-      <div class="section-title">What the labels mean</div>
-      <div class="label-legend">
+      <details style="margin-bottom:20px;">
+        <summary style="cursor:pointer;font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">What the labels mean (reference)</summary>
+      <div class="label-legend" style="margin-top:14px;">
         <div class="legend-item">
           <span class="legend-item-label">Active</span>
           <span class="badge badge-pass" style="margin-bottom:4px;">ACTIVE</span>
@@ -2397,11 +2398,13 @@
           <span class="legend-item-desc">PASS = safe to continue. AMBER = non-blocking items still to resolve.</span>
         </div>
         <div class="legend-item">
-          <span class="legend-item-label">[VERIFY]</span>
-          <span class="badge badge-verify" style="margin-bottom:4px;">[VERIFY]</span>
-          <span class="legend-item-desc">An item that is unconfirmed. Cannot be treated as fact until resolved.</span>
+          <span class="legend-item-label">Needs Confirmation</span>
+          <span class="badge badge-verify" style="margin-bottom:4px;" title="Technical label: [VERIFY]">Needs Confirmation</span>
+          <span class="legend-item-desc">An item that is unconfirmed (shown as <code>[VERIFY]</code> in source files).
+            Cannot be treated as fact until resolved.</span>
         </div>
       </div>
+      </details>
 
       <!-- Status summary -->
       <div class="section-title">Current System Status</div>
@@ -2425,9 +2428,9 @@
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
-          <span class="status-label">[VERIFY] Items Open</span>
+          <span class="status-label" title="Technical label: [VERIFY] Items Open">Needs Confirmation</span>
           <span class="status-value">9</span>
-          <span class="status-sub">9 open — items 8–10 resolved 2026-06-30 by SRC-ARUN-CONF-001</span>
+          <span class="status-sub">9 items open — 3 earlier items resolved 2026-06-30 by Arun's confirmation</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
@@ -2443,7 +2446,7 @@
         <div class="card" data-searchable data-tags="claude.md canonical root truth">
           <div class="card-header">
             <div class="card-title">CLAUDE.md is the root truth</div>
-            <span class="badge badge-source">CANONICAL</span>
+            <span class="badge badge-source" title="Technical label: CANONICAL">Master Reference</span>
           </div>
           <div class="card-note">The file <code>CLAUDE.md</code> in the root of the repository is the master reference.
             This dashboard is a summary view only — if anything here conflicts with CLAUDE.md, CLAUDE.md is correct.
@@ -2452,21 +2455,21 @@
         <div class="card" data-searchable data-tags="source register evidence authority">
           <div class="card-header">
             <div class="card-title">Source register controls evidence</div>
-            <span class="badge badge-source">AUTHORITY</span>
+            <span class="badge badge-source" title="Technical label: AUTHORITY">Rule</span>
           </div>
           <div class="card-note">Every fact in the AIOS must trace to a source registered in
-            <code>evidence/source-register.md</code>. If there is no registered source, the fact must be marked [VERIFY]
-            until one is provided.
+            <code>evidence/source-register.md</code>. If there is no registered source, the fact must be flagged as
+            <em>needing confirmation</em> (technically tagged <code>[VERIFY]</code>) until one is provided.
           </div>
         </div>
         <div class="card" data-searchable data-tags="verify register unresolved items">
           <div class="card-header">
             <div class="card-title">Verify register tracks unresolved items</div>
-            <span class="badge badge-verify">[VERIFY]</span>
+            <span class="badge badge-verify" title="Technical label: [VERIFY]">Needs Confirmation</span>
           </div>
           <div class="card-note">The file <code>context/verify-register.md</code> lists all 9 open items (items 8–10
-            from the original list were resolved 2026-06-30 by SRC-ARUN-CONF-001). A [VERIFY] item cannot be removed
-            until registered source evidence is produced and the relevant domain owner confirms it.</div>
+            from the original list were resolved 2026-06-30 by SRC-ARUN-CONF-001). An open item cannot be marked
+            resolved until registered source evidence is produced and the relevant domain owner confirms it.</div>
         </div>
         <div class="card" data-searchable data-tags="read only vs code editing dashboard static">
           <div class="card-header">
@@ -2486,7 +2489,7 @@
         <ul>
           <li>Store or display sensitive HR, staff, candidate, salary, health, disciplinary, grievance, or PDPA personal
             data.</li>
-          <li>Resolve any [VERIFY] item — all 9 remain open.</li>
+          <li>Resolve any open confirmation item — all 9 remain open.</li>
           <li>Mark any DRAFT workbench as ACTIVE — that requires domain owner sign-off.</li>
           <li>Show the Rajiv / Admin Manager workbench as created — it is BLOCKED until SRC-ADMIN-001 is received.</li>
           <li>Reproduce policy rules, KPI band tables, recruitment criteria, or leave policy as if this file is the
@@ -2521,22 +2524,31 @@
       <div class="section-title">Overall Result</div>
       <div class="result-box" data-searchable
         data-tags="pass amber result internal build active arun suman mayurika system build 2026-07-06">
-        <h3>Overall Result: PASS — AMBER noted</h3>
+        <h3 title="Technical result: PASS — AMBER noted">Overall Result: Ready — a few items still need confirmation</h3>
         <p>
-          Management AIOS Dashboard v0.1 — Internal Build. System interface build applied 2026-07-06 (build-first,
-          validate-later). Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is ACTIVE — Suman
-          Reviewed 2026-06-30. Mayurika's workbench is ACTIVE — Mayurika Reviewed 2026-07-03. [VERIFY] count corrected
-          to 9 (items 8–10 resolved 2026-06-30). Blocked/Gated Modules tab added with 6 gated section cards. Safety note
-          updated. All source pointers correct. No sensitive data shown. No policy text duplicated.
-          <br><br>
-          <strong>Build evidence:</strong>
-          <code>evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md</code>
-          <br><strong>Validation:</strong> <code>validation/management-aios-system-build-check.md</code>
-          <br><br>
-          <strong>AMBER:</strong> Future user validation pending — Mayurika, Varmen, Management Team must inspect and
-          confirm. Rajiv / Admin Manager section blocked pending SRC-ADMIN-001. 9 [VERIFY] items remain open. Dashboard
-          remains read-only.
+          The dashboard is built and working. Arun's, Suman's, and Mayurika's sections are active and reviewed. The
+          Rajiv / Admin section stays blocked until the missing admin document arrives. 9 items across the AIOS still
+          need confirmation before this can be treated as final. The dashboard stays read-only throughout — nothing
+          here can be changed, saved, or sent.
         </p>
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">Evidence / Technical Details</summary>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:6px;line-height:1.6;">
+            Management AIOS Dashboard v0.1 — Internal Build. System interface build applied 2026-07-06 (build-first,
+            validate-later). Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is ACTIVE — Suman
+            Reviewed 2026-06-30. Mayurika's workbench is ACTIVE — Mayurika Reviewed 2026-07-03. [VERIFY] count corrected
+            to 9 (items 8–10 resolved 2026-06-30). Blocked/Gated Modules tab added with 6 gated section cards. Safety note
+            updated. All source pointers correct. No sensitive data shown. No policy text duplicated.
+            <br><br>
+            <strong>Build evidence:</strong>
+            <code>evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md</code>
+            <br><strong>Validation:</strong> <code>validation/management-aios-system-build-check.md</code>
+            <br><br>
+            <strong>AMBER:</strong> Future user validation pending — Mayurika, Varmen, Management Team must inspect and
+            confirm. Rajiv / Admin Manager section blocked pending SRC-ADMIN-001. 9 [VERIFY] items remain open. Dashboard
+            remains read-only.
+          </p>
+        </details>
       </div>
 
       <div class="next-step-box">
@@ -2563,13 +2575,13 @@
             <span style="color:var(--muted); font-size:.8rem;">Mayurika approved WORKBENCH.md and
               quick-reference-sources.md on 2026-07-03. Evidence:
               <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code>.
-              [VERIFY] item 12 (exact tool names) remains open.</span>
+              Needs confirmation: item 12 (exact tool names) remains open.</span>
           </div>
         </div>
         <div class="member-header-badges">
           <span class="badge badge-pass">ACTIVE</span>
           <span class="badge badge-pass">Mayurika Reviewed 2026-07-03</span>
-          <span class="badge badge-verify">[VERIFY] Item 9 open (formerly item 12)</span>
+          <span class="badge badge-verify" title="Technical label: [VERIFY] Item 9 open (formerly item 12)">Needs Confirmation — Item 9 (formerly 12)</span>
         </div>
       </div>
 
@@ -2629,9 +2641,9 @@
       </div>
 
       <!-- VERIFY item 12 -->
-      <div class="section-title">Open VERIFY Item — Requires Mayurika's Confirmation</div>
+      <div class="section-title">Item Needing Mayurika's Confirmation</div>
       <div class="verify-explain" data-searchable data-tags="verify 9 formerly 12 hr eod tool names mayurika confirm">
-        <div class="verify-explain-title"><span class="badge badge-verify">[VERIFY] 9 (formerly item 12)</span> Exact
+        <div class="verify-explain-title"><span class="badge badge-verify" title="Technical label: [VERIFY] 9 (formerly item 12)">Needs Confirmation — Item 9 (formerly 12)</span> Exact
           tool names for HR
           records system and EOD dashboard</div>
         <div class="verify-explain-plain">
@@ -2968,7 +2980,7 @@
         data-tags="hr schedule pilot mayurika calendar preview verify amber md request read only static">
         <h3>HR Schedule Pilot</h3>
         <div class="hr-cal-badge-row">
-          <span class="hr-chip hr-chip-amber">AMBER — Awaiting Mayurika/Varmen answers</span>
+          <span class="hr-chip hr-chip-amber" title="Technical status: AMBER — Awaiting Mayurika/Varmen answers">Needs Confirmation — Awaiting Mayurika/Varmen answers</span>
           <span class="hr-chip hr-chip-scope">HR only</span>
           <span class="hr-chip hr-chip-safe">Read-only static preview</span>
         </div>
@@ -2988,7 +3000,7 @@
           <ul>
             <li>Current scope: <strong>HR pilot only</strong> — Mayurika's schedule.</li>
             <li>Full Management Team schedule (Arun, Suman, Rajiv, Varmen) is <strong>not built yet</strong>.</li>
-            <li>All open fields remain <strong>[VERIFY]</strong> until Mayurika and Varmen confirm.</li>
+            <li>All open fields still <strong>need confirmation</strong> from Mayurika and Varmen.</li>
           </ul>
         </div>
       </div>
@@ -3017,7 +3029,7 @@
           <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span>
             Technical sessions</span>
           <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--amber);"></span>
-            [VERIFY] — not yet confirmed</span>
+            Needs confirmation</span>
         </div>
         <div class="hr-cal-month-wrap">
           <div class="hr-cal-month">
@@ -3041,7 +3053,7 @@
             <!-- Week 2 -->
             <div class="hr-cal-month-cell"><div class="hr-cal-daynum">5</div></div>
             <div class="hr-cal-month-cell"><div class="hr-cal-daynum">6</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum today">7</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span><span class="hr-cal-chip verify">HR task — [VERIFY]</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum today">7</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span><span class="hr-cal-chip verify" title="Technical label: HR task — [VERIFY]">HR task — Needs confirmation</span></div>
             <div class="hr-cal-month-cell"><div class="hr-cal-daynum">8</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
             <div class="hr-cal-month-cell"><div class="hr-cal-daynum">9</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
             <div class="hr-cal-month-cell"><div class="hr-cal-daynum">10</div></div>
@@ -3077,8 +3089,8 @@
         </div>
         <p class="hr-why-view" style="padding:0 18px 14px;">
           Coloured blocks are <b>reference only</b> — read off the MD's shared calendar screenshot, not confirmed as
-          Mayurika-owned tasks. The single <b>[VERIFY]</b> chip on today's date is a placeholder — no real HR task or
-          staff name is shown.
+          Mayurika-owned tasks. The single chip marked <b>Needs confirmation</b> on today's date is a placeholder — no
+          real HR task or staff name is shown.
         </p>
       </div>
 
@@ -3093,7 +3105,7 @@
         </div>
         <p style="padding:0 18px 14px;font-size:.8rem;color:var(--muted);">
           Table display hidden. Ranks the day's work by priority (High / Medium / Low) — all rows shown previously
-          were illustrative placeholders, not real tasks, and the priority scale itself remains <b>[VERIFY]</b>. No
+          were illustrative placeholders, not real tasks, and the priority scale itself still <b>needs confirmation</b>. No
           real tasks or staff names are stored here.
         </p>
       </div>
@@ -3109,7 +3121,7 @@
         </div>
         <p style="padding:0 18px 14px;font-size:.8rem;color:var(--muted);">
           Table display hidden. The 5 recurring block types read off the MD's shared calendar screenshot; HR
-          applicability for all 5 remains <b>[VERIFY]</b>. Reference only — not Mayurika-owned tasks unless
+          applicability for all 5 still <b>needs confirmation</b>. Reference only — not Mayurika-owned tasks unless
           confirmed.
         </p>
       </div>
@@ -3117,7 +3129,7 @@
       <!-- 5. Still awaiting confirmation — condensed verify checklist -->
       <div class="hr-verify-panel" data-searchable
         data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights checklist active still awaiting confirmation">
-        <h4>Still awaiting confirmation before this becomes ACTIVE:</h4>
+        <h4>8 schedule details still need confirmation before this becomes active:</h4>
         <ul class="hr-verify-list">
           <li>Priority scale — High / Medium / Low or numeric?</li>
           <li>HR schedule categories</li>
@@ -3190,7 +3202,7 @@
         <h3>What should I do next?</h3>
         <p>
           1. Route all three workbench files to Mayurika for review. Ask her to confirm the domain scope list is correct
-          and confirm the exact names of the HR records system and EOD dashboard tools (to resolve [VERIFY] item 9).<br>
+          and confirm the exact names of the HR records system and EOD dashboard tools (to close open confirmation item 9).<br>
           2. Bring the HR Daily Control Panel screen list to DWC (Varmen) for sanity check — per AIOS UI/UX Build Guide
           §5. Do not build screens until DWC confirms the list.<br>
           3. Wait for Mayurika to send her HR table formats to MD, and for MD or Varmen to confirm them, before adding
@@ -3391,7 +3403,7 @@
             <span>📄</span>
             <div>
               <div class="fpath">member-aios/arun-implementation/verify-items-arun.md</div>
-              <div class="fdesc">Contains [VERIFY] items 8, 9, 10. Arun confirmed all three at member workbench layer on
+              <div class="fdesc">Contains confirmation items 8, 9, 10. Arun confirmed all three at member workbench layer on
                 2026-06-30. Root register update is a separate pending step.</div>
             </div>
           </li>
@@ -3399,7 +3411,7 @@
             <span>📄</span>
             <div>
               <div class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</div>
-              <div class="fdesc">Confirmation evidence — Arun's exact review text, confirmed items, and [VERIFY]
+              <div class="fdesc">Confirmation evidence — Arun's exact review text, confirmed items, and confirmation-item
                 resolutions at member workbench layer. Status: READY — Arun reviewed 2026-06-30.</div>
             </div>
           </li>
@@ -3458,15 +3470,18 @@
             <span>📄</span>
             <div>
               <div class="fpath">Evidence &amp; validation</div>
-              <div class="fdesc">
-                Approval:
-                <code>evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md</code><br>
-                Source map:
-                <code>member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md</code><br>
-                Query pack:
-                <code>member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md</code><br>
-                Validation: <code>validation/arun-ph-team-system-integration-check-2026-07-06.md</code>
-              </div>
+              <details>
+                <summary style="cursor:pointer;font-size:.78rem;color:var(--muted);">Evidence / Technical Details</summary>
+                <div class="fdesc" style="margin-top:6px;">
+                  Approval:
+                  <code>evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md</code><br>
+                  Source map:
+                  <code>member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md</code><br>
+                  Query pack:
+                  <code>member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md</code><br>
+                  Validation: <code>validation/arun-ph-team-system-integration-check-2026-07-06.md</code>
+                </div>
+              </details>
             </div>
           </li>
         </ul>
@@ -3502,11 +3517,11 @@
             avoid a suspension/termination</strong> under the escalation policy if the staff member provides a
           <strong>firm commitment with a defined deadline to achieve the required ROI</strong>.<br><br>
           <strong>Scope limit:</strong> This confirmation covers the Operational Manager's escalation authority
-          specifically. Full PRC membership scope and voting rights remain [VERIFY] in the root register until further
-          documentation is received.
+          specifically. Full PRC membership scope and voting rights still need confirmation in the root register until
+          further documentation is received.
         </div>
         <div class="verify-explain-action">Root propagation complete 2026-06-30 — CLAUDE.md §7.8 and
-          context/verify-register.md updated. Scope limit preserved: full PRC membership scope remains [VERIFY]. Source:
+          context/verify-register.md updated. Scope limit preserved: full PRC membership scope still needs confirmation. Source:
           SRC-ARUN-CONF-001.</div>
       </div>
 
@@ -3536,7 +3551,7 @@
           <li>context/kpi-axiom-context.md updated — Amazon ACOS, ROI Officer, and Operational Manager rows corrected.
           </li>
           <li>Item 9 scope limit preserved: Operational Manager escalation authority only — full PRC membership scope
-            remains [VERIFY] pending a dedicated source.</li>
+            still needs confirmation pending a dedicated source.</li>
         </ul>
       </div>
 
@@ -4324,13 +4339,16 @@
           </div>
         </details>
 
-        <p style="font-size:.78rem; color:var(--muted);">
-          Table map:
-          <code>member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md</code>
-          &nbsp;|&nbsp;
-          Validation: <code>validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md</code> &nbsp;|&nbsp;
-          Evidence: <code>evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md</code>
-        </p>
+        <details style="margin-top:6px;">
+          <summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">Evidence / Technical Details</summary>
+          <p style="font-size:.78rem; color:var(--muted); margin-top:6px;">
+            Table map:
+            <code>member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md</code>
+            &nbsp;|&nbsp;
+            Validation: <code>validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md</code> &nbsp;|&nbsp;
+            Evidence: <code>evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md</code>
+          </p>
+        </details>
       </div><!-- /arun day-to-day tables -->
 
     </div><!-- /tab-arun-implementation -->
@@ -4369,19 +4387,19 @@
           <li>Writing any content about Admin Manager authority or approval rights</li>
           <li>Writing any escalation paths that route through the Admin Manager</li>
           <li>Confirming the Admin Manager's PRC role or authority within the PRC</li>
-          <li>Resolving [VERIFY] items 1, 2, 3, 4, and 5 — all five are blocked by SRC-ADMIN-001</li>
+          <li>Resolving confirmation items 1, 2, 3, 4, and 5 — all five are blocked until the missing Admin Manager document arrives</li>
         </ul>
       </div>
 
       <!-- VERIFY items blocked -->
-      <div class="section-title">Open [VERIFY] Items Blocked by This Gap</div>
+      <div class="section-title">Items Blocked by This Gap</div>
       <div class="card" style="padding:0; overflow:hidden;" data-searchable
         data-tags="verify 1 2 3 4 5 admin manager blocked src-admin-001">
         <table class="review-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>[VERIFY] Item</th>
+              <th title="Technical label: [VERIFY] Item">Item Needing Confirmation</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -4423,7 +4441,7 @@
           <li>Register the document as SRC-ADMIN-001 in <code>evidence/source-register.md</code></li>
           <li>Update <code>validation/raw-source-readiness-check.md</code> — change SRC-ADMIN-001 status from PENDING to
             READY</li>
-          <li>Review and resolve [VERIFY] items 1–5 using the document content</li>
+          <li>Review and resolve confirmation items 1–5 using the document content</li>
           <li>Update CLAUDE.md §3, §5, and §7.8 with Admin Manager information</li>
           <li>Update <code>validation/claude-source-map.md</code> with Admin Manager claims</li>
           <li>Remove resolved items from <code>validation/pending-admin-manager-gaps.md</code></li>
@@ -4496,7 +4514,7 @@
                 <em>daily-weekly-checklist.md</em> — ACTIVE — Mayurika confirmed replacement checklist 2026-07-02 ✓<br>
                 Evidence:
                 <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code><br>
-                <span style="font-size:.8rem;color:var(--muted);">[VERIFY] item 12 (exact tool names) remains open — not
+                <span style="font-size:.8rem;color:var(--muted);">Confirmation item 12 (exact tool names) remains open — not
                   separately confirmed during this review.</span>
               </td>
               <td class="mono">
@@ -4561,22 +4579,22 @@
           <div class="amber-item-body">Arun confirmed items 8, 9, and 10 on 2026-06-30. Root propagation completed
             2026-06-30: CLAUDE.md §7.3/§7.4/§7.8/§14 updated; context/verify-register.md items 8, 9, 10 resolved (9 open
             items remain); SRC-ARUN-CONF-001 registered; context/kpi-axiom-context.md updated. Item 9 scope limit
-            preserved — Operational Manager escalation authority only; full PRC scope remains [VERIFY]. Evidence:
+            preserved — Operational Manager escalation authority only; full PRC scope still needs confirmation. Evidence:
             <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code>
           </div>
           <div class="amber-item-action">COMPLETE — no further action required for items 8, 9, 10.</div>
         </div>
         <div class="amber-item" data-searchable
           data-tags="amber mayurika hr workbench quick-reference active reviewed 2026-07-03 verify 12 tool names open">
-          <div class="amber-item-title">AMBER 2 — Mayurika Workbench ACTIVE (2026-07-03) — [VERIFY] Item 12 Still Open
+          <div class="amber-item-title">AMBER 2 — Mayurika Workbench ACTIVE (2026-07-03) — Confirmation Item 12 Still Open
           </div>
           <div class="amber-item-body">Mayurika approved WORKBENCH.md and quick-reference-sources.md on 2026-07-03. Both
             files are now ACTIVE. Evidence:
             <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code>.
-            Checklist: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02. [VERIFY] item 12 (exact tool names
+            Checklist: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02. Confirmation item 12 (exact tool names
             for HR records system and EOD dashboard) was not separately confirmed during this review and remains open.
           </div>
-          <div class="amber-item-action">To resolve [VERIFY] item 12: ask Mayurika to confirm exact names of her HR
+          <div class="amber-item-action">To resolve confirmation item 12: ask Mayurika to confirm exact names of her HR
             records system and EOD dashboard tool. Once confirmed, notify Mareenraj to register as a new source in
             evidence/source-register.md.</div>
         </div>
@@ -4982,11 +5000,11 @@
             <strong>What to check</strong>
             Status is ACTIVE — Mayurika Reviewed 2026-07-03. Evidence:
             evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md.
-            [VERIFY] item 9 (formerly item 12 — exact names of HR records system and EOD dashboard tools) remains open —
+            Confirmation item 9 (formerly item 12 — exact names of HR records system and EOD dashboard tools) remains open —
             not separately confirmed during this review.
           </div>
           <div class="md-card-meta">
-            <span class="badge badge-verify">[VERIFY] 9 Open (formerly 12)</span>
+            <span class="badge badge-verify" title="Technical label: [VERIFY] 9 Open (formerly 12)">Needs Confirmation — Item 9 (formerly 12)</span>
             <span>Owner: Mareenraj (builder)</span>
             <span>Reviewer: Mayurika — reviewed 2026-07-03</span>
           </div>
@@ -5666,7 +5684,7 @@
           </div>
 
           <div class="hov-card hov-card-verify">
-            <div class="hov-card-label">Open [VERIFY] Items</div>
+            <div class="hov-card-label" title="Technical label: Open [VERIFY] Items">Needs Confirmation</div>
             <div class="hov-card-number">9</div>
             <div class="hov-card-desc">Root register items remain unresolved</div>
           </div>
@@ -5947,7 +5965,7 @@
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
-          <span class="status-label">Open [VERIFY] Items</span>
+          <span class="status-label" title="Technical label: Open [VERIFY] Items">Needs Confirmation</span>
           <span class="status-value">9</span>
           <span class="status-sub">Admin Manager (1–5) · MD requirements (6–7) · Director (8) · HR/EOD tools (9)</span>
         </div>
@@ -6222,16 +6240,16 @@
             </tr>
             <tr>
               <td>
-                <strong>Open [VERIFY] Items — 9 Unresolved</strong><br>
+                <strong>Needs Confirmation — 9 Items Open</strong><br>
                 <span style="font-size:.76rem;color:var(--muted);">Admin Manager (1–5), MD requirements (6–7), Director
                   authority (8), HR/EOD tool names (9)</span>
               </td>
-              <td><span class="badge badge-verify">[VERIFY]</span></td>
+              <td><span class="badge badge-verify" title="Technical label: [VERIFY]">Needs Confirmation</span></td>
               <td>Domain owners per CLAUDE.md §14 &amp; §18</td>
               <td class="mono">context/verify-register.md</td>
               <td>Items 1–5: receive SRC-ADMIN-001; Items 6–7: conduct MD review meeting; Item 8: Director interview;
                 Item 9: Mayurika confirms tool names</td>
-              <td>No [VERIFY] items were resolved by this dashboard build — all 9 remain open</td>
+              <td>No items were resolved by this dashboard build — all 9 remain open</td>
             </tr>
             <tr>
               <td>
@@ -6428,14 +6446,14 @@
             <span class="badge badge-blocked">BLOCKED</span>
           </div>
           <div class="card-note">The Admin Manager's authority scope, approval rights, PRC role, and escalation paths
-            are all <strong>[VERIFY] items 1–5</strong> in CLAUDE.md §14 — pending receipt of
-            <code>SRC-ADMIN-001</code>. No Admin Manager authority, approval chain, or escalation logic may be built
-            into the dashboard until that source document is received, registered, and reviewed. See the <em>Rajiv /
+            are all <strong>items 1–5 needing confirmation</strong> in CLAUDE.md §14 — pending receipt of the missing
+            Admin Manager document. No Admin Manager authority, approval chain, or escalation logic may be built
+            into the dashboard until that document is received, registered, and reviewed. See the <em>Rajiv /
               Admin</em> tab for full detail.
           </div>
           <div class="card-footer">
-            <span class="badge badge-blocked">BLOCKED until SRC-ADMIN-001</span>
-            <span class="badge badge-verify">[VERIFY] items 1–5 open</span>
+            <span class="badge badge-blocked" title="Technical label: BLOCKED until SRC-ADMIN-001">Blocked — Awaiting Admin Manager Document</span>
+            <span class="badge badge-verify" title="Technical label: [VERIFY] items 1-5 open">Needs Confirmation — Items 1–5</span>
           </div>
         </div>
 
