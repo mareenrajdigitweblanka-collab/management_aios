@@ -652,6 +652,18 @@ Mayurika accepted all NSLP files/templates in `member-aios/mayurika-hr/nslp/`.
 
 ---
 
+## GAP-42 — Mayurika CONF-ID Numbering Decision — 2026-07-07
+
+**Decision received:** Mayurika confirmed chronological batch numbering should be used for all unregistered Mayurika stakeholder-confirmation files.
+
+- Planning file: `validation/mayurika-conf-id-chronological-batch-numbering-plan-2026-07-07.md`
+- 14 unregistered Mayurika confirmation files (2026-07-01 to 2026-07-06) identified and chronologically ordered; proposed range `SRC-MAYU-CONF-007` through `SRC-MAYU-CONF-020`
+- Under this ordering, the original GAP-42 candidate file (2026-07-03 workbench/quick-reference confirmation) maps to proposed `SRC-MAYU-CONF-015`, not `-007`
+- `evidence/source-register.md` untouched — all proposed IDs marked `PROPOSED_ONLY_NOT_REGISTERED`
+- Next step: review the proposed ID assignment table, then perform a separate source-register batch registration task
+
+---
+
 ## Overall Result
 
 **PASS — AMBER noted**
