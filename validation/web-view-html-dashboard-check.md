@@ -1443,6 +1443,24 @@ An HR Schedule Pilot — Internal Calendar Preview subsection was added to the M
 | Dashboard remains read-only/static | YES — all new elements are `<div>`/`<span>`/`<ul>` only; no `<form>`, `onsubmit`, or interactive JS added |
 | No APIs/forms/automation | YES — grep for `fetch(`, `XMLHttpRequest`, `axios`, `WebSocket`, `googleapis`, `calendar.google`, `<form`, `onsubmit`, `localStorage`, `sessionStorage`, `indexedDB` returned zero matches |
 
+---
+
+## HR Schedule Pilot Role Desk Calendar UI Match Check (2026-07-07)
+
+**Task:** The prior "Role Desk UI Alignment" pass (2026-07-06) borrowed card/banner/legend styling from `aios_role_desk_views.html` but kept a Mon–Fri time-slot grid and lane-based priority cards — not the actual month-view calendar the sample uses. This pass replaces the HR Schedule Pilot calendar with a literal month-view grid (7-column Sun–Sat, colour-coded chips) plus real `<table>`-based Priority Queue and Recurring Templates Register cards, matching the sample's structure card-for-card. Non-technical readability was also improved: technical source/validation file paths were consolidated into a single collapsed "Evidence / Technical Details" section instead of being scattered across captions. Full detail: `validation/hr-schedule-pilot-role-desk-calendar-ui-match-check-2026-07-07.md`.
+
+| Check | Result |
+|---|---|
+| Month-view calendar grid (not weekly time-slot grid) | YES — 7-column Sun–Sat grid, 5 weeks, July 2026 dates, `.hr-cal-month` |
+| Colour-coded compact chips matching sample's legend categories | YES — Merchandising/CST/Team Ldr Review/Technical interviews/Technical sessions/[VERIFY], `.hr-cal-chip` variants |
+| Priority Queue rebuilt as a table (matches sample's table) | YES — Priority/Task/Owner/Status columns, same 3 placeholder rows retained (High/Medium/Low) |
+| Recurring Templates Register rebuilt as a table (matches sample's table) | YES — Template/Weekday/Time/HR Applicability columns, same 5 recurring blocks retained |
+| Technical/source paths consolidated into one collapsed section | YES — single "Evidence / Technical Details" `<details>` block; removed inline repo-path captions under each card |
+| Non-technical readability improved | YES — visible text reduced to: what's scheduled, priority, owner, what's awaiting confirmation, next safe action |
+| HR-only scope preserved | YES — banner still states "Current scope: HR pilot only"; no Management Team schedule content added |
+| [VERIFY] preserved, none resolved | YES — same 8-item checklist retained verbatim; all table/grid VERIFY tags kept |
+| Dashboard remains read-only/static | YES — no `<form>`, `onsubmit`, or interactive JS added; grep for automation tokens returned zero matches |
+
 **Additions made:** (1) navy MD-request/HR-pilot banner stating source, HR-only scope, and Management Team schedule not-built status; (2) compact colour legend for calendar chips; (3) a distinct "Recurring Template Reference" panel pointing to `schedules/hr/recurring-templates/hr-schedule-block-template.md` and `schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md`; (4) evidence/source details block expanded to list `schedules/hr/README.md`, `schedules/hr/mayurika.md`, `schedules/hr/priority-queue.md`, and the confirmation-request evidence file by exact path.
 
 **Check result: PASS — AMBER remains until Mayurika/Varmen give visual sign-off and answer the 8 open HR schedule questions.**

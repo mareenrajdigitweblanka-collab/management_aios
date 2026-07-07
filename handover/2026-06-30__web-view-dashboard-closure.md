@@ -1573,3 +1573,27 @@ Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman A
 **Result:** PASS — AMBER remains until Mayurika/Varmen give visual sign-off.
 
 **Next step:** Visual review of the Role-Desk-aligned section by the user/Varmen/Mayurika, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## HR Schedule Pilot — Role Desk Calendar UI Match (2026-07-07)
+
+**Reason:** The 2026-07-06 alignment pass borrowed card/banner/legend styling from `aios_role_desk_views.html` but kept a Mon–Fri time-slot grid and lane-based priority cards instead of the sample's actual month-view calendar. The user asked for a closer visual match — same month-view layout, same 7-column grid, same compact coloured chips, same table-based Priority Queue and Recurring Templates Register — plus a general reduction of visible technical detail for non-technical readers. `aios_role_desk_views.html` was used strictly as a UI/style reference again; none of its sample rows were copied in as fact.
+
+**What changed in `web-view/index.html`:**
+
+- Replaced the Mon–Fri × Morning/Midday/Afternoon/Follow-up time-slot grid with a real 7-column (Sun–Sat) month-view calendar for July 2026, using the same recurring reference blocks already documented in `schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md` (Merchandising, CST call, Team Leader Review, Technical interviews, Technical sessions), repeated across all 5 weeks as "reference only" chips. A single `[VERIFY]` placeholder chip appears on today's date (7 July) — not a repeated pattern — so no fabricated recurring HR task was introduced.
+- Replaced the "Today's Priority Queue" High/Medium/Low lane cards with a `<table>` (Priority / Task / Owner / Status), same 3 placeholder rows.
+- Replaced the "Recurring Template Reference" panel with a `<table>` "Recurring Templates Register" (Template / Weekday / Time / HR Applicability), same 5 recurring blocks, same [VERIFY] tags.
+- Consolidated all technical source/validation file paths — previously scattered across multiple italic captions under each card — into one collapsed "Evidence / Technical Details" section at the bottom of the HR Schedule Pilot section.
+- Added a one-line "Next safe action" statement and shortened the header/banner copy so the visible screen answers: what's scheduled, what priority it is, who owns it, what's still awaiting confirmation, and what to do next — without needing to open the collapsed evidence section.
+- Section title kept unchanged: "HR Schedule Pilot — Internal Calendar Preview". The 8-item [VERIFY] checklist, MD-request banner, header badges, and safety footer were retained with the same wording.
+- Removed the non-functional calendar toolbar mock (Today/Week/Priority/Verify Items chips) — it added visual clutter without matching anything in the Role Desk sample.
+
+**Validation path:** `validation/hr-schedule-pilot-role-desk-calendar-ui-match-check-2026-07-07.md` (and the new section in `validation/web-view-html-dashboard-check.md`).
+
+**No schedule facts resolved. No source truth changed.** All 8 [VERIFY] items remain open; MD screenshot blocks remain reference-only/HR-applicability-[VERIFY]; no real staff/candidate data added; no forms/fetch/API/automation added (grep-confirmed); no `schedules/members/` or Arun/Suman/Rajiv/Varmen schedule files created; `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, and `schedules/hr/` source files untouched.
+
+**Result:** PASS — AMBER remains until Mayurika/Varmen give visual sign-off on the calendar-matched section.
+
+**Next step:** Visual review of the month-view HR Schedule Pilot section by the user/Varmen/Mayurika, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).

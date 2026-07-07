@@ -1862,187 +1862,143 @@
       display: inline-block;
     }
 
-    /* Toolbar (visual-only, no forms) */
-    .hr-cal-toolbar {
+    /* Month-view calendar — Role Desk style card (aios_role_desk_views.html reference) */
+    .hr-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .hr-table-card-head {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hr-table-title-row {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 16px;
-      margin-bottom: 16px;
-    }
-
-    .hr-cal-toolbar-meta {
-      display: flex;
       flex-wrap: wrap;
-      gap: 14px;
-      font-size: .76rem;
-      color: var(--muted);
     }
 
-    .hr-cal-toolbar-meta strong {
+    .hr-table-title {
+      font-size: .95rem;
+      font-weight: 700;
       color: var(--text);
+      margin: 0;
     }
 
-    .hr-cal-toolbar-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .hr-chip-action {
-      cursor: default;
-      background: #f8fafc;
-    }
-
-    .hr-chip-action:hover {
+    .hr-table-num {
+      font-size: .68rem;
+      color: var(--muted);
       background: #f1f5f9;
-    }
-
-    /* Weekly grid */
-    .hr-cal-grid-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      margin-bottom: 18px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      box-shadow: 0 1px 3px rgba(15, 23, 42, .05);
-    }
-
-    .hr-cal-grid {
-      min-width: 720px;
-      display: grid;
-      grid-template-columns: 96px repeat(5, 1fr);
-    }
-
-    .hr-cal-grid>* {
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      padding: 8px;
-    }
-
-    .hr-cal-corner {
-      background: #f8fafc;
-    }
-
-    .hr-cal-day-head {
-      background: #f8fafc;
-      text-align: center;
-      font-weight: 700;
-      font-size: .78rem;
-      color: var(--text);
-    }
-
-    .hr-cal-slot-label {
-      font-size: .72rem;
-      font-weight: 600;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      background: #fafbfc;
-    }
-
-    .hr-cal-cell {
-      min-height: 64px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .hr-event-card {
-      border-radius: 6px;
-      padding: 5px 8px;
-      font-size: .7rem;
-      line-height: 1.35;
-      border-left: 3px solid var(--accent);
-      background: var(--accent-light);
-      color: var(--text-secondary);
-    }
-
-    .hr-event-card.ref {
-      border-left-color: #94a3b8;
-      background: #f8fafc;
-      color: var(--muted);
-      font-style: italic;
-    }
-
-    .hr-event-card.verify::after {
-      content: " [VERIFY]";
-      color: var(--amber);
-      font-style: normal;
-      font-weight: 600;
-    }
-
-    /* Priority queue side panel */
-    .hr-priority-panel {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      padding: 14px 16px;
-      margin-bottom: 18px;
-    }
-
-    .hr-priority-panel h4 {
-      font-size: .88rem;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
-
-    .hr-priority-lanes {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-    }
-
-    .hr-priority-lane {
-      border-radius: var(--radius-sm);
-      padding: 10px;
-      background: #fafbfc;
-      border: 1px solid var(--border);
-    }
-
-    .hr-priority-lane-title {
-      font-size: .74rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-      display: inline-block;
       padding: 2px 8px;
       border-radius: 999px;
+      white-space: nowrap;
     }
 
-    .hr-priority-lane.high .hr-priority-lane-title {
-      background: var(--blocked-bg);
-      color: var(--blocked);
+    .hr-why-view {
+      margin: 6px 0 0;
+      font-size: .76rem;
+      color: var(--muted);
+      line-height: 1.5;
     }
 
-    .hr-priority-lane.medium .hr-priority-lane-title {
+    .hr-why-view b {
+      color: var(--text);
+    }
+
+    .hr-cal-month-wrap {
+      overflow-x: auto;
+    }
+
+    .hr-cal-month {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(84px, 1fr));
+      min-width: 630px;
+    }
+
+    .hr-cal-month-headcell {
+      padding: 6px 8px;
+      font-size: .68rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+      text-align: left;
+    }
+
+    .hr-cal-month-cell {
+      min-height: 66px;
+      padding: 5px 6px;
+      border-right: 1px solid #eef1f5;
+      border-bottom: 1px solid #eef1f5;
+      vertical-align: top;
+    }
+
+    .hr-cal-daynum {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .hr-cal-daynum.today {
+      color: #fff;
+      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    .hr-cal-chip {
+      display: block;
+      font-size: .64rem;
+      line-height: 1.4;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hr-cal-chip.amber {
       background: var(--amber-bg);
-      color: var(--amber);
+      color: #8a5e1e;
     }
 
-    .hr-priority-lane.low .hr-priority-lane-title {
+    .hr-cal-chip.purple {
+      background: #eeebf3;
+      color: #6c5b96;
+    }
+
+    .hr-cal-chip.green {
       background: var(--pass-bg);
       color: var(--pass);
     }
 
-    .hr-priority-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 8px;
-      font-size: .74rem;
-      color: var(--muted);
-      font-style: italic;
-      margin-bottom: 6px;
+    .hr-cal-chip.teal {
+      background: #e4f1ee;
+      color: #2e7a72;
     }
 
-    .hr-priority-card:last-child {
-      margin-bottom: 0;
+    .hr-cal-chip.blue {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .hr-cal-chip.verify {
+      background: var(--amber-bg);
+      color: var(--amber);
+      font-weight: 600;
     }
 
     /* Verification checklist panel */
@@ -2093,12 +2049,8 @@
     }
 
     @media (max-width: 768px) {
-      .hr-cal-grid {
-        min-width: 640px;
-      }
-
-      .hr-priority-lanes {
-        grid-template-columns: 1fr;
+      .hr-cal-month {
+        min-width: 560px;
       }
 
       .hr-verify-list {
@@ -3557,12 +3509,12 @@
 
       <!-- ══════════════════════════════════
          HR SCHEDULE PILOT — INTERNAL CALENDAR PREVIEW
-         Professional calendar-style UI — redesigned 2026-07-06
-         See validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md
+         Role Desk-style month-view calendar — aligned to aios_role_desk_views.html 2026-07-07
+         See validation/hr-schedule-pilot-role-desk-calendar-ui-match-check-2026-07-07.md
       ══════════════════════════════════ -->
       <div class="section-title" style="margin-top:32px;">HR Schedule Pilot — Internal Calendar Preview</div>
 
-      <!-- 1. Professional header card -->
+      <!-- 1. Header card -->
       <div class="hr-cal-header" data-searchable
         data-tags="hr schedule pilot mayurika calendar preview verify amber md request read only static">
         <h3>HR Schedule Pilot</h3>
@@ -3572,7 +3524,8 @@
           <span class="hr-chip hr-chip-safe">Read-only static preview</span>
         </div>
         <p class="hr-cal-purpose">
-          Plan Mayurika's HR work by priority and schedule block without creating live calendar automation.
+          A simple look at what's scheduled, what's most important today, and what's still waiting on confirmation —
+          no live calendar connection, no editing.
         </p>
       </div>
 
@@ -3581,161 +3534,217 @@
         data-tags="hr schedule pilot md request banner source mayurika hr only pilot scope management team not built verify">
         <span class="hr-md-banner-icon">&#128172;</span>
         <div>
-          <strong>Source:</strong> MD schedule request relayed to Mayurika, 6 July 2026 — build a folder structure so
-          each management team member's tasks are scheduled on a priority basis.
+          <strong>Source:</strong> MD schedule request relayed to Mayurika (6 July 2026) — schedule each management
+          team member's tasks on a priority basis.
           <ul>
             <li>Current scope: <strong>HR pilot only</strong> — Mayurika's schedule.</li>
-            <li>Full Management Team schedule (Arun, Suman, Rajiv, Varmen) is <strong>not built yet</strong> and is not
-              approved for this pass.</li>
-            <li>All open fields on this page remain <strong>[VERIFY]</strong> until Mayurika and Varmen confirm.</li>
+            <li>Full Management Team schedule (Arun, Suman, Rajiv, Varmen) is <strong>not built yet</strong>.</li>
+            <li>All open fields remain <strong>[VERIFY]</strong> until Mayurika and Varmen confirm.</li>
           </ul>
         </div>
       </div>
 
-      <!-- 2. Calendar toolbar mock (visual-only, no forms) -->
-      <div class="hr-cal-toolbar" data-searchable data-tags="hr schedule pilot toolbar week view owner priority mode">
-        <div class="hr-cal-toolbar-meta">
-          <span>Week of: <strong>[VERIFY]</strong></span>
-          <span>View: <strong>Week</strong></span>
-          <span>Owner: <strong>Mayurika / HR</strong></span>
-          <span>Priority mode: <strong>[VERIFY]</strong></span>
+      <!-- 2. Month View calendar — table-card, matches Role Desk "Month View" card -->
+      <div class="hr-table-card" data-searchable
+        data-tags="hr schedule pilot month view calendar grid chips legend reference only verify">
+        <div class="hr-table-card-head">
+          <div class="hr-table-title-row">
+            <h3 class="hr-table-title">Month View — July 2026</h3>
+            <span class="hr-table-num">HR · 01</span>
+          </div>
+          <p class="hr-why-view"><b>Why this view:</b> Shows the recurring blocks already read off the MD's shared
+            calendar screenshot, at a glance, the same way the Management Team's calendar is laid out. These are
+            <b>reference only</b> — not yet confirmed as Mayurika's own tasks.</p>
         </div>
-        <div class="hr-cal-toolbar-actions">
-          <span class="hr-chip hr-chip-action">Today</span>
-          <span class="hr-chip hr-chip-action">Week</span>
-          <span class="hr-chip hr-chip-action">Priority</span>
-          <span class="hr-chip hr-chip-action">Verify Items</span>
-        </div>
-      </div>
-
-      <!-- 3. Week calendar grid -->
-      <div class="hr-cal-grid-wrap" data-searchable
-        data-tags="hr schedule pilot weekly calendar grid placeholder cards legend">
         <div class="hr-cal-legend">
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span> HR
-            placeholder task</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#94a3b8;"></span> MD
-            screenshot — reference only</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#c8862e;"></span>
+            Merchandising</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#6c5b96;"></span> CST
+            call</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--pass);"></span>
+            Team Leader Review</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#2e7a72;"></span>
+            Technical interviews</span>
+          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span>
+            Technical sessions</span>
           <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--amber);"></span>
-            [VERIFY] — unresolved field</span>
+            [VERIFY] — not yet confirmed</span>
         </div>
-        <div class="hr-cal-grid">
-          <div class="hr-cal-corner"></div>
-          <div class="hr-cal-day-head">Monday</div>
-          <div class="hr-cal-day-head">Tuesday</div>
-          <div class="hr-cal-day-head">Wednesday</div>
-          <div class="hr-cal-day-head">Thursday</div>
-          <div class="hr-cal-day-head">Friday</div>
+        <div class="hr-cal-month-wrap">
+          <div class="hr-cal-month">
+            <div class="hr-cal-month-headcell">Sun</div>
+            <div class="hr-cal-month-headcell">Mon</div>
+            <div class="hr-cal-month-headcell">Tue</div>
+            <div class="hr-cal-month-headcell">Wed</div>
+            <div class="hr-cal-month-headcell">Thu</div>
+            <div class="hr-cal-month-headcell">Fri</div>
+            <div class="hr-cal-month-headcell">Sat</div>
 
-          <div class="hr-cal-slot-label">Morning</div>
-          <div class="hr-cal-cell"><span class="hr-event-card">[High priority HR task]</span></div>
-          <div class="hr-cal-cell"><span class="hr-event-card">[NSLP follow-up]</span></div>
-          <div class="hr-cal-cell"></div>
-          <div class="hr-cal-cell"><span class="hr-event-card ref">Technical sessions — reference only</span></div>
-          <div class="hr-cal-cell"></div>
+            <!-- Week 1 -->
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">2</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">3</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">4</div></div>
 
-          <div class="hr-cal-slot-label">Midday</div>
-          <div class="hr-cal-cell"><span class="hr-event-card ref">Merchandising — reference only</span></div>
-          <div class="hr-cal-cell"><span class="hr-event-card ref">Team Leader Review — reference only</span></div>
-          <div class="hr-cal-cell"><span class="hr-event-card ref">Technical interviews — reference only</span></div>
-          <div class="hr-cal-cell"></div>
-          <div class="hr-cal-cell"></div>
+            <!-- Week 2 -->
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">5</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">6</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum today">7</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span><span class="hr-cal-chip verify">HR task — [VERIFY]</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">8</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">9</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">10</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">11</div></div>
 
-          <div class="hr-cal-slot-label">Afternoon</div>
-          <div class="hr-cal-cell"><span class="hr-event-card ref">CST call — reference only</span></div>
-          <div class="hr-cal-cell"><span class="hr-event-card">[HR documentation]</span></div>
-          <div class="hr-cal-cell"><span class="hr-event-card verify">[Interview/session scheduling]</span></div>
-          <div class="hr-cal-cell"><span class="hr-event-card">[Management reporting]</span></div>
-          <div class="hr-cal-cell"></div>
+            <!-- Week 3 -->
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">12</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">13</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">14</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">15</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">16</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">17</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">18</div></div>
 
-          <div class="hr-cal-slot-label">Follow-up / Carry-over</div>
-          <div class="hr-cal-cell"></div>
-          <div class="hr-cal-cell"></div>
-          <div class="hr-cal-cell"></div>
-          <div class="hr-cal-cell"></div>
-          <div class="hr-cal-cell"><span class="hr-event-card">[Management reporting]</span></div>
+            <!-- Week 4 -->
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">19</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">20</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">21</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">22</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">23</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">24</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">25</div></div>
+
+            <!-- Week 5 -->
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">26</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">27</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">31</div></div>
+            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div></div>
+          </div>
         </div>
-      </div>
-      <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-bottom:18px;">
-        Placeholder cards only. No invented HR tasks. No real staff data. Source:
-        <span style="font-family:ui-monospace,monospace;">schedules/hr/mayurika.md</span>,
-        <span style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span>
-      </p>
-
-      <!-- 4. MD screenshot reference blocks -->
-      <div class="hr-priority-panel" data-searchable
-        data-tags="md screenshot reference blocks hr applicability verify cst merchandising team leader review technical interviews technical sessions">
-        <h4>MD screenshot reference blocks — HR applicability [VERIFY]</h4>
-        <div class="hr-cal-badge-row" style="margin-bottom:0;">
-          <span class="hr-event-card ref" style="display:inline-block;">Monday 11:30 — Merchandising <em>(reference
-              only)</em></span>
-          <span class="hr-event-card ref verify" style="display:inline-block;">Monday 12:00 — CST call <em>(reference
-              only · CST meaning)</em></span>
-          <span class="hr-event-card ref" style="display:inline-block;">Tuesday 10:00 — Team Leader Review
-            <em>(reference only)</em></span>
-          <span class="hr-event-card ref verify" style="display:inline-block;">Wednesday 10:00 — Technical interviews —
-            Saranya, Kajith, Pirija, Kayal <em>(reference only · role/status)</em></span>
-          <span class="hr-event-card ref verify" style="display:inline-block;">Thursday 06:30 — Technical sessions —
-            Vithusali, Dilaxshan, Mithula, Sakithiya, Gishor <em>(reference only · role/status)</em></span>
-        </div>
-        <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:10px;">
-          Reference only — not Mayurika-owned tasks. Source:
-          <span
-            style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
+        <p class="hr-why-view" style="padding:0 18px 14px;">
+          Coloured blocks are <b>reference only</b> — read off the MD's shared calendar screenshot, not confirmed as
+          Mayurika-owned tasks. The single <b>[VERIFY]</b> chip on today's date is a placeholder — no real HR task or
+          staff name is shown.
         </p>
       </div>
 
-      <!-- 4b. Recurring template reference -->
-      <div class="hr-priority-panel" data-searchable
-        data-tags="hr recurring template reference schedule block template md screenshot recurring blocks verify">
-        <h4>Recurring Template Reference</h4>
-        <ul class="hr-verify-list" style="grid-template-columns:1fr;">
-          <li>
-            <strong>HR schedule block template</strong> —
-            <span
-              style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/hr-schedule-block-template.md</span>
-            — reusable block shape for Mayurika's own HR tasks. Field names and cadence <span
-              class="verify">[VERIFY]</span>.
-          </li>
-          <li>
-            <strong>MD screenshot recurring blocks reference</strong> —
-            <span
-              style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
-            — the 5 recurring blocks read off the MD's shared calendar screenshot (Merchandising, CST call, Team Leader
-            Review, Technical interviews, Technical sessions). Reference only — HR applicability <span
-              class="verify">[VERIFY]</span>.
-          </li>
-        </ul>
-      </div>
-
-      <!-- 5. Priority lane panel -->
-      <div class="hr-priority-panel" data-searchable
+      <!-- 3. Priority Queue — table-card, matches Role Desk "Priority Queue" card -->
+      <div class="hr-table-card" data-searchable
         data-tags="hr priority queue preview high medium low placeholder mayurika schedule pilot today priority queue">
-        <h4>Today's Priority Queue</h4>
-        <div class="hr-priority-lanes">
-          <div class="hr-priority-lane high">
-            <span class="hr-priority-lane-title">High Priority</span>
-            <div class="hr-priority-card">[HR task pending confirmation]</div>
+        <div class="hr-table-card-head">
+          <div class="hr-table-title-row">
+            <h3 class="hr-table-title">Priority Queue — Today (Placeholder)</h3>
+            <span class="hr-table-num">HR · 02</span>
           </div>
-          <div class="hr-priority-lane medium">
-            <span class="hr-priority-lane-title">Medium Priority</span>
-            <div class="hr-priority-card">[NSLP follow-up placeholder]</div>
-          </div>
-          <div class="hr-priority-lane low">
-            <span class="hr-priority-lane-title">Low Priority</span>
-            <div class="hr-priority-card">[Documentation / reporting placeholder]</div>
-          </div>
+          <p class="hr-why-view"><b>Why this view:</b> Ranks the day's work by priority, not just by time slot — the
+            "priority basis" the MD asked for. Rows shown are illustrative placeholders, not real tasks.</p>
         </div>
-        <p style="font-size:.74rem;color:var(--muted);font-style:italic;margin-top:10px;">
-          Placeholder cards only. No real tasks. No real staff names. Priority scale [VERIFY]. Source:
-          <span style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span>
-        </p>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">Priority</th>
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">Task</th>
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">Owner</th>
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span style="background:var(--blocked-bg);color:var(--blocked);padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;">High</span></td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);color:var(--muted);font-style:italic;">[HR task pending confirmation]</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Mayurika / HR</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span class="verify">[VERIFY]</span></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span style="background:var(--amber-bg);color:var(--amber);padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;">Medium</span></td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);color:var(--muted);font-style:italic;">[NSLP follow-up placeholder]</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Mayurika / HR</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span class="verify">[VERIFY]</span></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 14px;"><span style="background:var(--pass-bg);color:var(--pass);padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;">Low</span></td>
+                <td style="padding:8px 14px;color:var(--muted);font-style:italic;">[Documentation / reporting placeholder]</td>
+                <td style="padding:8px 14px;">Mayurika / HR</td>
+                <td style="padding:8px 14px;"><span class="verify">[VERIFY]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hr-why-view" style="padding:0 18px 14px;">No real tasks or staff names shown. The priority scale
+          itself (High / Medium / Low vs. numeric) is <b>[VERIFY]</b>.</p>
       </div>
 
-      <!-- 6. Verification checklist panel -->
+      <!-- 4. Recurring Templates Register — table-card, matches Role Desk "Recurring Templates Register" card -->
+      <div class="hr-table-card" data-searchable
+        data-tags="hr recurring template reference schedule block template md screenshot recurring blocks verify cst merchandising team leader review technical interviews technical sessions">
+        <div class="hr-table-card-head">
+          <div class="hr-table-title-row">
+            <h3 class="hr-table-title">Recurring Templates Register (Reference Only)</h3>
+            <span class="hr-table-num">HR · 03</span>
+          </div>
+          <p class="hr-why-view"><b>Why this view:</b> The 5 recurring block types read directly off the MD's shared
+            calendar screenshot, so they don't need retyping by hand every week. HR applicability is still
+            <b>[VERIFY]</b> for all 5.</p>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">Template</th>
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">Weekday</th>
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">Time</th>
+                <th style="padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);">HR Applicability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Merchandising sync</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Monday</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">11:30</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span class="verify">[VERIFY]</span></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">CST call</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Monday</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">12:00</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span class="verify">[VERIFY]</span></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Team Leader Review</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Tuesday</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">10:00</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span class="verify">[VERIFY]</span></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Technical interviews</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">Wednesday</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);">10:00</td>
+                <td style="padding:8px 14px;border-bottom:1px solid var(--border-soft,#eee);"><span class="verify">[VERIFY]</span></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 14px;">Technical sessions</td>
+                <td style="padding:8px 14px;">Thursday</td>
+                <td style="padding:8px 14px;">06:30</td>
+                <td style="padding:8px 14px;"><span class="verify">[VERIFY]</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hr-why-view" style="padding:0 18px 14px;">Reference only — not Mayurika-owned tasks unless
+          confirmed. Multiple named attendees on the Wednesday/Thursday blocks (per the MD's screenshot) are not
+          shown here — see Evidence / Technical Details below.</p>
+      </div>
+
+      <!-- 5. Still awaiting confirmation — condensed verify checklist -->
       <div class="hr-verify-panel" data-searchable
-        data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights checklist active">
-        <h4>Before this becomes ACTIVE, confirm:</h4>
+        data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights checklist active still awaiting confirmation">
+        <h4>Still awaiting confirmation before this becomes ACTIVE:</h4>
         <ul class="hr-verify-list">
           <li>Priority scale — High / Medium / Low or numeric?</li>
           <li>HR schedule categories</li>
@@ -3748,17 +3757,24 @@
         </ul>
       </div>
 
+      <!-- 6. Next safe action -->
+      <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 12px;">
+        <strong>Next safe action:</strong> Route this preview to Mayurika and Varmen for visual sign-off and answers
+        to the items above. Do not treat any chip, row, or card on this page as a confirmed schedule until they
+        respond.
+      </p>
+
       <!-- 7. Safety footer -->
       <div class="hr-cal-footer">
         Static preview only. No Google Calendar connection. No automation. No live editing. No staff data stored.
       </div>
 
-      <!-- 9. Evidence / source details — collapsible -->
+      <!-- 8. Evidence / Technical Details — single collapsed section (all source & validation paths) -->
       <details
         style="margin-bottom:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);"
-        data-searchable data-tags="hr schedule pilot evidence source validation folder">
+        data-searchable data-tags="hr schedule pilot evidence source validation folder technical details">
         <summary style="padding:10px 16px;font-weight:600;font-size:.85rem;cursor:pointer;color:var(--text);">
-          Evidence / source details
+          Evidence / Technical Details
         </summary>
         <div style="padding:12px 16px;font-size:.78rem;color:var(--muted);line-height:1.7;">
           Source: <span style="font-family:ui-monospace,monospace;">MD schedule request relayed to Mayurika, 6 July
@@ -3767,6 +3783,13 @@
           Owner file: <span style="font-family:ui-monospace,monospace;">schedules/hr/mayurika.md</span><br>
           Priority queue source: <span
             style="font-family:ui-monospace,monospace;">schedules/hr/priority-queue.md</span><br>
+          Recurring template — HR own tasks: <span
+            style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/hr-schedule-block-template.md</span>
+          — field names and cadence [VERIFY]<br>
+          Recurring template — MD screenshot reference: <span
+            style="font-family:ui-monospace,monospace;">schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md</span>
+          — includes named attendees for Wednesday (Saranya, Kajith, Pirija, Kayal) and Thursday (Vithusali,
+          Dilaxshan, Mithula, Sakithiya, Gishor) blocks; reference only, HR applicability [VERIFY]<br>
           Evidence — confirmation request: <span
             style="font-family:ui-monospace,monospace;">evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md</span><br>
           Evidence — MD request: <span
@@ -3775,8 +3798,12 @@
             style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md</span><br>
           Validation (UI redesign): <span
             style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md</span><br>
-          Validation (Role Desk alignment): <span
+          Validation (Role Desk alignment, cards): <span
             style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-role-desk-ui-alignment-check-2026-07-06.md</span><br>
+          Validation (Role Desk calendar match): <span
+            style="font-family:ui-monospace,monospace;">validation/hr-schedule-pilot-role-desk-calendar-ui-match-check-2026-07-07.md</span><br>
+          UI reference used: <span style="font-family:ui-monospace,monospace;">aios_role_desk_views.html</span>
+          (uploaded sample — style reference only, its sample data was not copied in as fact)<br>
           Status: <strong>HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION</strong>
         </div>
       </details>
