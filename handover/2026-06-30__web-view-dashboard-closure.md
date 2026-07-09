@@ -2045,3 +2045,31 @@ status update added to the original request file. This is a content-answer captu
 does **not** mark the HR Schedule Pilot dashboard status complete. Visual sign-off on the pilot's UI remains
 a separate, still-open item. See `validation/hr-schedule-pilot-confirmation-answers-check-2026-07-08.md` for
 the full check.
+
+---
+
+## 2026-07-09 — Note: Member Tabs Simplified to Introduction / Workbench / Useful Tables / Schedule Calendar
+
+User requested that every member tab (Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv Admin) show
+only an introduction, workbench file details, useful efficiency tables/cards, and the schedule calendar —
+"no log confirmation or anything." Removed visible log-confirmation, evidence/technical-details, and
+validation/provenance clutter (status badges with evidence codes, VERIFY-item explain boxes,
+root-propagation records, "What should I do next?" developer-coordination boxes, collapsed
+Evidence/Technical Details blocks, and pending-status walls) from all four member tabs in
+`web-view/index.html`. Evidence remains in repo files (`evidence/`, `validation/`, `member-aios/`) — nothing
+was deleted; only the visible dashboard UI was simplified. All four interactive schedule calendars, the
+Mayurika HR no-table rule, and the genuinely useful operational tables (e.g. Arun's 5 day-to-day control
+tables) were preserved. See `validation/member-tabs-ui-simplification-check-2026-07-09.md` for the full
+check.
+
+---
+
+## 2026-07-09 — Note: Specific "Useful for Day-to-Day Work" Blocks Removed (Follow-up)
+
+User requested removal of specific day-to-day useful blocks from HR, Suman, and Arun tabs (HR Task
+Categories, Priority Scale, Recurring Block Durations, Edit Rights & Schedule Rule, Daily Control Panel
+cards, All Daily Check Items cards for Mayurika; Recruitment Workflow, Intake Checklist, Candidate/Follow-up
+Tracking, Weekly Deliverables for Suman; the Portfolio Holder KPI Review Template block for Arun, while
+keeping Arun's 5 existing operational control tables). Calendars and workbench details retained in all four
+tabs; Rajiv's tab was not intentionally changed. Evidence files unchanged. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 2) for the full check.
