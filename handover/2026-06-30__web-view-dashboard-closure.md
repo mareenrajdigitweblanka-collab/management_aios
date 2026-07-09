@@ -1803,3 +1803,39 @@ SRC-ADMIN-001 status (remains PENDING); no change to the HR Schedule Pilot's own
 member's real schedule should be captured as a registered source, following the same MD-request →
 registration → confirmation flow already used for the HR Schedule Pilot. For Rajiv specifically, real
 schedule content remains additionally gated on SRC-ADMIN-001.
+
+---
+
+## 2026-07-08 — Correction: Placeholder Cards Upgraded to Testing Calendar UI (Arun, Rajiv, Suman)
+
+**User clarification:** The small placeholder cards added earlier today were not sufficient. The user
+clarified: "Other team members should be same as Mayurika. This is for testing now. Real data will come in
+the future."
+
+**What changed:** The single-card placeholders for Arun, Rajiv, and Suman were replaced with a full
+calendar-style testing UI matching Mayurika's HR Schedule Pilot visual pattern — a 5-week month-view grid
+with a colour legend, a "Priority Preview — Sample" card, a safety footer, and a collapsed technical-details
+block. All calendar entries use only four generic sample labels ("Sample Task", "Sample Review", "Sample
+Follow-up", "Sample Planning") — no real dates/times, meeting names, staff names, or candidate names. Each
+section's header repeats three status chips: "Testing Preview Only", "Sample Data", "Real Data Pending
+Confirmation", plus the required explanation sentence: "This calendar is for UI testing only. Real schedule
+data will be added after member/domain-owner confirmation."
+
+**Rajiv's section additionally states** (visibly, five times within the section): "This does not confirm
+Admin Manager approval, escalation, or authority rules." SRC-ADMIN-001 remains PENDING and untouched.
+
+**Real schedule data is still pending future confirmation** for all three members — nothing in this update
+creates a confirmed schedule fact, a registered source, or a resolved [VERIFY] item.
+
+**Files touched:** `web-view/index.html`, the new
+`validation/member-schedule-testing-calendar-ui-check-2026-07-08.md`, and this closure file.
+`evidence/source-register.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not
+touched. Mayurika HR tab was not touched (still 0 `<table>` tags).
+
+**Result:** AMBER — TESTING UI ONLY. Member/domain-owner confirmation (Arun, Rajiv, Suman, and Varmen/MD per
+§18 Reviewer Routing Rule) is still required before any real schedule data is added.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser to visually confirm the testing calendar UI
+reads clearly as sample-only across all three tabs, before this is committed and pushed.
