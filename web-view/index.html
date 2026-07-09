@@ -2308,6 +2308,174 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ═══ HR Testing Tables — Sample Preview (Mayurika tab only, scoped) ═══ */
+    .hr-testing-table-note {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: .8rem;
+      color: #1e3a5f;
+      line-height: 1.6;
+      margin: 0 0 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hr-testing-table-note span.hr-pill {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .hr-testing-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .05);
+      padding: 18px 20px 20px;
+      margin-bottom: 22px;
+    }
+
+    .hr-testing-table-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .hr-testing-table-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .hr-testing-table-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      margin: 3px 0 14px;
+      line-height: 1.5;
+    }
+
+    .hr-testing-table-scroll {
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .hr-testing-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+      min-width: 560px;
+    }
+
+    .hr-testing-table thead th {
+      text-align: left;
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #57534e;
+      padding: 11px 16px;
+      background: #f5f2ea;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .hr-testing-table tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #efece4;
+      color: var(--text);
+      vertical-align: top;
+      line-height: 1.55;
+    }
+
+    .hr-testing-table tbody tr:nth-child(even) td {
+      background: #faf8f4;
+    }
+
+    .hr-testing-table tbody tr:hover td {
+      background: #eef4ff;
+    }
+
+    .hr-testing-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .hr-testing-table-footnote {
+      font-size: .76rem;
+      color: var(--muted);
+      margin: 4px 0 18px;
+      line-height: 1.5;
+    }
+
+    /* Pills — priority, frequency, and sample-status labels */
+    .hr-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .hr-pill-critical {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
+    .hr-pill-amber {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .hr-pill-green {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .hr-pill-daily {
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+    }
+
+    .hr-pill-weekly {
+      background: #eeebf3;
+      color: #6c5b96;
+      border: 1px solid #ddd6fe;
+    }
+
+    .hr-pill-monthly {
+      background: #e4f1ee;
+      color: #2e7a72;
+      border: 1px solid #99d8ce;
+    }
+
+    .hr-pill-sample {
+      background: #f0ede6;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 640px) {
+      .hr-testing-table-card {
+        padding: 14px 14px 16px;
+      }
+    }
   </style>
 </head>
 
@@ -2858,6 +3026,271 @@
             </div>
           </li>
         </ul>
+      </div>
+
+      <!-- 3. HR Testing Tables — Sample Preview
+           Content sourced from HR's written Q1-Q8 answers (2026-07-08), not random.
+           Visible tables only — no details/click-to-view wrapper, per user instruction.
+           Polished 2026-07-09 — scoped .hr-testing-table-* / .hr-pill-* CSS, no meaning/content change. -->
+      <div class="section-title" style="margin-top:32px;">HR Testing Tables — Sample Preview</div>
+      <div class="hr-testing-table-note" data-searchable data-tags="hr testing tables sample preview note">
+        <span class="hr-pill hr-pill-sample">Testing Only</span>
+        <span>These sample testing tables use captured HR schedule context. They are for UI/testing only and
+          are not live HR records.</span>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr daily work categories table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 1 — HR Daily Work Categories</div>
+        </div>
+        <p class="hr-testing-table-sub">The four daily HR work areas and why keeping on top of each one
+          matters.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Example HR Work</th>
+                <th>Frequency</th>
+                <th>Why It Helps</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HR Operations</td>
+                <td>Employee confirmation follow-up, service letter preparation, leave/no-pay updates, mail
+                  checking</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Keeps staff records and leave admin moving without delay</td>
+              </tr>
+              <tr>
+                <td>Tech Team Monitoring</td>
+                <td>Tech Team commitment update, task review, workflow follow-up, skill updates</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Keeps Tech/Developer teams on track between weekly reviews</td>
+              </tr>
+              <tr>
+                <td>Performance &amp; ROI Monitoring</td>
+                <td>ROI update, Last Used Date update, Time Saved update, EOD data validation</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Feeds weekly and monthly ROI reporting to the MD</td>
+              </tr>
+              <tr>
+                <td>Reporting</td>
+                <td>EOD summary preparation, daily progress updates, MD meeting reminders, meeting minutes</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Keeps management informed without waiting for the weekly cycle</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr priority guide critical amber green table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 2 — HR Priority Guide</div>
+        </div>
+        <p class="hr-testing-table-sub">How to read each priority level and what follow-up it calls for.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Meaning</th>
+                <th>When HR Should Use It</th>
+                <th>Follow-up Needed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="hr-pill hr-pill-critical">CRITICAL</span></td>
+                <td>Immediate management attention required</td>
+                <td>Work is significantly delayed or not completed; performance below expectations; targets not
+                  met</td>
+                <td>Immediate action and follow-up</td>
+              </tr>
+              <tr>
+                <td><span class="hr-pill hr-pill-amber">AMBER</span></td>
+                <td>Needs monitoring and improvement</td>
+                <td>Work partially completed or at risk of delay; performance average or inconsistent; output
+                  below standard but recoverable</td>
+                <td>Monitor and follow up</td>
+              </tr>
+              <tr>
+                <td><span class="hr-pill hr-pill-green">GREEN</span></td>
+                <td>On track / performing well</td>
+                <td>Work completed on time; performance meets or exceeds expectations; output meets the required
+                  standard</td>
+                <td>None — on track</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr recurring work duration guide table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 3 — HR Recurring Work Duration Guide</div>
+        </div>
+        <p class="hr-testing-table-sub">Typical time each recurring HR block takes, for planning the day.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>HR Recurring Block</th>
+                <th>Typical Duration</th>
+                <th>Frequency / Use</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Mail Check &amp; HR Communication</td>
+                <td>20–30 mins</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Includes mail checking and response</td>
+              </tr>
+              <tr>
+                <td>Employee Confirmation Check (7 Days &amp; Probation)</td>
+                <td>20–30 mins</td>
+                <td>Weekly / milestone</td>
+                <td>7/14-day and probation review checks</td>
+              </tr>
+              <tr>
+                <td>Service Letter Preparation &amp; Follow-up</td>
+                <td>30–60 mins</td>
+                <td>As needed</td>
+                <td>Preparation and follow-up combined</td>
+              </tr>
+              <tr>
+                <td>Tech Team Commitment Update</td>
+                <td>30–45 mins</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Tracks Tech Team commitments</td>
+              </tr>
+              <tr>
+                <td>Workflow Collection &amp; Follow-up</td>
+                <td>45–60 mins</td>
+                <td>Daily / weekly</td>
+                <td>Collects and follows up on workflow status</td>
+              </tr>
+              <tr>
+                <td>EOD Data Collection &amp; Validation</td>
+                <td>30–45 mins</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Validates End-of-Day submissions</td>
+              </tr>
+              <tr>
+                <td>MD Reports &amp; Summary Submission</td>
+                <td>30–45 mins</td>
+                <td>Weekly / monthly</td>
+                <td>Prepares and submits reports to the MD</td>
+              </tr>
+              <tr>
+                <td>RED Status Check &amp; Reporting</td>
+                <td>20–30 mins</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td>Reviews and reports any RED status items</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr schedule ownership rules table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 4 — HR Schedule Ownership Rules</div>
+        </div>
+        <p class="hr-testing-table-sub">Confirmed HR answers on what the schedule does and doesn't cover.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Rule</th>
+                <th>Confirmed HR Answer</th>
+                <th>UI Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Technical interviews / sessions ownership</td>
+                <td>Wednesday technical interviews and Thursday technical sessions are not managed by
+                  Mayurika</td>
+                <td>These items are reference-only on the calendar, not Mayurika-owned tasks</td>
+              </tr>
+              <tr>
+                <td>CST meaning</td>
+                <td>CST means Customer Service Team</td>
+                <td>Any "CST" label on the calendar refers to the Customer Service Team</td>
+              </tr>
+              <tr>
+                <td>HR schedule edit rights</td>
+                <td>Mayurika only</td>
+                <td>Only Mayurika edits HR schedule content</td>
+              </tr>
+              <tr>
+                <td>Replace-or-parallel rule</td>
+                <td>The HR schedule pilot runs alongside existing HR and meeting schedules</td>
+                <td>The testing calendar does not replace any current schedule</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr weekly monthly review tracker sample table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 5 — HR Weekly / Monthly Review Tracker — Sample</div>
+        </div>
+        <p class="hr-testing-table-sub">Sample tracker only — no real employee names or case data.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Review Type</th>
+                <th>HR Purpose</th>
+                <th>Timing</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Employee Performance Review</td>
+                <td>7-Day Confirmation Review, Probation Review, New Employee ROI Review, Team Leader feedback
+                  collection</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Tech Team Performance Review</td>
+                <td>Weekly Commitment Review, workflow completion review, Development Team Review</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>HR Reporting</td>
+                <td>Weekly EOD Summary, weekly task completion report, weekly MD report, RED status review</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Employee Lifecycle Management</td>
+                <td>Confirmation processing, probation evaluation, service letter issuance</td>
+                <td><span class="hr-pill hr-pill-monthly">Monthly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>HR Compliance</td>
+                <td>Password change monitoring, leave balance review, No-Pay analysis, attendance verification
+                </td>
+                <td><span class="hr-pill hr-pill-monthly">Monthly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hr-testing-table-footnote">Sample preview only — no real employee names or case data.
+          Statuses shown are placeholders for testing.</p>
       </div>
 
       <!-- 4. Schedule Calendar -->

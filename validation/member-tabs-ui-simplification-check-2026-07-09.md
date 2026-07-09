@@ -4,10 +4,187 @@ type: validation
 created: 2026-07-09
 created-by: Mareenraj (builder)
 status: AMBER / UI CLEANUP ONLY
-updated: 2026-07-09 — Update 2: removed specific "Useful for Day-to-Day Work" blocks from HR, Suman, and Arun tabs per user follow-up; Update 3: removed Arun's remaining 5 operational control tables
+updated: 2026-07-09 — Update 2: removed specific "Useful for Day-to-Day Work" blocks from HR, Suman, and Arun tabs per user follow-up; Update 3: removed Arun's remaining 5 operational control tables; Update 4: added 5 visible HR sample testing tables to Mayurika tab, based on HR Q1-Q8 context; Update 5: polished CSS/design of the 5 HR testing tables
 ---
 
 # Validation — Member Tabs UI Simplification (2026-07-09)
+
+## 2026-07-09 Update 5 — Polished CSS/Design of HR Testing Tables
+
+### A. User Requested Better CSS / Polished HR Tables
+
+The user asked: "Wait, make table more polish, I mean better CSS." This is a pure visual-design follow-up to
+Update 4 — no new tables, no content changes, no removals.
+
+### B. CSS/Classes Added or Changed
+
+Added a new scoped CSS block (`web-view/index.html`, inline `<style>`) limited to the HR testing tables,
+using only new class names — no existing shared classes (`.review-table`, `.hr-table-title`, `.msc-*`, etc.)
+were modified:
+
+- `.hr-testing-table-note` — polished intro note as a bordered/accent-left banner with an inline "Testing
+  Only" pill
+- `.hr-testing-table-card` — card wrapper per table: clean background, soft border, rounded corners, subtle
+  shadow, spacing between cards
+- `.hr-testing-table-head` / `.hr-testing-table-title` — clearer bold table titles
+- `.hr-testing-table-sub` — short one-line helper text under each title, explaining what that table is for
+- `.hr-testing-table-scroll` — bordered horizontal-scroll wrapper (keeps columns from feeling cramped on
+  small screens, without hiding content)
+- `.hr-testing-table` — stronger header row (uppercase, letter-spacing, tinted background), better cell
+  padding, larger line-height, zebra striping (`nth-child(even)`), row hover effect
+- `.hr-testing-table-footnote` — styled footnote text under Table 5
+- `.hr-pill` + variants `.hr-pill-critical` / `.hr-pill-amber` / `.hr-pill-green` / `.hr-pill-daily` /
+  `.hr-pill-weekly` / `.hr-pill-monthly` / `.hr-pill-sample` — rounded, color-coded badges using colors
+  consistent with the dashboard's existing palette (reusing the same red/amber/green/blue/purple/teal tones
+  already used elsewhere), applied to: CRITICAL/AMBER/GREEN priority cells (Table 2), Daily/Weekly/Monthly
+  frequency cells where the value was a single clean term (Tables 1, 3, 5), and "Sample — Not Started"
+  status cells (Table 5) plus a "Testing Only" pill in the intro note.
+
+All new classes are prefixed `hr-testing-table-` / `hr-pill-` and were only applied inside the Mayurika HR
+tab's new tables section — no broad/global CSS rule was changed, so no other table anywhere in the dashboard
+(Review Queue, Rajiv's items table, Arun's prior tables, etc.) is visually affected.
+
+### C. Confirmation Table Content Remains HR-Context Based
+
+No cell text, row, or column was reworded beyond the CSS/markup restructuring. Compound frequency values
+(e.g. "Weekly / milestone", "As needed", "Daily / weekly") were intentionally left as plain text rather than
+force-fit into a single pill, to avoid altering their meaning. All content still traces to HR's Q1–Q8
+answers exactly as in Update 4 — confirmed unchanged via spot-check of key phrases ("Customer Service Team",
+"Mayurika only", "Sample — Not Started").
+
+### D. Confirmation Tables Are Still Directly Visible
+
+All 5 `<table class="hr-testing-table">` elements remain plain, non-collapsible tables. Confirmed via direct
+check of the HR tables section's exact line range: 0 `<details>` elements present. File-wide `<details>`
+count unchanged (16/16 before and after this edit).
+
+### E. Confirmation Calendar Retained
+
+The "Mayurika Schedule Calendar — Testing Preview" section and its single `.msc-instance` mount remain
+immediately below the tables, unchanged. Calendar behavior (Add/Update/Cancel/Clear Testing Data,
+localStorage-only under `management_aios_testing_schedule_mayurika_v1`) is untouched.
+
+### F. Confirmation Other Tabs Not Intentionally Changed
+
+Verified via `git diff` that the only `+`/`-` lines in this change fall inside the Mayurika HR tab's line
+range and the shared `<style>` block (new, additive classes only) — zero diff lines reference
+`tab-suman-recruitment`, `tab-arun-implementation`, or `tab-rajiv-blocked`.
+
+### G. Safety Confirmations
+
+| Check | Result |
+|---|---|
+| `evidence/source-register.md` edited | NO — no diff |
+| `context/verify-register.md` edited | NO — no diff |
+| SRC-ADMIN-001 status | Unchanged — still PENDING |
+| HR Schedule Pilot marked complete | NO — underlying status unchanged in `schedules/hr/README.md` |
+| Backend/database/schema/API code added | NO — none found |
+| Evidence or validation files deleted | NO — none deleted |
+| Standalone HTML file created | NO |
+| Evidence paths / source IDs shown in visible HR tab | NO — checked, none found |
+| Tables hidden behind details/accordion/click-to-view | NO — 0 `<details>` in the tables section |
+| `<div>` / `<table>` / `<details>` tags balanced | YES — 541/541 divs, 16/16 tables, 16/16 details |
+
+### H. Status
+
+**AMBER / UI CLEANUP ONLY** (unchanged) — this update is a visual-polish-only pass on the already-added HR
+testing tables; it does not change table meaning, add real HR data, change confirmation status, register a
+source, or mark the HR Schedule Pilot complete.
+
+---
+
+## 2026-07-09 Update 4 — Added Visible HR Sample Testing Tables (Mayurika Tab)
+
+### A. User Requested Visible HR Sample Testing Tables
+
+The user requested: "In the HR tab include sample testing tables that are useful for HR. These table
+information not random, use context or HR related documents. Tables should be user friendly, not click to
+view tables." This is a content-addition request, distinct from Updates 1–3 (which removed content) — it
+asks for new, visible, non-collapsible tables built from already-captured HR context.
+
+### B. Source/Context Files Read
+
+Before building the tables, the following files were read in full:
+
+- `evidence/stakeholder-confirmations/hr-schedule-pilot-answers-from-hr-2026-07-08.md` — HR's written Q1–Q8
+  answers (priority scale, categories, recurring-block ownership, interview/session ownership, CST meaning,
+  durations, edit rights, replace-or-parallel rule)
+- `validation/hr-schedule-pilot-confirmation-answers-check-2026-07-08.md` — confirms all 8 questions were
+  answered and captured correctly
+- `member-aios/mayurika-hr/WORKBENCH.md` — confirms Mayurika's role boundary and domain scope for context
+
+All table content below is drawn directly from the Q1–Q8 answers already captured in these files — no
+invented or random data was introduced.
+
+### C. Tables Added
+
+Added a new "HR Testing Tables — Sample Preview" section (with the required short note) to the Mayurika HR
+tab, between Workbench File Details and the Schedule Calendar, containing 5 directly visible `<table
+class="review-table">` elements (reusing existing, already-styled CSS — no new CSS added):
+
+| # | Table | Columns | Source |
+|---|---|---|---|
+| 1 | HR Daily Work Categories | Area, Example HR Work, Frequency, Why It Helps | Q2 (Daily Tasks: HR Operations, Tech Team Monitoring, Performance & ROI Monitoring, Reporting) |
+| 2 | HR Priority Guide | Priority, Meaning, When HR Should Use It, Follow-up Needed | Q1 (CRITICAL / AMBER / GREEN, with criteria) |
+| 3 | HR Recurring Work Duration Guide | HR Recurring Block, Typical Duration, Frequency / Use, Notes | Q6 (8 of the 21 captured duration rows) |
+| 4 | HR Schedule Ownership Rules | Rule, Confirmed HR Answer, UI Meaning | Q4 (interview/session ownership), Q5 (CST meaning), Q7 (edit rights), Q8 (replace-or-parallel) |
+| 5 | HR Weekly / Monthly Review Tracker — Sample | Review Type, HR Purpose, Timing, Sample Status | Q2 (Weekly/Monthly categories only) — all statuses shown as "Sample — Not Started" placeholders, no real employee names or case data |
+
+### D. Confirmation Tables Are Visible, Not Click-to-View
+
+All 5 tables are plain `<table>` elements rendered directly on the page — none are wrapped in `<details>`,
+accordion, or any collapsed/hidden container. Confirmed via automated check: 0 `<details>` elements found
+within the new section (details count file-wide unchanged at 16/16 before and after this edit), and 5
+`<table class="review-table">` occurrences found directly inside the new section.
+
+### E. Confirmation Table Content Is HR-Context Based, Not Random
+
+Every row traces directly to a specific Q1–Q8 answer or Q2 category grouping already captured in
+`evidence/stakeholder-confirmations/hr-schedule-pilot-answers-from-hr-2026-07-08.md` — no fabricated
+durations, categories, or rules were introduced. Table 5's rows use only the Weekly/Monthly category labels
+and their listed sub-items from Q2; no real employee names, candidate data, or case-level content appears
+anywhere.
+
+**Note on the prior "no-table" preservation:** Earlier updates in this file (Updates 1–3) explicitly kept
+the Mayurika HR tab free of `<table>` elements as a standing preference. This update **intentionally
+supersedes that preference for this tab only**, per the user's direct, explicit instruction this turn to add
+visible sample tables. This is a deliberate, user-directed change, not an oversight — flagged here for
+transparency.
+
+### F. Calendar Retained
+
+The "Mayurika Schedule Calendar — Testing Preview" section and its single `.msc-instance` mount are
+unchanged and remain directly below the new tables section. Calendar behavior (Add/Update/Cancel/Clear
+Testing Data, localStorage-only under `management_aios_testing_schedule_mayurika_v1`) is untouched.
+
+### G. Other Member Tabs Not Intentionally Changed
+
+Verified via `git diff` that the only `+`/`-` lines in this change fall inside the Mayurika HR tab's line
+range — zero diff lines reference `tab-suman-recruitment`, `tab-arun-implementation`, or
+`tab-rajiv-blocked`.
+
+### H. Safety Confirmations
+
+| Check | Result |
+|---|---|
+| `evidence/source-register.md` edited | NO — no diff |
+| `context/verify-register.md` edited | NO — no diff |
+| SRC-ADMIN-001 status | Unchanged — still PENDING |
+| HR Schedule Pilot marked complete | NO — underlying status `HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION` unchanged in `schedules/hr/README.md` |
+| Backend/database/schema/API code added | NO — none found |
+| Evidence or validation files deleted | NO — none deleted |
+| Standalone HTML file created | NO |
+| Evidence paths / source IDs shown in visible HR tab | NO — checked, none found in the new section |
+| `<div>` / `<table>` / `<details>` tags balanced | YES — 530/530 divs, 16/16 tables, 16/16 details |
+| Calendar behavior | Unchanged, localStorage-only |
+
+### I. Status
+
+**AMBER / UI CLEANUP ONLY** (unchanged) — this update adds new, HR-context-based, directly visible sample
+tables to the Mayurika tab per explicit user request; it does not add real HR records, does not change any
+confirmation status, source registration, or backend logic, and does not mark the HR Schedule Pilot complete.
+
+---
 
 ## 2026-07-09 Update 3 — Removed Arun's Remaining Visible Tables/Cards
 

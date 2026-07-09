@@ -2084,3 +2084,24 @@ Dashboard Requirement Tracker), along with their now-orphaned framing notes. Aru
 introduction, workbench file details, and schedule calendar only — matching the other three member tabs.
 Other tabs not intentionally changed; evidence files unchanged. See
 `validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 3) for the full check.
+
+---
+
+## 2026-07-09 — Note: Visible HR Sample Testing Tables Added (Mayurika Tab)
+
+User requested visible HR sample testing tables based on HR context (not random content). Added 5 directly
+visible tables (HR Daily Work Categories, HR Priority Guide, HR Recurring Work Duration Guide, HR Schedule
+Ownership Rules, HR Weekly/Monthly Review Tracker — Sample) to the Mayurika HR tab, sourced from HR's
+already-captured Q1–Q8 written answers. Tables are sample/testing only and are not live HR records. This
+intentionally supersedes the earlier "no visible tables" preference for this tab, per the user's explicit
+request this turn. See `validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 4) for the
+full check.
+
+---
+
+## 2026-07-09 — Note: HR Testing Tables Visually Polished
+
+User requested the HR testing tables be visually polished. HR table CSS improved (card styling, stronger
+header rows, zebra striping, row hover, priority/frequency/status pills) using new scoped classes
+(`.hr-testing-table-*`, `.hr-pill-*`); table content and source meaning unchanged. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 5) for the full check.
