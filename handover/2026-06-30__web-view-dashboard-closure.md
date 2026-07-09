@@ -1839,3 +1839,195 @@ touched. Mayurika HR tab was not touched (still 0 `<table>` tags).
 
 **Next step:** A human should open the dashboard in a browser to visually confirm the testing calendar UI
 reads clearly as sample-only across all three tabs, before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Correction: Interactive Calendar Built Inside index.html (Not Standalone)
+
+**User correction:** The user clarified that the interactive Management Team schedule calendar must **not**
+be a standalone HTML file — it must be built inside the existing `web-view/index.html` dashboard.
+
+**What changed:** A new "Team Schedule (Test)" tab was added to `web-view/index.html`, containing an
+interactive testing calendar for all four members (Mayurika — HR, Arun — Implementation, Rajiv — Admin,
+Suman — Recruitment). Users can add, edit, view, and delete sample schedule items via a month-view calendar
+(Previous/Today/Next), a schedule form, and a schedule list. Data is stored **localStorage-only**, under the
+key `management_aios_testing_schedule_calendar_v1` — no PostgreSQL, no API, no schema, no server code of any
+kind. A "Clear Testing Data" button (with confirmation) and a visible note ("This browser stores testing data
+locally. It is not saved to GitHub or PostgreSQL.") are included. Categories are limited to the 4 approved
+generic labels (Sample Task, Sample Review, Sample Follow-up, Sample Planning). Rajiv's selection shows a
+visible note: "This testing calendar does not confirm Admin Manager approval, escalation, or authority
+rules."
+
+**Real schedule data is still pending future member/domain-owner confirmation** for all four members —
+nothing in this update creates a confirmed schedule fact, a registered source, or a resolved [VERIFY] item.
+This interactive tab is **not** the official source of truth for any member's schedule.
+
+**No standalone HTML file was created.** No `web-view/member-schedule-calendar.html` or any other separate
+calendar file exists.
+
+**Files touched:** `web-view/index.html`, the new
+`validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`, and this closure file.
+`evidence/source-register.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not
+touched. Mayurika HR tab was not touched (still 0 `<table>` tags).
+
+**Result:** AMBER — TESTING UI ONLY. Member/domain-owner confirmation (Mayurika, Arun, Rajiv, Suman, and
+Varmen/MD per §18 Reviewer Routing Rule) is required before any real schedule data replaces the local testing
+data.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser, exercise add/edit/view/delete on the new "Team
+Schedule (Test)" tab, and confirm the interactive behaviour works as expected before this is committed and
+pushed.
+
+---
+
+## 2026-07-08 — Bug Fix: Interactive Calendar Was Not Editable / Interactive
+
+**User bug report:** "I can't edit or interact with calendar."
+
+**Root cause:** The schedule form (`#mscForm`) had no `submit` handler and no `preventDefault()`. Pressing
+Enter in any form field (Title, Date, etc. — a natural action while testing) triggered the browser's default
+implicit form submission, reloading the page with no `action`/`method` set and discarding all in-progress
+interaction. This made the calendar appear completely unresponsive.
+
+**Fix applied:** Added `e.preventDefault()` on the form's `submit` event; wrapped calendar initialization in a
+named function gated on `document.readyState` (runs immediately or on `DOMContentLoaded`, whichever applies)
+for defense-in-depth; wrapped initialization in a `try/catch` that logs to `console.error` instead of
+silently failing; added the requested helper text "Choose a member, click a date, then add or edit a testing
+schedule item." No calendar logic, data model, storage key, categories, or safety text changed.
+
+**Verification:** Both inline `<script>` blocks pass a Node.js syntax check; no duplicate HTML IDs exist
+anywhere in the file; every `getElementById` call has exactly one matching element; no `pointer-events` or
+blocking overlay CSS exists. A full manual test-flow trace (member select → date click → add → edit → update
+→ view → delete with confirm → clear with confirm → prev/next/today → reload persistence) is recorded in
+`validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`.
+
+**Files touched:** `web-view/index.html` and
+`validation/member-schedule-index-interactive-calendar-check-2026-07-08.md` (updated with the bug report,
+root cause, fix, and test checklist), plus this closure file. `evidence/source-register.md`,
+`context/verify-register.md`, SRC-ADMIN-001, the HR Schedule Pilot status, and the Mayurika HR no-table rule
+were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). The fix restores intended interactivity only; it does
+not add real schedule data or resolve any confirmation item.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should re-test add/edit/view/delete/clear on the "Team Schedule (Test)" tab in an
+actual browser to confirm the fix resolves the reported issue before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Correction: Calendar Moved From Separate Tab Into Each Member Tab
+
+**User clarification:** The user found the separate "Team Schedule (Test)" tab but clarified the interactive
+calendar should live inside each member's own tab (Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv
+/ Admin), not as one standalone shared tab.
+
+**What changed:** The "Team Schedule (Test)" tab button and its tab panel were removed entirely from
+`web-view/index.html`. The old single-instance calendar script was replaced with a reusable factory
+(`mountScheduleCalendarInstance`) that mounts an independent, fully-functional calendar into every
+`.msc-instance` container found on the page — one now sits inside each of the four member tabs. The static
+sample-preview blocks previously added to Suman, Arun, and Rajiv's tabs were replaced in place by these
+interactive mounts. Mayurika's tab keeps her existing HR Schedule Pilot section completely unchanged, with a
+new, clearly separate "Mayurika Schedule Calendar — Testing Preview" interactive area added below it. No
+`<table>` markup was added to Mayurika's tab — the no-table rule is preserved.
+
+**Per-member localStorage keys** are used (the task's preferred approach over one shared key):
+`management_aios_testing_schedule_mayurika_v1`, `_suman_v1`, `_arun_v1`, `_rajiv_v1`. Every element inside a
+calendar instance is addressed via container-scoped `querySelector` — no `id` attributes are used for any
+repeated element, so the four instances cannot collide with each other. Each instance has its own form with
+`preventDefault()` wired, so Enter-key submission cannot reload the page in any of the four tabs. Rajiv's
+instance is configured to show the required Admin Manager authority disclaimer automatically.
+
+**Real schedule data is still pending future member/domain-owner confirmation** for all four members —
+nothing in this update creates a confirmed schedule fact, a registered source, or a resolved [VERIFY] item.
+None of these four calendars is the official source of truth for any member's schedule.
+
+**Files touched:** `web-view/index.html`, `validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`
+(updated with this change), and this closure file. `evidence/source-register.md`, `context/verify-register.md`,
+SRC-ADMIN-001, the HR Schedule Pilot's own status, and the Mayurika HR no-table rule were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). This is a structural relocation of the existing
+testing feature, not a change to its safety scope.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open each of the four member tabs in a browser and confirm the calendar in
+each one works independently (add/edit/view/delete/clear) and that data entered in one member's tab does not
+appear in another's, before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Correction: Duplicate Static Schedule Calendar UI Removed
+
+**User feedback:** A screenshot showed the old static month-view calendar still visible in the Mayurika HR
+tab, above the new interactive calendar. The user said this static preview was unnecessary duplicate UI.
+
+**What changed:** The entire visible "HR Schedule Pilot — Internal Calendar Preview" static block (header
+card, MD banner, static month grid, legend, Priority Queue card, Recurring Templates card, verification
+checklist, safety footer) was removed from the Mayurika HR tab in `web-view/index.html`. A small note was
+added in its place: "Static HR Schedule Pilot preview removed to avoid duplicate calendars. Use the
+interactive testing calendar below. Real schedule data still needs confirmation." The collapsed Evidence /
+Technical Details section (source paths and the pending status string) was kept unchanged directly below
+the note. Suman, Arun, and Rajiv's tabs were checked and already had no static preview blocks remaining from
+the prior update. Now-orphaned CSS tied only to the removed static block was also cleaned up.
+
+**Interactive per-member calendars are now the only visible schedule UI** in all four member tabs — no
+static duplicate remains anywhere. Real schedule data is still pending future confirmation for all four
+members; none of these calendars is the official source of truth.
+
+**Files touched:** `web-view/index.html`, `validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`
+(updated with this change), and this closure file. `evidence/source-register.md`, `context/verify-register.md`,
+SRC-ADMIN-001, the HR Schedule Pilot's own status (still
+`HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION`, not marked complete), and the Mayurika HR
+no-table rule (still 0 `<table>` tags) were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). Duplicate visible UI removed only; no data, storage,
+or confirmation-status change.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the Mayurika HR tab in a browser and confirm only one calendar (the
+interactive one) is now visible, then repeat for Suman, Arun, and Rajiv, before this is committed and
+pushed.
+
+---
+
+## 2026-07-08 — Correction: Per-Member Calendars Aligned to Uploaded Sample Demo Layout
+
+**User clarification:** The user uploaded `aios_role_desk_views.html` and clarified it is the sample demo
+requirement for the Management Team Schedule task — a UI/interaction pattern reference only, not confirmed
+company truth. The final dashboard was to keep interactive calendars inside each member tab, not a separate
+schedule tab (unchanged from the prior correction).
+
+**What changed:** The existing per-member interactive calendar factory in `web-view/index.html` was updated
+to match two interaction patterns from the demo: (1) calendar date cells now show up to 2 visible task chips
+(colored by category, with a "+N more" overflow chip), instead of just an item count — mirroring the demo's
+Month View density; (2) a new Priority field (High/Medium/Low, labeled "sample/demo only") was added to each
+member's schedule form, plus a new "Priority Preview — Today (Sample/Demo)" card ranking that member's own
+items by priority — mirroring the demo's Priority Queue concept, scoped per member.
+
+**Demo/sample data only:** No content, names, or meeting labels were copied from `aios_role_desk_views.html`
+into the dashboard. All calendar entries remain limited to the four approved generic category labels (Sample
+Task, Sample Review, Sample Follow-up, Sample Planning), and all new priority values are explicitly marked
+sample/demo only in the visible UI.
+
+**Real schedule data is still pending future member/domain-owner confirmation** for all four members — this
+change only aligns interaction style with the demo; it creates no new schedule facts and is not the official
+source of truth. The separate "Team Schedule (Test)" tab remains removed, and the static duplicate calendar
+UI removed in the prior update was not restored.
+
+**Files touched:** `web-view/index.html`, `validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`
+(updated with this change), and this closure file. `evidence/source-register.md`, `context/verify-register.md`,
+SRC-ADMIN-001, the HR Schedule Pilot's own status, and the Mayurika HR no-table rule were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). Demo-inspired interaction style only; no data, storage,
+or confirmation-status change.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open each of the four member tabs in a browser and confirm the visible task
+chips and Priority Preview card render correctly and stay independent per member, before this is committed
+and pushed.

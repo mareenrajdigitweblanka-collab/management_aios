@@ -1855,31 +1855,6 @@
       margin-bottom: 2px;
     }
 
-    /* Compact colour legend for calendar chips */
-    .hr-cal-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      font-size: .72rem;
-      color: var(--muted);
-    }
-
-    .hr-cal-legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .hr-cal-legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: inline-block;
-    }
-
     /* Month-view calendar — Role Desk style card (aios_role_desk_views.html reference) */
     .hr-table-card {
       background: var(--surface);
@@ -1918,143 +1893,6 @@
       white-space: nowrap;
     }
 
-    .hr-why-view {
-      margin: 6px 0 0;
-      font-size: .76rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .hr-why-view b {
-      color: var(--text);
-    }
-
-    .hr-cal-month-wrap {
-      overflow-x: auto;
-    }
-
-    .hr-cal-month {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(84px, 1fr));
-      min-width: 630px;
-    }
-
-    .hr-cal-month-headcell {
-      padding: 6px 8px;
-      font-size: .68rem;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 700;
-      border-bottom: 1px solid var(--border);
-      background: #f6f3ee;
-      text-align: left;
-    }
-
-    .hr-cal-month-cell {
-      min-height: 66px;
-      padding: 5px 6px;
-      border-right: 1px solid #efece4;
-      border-bottom: 1px solid #efece4;
-      vertical-align: top;
-    }
-
-    .hr-cal-daynum {
-      font-size: .68rem;
-      color: var(--muted);
-      margin-bottom: 3px;
-    }
-
-    .hr-cal-daynum.today {
-      color: #fff;
-      background: var(--accent);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-    }
-
-    .hr-cal-chip {
-      display: block;
-      font-size: .64rem;
-      line-height: 1.4;
-      padding: 1px 5px;
-      border-radius: 4px;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .hr-cal-chip.amber {
-      background: var(--amber-bg);
-      color: #8a5e1e;
-    }
-
-    .hr-cal-chip.purple {
-      background: #eeebf3;
-      color: #6c5b96;
-    }
-
-    .hr-cal-chip.green {
-      background: var(--pass-bg);
-      color: var(--pass);
-    }
-
-    .hr-cal-chip.teal {
-      background: #e4f1ee;
-      color: #2e7a72;
-    }
-
-    .hr-cal-chip.blue {
-      background: var(--accent-light);
-      color: var(--accent);
-    }
-
-    .hr-cal-chip.verify {
-      background: var(--amber-bg);
-      color: var(--amber);
-      font-weight: 600;
-    }
-
-    /* Verification checklist panel */
-    .hr-verify-panel {
-      border: 1px solid #fbbf24;
-      border-left: 4px solid #d97706;
-      border-radius: var(--radius);
-      background: #fffbeb;
-      padding: 14px 18px;
-      margin-bottom: 18px;
-    }
-
-    .hr-verify-panel h4 {
-      font-size: .86rem;
-      color: #92400e;
-      margin-bottom: 10px;
-    }
-
-    .hr-verify-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 6px 16px;
-      list-style: none;
-    }
-
-    .hr-verify-list li {
-      font-size: .78rem;
-      color: #78350f;
-      display: flex;
-      align-items: flex-start;
-      gap: 6px;
-    }
-
-    .hr-verify-list li::before {
-      content: "\2610";
-      flex-shrink: 0;
-    }
-
     /* Footer */
     .hr-cal-footer {
       font-size: .76rem;
@@ -2066,12 +1904,407 @@
       margin-bottom: 10px;
     }
 
-    @media (max-width: 768px) {
-      .hr-cal-month {
-        min-width: 560px;
-      }
+    /* ═══ Management Team Schedule Calendar — Testing Preview (interactive, localStorage only) ═══ */
+    .msc-banner {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: #402a06;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      color: #FDECC8;
+      font-size: .82rem;
+      line-height: 1.6;
+    }
 
-      .hr-verify-list {
+    .msc-banner .msc-banner-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .msc-banner strong {
+      color: #fff;
+    }
+
+    .msc-note {
+      font-size: .78rem;
+      color: var(--muted);
+      margin: 0 0 16px;
+      line-height: 1.6;
+    }
+
+    .msc-rajiv-note {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+      border: 1px solid #fbbf24;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: .78rem;
+      margin-bottom: 14px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .msc-rajiv-note.show {
+      display: block;
+    }
+
+    .msc-cal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .msc-cal-toolbar-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .msc-tool-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      font-size: .76rem;
+      cursor: pointer;
+    }
+
+    .msc-tool-btn:hover {
+      background: #f0ede6;
+    }
+
+    .msc-cal-heading {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .msc-cal-grid-wrap {
+      overflow-x: auto;
+    }
+
+    .msc-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(84px, 1fr));
+      min-width: 630px;
+    }
+
+    .msc-cal-headcell {
+      padding: 6px 8px;
+      font-size: .68rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      background: #f6f3ee;
+      text-align: left;
+    }
+
+    .msc-cal-cell {
+      min-height: 62px;
+      padding: 5px 6px;
+      border-right: 1px solid #efece4;
+      border-bottom: 1px solid #efece4;
+      vertical-align: top;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .msc-cal-cell:hover {
+      background: #faf8f4;
+    }
+
+    .msc-cal-cell.other-month {
+      opacity: .4;
+    }
+
+    .msc-cal-cell.selected {
+      background: var(--accent-light);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .msc-cal-daynum {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .msc-cal-daynum.today {
+      color: #fff;
+      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    .msc-cal-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-right: 3px;
+    }
+
+    .msc-cal-count {
+      font-size: .62rem;
+      color: var(--muted);
+    }
+
+    .msc-form-card,
+    .msc-list-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-top: 16px;
+    }
+
+    .msc-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 10px 14px;
+    }
+
+    .msc-form-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: .74rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .msc-form-grid input,
+    .msc-form-grid select,
+    .msc-form-grid textarea {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .82rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+
+    .msc-form-grid textarea {
+      resize: vertical;
+      min-height: 50px;
+    }
+
+    .msc-form-full {
+      grid-column: 1 / -1;
+    }
+
+    .msc-form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .msc-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .msc-btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .msc-btn-danger {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .msc-btn-ghost {
+      background: transparent;
+    }
+
+    .msc-btn:hover {
+      opacity: .9;
+    }
+
+    .msc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-item:last-child {
+      border-bottom: none;
+    }
+
+    .msc-item-title {
+      font-weight: 700;
+      font-size: .85rem;
+      color: var(--text);
+    }
+
+    .msc-item-meta {
+      font-size: .74rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .msc-item-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .msc-item-actions button {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: .72rem;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .msc-empty {
+      font-size: .8rem;
+      color: var(--muted);
+      padding: 8px 0;
+    }
+
+    .msc-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .msc-modal-overlay.show {
+      display: flex;
+    }
+
+    .msc-modal {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .25);
+    }
+
+    .msc-modal h4 {
+      margin-bottom: 8px;
+      font-size: .95rem;
+    }
+
+    .msc-modal p {
+      font-size: .82rem;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .msc-modal-close {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: .8rem;
+    }
+
+    .msc-chip-cat {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 600;
+      padding: 1px 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+
+    .msc-chip-cat.task {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+    }
+
+    .msc-chip-cat.review {
+      background: #eeebf3;
+      color: #6c5b96;
+    }
+
+    .msc-chip-cat.followup {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    .msc-chip-cat.planning {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    /* Demo-style visible task chips inside calendar date cells (aios_role_desk_views.html layout reference) */
+    .msc-cal-chip {
+      display: block;
+      font-size: .62rem;
+      line-height: 1.4;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .msc-cal-chip.task {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+    }
+
+    .msc-cal-chip.review {
+      background: #eeebf3;
+      color: #6c5b96;
+    }
+
+    .msc-cal-chip.followup {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    .msc-cal-chip.planning {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .msc-cal-chip-more {
+      display: block;
+      font-size: .6rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 768px) {
+      .msc-form-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -2168,7 +2401,8 @@
     <input id="searchInput" type="search" placeholder="Search across all tabs…" autocomplete="off" />
     <button id="searchClear">Clear</button>
     <span id="searchResults"></span>
-    <span class="search-hint" title="Examples: verify, blocked, arun, draft">Search by person, topic, task, or status.</span>
+    <span class="search-hint" title="Examples: verify, blocked, arun, draft">Search by person, topic, task, or
+      status.</span>
   </div>
 
   <!-- ═══════════════════════════════════
@@ -2253,7 +2487,8 @@
           </div>
           <div class="member-snap-row">
             <span class="msr-label">Sources</span>
-            <span class="msr-val">GAP-42 closed — Mayurika confirmation batch SRC-MAYU-CONF-007 to SRC-MAYU-CONF-020 registered.</span>
+            <span class="msr-val">GAP-42 closed — Mayurika confirmation batch SRC-MAYU-CONF-007 to SRC-MAYU-CONF-020
+              registered.</span>
           </div>
           <span class="member-snap-cta">Open Mayurika HR</span>
         </button>
@@ -2297,7 +2532,8 @@
           </div>
           <div class="member-snap-row">
             <span class="msr-label">Gated</span>
-            <span class="msr-val" title="Technical status: Live PH report is AMBER — 6 of 8 data sources missing">Live report not ready yet — data sources still need confirmation (6 of 8 missing)</span>
+            <span class="msr-val" title="Technical status: Live PH report is AMBER — 6 of 8 data sources missing">Live
+              report not ready yet — data sources still need confirmation (6 of 8 missing)</span>
           </div>
           <span class="member-snap-cta">Open Arun Implementation</span>
         </button>
@@ -2344,66 +2580,69 @@
 
       <!-- Label legend -->
       <details style="margin-bottom:20px;">
-        <summary style="cursor:pointer;font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">What the labels mean (reference)</summary>
-      <div class="label-legend" style="margin-top:14px;">
-        <div class="legend-item">
-          <span class="legend-item-label">Active</span>
-          <span class="badge badge-pass" style="margin-bottom:4px;">ACTIVE</span>
-          <span class="legend-item-desc">Approved by its owner for current internal use.</span>
+        <summary
+          style="cursor:pointer;font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">
+          What the labels mean (reference)</summary>
+        <div class="label-legend" style="margin-top:14px;">
+          <div class="legend-item">
+            <span class="legend-item-label">Active</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">ACTIVE</span>
+            <span class="legend-item-desc">Approved by its owner for current internal use.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pass</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+            <span class="legend-item-desc">Validation complete — this check has passed.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Amber</span>
+            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+            <span class="legend-item-desc">Needs review, a source, or approval before it is final.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Gated</span>
+            <span class="badge badge-blocked" style="margin-bottom:4px;">GATED</span>
+            <span class="legend-item-desc">Intentionally blocked until a required document or sign-off arrives.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Read-Only</span>
+            <span class="badge badge-viewonly" style="margin-bottom:4px;">READ-ONLY</span>
+            <span class="legend-item-desc">No data is saved or changed — this is a view only.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">View Only</span>
+            <span class="badge badge-viewonly" style="margin-bottom:4px;">VIEW ONLY</span>
+            <span class="legend-item-desc">This dashboard cannot edit or save any files.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Draft</span>
+            <span class="badge badge-draft" style="margin-bottom:4px;">DRAFT</span>
+            <span class="legend-item-desc">File created but not yet reviewed and approved by its owner.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pending</span>
+            <span class="badge badge-pending" style="margin-bottom:4px;">PENDING</span>
+            <span class="legend-item-desc">Waiting for a review, confirmation, or source document.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Blocked</span>
+            <span class="badge badge-blocked" style="margin-bottom:4px;">BLOCKED</span>
+            <span class="legend-item-desc">Cannot proceed — a required document or source is missing.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pass-Amber</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+            <span class="legend-item-desc">PASS = safe to continue. AMBER = non-blocking items still to resolve.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Needs Confirmation</span>
+            <span class="badge badge-verify" style="margin-bottom:4px;" title="Technical label: [VERIFY]">Needs
+              Confirmation</span>
+            <span class="legend-item-desc">An item that is unconfirmed (shown as <code>[VERIFY]</code> in source files).
+              Cannot be treated as fact until resolved.</span>
+          </div>
         </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Pass</span>
-          <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
-          <span class="legend-item-desc">Validation complete — this check has passed.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Amber</span>
-          <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
-          <span class="legend-item-desc">Needs review, a source, or approval before it is final.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Gated</span>
-          <span class="badge badge-blocked" style="margin-bottom:4px;">GATED</span>
-          <span class="legend-item-desc">Intentionally blocked until a required document or sign-off arrives.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Read-Only</span>
-          <span class="badge badge-viewonly" style="margin-bottom:4px;">READ-ONLY</span>
-          <span class="legend-item-desc">No data is saved or changed — this is a view only.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">View Only</span>
-          <span class="badge badge-viewonly" style="margin-bottom:4px;">VIEW ONLY</span>
-          <span class="legend-item-desc">This dashboard cannot edit or save any files.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Draft</span>
-          <span class="badge badge-draft" style="margin-bottom:4px;">DRAFT</span>
-          <span class="legend-item-desc">File created but not yet reviewed and approved by its owner.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Pending</span>
-          <span class="badge badge-pending" style="margin-bottom:4px;">PENDING</span>
-          <span class="legend-item-desc">Waiting for a review, confirmation, or source document.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Blocked</span>
-          <span class="badge badge-blocked" style="margin-bottom:4px;">BLOCKED</span>
-          <span class="legend-item-desc">Cannot proceed — a required document or source is missing.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Pass-Amber</span>
-          <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
-          <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
-          <span class="legend-item-desc">PASS = safe to continue. AMBER = non-blocking items still to resolve.</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-item-label">Needs Confirmation</span>
-          <span class="badge badge-verify" style="margin-bottom:4px;" title="Technical label: [VERIFY]">Needs Confirmation</span>
-          <span class="legend-item-desc">An item that is unconfirmed (shown as <code>[VERIFY]</code> in source files).
-            Cannot be treated as fact until resolved.</span>
-        </div>
-      </div>
       </details>
 
       <!-- Status summary -->
@@ -2424,7 +2663,8 @@
         <div class="status-item">
           <span class="status-label">Sources Registered</span>
           <span class="status-value">40</span>
-          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED · +14 Mayurika confirmations (GAP-42, 2026-07-07)</span>
+          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED · +14 Mayurika confirmations (GAP-42,
+            2026-07-07)</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
@@ -2524,7 +2764,8 @@
       <div class="section-title">Overall Result</div>
       <div class="result-box" data-searchable
         data-tags="pass amber result internal build active arun suman mayurika system build 2026-07-06">
-        <h3 title="Technical result: PASS — AMBER noted">Overall Result: Ready — a few items still need confirmation</h3>
+        <h3 title="Technical result: PASS — AMBER noted">Overall Result: Ready — a few items still need confirmation
+        </h3>
         <p>
           The dashboard is built and working. Arun's, Suman's, and Mayurika's sections are active and reviewed. The
           Rajiv / Admin section stays blocked until the missing admin document arrives. 9 items across the AIOS still
@@ -2537,7 +2778,8 @@
             Management AIOS Dashboard v0.1 — Internal Build. System interface build applied 2026-07-06 (build-first,
             validate-later). Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is ACTIVE — Suman
             Reviewed 2026-06-30. Mayurika's workbench is ACTIVE — Mayurika Reviewed 2026-07-03. [VERIFY] count corrected
-            to 9 (items 8–10 resolved 2026-06-30). Blocked/Gated Modules tab added with 6 gated section cards. Safety note
+            to 9 (items 8–10 resolved 2026-06-30). Blocked/Gated Modules tab added with 6 gated section cards. Safety
+            note
             updated. All source pointers correct. No sensitive data shown. No policy text duplicated.
             <br><br>
             <strong>Build evidence:</strong>
@@ -2545,7 +2787,8 @@
             <br><strong>Validation:</strong> <code>validation/management-aios-system-build-check.md</code>
             <br><br>
             <strong>AMBER:</strong> Future user validation pending — Mayurika, Varmen, Management Team must inspect and
-            confirm. Rajiv / Admin Manager section blocked pending SRC-ADMIN-001. 9 [VERIFY] items remain open. Dashboard
+            confirm. Rajiv / Admin Manager section blocked pending SRC-ADMIN-001. 9 [VERIFY] items remain open.
+            Dashboard
             remains read-only.
           </p>
         </details>
@@ -2581,7 +2824,8 @@
         <div class="member-header-badges">
           <span class="badge badge-pass">ACTIVE</span>
           <span class="badge badge-pass">Mayurika Reviewed 2026-07-03</span>
-          <span class="badge badge-verify" title="Technical label: [VERIFY] Item 9 open (formerly item 12)">Needs Confirmation — Item 9 (formerly 12)</span>
+          <span class="badge badge-verify" title="Technical label: [VERIFY] Item 9 open (formerly item 12)">Needs
+            Confirmation — Item 9 (formerly 12)</span>
         </div>
       </div>
 
@@ -2643,7 +2887,9 @@
       <!-- VERIFY item 12 -->
       <div class="section-title">Item Needing Mayurika's Confirmation</div>
       <div class="verify-explain" data-searchable data-tags="verify 9 formerly 12 hr eod tool names mayurika confirm">
-        <div class="verify-explain-title"><span class="badge badge-verify" title="Technical label: [VERIFY] 9 (formerly item 12)">Needs Confirmation — Item 9 (formerly 12)</span> Exact
+        <div class="verify-explain-title"><span class="badge badge-verify"
+            title="Technical label: [VERIFY] 9 (formerly item 12)">Needs Confirmation — Item 9 (formerly 12)</span>
+          Exact
           tool names for HR
           records system and EOD dashboard</div>
         <div class="verify-explain-plain">
@@ -2909,7 +3155,8 @@
 
       <div
         style="background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #0369a1;border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;"
-        data-searchable data-tags="mayurika hr tables pending md varmen confirmation removed 2026-07-07 no hr table format approved">
+        data-searchable
+        data-tags="mayurika hr tables pending md varmen confirmation removed 2026-07-07 no hr table format approved">
         <div style="font-weight:700;font-size:.88rem;color:#0369a1;margin-bottom:8px;">HR Tables Pending MD/Varmen
           Confirmation</div>
         <p style="font-size:.83rem;color:#0c4a6e;line-height:1.6;margin-bottom:6px;">Mayurika will prepare the HR table
@@ -2969,193 +3216,20 @@
       </div>
 
       <!-- ══════════════════════════════════
-         HR SCHEDULE PILOT — INTERNAL CALENDAR PREVIEW
-         Role Desk-style month-view calendar — aligned to aios_role_desk_views.html 2026-07-07
-         See validation/hr-schedule-pilot-role-desk-calendar-ui-match-check-2026-07-07.md
+         HR SCHEDULE PILOT — DUPLICATE STATIC UI REMOVED 2026-07-08
+         User feedback: the static month-view calendar, priority queue card, recurring templates
+         card, and verification checklist duplicated the interactive testing calendar below and
+         were confusing/unnecessary. Removed from visible UI. Source truth files (schedules/hr/*,
+         evidence/*, validation/hr-schedule-pilot-*) are NOT deleted — only this visible HTML block
+         was removed. HR Schedule Pilot is NOT marked complete; its pending status is preserved in
+         the collapsed Evidence / Technical Details section below.
+         See validation/member-schedule-index-interactive-calendar-check-2026-07-08.md
       ══════════════════════════════════ -->
-      <div class="section-title" style="margin-top:32px;">HR Schedule Pilot — Internal Calendar Preview</div>
-
-      <!-- 1. Header card -->
-      <div class="hr-cal-header" data-searchable
-        data-tags="hr schedule pilot mayurika calendar preview verify amber md request read only static">
-        <h3>HR Schedule Pilot</h3>
-        <div class="hr-cal-badge-row">
-          <span class="hr-chip hr-chip-amber" title="Technical status: AMBER — Awaiting Mayurika/Varmen answers">Needs Confirmation — Awaiting Mayurika/Varmen answers</span>
-          <span class="hr-chip hr-chip-scope">HR only</span>
-          <span class="hr-chip hr-chip-safe">Read-only static preview</span>
-        </div>
-        <p class="hr-cal-purpose">
-          A simple look at what's scheduled, what's most important today, and what's still waiting on confirmation —
-          no live calendar connection, no editing.
-        </p>
-      </div>
-
-      <!-- 1b. MD request / HR pilot banner — Role Desk style reference -->
-      <div class="hr-md-banner" data-searchable
-        data-tags="hr schedule pilot md request banner source mayurika hr only pilot scope management team not built verify">
-        <span class="hr-md-banner-icon">&#128172;</span>
-        <div>
-          <strong>Source:</strong> MD schedule request relayed to Mayurika (6 July 2026) — schedule each management
-          team member's tasks on a priority basis.
-          <ul>
-            <li>Current scope: <strong>HR pilot only</strong> — Mayurika's schedule.</li>
-            <li>Full Management Team schedule (Arun, Suman, Rajiv, Varmen) is <strong>not built yet</strong>.</li>
-            <li>All open fields still <strong>need confirmation</strong> from Mayurika and Varmen.</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- 2. Month View calendar — table-card, matches Role Desk "Month View" card -->
-      <div class="hr-table-card" data-searchable
-        data-tags="hr schedule pilot month view calendar grid chips legend reference only verify">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Month View — July 2026</h3>
-            <span class="hr-table-num">HR · 01</span>
-          </div>
-          <p class="hr-why-view"><b>Why this view:</b> Shows the recurring blocks already read off the MD's shared
-            calendar screenshot, at a glance, the same way the Management Team's calendar is laid out. These are
-            <b>reference only</b> — not yet confirmed as Mayurika's own tasks.</p>
-        </div>
-        <div class="hr-cal-legend">
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#c8862e;"></span>
-            Merchandising</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#6c5b96;"></span> CST
-            call</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--pass);"></span>
-            Team Leader Review</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#2e7a72;"></span>
-            Technical interviews</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span>
-            Technical sessions</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--amber);"></span>
-            Needs confirmation</span>
-        </div>
-        <div class="hr-cal-month-wrap">
-          <div class="hr-cal-month">
-            <div class="hr-cal-month-headcell">Sun</div>
-            <div class="hr-cal-month-headcell">Mon</div>
-            <div class="hr-cal-month-headcell">Tue</div>
-            <div class="hr-cal-month-headcell">Wed</div>
-            <div class="hr-cal-month-headcell">Thu</div>
-            <div class="hr-cal-month-headcell">Fri</div>
-            <div class="hr-cal-month-headcell">Sat</div>
-
-            <!-- Week 1 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">2</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">3</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">4</div></div>
-
-            <!-- Week 2 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">5</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">6</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum today">7</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span><span class="hr-cal-chip verify" title="Technical label: HR task — [VERIFY]">HR task — Needs confirmation</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">8</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">9</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">10</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">11</div></div>
-
-            <!-- Week 3 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">12</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">13</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">14</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">15</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">16</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">17</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">18</div></div>
-
-            <!-- Week 4 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">19</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">20</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">21</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">22</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">23</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">24</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">25</div></div>
-
-            <!-- Week 5 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">26</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">27</div><span class="hr-cal-chip amber">11:30 Merchandising</span><span class="hr-cal-chip purple">12:00 CST call</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div><span class="hr-cal-chip green">10:00 Team Ldr Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div><span class="hr-cal-chip teal">10:00 Technical int.</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip blue">06:30 Technical sessions</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">31</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div></div>
-          </div>
-        </div>
-        <p class="hr-why-view" style="padding:0 18px 14px;">
-          Coloured blocks are <b>reference only</b> — read off the MD's shared calendar screenshot, not confirmed as
-          Mayurika-owned tasks. The single chip marked <b>Needs confirmation</b> on today's date is a placeholder — no
-          real HR task or staff name is shown.
-        </p>
-      </div>
-
-      <!-- 3. Priority Queue — table markup removed 2026-07-07 per user instruction to remove all visible table UI -->
-      <div class="hr-table-card" data-searchable
-        data-tags="hr priority queue preview placeholder mayurika schedule pilot today priority queue table display hidden">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Priority Queue — Today</h3>
-            <span class="hr-table-num">HR · 02</span>
-          </div>
-        </div>
-        <p style="padding:0 18px 14px;font-size:.8rem;color:var(--muted);">
-          Table display hidden. Ranks the day's work by priority (High / Medium / Low) — all rows shown previously
-          were illustrative placeholders, not real tasks, and the priority scale itself still <b>needs confirmation</b>. No
-          real tasks or staff names are stored here.
-        </p>
-      </div>
-
-      <!-- 4. Recurring Templates Register — table markup removed 2026-07-07 per user instruction to remove all visible table UI -->
-      <div class="hr-table-card" data-searchable
-        data-tags="hr recurring template reference schedule block template verify table display hidden">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Recurring Templates Register</h3>
-            <span class="hr-table-num">HR · 03</span>
-          </div>
-        </div>
-        <p style="padding:0 18px 14px;font-size:.8rem;color:var(--muted);">
-          Table display hidden. The 5 recurring block types read off the MD's shared calendar screenshot; HR
-          applicability for all 5 still <b>needs confirmation</b>. Reference only — not Mayurika-owned tasks unless
-          confirmed.
-        </p>
-      </div>
-
-      <!-- 5. Still awaiting confirmation — condensed verify checklist -->
-      <div class="hr-verify-panel" data-searchable
-        data-tags="hr schedule pilot verify items priority scale categories recurring blocks cst durations edit rights checklist active still awaiting confirmation">
-        <h4>8 schedule details still need confirmation before this becomes active:</h4>
-        <ul class="hr-verify-list">
-          <li>Priority scale — High / Medium / Low or numeric?</li>
-          <li>HR schedule categories</li>
-          <li>Recurring-block ownership</li>
-          <li>Interview/session scheduling ownership</li>
-          <li>CST meaning</li>
-          <li>Durations</li>
-          <li>Edit rights</li>
-          <li>Replace-or-parallel schedule rule</li>
-        </ul>
-        <p class="hr-verify-note" style="font-size:.78rem;color:var(--muted);margin:10px 0 0;">
-          HR Schedule Pilot visual sign-off request pending Mayurika/Varmen response.
-        </p>
-      </div>
-
-      <!-- 6. Next safe action -->
-      <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 12px;">
-        <strong>Next safe action:</strong> Route this preview to Mayurika and Varmen for visual sign-off and answers
-        to the items above. Do not treat any chip, row, or card on this page as a confirmed schedule until they
-        respond.
+      <div class="section-title" style="margin-top:32px;">HR Schedule Pilot</div>
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 12px;">
+        Static HR Schedule Pilot preview removed to avoid duplicate calendars. Use the interactive testing
+        calendar below. Real schedule data still needs confirmation.
       </p>
-
-      <!-- 7. Safety footer -->
-      <div class="hr-cal-footer">
-        Static preview only. No Google Calendar connection. No automation. No live editing. No staff data stored.
-      </div>
 
       <!-- 8. Evidence / Technical Details — single collapsed section (all source & validation paths) -->
       <details
@@ -3202,7 +3276,8 @@
         <h3>What should I do next?</h3>
         <p>
           1. Route all three workbench files to Mayurika for review. Ask her to confirm the domain scope list is correct
-          and confirm the exact names of the HR records system and EOD dashboard tools (to close open confirmation item 9).<br>
+          and confirm the exact names of the HR records system and EOD dashboard tools (to close open confirmation item
+          9).<br>
           2. Bring the HR Daily Control Panel screen list to DWC (Varmen) for sanity check — per AIOS UI/UX Build Guide
           §5. Do not build screens until DWC confirms the list.<br>
           3. Wait for Mayurika to send her HR table formats to MD, and for MD or Varmen to confirm them, before adding
@@ -3215,6 +3290,23 @@
             style="font-family:ui-monospace,monospace;font-size:.8rem;">validation/mayurika-ui-screen-list-check.md</span>
         </p>
       </div>
+
+      <!-- ══════════════════════════════════
+         MAYURIKA TESTING SCHEDULE CALENDAR — INTERACTIVE, LOCALSTORAGE ONLY
+         Added 2026-07-08 as a separate area below the HR Schedule Pilot (which is preserved
+         unchanged above). This is a distinct interactive testing tool, not a replacement for
+         or an extension of the HR Schedule Pilot's own (still unconfirmed) content.
+         No table markup is used here, per the Mayurika HR no-table rule.
+         See validation/member-schedule-index-interactive-calendar-check-2026-07-08.md
+      ══════════════════════════════════ -->
+      <div class="section-title" style="margin-top:32px;">Mayurika Schedule Calendar — Testing Preview</div>
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 12px;">
+        This is a separate interactive testing area, kept apart from the HR Schedule Pilot above. The HR
+        Schedule Pilot's own content and confirmation status are unchanged.
+      </p>
+      <div class="msc-instance" data-member-key="mayurika" data-member-label="Mayurika — HR"
+        data-storage-key="management_aios_testing_schedule_mayurika_v1" data-rajiv-note="false" data-searchable
+        data-tags="mayurika schedule calendar testing preview interactive add edit view delete localstorage hr"></div>
 
     </div><!-- /tab-mayurika-hr -->
 
@@ -3342,141 +3434,16 @@
       </div>
 
       <!-- ══════════════════════════════════
-         SCHEDULE CALENDAR — TESTING PREVIEW ONLY (SUMAN)
-         Testing/sample calendar UI matching Mayurika's HR Schedule Pilot visual style.
-         ALL DATA BELOW IS SAMPLE DATA FOR UI TESTING ONLY — no real schedule facts, no real dates/times/meetings.
-         See validation/member-schedule-testing-calendar-ui-check-2026-07-08.md
+         SUMAN SCHEDULE CALENDAR — TESTING PREVIEW (INTERACTIVE, LOCALSTORAGE ONLY)
+         Moved 2026-07-08 from the separate "Team Schedule (Test)" tab into this member tab,
+         per user clarification. Replaces the prior static sample-preview blocks.
+         See validation/member-schedule-index-interactive-calendar-check-2026-07-08.md
       ══════════════════════════════════ -->
-      <div class="section-title" style="margin-top:32px;">Schedule Calendar — Testing Preview Only</div>
-
-      <div class="hr-cal-header" data-searchable
-        data-tags="suman schedule calendar testing preview sample data recruitment officer">
-        <h3>Suman — Recruiting Officer</h3>
-        <div class="hr-cal-badge-row">
-          <span class="hr-chip hr-chip-amber">Testing Preview Only</span>
-          <span class="hr-chip hr-chip-scope">Sample Data</span>
-          <span class="hr-chip hr-chip-safe">Real Data Pending Confirmation</span>
-        </div>
-        <p class="hr-cal-purpose">
-          This calendar is for UI testing only. Real schedule data will be added after member/domain-owner
-          confirmation.
-        </p>
+      <div class="section-title" style="margin-top:32px;">Suman Schedule Calendar — Testing Preview</div>
+      <div class="msc-instance" data-member-key="suman" data-member-label="Suman — Recruiting Officer"
+        data-storage-key="management_aios_testing_schedule_suman_v1" data-rajiv-note="false" data-searchable
+        data-tags="suman schedule calendar testing preview interactive add edit view delete localstorage recruitment officer">
       </div>
-
-      <div class="hr-table-card" data-searchable
-        data-tags="suman schedule calendar month view sample testing">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Month View — Sample Layout</h3>
-            <span class="hr-table-num">Suman · Test</span>
-          </div>
-          <p class="hr-why-view"><b>Why this view:</b> Uses the same visual calendar layout as the HR Schedule
-            Pilot, filled with generic sample entries only, so the UI style can be tested before any real
-            schedule is confirmed.</p>
-        </div>
-        <div class="hr-cal-legend">
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#c8862e;"></span>
-            Sample Task</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#6c5b96;"></span>
-            Sample Review</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--pass);"></span>
-            Sample Follow-up</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span>
-            Sample Planning</span>
-        </div>
-        <div class="hr-cal-month-wrap">
-          <div class="hr-cal-month">
-            <div class="hr-cal-month-headcell">Sun</div>
-            <div class="hr-cal-month-headcell">Mon</div>
-            <div class="hr-cal-month-headcell">Tue</div>
-            <div class="hr-cal-month-headcell">Wed</div>
-            <div class="hr-cal-month-headcell">Thu</div>
-            <div class="hr-cal-month-headcell">Fri</div>
-            <div class="hr-cal-month-headcell">Sat</div>
-
-            <!-- Week 1 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">2</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">3</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">4</div></div>
-
-            <!-- Week 2 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">5</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">6</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum today">7</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">8</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">9</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">10</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">11</div></div>
-
-            <!-- Week 3 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">12</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">13</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">14</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">15</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">16</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">17</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">18</div></div>
-
-            <!-- Week 4 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">19</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">20</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">21</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">22</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">23</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">24</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">25</div></div>
-
-            <!-- Week 5 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">26</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">27</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">31</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div></div>
-          </div>
-        </div>
-        <p class="hr-why-view" style="padding:0 18px 14px;">
-          All entries above are <b>sample data for UI testing only</b> — not real tasks, not real meetings, not
-          real staff or candidate names. No real schedule has been confirmed for Suman yet.
-        </p>
-      </div>
-
-      <div class="hr-table-card" data-searchable
-        data-tags="suman priority preview sample testing">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Priority Preview — Sample</h3>
-            <span class="hr-table-num">Suman · Test</span>
-          </div>
-        </div>
-        <p style="padding:0 18px 14px;font-size:.8rem;color:var(--muted);">
-          Table display hidden, matching the HR Schedule Pilot pattern. This area is reserved for a future
-          priority-ranked list once real schedule data is confirmed. Sample data only — no real tasks are
-          ranked here.
-        </p>
-      </div>
-
-      <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 12px;">
-        This calendar is for UI testing only. Real schedule data will be added after member/domain-owner
-        confirmation.
-      </p>
-
-      <div class="hr-cal-footer">
-        Static testing preview only. Sample data. No Google Calendar connection. No automation. No live editing.
-        No real staff or candidate data stored.
-      </div>
-
-      <details style="margin-top:6px;margin-bottom:18px;">
-        <summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">Technical details</summary>
-        <p style="font-size:.78rem;color:var(--muted);margin-top:6px;">
-          Validation: <code>validation/member-schedule-testing-calendar-ui-check-2026-07-08.md</code>
-        </p>
-      </details>
 
     </div><!-- /tab-suman-recruitment -->
 
@@ -3540,7 +3507,8 @@
             <span>📄</span>
             <div>
               <div class="fpath">member-aios/arun-implementation/verify-items-arun.md</div>
-              <div class="fdesc">Contains confirmation items 8, 9, 10. Arun confirmed all three at member workbench layer on
+              <div class="fdesc">Contains confirmation items 8, 9, 10. Arun confirmed all three at member workbench
+                layer on
                 2026-06-30. Root register update is a separate pending step.</div>
             </div>
           </li>
@@ -3548,7 +3516,8 @@
             <span>📄</span>
             <div>
               <div class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</div>
-              <div class="fdesc">Confirmation evidence — Arun's exact review text, confirmed items, and confirmation-item
+              <div class="fdesc">Confirmation evidence — Arun's exact review text, confirmed items, and
+                confirmation-item
                 resolutions at member workbench layer. Status: READY — Arun reviewed 2026-06-30.</div>
             </div>
           </li>
@@ -3608,7 +3577,8 @@
             <div>
               <div class="fpath">Evidence &amp; validation</div>
               <details>
-                <summary style="cursor:pointer;font-size:.78rem;color:var(--muted);">Evidence / Technical Details</summary>
+                <summary style="cursor:pointer;font-size:.78rem;color:var(--muted);">Evidence / Technical Details
+                </summary>
                 <div class="fdesc" style="margin-top:6px;">
                   Approval:
                   <code>evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md</code><br>
@@ -3658,7 +3628,8 @@
           further documentation is received.
         </div>
         <div class="verify-explain-action">Root propagation complete 2026-06-30 — CLAUDE.md §7.8 and
-          context/verify-register.md updated. Scope limit preserved: full PRC membership scope still needs confirmation. Source:
+          context/verify-register.md updated. Scope limit preserved: full PRC membership scope still needs confirmation.
+          Source:
           SRC-ARUN-CONF-001.</div>
       </div>
 
@@ -4483,147 +4454,23 @@
             <code>member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md</code>
             &nbsp;|&nbsp;
             Validation: <code>validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md</code> &nbsp;|&nbsp;
-            Evidence: <code>evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md</code>
+            Evidence:
+            <code>evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md</code>
           </p>
         </details>
       </div><!-- /arun day-to-day tables -->
 
       <!-- ══════════════════════════════════
-         SCHEDULE CALENDAR — TESTING PREVIEW ONLY (ARUN)
-         Testing/sample calendar UI matching Mayurika's HR Schedule Pilot visual style.
-         ALL DATA BELOW IS SAMPLE DATA FOR UI TESTING ONLY — no real schedule facts, no real dates/times/meetings.
-         See validation/member-schedule-testing-calendar-ui-check-2026-07-08.md
+         ARUN SCHEDULE CALENDAR — TESTING PREVIEW (INTERACTIVE, LOCALSTORAGE ONLY)
+         Moved 2026-07-08 from the separate "Team Schedule (Test)" tab into this member tab,
+         per user clarification. Replaces the prior static sample-preview blocks.
+         See validation/member-schedule-index-interactive-calendar-check-2026-07-08.md
       ══════════════════════════════════ -->
-      <div class="section-title" style="margin-top:32px;">Schedule Calendar — Testing Preview Only</div>
-
-      <div class="hr-cal-header" data-searchable
-        data-tags="arun schedule calendar testing preview sample data implementation officer">
-        <h3>Arun — Implementation Officer</h3>
-        <div class="hr-cal-badge-row">
-          <span class="hr-chip hr-chip-amber">Testing Preview Only</span>
-          <span class="hr-chip hr-chip-scope">Sample Data</span>
-          <span class="hr-chip hr-chip-safe">Real Data Pending Confirmation</span>
-        </div>
-        <p class="hr-cal-purpose">
-          This calendar is for UI testing only. Real schedule data will be added after member/domain-owner
-          confirmation.
-        </p>
+      <div class="section-title" style="margin-top:32px;">Arun Schedule Calendar — Testing Preview</div>
+      <div class="msc-instance" data-member-key="arun" data-member-label="Arun — Implementation Officer"
+        data-storage-key="management_aios_testing_schedule_arun_v1" data-rajiv-note="false" data-searchable
+        data-tags="arun schedule calendar testing preview interactive add edit view delete localstorage implementation officer">
       </div>
-
-      <div class="hr-table-card" data-searchable
-        data-tags="arun schedule calendar month view sample testing">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Month View — Sample Layout</h3>
-            <span class="hr-table-num">Arun · Test</span>
-          </div>
-          <p class="hr-why-view"><b>Why this view:</b> Uses the same visual calendar layout as the HR Schedule
-            Pilot, filled with generic sample entries only, so the UI style can be tested before any real
-            schedule is confirmed.</p>
-        </div>
-        <div class="hr-cal-legend">
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#c8862e;"></span>
-            Sample Task</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#6c5b96;"></span>
-            Sample Review</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--pass);"></span>
-            Sample Follow-up</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span>
-            Sample Planning</span>
-        </div>
-        <div class="hr-cal-month-wrap">
-          <div class="hr-cal-month">
-            <div class="hr-cal-month-headcell">Sun</div>
-            <div class="hr-cal-month-headcell">Mon</div>
-            <div class="hr-cal-month-headcell">Tue</div>
-            <div class="hr-cal-month-headcell">Wed</div>
-            <div class="hr-cal-month-headcell">Thu</div>
-            <div class="hr-cal-month-headcell">Fri</div>
-            <div class="hr-cal-month-headcell">Sat</div>
-
-            <!-- Week 1 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">2</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">3</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">4</div></div>
-
-            <!-- Week 2 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">5</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">6</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum today">7</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">8</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">9</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">10</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">11</div></div>
-
-            <!-- Week 3 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">12</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">13</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">14</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">15</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">16</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">17</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">18</div></div>
-
-            <!-- Week 4 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">19</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">20</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">21</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">22</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">23</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">24</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">25</div></div>
-
-            <!-- Week 5 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">26</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">27</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">31</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div></div>
-          </div>
-        </div>
-        <p class="hr-why-view" style="padding:0 18px 14px;">
-          All entries above are <b>sample data for UI testing only</b> — not real tasks, not real meetings, not
-          real staff names, and not KPI/AXIOM data. No real schedule has been confirmed for Arun yet.
-        </p>
-      </div>
-
-      <div class="hr-table-card" data-searchable
-        data-tags="arun priority preview sample testing">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Priority Preview — Sample</h3>
-            <span class="hr-table-num">Arun · Test</span>
-          </div>
-        </div>
-        <p style="padding:0 18px 14px;font-size:.8rem;color:var(--muted);">
-          Table display hidden, matching the HR Schedule Pilot pattern. This area is reserved for a future
-          priority-ranked list once real schedule data is confirmed. Sample data only — no real tasks,
-          reviews, or KPI items are ranked here.
-        </p>
-      </div>
-
-      <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 12px;">
-        This calendar is for UI testing only. Real schedule data will be added after member/domain-owner
-        confirmation.
-      </p>
-
-      <div class="hr-cal-footer">
-        Static testing preview only. Sample data. No Google Calendar connection. No automation. No live editing.
-        No real staff data stored.
-      </div>
-
-      <details style="margin-top:6px;margin-bottom:18px;">
-        <summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">Technical details</summary>
-        <p style="font-size:.78rem;color:var(--muted);margin-top:6px;">
-          Validation: <code>validation/member-schedule-testing-calendar-ui-check-2026-07-08.md</code>
-        </p>
-      </details>
 
     </div><!-- /tab-arun-implementation -->
 
@@ -4661,7 +4508,8 @@
           <li>Writing any content about Admin Manager authority or approval rights</li>
           <li>Writing any escalation paths that route through the Admin Manager</li>
           <li>Confirming the Admin Manager's PRC role or authority within the PRC</li>
-          <li>Resolving confirmation items 1, 2, 3, 4, and 5 — all five are blocked until the missing Admin Manager document arrives</li>
+          <li>Resolving confirmation items 1, 2, 3, 4, and 5 — all five are blocked until the missing Admin Manager
+            document arrives</li>
         </ul>
       </div>
 
@@ -4732,147 +4580,17 @@
       </div>
 
       <!-- ══════════════════════════════════
-         SCHEDULE CALENDAR — TESTING PREVIEW ONLY (RAJIV)
-         Testing/sample calendar UI matching Mayurika's HR Schedule Pilot visual style.
-         ALL DATA BELOW IS SAMPLE DATA FOR UI TESTING ONLY — no real schedule facts, no real dates/times/meetings.
+         RAJIV SCHEDULE CALENDAR — TESTING PREVIEW (INTERACTIVE, LOCALSTORAGE ONLY)
+         Moved 2026-07-08 from the separate "Team Schedule (Test)" tab into this member tab,
+         per user clarification. Replaces the prior static sample-preview blocks.
          Does NOT imply Admin Manager authority, approval rights, or escalation authority.
-         See validation/member-schedule-testing-calendar-ui-check-2026-07-08.md
+         See validation/member-schedule-index-interactive-calendar-check-2026-07-08.md
       ══════════════════════════════════ -->
-      <div class="section-title" style="margin-top:32px;">Schedule Calendar — Testing Preview Only</div>
-
-      <div class="hr-cal-header" data-searchable
-        data-tags="rajiv schedule calendar testing preview sample data admin manager">
-        <h3>Rajiv — Admin Manager</h3>
-        <div class="hr-cal-badge-row">
-          <span class="hr-chip hr-chip-amber">Testing Preview Only</span>
-          <span class="hr-chip hr-chip-scope">Sample Data</span>
-          <span class="hr-chip hr-chip-safe">Real Data Pending Confirmation</span>
-        </div>
-        <p class="hr-cal-purpose">
-          This calendar is for UI testing only. Real schedule data will be added after member/domain-owner
-          confirmation.
-        </p>
-        <p class="hr-cal-purpose" style="margin-top:8px;">
-          <strong>This does not confirm Admin Manager approval, escalation, or authority rules.</strong> Admin
-          Manager authority remains unconfirmed pending SRC-ADMIN-001.
-        </p>
+      <div class="section-title" style="margin-top:32px;">Rajiv Schedule Calendar — Testing Preview</div>
+      <div class="msc-instance" data-member-key="rajiv" data-member-label="Rajiv — Admin Manager"
+        data-storage-key="management_aios_testing_schedule_rajiv_v1" data-rajiv-note="true" data-searchable
+        data-tags="rajiv schedule calendar testing preview interactive add edit view delete localstorage admin manager authority">
       </div>
-
-      <div class="hr-table-card" data-searchable
-        data-tags="rajiv schedule calendar month view sample testing">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Month View — Sample Layout</h3>
-            <span class="hr-table-num">Rajiv · Test</span>
-          </div>
-          <p class="hr-why-view"><b>Why this view:</b> Uses the same visual calendar layout as the HR Schedule
-            Pilot, filled with generic sample entries only, so the UI style can be tested before any real
-            schedule is confirmed.</p>
-        </div>
-        <div class="hr-cal-legend">
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#c8862e;"></span>
-            Sample Task</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:#6c5b96;"></span>
-            Sample Review</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--pass);"></span>
-            Sample Follow-up</span>
-          <span class="hr-cal-legend-item"><span class="hr-cal-legend-dot" style="background:var(--accent);"></span>
-            Sample Planning</span>
-        </div>
-        <div class="hr-cal-month-wrap">
-          <div class="hr-cal-month">
-            <div class="hr-cal-month-headcell">Sun</div>
-            <div class="hr-cal-month-headcell">Mon</div>
-            <div class="hr-cal-month-headcell">Tue</div>
-            <div class="hr-cal-month-headcell">Wed</div>
-            <div class="hr-cal-month-headcell">Thu</div>
-            <div class="hr-cal-month-headcell">Fri</div>
-            <div class="hr-cal-month-headcell">Sat</div>
-
-            <!-- Week 1 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">2</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">3</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">4</div></div>
-
-            <!-- Week 2 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">5</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">6</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum today">7</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">8</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">9</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">10</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">11</div></div>
-
-            <!-- Week 3 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">12</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">13</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">14</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">15</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">16</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">17</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">18</div></div>
-
-            <!-- Week 4 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">19</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">20</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">21</div><span class="hr-cal-chip green">Sample Follow-up</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">22</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">23</div><span class="hr-cal-chip amber">Sample Task</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">24</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">25</div></div>
-
-            <!-- Week 5 -->
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">26</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">27</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">28</div><span class="hr-cal-chip purple">Sample Review</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">29</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">30</div><span class="hr-cal-chip blue">Sample Planning</span></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">31</div></div>
-            <div class="hr-cal-month-cell"><div class="hr-cal-daynum">1</div></div>
-          </div>
-        </div>
-        <p class="hr-why-view" style="padding:0 18px 14px;">
-          All entries above are <b>sample data for UI testing only</b> — not real tasks, not real meetings, not
-          real staff names, and not an Admin Manager approval or escalation record. No real schedule has been
-          confirmed for Rajiv yet, and Admin Manager authority itself remains unconfirmed pending SRC-ADMIN-001.
-        </p>
-      </div>
-
-      <div class="hr-table-card" data-searchable
-        data-tags="rajiv priority preview sample testing">
-        <div class="hr-table-card-head">
-          <div class="hr-table-title-row">
-            <h3 class="hr-table-title">Priority Preview — Sample</h3>
-            <span class="hr-table-num">Rajiv · Test</span>
-          </div>
-        </div>
-        <p style="padding:0 18px 14px;font-size:.8rem;color:var(--muted);">
-          Table display hidden, matching the HR Schedule Pilot pattern. This area is reserved for a future
-          priority-ranked list once real schedule data is confirmed. Sample data only — no real tasks are
-          ranked here, and no approval or escalation priority is implied.
-        </p>
-      </div>
-
-      <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 12px;">
-        This calendar is for UI testing only. Real schedule data will be added after member/domain-owner
-        confirmation. This does not confirm Admin Manager approval, escalation, or authority rules.
-      </p>
-
-      <div class="hr-cal-footer">
-        Static testing preview only. Sample data. No Google Calendar connection. No automation. No live editing.
-        No real staff data stored. No Admin Manager authority implied.
-      </div>
-
-      <details style="margin-top:6px;margin-bottom:18px;">
-        <summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">Technical details</summary>
-        <p style="font-size:.78rem;color:var(--muted);margin-top:6px;">
-          Validation: <code>validation/member-schedule-testing-calendar-ui-check-2026-07-08.md</code>
-        </p>
-      </details>
 
     </div><!-- /tab-rajiv-blocked -->
 
@@ -4931,7 +4649,8 @@
                 <em>daily-weekly-checklist.md</em> — ACTIVE — Mayurika confirmed replacement checklist 2026-07-02 ✓<br>
                 Evidence:
                 <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code><br>
-                <span style="font-size:.8rem;color:var(--muted);">Confirmation item 12 (exact tool names) remains open — not
+                <span style="font-size:.8rem;color:var(--muted);">Confirmation item 12 (exact tool names) remains open —
+                  not
                   separately confirmed during this review.</span>
               </td>
               <td class="mono">
@@ -4996,19 +4715,22 @@
           <div class="amber-item-body">Arun confirmed items 8, 9, and 10 on 2026-06-30. Root propagation completed
             2026-06-30: CLAUDE.md §7.3/§7.4/§7.8/§14 updated; context/verify-register.md items 8, 9, 10 resolved (9 open
             items remain); SRC-ARUN-CONF-001 registered; context/kpi-axiom-context.md updated. Item 9 scope limit
-            preserved — Operational Manager escalation authority only; full PRC scope still needs confirmation. Evidence:
+            preserved — Operational Manager escalation authority only; full PRC scope still needs confirmation.
+            Evidence:
             <code>evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</code>
           </div>
           <div class="amber-item-action">COMPLETE — no further action required for items 8, 9, 10.</div>
         </div>
         <div class="amber-item" data-searchable
           data-tags="amber mayurika hr workbench quick-reference active reviewed 2026-07-03 verify 12 tool names open">
-          <div class="amber-item-title">AMBER 2 — Mayurika Workbench ACTIVE (2026-07-03) — Confirmation Item 12 Still Open
+          <div class="amber-item-title">AMBER 2 — Mayurika Workbench ACTIVE (2026-07-03) — Confirmation Item 12 Still
+            Open
           </div>
           <div class="amber-item-body">Mayurika approved WORKBENCH.md and quick-reference-sources.md on 2026-07-03. Both
             files are now ACTIVE. Evidence:
             <code>evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md</code>.
-            Checklist: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02. Confirmation item 12 (exact tool names
+            Checklist: ACTIVE — Mayurika confirmed replacement checklist 2026-07-02. Confirmation item 12 (exact tool
+            names
             for HR records system and EOD dashboard) was not separately confirmed during this review and remains open.
           </div>
           <div class="amber-item-action">To resolve confirmation item 12: ask Mayurika to confirm exact names of her HR
@@ -5417,11 +5139,13 @@
             <strong>What to check</strong>
             Status is ACTIVE — Mayurika Reviewed 2026-07-03. Evidence:
             evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md.
-            Confirmation item 9 (formerly item 12 — exact names of HR records system and EOD dashboard tools) remains open —
+            Confirmation item 9 (formerly item 12 — exact names of HR records system and EOD dashboard tools) remains
+            open —
             not separately confirmed during this review.
           </div>
           <div class="md-card-meta">
-            <span class="badge badge-verify" title="Technical label: [VERIFY] 9 Open (formerly 12)">Needs Confirmation — Item 9 (formerly 12)</span>
+            <span class="badge badge-verify" title="Technical label: [VERIFY] 9 Open (formerly 12)">Needs Confirmation —
+              Item 9 (formerly 12)</span>
             <span>Owner: Mareenraj (builder)</span>
             <span>Reviewer: Mayurika — reviewed 2026-07-03</span>
           </div>
@@ -5609,7 +5333,8 @@
               <td><span class="badge badge-pass">CONFIRMED</span></td>
               <td>CLAUDE.md §2</td>
               <td class="mono">2026-07-07</td>
-              <td>All SRC-* source registrations; 40 sources registered (GAP-42 batch: SRC-MAYU-CONF-007–020 added 2026-07-07)</td>
+              <td>All SRC-* source registrations; 40 sources registered (GAP-42 batch: SRC-MAYU-CONF-007–020 added
+                2026-07-07)</td>
             </tr>
             <tr>
               <td><code class="mono">context/verify-register.md</code></td>
@@ -6393,7 +6118,8 @@
         <div class="status-item">
           <span class="status-label">Sources Registered</span>
           <span class="status-value">40</span>
-          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED · +14 Mayurika confirmations (GAP-42, 2026-07-07)</span>
+          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED · +14 Mayurika confirmations (GAP-42,
+            2026-07-07)</span>
         </div>
         <div class="status-divider"></div>
         <div class="status-item">
@@ -6869,8 +6595,10 @@
               Admin</em> tab for full detail.
           </div>
           <div class="card-footer">
-            <span class="badge badge-blocked" title="Technical label: BLOCKED until SRC-ADMIN-001">Blocked — Awaiting Admin Manager Document</span>
-            <span class="badge badge-verify" title="Technical label: [VERIFY] items 1-5 open">Needs Confirmation — Items 1–5</span>
+            <span class="badge badge-blocked" title="Technical label: BLOCKED until SRC-ADMIN-001">Blocked — Awaiting
+              Admin Manager Document</span>
+            <span class="badge badge-verify" title="Technical label: [VERIFY] items 1-5 open">Needs Confirmation — Items
+              1–5</span>
           </div>
         </div>
 
@@ -6955,6 +6683,12 @@
 
     </div><!-- /tab-gated-modules -->
 
+    <!-- ══════════════════════════════════
+       (Removed 2026-07-08: the separate "Team Schedule (Test)" tab was removed per user
+       clarification — the interactive testing calendar now lives inside each member's own
+       tab instead of a standalone tab. See
+       validation/member-schedule-index-interactive-calendar-check-2026-07-08.md)
+    ══════════════════════════════════ -->
   </main>
 
   <!-- ═══════════════════════════════════
@@ -7040,6 +6774,504 @@
         doSearch('');
         searchInput.focus();
       });
+
+    }());
+  </script>
+
+  <!-- ═══════════════════════════════════
+     PER-MEMBER SCHEDULE CALENDAR — TESTING PREVIEW ONLY
+     Interactive, localStorage-only. No PostgreSQL. No API. No schema. No source registration.
+     One reusable factory mounts an independent calendar instance into every
+     ".msc-instance" container (one per member tab: Mayurika, Suman, Arun, Rajiv).
+     No shared IDs are used across instances — every element is looked up via
+     container-scoped querySelector, so instances cannot interfere with each other.
+     See validation/member-schedule-index-interactive-calendar-check-2026-07-08.md
+═══════════════════════════════════ -->
+  <script>
+    (function () {
+      'use strict';
+
+      var CATEGORY_CLASS = {
+        'Sample Task': 'task',
+        'Sample Review': 'review',
+        'Sample Follow-up': 'followup',
+        'Sample Planning': 'planning'
+      };
+      var PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
+      var PRIORITY_BADGE = { High: 'badge-blocked', Medium: 'badge-amber', Low: 'badge-pass' };
+      var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+        'September', 'October', 'November', 'December'];
+      var DAY_HEADS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+      function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str == null ? '' : str;
+        return div.innerHTML;
+      }
+
+      /* Builds and wires ONE independent calendar instance inside `container`.
+         All element lookups are scoped to `container` — no ids are used for any
+         repeated element, so mounting several instances on one page (one per
+         member tab) cannot create duplicate-id collisions. */
+      function mountScheduleCalendarInstance(container) {
+        var memberKey = container.getAttribute('data-member-key') || 'member';
+        var memberLabel = container.getAttribute('data-member-label') || memberKey;
+        var storageKey = container.getAttribute('data-storage-key') ||
+          ('management_aios_testing_schedule_' + memberKey + '_v1');
+        var showRajivNote = container.getAttribute('data-rajiv-note') === 'true';
+
+        var rajivNoteHtml = showRajivNote
+          ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
+          : '';
+
+        container.innerHTML =
+          '<div class="msc-banner">' +
+          '<span class="msc-banner-icon">&#9888;&#65039;</span>' +
+          '<div><strong>Testing Preview Only</strong> — schedules saved here are local browser testing data ' +
+          'only. Real schedule data must be confirmed before official use.</div>' +
+          '</div>' +
+          '<p class="msc-note">This browser stores testing data locally. It is not saved to GitHub or PostgreSQL.</p>' +
+          '<p class="msc-note" style="font-weight:600;color:var(--text);">Click a date, then add or edit a testing schedule item.</p>' +
+          '<p class="msc-note">This follows the Management Team Schedule demo layout, but all entries here are ' +
+          'sample testing data.</p>' +
+          rajivNoteHtml +
+          '<div class="hr-table-card">' +
+          '<div class="msc-cal-toolbar">' +
+          '<div class="msc-cal-toolbar-btns">' +
+          '<button type="button" class="msc-tool-btn msc-prev">&larr; Previous</button>' +
+          '<button type="button" class="msc-tool-btn msc-today">Today</button>' +
+          '<button type="button" class="msc-tool-btn msc-next">Next &rarr;</button>' +
+          '</div>' +
+          '<div class="msc-cal-heading msc-heading">&nbsp;</div>' +
+          '</div>' +
+          '<div class="msc-cal-grid-wrap"><div class="msc-cal-grid msc-grid"></div></div>' +
+          '</div>' +
+          '<div class="msc-form-card">' +
+          '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
+          '<span class="msc-selected-date-label">select a date</span></div>' +
+          '<form class="msc-form msc-form-grid" autocomplete="off">' +
+          '<label>Date<input type="date" class="msc-field-date" required /></label>' +
+          '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Sample Task" maxlength="60" required /></label>' +
+          '<label>Category<select class="msc-field-category">' +
+          '<option value="Sample Task">Sample Task</option>' +
+          '<option value="Sample Review">Sample Review</option>' +
+          '<option value="Sample Follow-up">Sample Follow-up</option>' +
+          '<option value="Sample Planning">Sample Planning</option>' +
+          '</select></label>' +
+          '<label>Priority (sample/demo only)<select class="msc-field-priority">' +
+          '<option value="High">High</option>' +
+          '<option value="Medium" selected>Medium</option>' +
+          '<option value="Low">Low</option>' +
+          '</select></label>' +
+          '<label>Start time<input type="time" class="msc-field-start" /></label>' +
+          '<label>End time<input type="time" class="msc-field-end" /></label>' +
+          '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
+          'placeholder="Optional testing note — no real names, meetings, or customer details"></textarea></label>' +
+          '</form>' +
+          '<div class="msc-form-actions">' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-update-btn" style="display:none;">Update schedule</button>' +
+          '<button type="button" class="msc-btn msc-btn-ghost msc-cancel-btn" style="display:none;">Cancel edit</button>' +
+          '</div>' +
+          '</div>' +
+          '<div class="msc-list-card">' +
+          '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Items — ' +
+          '<span class="msc-list-date-label">select a date</span></div>' +
+          '<div class="msc-list"><p class="msc-empty">Select a date on the calendar to see schedule items.</p></div>' +
+          '</div>' +
+          '<div class="msc-list-card">' +
+          '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
+          '<p class="msc-note" style="margin:0 0 8px;">Ranks today\'s sample items High → Medium → Low, styled ' +
+          'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
+          '<div class="msc-priority-list"></div>' +
+          '</div>' +
+          '<div class="msc-form-actions" style="margin-top:16px;">' +
+          '<button type="button" class="msc-btn msc-btn-danger msc-clear-btn">Clear Testing Data</button>' +
+          '</div>' +
+          '<div class="hr-cal-footer">Static testing calendar. Data is stored only in this browser (localStorage key ' +
+          '<code>' + escapeHtml(storageKey) + '</code>). Not connected to Google Calendar, GitHub, or PostgreSQL. ' +
+          'Not official schedule truth.</div>' +
+          '<details style="margin-top:6px;margin-bottom:18px;"><summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">' +
+          'Technical details</summary><p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Validation: ' +
+          '<code>validation/member-schedule-index-interactive-calendar-check-2026-07-08.md</code></p></details>' +
+          '<div class="msc-modal-overlay msc-view-modal">' +
+          '<div class="msc-modal">' +
+          '<h4 class="msc-view-title">Sample Task</h4>' +
+          '<p class="msc-view-date"></p>' +
+          '<p class="msc-view-time"></p>' +
+          '<p class="msc-view-category"></p>' +
+          '<p class="msc-view-priority"></p>' +
+          '<p class="msc-view-notes"></p>' +
+          '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
+          '</div>' +
+          '</div>';
+
+        /* ── Scoped element refs (container-level selectors only — no ids) ── */
+        var formEl = container.querySelector('.msc-form');
+        var monthHeading = container.querySelector('.msc-heading');
+        var calGrid = container.querySelector('.msc-grid');
+        var prevBtn = container.querySelector('.msc-prev');
+        var todayBtn = container.querySelector('.msc-today');
+        var nextBtn = container.querySelector('.msc-next');
+        var selectedDateLabel = container.querySelector('.msc-selected-date-label');
+        var listDateLabel = container.querySelector('.msc-list-date-label');
+        var fieldDate = container.querySelector('.msc-field-date');
+        var fieldTitle = container.querySelector('.msc-field-title');
+        var fieldCategory = container.querySelector('.msc-field-category');
+        var fieldPriority = container.querySelector('.msc-field-priority');
+        var fieldStart = container.querySelector('.msc-field-start');
+        var fieldEnd = container.querySelector('.msc-field-end');
+        var fieldNotes = container.querySelector('.msc-field-notes');
+        var addBtn = container.querySelector('.msc-add-btn');
+        var updateBtn = container.querySelector('.msc-update-btn');
+        var cancelBtn = container.querySelector('.msc-cancel-btn');
+        var listEl = container.querySelector('.msc-list');
+        var priorityListEl = container.querySelector('.msc-priority-list');
+        var clearBtn = container.querySelector('.msc-clear-btn');
+        var viewModal = container.querySelector('.msc-view-modal');
+        var viewTitle = container.querySelector('.msc-view-title');
+        var viewDate = container.querySelector('.msc-view-date');
+        var viewTime = container.querySelector('.msc-view-time');
+        var viewCategory = container.querySelector('.msc-view-category');
+        var viewPriority = container.querySelector('.msc-view-priority');
+        var viewNotes = container.querySelector('.msc-view-notes');
+        var viewClose = container.querySelector('.msc-view-close');
+
+        /* Prevent Enter-key implicit form submission from reloading the page —
+           no action/method is set on this form; it is never meant to submit. */
+        formEl.addEventListener('submit', function (e) { e.preventDefault(); });
+
+        var state = { viewYear: null, viewMonth: null, selectedDate: null, editingId: null };
+
+        /* ── Storage helpers (localStorage only — no network, no database) ── */
+        function loadItems() {
+          var raw;
+          try { raw = window.localStorage.getItem(storageKey); } catch (e) { raw = null; }
+          if (!raw) {
+            var seed = buildSeedData();
+            saveItems(seed);
+            return seed;
+          }
+          try {
+            var parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        function saveItems(list) {
+          try { window.localStorage.setItem(storageKey, JSON.stringify(list)); } catch (e) { /* storage unavailable — testing UI only */ }
+        }
+
+        function buildSeedData() {
+          var today = new Date();
+          return [{
+            id: 'seed-' + memberKey + '-1',
+            date: toDateStr(today),
+            title: 'Sample Task',
+            category: 'Sample Task',
+            priority: 'Medium',
+            start: '',
+            end: '',
+            notes: 'Starter sample entry for UI testing only — not a real schedule item.'
+          }];
+        }
+
+        var items = loadItems();
+
+        function itemsForDate(dateStr) {
+          return items.filter(function (it) { return it.date === dateStr; });
+        }
+
+        var MAX_CAL_CHIPS = 2;
+
+        function renderCalendar() {
+          var y = state.viewYear, m = state.viewMonth;
+          monthHeading.textContent = MONTH_NAMES[m] + ' ' + y;
+
+          var firstOfMonth = new Date(y, m, 1);
+          var startOffset = firstOfMonth.getDay();
+          var gridStart = new Date(y, m, 1 - startOffset);
+          var todayStr = toDateStr(new Date());
+
+          var html = '';
+          DAY_HEADS.forEach(function (d) { html += '<div class="msc-cal-headcell">' + d + '</div>'; });
+
+          for (var i = 0; i < 42; i++) {
+            var cellDate = new Date(gridStart);
+            cellDate.setDate(gridStart.getDate() + i);
+            var cellStr = toDateStr(cellDate);
+            var inMonth = cellDate.getMonth() === m;
+            var isToday = cellStr === todayStr;
+            var isSelected = cellStr === state.selectedDate;
+            var dayItems = itemsForDate(cellStr);
+
+            var cls = 'msc-cal-cell' + (inMonth ? '' : ' other-month') + (isSelected ? ' selected' : '');
+            html += '<div class="' + cls + '" data-date="' + cellStr + '">';
+            html += '<div class="msc-cal-daynum' + (isToday ? ' today' : '') + '">' + cellDate.getDate() + '</div>';
+            /* Demo-style visible task chips inside each date (aios_role_desk_views.html layout reference) —
+               shows the actual sample/testing entries the user has added, not real schedule facts. */
+            dayItems.slice(0, MAX_CAL_CHIPS).forEach(function (it) {
+              var catClass = CATEGORY_CLASS[it.category] || 'task';
+              var label = (it.start ? it.start + ' ' : '') + it.title;
+              html += '<span class="msc-cal-chip ' + catClass + '" title="' + escapeHtml(label) + '">' +
+                escapeHtml(label) + '</span>';
+            });
+            if (dayItems.length > MAX_CAL_CHIPS) {
+              html += '<span class="msc-cal-chip-more">+' + (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
+            }
+            html += '</div>';
+          }
+          calGrid.innerHTML = html;
+
+          calGrid.querySelectorAll('.msc-cal-cell').forEach(function (cell) {
+            cell.addEventListener('click', function () {
+              selectDate(cell.getAttribute('data-date'));
+            });
+          });
+        }
+
+        prevBtn.addEventListener('click', function () {
+          state.viewMonth--;
+          if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
+          renderCalendar();
+        });
+        nextBtn.addEventListener('click', function () {
+          state.viewMonth++;
+          if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
+          renderCalendar();
+        });
+        todayBtn.addEventListener('click', function () {
+          var t = new Date();
+          state.viewYear = t.getFullYear();
+          state.viewMonth = t.getMonth();
+          selectDate(toDateStr(t));
+        });
+
+        function selectDate(dateStr) {
+          state.selectedDate = dateStr;
+          selectedDateLabel.textContent = dateStr;
+          listDateLabel.textContent = dateStr;
+          fieldDate.value = dateStr;
+          cancelEdit();
+          renderCalendar();
+          renderList();
+        }
+
+        function renderList() {
+          if (!state.selectedDate) {
+            listEl.innerHTML = '<p class="msc-empty">Select a date on the calendar to see schedule items.</p>';
+            renderPriorityPreview();
+            return;
+          }
+          var dayItems = items.filter(function (it) { return it.date === state.selectedDate; });
+          if (!dayItems.length) {
+            listEl.innerHTML = '<p class="msc-empty">No sample schedule items for ' + escapeHtml(memberLabel) +
+              ' on ' + state.selectedDate + ' yet. Use the form above to add one for testing.</p>';
+            renderPriorityPreview();
+            return;
+          }
+          var html = '';
+          dayItems.forEach(function (it) {
+            var catClass = CATEGORY_CLASS[it.category] || 'task';
+            var priority = it.priority || 'Medium';
+            var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
+            var timeStr = (it.start || it.end) ? (it.start || '?') + '–' + (it.end || '?') : 'No time set';
+            html += '<div class="msc-item" data-id="' + it.id + '">';
+            html += '<div><div class="msc-item-title"><span class="badge ' + badgeClass + '" ' +
+              'title="Sample/demo priority only">' + escapeHtml(priority) + '</span> ' +
+              '<span class="msc-chip-cat ' + catClass + '">' + it.category +
+              '</span>' + escapeHtml(it.title) + '</div>';
+            html += '<div class="msc-item-meta">' + timeStr + '</div></div>';
+            html += '<div class="msc-item-actions">';
+            html += '<button type="button" data-action="view" data-id="' + it.id + '">View</button>';
+            html += '<button type="button" data-action="edit" data-id="' + it.id + '">Edit</button>';
+            html += '<button type="button" data-action="delete" data-id="' + it.id + '">Delete</button>';
+            html += '</div></div>';
+          });
+          listEl.innerHTML = html;
+
+          listEl.querySelectorAll('button[data-action]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var action = btn.getAttribute('data-action');
+              var id = btn.getAttribute('data-id');
+              if (action === 'view') { viewItem(id); }
+              else if (action === 'edit') { editItem(id); }
+              else if (action === 'delete') { deleteItem(id); }
+            });
+          });
+
+          renderPriorityPreview();
+        }
+
+        /* Demo-style "Priority Queue" preview (aios_role_desk_views.html layout reference) — ranks
+           today's sample items High → Medium → Low. Sample/demo priority only, not a real ranking. */
+        function renderPriorityPreview() {
+          var todayStr = toDateStr(new Date());
+          var todays = itemsForDate(todayStr).slice().sort(function (a, b) {
+            var pa = PRIORITY_ORDER[a.priority] === undefined ? 1 : PRIORITY_ORDER[a.priority];
+            var pb = PRIORITY_ORDER[b.priority] === undefined ? 1 : PRIORITY_ORDER[b.priority];
+            return pa - pb;
+          });
+          if (!todays.length) {
+            priorityListEl.innerHTML = '<p class="msc-empty">No sample items for today yet.</p>';
+            return;
+          }
+          var html = '';
+          todays.forEach(function (it) {
+            var priority = it.priority || 'Medium';
+            var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
+            var catClass = CATEGORY_CLASS[it.category] || 'task';
+            html += '<div class="msc-item">';
+            html += '<div><span class="badge ' + badgeClass + '" title="Sample/demo priority only">' +
+              escapeHtml(priority) + '</span> <span class="msc-chip-cat ' + catClass + '">' + it.category +
+              '</span>' + escapeHtml(it.title) + '</div>';
+            html += '</div>';
+          });
+          priorityListEl.innerHTML = html;
+        }
+
+        function resetForm() {
+          fieldTitle.value = '';
+          fieldCategory.value = 'Sample Task';
+          fieldPriority.value = 'Medium';
+          fieldStart.value = '';
+          fieldEnd.value = '';
+          fieldNotes.value = '';
+        }
+
+        function cancelEdit() {
+          state.editingId = null;
+          addBtn.style.display = '';
+          updateBtn.style.display = 'none';
+          cancelBtn.style.display = 'none';
+          resetForm();
+        }
+
+        cancelBtn.addEventListener('click', cancelEdit);
+
+        addBtn.addEventListener('click', function () {
+          if (!fieldDate.value) { window.alert('Choose a date on the calendar first.'); return; }
+          if (!fieldTitle.value.trim()) { window.alert('Enter a title (e.g. Sample Task) before adding.'); return; }
+          var newItem = {
+            id: 'item-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+            date: fieldDate.value,
+            title: fieldTitle.value.trim(),
+            category: fieldCategory.value,
+            priority: fieldPriority.value,
+            start: fieldStart.value,
+            end: fieldEnd.value,
+            notes: fieldNotes.value.trim()
+          };
+          items.push(newItem);
+          saveItems(items);
+          selectDate(fieldDate.value);
+          resetForm();
+        });
+
+        function editItem(id) {
+          var it = items.filter(function (x) { return x.id === id; })[0];
+          if (!it) { return; }
+          state.editingId = id;
+          fieldDate.value = it.date;
+          fieldTitle.value = it.title;
+          fieldCategory.value = it.category;
+          fieldPriority.value = it.priority || 'Medium';
+          fieldStart.value = it.start || '';
+          fieldEnd.value = it.end || '';
+          fieldNotes.value = it.notes || '';
+          addBtn.style.display = 'none';
+          updateBtn.style.display = '';
+          cancelBtn.style.display = '';
+        }
+
+        updateBtn.addEventListener('click', function () {
+          if (!state.editingId) { return; }
+          var it = items.filter(function (x) { return x.id === state.editingId; })[0];
+          if (!it) { return; }
+          if (!fieldTitle.value.trim()) { window.alert('Enter a title before updating.'); return; }
+          it.date = fieldDate.value;
+          it.title = fieldTitle.value.trim();
+          it.category = fieldCategory.value;
+          it.priority = fieldPriority.value;
+          it.start = fieldStart.value;
+          it.end = fieldEnd.value;
+          it.notes = fieldNotes.value.trim();
+          saveItems(items);
+          selectDate(it.date);
+          cancelEdit();
+        });
+
+        function deleteItem(id) {
+          var it = items.filter(function (x) { return x.id === id; })[0];
+          if (!it) { return; }
+          var ok = window.confirm('Delete this sample schedule item ("' + it.title + '")? This only removes local testing data.');
+          if (!ok) { return; }
+          items = items.filter(function (x) { return x.id !== id; });
+          saveItems(items);
+          if (state.editingId === id) { cancelEdit(); }
+          renderCalendar();
+          renderList();
+        }
+
+        function viewItem(id) {
+          var it = items.filter(function (x) { return x.id === id; })[0];
+          if (!it) { return; }
+          viewTitle.textContent = it.title;
+          viewDate.textContent = 'Date: ' + it.date;
+          viewTime.textContent = 'Time: ' + ((it.start || it.end) ? (it.start || '?') + ' – ' + (it.end || '?') : 'Not set');
+          viewCategory.textContent = 'Category: ' + it.category;
+          viewPriority.textContent = 'Priority (sample/demo only): ' + (it.priority || 'Medium');
+          viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
+          viewModal.classList.add('show');
+        }
+
+        viewClose.addEventListener('click', function () { viewModal.classList.remove('show'); });
+        viewModal.addEventListener('click', function (e) {
+          if (e.target === viewModal) { viewModal.classList.remove('show'); }
+        });
+
+        clearBtn.addEventListener('click', function () {
+          var ok = window.confirm('Clear ALL testing schedule data for ' + memberLabel +
+            ' from this browser? This cannot be undone and only affects local testing data — it does not touch any real source or database.');
+          if (!ok) { return; }
+          items = [];
+          saveItems(items);
+          cancelEdit();
+          renderCalendar();
+          renderList();
+        });
+
+        /* ── Init this instance ── */
+        var t0 = new Date();
+        state.viewYear = t0.getFullYear();
+        state.viewMonth = t0.getMonth();
+        renderCalendar();
+        selectDate(toDateStr(t0));
+      }
+
+      function initAllScheduleCalendars() {
+        var containers = document.querySelectorAll('.msc-instance');
+        containers.forEach(function (container) {
+          try {
+            mountScheduleCalendarInstance(container);
+          } catch (err) {
+            if (window.console && window.console.error) {
+              window.console.error('Schedule calendar failed to initialize for member "' +
+                container.getAttribute('data-member-key') + '":', err);
+            }
+          }
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllScheduleCalendars);
+      } else {
+        initAllScheduleCalendars();
+      }
 
     }());
   </script>
