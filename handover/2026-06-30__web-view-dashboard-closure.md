@@ -2117,3 +2117,11 @@ sample/testing tables (4 each) to the Suman Recruitment and Arun Implementation 
 `member-aios/arun-implementation/WORKBENCH.md` and the SRC-ARUN-PH-001 source map. Tables are not live
 records and need member review before official use. See
 `validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 6) for the full check.
+
+---
+
+## 2026-07-09 — Note: GAP-40 / GAP-44 Deferred for Local UI Testing Scope Only
+
+GAP-40 and GAP-44 are deferred for current local UI testing/sample dashboard work only. They still block
+official HR Schedule Pilot completion and live/shared deployment. Neither gap is answered, registered, or
+closed by this note. See `validation/hr-schedule-gap-deferral-note-2026-07-09.md` for the full deferral rule.
