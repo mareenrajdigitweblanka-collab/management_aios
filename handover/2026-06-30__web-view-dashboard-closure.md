@@ -1765,3 +1765,41 @@ A wording-and-visibility-only pass was applied to `web-view/index.html` so non-t
 **Not committed** — per task instruction, this change is staged for review only.
 
 **Next step:** A human should open the dashboard in a browser to visually confirm the simplified wording reads naturally across tabs, before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Schedule Calendar Placeholders Added (Arun, Rajiv, Suman)
+
+A placeholder-only "Schedule Calendar — Pending Confirmation" section was added to the end of the Suman
+Recruitment, Arun Implementation, and Rajiv / Admin Blocked tabs in `web-view/index.html`, reusing the
+existing HR Schedule Pilot CSS classes (no new CSS added). This is **not** an evidence-backed calendar
+build — no confirmed schedule data exists yet for any of the three members.
+
+**What was added:** For each of Arun (Implementation Officer), Rajiv (Admin Manager), and Suman (Recruiting
+Officer) — a card with two chips ("Pending Confirmation", "Placeholder only"), the exact required plain-text
+body ("Schedule Calendar — Pending Confirmation." / "No confirmed schedule data registered yet." / "Waiting
+for member/domain-owner confirmation."), a static safety footer, and a collapsed "Technical details" block
+pointing only to the new validation file (no evidence paths, source IDs, commit hashes, or PASS/AMBER text
+in the main visible UI). Rajiv's card carries an additional visible disclaimer that the placeholder does not
+imply Admin Manager authority, approval rights, or escalation authority.
+
+**What was intentionally not added:** No schedule facts, dates, times, or recurring meeting facts for any
+member; no calendar grid or priority queue (unlike the HR pilot, there is no source basis for one yet); no
+new source registered in `evidence/source-register.md`; no `[VERIFY]` item touched; no change to
+SRC-ADMIN-001 status (remains PENDING); no change to the HR Schedule Pilot's own status (remains
+`HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION`); Mayurika HR tab was not touched (still 0
+`<table>` tags — no-table rule preserved).
+
+**Files touched:** `web-view/index.html` and the new
+`validation/member-schedule-placeholder-ui-check-2026-07-08.md`. `evidence/source-register.md`, CLAUDE.md,
+`context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not touched.
+
+**Result:** AMBER — PLACEHOLDER ONLY. Member/domain-owner confirmation (Arun, Rajiv, Suman, and Varmen/MD per
+§18 Reviewer Routing Rule) is required before any real schedule data is added.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** Route to Arun, Rajiv, and Suman (and Varmen/MD where relevant) to confirm whether and how each
+member's real schedule should be captured as a registered source, following the same MD-request →
+registration → confirmation flow already used for the HR Schedule Pilot. For Rajiv specifically, real
+schedule content remains additionally gated on SRC-ADMIN-001.
