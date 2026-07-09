@@ -2031,3 +2031,17 @@ or confirmation-status change.
 **Next step:** A human should open each of the four member tabs in a browser and confirm the visible task
 chips and Priority Preview card render correctly and stay independent per member, before this is committed
 and pushed.
+
+---
+
+## 2026-07-08 — Note: HR Schedule Pilot Q1–Q8 Answers Received and Captured
+
+Written HR answers to all 8 open HR Schedule Pilot confirmation questions (priority scale, categories,
+recurring-block ownership, interview/session ownership, CST meaning, durations, edit rights,
+replace-or-parallel) were received and captured as controlled evidence in
+`evidence/stakeholder-confirmations/hr-schedule-pilot-answers-from-hr-2026-07-08.md`, with an append-only
+status update added to the original request file. This is a content-answer capture only — it does not change
+`web-view/index.html`, does not update `evidence/source-register.md` or `context/verify-register.md`, and
+does **not** mark the HR Schedule Pilot dashboard status complete. Visual sign-off on the pilot's UI remains
+a separate, still-open item. See `validation/hr-schedule-pilot-confirmation-answers-check-2026-07-08.md` for
+the full check.
