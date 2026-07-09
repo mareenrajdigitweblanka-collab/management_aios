@@ -4,10 +4,73 @@ type: validation
 created: 2026-07-09
 created-by: Mareenraj (builder)
 status: AMBER / UI CLEANUP ONLY
-updated: 2026-07-09 — Update 2: removed specific "Useful for Day-to-Day Work" blocks from HR, Suman, and Arun tabs per user follow-up
+updated: 2026-07-09 — Update 2: removed specific "Useful for Day-to-Day Work" blocks from HR, Suman, and Arun tabs per user follow-up; Update 3: removed Arun's remaining 5 operational control tables
 ---
 
 # Validation — Member Tabs UI Simplification (2026-07-09)
+
+## 2026-07-09 Update 3 — Removed Arun's Remaining Visible Tables/Cards
+
+### A. User Requested Removal
+
+The user instructed "Remove tables from Arun tab," identifying (via screenshot) 5 remaining visible blocks in
+the Arun Implementation tab that had been kept in Update 1 as "existing operational control tables": Portfolio
+Holder Review Preparation Tracker, KPI Data Source Readiness Table, PH Monthly Review Output Checklist,
+Risk / Coaching / Action Plan Tracker, and Dashboard Requirement Tracker.
+
+### B. Removed Arun Blocks
+
+Removed the entire wrapper `<div style="margin-top:20px;">...</div><!-- /arun day-to-day tables -->` from
+the Arun Implementation tab, which contained:
+
+- The intro note "Day-to-day implementation review and KPI follow-up tools:"
+- The warning note "These are day-to-day control templates only..."
+- Portfolio Holder Review Preparation Tracker (collapsible table)
+- KPI Data Source Readiness Table (collapsible table)
+- PH Monthly Review Output Checklist (collapsible table)
+- Risk / Coaching / Action Plan Tracker (collapsible table)
+- Dashboard Requirement Tracker (collapsible table)
+
+The intro/warning notes were removed together with the tables since they existed only to describe/frame
+that now-removed table set and would otherwise be orphaned. Confirmed via grep against the Arun tab's current
+line range: 0 matches for any of the 5 table names or the two notes.
+
+### C. Arun Intro / Workbench / Calendar Retained
+
+Confirmed present and unchanged: the "Introduction" `member-header` block, the "Workbench File Details"
+section (2 files: WORKBENCH.md, quick-reference-sources.md), and exactly one "Arun Schedule Calendar —
+Testing Preview" section containing a single `.msc-instance` calendar mount.
+
+### D. Other Member Tabs Not Intentionally Changed
+
+Verified via `git diff` that the only `+`/`-` lines in this change fall inside the Arun tab's line range —
+zero diff lines reference `tab-mayurika-hr`, `tab-suman-recruitment`, `tab-rajiv-blocked`, or any of their
+tab-specific content (e.g. "HR Task Categories", "Recruitment Workflow", "Admin Responsibility Map"). Mayurika,
+Suman, and Rajiv tabs are unchanged from their prior state.
+
+### E. Safety Confirmations
+
+| Check | Result |
+|---|---|
+| `evidence/source-register.md` edited | NO — no diff |
+| `context/verify-register.md` edited | NO — no diff |
+| SRC-ADMIN-001 status | Unchanged — still PENDING |
+| HR Schedule Pilot marked complete | NO — underlying status `HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION` unchanged in `schedules/hr/README.md` |
+| Backend/database/schema/API code added | NO — none found |
+| Evidence or validation files deleted | NO — none deleted |
+| Standalone HTML file created | NO |
+| `<div>` / `<table>` / `<details>` tags balanced | YES — confirmed via automated tag-count check (519/519 divs, 11/11 tables, 16/16 details) |
+| Calendar Add/Update/Cancel/Clear Testing Data controls | Present — unchanged shared JS factory |
+| Calendar localStorage-only | YES — `management_aios_testing_schedule_arun_v1` unchanged |
+
+### F. Status
+
+**AMBER / UI CLEANUP ONLY** (unchanged) — this update removes the last remaining visible operational tables
+from the Arun tab per direct user follow-up; it does not change any confirmation status, source registration,
+or backend logic. Arun's tab is now Introduction + Workbench File Details + Schedule Calendar only, matching
+the same structure as the other three member tabs.
+
+---
 
 ## 2026-07-09 Update 2 — Removed Specific "Useful for Day-to-Day Work" Blocks
 

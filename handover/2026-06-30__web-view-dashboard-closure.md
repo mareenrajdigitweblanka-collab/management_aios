@@ -2073,3 +2073,14 @@ Tracking, Weekly Deliverables for Suman; the Portfolio Holder KPI Review Templat
 keeping Arun's 5 existing operational control tables). Calendars and workbench details retained in all four
 tabs; Rajiv's tab was not intentionally changed. Evidence files unchanged. See
 `validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 2) for the full check.
+
+---
+
+## 2026-07-09 — Note: Arun's Remaining Visible Tables/Cards Removed (Follow-up)
+
+User requested Arun's remaining visible tables/cards removed (Portfolio Holder Review Preparation Tracker,
+KPI Data Source Readiness Table, PH Monthly Review Output Checklist, Risk / Coaching / Action Plan Tracker,
+Dashboard Requirement Tracker), along with their now-orphaned framing notes. Arun tab now keeps
+introduction, workbench file details, and schedule calendar only — matching the other three member tabs.
+Other tabs not intentionally changed; evidence files unchanged. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 3) for the full check.
