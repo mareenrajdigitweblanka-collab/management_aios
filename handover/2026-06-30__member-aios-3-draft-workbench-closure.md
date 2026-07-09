@@ -812,3 +812,47 @@ This closure record is committed on branch `individual-aios`. Commit hash to be 
 **Safety preserved:** Dashboard untouched (`web-view/index.html` not opened). CLAUDE.md not touched. `context/verify-register.md` not touched. Raw `Rajiv Doc.md` not edited. No [VERIFY] item resolved. No approval authority, escalation, KPI, or policy content marked final — Approval Authority Matrix and Escalation Matrix explicitly flagged NEEDS_RAJIV_MD_CONFIRMATION; KPI Governance flagged as possible overlap with Arun's domain; Core Operational Policies flagged as possible overlap with SRC-POLICY-001. No HR/Suman/Arun/BLOS/threshold/KPI/AXIOM/database files touched.
 
 **Next step:** Verify with Rajiv (and MD/Arun for overlapping sections) later. Only after written confirmation: register SRC-ADMIN-001, update workbench status fields, and route overlap areas to the relevant domain owners before any CLAUDE.md propagation or dashboard visibility.
+
+---
+
+## SRC-ADMIN-001 Registration — 2026-07-09
+
+**Task:** Capture Admin Manager written answers (relayed by the user) confirming `Rajiv Doc.md` and register
+it as SRC-ADMIN-001.
+
+**Admin answers received:** Document confirmed generally current and accurate, Version 1.0 Working Draft.
+Approved/current sections (Organizational Structure, Department Structure, Reporting Structure, Approval
+Authority Matrix v1.0, Escalation Matrix, ROI Governance, AI Governance, Core Operational Policies)
+separated from draft framework sections (Purpose, Governance Principles, KPI Governance System,
+Accountability Framework, Governance Meetings, Management Drift Assessment, Governance Improvement Roadmap,
+Document Ownership) requiring MD approval before parent-AIOS truth. KPI Governance System additionally
+requires Implementation Officer (Arun) review. No individual-name redaction concern raised.
+
+**Files created/updated:**
+
+| File | Action |
+|---|---|
+| `evidence/stakeholder-confirmations/admin-manager-src-admin-001-confirmation-2026-07-09.md` | CREATED — full Admin answers capture |
+| `validation/admin-manager-src-admin-001-registration-check-2026-07-09.md` | CREATED — registration validation |
+| `evidence/source-register.md` | UPDATED — SRC-ADMIN-001 row changed from PENDING to REGISTERED — VERSION 1.0 WORKING DRAFT / PARTLY APPROVED, PARTLY DRAFT; Source Count Summary and Notes section updated; historical "blocked" note preserved |
+| `member-aios/rajiv-admin/WORKBENCH.md` | UPDATED — status/verification/source-registration fields updated; approved-vs-draft section table added; "unregistered/pending" wording replaced with "registered but limited" wording; MD-approval, Company Policy Manual authority, AXIOM boundary, and Arun-review cautions preserved |
+| `member-aios/rajiv-admin/governance-framework-draft-map.md` | UPDATED — per-row "SRC-ADMIN-001 Status" column added distinguishing approved/current from draft-framework rows; summary section restructured; all overlap-risk cautions preserved |
+| `member-aios/rajiv-admin/admin-manager-responsibility-map-draft.md` | UPDATED — status fields updated to registered/reference; Arun boundary-review caution preserved |
+| `member-aios/rajiv-admin/admin-manager-query-pack-draft.md` | UPDATED — universal answer rule and all 8 Q&A rules updated to registered-but-limited wording; overlap/boundary/authority cautions preserved |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED (this file) |
+
+**Status after this task:** SRC-ADMIN-001 is **REGISTERED** (no longer PENDING/candidate). This is **not** a
+promotion to parent-AIOS truth — draft framework sections still require MD approval, KPI Governance System
+additionally requires Arun's review, Core Operational Policies/ROI Governance/AI Governance derive authority
+from SRC-POLICY-001 (not a competing source), and the Escalation Matrix coexists with (does not replace)
+AXIOM incident/SLA escalation (CLAUDE.md §7.7). `context/verify-register.md` items 1–5 remain open — this
+registration does not resolve them.
+
+**Safety preserved:** `web-view/index.html` not touched. `context/verify-register.md` not touched. No
+dashboard visibility change. No CLAUDE.md propagation performed. No HR Schedule Pilot status touched. No
+backend/database/API/schema code changed. No unrelated source-register rows edited — only the SRC-ADMIN-001
+row, Source Count Summary, and Notes section were changed.
+
+**Next step:** Obtain explicit MD approval evidence for the draft framework sections listed above (and Arun's
+review for KPI Governance System) before considering any CLAUDE.md propagation or dashboard visibility for
+Admin Manager content.

@@ -20,7 +20,7 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 | SRC-ARUN-002 | `intelligence-inbox/raw-stakeholder-documents/arun-implementation/my day check list-arun - shedule.csv` | Arun | Implementation Manager | Daily Schedule / Checklist | YES — confirmed in interview | LOW — operational schedule | YES — daily workflow reference | READY |
 | SRC-SUMAN-001-v1 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/archive/Recruitment_Quality_Control_Process.docx` | Suman | Recruitment Officer | Recruitment Process Document | YES — confirmed in interview | MEDIUM — recruitment process | NO — superseded | SUPERSEDED — binary/unreadable; replaced by v2 |
 | SRC-SUMAN-001-v2 | `intelligence-inbox/raw-stakeholder-documents/suman-recruitment/Recruitment_Quality_Control_Process.md` | Suman | Recruitment Officer | Recruitment Process Document | YES — confirmed in interview | MEDIUM — recruitment process | YES — current readable source | READY |
-| SRC-ADMIN-001 | `intelligence-inbox/raw-stakeholder-documents/admin-manager/` *(folder exists; no documents inside)* | Admin Manager | Admin Manager | Stakeholder Documents | NO — not yet interviewed | UNKNOWN — pending review | PARTIAL — authority and escalation logic marked [VERIFY] until received | PENDING |
+| SRC-ADMIN-001 | `intelligence-inbox/raw-stakeholder-documents/admin-manager/Rajiv Doc.md` | Admin Manager / Rajiv | Admin Manager | Stakeholder Document — Governance Framework (Version 1.0 Working Draft); covers organisational structure, department structure, reporting structure, approval authority matrix, escalation matrix, KPI governance system, ROI governance, AI governance, core operational policies, accountability framework, governance meetings, management drift assessment | PARTIAL — Admin answers received via written confirmation provided by user, 2026-07-09; Varmen review not required for ongoing Management AIOS work per CLAUDE.md §18; MD approval still required for company-wide governance-principle sections (see Notes) | MEDIUM — governance/process content only; no individual employee personal information, salaries, HR records, customer data, or financial data identified; no individual-name redaction concern raised | PARTIAL — approved/current sections (Organizational Structure, Department Structure, Reporting Structure, Approval Authority Matrix v1.0, Escalation Matrix, ROI Governance, AI Governance, Core Operational Policies) may be used as process-level reference; draft framework sections (Purpose, Governance Principles, KPI Governance System, Accountability Framework, Governance Meetings, Management Drift Assessment, Governance Improvement Roadmap, Document Ownership) require MD approval before parent-AIOS truth; KPI Governance System additionally requires Implementation Officer (Arun) review; does not override SRC-POLICY-001; does not replace or override AXIOM incident/SLA escalation (CLAUDE.md §7.7); does not resolve [VERIFY] items 1–5 in context/verify-register.md | REGISTERED — VERSION 1.0 WORKING DRAFT / PARTLY APPROVED, PARTLY DRAFT — NOT PARENT AIOS TRUTH |
 | SRC-POLICY-001 | `intelligence-inbox/raw-stakeholder-documents/company-policy/Draft DIGIT WEB LANKA - Company Policy Manual.md` | Management / HR | Company Policy | Company Policy Manual | YES — Varmen reviewed; Final Approved | INTERNAL / RESTRICTED | YES — company-wide conduct, leave, onboarding, offboarding, AI tools, confidentiality, assets | READY — Final Approved |
 | SRC-MD-HR-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & HR Discussion Notes.md` | Management / HR / MD Governance | MD Discussion Notes with HR | MD Discussion Notes spanning 19/11/2025–22/06/2026 | YES — Varmen reviewed 2026-06-25 | INTERNAL / RESTRICTED — contains individual staff names in operational context; individual performance case references; do not copy personal case details to context | YES — with source mapping and sensitivity limits | READY — Varmen Reviewed |
 | SRC-MD-SUMAN-001 | `intelligence-inbox/raw-stakeholder-documents/md-discussion-notes/MD & Suman Discussions Notes.md` | Recruitment / Onboarding / MD Governance | MD Discussion Notes with Suman | MD Discussion Notes spanning 24/02/2026–23/06/2026 | YES — Varmen reviewed 2026-06-25 | INTERNAL / RESTRICTED — contains candidate names with statuses; individual CV/salary details (14/05/2026 entry); individual performance assessment references; do not copy candidate personal data, CV, or salary details to context | YES — with source mapping and sensitivity limits | READY — Varmen Reviewed |
@@ -66,7 +66,8 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 | READY (Full) | 14 |
 | READY — Conditional (Varmen review pending) | 0 |
 | SUPERSEDED | 2 |
-| PENDING | 2 |
+| PENDING | 1 |
+| REGISTERED — Version 1.0 Working Draft, Partly Approved | 1 |
 | ACTIVE FOLDER STANDARD | 1 |
 | READY — HR-Confirmed | 1 |
 | READY — Confirmation Sources | 21 |
@@ -80,9 +81,26 @@ All raw stakeholder documents and interview notes that feed into CLAUDE.md must 
 
 - SRC-VAR-001 is the **highest-authority source**. All conflicts between other sources must defer to Varmen's stated intent.
 - SRC-SUMAN-001-v1 is SUPERSEDED. The .docx was binary/unreadable by Claude Code and has been moved to the `archive` subfolder (folder name as created by user). SRC-SUMAN-001-v2 (.md) is the current active source. Do not reference v1 for any new claims.
-- SRC-ADMIN-001 is **blocked**. The admin-manager folder exists but is empty — no documents have been placed inside it. Any Admin Manager authority, escalation paths, or approval chains in CLAUDE.md must carry the tag `[VERIFY — awaiting SRC-ADMIN-001]` until documents are received and registered.
+- **SRC-ADMIN-001 was historically blocked** (folder empty, no document received) until 2026-07-09. It is now **REGISTERED** — see the dedicated note below for the registration event. This historical line is preserved so the prior blocked period remains on record.
 - Sensitivity ratings guide redaction decisions if CLAUDE.md is shared externally.
 - Do not invent or infer Admin Manager information from other sources as a substitute for SRC-ADMIN-001.
+- **SRC-ADMIN-001 registered 2026-07-09.** The Admin Manager document (`Rajiv Doc.md`) was received and,
+  per written Admin answers provided by the user, confirmed as Version 1.0 Working Draft, generally current
+  and accurate, with approved/current sections (Organizational Structure, Department Structure, Reporting
+  Structure, Approval Authority Matrix v1.0, Escalation Matrix, ROI Governance, AI Governance, Core
+  Operational Policies) separated from draft framework sections (Purpose, Governance Principles, KPI
+  Governance System, Accountability Framework, Governance Meetings, Management Drift Assessment, Governance
+  Improvement Roadmap, Document Ownership). The draft framework sections require **MD approval** before
+  parent-AIOS truth; KPI Governance System additionally requires **Implementation Officer (Arun) review**.
+  ROI Governance, AI Governance, and Core Operational Policies derive their actual authority from
+  **SRC-POLICY-001 (Company Policy Manual)** — this source does not override or compete with SRC-POLICY-001.
+  The document's Escalation Matrix is an admin/staff-conduct escalation model that **coexists with, and does
+  not replace, the AXIOM incident/SLA escalation** already confirmed as Arun's authority (CLAUDE.md §7.7).
+  This registration does **not** resolve `context/verify-register.md` items 1–5 (Admin Manager authority
+  scope, PRC role, approval chains, final escalation paths) and does **not** promote any section to parent
+  AIOS truth, CLAUDE.md content, or dashboard visibility — those remain separate, explicitly authorized
+  steps. Evidence: `evidence/stakeholder-confirmations/admin-manager-src-admin-001-confirmation-2026-07-09.md`.
+  Validation: `validation/admin-manager-src-admin-001-registration-check-2026-07-09.md`.
 - SRC-SUMAN-CONF-001 is SUPERSEDED for the Line Manager claim only. It stated the "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake. That position was superseded on 2026-06-30 by SRC-SUMAN-CONF-002, which confirms the Line Manager role exists and refers to the employee's Team Lead. SRC-SUMAN-CONF-001 is preserved as a historical record. Do not cite SRC-SUMAN-CONF-001 as current authority on the Line Manager question.
 - SRC-POLICY-001 was registered on 2026-06-23 as Final Approved following Varmen review. The source filename contains "Draft" but Varmen confirmed this is the reviewed and approved company policy. It is the authoritative source for all company-wide policy claims in this AIOS.
 - SRC-STAFF-001 was registered on 2026-06-26 as sensitive raw staff roster evidence. This is a cumulative historical roster (2015–2026) and is NOT a current-employees-only extract. HR owner (Mayurika) must confirm which entries represent currently active staff before this source is used for headcount or active org structure validation. Full staff name lists must not be copied into context or summary files. Aggregate use only.

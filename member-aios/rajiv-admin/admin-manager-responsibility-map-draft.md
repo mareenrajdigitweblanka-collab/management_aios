@@ -2,20 +2,26 @@
 name: admin-manager-responsibility-map-draft
 type: member-draft-map
 created: 2026-07-07
+updated: 2026-07-09
 member: Rajiv / Admin Manager
-status: DRAFT_FROM_RAJIV_DOC
-verification: NEEDS_RAJIV_OR_MD_CONFIRMATION
-source-registration: NOT_REGISTERED
-parent-aios-status: NOT_PARENT_TRUTH
+status: REGISTERED_VERSION_1_WORKING_DRAFT — REFERENCE (PROCESS-LEVEL)
+verification: ADMIN_ANSWERS_RECEIVED_2026-07-09
+source-registration: REGISTERED — SRC-ADMIN-001
+parent-aios-status: NOT_PARENT_TRUTH — PENDING MD CONFIRMATION FOR [VERIFY]-ITEM RESOLUTION USE
 dashboard-status: NOT_DASHBOARD_VISIBLE
 ---
 
-> **WARNING: Draft only. Built from Rajiv Doc.md before Rajiv's confirmation, because Rajiv is currently busy. Not approved parent AIOS truth. Do not use as final authority. No responsibility below is invented — each is drawn directly from the raw source document sections "Admin Manager Responsibilities" and "KPI Meetings and Staff Management Responsibilities."**
+> **STATUS: SRC-ADMIN-001 registered 2026-07-09. This responsibility map is process-level reference content
+> under a registered Version 1.0 Working Draft source. It is not yet approved parent AIOS truth for the
+> purpose of resolving `context/verify-register.md` items 1–5 — that still requires MD confirmation. No
+> responsibility below is invented — each is drawn directly from the raw source document sections "Admin
+> Manager Responsibilities" and "KPI Meetings and Staff Management Responsibilities."**
 
-# Admin Manager Responsibility Map (DRAFT)
+# Admin Manager Responsibility Map
 
 Source: `intelligence-inbox/raw-stakeholder-documents/admin-manager/Rajiv Doc.md`, §"Responsibilities"
-Candidate Source ID: SRC-ADMIN-001 — NOT_REGISTERED
+Source ID: **SRC-ADMIN-001 — REGISTERED** (2026-07-09), Version 1.0 Working Draft. See
+`evidence/stakeholder-confirmations/admin-manager-src-admin-001-confirmation-2026-07-09.md`.
 
 ## 1. Administrative Management
 
@@ -156,6 +162,6 @@ Candidate Source ID: SRC-ADMIN-001 — NOT_REGISTERED
 
 ## Overall Status
 
-DRAFT_FROM_RAJIV_DOC | NEEDS_RAJIV_OR_MD_CONFIRMATION | NOT_REGISTERED | NOT_PARENT_TRUTH | NOT_DASHBOARD_VISIBLE
+REGISTERED_VERSION_1_WORKING_DRAFT | SRC-ADMIN-001 REGISTERED 2026-07-09 | REFERENCE (PROCESS-LEVEL) | NOT_PARENT_TRUTH (pending MD confirmation for [VERIFY]-item resolution use) | NOT_DASHBOARD_VISIBLE
 
-No responsibility category above was invented — all 11 categories and their content are drawn directly from Rajiv Doc.md §"Admin Manager Responsibilities" and §"KPI Meetings and Staff Management Responsibilities."
+No responsibility category above was invented — all 11 categories and their content are drawn directly from Rajiv Doc.md §"Admin Manager Responsibilities" and §"KPI Meetings and Staff Management Responsibilities." Item 9 (KPI Meeting Management) still requires Arun boundary review before any content is treated as authoritative for KPI/AXIOM-adjacent matters.
