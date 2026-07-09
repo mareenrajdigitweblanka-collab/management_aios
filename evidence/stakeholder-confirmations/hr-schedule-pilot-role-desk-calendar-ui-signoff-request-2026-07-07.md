@@ -96,3 +96,38 @@ FAIL if the HR Schedule Pilot UI is marked final, pushed to a remote, or deploye
 ## Next Step
 
 Route this request to Mayurika and Varmen alongside the still-open `hr-schedule-pilot-confirmation-request-2026-07-06.md`. Do not push to remote or deploy a Netlify preview, and do not mark the HR Schedule Pilot UI as final, until written answers to Q1–Q8 are received.
+
+---
+
+## Verbal Visual Sign-off Received — 2026-07-09
+
+This section is append-only — the original request, the Q1–Q8 list, and the "Current [VERIFY] Status" table
+above are preserved unchanged and must not be deleted.
+
+The user clarified: "She verbally confirmed with me." Mayurika verbally confirmed GAP-44 (the visual
+sign-off request above) to the user. This is a verbal report, not a written confirmation and not a direct
+statement from Mayurika in this conversation.
+
+**Status:** VERBALLY CONFIRMED — PENDING WRITTEN CONFIRMATION / DEPLOYMENT APPROVAL CLARITY
+
+**Full detail:** see
+`evidence/stakeholder-confirmations/hr-schedule-gap-40-gap-44-verbal-confirmation-2026-07-09.md` (captured
+by Mareenraj Developer, 2026-07-09).
+
+**Important — what this does NOT mean:**
+
+- **Deployment/live approval is not assumed.** Q7 of this request specifically asks whether the visual
+  update is approved for remote push and Netlify preview deployment. Nothing in the user's statement
+  specifies that deployment was part of what Mayurika verbally confirmed, so Q7 remains explicitly
+  unresolved pending written clarity.
+- This verbal report does not itself register a formal source or resolve any of the 8 open `[VERIFY]` items
+  from `hr-schedule-pilot-confirmation-request-2026-07-06.md` — those remain tracked separately (and are
+  themselves only verbally, not formally, confirmed as of this same date — see that file's own "Verbal
+  Confirmation Received — 2026-07-09" section).
+- No `web-view/index.html`, `evidence/source-register.md`, or `context/verify-register.md` change was made
+  by this update.
+- The HR Schedule Pilot UI must **not** be marked final, pushed to remote, or deployed to Netlify based on
+  this verbal confirmation alone.
+
+**Next step (this section):** Obtain short written confirmation from Mayurika/Varmen on Q1–Q8, with explicit
+clarity on Q7 (deployment approval), before treating this gate as closed or taking any push/deploy action.

@@ -2125,3 +2125,14 @@ records and need member review before official use. See
 GAP-40 and GAP-44 are deferred for current local UI testing/sample dashboard work only. They still block
 official HR Schedule Pilot completion and live/shared deployment. Neither gap is answered, registered, or
 closed by this note. See `validation/hr-schedule-gap-deferral-note-2026-07-09.md` for the full deferral rule.
+
+---
+
+## 2026-07-09 — Note: GAP-40 / GAP-44 Verbal Confirmation Captured
+
+Mayurika verbally confirmed GAP-40 and GAP-44 to the user. Captured as verbal confirmation only — status set
+to "VERBALLY CONFIRMED — PENDING WRITTEN CONFIRMATION / SOURCE REGISTRATION REVIEW" (GAP-40) and "VERBALLY
+CONFIRMED — PENDING WRITTEN CONFIRMATION / DEPLOYMENT APPROVAL CLARITY" (GAP-44). Written confirmation,
+source registration, and deployment approval clarity all remain separate, open steps unless later confirmed
+in writing. No source-register, verify-register, or `web-view/index.html` change was made. See
+`validation/hr-schedule-gap-40-gap-44-verbal-confirmation-check-2026-07-09.md` for the full check.

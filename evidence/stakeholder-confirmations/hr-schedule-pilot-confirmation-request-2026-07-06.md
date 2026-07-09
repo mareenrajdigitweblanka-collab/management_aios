@@ -135,3 +135,33 @@ Developer, 2026-07-08).
 **Next step (this section):** Route to Mayurika/Varmen for accuracy review of the captured answers, then map
 reviewed answers into `schedules/hr/README.md`, `schedules/hr/mayurika.md`, `schedules/hr/priority-queue.md`,
 and `schedules/hr/recurring-templates/` as a separate, controlled task before any dashboard update.
+
+---
+
+## Verbal Confirmation Received — 2026-07-09
+
+This section is append-only — the original 8 questions, the "Current [VERIFY] Status" table, and the
+"Answers Received from HR — 2026-07-08" section above are preserved unchanged and must not be deleted.
+
+The user clarified: "She verbally confirmed with me." Mayurika verbally confirmed the HR Q1–Q8 answers
+(captured 2026-07-08) to the user. This is a verbal report, not a written confirmation and not a direct
+statement from Mayurika in this conversation.
+
+**Status:** VERBALLY CONFIRMED — PENDING SOURCE REGISTRATION / WRITTEN CONFIRMATION REVIEW
+
+**Full detail:** see
+`evidence/stakeholder-confirmations/hr-schedule-gap-40-gap-44-verbal-confirmation-2026-07-09.md` (captured
+by Mareenraj Developer, 2026-07-09).
+
+**Important — what this does NOT mean:**
+
+- This verbal report does not itself register the HR Q1–Q8 answers as a formal source (`SRC-*` ID) and does
+  not resolve the underlying accuracy-review step.
+- This does not confirm GAP-44 (visual sign-off) — that is a separate gate, tracked in
+  `evidence/stakeholder-confirmations/hr-schedule-pilot-role-desk-calendar-ui-signoff-request-2026-07-07.md`.
+- No `schedules/hr/*` files, `web-view/index.html`, `evidence/source-register.md`, or
+  `context/verify-register.md` were changed by this update.
+- The HR Schedule Pilot must **not** be marked fully complete based on this verbal confirmation alone.
+
+**Next step (this section):** Obtain short written confirmation from Mayurika if required by source
+discipline, then prepare (but do not apply without separate approval) a source-register update proposal.
