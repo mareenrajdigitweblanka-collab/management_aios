@@ -2105,3 +2105,15 @@ User requested the HR testing tables be visually polished. HR table CSS improved
 header rows, zebra striping, row hover, priority/frequency/status pills) using new scoped classes
 (`.hr-testing-table-*`, `.hr-pill-*`); table content and source meaning unchanged. See
 `validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 5) for the full check.
+
+---
+
+## 2026-07-09 — Note: Suman and Arun Testing Tables Added (Similar to HR)
+
+User requested Suman and Arun testing tables similar to HR. Added visible, polished, context-based
+sample/testing tables (4 each) to the Suman Recruitment and Arun Implementation tabs, using the same
+`.member-testing-table-*` / `.member-pill-*` scoped CSS pattern as the HR tables. Suman's tables draw from
+`member-aios/suman-recruitment/WORKBENCH.md` and `weekly-deliverables-checklist.md`; Arun's tables draw from
+`member-aios/arun-implementation/WORKBENCH.md` and the SRC-ARUN-PH-001 source map. Tables are not live
+records and need member review before official use. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 6) for the full check.

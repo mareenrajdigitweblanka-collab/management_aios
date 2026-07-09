@@ -2476,6 +2476,156 @@
         padding: 14px 14px 16px;
       }
     }
+
+    /* ═══ Member Testing Tables — Sample Preview (Suman, Arun tabs; scoped, reuses HR polish pattern) ═══ */
+    .member-testing-table-note {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: .8rem;
+      color: #1e3a5f;
+      line-height: 1.6;
+      margin: 0 0 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .member-testing-table-note span.member-pill {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .member-testing-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .05);
+      padding: 18px 20px 20px;
+      margin-bottom: 22px;
+    }
+
+    .member-testing-table-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .member-testing-table-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .member-testing-table-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      margin: 3px 0 14px;
+      line-height: 1.5;
+    }
+
+    .member-testing-table-scroll {
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .member-testing-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+      min-width: 560px;
+    }
+
+    .member-testing-table thead th {
+      text-align: left;
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #57534e;
+      padding: 11px 16px;
+      background: #f5f2ea;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .member-testing-table tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #efece4;
+      color: var(--text);
+      vertical-align: top;
+      line-height: 1.55;
+    }
+
+    .member-testing-table tbody tr:nth-child(even) td {
+      background: #faf8f4;
+    }
+
+    .member-testing-table tbody tr:hover td {
+      background: #eef4ff;
+    }
+
+    .member-testing-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .member-testing-table-footnote {
+      font-size: .76rem;
+      color: var(--muted);
+      margin: 4px 0 18px;
+      line-height: 1.5;
+    }
+
+    /* Pills — sample/ready/pending/review labels */
+    .member-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .member-pill-sample {
+      background: #f0ede6;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .member-pill-ready {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .member-pill-pending {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .member-pill-review {
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+    }
+
+    @media (max-width: 640px) {
+      .member-testing-table-card {
+        padding: 14px 14px 16px;
+      }
+    }
   </style>
 </head>
 
@@ -3360,6 +3510,221 @@
         </ul>
       </div>
 
+      <!-- 3. Suman Testing Tables — Sample Preview
+           Content sourced from Suman's WORKBENCH.md and weekly-deliverables-checklist.md
+           (recruitment pipeline, 8-point screening, review cadence, weekly deliverables, OLOS/BGCT checks).
+           Visible tables only — no details/click-to-view wrapper. No real candidate data. -->
+      <div class="section-title" style="margin-top:32px;">Suman Testing Tables — Sample Preview</div>
+      <div class="member-testing-table-note" data-searchable data-tags="suman testing tables sample preview note">
+        <span class="member-pill member-pill-sample">Testing Only</span>
+        <span>These sample testing tables use captured recruitment/onboarding context. They are for
+          UI/testing only and are not live candidate records.</span>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="suman recruitment workflow overview table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 1 — Recruitment Workflow Overview</div>
+        </div>
+        <p class="member-testing-table-sub">The recruitment pipeline stages Suman moves each hire through.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Stage</th>
+                <th>What Suman Checks</th>
+                <th>Output</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Candidate Screening (8-Point)</td>
+                <td>O/L Maths, English, IT Skills, E-Commerce Knowledge, AI Familiarity, Salary Alignment,
+                  Availability, Commitment</td>
+                <td>Screening result (progress / hold / reject)</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Interview Scoring</td>
+                <td>Technical Knowledge, AI Knowledge, Communication, Confidence, Cultural Fit (50-point
+                  scale)</td>
+                <td>Interview score band</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Commitment Record</td>
+                <td>What the candidate agreed to deliver after the offer</td>
+                <td>Documented commitment record</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>7/14-Day Review</td>
+                <td>Knowledge gained, responsibility understanding, confidence, AI/LLM adoption</td>
+                <td>Review outcome recorded</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Month 1 / 3 / 6 Reviews</td>
+                <td>Task completion, commitment delivery, KPI participation</td>
+                <td>Status: On Track / Watch / Concern / Critical</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>180-Day Handover</td>
+                <td>ROI audit evidence, KPI baseline, outstanding issues</td>
+                <td>Handover pack ready for Mayurika/Arun/Team Lead</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="suman intake readiness checklist table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 2 — Intake Readiness Checklist</div>
+        </div>
+        <p class="member-testing-table-sub">Process-level checks before a candidate or hire moves forward.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Check Area</th>
+                <th>What to Confirm</th>
+                <th>Why It Helps</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>8-Point Screening Complete</td>
+                <td>All 8 criteria assessed before interview stage</td>
+                <td>Prevents unqualified candidates progressing</td>
+                <td><span class="member-pill member-pill-ready">Sample — Ready</span></td>
+              </tr>
+              <tr>
+                <td>Weekly Deliverables Filed</td>
+                <td>Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop
+                  proof</td>
+                <td>Keeps compliance with the weekly deliverable requirement</td>
+                <td><span class="member-pill member-pill-pending">Sample — Pending</span></td>
+              </tr>
+              <tr>
+                <td>OLOS Validation Documents</td>
+                <td>Evidence Standard, Onboarding Guide, OLOS Master, Team Leader Setup Guide, File Pack
+                  Register</td>
+                <td>Confirms the onboarding system is ready before go-live</td>
+                <td><span class="member-pill member-pill-pending">Sample — Pending</span></td>
+              </tr>
+              <tr>
+                <td>BGCT Completion (Last 6 Months)</td>
+                <td>Best Practices, Guidelines, Checklists, Tutorials on file for recent joiners</td>
+                <td>Flags onboarding documentation gaps early</td>
+                <td><span class="member-pill member-pill-pending">Sample — Pending</span></td>
+              </tr>
+              <tr>
+                <td>LLM-Queryable Format</td>
+                <td>All onboarding activity captured in LLM-queryable format from day one</td>
+                <td>Meets the queryability standard</td>
+                <td><span class="member-pill member-pill-ready">Sample — Ready</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="suman recruitment follow-up tracker sample table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 3 — Recruitment Follow-up Tracker — Sample</div>
+        </div>
+        <p class="member-testing-table-sub">Weekly follow-up items, process-level only.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Follow-up Type</th>
+                <th>Purpose</th>
+                <th>Timing</th>
+                <th>Sample Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Risk Identification</td>
+                <td>Flag pipeline or probation risk at process level</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — review pipeline risk categories</td>
+              </tr>
+              <tr>
+                <td>One-Month Task Rule Check</td>
+                <td>Confirm Month 1 task completion status</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — assign On Track / Watch / Concern / Critical</td>
+              </tr>
+              <tr>
+                <td>SKU / Margin / Hire-ROI Trace</td>
+                <td>Link hire to a measurable business outcome</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — document trace or explicit gap</td>
+              </tr>
+              <tr>
+                <td>LLM-in-the-Loop Proof</td>
+                <td>Confirm LLM consulted before planning decisions</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — log consultation reference</td>
+              </tr>
+              <tr>
+                <td>180-Day Handover Reminder</td>
+                <td>Proactive reminder 2 weeks before the Month 6 handover</td>
+                <td>One-time per hire</td>
+                <td>Sample — notify Mayurika, Arun, and the Team Lead</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="suman workbench usage guide table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 4 — Suman Workbench Usage Guide</div>
+        </div>
+        <p class="member-testing-table-sub">What each workbench file is for and how it's used day to day.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Workbench Asset</th>
+                <th>Daily Use</th>
+                <th>Evidence / Output Expected</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WORKBENCH.md</td>
+                <td>Main recruitment domain reference</td>
+                <td>Confirms scope and reviewer routing</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>quick-reference-sources.md</td>
+                <td>Quick lookup of which sources cover each responsibility</td>
+                <td>Fast reference during daily work</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>weekly-deliverables-checklist.md</td>
+                <td>Daily and weekly task checklist</td>
+                <td>Weekly deliverable records</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="member-testing-table-footnote">Sample preview only — content reflects captured recruitment
+          context, not real candidate data.</p>
+      </div>
+
       <!-- 4. Schedule Calendar -->
       <div class="section-title" style="margin-top:32px;">Suman Schedule Calendar — Testing Preview</div>
       <div class="msc-instance" data-member-key="suman" data-member-label="Suman — Recruiting Officer"
@@ -3421,6 +3786,220 @@
         </ul>
       </div>
 
+      <!-- 3. Arun Testing Tables — Sample Preview
+           Content sourced from Arun's WORKBENCH.md and the SRC-ARUN-PH-001 source map
+           (PH KPI review structure, data-source readiness, output sections). Visible tables only —
+           no details/click-to-view wrapper. No real KPI, sales, stock, or staff-performance data. -->
+      <div class="section-title" style="margin-top:32px;">Arun Testing Tables — Sample Preview</div>
+      <div class="member-testing-table-note" data-searchable data-tags="arun testing tables sample preview note">
+        <span class="member-pill member-pill-sample">Testing Only</span>
+        <span>These sample testing tables use captured implementation/PH review context. They are for
+          UI/testing only and are not live KPI, sales, stock, or staff-performance records.</span>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun ph review preparation sample table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 1 — PH Review Preparation — Sample</div>
+        </div>
+        <p class="member-testing-table-sub">What Arun checks is ready before starting a Portfolio Holder
+          monthly review.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Review Area</th>
+                <th>What Arun Checks</th>
+                <th>Required Input</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Marketplace Performance Readiness</td>
+                <td>YOY performance across Amazon UK, eBay UK, eBay DE, B&amp;Q</td>
+                <td>Marketplace sales data</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>SKU Review Readiness</td>
+                <td>Best-improving and declining SKU trends</td>
+                <td>SKU-level sales data</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>Stock Health Check Readiness</td>
+                <td>Inventory levels, non-selling stock, stock cover days</td>
+                <td>Inventory data</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>Coaching / Action Question Readiness</td>
+                <td>Structured coaching questions for the review discussion</td>
+                <td>Team Leader / Auditor feedback</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>Management Summary Readiness</td>
+                <td>KPI achievement, risks, next-month focus</td>
+                <td>All review inputs combined</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun kpi source readiness sample table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 2 — KPI Source Readiness — Sample</div>
+        </div>
+        <p class="member-testing-table-sub">Data areas that must be ready before a live KPI review can be
+          generated.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Source Area</th>
+                <th>What Must Be Ready</th>
+                <th>Why It Helps</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Sales Data</td>
+                <td>Marketplace sales figures (Amazon UK, eBay UK, eBay DE, B&amp;Q)</td>
+                <td>Feeds YOY and monthly comparison sections</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Inventory Data</td>
+                <td>Stock levels, non-selling inventory</td>
+                <td>Feeds inventory and stock health sections</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Advertising / PPC Data</td>
+                <td>ROAS / ACOS campaign data</td>
+                <td>Feeds coaching questions and KPI checks</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Pricing Data</td>
+                <td>Price history across marketplaces</td>
+                <td>Feeds declining-SKU analysis</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Team Leader / Auditor Feedback</td>
+                <td>Team Leader and external auditor review input</td>
+                <td>Feeds the review-inputs section</td>
+                <td><span class="member-pill member-pill-pending">Sample — Partial</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun ph review output checklist table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 3 — PH Review Output Checklist</div>
+        </div>
+        <p class="member-testing-table-sub">Example output sections from the PH review template and how
+          they're used.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Output Section</th>
+                <th>Purpose</th>
+                <th>Reviewer Use</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Executive Summary</td>
+                <td>High-level KPI highlights</td>
+                <td>First section reviewed by management</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>YOY Performance</td>
+                <td>Annual marketplace comparison</td>
+                <td>Confirms the 30% YOY growth KPI status</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Coaching Questions</td>
+                <td>Structured discussion prompts</td>
+                <td>Guides the management review conversation</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Appreciation</td>
+                <td>Recognition opportunities</td>
+                <td>Balances the review with positive feedback</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Action Plan</td>
+                <td>Actions, owners, deadlines</td>
+                <td>Tracks follow-up after the review</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun workbench usage guide table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 4 — Arun Workbench Usage Guide</div>
+        </div>
+        <p class="member-testing-table-sub">What each workbench asset is for and how it's used day to
+          day.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Workbench Asset</th>
+                <th>Daily Use</th>
+                <th>Evidence / Output Expected</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WORKBENCH.md</td>
+                <td>Main KPI / AXIOM / implementation reference</td>
+                <td>Confirms scope and reviewer routing</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>quick-reference-sources.md</td>
+                <td>Quick lookup of which sources cover each responsibility</td>
+                <td>Fast reference during daily work</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>PH Review Source Map</td>
+                <td>Portfolio Holder review structure reference</td>
+                <td>Confirms report sections and output format</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>PH Review Query Pack</td>
+                <td>KPI review prompt reference</td>
+                <td>Supports monthly review generation</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="member-testing-table-footnote">Sample preview only — content reflects captured
+          implementation/PH context, not real KPI or performance data.</p>
+      </div>
 
       <!-- 4. Schedule Calendar -->
       <div class="section-title" style="margin-top:32px;">Arun Schedule Calendar — Testing Preview</div>

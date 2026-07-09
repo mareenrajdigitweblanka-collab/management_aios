@@ -4,10 +4,118 @@ type: validation
 created: 2026-07-09
 created-by: Mareenraj (builder)
 status: AMBER / UI CLEANUP ONLY
-updated: 2026-07-09 — Update 2: removed specific "Useful for Day-to-Day Work" blocks from HR, Suman, and Arun tabs per user follow-up; Update 3: removed Arun's remaining 5 operational control tables; Update 4: added 5 visible HR sample testing tables to Mayurika tab, based on HR Q1-Q8 context; Update 5: polished CSS/design of the 5 HR testing tables
+updated: 2026-07-09 — Update 2: removed specific "Useful for Day-to-Day Work" blocks from HR, Suman, and Arun tabs per user follow-up; Update 3: removed Arun's remaining 5 operational control tables; Update 4: added 5 visible HR sample testing tables to Mayurika tab, based on HR Q1-Q8 context; Update 5: polished CSS/design of the 5 HR testing tables; Update 6: added visible, polished, context-based sample testing tables to Suman and Arun tabs
 ---
 
 # Validation — Member Tabs UI Simplification (2026-07-09)
+
+## 2026-07-09 Update 6 — Added Suman and Arun Testing Tables (Similar to HR)
+
+### A. User Requested Suman and Arun Testing Tables Similar to HR
+
+The user asked: "Similarly do for Suman, and Arun?" — requesting the same treatment as the Mayurika HR
+tables (Updates 4–5): visible, polished, context-based sample testing tables added to the Suman Recruitment
+and Arun Implementation tabs.
+
+### B. Source/Context Files Read for Suman
+
+- `member-aios/suman-recruitment/WORKBENCH.md` — role boundary, recruitment domain areas, 8-point screening,
+  review cadence (7/14-day, Month 1/3/6), 180-day handover, OLOS/BGCT requirements
+- `member-aios/suman-recruitment/weekly-deliverables-checklist.md` — the 4 weekly deliverables, daily
+  knowledge capture, probation review cadence, 180-day handover preparation, OLOS validation document list,
+  BGCT completion check, source quality monitoring
+- `member-aios/suman-recruitment/quick-reference-sources.md` — referenced by name only (asset listing), not
+  re-read in full since its content pointers were already covered by WORKBENCH.md
+
+### C. Source/Context Files Read for Arun
+
+- `member-aios/arun-implementation/WORKBENCH.md` — role boundary, KPI/AXIOM domain areas, SRC-ARUN-PH-001
+  integration summary, day-to-day dashboard tables description, PH live report data-source mapping status
+- `member-aios/arun-implementation/source-maps/arun-ph-team-review-source-map-2026-07-06.md` — PH KPI review
+  report structure (16 sections, 15 Excel worksheets), marketplace scope (Amazon UK, eBay UK, eBay DE, B&Q),
+  required data sources (not embedded in the template)
+- `member-aios/arun-implementation/query-packs/arun-ph-kpi-review-query-pack-2026-07-06.md` — referenced by
+  name only for the workbench usage guide table
+
+### D. Suman Tables Added
+
+Added a new "Suman Testing Tables — Sample Preview" section (with the required note) between Workbench File
+Details and the Schedule Calendar, containing 4 directly visible `<table class="member-testing-table">`
+elements:
+
+| # | Table | Columns | Source |
+|---|---|---|---|
+| 1 | Recruitment Workflow Overview | Stage, What Suman Checks, Output, Sample Status | WORKBENCH.md §2/§4 pipeline stages: 8-point screening, interview scoring, commitment record, 7/14-day review, Month 1/3/6, 180-day handover |
+| 2 | Intake Readiness Checklist | Check Area, What to Confirm, Why It Helps, Sample Status | weekly-deliverables-checklist.md: 8-point screening, weekly deliverables, OLOS validation documents, BGCT completion check, LLM-queryable standard |
+| 3 | Recruitment Follow-up Tracker — Sample | Follow-up Type, Purpose, Timing, Sample Action | weekly-deliverables-checklist.md weekly deliverables (Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop proof) plus the 180-day handover reminder |
+| 4 | Suman Workbench Usage Guide | Workbench Asset, Daily Use, Evidence / Output Expected, Status | The 3 actual Suman workbench files (clean asset names, no long evidence paths) |
+
+### E. Arun Tables Added
+
+Added a new "Arun Testing Tables — Sample Preview" section (with the required note) between Workbench File
+Details and the Schedule Calendar, containing 4 directly visible `<table class="member-testing-table">`
+elements:
+
+| # | Table | Columns | Source |
+|---|---|---|---|
+| 1 | PH Review Preparation — Sample | Review Area, What Arun Checks, Required Input, Sample Status | SRC-ARUN-PH-001 source map: marketplace performance, SKU review, stock health, coaching questions, management summary |
+| 2 | KPI Source Readiness — Sample | Source Area, What Must Be Ready, Why It Helps, Sample Status | SRC-ARUN-PH-001 source map's "Data Sources Required" table and WORKBENCH.md §17 data-source mapping status |
+| 3 | PH Review Output Checklist | Output Section, Purpose, Reviewer Use, Sample Status | SRC-ARUN-PH-001 source map's 16 report sections (5 representative sections shown) |
+| 4 | Arun Workbench Usage Guide | Workbench Asset, Daily Use, Evidence / Output Expected, Status | The 4 actual Arun workbench/source-map/query-pack assets (clean asset names, no long evidence paths) |
+
+### F. Confirmation Content Is Context-Based, Not Random
+
+Every row in both members' tables traces directly to a specific passage already read in
+`WORKBENCH.md`, `weekly-deliverables-checklist.md` (Suman), or the SRC-ARUN-PH-001 source map (Arun) — no
+fabricated stages, KPIs, or checklist items were introduced. Marketplace scope (Amazon UK, eBay UK, eBay DE,
+B&Q), the 8-point screening criteria, and the 16-section PH review structure all match the source files
+exactly.
+
+### G. Confirmation Tables Are Visible, Not Click-to-View
+
+All 8 new tables (4 Suman + 4 Arun) are plain `<table>` elements rendered directly on the page — none are
+wrapped in `<details>`, accordion, or any collapsed/hidden container. Confirmed via automated check: 0
+`<details>` elements found within either new section, and file-wide `<details>` count unchanged (16/16
+before and after this edit).
+
+### H. Confirmation Calendars Retained
+
+Both the "Suman Schedule Calendar — Testing Preview" and "Arun Schedule Calendar — Testing Preview" sections
+remain immediately below their respective tables, each with exactly one `.msc-instance` mount, unchanged.
+Calendar behavior (Add/Update/Cancel/Clear Testing Data, localStorage-only under
+`management_aios_testing_schedule_suman_v1` / `_arun_v1`) is untouched.
+
+### I. Confirmation Mayurika/Rajiv Not Intentionally Changed
+
+Verified via `git diff` that the only `+`/`-` lines in this change fall inside the Suman/Arun tabs and the
+shared `<style>` block (new, additive `.member-testing-table-*` / `.member-pill-*` classes only) — zero diff
+lines reference `tab-mayurika-hr` or `tab-rajiv-blocked`. The Mayurika HR tab's own 5 `.hr-testing-table`
+elements (from Updates 4–5) remain unchanged (5/5 confirmed present).
+
+### J. Safety Confirmations
+
+| Check | Result |
+|---|---|
+| `evidence/source-register.md` edited | NO — no diff |
+| `context/verify-register.md` edited | NO — no diff |
+| SRC-ADMIN-001 status | Unchanged — still PENDING |
+| HR Schedule Pilot marked complete | NO — underlying status unchanged in `schedules/hr/README.md` |
+| Backend/database/schema/API code added | NO — none found |
+| Evidence or validation files deleted | NO — none deleted |
+| Standalone HTML file created | NO |
+| Real candidate personal data added | NO — none found (only pre-existing protective disclaimer text matched during search) |
+| Real KPI / sales / stock / staff-performance data added | NO — none found |
+| Source IDs / evidence paths visible in rendered UI | NO — the one `SRC-ARUN-PH-001` match found is inside an HTML comment (not rendered to the browser), consistent with the existing pattern |
+| `<div>` / `<table>` / `<details>` tags balanced | YES — 577/577 divs, 24/24 tables, 16/16 details |
+
+### K. Status
+
+**AMBER / UI CLEANUP ONLY** (unchanged) — this update adds new, context-based, directly visible sample
+tables to the Suman and Arun tabs (mirroring the HR tables pattern) per explicit user request; it does not
+add real recruitment/KPI records, does not change any confirmation status, source registration, or backend
+logic, and does not mark the HR Schedule Pilot complete.
+
+---
 
 ## 2026-07-09 Update 5 — Polished CSS/Design of HR Testing Tables
 
