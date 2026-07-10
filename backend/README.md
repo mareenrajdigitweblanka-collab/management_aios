@@ -1,4 +1,4 @@
-# Management AIOS — Member Schedule API (Local Draft, 2026-07-09)
+# Management AIOS — Member Schedule API (Local Draft, finalized 2026-07-10)
 
 **Status: LOCAL IMPLEMENTATION DRAFT. Not committed, not pushed, not deployed.**
 GPT is scheduled to review this draft before any commit/push decision is made.
@@ -7,13 +7,13 @@ GPT is scheduled to review this draft before any commit/push decision is made.
 
 ## Purpose
 
-This FastAPI service is a first local draft of a centralized backend for the member dashboard schedule
-calendar currently implemented in `web-view/index.html` using browser `localStorage`. It exists to remove
-the single-browser/single-device limitation of `localStorage` while preserving the same per-member
-separation and the same testing/demo scope that the current UI already carries.
+This FastAPI service is a centralized backend for the member dashboard schedule calendar in
+`web-view/index.html`, replacing the earlier browser-`localStorage`-only build. It removes the
+single-browser/single-device limitation of `localStorage` while preserving the same per-member
+separation and the same testing/demo scope the UI has always carried.
 
-It replaces the *future* need for `localStorage` reads/writes in the dashboard. **`web-view/index.html`
-has not been modified as part of this task** — the frontend integration is a separate future step.
+`web-view/index.html` is fully wired to this API (no calendar `localStorage` reads/writes remain — see
+`validation/member-schedule-end-to-end-finalization-check-2026-07-10.md`).
 
 See the design rationale in `docs/member-dashboard-schedule-api-plan-2026-07-09.md`.
 
@@ -26,9 +26,9 @@ cd backend
 pip install -r requirements.txt
 ```
 
-Dependencies (`fastapi`, `uvicorn`, `sqlalchemy`, `psycopg`, `pydantic`, `python-dotenv`) were **not**
-installed as part of this task — see the implementation validation file for the syntax-only check that was
-run instead of a full import/runtime check.
+Dependencies (`fastapi`, `uvicorn`, `sqlalchemy`, `psycopg`, `pydantic`, `python-dotenv`) have been installed
+and the API has been run and tested end to end locally — see
+`validation/member-schedule-end-to-end-finalization-check-2026-07-10.md` for the full test matrix.
 
 ---
 
@@ -41,7 +41,9 @@ run instead of a full import/runtime check.
 2. Edit `.env` and replace the placeholder values with your real local PostgreSQL connection details.
    **Never commit `.env`** — it is not tracked by this repository's `.gitignore` today; if a `.gitignore`
    entry for `.env` does not exist yet, add one before creating a real `.env` file with live credentials.
-3. Apply the schema first:
+3. Apply the schema first (if `psql` is not on your PATH, any safe runner that executes the whole `.sql`
+   file as one script works — do not naively `split(';')`, since that breaks on the file's own
+   comments/constraints):
    ```bash
    psql "$DATABASE_URL" -f database/member_schedule_events_schema.sql
    ```
@@ -56,11 +58,29 @@ No real credentials are stored in this repository. `DATABASE_URL` is read from t
 From the repository root (so the `backend` package resolves correctly):
 
 ```bash
-uvicorn backend.main:app --reload --port 8000
+python -m uvicorn backend.main:app --reload --port 8000
 ```
 
-Then visit `http://localhost:8000/docs` for interactive Swagger UI, or `http://localhost:8000/health` for
+Then visit `http://127.0.0.1:8000/docs` for interactive Swagger UI, or `http://127.0.0.1:8000/health` for
 the health check.
+
+---
+
+## Serve the Dashboard Frontend
+
+`web-view/index.html` calls this API directly from the browser, so it must be served over HTTP (not opened
+via `file://`) for CORS to apply correctly:
+
+```bash
+python -m http.server 8080 --directory web-view
+```
+
+Then open `http://127.0.0.1:8080/index.html` with the FastAPI server above running on port 8000.
+
+**CORS (local development only):** `backend/main.py` allows any `http://localhost:<port>` or
+`http://127.0.0.1:<port>` origin, with credentials disabled (`allow_credentials=False`) — safe for local
+static-server/file-based development, not for a public deployment. No `allow_origins=["*"]` is combined
+with credentialed requests.
 
 ---
 
@@ -95,6 +115,25 @@ This API is **not** a source of official HR/Admin schedule truth.
   reference, or depend on either gap being closed.
 - This service does not read from or write to `evidence/source-register.md`, `context/verify-register.md`,
   `CLAUDE.md`, or any `schedules/hr/*` official file.
+
+---
+
+## End-to-End Manual Test
+
+1. Start PostgreSQL (this draft was validated against a Dockerized PostgreSQL instance) and apply the schema
+   (see above).
+2. Start the API: `python -m uvicorn backend.main:app --port 8000`.
+3. Serve the frontend: `python -m http.server 8080 --directory web-view`.
+4. Open `http://127.0.0.1:8080/index.html`, switch to each of the four member tabs (Mayurika, Suman, Arun,
+   Rajiv), and for each: add a schedule item, refresh the page and confirm it persists, edit it and confirm
+   the update persists after refresh, then delete it and confirm the deletion persists after refresh.
+5. On the Arun tab, add two items and use "Clear Testing Data" — confirm only Arun's `dashboard_testing`
+   rows are removed and other members' data is untouched.
+6. Stop the FastAPI process (or block the `/api/member-schedules/*` requests) and refresh a member tab to
+   confirm a clear, non-technical error message appears without corrupting the page.
+
+Full automated results (backend CRUD/validation matrix and browser-driven four-member test) are recorded in
+`validation/member-schedule-end-to-end-finalization-check-2026-07-10.md`.
 
 ---
 

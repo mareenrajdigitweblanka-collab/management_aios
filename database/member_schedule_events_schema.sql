@@ -9,6 +9,12 @@
 -- docs/member-dashboard-schedule-api-plan-2026-07-09.md for the full design
 -- rationale.
 
+-- gen_random_uuid() is built into PostgreSQL core since PG 13; pgcrypto is
+-- only needed on older servers. Guarded so it is a no-op (and does not fail)
+-- on managed instances where the extension is already present or where core
+-- gen_random_uuid() already covers it.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE SCHEMA IF NOT EXISTS management_aios;
 
 CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events (

@@ -65,6 +65,12 @@ def list_member_schedule_events(
 ):
     _validate_member_key(member_key)
 
+    if start_date is not None and end_date is not None and start_date > end_date:
+        raise HTTPException(
+            status_code=422,
+            detail="start_date must not be after end_date.",
+        )
+
     query = db.query(MemberScheduleEvent).filter(
         MemberScheduleEvent.member_key == member_key,
         MemberScheduleEvent.deleted_at.is_(None),
