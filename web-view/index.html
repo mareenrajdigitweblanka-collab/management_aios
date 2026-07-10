@@ -1904,7 +1904,7 @@
       margin-bottom: 10px;
     }
 
-    /* ═══ Management Team Schedule Calendar — Testing Preview (interactive, localStorage only) ═══ */
+    /* ═══ Management Team Schedule Calendar — Testing Preview (interactive, local FastAPI/PostgreSQL backend) ═══ */
     .msc-banner {
       display: flex;
       gap: 10px;
@@ -6315,16 +6315,22 @@
 
   <!-- ═══════════════════════════════════
      PER-MEMBER SCHEDULE CALENDAR — TESTING PREVIEW ONLY
-     Interactive, localStorage-only. No PostgreSQL. No API. No schema. No source registration.
+     Backed by a local FastAPI + PostgreSQL API (see backend/README.md). Not official
+     HR/Admin schedule truth. Every event created here is server-forced to
+     source_scope='dashboard_testing' / is_official_truth=false (backend/routers/member_schedules.py).
      One reusable factory mounts an independent calendar instance into every
      ".msc-instance" container (one per member tab: Mayurika, Suman, Arun, Rajiv).
      No shared IDs are used across instances — every element is looked up via
      container-scoped querySelector, so instances cannot interfere with each other.
-     See validation/member-schedule-index-interactive-calendar-check-2026-07-08.md
+     See validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md
+     (supersedes the earlier localStorage-only build documented in
+     validation/member-schedule-index-interactive-calendar-check-2026-07-08.md)
 ═══════════════════════════════════ -->
   <script>
     (function () {
       'use strict';
+
+      var MEMBER_SCHEDULE_API_BASE = 'http://localhost:8000/api/member-schedules';
 
       var CATEGORY_CLASS = {
         'Sample Task': 'task',
@@ -6346,6 +6352,38 @@
         return div.innerHTML;
       }
 
+      /* Converts a backend member_schedule_events row (event_date/start_time/end_time)
+         into the frontend item shape (date/start/end) the render functions expect.
+         Backend times come back as "HH:MM:SS" — trimmed to "HH:MM" for the <input type="time"> fields. */
+      function apiItemToFrontend(apiItem) {
+        function trimTime(t) { return t ? String(t).slice(0, 5) : ''; }
+        return {
+          id: apiItem.id,
+          date: apiItem.date,
+          title: apiItem.title,
+          category: apiItem.category,
+          priority: apiItem.priority,
+          start: trimTime(apiItem.start),
+          end: trimTime(apiItem.end),
+          notes: apiItem.notes || ''
+        };
+      }
+
+      /* Converts the frontend form/item shape into the backend create/update payload.
+         Empty start/end strings are sent as null — the backend Optional[time] field
+         rejects an empty string, and null is how "no time set" is represented server-side. */
+      function frontendToApiPayload(fields) {
+        return {
+          date: fields.date,
+          title: fields.title,
+          category: fields.category,
+          priority: fields.priority,
+          start: fields.start ? fields.start : null,
+          end: fields.end ? fields.end : null,
+          notes: fields.notes ? fields.notes : null
+        };
+      }
+
       /* Builds and wires ONE independent calendar instance inside `container`.
          All element lookups are scoped to `container` — no ids are used for any
          repeated element, so mounting several instances on one page (one per
@@ -6353,9 +6391,8 @@
       function mountScheduleCalendarInstance(container) {
         var memberKey = container.getAttribute('data-member-key') || 'member';
         var memberLabel = container.getAttribute('data-member-label') || memberKey;
-        var storageKey = container.getAttribute('data-storage-key') ||
-          ('management_aios_testing_schedule_' + memberKey + '_v1');
         var showRajivNote = container.getAttribute('data-rajiv-note') === 'true';
+        var apiBase = MEMBER_SCHEDULE_API_BASE + '/' + encodeURIComponent(memberKey);
 
         var rajivNoteHtml = showRajivNote
           ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
@@ -6364,13 +6401,15 @@
         container.innerHTML =
           '<div class="msc-banner">' +
           '<span class="msc-banner-icon">&#9888;&#65039;</span>' +
-          '<div><strong>Testing Preview Only</strong> — schedules saved here are local browser testing data ' +
-          'only. Real schedule data must be confirmed before official use.</div>' +
+          '<div><strong>Testing Preview Only</strong> — stored through local FastAPI/PostgreSQL backend for ' +
+          'dashboard testing; not official HR/Admin truth.</div>' +
           '</div>' +
-          '<p class="msc-note">This browser stores testing data locally. It is not saved to GitHub or PostgreSQL.</p>' +
+          '<p class="msc-note">Schedule items here are saved to a local FastAPI + PostgreSQL backend for testing ' +
+          'purposes only (see <code>backend/README.md</code>). This is not official HR/Admin schedule truth.</p>' +
           '<p class="msc-note" style="font-weight:600;color:var(--text);">Click a date, then add or edit a testing schedule item.</p>' +
           '<p class="msc-note">This follows the Management Team Schedule demo layout, but all entries here are ' +
           'sample testing data.</p>' +
+          '<p class="msc-note msc-api-status" style="display:none;"></p>' +
           rajivNoteHtml +
           '<div class="hr-table-card">' +
           '<div class="msc-cal-toolbar">' +
@@ -6425,12 +6464,12 @@
           '<div class="msc-form-actions" style="margin-top:16px;">' +
           '<button type="button" class="msc-btn msc-btn-danger msc-clear-btn">Clear Testing Data</button>' +
           '</div>' +
-          '<div class="hr-cal-footer">Static testing calendar. Data is stored only in this browser (localStorage key ' +
-          '<code>' + escapeHtml(storageKey) + '</code>). Not connected to Google Calendar, GitHub, or PostgreSQL. ' +
-          'Not official schedule truth.</div>' +
+          '<div class="hr-cal-footer">Testing calendar. Data is stored via a local FastAPI + PostgreSQL backend ' +
+          '(<code>' + escapeHtml(apiBase) + '</code>), for dashboard testing only. Not connected to Google Calendar ' +
+          'or GitHub. Not official schedule truth.</div>' +
           '<details style="margin-top:6px;margin-bottom:18px;"><summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">' +
           'Technical details</summary><p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Validation: ' +
-          '<code>validation/member-schedule-index-interactive-calendar-check-2026-07-08.md</code></p></details>' +
+          '<code>validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md</code></p></details>' +
           '<div class="msc-modal-overlay msc-view-modal">' +
           '<div class="msc-modal">' +
           '<h4 class="msc-view-title">Sample Task</h4>' +
@@ -6473,6 +6512,7 @@
         var viewPriority = container.querySelector('.msc-view-priority');
         var viewNotes = container.querySelector('.msc-view-notes');
         var viewClose = container.querySelector('.msc-view-close');
+        var apiStatusEl = container.querySelector('.msc-api-status');
 
         /* Prevent Enter-key implicit form submission from reloading the page —
            no action/method is set on this form; it is never meant to submit. */
@@ -6480,42 +6520,52 @@
 
         var state = { viewYear: null, viewMonth: null, selectedDate: null, editingId: null };
 
-        /* ── Storage helpers (localStorage only — no network, no database) ── */
+        function showApiStatus(message, isError) {
+          if (!message) {
+            apiStatusEl.style.display = 'none';
+            apiStatusEl.textContent = '';
+            return;
+          }
+          apiStatusEl.style.display = '';
+          apiStatusEl.style.color = isError ? 'var(--blocked)' : 'var(--muted)';
+          apiStatusEl.textContent = message;
+        }
+
+        /* ── API helpers — no localStorage; this is the only place calendar data
+           is read from or written to. On failure, the UI shows a visible status
+           message rather than silently falling back to any local storage. ── */
+        function apiRequest(method, url, body) {
+          var opts = { method: method, headers: {} };
+          if (body !== undefined) {
+            opts.headers['Content-Type'] = 'application/json';
+            opts.body = JSON.stringify(body);
+          }
+          return fetch(url, opts).then(function (res) {
+            if (!res.ok) {
+              return res.json().catch(function () { return {}; }).then(function (errBody) {
+                var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) : (res.status + ' ' + res.statusText);
+                throw new Error(detail);
+              });
+            }
+            if (res.status === 204) { return null; }
+            return res.json();
+          });
+        }
+
         function loadItems() {
-          var raw;
-          try { raw = window.localStorage.getItem(storageKey); } catch (e) { raw = null; }
-          if (!raw) {
-            var seed = buildSeedData();
-            saveItems(seed);
-            return seed;
-          }
-          try {
-            var parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : [];
-          } catch (e) {
+          showApiStatus('Loading schedule from local API…', false);
+          return apiRequest('GET', apiBase).then(function (rows) {
+            showApiStatus('', false);
+            return (rows || []).map(apiItemToFrontend);
+          }).catch(function (err) {
+            showApiStatus('Could not reach the local schedule API (' + apiBase + '). Is the backend ' +
+              'running? Start it with "uvicorn backend.main:app --port 8000" — see backend/README.md. ' +
+              'Detail: ' + err.message, true);
             return [];
-          }
+          });
         }
 
-        function saveItems(list) {
-          try { window.localStorage.setItem(storageKey, JSON.stringify(list)); } catch (e) { /* storage unavailable — testing UI only */ }
-        }
-
-        function buildSeedData() {
-          var today = new Date();
-          return [{
-            id: 'seed-' + memberKey + '-1',
-            date: toDateStr(today),
-            title: 'Sample Task',
-            category: 'Sample Task',
-            priority: 'Medium',
-            start: '',
-            end: '',
-            notes: 'Starter sample entry for UI testing only — not a real schedule item.'
-          }];
-        }
-
-        var items = loadItems();
+        var items = [];
 
         function itemsForDate(dateStr) {
           return items.filter(function (it) { return it.date === dateStr; });
@@ -6691,8 +6741,7 @@
         addBtn.addEventListener('click', function () {
           if (!fieldDate.value) { window.alert('Choose a date on the calendar first.'); return; }
           if (!fieldTitle.value.trim()) { window.alert('Enter a title (e.g. Sample Task) before adding.'); return; }
-          var newItem = {
-            id: 'item-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+          var payload = frontendToApiPayload({
             date: fieldDate.value,
             title: fieldTitle.value.trim(),
             category: fieldCategory.value,
@@ -6700,11 +6749,18 @@
             start: fieldStart.value,
             end: fieldEnd.value,
             notes: fieldNotes.value.trim()
-          };
-          items.push(newItem);
-          saveItems(items);
-          selectDate(fieldDate.value);
-          resetForm();
+          });
+          var addedDate = fieldDate.value;
+          addBtn.disabled = true;
+          showApiStatus('Saving…', false);
+          apiRequest('POST', apiBase, payload).then(function (apiItem) {
+            items.push(apiItemToFrontend(apiItem));
+            showApiStatus('', false);
+            selectDate(addedDate);
+            resetForm();
+          }).catch(function (err) {
+            showApiStatus('Could not save this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+          }).then(function () { addBtn.disabled = false; });
         });
 
         function editItem(id) {
@@ -6728,28 +6784,46 @@
           var it = items.filter(function (x) { return x.id === state.editingId; })[0];
           if (!it) { return; }
           if (!fieldTitle.value.trim()) { window.alert('Enter a title before updating.'); return; }
-          it.date = fieldDate.value;
-          it.title = fieldTitle.value.trim();
-          it.category = fieldCategory.value;
-          it.priority = fieldPriority.value;
-          it.start = fieldStart.value;
-          it.end = fieldEnd.value;
-          it.notes = fieldNotes.value.trim();
-          saveItems(items);
-          selectDate(it.date);
-          cancelEdit();
+          var payload = frontendToApiPayload({
+            date: fieldDate.value,
+            title: fieldTitle.value.trim(),
+            category: fieldCategory.value,
+            priority: fieldPriority.value,
+            start: fieldStart.value,
+            end: fieldEnd.value,
+            notes: fieldNotes.value.trim()
+          });
+          var editingId = state.editingId;
+          updateBtn.disabled = true;
+          showApiStatus('Saving…', false);
+          apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiItem) {
+            var updated = apiItemToFrontend(apiItem);
+            var idx = items.indexOf(it);
+            if (idx !== -1) { items[idx] = updated; }
+            showApiStatus('', false);
+            selectDate(updated.date);
+            cancelEdit();
+          }).catch(function (err) {
+            showApiStatus('Could not update this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+          }).then(function () { updateBtn.disabled = false; });
         });
 
         function deleteItem(id) {
           var it = items.filter(function (x) { return x.id === id; })[0];
           if (!it) { return; }
-          var ok = window.confirm('Delete this sample schedule item ("' + it.title + '")? This only removes local testing data.');
+          var ok = window.confirm('Delete this sample schedule item ("' + it.title + '")? This only removes ' +
+            'testing data from the local API/database — it does not touch any real source or database.');
           if (!ok) { return; }
-          items = items.filter(function (x) { return x.id !== id; });
-          saveItems(items);
-          if (state.editingId === id) { cancelEdit(); }
-          renderCalendar();
-          renderList();
+          showApiStatus('Deleting…', false);
+          apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
+            items = items.filter(function (x) { return x.id !== id; });
+            showApiStatus('', false);
+            if (state.editingId === id) { cancelEdit(); }
+            renderCalendar();
+            renderList();
+          }).catch(function (err) {
+            showApiStatus('Could not delete this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+          });
         }
 
         function viewItem(id) {
@@ -6771,21 +6845,34 @@
 
         clearBtn.addEventListener('click', function () {
           var ok = window.confirm('Clear ALL testing schedule data for ' + memberLabel +
-            ' from this browser? This cannot be undone and only affects local testing data — it does not touch any real source or database.');
+            ' from the local API/database? This cannot be undone. Only "dashboard_testing" rows are affected — ' +
+            'it does not touch any real source, official record, or database.');
           if (!ok) { return; }
-          items = [];
-          saveItems(items);
-          cancelEdit();
-          renderCalendar();
-          renderList();
+          showApiStatus('Clearing testing data…', false);
+          apiRequest('DELETE', apiBase + '/clear-testing-data').then(function () {
+            items = [];
+            showApiStatus('', false);
+            cancelEdit();
+            renderCalendar();
+            renderList();
+          }).catch(function (err) {
+            showApiStatus('Could not clear testing data — the local API may be unavailable. Detail: ' + err.message, true);
+          });
         });
 
-        /* ── Init this instance ── */
+        /* ── Init this instance ──
+           Items are loaded from the API before the first render. No seed/sample
+           data is created automatically — the list stays empty (and the calendar
+           shows no chips) until the user manually adds an item, so mounting this
+           instance never writes a row to PostgreSQL by itself. */
         var t0 = new Date();
         state.viewYear = t0.getFullYear();
         state.viewMonth = t0.getMonth();
         renderCalendar();
-        selectDate(toDateStr(t0));
+        loadItems().then(function (loaded) {
+          items = loaded;
+          selectDate(toDateStr(t0));
+        });
       }
 
       function initAllScheduleCalendars() {

@@ -10,7 +10,7 @@ Validation rules implemented here (per implementation requirements):
   request bodies — they are server-controlled only.
 """
 
-from datetime import date, datetime, time
+from datetime import date as date_type, datetime, time as time_type
 from typing import Optional
 from uuid import UUID
 
@@ -20,12 +20,12 @@ from backend.config import VALID_PRIORITIES
 
 
 class MemberScheduleEventCreate(BaseModel):
-    date: date
+    date: date_type
     title: str = Field(..., max_length=60, min_length=1)
     category: str = Field(default="Sample Task")
     priority: str = Field(default="Medium")
-    start: Optional[time] = None
-    end: Optional[time] = None
+    start: Optional[time_type] = None
+    end: Optional[time_type] = None
     notes: Optional[str] = Field(default=None, max_length=240)
 
     @field_validator("priority")
@@ -47,12 +47,12 @@ class MemberScheduleEventUpdate(BaseModel):
     intentionally absent from this model so they can never be set via the
     update endpoint, regardless of request body content."""
 
-    date: Optional[date] = None
+    date: Optional[date_type] = None
     title: Optional[str] = Field(default=None, max_length=60, min_length=1)
     category: Optional[str] = None
     priority: Optional[str] = None
-    start: Optional[time] = None
-    end: Optional[time] = None
+    start: Optional[time_type] = None
+    end: Optional[time_type] = None
     notes: Optional[str] = Field(default=None, max_length=240)
 
     @field_validator("priority")
@@ -73,12 +73,12 @@ class MemberScheduleEventOut(BaseModel):
     id: UUID
     member_key: str
     member_label: str
-    date: date = Field(validation_alias="event_date")
+    date: date_type = Field(validation_alias="event_date")
     title: str
     category: str
     priority: str
-    start: Optional[time] = Field(default=None, validation_alias="start_time")
-    end: Optional[time] = Field(default=None, validation_alias="end_time")
+    start: Optional[time_type] = Field(default=None, validation_alias="start_time")
+    end: Optional[time_type] = Field(default=None, validation_alias="end_time")
     notes: Optional[str] = None
     source_scope: str
     is_official_truth: bool

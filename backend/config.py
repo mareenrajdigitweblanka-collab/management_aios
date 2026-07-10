@@ -7,6 +7,10 @@ variable name and format (placeholder values only).
 
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 SERVICE_NAME = "management-aios-member-schedules"
