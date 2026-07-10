@@ -2,13 +2,25 @@
 name = "management-aios-member-schedule-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
-
-# No [project.dependencies] here on purpose: Vercel's Python runtime accepts
-# dependencies from pyproject.toml, requirements.txt, or Pipfile, and it is
-# undocumented which one wins if more than one declares them. The root
-# requirements.txt (-r backend/requirements.txt) is the single source of
-# truth for installed packages; this file exists only for Python-version
-# pinning and Vercel entrypoint discovery.
+# 2026-07-10 production crash (validation/member-schedule-vercel-function-crash-check-2026-07-10.md):
+# ModuleNotFoundError: No module named 'fastapi' at backend/main.py line 9.
+# The entrypoint (backend.main:app) was found and invoked correctly — only
+# dependency installation failed. This file previously declared no
+# [project.dependencies], on the theory that root requirements.txt
+# (-r backend/requirements.txt) was the single source of truth; the crash
+# proves Vercel's build did not actually install from that reference.
+# Declaring dependencies here directly (mirrored from backend/requirements.txt,
+# which remains the source to keep both in sync) is the minimal fix. Root
+# requirements.txt is left in place for local `pip install -r requirements.txt`
+# parity and as a second path to the same packages.
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.1",
+    "pydantic>=2.6",
+    "python-dotenv>=1.0",
+]
 
 [tool.vercel]
 # backend/main.py is not auto-discovered by Vercel's default entrypoint
