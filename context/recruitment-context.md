@@ -191,8 +191,9 @@ At Month 6, a structured 15-minute handover meeting is conducted.
 - Mayurika (HR Officer) — referred to as "Mayoorika" in source document
 - Arun (Implementation Officer)
 - Suman (Recruitment Officer)
+- Line Manager (the employee's Team Lead — role-based, not a fixed named person)
 
-> **Typing correction (SRC-SUMAN-CONF-001 — 2026-06-25):** Suman confirmed that the previous "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake. There is no Line Manager role in the 180-day handover. No Line Manager identity verification is required for this item. The confirmed attendees are Mayurika, Arun, and Suman only.
+> **Source correction (SRC-SUMAN-CONF-002 — 2026-06-30):** Suman clarified that a Line Manager does attend the 180-day handover and that the Line Manager is the employee's Team Lead. SRC-SUMAN-CONF-002 supersedes SRC-SUMAN-CONF-001 for this claim only. SRC-SUMAN-CONF-001 (2026-06-25) had stated the "Line Manager" reference was a typing mistake — that position is superseded; SRC-SUMAN-CONF-001 is preserved as a historical record. See `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`.
 
 **Review covers:**
 

@@ -1,0 +1,4835 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Management AIOS — Dashboard v0.1 | Internal Build</title>
+  <style>
+    /* ── Reset & base ── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f7f5f1;
+      --surface: #ffffff;
+      --border: #e6e1d8;
+      --text: #1e293b;
+      --text-secondary: #44403c;
+      --muted: #78716c;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --pass: #15803d;
+      --pass-bg: #dcfce7;
+      --amber: #b45309;
+      --amber-bg: #fef3c7;
+      --draft: #6d28d9;
+      --draft-bg: #ede9fe;
+      --blocked: #b91c1c;
+      --blocked-bg: #fee2e2;
+      --preview: #0369a1;
+      --preview-bg: #e0f2fe;
+      --topbar: #0f172a;
+      --topbar-border: #1e2d3d;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 1px 3px rgba(30, 25, 15, .05), 0 3px 14px rgba(30, 25, 15, .045);
+      --shadow-md: 0 2px 7px rgba(30, 25, 15, .06), 0 6px 20px rgba(30, 25, 15, .06);
+      --shadow-hover: 0 6px 22px rgba(30, 25, 15, .11), 0 3px 9px rgba(30, 25, 15, .07);
+
+      /* ── Type scale (Phase 1 polish, 2026-07-10) — named tokens for sizes already
+         in use across the file; extending, not replacing, existing rem values. ── */
+      --font-2xs: .68rem;
+      --font-xs: .76rem;
+      --font-sm: .82rem;
+      --font-base: .86rem;
+      --font-md: .95rem;
+      --font-lg: 1.05rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.35rem;
+
+      /* ── Spacing scale ── */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+
+      /* ── Pill / badge shape tokens (shared by badges, tab-badges, pills, chips) ── */
+      --pill-radius: 999px;
+      --pill-pad-y: 3px;
+      --pill-pad-x: 10px;
+
+      /* ── Named neutrals/surfaces — extending the token set to cover repeated
+         hardcoded hex values found across the file (table stripes, hover tints,
+         subtle borders, dark inset panels). ── */
+      --surface-tint: #f6f3ee;
+      --surface-tint-2: #faf8f4;
+      --surface-tint-3: #f0ede6;
+      --surface-tint-4: #f5f2ea;
+      --hairline: #efece4;
+      --muted-2: #a8a29e;
+      --panel-dark-amber: #402a06;
+      --panel-dark-amber-text: #FDECC8;
+      --draft-tint-bg: #eeebf3;
+      --draft-tint-text: #6c5b96;
+
+      /* ── API status states (calendar) ── */
+      --status-info-bg: #eff6ff;
+      --status-info-border: #bfdbfe;
+      --status-info-text: #1e3a5f;
+      --status-success-bg: var(--pass-bg);
+      --status-success-border: #86efac;
+      --status-success-text: var(--pass);
+      --status-error-bg: var(--blocked-bg);
+      --status-error-border: #fca5a5;
+      --status-error-text: var(--blocked);
+    }
+
+    html {
+      font-size: 15px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--topbar-border);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-logo {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: .3px;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-logo::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(37, 99, 235, .7);
+    }
+
+    .topbar-logo span {
+      color: #60a5fa;
+    }
+
+    .topbar-sep {
+      width: 1px;
+      height: 22px;
+      background: #334155;
+    }
+
+    .topbar-sub {
+      font-size: .78rem;
+      color: #94a3b8;
+      letter-spacing: .01em;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .75rem;
+      color: #94a3b8;
+    }
+
+    .topbar-commit {
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid #334155;
+      border-radius: var(--radius-sm);
+      padding: 3px 9px;
+      font-family: ui-monospace, monospace;
+      font-size: .73rem;
+      color: #7dd3fc;
+    }
+
+    /* ── Tab bar ──
+       Phase 1 polish: desktop keeps a single row via a horizontal scroller
+       (same mechanism as mobile) instead of silently wrapping to a second
+       row and shifting the sticky bar's height. */
+    .tab-bar {
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      flex-wrap: nowrap;
+      gap: 0;
+      padding: 0 28px;
+      position: sticky;
+      top: 60px;
+      z-index: 90;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .05);
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 14px 15px 11px;
+      font-size: .81rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      transition: color .15s, border-color .15s, background .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: -2px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: var(--surface-tint);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      font-weight: 700;
+      border-bottom-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .tab-btn:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab-badge {
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      line-height: 1;
+      padding: 2px 7px;
+      border-radius: var(--pill-radius);
+      letter-spacing: .02em;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .tab-badge-amber {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
+    .tab-badge-active {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    /* ── Search strip ── */
+    .search-strip {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 9px 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    #searchInput {
+      flex: 1;
+      max-width: 400px;
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: .84rem;
+      background: var(--surface-tint);
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    #searchInput::placeholder {
+      color: var(--muted-2);
+    }
+
+    #searchInput:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+      background: var(--surface);
+    }
+
+    #searchClear {
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: .81rem;
+      cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+
+    #searchClear:hover {
+      background: var(--surface-tint-3);
+      border-color: var(--muted-2);
+    }
+
+    #searchClear:focus-visible,
+    #searchInput:focus-visible {
+      outline: none;
+    }
+
+    #searchResults {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    .search-hint {
+      font-size: .75rem;
+      color: var(--muted-2);
+    }
+
+    /* ── Tab panels ── */
+    .tab-main {
+      flex: 1;
+    }
+
+    .tab-panel {
+      display: none;
+      padding: 28px 32px 40px;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* ── Section heading ── */
+    .section-title {
+      font-size: .73rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 16px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Info / how-to box ── */
+    .how-to-box {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #bae6fd;
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .how-to-box h3 {
+      font-size: .92rem;
+      font-weight: 800;
+      color: #075985;
+      margin-bottom: 10px;
+      letter-spacing: -.01em;
+    }
+
+    .how-to-box p {
+      font-size: .84rem;
+      color: #0c4a6e;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .how-to-box ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: .82rem;
+      color: #0c4a6e;
+    }
+
+    .how-to-box ul li::before {
+      content: '→ ';
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* ── Label legend ── */
+    .label-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .legend-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 130px;
+    }
+
+    .legend-item-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--muted);
+    }
+
+    .legend-item-desc {
+      font-size: .78rem;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    /* ── Next step box ── */
+    .next-step-box {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid var(--pass);
+      border-radius: var(--radius);
+      padding: 16px 22px;
+      margin-top: 24px;
+    }
+
+    .next-step-box h3 {
+      font-size: .87rem;
+      font-weight: 800;
+      color: var(--pass);
+      margin-bottom: 8px;
+      letter-spacing: -.01em;
+    }
+
+    .next-step-box p {
+      font-size: .83rem;
+      color: #14532d;
+      line-height: 1.6;
+    }
+
+    /* ── Member header ── */
+    .member-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      padding: 22px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .member-header-info h2 {
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: -.01em;
+    }
+
+    .member-header-info .role-label {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-weight: 600;
+    }
+
+    .member-header-info .status-note {
+      font-size: .83rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* Shared member-header paragraph styles (Phase 1 polish, 2026-07-10) —
+       replaces identical inline style="" attributes previously repeated on
+       every member tab's intro paragraphs (Mayurika/Suman/Arun/Rajiv).
+       Wording is unchanged; only the styling mechanism moved to a class. */
+    .member-header-lede {
+      font-size: var(--font-sm);
+      color: var(--text-secondary);
+      line-height: 1.65;
+      margin-top: var(--space-3);
+      max-width: 68ch;
+    }
+
+    .member-header-note {
+      font-size: var(--font-xs);
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: var(--space-2);
+      max-width: 68ch;
+    }
+
+    .member-header-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: flex-start;
+      padding-top: 2px;
+    }
+
+    /* ── File list box ── */
+    .file-list-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 19px 22px;
+      margin-bottom: 18px;
+    }
+
+    .file-list-box h4 {
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--hairline);
+      padding-bottom: 8px;
+    }
+
+    .file-list-box ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .file-list-box li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .83rem;
+    }
+
+    .file-list-box li .fpath {
+      font-family: ui-monospace, monospace;
+      font-size: .76rem;
+      color: #1d4ed8;
+      background: #eff6ff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #dbeafe;
+    }
+
+    .file-list-box li .fdesc {
+      color: var(--muted);
+      font-size: .79rem;
+      margin-top: 2px;
+    }
+
+    /* ── VERIFY explain box ── */
+    .verify-explain {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid var(--amber);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 12px;
+    }
+
+    .verify-explain-title {
+      font-weight: 700;
+      font-size: .88rem;
+      color: var(--amber);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .verify-explain-plain {
+      font-size: .83rem;
+      color: #78350f;
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+
+    .verify-explain-action {
+      font-size: .78rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ── Root AIOS two-column info layout (Phase 1 polish, 2026-07-10) ──
+       Pairs Safety Rules / Netlify Deployment side by side on desktop so
+       Root AIOS reads as fewer, wider blocks instead of one long stack of
+       full-width boxes; collapses to a single column at/below 1024px. */
+    .root-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6) var(--space-7);
+      align-items: start;
+      margin-bottom: var(--space-2);
+    }
+
+    .root-info-cell .section-title {
+      margin-top: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .root-info-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+
+    /* ── Cards grid ──
+       auto-fill + a capped max (minmax(280px,360px)) keeps cards from
+       stretching thin-but-wide on large monitors; justify-content:start
+       stops the last, short row from spreading edge-to-edge. */
+    .cards {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 360px));
+      justify-content: start;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 19px 21px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+      border-color: #d6d0c2;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: .93rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .card-role {
+      font-size: .77rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .card-note {
+      font-size: .82rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .card-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: .69rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .badge-pass {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-amber {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .badge-draft {
+      background: #ede9fe;
+      color: #6d28d9;
+      border: 1px solid #ddd6fe;
+    }
+
+    .badge-blocked {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .badge-pending {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+
+    .badge-verify {
+      background: #fef9c3;
+      color: #854d0e;
+      border: 1px solid #fef08a;
+    }
+
+    .badge-source {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-viewonly {
+      background: var(--surface-tint-3);
+      color: #57534e;
+      border: 1px solid #e3ded3;
+    }
+
+    .badge-preview {
+      background: var(--preview-bg);
+      color: var(--preview);
+      border: 1px solid #bae6fd;
+    }
+
+    /* Compact badge modifier (Phase 1 polish, 2026-07-10) — replaces the
+       repeated inline style="font-size:.62rem;"/"font-size:.66rem;"
+       overrides scattered through the File Map's nested badges with one
+       shared class. Same visual intent (small badge inside a dense tree),
+       one declaration to maintain. */
+    .badge-sm {
+      font-size: var(--font-2xs);
+      padding: 2px 7px;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      padding: 18px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 100px;
+    }
+
+    .status-label {
+      font-size: .67rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted-2);
+    }
+
+    .status-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .status-sub {
+      font-size: .7rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .status-divider {
+      width: 1px;
+      height: 48px;
+      background: var(--border);
+      align-self: center;
+    }
+
+    /* ── Warning box ── */
+    .warning-box {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-left: 4px solid #ea580c;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+
+    .warning-box h3 {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #c2410c;
+      margin-bottom: 8px;
+    }
+
+    .warning-box ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: .82rem;
+      color: #7c2d12;
+    }
+
+    .warning-box ul li::before {
+      content: '→ ';
+      font-weight: 700;
+    }
+
+    /* ── Deploy box ── */
+    .deploy-box {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+
+    .deploy-box h3 {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #075985;
+      margin-bottom: 8px;
+    }
+
+    .deploy-box ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: .82rem;
+      color: #0c4a6e;
+    }
+
+    .deploy-box ul li::before {
+      content: '✓ ';
+      font-weight: 700;
+      color: var(--pass);
+    }
+
+    /* ── Result box ── */
+    .result-box {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid var(--pass);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(21, 128, 61, .08);
+    }
+
+    .result-box h3 {
+      font-size: .88rem;
+      font-weight: 800;
+      color: var(--pass);
+      margin-bottom: 8px;
+      letter-spacing: -.01em;
+    }
+
+    .result-box p {
+      font-size: .84rem;
+      color: #14532d;
+      line-height: 1.6;
+    }
+
+    /* ── Source list ── */
+    .source-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .source-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      display: grid;
+      grid-template-columns: 180px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      font-size: .82rem;
+      transition: background .13s, box-shadow .13s;
+    }
+
+    .source-row:hover {
+      background: var(--surface-tint);
+      box-shadow: 0 1px 6px rgba(30, 25, 15, .06);
+    }
+
+    .source-id {
+      font-weight: 700;
+      font-family: ui-monospace, monospace;
+      color: #1d4ed8;
+    }
+
+    .source-desc {
+      color: var(--text);
+    }
+
+    .source-status-cell {
+      text-align: right;
+    }
+
+    /* ── File map (details/summary) ── */
+    .file-map-section {
+      margin-bottom: 20px;
+    }
+
+    details {
+      margin-bottom: 6px;
+    }
+
+    details>summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: .86rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      user-select: none;
+      color: var(--text);
+      transition: background .13s, box-shadow .13s;
+    }
+
+    details[open]>summary {
+      background: var(--accent-light);
+      border-color: #c7d7f5;
+      color: #1e40af;
+    }
+
+    details>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details>summary::before {
+      content: '▸';
+      color: var(--muted);
+      font-size: .78rem;
+      transition: transform .15s;
+      flex-shrink: 0;
+    }
+
+    details[open]>summary::before {
+      transform: rotate(90deg);
+      color: var(--accent);
+    }
+
+    details>summary:hover {
+      background: var(--surface-tint);
+    }
+
+    details[open]>summary:hover {
+      background: var(--accent-light);
+    }
+
+    details>summary:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(37, 99, 235, .3);
+    }
+
+    .details-body {
+      padding: 12px 16px 6px 34px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--surface-tint-2);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      margin-bottom: 6px;
+    }
+
+    .file-entry {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .81rem;
+      color: var(--text);
+    }
+
+    .file-entry .fpath {
+      font-family: ui-monospace, monospace;
+      font-size: .76rem;
+      color: #1d4ed8;
+    }
+
+    .file-entry .fdesc {
+      color: var(--muted);
+      font-size: .77rem;
+    }
+
+    /* ── Searchable ── */
+    [data-searchable] {
+      transition: opacity .15s;
+    }
+
+    [data-searchable].hidden {
+      display: none !important;
+    }
+
+    /* ── Spacer between sections ── */
+    .gap {
+      margin-bottom: 24px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .tab-panel {
+        padding: 18px 16px;
+      }
+
+      .status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .status-divider {
+        display: none;
+      }
+
+      .source-row {
+        grid-template-columns: 1fr;
+      }
+
+      .tab-btn {
+        padding: 12px 12px 9px;
+        font-size: .78rem;
+      }
+
+      .member-header {
+        flex-direction: column;
+      }
+    }
+
+    @media print {
+      .tab-bar {
+        display: none;
+      }
+
+      .tab-panel {
+        display: block !important;
+      }
+
+      .topbar {
+        position: static;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #d6d2c8;
+      border-radius: 3px;
+    }
+
+    /* ── Safety note strip ── */
+    .safety-strip {
+      background: var(--surface-tint);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .safety-strip-icon {
+      font-size: .82rem;
+      color: #78716c;
+      flex-shrink: 0;
+    }
+
+    .safety-strip-text {
+      font-size: .74rem;
+      color: #57534e;
+      line-height: 1.3;
+    }
+
+    .safety-strip-text strong {
+      color: #3f3a34;
+    }
+
+    /* ── Dashboard footer ── */
+    .dashboard-footer {
+      background: #0f172a;
+      color: #64748b;
+      padding: 14px 28px;
+      font-size: .73rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex-shrink: 0;
+      border-top: 1px solid #1e2d3d;
+    }
+
+    .dashboard-footer-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dashboard-footer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid #334155;
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: #94a3b8;
+      font-size: .7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .dashboard-footer-right {
+      color: #475569;
+      font-size: .7rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .dashboard-footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .safety-strip {
+        flex-wrap: wrap;
+      }
+
+      .topbar-right {
+        display: none;
+      }
+
+      .topbar-logo::before {
+        display: none;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       USER-FRIENDLY UI LAYER — added 2026-07-06
+       Presentation-only. No data, no logic, no network.
+    ═══════════════════════════════════════════ */
+
+    /* ── Landing summary hero ── */
+    .landing-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #1e3a5f 100%);
+      border-radius: var(--radius);
+      padding: 26px 28px 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+      color: #e2e8f0;
+    }
+
+    .landing-hero h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: -.01em;
+      margin-bottom: 4px;
+    }
+
+    .landing-hero h1 span {
+      color: #60a5fa;
+    }
+
+    .landing-hero .lh-sub {
+      font-size: .86rem;
+      color: #cbd5e1;
+      line-height: 1.55;
+      max-width: 720px;
+    }
+
+    .landing-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 4px;
+    }
+
+    .lh-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .74rem;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid #334155;
+      color: #cbd5e1;
+    }
+
+    .lh-pill strong {
+      color: #f1f5f9;
+      font-weight: 700;
+    }
+
+    .lh-pill-ok {
+      background: rgba(21, 128, 61, .18);
+      border-color: #15803d;
+      color: #bbf7d0;
+    }
+
+    .lh-pill-amber {
+      background: rgba(180, 83, 9, .2);
+      border-color: #b45309;
+      color: #fde68a;
+    }
+
+    .lh-pill-lock {
+      background: rgba(37, 99, 235, .16);
+      border-color: #2563eb;
+      color: #bfdbfe;
+    }
+
+    .landing-hero-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .lh-col {
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid #334155;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .lh-col h4 {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .lh-col-do h4 {
+      color: #7dd3fc;
+    }
+
+    .lh-col-gated h4 {
+      color: #fca5a5;
+    }
+
+    .lh-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: .81rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .lh-col-do ul li::before {
+      content: '✓ ';
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    .lh-col-gated ul li::before {
+      content: '🔒 ';
+      font-size: .75rem;
+    }
+
+    /* ── Member snapshot grid (navigation cards) ── */
+    .member-snap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(255px, 360px));
+      justify-content: start;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* Wide-screen refinement — auto-fit (rather than auto-fill) lets the 4
+       member snapshot cards expand to fill the row evenly once there's
+       room for them, without ever forcing a track count that could
+       overflow a narrower "wide" viewport (e.g. 1024px). */
+    @media (min-width: 1024px) {
+      .member-snap-grid {
+        grid-template-columns: repeat(auto-fit, minmax(255px, 300px));
+        gap: 18px;
+      }
+
+      .cards {
+        gap: 20px;
+      }
+    }
+
+    .member-snap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid #d6d2c8;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      font: inherit;
+      color: inherit;
+      transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+    }
+
+    .member-snap:hover,
+    .member-snap:focus-visible {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+      border-color: #d6d0c2;
+      outline: none;
+    }
+
+    .member-snap:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .18);
+    }
+
+    .member-snap-active {
+      border-top-color: var(--pass);
+    }
+
+    .member-snap-blocked {
+      border-top-color: var(--blocked);
+    }
+
+    .member-snap-amber {
+      border-top-color: var(--amber);
+    }
+
+    .member-snap-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .member-snap-name {
+      font-size: .98rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .member-snap-role {
+      font-size: .76rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .member-snap-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      font-size: .8rem;
+    }
+
+    .member-snap-row .msr-label {
+      font-size: .63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted-2);
+    }
+
+    .member-snap-row .msr-val {
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .member-snap-cta {
+      margin-top: auto;
+      padding-top: 4px;
+      font-size: .77rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .member-snap-cta::after {
+      content: '→';
+    }
+
+    /* ── Reusable table helper text ── */
+    .table-helper {
+      font-size: .8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+      background: var(--surface-tint);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 8px 12px;
+    }
+
+    /* ── Scroll affordance for wide tables on touch ── */
+    .tab-panel [style*="overflow-x"],
+    .table-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ═══ Responsive refinements ═══ */
+    @media (max-width: 820px) {
+      .landing-hero-cols {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+
+      /* Tab navigation is a single clean, swipeable row at all sizes (see
+         base .tab-bar rule); on narrow viewports a right-edge fade hints
+         that more tabs may sit off-screen, without blocking the scrollbar
+         affordance already provided by overflow-x:auto. */
+      .tab-bar {
+        -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 92%, transparent 100%);
+        mask-image: linear-gradient(90deg, #000 0%, #000 92%, transparent 100%);
+      }
+
+      .landing-hero {
+        padding: 20px 18px;
+      }
+
+      .landing-hero h1 {
+        font-size: 1.15rem;
+      }
+
+      .member-snap-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Any wide table in a horizontal-scroll wrapper keeps readable columns */
+      .tab-panel [style*="overflow-x"] table {
+        min-width: 560px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Month-view calendar — Role Desk style card (aios_role_desk_views.html reference) */
+    .hr-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .hr-table-card-head {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hr-table-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hr-table-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .hr-table-num {
+      font-size: .68rem;
+      color: var(--muted);
+      background: var(--surface-tint-3);
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    /* Footer */
+    .hr-cal-footer {
+      font-size: .76rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 10px 14px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+
+    /* ═══ Management Team Schedule Calendar — Testing Preview (interactive, local FastAPI/PostgreSQL backend) ═══ */
+    .msc-banner {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: var(--panel-dark-amber);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      color: var(--panel-dark-amber-text);
+      font-size: .82rem;
+      line-height: 1.6;
+    }
+
+    .msc-banner .msc-banner-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .msc-banner strong {
+      color: #fff;
+    }
+
+    .msc-note {
+      font-size: .78rem;
+      color: var(--muted);
+      margin: 0 0 16px;
+      line-height: 1.6;
+    }
+
+    /* Calendar API status line (Phase 1 polish, 2026-07-10) — visually distinct
+       from the static .msc-note instructional paragraphs above it, so a real
+       loading/saving/error state doesn't get lost in a wall of muted help text.
+       Presentation only: showApiStatus() still drives the same isError boolean
+       and message text as before; fetch calls/CRUD flow are unchanged. */
+    .msc-api-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--font-xs);
+      line-height: 1.5;
+      margin: 0 0 var(--space-4);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+    }
+
+    .msc-api-status::before {
+      content: '';
+      flex-shrink: 0;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .msc-api-status--info {
+      background: var(--status-info-bg);
+      border-color: var(--status-info-border);
+      color: var(--status-info-text);
+    }
+
+    .msc-api-status--info::before {
+      background: var(--accent);
+    }
+
+    .msc-api-status--error {
+      background: var(--status-error-bg);
+      border-color: var(--status-error-border);
+      color: var(--status-error-text);
+      font-weight: 600;
+    }
+
+    .msc-api-status--error::before {
+      background: var(--status-error-text);
+    }
+
+    .msc-rajiv-note {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+      border: 1px solid #fbbf24;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: .78rem;
+      margin-bottom: 14px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .msc-rajiv-note.show {
+      display: block;
+    }
+
+    .msc-cal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .msc-cal-toolbar-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .msc-tool-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      font-size: .76rem;
+      cursor: pointer;
+    }
+
+    .msc-tool-btn:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-cal-heading {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .msc-cal-grid-wrap {
+      overflow-x: auto;
+    }
+
+    .msc-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(84px, 1fr));
+      min-width: 630px;
+    }
+
+    .msc-cal-headcell {
+      padding: 6px 8px;
+      font-size: .68rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-tint);
+      text-align: left;
+    }
+
+    .msc-cal-cell {
+      min-height: 62px;
+      padding: 5px 6px;
+      border-right: 1px solid var(--hairline);
+      border-bottom: 1px solid var(--hairline);
+      vertical-align: top;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .msc-cal-cell:hover {
+      background: var(--surface-tint-2);
+    }
+
+    .msc-cal-cell.other-month {
+      opacity: .4;
+    }
+
+    .msc-cal-cell.selected {
+      background: var(--accent-light);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .msc-cal-daynum {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .msc-cal-daynum.today {
+      color: #fff;
+      background: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    .msc-cal-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-right: 3px;
+    }
+
+    .msc-cal-count {
+      font-size: .62rem;
+      color: var(--muted);
+    }
+
+    .msc-form-card,
+    .msc-list-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-top: 16px;
+    }
+
+    .msc-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 10px 14px;
+    }
+
+    .msc-form-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: .74rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .msc-form-grid input,
+    .msc-form-grid select,
+    .msc-form-grid textarea {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .82rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+
+    .msc-form-grid textarea {
+      resize: vertical;
+      min-height: 50px;
+    }
+
+    .msc-form-full {
+      grid-column: 1 / -1;
+    }
+
+    .msc-form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .msc-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .msc-btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .msc-btn-danger {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .msc-btn-ghost {
+      background: transparent;
+    }
+
+    .msc-btn:hover {
+      opacity: .9;
+    }
+
+    .msc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-item:last-child {
+      border-bottom: none;
+    }
+
+    .msc-item-title {
+      font-weight: 700;
+      font-size: .85rem;
+      color: var(--text);
+    }
+
+    .msc-item-meta {
+      font-size: .74rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .msc-item-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .msc-item-actions button {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: .72rem;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .msc-empty {
+      font-size: .8rem;
+      color: var(--muted);
+      padding: 8px 0;
+    }
+
+    .msc-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .msc-modal-overlay.show {
+      display: flex;
+    }
+
+    .msc-modal {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .25);
+    }
+
+    .msc-modal h4 {
+      margin-bottom: 8px;
+      font-size: .95rem;
+    }
+
+    .msc-modal p {
+      font-size: .82rem;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .msc-modal-close {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: .8rem;
+    }
+
+    .msc-modal-close:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
+    }
+
+    .msc-chip-cat {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 600;
+      padding: 1px 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+
+    .msc-chip-cat.task {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+    }
+
+    .msc-chip-cat.review {
+      background: var(--draft-tint-bg);
+      color: var(--draft-tint-text);
+    }
+
+    .msc-chip-cat.followup {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    .msc-chip-cat.planning {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    /* Demo-style visible task chips inside calendar date cells (aios_role_desk_views.html layout reference) */
+    .msc-cal-chip {
+      display: block;
+      font-size: .62rem;
+      line-height: 1.4;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .msc-cal-chip.task {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+    }
+
+    .msc-cal-chip.review {
+      background: var(--draft-tint-bg);
+      color: var(--draft-tint-text);
+    }
+
+    .msc-cal-chip.followup {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    .msc-cal-chip.planning {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .msc-cal-chip-more {
+      display: block;
+      font-size: .6rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 768px) {
+      .msc-form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ═══ Shared testing-table / status-pill component (Phase 1 polish, 2026-07-10) ═══
+       Mayurika's ".hr-testing-table-*" set and Suman/Arun's ".member-testing-table-*"
+       set were near-duplicate CSS (same component, different prefix per tab owner).
+       Grouped selectors below merge them into one ruleset — zero HTML changes, so no
+       table content, class names, or business wording in any tab was touched. Canonical
+       aliases (.data-table-card / .data-table-wrap / .data-table / .status-pill) are
+       included in the same groups for future markup, but every existing hr-*/member-*
+       class name keeps working exactly as before. ═══ */
+    .hr-testing-table-note,
+    .member-testing-table-note {
+      background: var(--status-info-bg);
+      border: 1px solid var(--status-info-border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--font-sm);
+      color: var(--status-info-text);
+      line-height: 1.6;
+      margin: 0 0 var(--space-6);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .hr-testing-table-note span.hr-pill,
+    .member-testing-table-note span.member-pill {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .hr-testing-table-card,
+    .member-testing-table-card,
+    .data-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: var(--space-5) var(--space-5) var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+
+    .hr-testing-table-head,
+    .member-testing-table-head,
+    .data-table-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: 2px;
+    }
+
+    .hr-testing-table-title,
+    .member-testing-table-title,
+    .data-table-card-title {
+      font-size: var(--font-md);
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .hr-testing-table-sub,
+    .member-testing-table-sub,
+    .data-table-card-sub {
+      font-size: var(--font-xs);
+      color: var(--muted);
+      margin: 3px 0 var(--space-4);
+      line-height: 1.5;
+    }
+
+    .hr-testing-table-scroll,
+    .member-testing-table-scroll,
+    .data-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .hr-testing-table,
+    .member-testing-table,
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-sm);
+      min-width: 560px;
+    }
+
+    .hr-testing-table thead th,
+    .member-testing-table thead th,
+    .data-table thead th {
+      text-align: left;
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-secondary);
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface-tint-4);
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .hr-testing-table tbody td,
+    .member-testing-table tbody td,
+    .data-table tbody td {
+      padding: 13px var(--space-4);
+      border-bottom: 1px solid var(--hairline);
+      color: var(--text);
+      vertical-align: top;
+      line-height: 1.55;
+    }
+
+    .hr-testing-table tbody tr:nth-child(even) td,
+    .member-testing-table tbody tr:nth-child(even) td,
+    .data-table tbody tr:nth-child(even) td {
+      background: var(--surface-tint-2);
+    }
+
+    .hr-testing-table tbody tr:hover td,
+    .member-testing-table tbody tr:hover td,
+    .data-table tbody tr:hover td {
+      background: var(--accent-light);
+    }
+
+    .hr-testing-table tbody tr:last-child td,
+    .member-testing-table tbody tr:last-child td,
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .hr-testing-table-footnote,
+    .member-testing-table-footnote,
+    .data-table-card-footnote {
+      font-size: var(--font-xs);
+      color: var(--muted);
+      margin: var(--space-1) 0 var(--space-5);
+      line-height: 1.5;
+    }
+
+    /* Status pills — priority / frequency / sample-status labels. One shared
+       shape (.status-pill) with color modifiers; hr-pill-*/member-pill-* keep
+       working as aliases so no HTML in any member tab needed to change. */
+    .hr-pill,
+    .member-pill,
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      letter-spacing: .02em;
+      padding: var(--pill-pad-y) var(--pill-pad-x);
+      border-radius: var(--pill-radius);
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+
+    .hr-pill-critical {
+      background: var(--blocked-bg);
+      color: var(--blocked);
+      border: 1px solid #fca5a5;
+    }
+
+    .hr-pill-amber,
+    .member-pill-pending {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid #fde68a;
+    }
+
+    .hr-pill-green,
+    .member-pill-ready {
+      background: var(--pass-bg);
+      color: var(--pass);
+      border: 1px solid #bbf7d0;
+    }
+
+    .hr-pill-daily,
+    .member-pill-review {
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+    }
+
+    .hr-pill-weekly {
+      background: var(--draft-tint-bg);
+      color: var(--draft-tint-text);
+      border: 1px solid #ddd6fe;
+    }
+
+    .hr-pill-monthly {
+      background: #e4f1ee;
+      color: #2e7a72;
+      border: 1px solid #99d8ce;
+    }
+
+    .hr-pill-sample,
+    .member-pill-sample {
+      background: var(--surface-tint-3);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 640px) {
+
+      .hr-testing-table-card,
+      .member-testing-table-card,
+      .data-table-card {
+        padding: var(--space-4) var(--space-4) var(--space-4);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════
+     TOP BAR
+═══════════════════════════════════ -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">Management <span>AIOS</span></span>
+      <div class="topbar-sep"></div>
+      <span class="topbar-sub">Dashboard v0.1 — Internal Build</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge badge-viewonly" style="font-size:.7rem;letter-spacing:.07em;">READ ONLY</span>
+      <div class="topbar-sep" style="height:18px;"></div>
+      <span>Branch: <strong style="color:#e2e8f0;">individual-aios</strong></span>
+      <div class="topbar-sep" style="height:18px;"></div>
+      <span>Commit:</span>
+      <span class="topbar-commit">d649652</span>
+      <div class="topbar-sep" style="height:18px;"></div>
+      <span style="color:#64748b;">2026-07-07</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════
+     TAB BAR
+═══════════════════════════════════ -->
+  <nav class="tab-bar" role="tablist" aria-label="Dashboard tabs">
+    <button class="tab-btn active" data-tab="root-aios" role="tab" aria-selected="true">
+      Root AIOS
+      <span class="tab-badge tab-badge-amber" title="Technical result: PASS-AMBER">Needs Confirmation</span>
+    </button>
+    <button class="tab-btn" data-tab="mayurika-hr" role="tab" aria-selected="false">
+      Mayurika HR
+      <span class="tab-badge tab-badge-active">ACTIVE</span>
+    </button>
+    <button class="tab-btn" data-tab="suman-recruitment" role="tab" aria-selected="false">
+      Suman Recruitment
+      <span class="tab-badge tab-badge-active">ACTIVE</span>
+    </button>
+    <button class="tab-btn" data-tab="arun-implementation" role="tab" aria-selected="false">
+      Arun Implementation
+      <span class="tab-badge tab-badge-active">ACTIVE</span>
+    </button>
+    <button class="tab-btn" data-tab="rajiv-blocked" role="tab" aria-selected="false">
+      Rajiv / Admin
+      <span class="tab-badge tab-badge-amber"
+        title="Technical status: REGISTERED / VERSION 1.0 WORKING DRAFT / PARTLY APPROVED, PARTLY DRAFT">ACTIVE WITH
+        LIMITS</span>
+    </button>
+    <button class="tab-btn" data-tab="file-map" role="tab" aria-selected="false">
+      File Map
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════
+     SEARCH STRIP
+═══════════════════════════════════ -->
+  <div class="search-strip">
+    <input id="searchInput" type="search" placeholder="Search across all tabs…" autocomplete="off" />
+    <button id="searchClear">Clear</button>
+    <span id="searchResults"></span>
+    <span class="search-hint" title="Examples: verify, blocked, arun, draft">Search by person, topic, task, or
+      status.</span>
+  </div>
+
+  <!-- ═══════════════════════════════════
+     SAFETY NOTE STRIP
+═══════════════════════════════════ -->
+  <div class="safety-strip" role="note" aria-label="Read-only safety note">
+    <span class="safety-strip-icon" aria-hidden="true">&#128274;</span>
+    <span class="safety-strip-text"><strong>This dashboard is a read-only internal build.</strong> Sensitive HR data,
+      leave records, onboarding records, KPI scores, staff personal data, salary, health, PDPA, candidate, disciplinary,
+      and production data are not shown.</span>
+  </div>
+
+  <!-- ═══════════════════════════════════
+     TAB PANELS
+═══════════════════════════════════ -->
+  <main class="tab-main">
+
+    <!-- ══════════════════════════════════
+       TAB 1 — ROOT AIOS
+  ══════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-root-aios" role="tabpanel">
+
+      <!-- Landing summary hero -->
+      <div class="landing-hero" data-searchable
+        data-tags="landing summary welcome overview read only internal build what you can do gated pass amber">
+        <h1>Management <span>AIOS</span> Dashboard</h1>
+        <p class="lh-sub">A plain-language, read-only window into the Management AIOS — the system that watches for
+          management gaps and tracks HR records, recruitment, and KPI processes. Nothing here can be edited, saved, or
+          sent. Use it to check status at a glance and see what each team member is working on.</p>
+
+        <div class="landing-hero-meta">
+          <span class="lh-pill lh-pill-ok"><span aria-hidden="true">&#9679;</span> Build status: <strong>Internal Build v0.1 · PASS</strong></span>
+          <span class="lh-pill lh-pill-amber"><span aria-hidden="true">&#9679;</span> <strong>AMBER</strong> — user review pending</span>
+          <span class="lh-pill lh-pill-lock"><span aria-hidden="true">&#128274;</span> <strong>READ-ONLY</strong> · no data saved or changed</span>
+          <span class="lh-pill">Last sync: <strong>2026-07-07</strong> · commit <strong>d649652</strong></span>
+        </div>
+
+        <div class="landing-hero-cols">
+          <div class="lh-col lh-col-do">
+            <h4><span aria-hidden="true">&#128161;</span> What you can do here</h4>
+            <ul>
+              <li>Read the current status of each area and team member.</li>
+              <li>Open a member tab to see their systems, tables, and next actions.</li>
+              <li>Search across every tab for a name, topic, or file path.</li>
+              <li>Follow evidence and source pointers back to the real files.</li>
+            </ul>
+          </div>
+          <div class="lh-col lh-col-gated">
+            <h4><span aria-hidden="true">&#128274;</span> What is still gated</h4>
+            <ul>
+              <li>Rajiv/Admin draft governance sections remain pending required reviewer approvals.</li>
+              <li>All 9 open confirmation items — cannot be resolved from this dashboard.</li>
+              <li>Live KPI, AXIOM, ROI and leave figures — no real data is shown.</li>
+              <li>Any editing, saving, or sending — done in VS Code only.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member snapshot — quick navigation -->
+      <h2 class="section-title">Team Members at a Glance</h2>
+      <div class="member-snap-grid">
+
+        <button type="button" class="member-snap member-snap-active" data-goto="mayurika-hr" data-searchable
+          data-tags="mayurika hr officer active nslp control system snapshot navigation">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Mayurika</span>
+            <span class="badge badge-pass">ACTIVE</span>
+          </div>
+          <div class="member-snap-role">HR Officer — staff records, PDPA, HR workflows</div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">NSLP Control System (6 tables) · HR Daily Control Panel</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Confirm exact HR / EOD tool names to close open confirmation item 9</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val">HR tables pending MD/Varmen confirmation — no format approved yet</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Sources</span>
+            <span class="msr-val">GAP-42 closed — Mayurika confirmation batch SRC-MAYU-CONF-007 to SRC-MAYU-CONF-020
+              registered.</span>
+          </div>
+          <span class="member-snap-cta">Open Mayurika HR</span>
+        </button>
+
+        <button type="button" class="member-snap member-snap-active" data-goto="suman-recruitment" data-searchable
+          data-tags="suman recruitment officer active snapshot navigation head hunter onboarder">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Suman</span>
+            <span class="badge badge-pass">ACTIVE</span>
+          </div>
+          <div class="member-snap-role">Recruitment Officer — Head Hunter · Onboarder · ROI Reviewer</div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">Recruitment workbench · 8-point screening · review timeline</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Await Suman confirmation for two candidate sources before source registration.</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val">None — no candidate personal data shown</span>
+          </div>
+          <span class="member-snap-cta">Open Suman Recruitment</span>
+        </button>
+
+        <button type="button" class="member-snap member-snap-active" data-goto="arun-implementation" data-searchable
+          data-tags="arun implementation officer active snapshot navigation kpi axiom control tables">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Arun</span>
+            <span class="badge badge-pass">ACTIVE</span>
+          </div>
+          <div class="member-snap-role">Implementation Officer — KPI, AXIOM, incident escalation</div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">Day-to-Day Control Tables · PH KPI review template</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Map factual data sources before any live PH report</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val" title="Technical status: Live PH report is AMBER — 6 of 8 data sources missing">Live
+              report not ready yet — data sources still need confirmation (6 of 8 missing)</span>
+          </div>
+          <span class="member-snap-cta">Open Arun Implementation</span>
+        </button>
+
+        <button type="button" class="member-snap member-snap-amber" data-goto="rajiv-blocked" data-searchable
+          data-tags="rajiv admin manager registered working draft partly approved partly draft src-admin-001 active with limits">
+          <div class="member-snap-top">
+            <span class="member-snap-name">Rajiv / Admin</span>
+            <span class="badge badge-amber">ACTIVE WITH LIMITS</span>
+          </div>
+          <div class="member-snap-role">Admin Manager — registered working draft with approved and pending sections
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Main system</span>
+            <span class="msr-val">Rajiv Admin workbench — registered source, mixed approval status</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Next action</span>
+            <span class="msr-val">Complete remaining MD, Arun/Implementation Officer, and domain-owner reviews for draft
+              governance sections</span>
+          </div>
+          <div class="member-snap-row">
+            <span class="msr-label">Gated</span>
+            <span class="msr-val">Draft governance sections remain pending approval; KPI Governance also requires Arun
+              review</span>
+          </div>
+          <span class="member-snap-cta">Open Rajiv / Admin</span>
+        </button>
+
+      </div>
+
+      <!-- How to use -->
+      <div class="how-to-box">
+        <h3>How to use this dashboard</h3>
+        <p>This dashboard gives you a quick view of the Management AIOS — a system that tracks management gaps, HR
+          records, recruitment, and KPI processes. It is a <strong>read-only view</strong>. You cannot change anything
+          from here.</p>
+        <ul>
+          <li>Use the tabs above to move between different areas (Root overview, each team member's section, review
+            actions, and the file map).</li>
+          <li>Use the search bar to find anything — file paths, names, or topics — across all tabs.</li>
+          <li>Editing is done in VS Code only, by opening the repository files directly.</li>
+          <li>Every tab has a "What should I do next?" box at the bottom — check that first if you're unsure what to do.
+          </li>
+        </ul>
+      </div>
+
+      <!-- Label legend -->
+      <details style="margin-bottom:20px;">
+        <summary
+          style="cursor:pointer;font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">
+          What the labels mean (reference)</summary>
+        <div class="label-legend" style="margin-top:14px;">
+          <div class="legend-item">
+            <span class="legend-item-label">Active</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">ACTIVE</span>
+            <span class="legend-item-desc">Approved by its owner for current internal use.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pass</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+            <span class="legend-item-desc">Validation complete — this check has passed.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Amber</span>
+            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+            <span class="legend-item-desc">Needs review, a source, or approval before it is final.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Gated</span>
+            <span class="badge badge-blocked" style="margin-bottom:4px;">GATED</span>
+            <span class="legend-item-desc">Intentionally blocked until a required document or sign-off arrives.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Read-Only</span>
+            <span class="badge badge-viewonly" style="margin-bottom:4px;">READ-ONLY</span>
+            <span class="legend-item-desc">No data is saved or changed — this is a view only.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">View Only</span>
+            <span class="badge badge-viewonly" style="margin-bottom:4px;">VIEW ONLY</span>
+            <span class="legend-item-desc">This dashboard cannot edit or save any files.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Draft</span>
+            <span class="badge badge-draft" style="margin-bottom:4px;">DRAFT</span>
+            <span class="legend-item-desc">File created but not yet reviewed and approved by its owner.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pending</span>
+            <span class="badge badge-pending" style="margin-bottom:4px;">PENDING</span>
+            <span class="legend-item-desc">Waiting for a review, confirmation, or source document.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Blocked</span>
+            <span class="badge badge-blocked" style="margin-bottom:4px;">BLOCKED</span>
+            <span class="legend-item-desc">Cannot proceed — a required document or source is missing.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pass-Amber</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+            <span class="legend-item-desc">PASS = safe to continue. AMBER = non-blocking items still to resolve.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Needs Confirmation</span>
+            <span class="badge badge-verify" style="margin-bottom:4px;" title="Technical label: [VERIFY]">Needs
+              Confirmation</span>
+            <span class="legend-item-desc">An item that is unconfirmed (shown as <code>[VERIFY]</code> in source files).
+              Cannot be treated as fact until resolved.</span>
+          </div>
+        </div>
+      </details>
+
+      <!-- Status summary -->
+      <h2 class="section-title">Current System Status</h2>
+      <div class="status-bar" data-searchable data-tags="status summary foundation draft pass amber">
+        <div class="status-item">
+          <span class="status-label">System</span>
+          <span class="status-value">Foundation Draft</span>
+          <span class="status-sub">v0.1 — Root CLAUDE.md canonical</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Member Workbenches</span>
+          <span class="status-value">4 / 4</span>
+          <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: ACTIVE · Rajiv: ACTIVE WITH LIMITS</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Sources Registered</span>
+          <span class="status-value">40</span>
+          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED · +14 Mayurika confirmations (GAP-42,
+            2026-07-07)</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label" title="Technical label: [VERIFY] Items Open">Needs Confirmation</span>
+          <span class="status-value">9</span>
+          <span class="status-sub">9 items open — 3 earlier items resolved 2026-06-30 by Arun's confirmation</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Overall</span>
+          <span class="status-value" style="color:var(--pass);">PASS</span>
+          <span class="status-sub">AMBER — domain approvals pending</span>
+        </div>
+      </div>
+
+      <!-- Root rules -->
+      <h2 class="section-title">Key Rules</h2>
+      <div class="cards gap">
+        <div class="card" data-searchable data-tags="claude.md canonical root truth">
+          <div class="card-header">
+            <div class="card-title">CLAUDE.md is the root truth</div>
+            <span class="badge badge-source" title="Technical label: CANONICAL">Master Reference</span>
+          </div>
+          <div class="card-note">The file <code>CLAUDE.md</code> in the root of the repository is the master reference.
+            This dashboard is a summary view only — if anything here conflicts with CLAUDE.md, CLAUDE.md is correct.
+          </div>
+        </div>
+        <div class="card" data-searchable data-tags="source register evidence authority">
+          <div class="card-header">
+            <div class="card-title">Source register controls evidence</div>
+            <span class="badge badge-source" title="Technical label: AUTHORITY">Rule</span>
+          </div>
+          <div class="card-note">Every fact in the AIOS must trace to a source registered in
+            <code>evidence/source-register.md</code>. If there is no registered source, the fact must be flagged as
+            <em>needing confirmation</em> (technically tagged <code>[VERIFY]</code>) until one is provided.
+          </div>
+        </div>
+        <div class="card" data-searchable data-tags="verify register unresolved items">
+          <div class="card-header">
+            <div class="card-title">Verify register tracks unresolved items</div>
+            <span class="badge badge-verify" title="Technical label: [VERIFY]">Needs Confirmation</span>
+          </div>
+          <div class="card-note">The file <code>context/verify-register.md</code> lists all 9 open items (items 8–10
+            from the original list were resolved 2026-06-30 by SRC-ARUN-CONF-001). An open item cannot be marked
+            resolved until registered source evidence is produced and the relevant domain owner confirms it.</div>
+        </div>
+        <div class="card" data-searchable data-tags="read only vs code editing dashboard static">
+          <div class="card-header">
+            <div class="card-title">Editing is in VS Code only</div>
+            <span class="badge badge-viewonly">VIEW ONLY</span>
+          </div>
+          <div class="card-note">This dashboard is a static HTML file. There is no edit button, no save button, and no
+            form. All changes to the AIOS are made by editing source files in VS Code and regenerating this dashboard
+            via Claude Code.</div>
+        </div>
+      </div>
+
+      <!-- Safety rules + Deployment — two-column on desktop, stacked below 1024px -->
+      <div class="root-info-grid">
+        <div class="root-info-cell">
+          <h2 class="section-title">Safety Rules</h2>
+          <div class="warning-box" data-searchable
+            data-tags="safety rules read only no sensitive data verify preserved">
+            <h3>What this dashboard will never do</h3>
+            <ul>
+              <li>Store or display sensitive HR, staff, candidate, salary, health, disciplinary, grievance, or PDPA
+                personal data.</li>
+              <li>Resolve any open confirmation item — all 9 remain open.</li>
+              <li>Mark any DRAFT workbench as ACTIVE — that requires domain owner sign-off.</li>
+              <li>Treat the Rajiv / Admin Manager workbench's draft governance sections as approved — SRC-ADMIN-001 is
+                registered, but Governance Principles, KPI Governance System, Accountability Framework, Governance
+                Meetings, Management Drift Assessment, and Governance Improvement Roadmap remain draft pending MD (and,
+                for KPI Governance, Arun/Implementation Officer) review.</li>
+              <li>Reproduce policy rules, KPI band tables, recruitment criteria, or leave policy as if this file is the
+                source of truth.</li>
+              <li>Connect to any backend, API, or database — this is a static HTML file with no server-side code.</li>
+              <li>Allow any file editing or writing from the browser.</li>
+              <li>Promote content to parent AIOS truth — domain owner sign-off is required before any promotion.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="root-info-cell">
+          <h2 class="section-title">Netlify Deployment</h2>
+          <div class="deploy-box" data-searchable data-tags="netlify deployment static html no build">
+            <h3>Netlify Deployment Note</h3>
+            <ul>
+              <li>This is a single self-contained HTML file. No build step required.</li>
+              <li>No external CDN, no JavaScript frameworks, no server-side dependencies.</li>
+              <li>Deploy by connecting the repository to Netlify. Set the publish directory to <code>web-view</code> and
+                leave the build command empty.</li>
+              <li>All CSS and JavaScript are inline. The file is fully self-contained at deployment.</li>
+              <li>Editing is done exclusively through VS Code on the source repository. This dashboard does not expose
+                any edit interface.</li>
+              <li>No environment variables, secrets, or API keys are required or used.</li>
+              <li>For updated content: edit source files in VS Code, then regenerate this index.html through Claude Code
+                and redeploy to Netlify.</li>
+              <li>Branch: <code>individual-aios</code> — confirm merge to main before final Netlify production
+                deployment.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pass/fail -->
+      <h2 class="section-title">Overall Result</h2>
+      <div class="result-box" data-searchable
+        data-tags="pass amber result internal build active arun suman mayurika system build 2026-07-06">
+        <h3 title="Technical result: PASS — AMBER noted">Overall Result: Ready — a few items still need confirmation
+        </h3>
+        <p>
+          The dashboard is built and working. Arun's, Suman's, and Mayurika's sections are active and reviewed.
+          Rajiv / Admin is active with limits — SRC-ADMIN-001 is registered, but its draft governance sections
+          remain pending approval. 9 items across the AIOS still need confirmation before this can be treated as
+          final. The dashboard stays read-only throughout — nothing here can be changed, saved, or sent.
+        </p>
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">Evidence / Technical Details</summary>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:6px;line-height:1.6;">
+            Management AIOS Dashboard v0.1 — Internal Build. System interface build applied 2026-07-06 (build-first,
+            validate-later). Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is ACTIVE — Suman
+            Reviewed 2026-06-30. Mayurika's workbench is ACTIVE — Mayurika Reviewed 2026-07-03. [VERIFY] count corrected
+            to 9 (items 8–10 resolved 2026-06-30). Safety note updated. All source pointers correct. No sensitive
+            data shown. No policy text duplicated. (Historical note, 2026-07-10: the preview-only tabs referenced
+            in earlier build history — including Skills Register, Handover Preview, Overview, Recurring Issues,
+            Blocked/Gated Modules, Review Queue, Markdown Viewer, and Document Register — were removed from this
+            dashboard's navigation; the underlying repository files they referenced were not deleted and remain
+            in the repository.)
+            <br><br>
+            <strong>Build evidence:</strong>
+            <code>evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md</code>
+            <br><strong>Validation:</strong> <code>validation/management-aios-system-build-check.md</code>
+            <br><br>
+            <strong>AMBER:</strong> Future user validation pending — Mayurika, Varmen, Management Team must inspect and
+            confirm. Rajiv / Admin Manager section is ACTIVE WITH LIMITS — SRC-ADMIN-001 is registered; its draft
+            governance sections remain pending MD (and, for KPI Governance, Arun/Implementation Officer) review.
+            9 [VERIFY] items remain open. Dashboard
+            remains read-only.
+          </p>
+        </details>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>All domain owner workbench reviews are complete (Arun, Suman, Mayurika). Rajiv/Admin is registered and
+          active with limits — its draft governance sections remain pending MD and domain-owner review. Next:
+          complete those remaining reviews, then commit and redeploy to Netlify.</p>
+      </div>
+
+    </div><!-- /tab-root-aios -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 2 — MAYURIKA HR
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-mayurika-hr" role="tabpanel">
+
+      <!-- 1. Introduction -->
+      <div class="member-header" data-searchable data-tags="mayurika hr officer introduction role">
+        <div class="member-header-info">
+          <h2>Mayurika / Mayuri — HR Officer</h2>
+          <div class="role-label">Primary custodian of staff records, PDPA compliance, and day-to-day HR workflows
+          </div>
+          <p class="member-header-lede">
+            Mayurika looks after staff records from the day someone joins to the day they leave — leave
+            tracking, PDPA notices, review scheduling, EOD monitoring for the Website and PH Teams, SKILL file
+            compliance for the Developer/Technical Teams, and Technical Team ROI reporting to the MD. She does
+            not set salary bands, AXIOM scores, or team structure — those belong to other roles.
+          </p>
+          <p class="member-header-note">
+            Not stored here: individual staff names, salary, health data, disciplinary details, or PDPA
+            personal data — role-level and process-level information only.
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Workbench File Details -->
+      <h3 class="section-title">Workbench File Details</h3>
+      <div class="file-list-box" data-searchable
+        data-tags="mayurika hr workbench files quick reference daily checklist">
+        <h4>Files Mayurika uses</h4>
+        <ul>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/mayurika-hr/WORKBENCH.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> main HR domain reference. <strong>How used:</strong>
+                confirms what Mayurika does and does not write, and where related context lives.</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/mayurika-hr/quick-reference-sources.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> quick lookup of which sources cover each HR
+                responsibility. <strong>How used:</strong> fast reference during daily work.</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/mayurika-hr/daily-weekly-checklist.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> Mayurika's own daily/weekly task checklist.
+                <strong>How used:</strong> day-to-day operational routine.
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 3. HR Testing Tables — Sample Preview
+           Content sourced from HR's written Q1-Q8 answers (2026-07-08), not random.
+           Visible tables only — no details/click-to-view wrapper, per user instruction.
+           Polished 2026-07-09 — scoped .hr-testing-table-* / .hr-pill-* CSS, no meaning/content change. -->
+      <h3 class="section-title" style="margin-top:32px;">HR Testing Tables — Sample Preview</h3>
+      <div class="hr-testing-table-note" data-searchable data-tags="hr testing tables sample preview note">
+        <span class="hr-pill hr-pill-sample">Testing Only</span>
+        <span>These sample testing tables use captured HR schedule context. They are for UI/testing only and
+          are not live HR records.</span>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr daily work categories table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 1 — HR Daily Work Categories</div>
+        </div>
+        <p class="hr-testing-table-sub">The four daily HR work areas and why keeping on top of each one
+          matters.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Example HR Work</th>
+                <th>Frequency</th>
+                <th>Why It Helps</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HR Operations</td>
+                <td>Employee confirmation follow-up, service letter preparation, leave/no-pay updates, mail
+                  checking</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Keeps staff records and leave admin moving without delay</td>
+              </tr>
+              <tr>
+                <td>Tech Team Monitoring</td>
+                <td>Tech Team commitment update, task review, workflow follow-up, skill updates</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Keeps Tech/Developer teams on track between weekly reviews</td>
+              </tr>
+              <tr>
+                <td>Performance &amp; ROI Monitoring</td>
+                <td>ROI update, Last Used Date update, Time Saved update, EOD data validation</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Feeds weekly and monthly ROI reporting to the MD</td>
+              </tr>
+              <tr>
+                <td>Reporting</td>
+                <td>EOD summary preparation, daily progress updates, MD meeting reminders, meeting minutes</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Keeps management informed without waiting for the weekly cycle</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr priority guide critical amber green table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 2 — HR Priority Guide</div>
+        </div>
+        <p class="hr-testing-table-sub">How to read each priority level and what follow-up it calls for.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Meaning</th>
+                <th>When HR Should Use It</th>
+                <th>Follow-up Needed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="hr-pill hr-pill-critical">CRITICAL</span></td>
+                <td>Immediate management attention required</td>
+                <td>Work is significantly delayed or not completed; performance below expectations; targets not
+                  met</td>
+                <td>Immediate action and follow-up</td>
+              </tr>
+              <tr>
+                <td><span class="hr-pill hr-pill-amber">AMBER</span></td>
+                <td>Needs monitoring and improvement</td>
+                <td>Work partially completed or at risk of delay; performance average or inconsistent; output
+                  below standard but recoverable</td>
+                <td>Monitor and follow up</td>
+              </tr>
+              <tr>
+                <td><span class="hr-pill hr-pill-green">GREEN</span></td>
+                <td>On track / performing well</td>
+                <td>Work completed on time; performance meets or exceeds expectations; output meets the required
+                  standard</td>
+                <td>None — on track</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr recurring work duration guide table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 3 — HR Recurring Work Duration Guide</div>
+        </div>
+        <p class="hr-testing-table-sub">Typical time each recurring HR block takes, for planning the day.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>HR Recurring Block</th>
+                <th>Typical Duration</th>
+                <th>Frequency / Use</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Mail Check &amp; HR Communication</td>
+                <td>20–30 mins</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Includes mail checking and response</td>
+              </tr>
+              <tr>
+                <td>Employee Confirmation Check (7 Days &amp; Probation)</td>
+                <td>20–30 mins</td>
+                <td>Weekly / milestone</td>
+                <td>7/14-day and probation review checks</td>
+              </tr>
+              <tr>
+                <td>Service Letter Preparation &amp; Follow-up</td>
+                <td>30–60 mins</td>
+                <td>As needed</td>
+                <td>Preparation and follow-up combined</td>
+              </tr>
+              <tr>
+                <td>Tech Team Commitment Update</td>
+                <td>30–45 mins</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Tracks Tech Team commitments</td>
+              </tr>
+              <tr>
+                <td>Workflow Collection &amp; Follow-up</td>
+                <td>45–60 mins</td>
+                <td>Daily / weekly</td>
+                <td>Collects and follows up on workflow status</td>
+              </tr>
+              <tr>
+                <td>EOD Data Collection &amp; Validation</td>
+                <td>30–45 mins</td>
+                <td><span class="hr-pill hr-pill-daily">Daily</span></td>
+                <td>Validates End-of-Day submissions</td>
+              </tr>
+              <tr>
+                <td>MD Reports &amp; Summary Submission</td>
+                <td>30–45 mins</td>
+                <td>Weekly / monthly</td>
+                <td>Prepares and submits reports to the MD</td>
+              </tr>
+              <tr>
+                <td>RED Status Check &amp; Reporting</td>
+                <td>20–30 mins</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td>Reviews and reports any RED status items</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr schedule ownership rules table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 4 — HR Schedule Ownership Rules</div>
+        </div>
+        <p class="hr-testing-table-sub">Confirmed HR answers on what the schedule does and doesn't cover.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Rule</th>
+                <th>Confirmed HR Answer</th>
+                <th>UI Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Technical interviews / sessions ownership</td>
+                <td>Wednesday technical interviews and Thursday technical sessions are not managed by
+                  Mayurika</td>
+                <td>These items are reference-only on the calendar, not Mayurika-owned tasks</td>
+              </tr>
+              <tr>
+                <td>CST meaning</td>
+                <td>CST means Customer Service Team</td>
+                <td>Any "CST" label on the calendar refers to the Customer Service Team</td>
+              </tr>
+              <tr>
+                <td>HR schedule edit rights</td>
+                <td>Mayurika only</td>
+                <td>Only Mayurika edits HR schedule content</td>
+              </tr>
+              <tr>
+                <td>Replace-or-parallel rule</td>
+                <td>The HR schedule pilot runs alongside existing HR and meeting schedules</td>
+                <td>The testing calendar does not replace any current schedule</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="hr-testing-table-card" data-searchable data-tags="hr weekly monthly review tracker sample table">
+        <div class="hr-testing-table-head">
+          <div class="hr-testing-table-title">Table 5 — HR Weekly / Monthly Review Tracker — Sample</div>
+        </div>
+        <p class="hr-testing-table-sub">Sample tracker only — no real employee names or case data.</p>
+        <div class="hr-testing-table-scroll">
+          <table class="hr-testing-table">
+            <thead>
+              <tr>
+                <th>Review Type</th>
+                <th>HR Purpose</th>
+                <th>Timing</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Employee Performance Review</td>
+                <td>7-Day Confirmation Review, Probation Review, New Employee ROI Review, Team Leader feedback
+                  collection</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Tech Team Performance Review</td>
+                <td>Weekly Commitment Review, workflow completion review, Development Team Review</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>HR Reporting</td>
+                <td>Weekly EOD Summary, weekly task completion report, weekly MD report, RED status review</td>
+                <td><span class="hr-pill hr-pill-weekly">Weekly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Employee Lifecycle Management</td>
+                <td>Confirmation processing, probation evaluation, service letter issuance</td>
+                <td><span class="hr-pill hr-pill-monthly">Monthly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>HR Compliance</td>
+                <td>Password change monitoring, leave balance review, No-Pay analysis, attendance verification
+                </td>
+                <td><span class="hr-pill hr-pill-monthly">Monthly</span></td>
+                <td><span class="hr-pill hr-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hr-testing-table-footnote">Sample preview only — no real employee names or case data.
+          Statuses shown are placeholders for testing.</p>
+      </div>
+
+      <!-- 4. Schedule Calendar -->
+      <h3 class="section-title" style="margin-top:32px;">Mayurika Schedule Calendar — Testing Preview</h3>
+      <div class="msc-instance" data-member-key="mayurika" data-member-label="Mayurika — HR"
+        data-storage-key="management_aios_testing_schedule_mayurika_v1" data-rajiv-note="false" data-searchable
+        data-tags="mayurika schedule calendar testing preview interactive add edit view delete localstorage hr"></div>
+
+    </div><!-- /tab-mayurika-hr -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 3 — SUMAN RECRUITMENT
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-suman-recruitment" role="tabpanel">
+
+      <!-- 1. Introduction -->
+      <div class="member-header" data-searchable
+        data-tags="suman recruitment officer introduction role head hunter onboarder roi reviewer">
+        <div class="member-header-info">
+          <h2>Suman — Recruitment Officer</h2>
+          <div class="role-label">Head Hunter · Onboarder · 6-Month Progress ROI Reviewer</div>
+          <p class="member-header-lede">
+            Suman runs the recruitment pipeline end to end — sourcing, 8-point candidate screening, interview
+            scoring, offer commitment records, and the 7/14-day, Month 1, Month 3, and Month 6 reviews. At
+            Month 6 she hands the employee off to Mayurika and the Team Lead, with a binary ROI audit
+            confirming the hire's traceable contribution.
+          </p>
+          <p class="member-header-note">
+            Not stored here: candidate names, contact details, CVs, interview notes by name, or salary offers
+            — process-level tracking only.
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Workbench File Details -->
+      <h3 class="section-title">Workbench File Details</h3>
+      <div class="file-list-box" data-searchable
+        data-tags="suman recruitment workbench files quick reference weekly deliverables">
+        <h4>Files Suman uses</h4>
+        <ul>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/suman-recruitment/WORKBENCH.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> recruitment pipeline, screening, scoring, review
+                timeline, and 180-day handover reference. <strong>How used:</strong> main day-to-day
+                recruitment reference.</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/suman-recruitment/quick-reference-sources.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> quick lookup of which sources cover each
+                responsibility. <strong>How used:</strong> fast reference during daily work.</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/suman-recruitment/weekly-deliverables-checklist.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> the 4 weekly deliverables Suman must produce.
+                <strong>How used:</strong> weekly output checklist.
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 3. Suman Testing Tables — Sample Preview
+           Content sourced from Suman's WORKBENCH.md and weekly-deliverables-checklist.md
+           (recruitment pipeline, 8-point screening, review cadence, weekly deliverables, OLOS/BGCT checks).
+           Visible tables only — no details/click-to-view wrapper. No real candidate data. -->
+      <h3 class="section-title" style="margin-top:32px;">Suman Testing Tables — Sample Preview</h3>
+      <div class="member-testing-table-note" data-searchable data-tags="suman testing tables sample preview note">
+        <span class="member-pill member-pill-sample">Testing Only</span>
+        <span>These sample testing tables use captured recruitment/onboarding context. They are for
+          UI/testing only and are not live candidate records.</span>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="suman recruitment workflow overview table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 1 — Recruitment Workflow Overview</div>
+        </div>
+        <p class="member-testing-table-sub">The recruitment pipeline stages Suman moves each hire through.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Stage</th>
+                <th>What Suman Checks</th>
+                <th>Output</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Candidate Screening (8-Point)</td>
+                <td>O/L Maths, English, IT Skills, E-Commerce Knowledge, AI Familiarity, Salary Alignment,
+                  Availability, Commitment</td>
+                <td>Screening result (progress / hold / reject)</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Interview Scoring</td>
+                <td>Technical Knowledge, AI Knowledge, Communication, Confidence, Cultural Fit (50-point
+                  scale)</td>
+                <td>Interview score band</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Commitment Record</td>
+                <td>What the candidate agreed to deliver after the offer</td>
+                <td>Documented commitment record</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>7/14-Day Review</td>
+                <td>Knowledge gained, responsibility understanding, confidence, AI/LLM adoption</td>
+                <td>Review outcome recorded</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Month 1 / 3 / 6 Reviews</td>
+                <td>Task completion, commitment delivery, KPI participation</td>
+                <td>Status: On Track / Watch / Concern / Critical</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>180-Day Handover</td>
+                <td>ROI audit evidence, KPI baseline, outstanding issues</td>
+                <td>Handover pack ready for Mayurika/Arun/Team Lead</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="suman intake readiness checklist table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 2 — Intake Readiness Checklist</div>
+        </div>
+        <p class="member-testing-table-sub">Process-level checks before a candidate or hire moves forward.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Check Area</th>
+                <th>What to Confirm</th>
+                <th>Why It Helps</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>8-Point Screening Complete</td>
+                <td>All 8 criteria assessed before interview stage</td>
+                <td>Prevents unqualified candidates progressing</td>
+                <td><span class="member-pill member-pill-ready">Sample — Ready</span></td>
+              </tr>
+              <tr>
+                <td>Weekly Deliverables Filed</td>
+                <td>Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop
+                  proof</td>
+                <td>Keeps compliance with the weekly deliverable requirement</td>
+                <td><span class="member-pill member-pill-pending">Sample — Pending</span></td>
+              </tr>
+              <tr>
+                <td>OLOS Validation Documents</td>
+                <td>Evidence Standard, Onboarding Guide, OLOS Master, Team Leader Setup Guide, File Pack
+                  Register</td>
+                <td>Confirms the onboarding system is ready before go-live</td>
+                <td><span class="member-pill member-pill-pending">Sample — Pending</span></td>
+              </tr>
+              <tr>
+                <td>BGCT Completion (Last 6 Months)</td>
+                <td>Best Practices, Guidelines, Checklists, Tutorials on file for recent joiners</td>
+                <td>Flags onboarding documentation gaps early</td>
+                <td><span class="member-pill member-pill-pending">Sample — Pending</span></td>
+              </tr>
+              <tr>
+                <td>LLM-Queryable Format</td>
+                <td>All onboarding activity captured in LLM-queryable format from day one</td>
+                <td>Meets the queryability standard</td>
+                <td><span class="member-pill member-pill-ready">Sample — Ready</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable
+        data-tags="suman recruitment follow-up tracker sample table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 3 — Recruitment Follow-up Tracker — Sample</div>
+        </div>
+        <p class="member-testing-table-sub">Weekly follow-up items, process-level only.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Follow-up Type</th>
+                <th>Purpose</th>
+                <th>Timing</th>
+                <th>Sample Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Risk Identification</td>
+                <td>Flag pipeline or probation risk at process level</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — review pipeline risk categories</td>
+              </tr>
+              <tr>
+                <td>One-Month Task Rule Check</td>
+                <td>Confirm Month 1 task completion status</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — assign On Track / Watch / Concern / Critical</td>
+              </tr>
+              <tr>
+                <td>SKU / Margin / Hire-ROI Trace</td>
+                <td>Link hire to a measurable business outcome</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — document trace or explicit gap</td>
+              </tr>
+              <tr>
+                <td>LLM-in-the-Loop Proof</td>
+                <td>Confirm LLM consulted before planning decisions</td>
+                <td><span class="member-pill member-pill-review">Weekly</span></td>
+                <td>Sample — log consultation reference</td>
+              </tr>
+              <tr>
+                <td>180-Day Handover Reminder</td>
+                <td>Proactive reminder 2 weeks before the Month 6 handover</td>
+                <td>One-time per hire</td>
+                <td>Sample — notify Mayurika, Arun, and the Team Lead</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="suman workbench usage guide table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 4 — Suman Workbench Usage Guide</div>
+        </div>
+        <p class="member-testing-table-sub">What each workbench file is for and how it's used day to day.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Workbench Asset</th>
+                <th>Daily Use</th>
+                <th>Evidence / Output Expected</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WORKBENCH.md</td>
+                <td>Main recruitment domain reference</td>
+                <td>Confirms scope and reviewer routing</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>quick-reference-sources.md</td>
+                <td>Quick lookup of which sources cover each responsibility</td>
+                <td>Fast reference during daily work</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>weekly-deliverables-checklist.md</td>
+                <td>Daily and weekly task checklist</td>
+                <td>Weekly deliverable records</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="member-testing-table-footnote">Sample preview only — content reflects captured recruitment
+          context, not real candidate data.</p>
+      </div>
+
+      <!-- 4. Schedule Calendar -->
+      <h3 class="section-title" style="margin-top:32px;">Suman Schedule Calendar — Testing Preview</h3>
+      <div class="msc-instance" data-member-key="suman" data-member-label="Suman — Recruiting Officer"
+        data-storage-key="management_aios_testing_schedule_suman_v1" data-rajiv-note="false" data-searchable
+        data-tags="suman schedule calendar testing preview interactive add edit view delete localstorage recruitment officer">
+      </div>
+
+    </div><!-- /tab-suman-recruitment -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 4 — ARUN IMPLEMENTATION
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-arun-implementation" role="tabpanel">
+
+      <!-- 1. Introduction -->
+      <div class="member-header" data-searchable data-tags="arun implementation officer introduction role kpi axiom">
+        <div class="member-header-info">
+          <h2>Arun — Implementation Officer</h2>
+          <div class="role-label">KPI definitions, AXIOM band placement, incident escalation, PRC membership,
+            KPI meeting governance</div>
+          <p class="member-header-lede">
+            Arun owns the KPI and AXIOM system — setting KPI definitions per team, placing staff into AXIOM
+            performance bands, running the weekly AXIOM workflow, managing incident escalation, and sitting on
+            the Performance Review Committee (PRC). He also defines the management dashboard requirements and
+            KPI meeting format.
+          </p>
+          <p class="member-header-note">
+            Not stored here: individual staff AXIOM scores, real sales/inventory/PPC data, or bonus/PRC
+            decisions — templates and process-level tracking only.
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Workbench File Details -->
+      <h3 class="section-title">Workbench File Details</h3>
+      <div class="file-list-box" data-searchable
+        data-tags="arun implementation workbench files quick reference verify items">
+        <h4>Files Arun uses</h4>
+        <ul>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/arun-implementation/WORKBENCH.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> KPI definitions per team, AXIOM band placement,
+                weekly AXIOM workflow, incident escalation path, PRC membership, KPI meeting format.
+                <strong>How used:</strong> main implementation reference.
+              </div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/arun-implementation/quick-reference-sources.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> quick lookup of which sources cover each
+                responsibility. <strong>How used:</strong> fast reference during daily work.</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 3. Arun Testing Tables — Sample Preview
+           Content sourced from Arun's WORKBENCH.md and the SRC-ARUN-PH-001 source map
+           (PH KPI review structure, data-source readiness, output sections). Visible tables only —
+           no details/click-to-view wrapper. No real KPI, sales, stock, or staff-performance data. -->
+      <h3 class="section-title" style="margin-top:32px;">Arun Testing Tables — Sample Preview</h3>
+      <div class="member-testing-table-note" data-searchable data-tags="arun testing tables sample preview note">
+        <span class="member-pill member-pill-sample">Testing Only</span>
+        <span>These sample testing tables use captured implementation/PH review context. They are for
+          UI/testing only and are not live KPI, sales, stock, or staff-performance records.</span>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun ph review preparation sample table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 1 — PH Review Preparation — Sample</div>
+        </div>
+        <p class="member-testing-table-sub">What Arun checks is ready before starting a Portfolio Holder
+          monthly review.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Review Area</th>
+                <th>What Arun Checks</th>
+                <th>Required Input</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Marketplace Performance Readiness</td>
+                <td>YOY performance across Amazon UK, eBay UK, eBay DE, B&amp;Q</td>
+                <td>Marketplace sales data</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>SKU Review Readiness</td>
+                <td>Best-improving and declining SKU trends</td>
+                <td>SKU-level sales data</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>Stock Health Check Readiness</td>
+                <td>Inventory levels, non-selling stock, stock cover days</td>
+                <td>Inventory data</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>Coaching / Action Question Readiness</td>
+                <td>Structured coaching questions for the review discussion</td>
+                <td>Team Leader / Auditor feedback</td>
+                <td><span class="member-pill member-pill-pending">Sample — Data Not Mapped</span></td>
+              </tr>
+              <tr>
+                <td>Management Summary Readiness</td>
+                <td>KPI achievement, risks, next-month focus</td>
+                <td>All review inputs combined</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun kpi source readiness sample table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 2 — KPI Source Readiness — Sample</div>
+        </div>
+        <p class="member-testing-table-sub">Data areas that must be ready before a live KPI review can be
+          generated.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Source Area</th>
+                <th>What Must Be Ready</th>
+                <th>Why It Helps</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Sales Data</td>
+                <td>Marketplace sales figures (Amazon UK, eBay UK, eBay DE, B&amp;Q)</td>
+                <td>Feeds YOY and monthly comparison sections</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Inventory Data</td>
+                <td>Stock levels, non-selling inventory</td>
+                <td>Feeds inventory and stock health sections</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Advertising / PPC Data</td>
+                <td>ROAS / ACOS campaign data</td>
+                <td>Feeds coaching questions and KPI checks</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Pricing Data</td>
+                <td>Price history across marketplaces</td>
+                <td>Feeds declining-SKU analysis</td>
+                <td><span class="member-pill member-pill-pending">Sample — Missing</span></td>
+              </tr>
+              <tr>
+                <td>Team Leader / Auditor Feedback</td>
+                <td>Team Leader and external auditor review input</td>
+                <td>Feeds the review-inputs section</td>
+                <td><span class="member-pill member-pill-pending">Sample — Partial</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun ph review output checklist table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 3 — PH Review Output Checklist</div>
+        </div>
+        <p class="member-testing-table-sub">Example output sections from the PH review template and how
+          they're used.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Output Section</th>
+                <th>Purpose</th>
+                <th>Reviewer Use</th>
+                <th>Sample Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Executive Summary</td>
+                <td>High-level KPI highlights</td>
+                <td>First section reviewed by management</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>YOY Performance</td>
+                <td>Annual marketplace comparison</td>
+                <td>Confirms the 30% YOY growth KPI status</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Coaching Questions</td>
+                <td>Structured discussion prompts</td>
+                <td>Guides the management review conversation</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Appreciation</td>
+                <td>Recognition opportunities</td>
+                <td>Balances the review with positive feedback</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+              <tr>
+                <td>Action Plan</td>
+                <td>Actions, owners, deadlines</td>
+                <td>Tracks follow-up after the review</td>
+                <td><span class="member-pill member-pill-sample">Sample — Not Started</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="member-testing-table-card" data-searchable data-tags="arun workbench usage guide table">
+        <div class="member-testing-table-head">
+          <div class="member-testing-table-title">Table 4 — Arun Workbench Usage Guide</div>
+        </div>
+        <p class="member-testing-table-sub">What each workbench asset is for and how it's used day to
+          day.</p>
+        <div class="member-testing-table-scroll">
+          <table class="member-testing-table">
+            <thead>
+              <tr>
+                <th>Workbench Asset</th>
+                <th>Daily Use</th>
+                <th>Evidence / Output Expected</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>WORKBENCH.md</td>
+                <td>Main KPI / AXIOM / implementation reference</td>
+                <td>Confirms scope and reviewer routing</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>quick-reference-sources.md</td>
+                <td>Quick lookup of which sources cover each responsibility</td>
+                <td>Fast reference during daily work</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>PH Review Source Map</td>
+                <td>Portfolio Holder review structure reference</td>
+                <td>Confirms report sections and output format</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+              <tr>
+                <td>PH Review Query Pack</td>
+                <td>KPI review prompt reference</td>
+                <td>Supports monthly review generation</td>
+                <td><span class="member-pill member-pill-ready">ACTIVE</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="member-testing-table-footnote">Sample preview only — content reflects captured
+          implementation/PH context, not real KPI or performance data.</p>
+      </div>
+
+      <!-- 4. Schedule Calendar -->
+      <h3 class="section-title" style="margin-top:32px;">Arun Schedule Calendar — Testing Preview</h3>
+      <div class="msc-instance" data-member-key="arun" data-member-label="Arun — Implementation Officer"
+        data-storage-key="management_aios_testing_schedule_arun_v1" data-rajiv-note="false" data-searchable
+        data-tags="arun schedule calendar testing preview interactive add edit view delete localstorage implementation officer">
+      </div>
+
+    </div><!-- /tab-arun-implementation -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 5 — RAJIV / ADMIN BLOCKED
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-rajiv-blocked" role="tabpanel">
+
+      <!-- 1. Introduction -->
+      <div class="member-header" data-searchable
+        data-tags="rajiv admin manager introduction role registered working draft partly approved partly draft src-admin-001">
+        <div class="member-header-info">
+          <h2>Rajiv — Admin Manager</h2>
+          <div class="role-label">Admin / Document Control — Registered Working Draft, Partly Approved, Partly Draft
+          </div>
+          <p class="member-header-lede">
+            Rajiv's workbench covers Admin Manager and document-control responsibilities using registered
+            source SRC-ADMIN-001. Confirmed sections may be used as working guidance, while identified
+            governance-framework sections remain draft pending the required MD, Implementation Officer, or
+            domain-owner review. This workbench is not parent-AIOS truth and does not replace the Company
+            Policy Manual or AXIOM escalation rules.
+          </p>
+        </div>
+      </div>
+
+      <!-- 2. Workbench File Details -->
+      <h3 class="section-title">Workbench File Details</h3>
+      <div class="file-list-box" data-searchable
+        data-tags="rajiv admin workbench files registered source mixed status governance responsibility map query pack">
+        <h4>Rajiv Workbench Files — Registered Source, Mixed Status</h4>
+        <ul>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/rajiv-admin/WORKBENCH.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> Admin Manager domain reference built from registered
+                source SRC-ADMIN-001. <strong>How used:</strong> working guidance for approved/current sections
+                (organizational, department, and reporting structure; approval authority matrix v1.0;
+                escalation matrix; ROI, AI, and core operational governance); governance-framework sections
+                remain draft pending MD (and, for KPI governance, Arun/Implementation Officer) review.</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/rajiv-admin/quick-reference-sources.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> quick lookup of sources related to the Admin Manager
+                role. <strong>How used:</strong> fast reference alongside the mixed approved/draft status
+                below.</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/rajiv-admin/admin-manager-responsibility-map-draft.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> map of Admin Manager responsibilities drawn from
+                SRC-ADMIN-001. <strong>How used:</strong> confirmed sections (structure, reporting, approval
+                authority, escalation) are working guidance; remaining governance-principle and accountability
+                sections stay draft pending review.</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/rajiv-admin/governance-framework-draft-map.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> governance area map from SRC-ADMIN-001. <strong>How
+                  used:</strong> tracks which governance areas are already approved/current versus which still
+                need MD, Arun, or domain-owner confirmation (Governance Principles, KPI Governance System,
+                Accountability Framework, Governance Meetings, Management Drift Assessment, Governance
+                Improvement Roadmap).</div>
+            </div>
+          </li>
+          <li>
+            <span aria-hidden="true">📄</span>
+            <div>
+              <div class="fpath">member-aios/rajiv-admin/admin-manager-query-pack-draft.md</div>
+              <div class="fdesc"><strong>Purpose:</strong> set of open questions for the Admin Manager role.
+                <strong>How used:</strong> reference for resolving the remaining draft governance-framework
+                sections; not a substitute for MD or domain-owner sign-off.
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 3. Useful Efficiency Cards -->
+      <h3 class="section-title">Useful for Day-to-Day Work</h3>
+
+      <div class="cards" data-searchable
+        data-tags="rajiv admin responsibility map governance approved current draft pending confirmation axiom company policy manual arun">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Structure &amp; Approval Authority</div>
+              <div class="card-role">Approved / current — Version 1.0</div>
+            </div>
+            <span class="badge badge-amber">Active</span>
+          </div>
+          <div class="card-note">Organizational structure, department structure, reporting structure, and the
+            Approval Authority Matrix (v1.0) are confirmed current operational practice per SRC-ADMIN-001; may
+            evolve over time.</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Escalation Matrix</div>
+              <div class="card-role">Approved / current operational governance</div>
+            </div>
+            <span class="badge badge-amber">Active</span>
+          </div>
+          <div class="card-note">Admin/staff-conduct escalation routing is confirmed current. This coexists
+            with — and does not replace — the AXIOM incident/SLA escalation framework (Arun's confirmed
+            authority, CLAUDE.md §7.7).</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">ROI / AI / Core Operational Policies</div>
+              <div class="card-role">Approved / current — authority from Company Policy Manual</div>
+            </div>
+            <span class="badge badge-amber">Active</span>
+          </div>
+          <div class="card-note">Confirmed current, but authority derives from the Company Policy Manual
+            (SRC-POLICY-001), not from this document — no competing policy source is created here.</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Governance Framework Sections</div>
+              <div class="card-role">Draft — pending MD approval</div>
+            </div>
+            <span class="badge badge-draft">Draft</span>
+          </div>
+          <div class="card-note">Governance Principles, KPI Governance System, Accountability Framework,
+            Governance Meetings, Management Drift Assessment, and Governance Improvement Roadmap remain draft
+            framework proposals pending MD approval. KPI Governance System additionally requires
+            Arun/Implementation Officer review before it can be treated as authoritative.</div>
+        </div>
+      </div>
+
+      <!-- 4. Schedule Calendar -->
+      <h3 class="section-title" style="margin-top:32px;">Rajiv Schedule Calendar — Testing Preview</h3>
+      <div class="msc-instance" data-member-key="rajiv" data-member-label="Rajiv — Admin Manager"
+        data-storage-key="management_aios_testing_schedule_rajiv_v1" data-rajiv-note="true" data-searchable
+        data-tags="rajiv schedule calendar testing preview interactive add edit view delete localstorage admin manager authority">
+      </div>
+
+    </div><!-- /tab-rajiv-blocked -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 7 — FILE MAP
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-file-map" role="tabpanel">
+
+      <div class="how-to-box">
+        <h3>About the File Map</h3>
+        <p>This tab shows the key files and folders in the Management AIOS repository. Click any folder heading to
+          expand or collapse it. File paths are shown in blue — these match the actual paths in the repository. This is
+          a static snapshot; it does not scan the live repository.</p>
+        <p style="margin-top:8px;"><strong>The File Map lists relevant repository assets. Not every file or function
+            has a dedicated dashboard tab.</strong> The dashboard navigation was reduced on 2026-07-10 to six tabs
+          (Root AIOS, Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv / Admin, File Map). Removing a
+          dashboard tab does not delete or invalidate the underlying repository files it referenced — those files
+          remain in the repository and are listed below by folder, whether or not a tab renders them.</p>
+      </div>
+
+      <!-- Dashboard structure -->
+      <div class="file-map-section" data-searchable
+        data-tags="dashboard structure tabs root aios mayurika suman arun rajiv file map remaining navigation">
+        <details open>
+          <summary>📁 Dashboard Structure — Remaining Tabs</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">Root AIOS</span><span class="fdesc">— Root
+                Management AIOS status, source register summary, and cross-domain governance notes.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">Mayurika HR</span><span class="fdesc">— HR
+                workbench (member-aios/mayurika-hr/) — ACTIVE.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">Suman Recruitment</span><span class="fdesc">—
+                Recruitment workbench (member-aios/suman-recruitment/) — ACTIVE.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">Arun Implementation</span><span class="fdesc">—
+                Implementation/KPI workbench (member-aios/arun-implementation/) — ACTIVE.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">Rajiv / Admin</span><span class="fdesc">— Admin
+                Manager workbench (member-aios/rajiv-admin/) — REGISTERED / VERSION 1.0 WORKING DRAFT / PARTLY
+                APPROVED, PARTLY DRAFT, using SRC-ADMIN-001.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">File Map</span><span class="fdesc">— This tab;
+                a reference index of repository assets, not a live file scanner.</span></div>
+            <div class="file-entry" style="margin-top:8px;"><span aria-hidden="true">ℹ️</span><span class="fdesc">Evidence, validation,
+                context, handover, and intelligence-inbox files exist in the repository whether or not they are
+                surfaced in a dashboard tab. Each member's workbench folder (see "Member AIOS" below) is the primary
+                source file set for that tab; evidence/validation/context files support all tabs and are listed in
+                their own sections below.</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Root files -->
+      <div class="file-map-section" data-searchable data-tags="root files claude.md readme canonical">
+        <details open>
+          <summary>📁 management-aios/ — Root <span class="badge badge-source badge-sm">Canonical</span></summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">CLAUDE.md</span><span class="fdesc">— Root truth.
+                Canonical. All content verified against this file.</span><span
+                class="badge badge-source badge-sm">CANONICAL ROOT</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">README.md</span><span class="fdesc">— Repository
+                overview and getting-started guide.</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Member AIOS -->
+      <div class="file-map-section" data-searchable
+        data-tags="member aios mayurika suman arun rajiv workbench active active with limits">
+        <details open>
+          <summary>📁 member-aios/ — Member Workbenches</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">member-aios/README.md</span><span class="fdesc">—
+                Folder overview, member list, status summary.</span><span
+                class="badge badge-source badge-sm">ACTIVE</span></div>
+            <details style="margin-top:6px;">
+              <summary style="font-size:.84rem; padding:8px 12px;">📁 mayurika-hr/ <span
+                  class="badge badge-pass badge-sm">ACTIVE</span></summary>
+              <div class="details-body">
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/mayurika-hr/WORKBENCH.md</span><span class="fdesc">— Mayurika domain
+                    workbench. ACTIVE — Mayurika Reviewed 2026-07-03.</span><span
+                    class="badge badge-pass badge-sm">ACTIVE</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/mayurika-hr/quick-reference-sources.md</span><span class="fdesc">— Source
+                    quick reference for Mayurika's domain. ACTIVE — Mayurika Reviewed 2026-07-03.</span><span
+                    class="badge badge-pass badge-sm">ACTIVE</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/mayurika-hr/daily-weekly-checklist.md</span><span class="fdesc">— Daily
+                    and weekly operational checklist.</span></div>
+              </div>
+            </details>
+            <details style="margin-top:4px;">
+              <summary style="font-size:.84rem; padding:8px 12px;">📁 suman-recruitment/ <span
+                  class="badge badge-pass badge-sm">ACTIVE</span></summary>
+              <div class="details-body">
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/suman-recruitment/WORKBENCH.md</span><span class="fdesc">— Suman domain
+                    workbench. ACTIVE — Suman Reviewed 2026-06-30.</span><span
+                    class="badge badge-pass badge-sm">ACTIVE</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/suman-recruitment/quick-reference-sources.md</span><span class="fdesc">—
+                    Source quick reference for Suman's domain.</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/suman-recruitment/weekly-deliverables-checklist.md</span><span
+                    class="fdesc">— 4 weekly deliverables checklist. ACTIVE — Suman Reviewed 2026-06-30.</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md</span><span
+                    class="fdesc">— Suman review confirmation evidence. READY — 2026-06-30.</span><span
+                    class="badge badge-source badge-sm">READY</span></div>
+              </div>
+            </details>
+            <details style="margin-top:4px;">
+              <summary style="font-size:.84rem; padding:8px 12px;">📁 arun-implementation/ <span
+                  class="badge badge-pass badge-sm">ACTIVE</span></summary>
+              <div class="details-body">
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/arun-implementation/WORKBENCH.md</span><span class="fdesc">— Arun domain
+                    workbench. ACTIVE — Arun Reviewed 2026-06-30.</span><span
+                    class="badge badge-pass badge-sm">ACTIVE</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/arun-implementation/quick-reference-sources.md</span><span class="fdesc">—
+                    Source quick reference for Arun's domain.</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/arun-implementation/verify-items-arun.md</span><span class="fdesc">—
+                    [VERIFY] items 8, 9, 10 — confirmed 2026-06-30. Root propagation complete —
+                    SRC-ARUN-CONF-001.</span><span class="badge badge-pass badge-sm">Root Propagation
+                    Complete</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</span><span
+                    class="fdesc">— Arun review confirmation evidence. READY — 2026-06-30.</span><span
+                    class="badge badge-source badge-sm">READY</span></div>
+              </div>
+            </details>
+            <details style="margin-top:4px;">
+              <summary style="font-size:.84rem; padding:8px 12px;">📁 rajiv-admin/ <span
+                  class="badge badge-amber badge-sm">ACTIVE WITH LIMITS</span></summary>
+              <div class="details-body">
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/rajiv-admin/WORKBENCH.md</span><span class="fdesc">— Rajiv/Admin Manager
+                    domain workbench, built from registered source SRC-ADMIN-001. REGISTERED / VERSION 1.0 WORKING
+                    DRAFT / PARTLY APPROVED, PARTLY DRAFT — not parent-AIOS truth.</span><span
+                    class="badge badge-amber badge-sm">ACTIVE WITH LIMITS</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/rajiv-admin/quick-reference-sources.md</span><span class="fdesc">—
+                    Source quick reference for the Admin Manager domain.</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/rajiv-admin/governance-framework-draft-map.md</span><span class="fdesc">—
+                    Governance area map; separates approved/current sections from sections still
+                    draft pending MD (and, for KPI Governance, Arun/Implementation Officer) review.</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/rajiv-admin/admin-manager-responsibility-map-draft.md</span><span
+                    class="fdesc">— Admin Manager responsibility map drawn from SRC-ADMIN-001.</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">member-aios/rajiv-admin/admin-manager-query-pack-draft.md</span><span class="fdesc">—
+                    Open questions for the Admin Manager role.</span></div>
+                <div class="file-entry"><span aria-hidden="true">📄</span><span
+                    class="fpath">evidence/stakeholder-confirmations/admin-manager-src-admin-001-confirmation-2026-07-09.md</span><span
+                    class="fdesc">— SRC-ADMIN-001 registration confirmation. READY — 2026-07-09.</span><span
+                    class="badge badge-source badge-sm">READY</span></div>
+              </div>
+            </details>
+          </div>
+        </details>
+      </div>
+
+      <!-- Context files -->
+      <div class="file-map-section" data-searchable
+        data-tags="context files verify register hr operations recruitment kpi management action records">
+        <details>
+          <summary>📁 context/ — Domain Context Files</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">context/verify-register.md</span><span
+                class="fdesc">— All 9 open [VERIFY] items with resolution conditions (items 8–10 resolved
+                2026-06-30).</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">context/hr-operations-context.md</span><span
+                class="fdesc">— Extended HR operations context (Mayurika domain).</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">context/recruitment-context.md</span><span
+                class="fdesc">— Extended recruitment context (Suman domain).</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">context/kpi-axiom-context.md</span><span
+                class="fdesc">— Extended KPI and AXIOM context (Arun domain).</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">context/management-aios-purpose.md</span><span
+                class="fdesc">— AIOS purpose, scope, and problem areas (root level).</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">context/confidentiality-rules.md</span><span
+                class="fdesc">— Data safety and confidentiality rules.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">context/management-action-records-context.md</span><span class="fdesc">— Usage rules for
+                the management-action-records inbox folder.</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Evidence files -->
+      <div class="file-map-section" data-searchable
+        data-tags="evidence source register stakeholder confirmations suman line manager mayurika roster">
+        <details>
+          <summary>📁 evidence/ — Source Register and Confirmations</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">evidence/source-register.md</span><span
+                class="fdesc">— All 26 registered sources with IDs, statuses, and descriptions.</span><span
+                class="badge badge-source badge-sm">26 sources</span></div>
+            <div class="file-entry" style="margin-top:8px;"><span aria-hidden="true">📁</span><strong
+                style="font-size:.82rem;">stakeholder-confirmations/</strong></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📄</span><span
+                class="fpath">evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md</span><span
+                class="fdesc">— SRC-SUMAN-CONF-001: Suman said "Line Manager" was a typing mistake. SUPERSEDED by
+                SRC-SUMAN-CONF-002 (2026-06-30) — historical record preserved.</span><span class="badge badge-sm"
+                style="background:#888;color:#fff;">SUPERSEDED</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📄</span><span
+                class="fpath">evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md</span><span
+                class="fdesc">— SRC-SUMAN-CONF-002: Suman clarified Line Manager = employee's Team Lead. Supersedes
+                SRC-SUMAN-CONF-001. Root propagation complete 2026-06-30.</span><span
+                class="badge badge-pass badge-sm">READY</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📄</span><span
+                class="fpath">evidence/stakeholder-confirmations/mayurika-active-staff-roster-confirmation-2026-06-26.md</span><span
+                class="fdesc">— Mayurika confirmed active staff roster details.</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📄</span><span
+                class="fpath">evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md</span><span
+                class="fdesc">— Arun confirmed workbench accuracy and items 8, 9, 10. READY — 2026-06-30.</span><span
+                class="badge badge-pass badge-sm">READY</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📄</span><span
+                class="fpath">evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md</span><span
+                class="fdesc">— Suman confirmed workbench accuracy, 8-point screening criteria, Line Manager = Team
+                Lead, and weekly deliverables. READY — 2026-06-30.</span><span
+                class="badge badge-pass badge-sm">READY</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Validation files -->
+      <div class="file-map-section" data-searchable
+        data-tags="validation files member workbench creation web view dashboard policy md arun source map">
+        <details>
+          <summary>📁 validation/ — Validation and Check Files</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/member-aios-3-draft-workbench-creation-check.md</span><span class="fdesc">—
+                Validation for 3-workbench creation task.</span><span
+                class="badge badge-pass badge-sm">PASS-AMBER</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/web-view-html-dashboard-check.md</span><span class="fdesc">— Validation for
+                this web dashboard (current file).</span><span
+                class="badge badge-pass badge-sm">PASS-AMBER</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/policy-update-impact-report.md</span><span class="fdesc">— Impact report for
+                SRC-POLICY-001 integration.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/md-arun-discussion-source-ingestion-check.md</span><span class="fdesc">—
+                Ingestion check for SRC-MD-ARUN-001.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/md-arun-discussion-conflict-check.md</span><span class="fdesc">— Soft conflict
+                check — bonus queryability vs §7.9.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/md-arun-discussion-impact-map.md</span><span class="fdesc">— Impact map for
+                SRC-MD-ARUN-001 integration.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/md-arun-discussion-ingestion-final-report.md</span><span class="fdesc">— Final
+                ingestion report for SRC-MD-ARUN-001.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/md-discussion-source-ingestion-check.md</span><span class="fdesc">— Ingestion
+                check for SRC-MD-HR-001 and SRC-MD-SUMAN-001.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">validation/md-discussion-skill-impact-check.md</span><span class="fdesc">— Skill file
+                update candidates from MD discussion sources.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">validation/claude-source-map.md</span><span
+                class="fdesc">— Map of which CLAUDE.md claims trace to which source IDs.</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Handover files -->
+      <div class="file-map-section" data-searchable
+        data-tags="handover files closure web view dashboard member workbench management action records team usage">
+        <details>
+          <summary>📁 handover/ — Closure and Handover Files</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">handover/2026-06-30__member-aios-3-draft-workbench-closure.md</span><span class="fdesc">—
+                Closure for 3-workbench creation task.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">handover/2026-06-30__web-view-dashboard-closure.md</span><span class="fdesc">— Closure for
+                this web dashboard task.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span
+                class="fpath">handover/management-action-records-team-usage-guide.md</span><span class="fdesc">— Usage
+                guide for the management-action-records inbox.</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Intelligence inbox -->
+      <div class="file-map-section" data-searchable
+        data-tags="intelligence inbox management action records mayurika suman arun index active folder">
+        <details>
+          <summary>📁 intelligence-inbox/ — Ongoing Action Records Inbox</summary>
+          <div class="details-body">
+            <div class="file-entry" style="margin-bottom:6px;"><span aria-hidden="true">📁</span><strong
+                style="font-size:.82rem;">management-action-records/</strong><span
+                class="badge badge-source badge-sm" style="margin-left:8px;">ACTIVE FOLDER</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📄</span><span
+                class="fpath">intelligence-inbox/management-action-records/INDEX.md</span><span class="fdesc">— Index of
+                all records and usage rules.</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📁</span><span
+                class="fpath">intelligence-inbox/management-action-records/mayurika-hr/</span><span class="fdesc">— 1
+                record open</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📁</span><span
+                class="fpath">intelligence-inbox/management-action-records/suman-recruitment/</span><span
+                class="fdesc">— 0 records</span></div>
+            <div class="file-entry" style="padding-left:16px;"><span aria-hidden="true">📁</span><span
+                class="fpath">intelligence-inbox/management-action-records/arun-implementation/</span><span
+                class="fdesc">— 0 records</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Skills -->
+      <div class="file-map-section" data-searchable
+        data-tags="skills management gap detection problem analysis policy lookup recruitment quality kpi axiom">
+        <details>
+          <summary>📁 skills/ — AIOS Skill Files</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">skills/management-gap-detection.md</span><span
+                class="fdesc">— Skill for detecting management and operational gaps.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">skills/management-problem-analysis.md</span><span
+                class="fdesc">— Skill for analysing recorded management problems.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">skills/policy-lookup.md</span><span
+                class="fdesc">— Skill for looking up company policy from confirmed sources.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">skills/recruitment-quality-check.md</span><span
+                class="fdesc">— Skill for checking recruitment process quality.</span></div>
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">skills/kpi-axiom-review-support.md</span><span
+                class="fdesc">— Skill for supporting KPI and AXIOM review processes.</span></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Web-view -->
+      <div class="file-map-section" data-searchable data-tags="web view index html dashboard netlify this file">
+        <details open>
+          <summary>📁 web-view/ — This Dashboard File</summary>
+          <div class="details-body">
+            <div class="file-entry"><span aria-hidden="true">📄</span><span class="fpath">web-view/index.html</span><span class="fdesc">—
+                This file. Static HTML dashboard for Netlify deployment. Read-only.</span><span
+                class="badge badge-source badge-sm">THIS FILE</span></div>
+          </div>
+        </details>
+      </div>
+
+      <div class="next-step-box">
+        <h3>What should I do next?</h3>
+        <p>Use this File Map as a reference when opening files in VS Code. All editing happens in VS Code directly — not
+          from this dashboard. After domain owner reviews are complete, regenerate this dashboard via Claude Code so the
+          file map stays up to date.</p>
+      </div>
+
+    </div><!-- /tab-file-map -->
+
+
+
+    <!-- ══════════════════════════════════
+       (Removed 2026-07-08: the separate "Team Schedule (Test)" tab was removed per user
+       clarification — the interactive testing calendar now lives inside each member's own
+       tab instead of a standalone tab. See
+       validation/member-schedule-index-interactive-calendar-check-2026-07-08.md)
+    ══════════════════════════════════ -->
+  </main>
+
+  <!-- ═══════════════════════════════════
+     DASHBOARD FOOTER
+═══════════════════════════════════ -->
+  <footer class="dashboard-footer" role="contentinfo">
+    <div class="dashboard-footer-left">
+      <span class="dashboard-footer-badge"><span aria-hidden="true">&#128274;</span> Read-only</span>
+      <span>Management AIOS — Dashboard v0.1 — Internal Build &nbsp;&middot;&nbsp; Sensitive HR data, leave records, KPI
+        scores, PDPA, salary, health, candidate, disciplinary, and production data are not shown</span>
+    </div>
+    <div class="dashboard-footer-right">
+      Branch: individual-aios &nbsp;&middot;&nbsp; Internal Build — build-first / validate-later &nbsp;&middot;&nbsp;
+      Future validation: Mayurika, Varmen, Management Team
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════
+     INLINE JAVASCRIPT
+═══════════════════════════════════ -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── Tab switching ── */
+      var tabBtns = document.querySelectorAll('.tab-btn');
+      var tabPanels = document.querySelectorAll('.tab-panel');
+
+      function activateTab(targetId) {
+        tabBtns.forEach(function (btn) {
+          btn.classList.toggle('active', btn.getAttribute('data-tab') === targetId);
+          btn.setAttribute('aria-selected', btn.getAttribute('data-tab') === targetId ? 'true' : 'false');
+        });
+        tabPanels.forEach(function (panel) {
+          panel.classList.toggle('active', panel.id === 'tab-' + targetId);
+        });
+      }
+
+      tabBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          activateTab(btn.getAttribute('data-tab'));
+        });
+      });
+
+      /* ── Member snapshot cards jump to a tab (UI-only, no network) ── */
+      document.querySelectorAll('[data-goto]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          activateTab(el.getAttribute('data-goto'));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+
+      /* ── Search (across all panels) ── */
+      var searchInput = document.getElementById('searchInput');
+      var searchClear = document.getElementById('searchClear');
+      var searchResults = document.getElementById('searchResults');
+
+      function normalize(str) {
+        return str.toLowerCase().replace(/\s+/g, ' ').trim();
+      }
+
+      function doSearch(query) {
+        query = normalize(query);
+        var items = document.querySelectorAll('[data-searchable]');
+        var shown = 0;
+        items.forEach(function (el) {
+          var tags = normalize(el.getAttribute('data-tags') || '');
+          var text = normalize(el.textContent || '');
+          var match = !query || tags.indexOf(query) !== -1 || text.indexOf(query) !== -1;
+          if (match) { el.classList.remove('hidden'); shown++; }
+          else { el.classList.add('hidden'); }
+        });
+        if (query) {
+          searchResults.textContent = shown + ' result' + (shown === 1 ? '' : 's') + ' across all tabs';
+        } else {
+          searchResults.textContent = '';
+        }
+      }
+
+      searchInput.addEventListener('input', function () { doSearch(searchInput.value); });
+      searchClear.addEventListener('click', function () {
+        searchInput.value = '';
+        doSearch('');
+        searchInput.focus();
+      });
+
+    }());
+  </script>
+
+  <!-- ═══════════════════════════════════
+     PER-MEMBER SCHEDULE CALENDAR — TESTING PREVIEW ONLY
+     Backed by a local FastAPI + PostgreSQL API (see backend/README.md). Not official
+     HR/Admin schedule truth. Every event created here is server-forced to
+     source_scope='dashboard_testing' / is_official_truth=false (backend/routers/member_schedules.py).
+     One reusable factory mounts an independent calendar instance into every
+     ".msc-instance" container (one per member tab: Mayurika, Suman, Arun, Rajiv).
+     No shared IDs are used across instances — every element is looked up via
+     container-scoped querySelector, so instances cannot interfere with each other.
+     See validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md
+     (supersedes the earlier localStorage-only build documented in
+     validation/member-schedule-index-interactive-calendar-check-2026-07-08.md)
+═══════════════════════════════════ -->
+  <script>
+    (function () {
+      'use strict';
+
+      var MEMBER_SCHEDULE_API_BASE = 'http://127.0.0.1:8000/api/member-schedules';
+
+      var CATEGORY_CLASS = {
+        'Sample Task': 'task',
+        'Sample Review': 'review',
+        'Sample Follow-up': 'followup',
+        'Sample Planning': 'planning'
+      };
+      var PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
+      var PRIORITY_BADGE = { High: 'badge-blocked', Medium: 'badge-amber', Low: 'badge-pass' };
+      var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+        'September', 'October', 'November', 'December'];
+      var DAY_HEADS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+      function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str == null ? '' : str;
+        return div.innerHTML;
+      }
+
+      /* Converts a backend member_schedule_events row (event_date/start_time/end_time)
+         into the frontend item shape (date/start/end) the render functions expect.
+         Backend times come back as "HH:MM:SS" — trimmed to "HH:MM" for the <input type="time"> fields. */
+      function apiItemToFrontend(apiItem) {
+        function trimTime(t) { return t ? String(t).slice(0, 5) : ''; }
+        return {
+          id: apiItem.id,
+          date: apiItem.date,
+          title: apiItem.title,
+          category: apiItem.category,
+          priority: apiItem.priority,
+          start: trimTime(apiItem.start),
+          end: trimTime(apiItem.end),
+          notes: apiItem.notes || ''
+        };
+      }
+
+      /* Converts the frontend form/item shape into the backend create/update payload.
+         Empty start/end strings are sent as null — the backend Optional[time] field
+         rejects an empty string, and null is how "no time set" is represented server-side. */
+      function frontendToApiPayload(fields) {
+        return {
+          date: fields.date,
+          title: fields.title,
+          category: fields.category,
+          priority: fields.priority,
+          start: fields.start ? fields.start : null,
+          end: fields.end ? fields.end : null,
+          notes: fields.notes ? fields.notes : null
+        };
+      }
+
+      /* Builds and wires ONE independent calendar instance inside `container`.
+         All element lookups are scoped to `container` — no ids are used for any
+         repeated element, so mounting several instances on one page (one per
+         member tab) cannot create duplicate-id collisions. */
+      function mountScheduleCalendarInstance(container) {
+        var memberKey = container.getAttribute('data-member-key') || 'member';
+        var memberLabel = container.getAttribute('data-member-label') || memberKey;
+        var showRajivNote = container.getAttribute('data-rajiv-note') === 'true';
+        var apiBase = MEMBER_SCHEDULE_API_BASE + '/' + encodeURIComponent(memberKey);
+        /* Unique per instance (no shared ids across the 4 mounted calendars —
+           same rule the rest of this factory already follows) so the view
+           modal's aria-labelledby target is valid for every member tab. */
+        var viewTitleId = 'msc-view-title-' + memberKey;
+
+        var rajivNoteHtml = showRajivNote
+          ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
+          : '';
+
+        container.innerHTML =
+          '<div class="msc-banner">' +
+          '<span class="msc-banner-icon" aria-hidden="true">&#9888;&#65039;</span>' +
+          '<div><strong>Testing Preview Only</strong> — stored through local FastAPI/PostgreSQL backend for ' +
+          'dashboard testing; not official HR/Admin truth.</div>' +
+          '</div>' +
+          '<p class="msc-note">Schedule items here are saved to a local FastAPI + PostgreSQL backend for testing ' +
+          'purposes only (see <code>backend/README.md</code>). This is not official HR/Admin schedule truth.</p>' +
+          '<p class="msc-note" style="font-weight:600;color:var(--text);">Click a date, then add or edit a testing schedule item.</p>' +
+          '<p class="msc-note">This follows the Management Team Schedule demo layout, but all entries here are ' +
+          'sample testing data.</p>' +
+          '<p class="msc-note msc-api-status" style="display:none;"></p>' +
+          rajivNoteHtml +
+          '<div class="hr-table-card">' +
+          '<div class="msc-cal-toolbar">' +
+          '<div class="msc-cal-toolbar-btns">' +
+          '<button type="button" class="msc-tool-btn msc-prev">&larr; Previous</button>' +
+          '<button type="button" class="msc-tool-btn msc-today">Today</button>' +
+          '<button type="button" class="msc-tool-btn msc-next">Next &rarr;</button>' +
+          '</div>' +
+          '<div class="msc-cal-heading msc-heading">&nbsp;</div>' +
+          '</div>' +
+          '<div class="msc-cal-grid-wrap"><div class="msc-cal-grid msc-grid"></div></div>' +
+          '</div>' +
+          '<div class="msc-form-card">' +
+          '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
+          '<span class="msc-selected-date-label">select a date</span></div>' +
+          '<form class="msc-form msc-form-grid" autocomplete="off">' +
+          '<label>Date<input type="date" class="msc-field-date" required /></label>' +
+          '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Sample Task" maxlength="60" required /></label>' +
+          '<label>Category<select class="msc-field-category">' +
+          '<option value="Sample Task">Sample Task</option>' +
+          '<option value="Sample Review">Sample Review</option>' +
+          '<option value="Sample Follow-up">Sample Follow-up</option>' +
+          '<option value="Sample Planning">Sample Planning</option>' +
+          '</select></label>' +
+          '<label>Priority (sample/demo only)<select class="msc-field-priority">' +
+          '<option value="High">High</option>' +
+          '<option value="Medium" selected>Medium</option>' +
+          '<option value="Low">Low</option>' +
+          '</select></label>' +
+          '<label>Start time<input type="time" class="msc-field-start" /></label>' +
+          '<label>End time<input type="time" class="msc-field-end" /></label>' +
+          '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
+          'placeholder="Optional testing note — no real names, meetings, or customer details"></textarea></label>' +
+          '</form>' +
+          '<div class="msc-form-actions">' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-update-btn" style="display:none;">Update schedule</button>' +
+          '<button type="button" class="msc-btn msc-btn-ghost msc-cancel-btn" style="display:none;">Cancel edit</button>' +
+          '</div>' +
+          '</div>' +
+          '<div class="msc-list-card">' +
+          '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Items — ' +
+          '<span class="msc-list-date-label">select a date</span></div>' +
+          '<div class="msc-list"><p class="msc-empty">Select a date on the calendar to see schedule items.</p></div>' +
+          '</div>' +
+          '<div class="msc-list-card">' +
+          '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
+          '<p class="msc-note" style="margin:0 0 8px;">Ranks today\'s sample items High → Medium → Low, styled ' +
+          'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
+          '<div class="msc-priority-list"></div>' +
+          '</div>' +
+          '<div class="msc-form-actions" style="margin-top:16px;">' +
+          '<button type="button" class="msc-btn msc-btn-danger msc-clear-btn">Clear Testing Data</button>' +
+          '</div>' +
+          '<div class="hr-cal-footer">Testing calendar. Data is stored via a local FastAPI + PostgreSQL backend ' +
+          '(<code>' + escapeHtml(apiBase) + '</code>), for dashboard testing only. Not connected to Google Calendar ' +
+          'or GitHub. Not official schedule truth.</div>' +
+          '<details style="margin-top:6px;margin-bottom:18px;"><summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">' +
+          'Technical details</summary><p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Validation: ' +
+          '<code>validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md</code></p></details>' +
+          '<div class="msc-modal-overlay msc-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(viewTitleId) + '">' +
+          '<div class="msc-modal">' +
+          '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '">Sample Task</h4>' +
+          '<p class="msc-view-date"></p>' +
+          '<p class="msc-view-time"></p>' +
+          '<p class="msc-view-category"></p>' +
+          '<p class="msc-view-priority"></p>' +
+          '<p class="msc-view-notes"></p>' +
+          '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
+          '</div>' +
+          '</div>';
+
+        /* ── Scoped element refs (container-level selectors only — no ids) ── */
+        var formEl = container.querySelector('.msc-form');
+        var monthHeading = container.querySelector('.msc-heading');
+        var calGrid = container.querySelector('.msc-grid');
+        var prevBtn = container.querySelector('.msc-prev');
+        var todayBtn = container.querySelector('.msc-today');
+        var nextBtn = container.querySelector('.msc-next');
+        var selectedDateLabel = container.querySelector('.msc-selected-date-label');
+        var listDateLabel = container.querySelector('.msc-list-date-label');
+        var fieldDate = container.querySelector('.msc-field-date');
+        var fieldTitle = container.querySelector('.msc-field-title');
+        var fieldCategory = container.querySelector('.msc-field-category');
+        var fieldPriority = container.querySelector('.msc-field-priority');
+        var fieldStart = container.querySelector('.msc-field-start');
+        var fieldEnd = container.querySelector('.msc-field-end');
+        var fieldNotes = container.querySelector('.msc-field-notes');
+        var addBtn = container.querySelector('.msc-add-btn');
+        var updateBtn = container.querySelector('.msc-update-btn');
+        var cancelBtn = container.querySelector('.msc-cancel-btn');
+        var listEl = container.querySelector('.msc-list');
+        var priorityListEl = container.querySelector('.msc-priority-list');
+        var clearBtn = container.querySelector('.msc-clear-btn');
+        var viewModal = container.querySelector('.msc-view-modal');
+        var viewTitle = container.querySelector('.msc-view-title');
+        var viewDate = container.querySelector('.msc-view-date');
+        var viewTime = container.querySelector('.msc-view-time');
+        var viewCategory = container.querySelector('.msc-view-category');
+        var viewPriority = container.querySelector('.msc-view-priority');
+        var viewNotes = container.querySelector('.msc-view-notes');
+        var viewClose = container.querySelector('.msc-view-close');
+        var apiStatusEl = container.querySelector('.msc-api-status');
+
+        /* Prevent Enter-key implicit form submission from reloading the page —
+           no action/method is set on this form; it is never meant to submit. */
+        formEl.addEventListener('submit', function (e) { e.preventDefault(); });
+
+        var state = { viewYear: null, viewMonth: null, selectedDate: null, editingId: null };
+
+        /* Presentation-only status line (Phase 1 polish, 2026-07-10): same
+           (message, isError) signature and every call site as before — only
+           how the message is styled/announced changed. Non-error messages
+           (loading/saving/deleting) use role="status" (polite); a genuine
+           error switches to role="alert" (assertive) so it isn't missed. */
+        function showApiStatus(message, isError) {
+          if (!message) {
+            apiStatusEl.style.display = 'none';
+            apiStatusEl.textContent = '';
+            apiStatusEl.removeAttribute('role');
+            apiStatusEl.classList.remove('msc-api-status--info', 'msc-api-status--error');
+            return;
+          }
+          apiStatusEl.style.display = '';
+          apiStatusEl.classList.toggle('msc-api-status--error', !!isError);
+          apiStatusEl.classList.toggle('msc-api-status--info', !isError);
+          apiStatusEl.setAttribute('role', isError ? 'alert' : 'status');
+          apiStatusEl.textContent = message;
+        }
+
+        /* ── API helpers — no localStorage; this is the only place calendar data
+           is read from or written to. On failure, the UI shows a visible status
+           message rather than silently falling back to any local storage. ── */
+        function apiRequest(method, url, body) {
+          var opts = { method: method, headers: {} };
+          if (body !== undefined) {
+            opts.headers['Content-Type'] = 'application/json';
+            opts.body = JSON.stringify(body);
+          }
+          return fetch(url, opts).then(function (res) {
+            if (!res.ok) {
+              return res.json().catch(function () { return {}; }).then(function (errBody) {
+                var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) : (res.status + ' ' + res.statusText);
+                throw new Error(detail);
+              });
+            }
+            if (res.status === 204) { return null; }
+            return res.json();
+          });
+        }
+
+        function loadItems() {
+          showApiStatus('Loading schedule from local API…', false);
+          return apiRequest('GET', apiBase).then(function (rows) {
+            showApiStatus('', false);
+            return (rows || []).map(apiItemToFrontend);
+          }).catch(function (err) {
+            showApiStatus('Could not reach the local schedule API (' + apiBase + '). Is the backend ' +
+              'running? Start it with "uvicorn backend.main:app --port 8000" — see backend/README.md. ' +
+              'Detail: ' + err.message, true);
+            return [];
+          });
+        }
+
+        var items = [];
+
+        function itemsForDate(dateStr) {
+          return items.filter(function (it) { return it.date === dateStr; });
+        }
+
+        var MAX_CAL_CHIPS = 2;
+
+        function renderCalendar() {
+          var y = state.viewYear, m = state.viewMonth;
+          monthHeading.textContent = MONTH_NAMES[m] + ' ' + y;
+
+          var firstOfMonth = new Date(y, m, 1);
+          var startOffset = firstOfMonth.getDay();
+          var gridStart = new Date(y, m, 1 - startOffset);
+          var todayStr = toDateStr(new Date());
+
+          var html = '';
+          DAY_HEADS.forEach(function (d) { html += '<div class="msc-cal-headcell">' + d + '</div>'; });
+
+          for (var i = 0; i < 42; i++) {
+            var cellDate = new Date(gridStart);
+            cellDate.setDate(gridStart.getDate() + i);
+            var cellStr = toDateStr(cellDate);
+            var inMonth = cellDate.getMonth() === m;
+            var isToday = cellStr === todayStr;
+            var isSelected = cellStr === state.selectedDate;
+            var dayItems = itemsForDate(cellStr);
+
+            var cls = 'msc-cal-cell' + (inMonth ? '' : ' other-month') + (isSelected ? ' selected' : '');
+            html += '<div class="' + cls + '" data-date="' + cellStr + '">';
+            html += '<div class="msc-cal-daynum' + (isToday ? ' today' : '') + '">' + cellDate.getDate() + '</div>';
+            /* Demo-style visible task chips inside each date (aios_role_desk_views.html layout reference) —
+               shows the actual sample/testing entries the user has added, not real schedule facts. */
+            dayItems.slice(0, MAX_CAL_CHIPS).forEach(function (it) {
+              var catClass = CATEGORY_CLASS[it.category] || 'task';
+              var label = (it.start ? it.start + ' ' : '') + it.title;
+              html += '<span class="msc-cal-chip ' + catClass + '" title="' + escapeHtml(label) + '">' +
+                escapeHtml(label) + '</span>';
+            });
+            if (dayItems.length > MAX_CAL_CHIPS) {
+              html += '<span class="msc-cal-chip-more">+' + (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
+            }
+            html += '</div>';
+          }
+          calGrid.innerHTML = html;
+
+          calGrid.querySelectorAll('.msc-cal-cell').forEach(function (cell) {
+            cell.addEventListener('click', function () {
+              selectDate(cell.getAttribute('data-date'));
+            });
+          });
+        }
+
+        prevBtn.addEventListener('click', function () {
+          state.viewMonth--;
+          if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
+          renderCalendar();
+        });
+        nextBtn.addEventListener('click', function () {
+          state.viewMonth++;
+          if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
+          renderCalendar();
+        });
+        todayBtn.addEventListener('click', function () {
+          var t = new Date();
+          state.viewYear = t.getFullYear();
+          state.viewMonth = t.getMonth();
+          selectDate(toDateStr(t));
+        });
+
+        function selectDate(dateStr) {
+          state.selectedDate = dateStr;
+          selectedDateLabel.textContent = dateStr;
+          listDateLabel.textContent = dateStr;
+          fieldDate.value = dateStr;
+          cancelEdit();
+          renderCalendar();
+          renderList();
+        }
+
+        function renderList() {
+          if (!state.selectedDate) {
+            listEl.innerHTML = '<p class="msc-empty">Select a date on the calendar to see schedule items.</p>';
+            renderPriorityPreview();
+            return;
+          }
+          var dayItems = items.filter(function (it) { return it.date === state.selectedDate; });
+          if (!dayItems.length) {
+            listEl.innerHTML = '<p class="msc-empty">No sample schedule items for ' + escapeHtml(memberLabel) +
+              ' on ' + state.selectedDate + ' yet. Use the form above to add one for testing.</p>';
+            renderPriorityPreview();
+            return;
+          }
+          var html = '';
+          dayItems.forEach(function (it) {
+            var catClass = CATEGORY_CLASS[it.category] || 'task';
+            var priority = it.priority || 'Medium';
+            var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
+            var timeStr = (it.start || it.end) ? (it.start || '?') + '–' + (it.end || '?') : 'No time set';
+            html += '<div class="msc-item" data-id="' + it.id + '">';
+            html += '<div><div class="msc-item-title"><span class="badge ' + badgeClass + '" ' +
+              'title="Sample/demo priority only">' + escapeHtml(priority) + '</span> ' +
+              '<span class="msc-chip-cat ' + catClass + '">' + it.category +
+              '</span>' + escapeHtml(it.title) + '</div>';
+            html += '<div class="msc-item-meta">' + timeStr + '</div></div>';
+            html += '<div class="msc-item-actions">';
+            html += '<button type="button" data-action="view" data-id="' + it.id + '">View</button>';
+            html += '<button type="button" data-action="edit" data-id="' + it.id + '">Edit</button>';
+            html += '<button type="button" data-action="delete" data-id="' + it.id + '">Delete</button>';
+            html += '</div></div>';
+          });
+          listEl.innerHTML = html;
+
+          listEl.querySelectorAll('button[data-action]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var action = btn.getAttribute('data-action');
+              var id = btn.getAttribute('data-id');
+              if (action === 'view') { viewItem(id, btn); }
+              else if (action === 'edit') { editItem(id); }
+              else if (action === 'delete') { deleteItem(id); }
+            });
+          });
+
+          renderPriorityPreview();
+        }
+
+        /* Demo-style "Priority Queue" preview (aios_role_desk_views.html layout reference) — ranks
+           today's sample items High → Medium → Low. Sample/demo priority only, not a real ranking. */
+        function renderPriorityPreview() {
+          var todayStr = toDateStr(new Date());
+          var todays = itemsForDate(todayStr).slice().sort(function (a, b) {
+            var pa = PRIORITY_ORDER[a.priority] === undefined ? 1 : PRIORITY_ORDER[a.priority];
+            var pb = PRIORITY_ORDER[b.priority] === undefined ? 1 : PRIORITY_ORDER[b.priority];
+            return pa - pb;
+          });
+          if (!todays.length) {
+            priorityListEl.innerHTML = '<p class="msc-empty">No sample items for today yet.</p>';
+            return;
+          }
+          var html = '';
+          todays.forEach(function (it) {
+            var priority = it.priority || 'Medium';
+            var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
+            var catClass = CATEGORY_CLASS[it.category] || 'task';
+            html += '<div class="msc-item">';
+            html += '<div><span class="badge ' + badgeClass + '" title="Sample/demo priority only">' +
+              escapeHtml(priority) + '</span> <span class="msc-chip-cat ' + catClass + '">' + it.category +
+              '</span>' + escapeHtml(it.title) + '</div>';
+            html += '</div>';
+          });
+          priorityListEl.innerHTML = html;
+        }
+
+        function resetForm() {
+          fieldTitle.value = '';
+          fieldCategory.value = 'Sample Task';
+          fieldPriority.value = 'Medium';
+          fieldStart.value = '';
+          fieldEnd.value = '';
+          fieldNotes.value = '';
+        }
+
+        function cancelEdit() {
+          state.editingId = null;
+          addBtn.style.display = '';
+          updateBtn.style.display = 'none';
+          cancelBtn.style.display = 'none';
+          resetForm();
+        }
+
+        cancelBtn.addEventListener('click', cancelEdit);
+
+        addBtn.addEventListener('click', function () {
+          if (!fieldDate.value) { window.alert('Choose a date on the calendar first.'); return; }
+          if (!fieldTitle.value.trim()) { window.alert('Enter a title (e.g. Sample Task) before adding.'); return; }
+          var payload = frontendToApiPayload({
+            date: fieldDate.value,
+            title: fieldTitle.value.trim(),
+            category: fieldCategory.value,
+            priority: fieldPriority.value,
+            start: fieldStart.value,
+            end: fieldEnd.value,
+            notes: fieldNotes.value.trim()
+          });
+          var addedDate = fieldDate.value;
+          addBtn.disabled = true;
+          showApiStatus('Saving…', false);
+          apiRequest('POST', apiBase, payload).then(function (apiItem) {
+            items.push(apiItemToFrontend(apiItem));
+            showApiStatus('', false);
+            selectDate(addedDate);
+            resetForm();
+          }).catch(function (err) {
+            showApiStatus('Could not save this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+          }).then(function () { addBtn.disabled = false; });
+        });
+
+        function editItem(id) {
+          var it = items.filter(function (x) { return x.id === id; })[0];
+          if (!it) { return; }
+          state.editingId = id;
+          fieldDate.value = it.date;
+          fieldTitle.value = it.title;
+          fieldCategory.value = it.category;
+          fieldPriority.value = it.priority || 'Medium';
+          fieldStart.value = it.start || '';
+          fieldEnd.value = it.end || '';
+          fieldNotes.value = it.notes || '';
+          addBtn.style.display = 'none';
+          updateBtn.style.display = '';
+          cancelBtn.style.display = '';
+        }
+
+        updateBtn.addEventListener('click', function () {
+          if (!state.editingId) { return; }
+          var it = items.filter(function (x) { return x.id === state.editingId; })[0];
+          if (!it) { return; }
+          if (!fieldTitle.value.trim()) { window.alert('Enter a title before updating.'); return; }
+          var payload = frontendToApiPayload({
+            date: fieldDate.value,
+            title: fieldTitle.value.trim(),
+            category: fieldCategory.value,
+            priority: fieldPriority.value,
+            start: fieldStart.value,
+            end: fieldEnd.value,
+            notes: fieldNotes.value.trim()
+          });
+          var editingId = state.editingId;
+          updateBtn.disabled = true;
+          showApiStatus('Saving…', false);
+          apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiItem) {
+            var updated = apiItemToFrontend(apiItem);
+            var idx = items.indexOf(it);
+            if (idx !== -1) { items[idx] = updated; }
+            showApiStatus('', false);
+            selectDate(updated.date);
+            cancelEdit();
+          }).catch(function (err) {
+            showApiStatus('Could not update this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+          }).then(function () { updateBtn.disabled = false; });
+        });
+
+        function deleteItem(id) {
+          var it = items.filter(function (x) { return x.id === id; })[0];
+          if (!it) { return; }
+          var ok = window.confirm('Delete this sample schedule item ("' + it.title + '")? This only removes ' +
+            'testing data from the local API/database — it does not touch any real source or database.');
+          if (!ok) { return; }
+          showApiStatus('Deleting…', false);
+          apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
+            items = items.filter(function (x) { return x.id !== id; });
+            showApiStatus('', false);
+            if (state.editingId === id) { cancelEdit(); }
+            renderCalendar();
+            renderList();
+          }).catch(function (err) {
+            showApiStatus('Could not delete this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+          });
+        }
+
+        /* Modal focus management (Phase 1 polish, 2026-07-10) — presentation/
+           keyboard-behaviour only, no change to calendar item data or CRUD
+           calls. lastFocusedTrigger lets Close/Escape/backdrop-click return
+           focus to whichever "View" button opened the modal. Since the modal
+           body only ever contains one interactive control (the Close button),
+           Tab is simply pinned there — a correct, minimal focus trap for this
+           content rather than a general-purpose one. */
+        var lastFocusedTrigger = null;
+
+        function onViewModalKeydown(e) {
+          if (e.key === 'Escape' || e.key === 'Esc') {
+            e.preventDefault();
+            closeViewModal();
+          } else if (e.key === 'Tab') {
+            e.preventDefault();
+            viewClose.focus();
+          }
+        }
+
+        function closeViewModal() {
+          viewModal.classList.remove('show');
+          viewModal.removeEventListener('keydown', onViewModalKeydown);
+          if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function') {
+            lastFocusedTrigger.focus();
+          }
+          lastFocusedTrigger = null;
+        }
+
+        function viewItem(id, triggerEl) {
+          var it = items.filter(function (x) { return x.id === id; })[0];
+          if (!it) { return; }
+          viewTitle.textContent = it.title;
+          viewDate.textContent = 'Date: ' + it.date;
+          viewTime.textContent = 'Time: ' + ((it.start || it.end) ? (it.start || '?') + ' – ' + (it.end || '?') : 'Not set');
+          viewCategory.textContent = 'Category: ' + it.category;
+          viewPriority.textContent = 'Priority (sample/demo only): ' + (it.priority || 'Medium');
+          viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
+          lastFocusedTrigger = triggerEl || document.activeElement;
+          viewModal.classList.add('show');
+          viewModal.addEventListener('keydown', onViewModalKeydown);
+          viewClose.focus();
+        }
+
+        viewClose.addEventListener('click', closeViewModal);
+        viewModal.addEventListener('click', function (e) {
+          if (e.target === viewModal) { closeViewModal(); }
+        });
+
+        clearBtn.addEventListener('click', function () {
+          var ok = window.confirm('Clear ALL testing schedule data for ' + memberLabel +
+            ' from the local API/database? This cannot be undone. Only "dashboard_testing" rows are affected — ' +
+            'it does not touch any real source, official record, or database.');
+          if (!ok) { return; }
+          showApiStatus('Clearing testing data…', false);
+          apiRequest('DELETE', apiBase + '/clear-testing-data').then(function () {
+            items = [];
+            showApiStatus('', false);
+            cancelEdit();
+            renderCalendar();
+            renderList();
+          }).catch(function (err) {
+            showApiStatus('Could not clear testing data — the local API may be unavailable. Detail: ' + err.message, true);
+          });
+        });
+
+        /* ── Init this instance ──
+           Items are loaded from the API before the first render. No seed/sample
+           data is created automatically — the list stays empty (and the calendar
+           shows no chips) until the user manually adds an item, so mounting this
+           instance never writes a row to PostgreSQL by itself. */
+        var t0 = new Date();
+        state.viewYear = t0.getFullYear();
+        state.viewMonth = t0.getMonth();
+        renderCalendar();
+        loadItems().then(function (loaded) {
+          items = loaded;
+          selectDate(toDateStr(t0));
+        });
+      }
+
+      function initAllScheduleCalendars() {
+        var containers = document.querySelectorAll('.msc-instance');
+        containers.forEach(function (container) {
+          try {
+            mountScheduleCalendarInstance(container);
+          } catch (err) {
+            if (window.console && window.console.error) {
+              window.console.error('Schedule calendar failed to initialize for member "' +
+                container.getAttribute('data-member-key') + '":', err);
+            }
+          }
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllScheduleCalendars);
+      } else {
+        initAllScheduleCalendars();
+      }
+
+    }());
+  </script>
+</body>
+
+</html>

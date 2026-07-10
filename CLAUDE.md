@@ -63,6 +63,7 @@ Every fact, rule, process claim, or operational detail in this CLAUDE.md must tr
 | SRC-MD-HR-001 | READY — Varmen Reviewed 2026-06-25 |
 | SRC-MD-SUMAN-001 | READY — Varmen Reviewed 2026-06-25 |
 | SRC-MD-ARUN-001 | READY — Varmen Reviewed by project default (2026-06-26) |
+| SRC-ARUN-CONF-001 | READY — Arun reviewed 2026-06-30 |
 
 ---
 
@@ -141,7 +142,7 @@ The following domains are confirmed by registered sources and are in scope for t
 
 | Role | Confirmed Responsibilities | Source ID | [VERIFY] Limits |
 |------|---------------------------|-----------|-----------------|
-| **HR Officer (Mayurika)** | Staff record maintenance and data stewardship; PDPA compliance tracking; AXIOM weekly data submission to Arun; probation date monitoring; review schedule management; EOD productivity monitoring (Website & PH Teams); Critic Meeting coordination (with Muguntha and Jefri); SKILL file compliance enforcement (Developer & Technical/N8N Teams); Leadership Review coordination (with Director); 996 Project ROI monitoring; monthly HR governance reporting to MD | SRC-MAYU-001 | Does not write AXIOM band placements (Arun's authority); does not overwrite canonical name spelling (Rajiv's authority); does not write team structure data (Rajiv's authority); does not write salary band information |
+| **HR Officer (Mayurika)** | Staff record maintenance and data stewardship; PDPA compliance tracking; AXIOM weekly data submission to Arun; probation date monitoring; review schedule management; EOD productivity monitoring (Website & PH Teams); Critic Meeting coordination (with Muguntha and Jefri); SKILL file compliance enforcement (Developer & Technical/N8N Teams); Leadership Review coordination (with Director); 996 Project ROI monitoring; monthly HR governance reporting to MD; New Skill Learning Program follow-up, verification, evidence collection, adoption tracking, and management reporting | SRC-MAYU-001, SRC-MAYURIKA-NSLP-001 | Does not write AXIOM band placements (Arun's authority); does not overwrite canonical name spelling (Rajiv's authority); does not write team structure data (Rajiv's authority); does not write salary band information |
 | **Implementation Officer (Arun)** | KPI definitions per role; AXIOM band placement; weekly AXIOM processing; incident escalation management; PRC membership; management dashboard requirements; daily operational checklist across teams | SRC-ARUN-001, SRC-ARUN-002 | [VERIFY — detailed authority limits beyond KPI/AXIOM scope not yet documented] |
 | **Recruitment Officer (Suman)** | Formal role designation: Head Hunter, Onboarder, 6-Month Progress ROI Reviewer (SRC-MD-SUMAN-001 — Varmen Reviewed 2026-06-25); recruitment pipeline management; 8-point candidate screening; interview scoring (50-point scale); rejected/on-hold tracking; commitment records; 7/14-day, Month 1, Month 3, and Month 6 reviews; source quality monitoring; 180-day handover; daily knowledge capture; six-month hire ROI audit (binary); OLOS onboarding validation; BGCT completion monitoring; weekly deliverables (Risk Identification, One-Month Task Rule, SKU/Margin/Hire-ROI Trace, LLM-in-the-Loop proof) | SRC-SUMAN-001-v2, SRC-MAYU-001, SRC-MD-SUMAN-001 | Line Manager identity in 180-day handover [VERIFY — §8.11]; Suman formal role designation and extended responsibilities confirmed — Varmen Reviewed 2026-06-25 (SRC-MD-SUMAN-001) |
 | **Admin Manager** | [VERIFY — awaiting SRC-ADMIN-001] | SRC-ADMIN-001 PENDING | All authority, approval rights, and escalation responsibilities unknown until source received |
@@ -226,7 +227,7 @@ The following conditions trigger KPI risk detection:
 
 - YOY Growth below 30%
 - Website ROAS below 400%
-- Amazon ACOS Below 25% [VERIFY — Arun: source wording is "Amazon ACOSBelow 25%" — threshold direction and formatting should be confirmed]
+- Amazon ACOS below 25% / ROAS 4 *(SRC-ARUN-CONF-001 — Arun confirmed 2026-06-30)*
 - eBay ACOS Below 20%
 - Incident Score below 15/25
 - 3+ incident reports
@@ -238,7 +239,7 @@ The following conditions trigger KPI risk detection:
 
 ### 7.4 Review Inputs
 
-Revenue, Profit, YOY Growth, ROAS, ACOS, Individual Staff Net Sales, Task Completion, Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback, ROI Officer Feedback [VERIFY — Arun: source lists "ROI officer feed back" — confirm whether this is a distinct role or a title for an existing role].
+Revenue, Profit, YOY Growth, ROAS, ACOS, Individual Staff Net Sales, Task Completion, Documentation Status, Incident Reports, ROI Contribution, Team Leader Feedback, Auditor Feedback (External Auditor: Paraparan), Implementation Officer – Arunraj Feedback *(SRC-ARUN-CONF-001 — Arun confirmed 2026-06-30; replaces "ROI Officer" wording from SRC-ARUN-001)*.
 
 ### 7.5 Review Outputs
 
@@ -278,7 +279,7 @@ Collect data weekly → calculate KPI scores → assign bands → identify risks
 - Implementation Officer
 - Admin Manager [VERIFY — awaiting SRC-ADMIN-001: Admin Manager's PRC role and authority within PRC not yet independently confirmed]
 - Team Leader
-- Operational Manager [VERIFY — Arun: confirm Operational Manager PRC membership and scope of participation]
+- Operational Manager — Escalation authority confirmed (SRC-ARUN-CONF-001, 2026-06-30): may delay or avoid suspension/termination under the escalation policy if the staff member provides a firm commitment with a defined deadline to achieve the required ROI. Full PRC membership scope and voting rights remain [VERIFY — awaiting dedicated Operational Manager source].
 
 **PRC Responsibilities:** KPI Review, Bonus Approval, Escalation Decisions, Promotion Reviews.
 
@@ -425,9 +426,9 @@ All recruitment sources are monitored across two dimensions:
 
 ### 8.11 180-Day Handover
 
-At Month 6, a structured 15-minute handover meeting is conducted involving Mayurika (referred to as "Mayoorika" in source document), Arun, and Suman.
+At Month 6, a structured 15-minute handover meeting is conducted involving Mayurika (referred to as "Mayoorika" in source document), Arun, Suman, and the Line Manager (the employee's Team Lead).
 
-> **Typing correction (SRC-SUMAN-CONF-001 — 2026-06-25):** The original source document (SRC-SUMAN-001-v2) mentioned a "Line Manager" attendee. Suman confirmed this was a typing mistake. There is no Line Manager role in the 180-day handover. The [VERIFY] item for Line Manager identity (former item 11) is resolved.
+> **Source correction (SRC-SUMAN-CONF-002 — 2026-06-30):** Suman clarified that a Line Manager does attend the 180-day handover, and that the Line Manager is the employee's Team Lead — a role-based attendee, not a fixed named person. SRC-SUMAN-CONF-002 supersedes SRC-SUMAN-CONF-001 (2026-06-25) for this claim only. SRC-SUMAN-CONF-001 had stated the "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake — that position is superseded. SRC-SUMAN-CONF-001 is preserved as a historical record. See `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`.
 
 The review covers:
 
@@ -768,7 +769,7 @@ The assistant must not:
 
 The following items are unresolved and must remain tagged `[VERIFY]` until the listed condition is met.
 
-> **Resolved since Foundation Draft v0.1:** Item 12 (Leave policy detail) was resolved on 2026-06-23 by SRC-POLICY-001 §6.0–6.5. The full leave framework is documented in §10.1 and context/hr-operations-context.md §9. Item 11 (Line Manager identity in 180-day handover) was resolved on 2026-06-25 by SRC-SUMAN-CONF-001 — Suman confirmed the "Line Manager" reference in SRC-SUMAN-001-v2 was a typing mistake; no Line Manager role exists in the handover. See §8.11 and evidence/stakeholder-confirmations/suman-line-manager-typing-correction-2026-06-25.md.
+> **Resolved since Foundation Draft v0.1:** Item 12 (Leave policy detail) was resolved on 2026-06-23 by SRC-POLICY-001 §6.0–6.5. The full leave framework is documented in §10.1 and context/hr-operations-context.md §9. Item 11 (Line Manager identity in 180-day handover) was initially resolved 2026-06-25 by SRC-SUMAN-CONF-001 (Suman said "typing mistake; no Line Manager") — that resolution was superseded on 2026-06-30 by SRC-SUMAN-CONF-002: Suman clarified the Line Manager role does exist and refers to the employee's Team Lead. Final resolution: Line Manager = employee's Team Lead. See §8.11 and `evidence/stakeholder-confirmations/suman-line-manager-role-reconfirmation-2026-06-30.md`. Items 8 (Amazon ACOS threshold wording), 9 (Operational Manager escalation authority), and 10 (ROI Officer identity / title) were resolved on 2026-06-30 by SRC-ARUN-CONF-001 — Arun direct confirmation. Item 9 confirmed for escalation authority only; full Operational Manager PRC scope remains [VERIFY] pending a dedicated source. See `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`.
 
 | # | [VERIFY] Item | Blocked By | Resolution Condition |
 |---|---------------|-----------|----------------------|
@@ -779,11 +780,8 @@ The following items are unresolved and must remain tagged `[VERIFY]` until the l
 | 5 | Final escalation paths (routes through Admin Manager) | SRC-ADMIN-001 PENDING | Admin Manager source received |
 | 6 | MD-specific requirements beyond Varmen relay | SRC-VAR-001 acknowledged limit | Future meeting with MD; findings documented and registered |
 | 7 | Final implementation scope | SRC-VAR-001 acknowledged limit | MD review meeting completed |
-| 8 | Amazon ACOS threshold wording | SRC-ARUN-001 formatting unclear | Confirm exact threshold wording with Arun |
-| 9 | Operational Manager PRC role confirmation | SRC-ARUN-001 names role; no dedicated source | Arun or dedicated Operational Manager source confirms |
-| 10 | ROI Officer identity / title in review inputs | SRC-ARUN-001 wording unclear | Confirm with Arun whether this is a distinct role. **VERIFY Resolved Candidate:** SRC-MD-SUMAN-001 (07/05/2026) identifies ROI Officers as Arun and Mayurika jointly. [VERIFY] tag must remain until Arun directly confirms. |
-| 11 | Director authority beyond leadership review | SRC-MAYU-001 partial coverage | Dedicated Director source or interview |
-| 12 | Exact tool names for HR and EOD systems | SRC-MAYU-001 marks several as (assumed) | Confirm actual tool names with Mayurika |
+| 8 | Director authority beyond leadership review | SRC-MAYU-001 partial coverage | Dedicated Director source or interview |
+| 9 | Exact tool names for HR and EOD systems | SRC-MAYU-001 marks several as (assumed) | Confirm actual tool names with Mayurika |
 
 ---
 
@@ -852,9 +850,9 @@ All [VERIFY] items in Section 14 remain open. This reading rule does not resolve
 
 - Admin Manager authority ([VERIFY] items 1–5) — awaiting SRC-ADMIN-001
 - Escalation paths through Admin Manager ([VERIFY] items 4–5) — awaiting SRC-ADMIN-001
-- Arun wording items ([VERIFY] items 8–10) — awaiting Arun direct confirmation
-- Director authority beyond leadership review ([VERIFY] item 11)
-- Exact tool names for HR and EOD systems ([VERIFY] item 12)
+- Arun wording items (original [VERIFY] items 8–10) — **RESOLVED 2026-06-30 by SRC-ARUN-CONF-001**; see §14 and `context/verify-register.md`
+- Director authority beyond leadership review ([VERIFY] item 8)
+- Exact tool names for HR and EOD systems ([VERIFY] item 9)
 
 See [intelligence-inbox/management-action-records/INDEX.md](intelligence-inbox/management-action-records/INDEX.md) and [context/management-action-records-context.md](context/management-action-records-context.md) for full usage rules.
 
@@ -878,7 +876,9 @@ See [intelligence-inbox/management-action-records/INDEX.md](intelligence-inbox/m
 6. Remove resolved items from [validation/pending-admin-manager-gaps.md](validation/pending-admin-manager-gaps.md)
 7. Validate updated draft with relevant Management Team/domain owners before promoting to v0.2
 
-**Secondary actions:** Confirm Line Manager identity in 180-day handover with Suman or Varmen (§8.11, [VERIFY] item 11). Confirm Arun wording items: Amazon ACOS threshold, Operational Manager PRC role, ROI Officer title ([VERIFY] items 8–10) — note: item 10 has a VERIFY Resolved Candidate from SRC-MD-SUMAN-001; Arun direct confirmation is still required.
+**Completed 2026-06-30:** SRC-ARUN-CONF-001 registered and root propagation complete. Arun confirmed [VERIFY] items 8 (Amazon ACOS threshold: ACOS below 25% / ROAS 4), 9 (Operational Manager escalation authority: firm commitment with deadline to achieve required ROI — escalation only; full PRC scope remains [VERIFY]), and 10 (ROI Officer = Implementation Officer – Arunraj; External Auditor = Paraparan). Evidence: `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`. CLAUDE.md §7.3, §7.4, §7.8, §14 updated. context/verify-register.md items 8–10 resolved. context/kpi-axiom-context.md and evidence/source-register.md updated. Remaining open items renumbered to 8–9 (former items 11–12) in §14.
+
+**Secondary actions:** Line Manager identity in 180-day handover resolved 2026-06-30 by SRC-SUMAN-CONF-002 (§8.11) — no further action needed. Arun wording items 8–10 resolved 2026-06-30 by SRC-ARUN-CONF-001 — no further action needed.
 
 **Skill update actions (pending Management Team/domain owner review):** management-gap-detection and recruitment-quality-check have identified update candidates from the MD discussion sources. See [validation/md-discussion-skill-impact-check.md](validation/md-discussion-skill-impact-check.md) for full recommendations. Do not edit skill files until the relevant Management Team/domain owner (Arun for KPI/implementation, Mayurika for HR, Suman for recruitment) reviews and confirms.
 

@@ -1,0 +1,2138 @@
+---
+name: web-view-dashboard-closure
+type: handover-closure
+created: 2026-06-30
+last-updated: 2026-07-03
+created-by: Mareenraj (builder)
+requirement-id: web-view-html-dashboard-creation
+status: PASS — AMBER noted; Arun ACTIVE and Suman ACTIVE; Mayurika DRAFT; Rajiv BLOCKED; Markdown Viewer added; Mayurika HR Daily Control Panel added 2026-07-01; DWC sanity check pending; Professional UI polish applied 2026-07-03; Skills Register Preview added 2026-07-03; Varmen visual review pending; ready for Netlify deployment
+---
+
+# Handover Closure — Web View HTML Dashboard Creation, Tab UI Update, Arun ACTIVE Update, Markdown Viewer Addition, and Mayurika HR Daily Control Panel
+
+**Closure date:** 2026-06-30
+**Pass/Fail Rule:** PASS if the dashboard is a self-contained static HTML file showing AIOS status and folder structure without sensitive data, duplicate truth, or editing capability, and is ready for Netlify deployment. FAIL if any of those conditions are violated.
+
+---
+
+## Requirement ID
+
+`web-view-html-dashboard-creation` — Create a static HTML-only web dashboard at `web-view/index.html` for read-only viewing of the Management AIOS folder structure and member workbench statuses. Intended for Netlify deployment. No backend. No editing. No sensitive data.
+
+---
+
+## Asset Path
+
+| Asset | Path | Action |
+|---|---|---|
+| Main dashboard | `web-view/index.html` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE); UPDATED 2026-06-30 (Suman ACTIVE); UPDATED 2026-06-30 (Arun root propagation complete); UPDATED 2026-06-30 (Markdown Viewer tab added) |
+| Validation check | `validation/web-view-html-dashboard-check.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE check added); UPDATED 2026-06-30 (Suman ACTIVE check §16 added); UPDATED 2026-06-30 (root propagation complete check §17 added); UPDATED 2026-06-30 (Markdown Viewer check §18 added) |
+| This closure file | `handover/2026-06-30__web-view-dashboard-closure.md` | CREATED 2026-06-30; UPDATED 2026-06-30 (Arun ACTIVE update recorded); UPDATED 2026-06-30 (Suman ACTIVE update recorded); UPDATED 2026-06-30 (root propagation complete recorded); UPDATED 2026-06-30 (Markdown Viewer addition recorded) |
+
+**Total new files (original creation):** 3
+**Files modified in Arun ACTIVE update:** 3 (all three above)
+**Files modified in root propagation complete update:** 3 (all three above)
+
+---
+
+## Evidence Path
+
+Primary validation evidence: `validation/web-view-html-dashboard-check.md`
+
+Supporting evidence read during creation:
+
+| File | Role |
+|---|---|
+| CLAUDE.md | Root truth — all content verified against this |
+| member-aios/README.md | Member workbench statuses and folder structure |
+| member-aios/mayurika-hr/WORKBENCH.md | Mayurika domain summary and DRAFT status |
+| member-aios/suman-recruitment/WORKBENCH.md | Suman domain summary and DRAFT status |
+| member-aios/arun-implementation/WORKBENCH.md | Arun domain summary, DRAFT status, [VERIFY] items |
+| member-aios/arun-implementation/verify-items-arun.md | [VERIFY] items 8, 9, 10 full detail |
+| validation/member-aios-3-draft-workbench-creation-check.md | AMBER items and overall PASS-AMBER result |
+| handover/2026-06-30__member-aios-3-draft-workbench-closure.md | Commit hash and branch for display |
+| context/verify-register.md | All 12 [VERIFY] items |
+| evidence/source-register.md | All source IDs and statuses (22 sources) |
+
+---
+
+## GitHub Path / Commit Placeholder
+
+**Branch:** `individual-aios`
+
+**Files created in original task:**
+- `web-view/index.html` (new)
+- `validation/web-view-html-dashboard-check.md` (new)
+- `handover/2026-06-30__web-view-dashboard-closure.md` (this file — new)
+
+**Files modified in Arun ACTIVE update:**
+- `web-view/index.html` (updated — Arun status DRAFT → ACTIVE)
+- `validation/web-view-html-dashboard-check.md` (updated — Arun ACTIVE check added)
+- `handover/2026-06-30__web-view-dashboard-closure.md` (this file — Arun ACTIVE update recorded)
+
+**Evidence file path:** `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md`
+
+**Prior commit shown in dashboard:** `db06f7d`
+
+**Commit hash for this Arun ACTIVE dashboard update:** `86e533b`
+
+*After committing these three files, update the commit hash placeholder above with the actual commit hash, then redeploy to Netlify.*
+
+---
+
+## Queryability Result
+
+A clean LLM reading the `web-view/` folder should be able to answer:
+
+| Question | Answerable? |
+|---|---|
+| What is the web-view dashboard? | YES — index.html with page title and topbar |
+| What system does it display? | YES — Management AIOS Foundation Draft v0.1 |
+| Is it editable from the browser? | YES — safety warning says NO; no edit form exists |
+| Which member workbenches are shown? | YES — 4 cards (3 DRAFT, 1 BLOCKED) |
+| What commit hash does it reference? | YES — topbar and pass/fail section |
+| What [VERIFY] items are open? | YES — [VERIFY] register section |
+| What are the AMBER items? | YES — AMBER Items section |
+| Can it be deployed to Netlify without a build step? | YES — deployment note section confirms YES |
+| Is this file the root AIOS truth? | YES — safety warning says NO explicitly |
+
+**Queryability result: PASS**
+
+---
+
+## Management AIOS System Interface Build — Applied 2026-07-06
+
+**Task:** Build the Management AIOS web system interface in build-first / validate-later mode.
+
+**Evidence path:** `evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md`
+
+**Validation path:** `validation/management-aios-system-build-check.md`
+
+### Changes Applied to web-view/index.html
+
+| Change | Applied? |
+|---|---|
+| Title updated to "Dashboard v0.1 \| Internal Build" | YES |
+| Topbar subtitle updated to "Dashboard v0.1 — Internal Build" | YES |
+| Date updated to 2026-07-06 | YES |
+| [VERIFY] count corrected: 12 → 9 (stale count fixed) | YES |
+| Mayurika [VERIFY] badge updated: "Item 12" → "Item 9 (formerly item 12)" | YES |
+| Safety strip updated with full sensitive-data exclusion list | YES |
+| "Blocked / Gated Modules" tab added — 6 gated cards | YES |
+| Result box updated to reflect system build | YES |
+| Footer updated with "Internal Build" label | YES |
+
+### Build Mode
+
+Build-first, validate-later. The dashboard was built without waiting for step-by-step user validation. User validation is the next step.
+
+### Safety Limits
+
+- No sensitive HR data, leave records, KPI scores, AXIOM bands, PDPA, salary, health, disciplinary, candidate, employee IDs, or production data added.
+- No blocked/gated sections built with real data — shown as tracking cards only.
+- No source-register.md, CLAUDE.md, or verify-register.md edits.
+- No [VERIFY] items resolved.
+- No NSLP merge.
+- No staff-skill-learning.md created.
+- No database or PostgreSQL changes.
+- Dashboard remains read-only.
+
+### Future Validation Users
+
+Mayurika, Varmen, Management Team
+
+### Next Step — 2026-07-06
+
+Commit the updated files to `individual-aios`, redeploy to Netlify (`web-view/` directory, no build step), inspect the dashboard — especially the new Blocked/Gated Modules tab — then continue system build only inside safe UI scope.
+
+---
+
+## Arun Day-to-Day Useful Tables — Added 2026-07-06
+
+**Task:** Add 5 Arun day-to-day control tables to the Arun Implementation tab in `web-view/index.html`. Tables are planning/control templates only — no live KPI/AXIOM data.
+
+**Evidence path:** `evidence/stakeholder-confirmations/arun-day-to-day-useful-tables-request-2026-07-06.md`
+
+**Table map path:** `member-aios/arun-implementation/dashboard-table-maps/arun-day-to-day-useful-tables-map-2026-07-06.md`
+
+**Validation path:** `validation/arun-day-to-day-useful-tables-preview-check-2026-07-06.md`
+
+### Five Tables Added
+
+| # | Table Name | Safe to Show? |
+|---|---|---|
+| 1 | Portfolio Holder Review Preparation Tracker | YES — placeholder rows only |
+| 2 | KPI Data Source Readiness Table | YES — source metadata only |
+| 3 | PH Monthly Review Output Checklist | YES — 15-worksheet structure (SRC-ARUN-PH-001) |
+| 4 | Risk / Coaching / Action Plan Tracker | YES — process-level placeholders; no staff names |
+| 5 | Arun Dashboard Requirement Tracker | YES — gate status reference only |
+
+### Safety Limits
+
+- No real staff names, no real sales / inventory / PPC values added.
+- No AXIOM band results calculated.
+- No bonus eligibility determination.
+- No PRC decision output.
+- No warning / PIP decision output.
+- No CSV exchange-rate rows (SRC-ARUN-002 rows 44–52 excluded).
+- Dashboard remains read-only — no forms, no edit buttons, no backend.
+- No source-register.md, CLAUDE.md, or verify-register.md changes.
+- No [VERIFY] items resolved.
+
+### Safety note added in dashboard
+
+> "These Arun tables are day-to-day control templates only. They do not calculate KPI, AXIOM, bonus, PRC, warning, or PIP outcomes. Real report generation requires approved factual data sources."
+
+### Next Step
+
+Map factual data sources (sales, inventory, advertising, pricing, feedback) and confirm access approval before building live report generation.
+
+---
+
+## Mayurika HR Tables Preview Removal — Applied 2026-07-06
+
+**Task:** Remove existing Mayurika HR useful table previews from visible dashboard. Mayurika will provide table format and table contents in the future.
+
+**Reason:** Mayurika will provide final HR table format and content herself. Existing 5 preview tables (built 2026-07-02) were removed from the visible dashboard pending Mayurika's input.
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-hr-tables-future-format-update-2026-07-06.md`
+
+**Validation path:** `validation/mayurika-hr-tables-preview-removal-check.md`
+
+### Changes Applied
+
+| Change | Applied? |
+|---|---|
+| 5 HR useful table previews removed from Mayurika HR tab | YES |
+| "Not Built — Month 1 Status Categories" amber note removed | YES |
+| "PREVIEW — Read-Only Source-Backed HR Reference Tables" banner removed | YES |
+| Placeholder note added: "HR table formats pending Mayurika input" | YES |
+| Next-step-box updated — reference to routing 5 tables removed | YES |
+| Historical evidence files retained (not deleted) | CONFIRMED |
+
+### Historical Preview Evidence Retained
+
+The following files from the original 2026-07-02 build are retained as historical records and must not be deleted:
+
+- `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md`
+- `validation/mayurika-hr-useful-tables-preview-build-check.md` (supersession note added)
+- `evidence/table-discovery/mayurika-hr-useful-tables-source-check-2026-07-02.md`
+- `validation/mayurika-hr-useful-tables-discovery-check.md`
+
+### Next Step — HR Tables
+
+Wait for Mayurika to provide exact HR table format and content. Do not build any HR table until Mayurika's table format and content are received.
+
+---
+
+## Blockers
+
+| Blocker | Detail | Owner |
+|---|---|---|
+| Commit hash placeholder | Update after committing the Arun ACTIVE dashboard update | Mareenraj |
+| Netlify redeployment | Dashboard is updated; redeploy to Netlify to publish Arun ACTIVE status | Mareenraj |
+| Root propagation complete 2026-06-30 | CLAUDE.md §7.3/§7.4/§7.8/§14, source-register.md (SRC-ARUN-CONF-001 READY), verify-register.md (items 8, 9, 10 resolved; 9 open items remain), and kpi-axiom-context.md all updated. Item 9 scope limit preserved. Dashboard updated to reflect propagation complete. | COMPLETE |
+| Mayurika review pending | Mayurika workbench remains DRAFT | Mayurika |
+| Suman review complete | Suman workbench ACTIVE — Suman Reviewed 2026-06-30. Evidence: `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md` | COMPLETE |
+| SRC-ADMIN-001 pending | Rajiv workbench shown as BLOCKED — unchanged | Admin Manager |
+
+---
+
+## [VERIFY] Items Preserved
+
+All 12 open [VERIFY] items from `context/verify-register.md` remain open in the root register:
+
+| Items | Shown In Dashboard As |
+|---|---|
+| 1–5 — Admin Manager authority | BLOCKED badge on Rajiv card; [VERIFY] table items 1–5 |
+| 6–7 — MD-specific requirements and final scope | [VERIFY] table items 6–7 |
+| 8–10 — Arun wording items (ACOS, Op Manager, ROI Officer) | Shown as CONFIRMED at member workbench layer in Arun tab; root propagation pending note displayed; AMBER 1; Review Queue action 4 |
+| 11 — Director authority beyond leadership review | [VERIFY] table item 11 |
+| 12 — Exact HR and EOD tool names | [VERIFY] table item 12; Mayurika card |
+
+**No [VERIFY] items resolved in root register by this task.** Items 8, 9, and 10 are confirmed at the member workbench layer only (Arun 2026-06-30). Root propagation is a separate pending task.
+
+---
+
+## Sensitive-Data Check
+
+| Category | Present in Dashboard? |
+|---|---|
+| Individual staff names | NO — role titles only |
+| Salary or compensation data | NO |
+| Individual AXIOM scores | NO |
+| Candidate personal data, CV, salary | NO |
+| Health, medical, or grievance data | NO |
+| PDPA personal data | NO |
+| Disciplinary case details | NO |
+
+**Sensitive-data check: PASS**
+
+---
+
+## Duplicate-Truth Controls
+
+- No policy text (leave, conduct, AI tools, offboarding) is reproduced in the dashboard
+- No KPI rules, AXIOM band tables, or incident escalation rules are reproduced
+- No recruitment screening criteria are reproduced
+- All domain content in the dashboard is path references or short summaries (10 words or fewer per domain area)
+- Safety warning section explicitly states "This web view is not parent AIOS truth. Root CLAUDE.md is canonical."
+- No member workbench is shown as ACTIVE — all shown as DRAFT or BLOCKED
+
+---
+
+## UI Sections Delivered
+
+| Section | Delivered? |
+|---|---|
+| Top status header | YES — sticky topbar |
+| Left sidebar navigation | YES — all 10 sections linked |
+| Search/filter box | YES — live keyword search with clear button |
+| Status summary bar | YES — 5 metrics |
+| Member workbench cards (4) | YES — Mayurika DRAFT, Suman DRAFT, Arun DRAFT, Rajiv BLOCKED |
+| Review queue table (4 actions) | YES |
+| Folder structure tree | YES |
+| Source register (17 sources) | YES |
+| [VERIFY] register (12 items) | YES |
+| AMBER items (4) | YES |
+| Safety warning | YES |
+| Netlify deployment note | YES |
+| Pass/fail result section | YES |
+| Mobile responsive | YES |
+
+---
+
+## Next Step
+
+1. **Commit** the updated files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`) to branch `individual-aios`
+2. **Update** the commit hash placeholder in this file with the actual commit hash from this update
+3. **Deploy / redeploy** to Netlify: publish directory is `web-view/`, no build command — no build step required
+4. **Root propagation (separate task):** Update root CLAUDE.md (§7.3, §7.4, §7.7/§7.8), context/verify-register.md (items 8, 9, 10), and evidence/source-register.md to formally register Arun's 2026-06-30 confirmation
+5. **After Mayurika and Suman reviews:** Update their `member-aios/*/WORKBENCH.md` statuses from DRAFT to ACTIVE and regenerate `web-view/index.html`
+
+---
+
+## Arun ACTIVE Dashboard Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Arun tab badge | Changed from DRAFT to ACTIVE (new CSS class `tab-badge-active` added) |
+| Arun member header | Status changed to ACTIVE — Arun Reviewed 2026-06-30; evidence path shown; root propagation pending note added |
+| Arun member header badges | DRAFT and "Pending Arun Review" badges replaced with ACTIVE, "Arun Reviewed 2026-06-30", and "Root Propagation Pending" badges |
+| Arun VERIFY explain boxes | Items 8, 9, 10 changed from "pending confirmation" to "CONFIRMED at member workbench layer" with root propagation pending note |
+| Arun file list | Evidence file `evidence/stakeholder-confirmations/arun-member-aios-review-2026-06-30.md` added |
+| Arun tab warning box | Root propagation warning box added — explicitly states CLAUDE.md, source-register.md, and verify-register.md not updated |
+| Arun next step box | Updated to reflect review complete; next actions are root propagation and Mayurika/Suman reviews |
+| Status bar | Member workbenches sub-text updated: "Arun: ACTIVE · Mayurika: DRAFT · Suman: DRAFT · Rajiv: BLOCKED" |
+| Root AIOS result box | Updated to reflect Arun ACTIVE; root propagation pending noted in AMBER section |
+| Root AIOS next step box | Updated — points to root propagation and remaining domain reviews |
+| Review Queue | Action 1 (Arun) marked COMPLETED 2026-06-30 with confirmation summary; action 4 added (root propagation); action 5 added (Mayurika/Suman post-review) |
+| AMBER items | AMBER 1 replaced (root propagation pending); AMBER 2 added (Mayurika review pending); AMBER 3 added (Suman review pending); previous AMBER 2–4 renumbered as 4–5 |
+| File map | arun-implementation/ folder badge changed from DRAFT to ACTIVE; evidence confirmation file added |
+| Evidence file map | `arun-member-aios-review-2026-06-30.md` added to stakeholder-confirmations section |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no personal data, salary, health, disciplinary, grievance, or PDPA data |
+| [VERIFY] root register | NOT CHANGED — all 12 items remain open in root register |
+| DRAFT → ACTIVE promotion | DONE for Arun only — based on confirmed domain owner sign-off (arun-member-aios-review-2026-06-30.md) |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED — no policy text, KPI rules, or AXIOM bands reproduced |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+
+---
+
+## Tab-Based UI Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| UI layout | Replaced sidebar + single-page layout with 7-tab navigation |
+| Tabs added | Root AIOS, Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv / Admin Blocked, Review Queue, File Map |
+| Beginner-friendly additions | "How to use this dashboard" box (Root AIOS tab), label legend with descriptions for all 6 label types, "What should I do next?" box in every tab |
+| VERIFY plain-English | Items 8, 9, 10 explained in plain English with "what we recorded", "what we do not know", and resolution action (Arun Implementation tab) |
+| File Map | Converted to collapsible `<details>`/`<summary>` sections — 9 folder groups, no JS required |
+| Search | Retained — searches across all tab panels regardless of active tab |
+| VIEW ONLY badge | Added to topbar for immediate clarity |
+| Tab status badges | Each tab button shows status badge (PASS-AMBER, DRAFT ×3, BLOCKED) |
+
+**Safety checks — all preserved:**
+
+- No sensitive data added
+- No [VERIFY] items resolved
+- No DRAFT workbench marked ACTIVE
+- Rajiv / Admin workbench shown as BLOCKED throughout
+- No duplicate truth — file paths and short summaries only
+- No backend, CDN, or external dependency
+- Netlify deployment wording preserved in Root AIOS tab
+
+**Commit hash for this tab UI update:** `8d8d3ffa6f1c3ce92c4e26bce65a5414f338e2e7`
+
+---
+
+## Suman Line Manager Clarification Dashboard Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| 180-day handover attendee line (Suman tab) | Added "and the employee's Team Lead (Line Manager) at Month 6" — confirmed by SRC-SUMAN-CONF-002 |
+| SRC-SUMAN-CONF-001 file map entry | Description updated to note superseded status; SUPERSEDED badge added |
+| SRC-SUMAN-CONF-002 file map entry | New entry added below SRC-SUMAN-CONF-001; READY badge; root propagation complete note |
+| Source count badge (evidence/ section) | 22 sources → 23 sources |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 12 items remain open in root register |
+| DRAFT → ACTIVE promotion | NOT DONE — Suman and Mayurika remain DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+
+---
+
+---
+
+## Suman ACTIVE Dashboard Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Suman tab badge | Changed from DRAFT to ACTIVE (CSS class updated to `tab-badge-active`) |
+| Suman member header | Status changed to ACTIVE — Suman Reviewed 2026-06-30; evidence path shown; confirmed items noted |
+| Suman member header badges | DRAFT and "Pending Suman Review" badges replaced with ACTIVE and "Suman Reviewed 2026-06-30" badges |
+| Suman review evidence file list | Added in Suman tab |
+| Suman next step box | Updated — review complete; points to Mayurika review (action 2) |
+| Review Queue action 3 | Marked COMPLETED 2026-06-30 with confirmation summary (domain pointers, 8-point criteria, Line Manager, deliverables) |
+| AMBER items | AMBER 3 (Suman Review Pending) removed; AMBER 4 and 5 renumbered to 3 and 4 |
+| Status bar | Sub-text updated: "Suman: ACTIVE" |
+| Root AIOS result box | Updated to reflect Suman ACTIVE |
+| Root AIOS next step box | Updated — Arun and Suman complete; Mayurika and root propagation next |
+| Review Queue next step box | Updated — actions 1 and 3 complete; action 2 (Mayurika) and action 4 (root propagation) next |
+| File map — suman-recruitment/ | Folder badge changed from DRAFT to ACTIVE; file descriptions updated; evidence file entry added |
+| Evidence section — file map | `suman-member-aios-review-2026-06-30.md` added |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no personal data, salary, health, disciplinary, grievance, or PDPA data |
+| [VERIFY] root register | NOT CHANGED — all 12 items remain open in root register |
+| DRAFT → ACTIVE promotion | DONE for Suman only — based on confirmed domain owner sign-off (`suman-member-aios-review-2026-06-30.md`) |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+
+**Evidence file path:** `evidence/stakeholder-confirmations/suman-member-aios-review-2026-06-30.md`
+
+**Commit hash for this Suman ACTIVE dashboard update:** `cc9be9d`
+
+---
+
+## Arun Root Propagation Complete Dashboard Update Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Arun member header badge | "Root Propagation Pending" (amber) → "Root Propagation Complete" (pass) |
+| verify-explain-action boxes (items 8, 9, 10) | All updated to "Root propagation complete 2026-06-30 — source: SRC-ARUN-CONF-001" |
+| Root propagation warning box (Arun tab) | Replaced with "COMPLETE 2026-06-30" next-step box listing all updated files |
+| Arun next-step box | Updated — no longer references separate propagation task; points to Mayurika review |
+| Review Queue action 4 | Changed from "PENDING — Separate Task" (amber) to "COMPLETED 2026-06-30" (pass) |
+| AMBER 1 | Updated from "Root Propagation of Arun Confirmations Pending" to "COMPLETE 2026-06-30" with SRC-ARUN-CONF-001 reference |
+| File map verify-items-arun.md badge | "Root Propagation Pending" (amber) → "Root Propagation Complete" (pass) |
+| Root AIOS tab AMBER text | Updated to reflect propagation complete |
+| Root AIOS next-step box | Updated — actions 1, 3, 4 complete; Mayurika review next |
+| Review Queue next-step box | Updated — actions 1, 3, 4 complete; Mayurika review next |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | CORRECTLY UPDATED — 9 items open; items 8, 9, 10 resolved by SRC-ARUN-CONF-001 |
+| Item 9 scope limit | PRESERVED — "full PRC membership scope remains [VERIFY]" note in all updated text |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+
+**Commit hash for this root propagation complete dashboard update:** `63ec09e`
+
+---
+
+## Markdown Viewer Addition Record (2026-06-30)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| New tab button added | "Markdown Viewer" tab (Tab 8) with "6 Files" badge (tab-badge-info) added to tab bar |
+| New tab panel added | `id="tab-md-viewer"` — beginner-friendly intro box, 6 safe file summary cards, next-step box |
+| New CSS added | 5 new rules in inline `<style>` block: `.tab-badge-info`, `.md-card-path`, `.md-card-check`, `.md-card-meta`, `.md-viewonly-notice` |
+| Card 1 — Root / Member Overview | `member-aios/README.md` — ACTIVE — folder overview and member list |
+| Card 2 — Mayurika HR Workbench | `member-aios/mayurika-hr/WORKBENCH.md` — DRAFT — HR domain scope; [VERIFY] 12 open; reviewer: Mayurika |
+| Card 3 — Suman Recruitment Workbench | `member-aios/suman-recruitment/WORKBENCH.md` — ACTIVE — Suman Reviewed 2026-06-30 |
+| Card 4 — Arun Implementation Workbench | `member-aios/arun-implementation/WORKBENCH.md` — ACTIVE — Arun Reviewed 2026-06-30; root propagation complete |
+| Card 5 — Validation Check | `validation/member-aios-3-draft-workbench-creation-check.md` — PASS-AMBER |
+| Card 6 — Handover Closure | `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` — PASS |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §18 added — Markdown Viewer Tab Check |
+| Closure file updated | This file — Markdown Viewer Addition Record section added |
+| Commit hash placeholder | `[COMMIT-HASH-MD-VIEWER]` — update after committing these three files |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no staff names, salary, health, disciplinary, PDPA, or candidate personal data |
+| Raw evidence files exposed | NOT PRESENT — `evidence/` and `intelligence-inbox/` excluded from viewer |
+| Raw stakeholder notes exposed | NOT PRESENT — stakeholder-confirmations/ raw files excluded |
+| Editing feature added | NOT ADDED — view-only summary cards only |
+| Full markdown file content rendered | NOT PRESENT — manual summary text only |
+| Duplicate truth | NOT ADDED — card notes are navigation summaries; no policy, KPI, or AXIOM rules reproduced |
+| Backend or CDN | NOT PRESENT |
+| [VERIFY] root register | NOT CHANGED — 9 open items remain unchanged |
+| DRAFT → ACTIVE promotion | NOT DONE — Mayurika remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Commit hash for Markdown Viewer addition:** `2fe3c8a`
+
+*Files committed: `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, and this closure file. Redeploy to Netlify to publish the Markdown Viewer tab.*
+
+---
+
+## Mayurika HR Daily Control Panel Addition Record (2026-07-01)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| HR Daily Control Panel section added | `web-view/index.html` — Mayurika HR tab — new section added after sensitive-data warning box |
+| Priority cards (3) | Attendance Dashboard, Leave Requests, Task Tool Management — marked AMBER/Priority |
+| Standard daily check cards (9) | EOD Submissions, Probation Reminders, New Joiners, HR Inbox, Pending Approvals, Document Verification, Missing Employee Documents, Developer/Technical Daily Requirement & Skill File Quantity, Developer/Technical Daily ROI & User Benefit |
+| Secondary screens listed | 5 items — future design candidates only; not built |
+| Submission form candidates listed | 6 items — deferred; not built |
+| Read-only notice added | "This panel is based on Mayurika's UI intent capture. It is read-only. It does not submit or update HR records yet." |
+| Cross-source note shown | Leave requests currently from task management tool AND mail — pending workflow design |
+| DWC sanity check status | PENDING — screen list must be reviewed by DWC before screens are built |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-ui-intent-capture-2026-07-01.md` |
+| Validation file created | `validation/mayurika-ui-screen-list-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` — §19 Mayurika HR Daily Control Panel Check added |
+| Commit hash placeholder | `[COMMIT-HASH-MAYURIKA-CONTROL-PANEL]` — update after committing |
+| Netlify redeploy required | YES — after commit; publish directory `web-view/`; no build step |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (staff names, salary, health, PDPA, disciplinary, employee IDs) | NOT ADDED |
+| Submission forms built | NO — deferred; listed as future candidates only |
+| Write capability or backend code | NOT PRESENT |
+| External CDN | NOT PRESENT |
+| Duplicate truth (policy text, KPI rules, AXIOM bands) | NOT ADDED |
+| Mayurika marked ACTIVE | NO — remains DRAFT |
+| [VERIFY] items resolved | NO — none resolved |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+---
+
+## Mayurika HR Useful Tables Preview Build Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| New section added to Mayurika HR tab | `web-view/index.html` — "Mayurika HR Useful Tables — Preview" section added after Future Submission Form Candidates section |
+| Tables added | 5 read-only PREVIEW tables (see below) |
+| Month 1 Status Categories | NOT BUILT — AMBER note shown in dashboard; Suman's domain |
+| Section intro box | PREVIEW / READ ONLY warning shown; evidence and validation paths linked |
+| Next-step box updated | Step 2 added — route 5 preview tables to Mayurika for review |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §23 added |
+| Build note created | `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md` |
+| Validation check created | `validation/mayurika-hr-useful-tables-preview-build-check.md` |
+
+**Tables added (all PREVIEW / READ ONLY):**
+
+| # | Table Name | Source |
+|---|---|---|
+| 1 | Leave Notice Periods & Approval Levels | SRC-POLICY-001 §6.1–§6.2 |
+| 2 | Leave Types at a Glance | SRC-POLICY-001 §6.1–§6.5 |
+| 3 | Employment Status Reference & PDPA Compliance Indicator | SRC-MAYU-001 |
+| 4 | Staff Review Milestone Calendar | SRC-MD-HR-001 §10.9; SRC-MAYU-001 |
+| 5 | Probation Record Monitoring | SRC-MAYU-001; SRC-POLICY-001 §6.2 |
+
+**Tables excluded:**
+
+| Table | Status | Reason |
+|---|---|---|
+| Month 1 Status Categories | AMBER — not built | Primary domain is Suman's recruitment/handover process; build only after Mayurika confirms and Suman is notified |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-hr-useful-tables-preview-build-note-2026-07-02.md`
+**Validation path:** `validation/mayurika-hr-useful-tables-preview-build-check.md`
+**Mayurika review:** PENDING — all 5 tables remain PREVIEW until Mayurika confirms
+**Commit hash:** [TBC — fill after commit]
+**Next step:** Commit; redeploy to Netlify (publish directory `web-view/`, no build step); route preview tables to Mayurika for review when available.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (staff names, salary, health, PDPA personal data, disciplinary, employee IDs) | NOT ADDED |
+| AXIOM bands or KPI trigger rules | NOT ADDED |
+| Incident escalation / PRC / Admin Manager content | NOT ADDED |
+| Suman process steps (Month 6 scoped to Mayurika's receipt role) | CONFIRMED |
+| Backend write capability | NOT PRESENT |
+| External CDN | NOT PRESENT |
+| [VERIFY] items resolved | NO — all 9 open items preserved |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| Duplicate truth | NOT ADDED — tables are view extracts of registered sources |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+---
+
+## Mayurika Checklist Verbatim Wording Dashboard Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR tab — checklist file description | Updated from "DRAFT — Exact user-provided text applied; Mayurika confirmation pending" to "DRAFT — Mayurika checklist verbatim wording applied; confirmation pending" |
+| Review Queue action 2 | Updated to reference verbatim wording (2026-07-02); confirmation pending |
+| AMBER 2 title | Changed to "Mayurika Confirmation Pending (Verbatim Wording Applied 2026-07-02)" |
+| AMBER 2 body | Updated to reflect labels A–E preserved; no synonym substitution; no spelling correction |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §24 added |
+| Closure file updated | This file — Verbatim Wording Dashboard Update Record added |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+---
+
+## Mayurika Checklist Full Body Replacement Dashboard Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR tab — checklist file description | Updated to "DRAFT — Mayurika checklist replaced with Mayurika-provided text; confirmation pending" |
+| Review Queue action 2 | Updated to reference replacement with Mayurika-provided text; confirmation pending |
+| AMBER 2 title | Changed to "Mayurika Confirmation Pending (Checklist Replaced with Mayurika-Provided Text 2026-07-02)" |
+| AMBER 2 body | Updated to reflect old source-backed sections removed; replacement text inserted exactly; no words substituted |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §28 added |
+| Closure file updated | This file — Full Body Replacement Dashboard Update Record added |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-checklist-full-replacement-request-2026-07-02.md`
+**Validation path:** `validation/mayurika-checklist-full-replacement-check.md`
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+---
+
+## Mayurika Attendance Dashboard Card Removal Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Attendance Dashboard card (Mayurika HR tab, Priority Cards section) | Card HTML block removed — no longer visible in dashboard |
+| Closed info-box (below Priority Cards section) | Removed — record held in evidence and handover files instead |
+| Replacement feature | NOT INVENTED — no replacement required; not built |
+
+**Historical evidence retained:**
+
+| File | Status |
+|---|---|
+| `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-not-needed-2026-07-02.md` | RETAINED |
+| `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md` | RETAINED |
+| `validation/mayurika-attendance-dashboard-pause-check.md` | RETAINED |
+| `validation/mayurika-attendance-dashboard-no-replacement-check.md` | RETAINED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-card-remove-request-2026-07-02.md`
+**Validation path:** `validation/mayurika-attendance-dashboard-card-removal-check.md`
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Other Mayurika HR cards changed | NO — all other cards unchanged |
+| Dashboard read-only status | PRESERVED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika tab badge | NOT CHANGED — remains DRAFT |
+| Suman / Arun / Rajiv statuses | NOT CHANGED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files; redeploy to Netlify. No further action on Attendance Dashboard unless Mayurika raises a new, separate requirement.
+
+---
+
+## Mayurika Attendance Dashboard No-Replacement Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Attendance Dashboard card (Mayurika HR tab, Priority Cards section) | Status changed from NOT REQUIRED NOW (pending) to NOT REQUIRED (blocked/closed) |
+| Card role | Updated to "Not required — no replacement required" |
+| Card note | Updated to "Mayurika confirmed this feature is not required. No replacement feature is required for this card." |
+| Footer badge 2 | Changed from "Replacement Pending" to "Closed — Not Required" |
+| "Replacement HR Feature Pending" info-box | Replaced with "Attendance Dashboard — Closed (2026-07-02)" note; no replacement pending wording remains |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md` |
+| Validation file created | `validation/mayurika-attendance-dashboard-no-replacement-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` §26 added |
+
+**Replacement feature:** NOT INVENTED — no replacement required per Mayurika's confirmed update. No feature built.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Dashboard read-only status | PRESERVED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-no-replacement-2026-07-02.md`
+**Validation path:** `validation/mayurika-attendance-dashboard-no-replacement-check.md`
+
+**Next step:** Commit updated files; redeploy to Netlify. No further action on Attendance Dashboard unless Mayurika raises a new, separate requirement.
+
+---
+
+## Mayurika Attendance Dashboard Pause Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Attendance Dashboard card (Mayurika HR tab, Priority Cards section) | Status changed from AMBER / Priority to pending / NOT REQUIRED NOW |
+| Card role | Updated to "Not required now — replacement feature pending clarification" |
+| Card note | Updated to "Mayurika confirmed this is not needed now. Replacement feature is pending clarification. Do not build until the exact requirement is provided." |
+| Footer badge 2 | Changed from "Pending source connection" to "Replacement Pending" |
+| Replacement pending note | Added below Priority Cards section in Mayurika HR tab — references evidence path; states requirement not yet confirmed |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-attendance-dashboard-not-needed-2026-07-02.md` |
+| Validation file created | `validation/mayurika-attendance-dashboard-pause-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` §25 added |
+
+**Replacement feature:** NOT INVENTED — pending Mayurika clarification. No feature built.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (attendance records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| Replacement feature invented | NO |
+| New feature built | NO |
+| Dashboard read-only status | PRESERVED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika tab badge | NOT CHANGED — remains DRAFT |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files; redeploy to Netlify. Then ask Mayurika for the exact replacement feature requirement (feature name, business question, evidence needed, pass/fail rule) before any further build work.
+
+---
+
+## Mayurika Checklist Final Activation Dashboard Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR tab — checklist file description | Updated to "ACTIVE — Mayurika confirmed replacement checklist 2026-07-02"; evidence path shown |
+| Review Queue action 2 — checklist status span | Updated from DRAFT/amber to ACTIVE/pass colour; text updated to "ACTIVE — Mayurika confirmed replacement checklist 2026-07-02" |
+| AMBER 2 title | Changed to "Mayurika Checklist ACTIVE — WORKBENCH.md and quick-reference-sources.md Remain DRAFT (2026-07-02)" |
+| AMBER 2 body | Updated to reflect confirmed checklist; WORKBENCH.md and quick-reference-sources.md remain DRAFT; [VERIFY] item 12 still open |
+| AMBER 2 action | Updated to route WORKBENCH.md and quick-reference-sources.md for review |
+| Validation file updated | `validation/web-view-html-dashboard-check.md` §29 added |
+| Closure file updated | This file — Final Activation Dashboard Update Record added |
+
+**Evidence path:** `evidence/stakeholder-confirmations/mayurika-checklist-final-confirmation-2026-07-02.md`
+**Validation path:** `validation/mayurika-checklist-final-activation-check.md`
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT (WORKBENCH.md not yet confirmed) |
+| Mayurika marked ACTIVE | NO — correctly remains DRAFT until full workbench review |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Duplicate truth | NOT ADDED |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files; redeploy to Netlify to publish the Mayurika checklist ACTIVE status.
+
+---
+
+## Varmen Dashboard — No Leave Tables Scope Update Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Varmen clarification received | Varmen confirmed no leave-related tables needed for current dashboard build |
+| Leave Requests table | Excluded from current build scope — NOT REQUIRED / OUT OF CURRENT BUILD SCOPE |
+| Leave source/access question (Mayurika) | No longer required as the next step for this dashboard task |
+| Next step updated | Confirm which PASS section Varmen wants built first: Document Register, Skills, Handover, Overview, or Recurring Issues |
+| Evidence file created | `evidence/stakeholder-confirmations/varmen-dashboard-no-leave-tables-2026-07-02.md` |
+| Validation file created | `validation/varmen-dashboard-no-leave-tables-scope-check.md` |
+| Discovery file updated | `evidence/dashboard-discovery/varmen-draft-dashboard-table-data-requirements-2026-07-02.md` — scope update note added; Leave Requests reclassified OUT OF CURRENT BUILD SCOPE in TASK 3 and TASK 5 |
+| Validation check updated | `validation/varmen-draft-dashboard-data-requirements-check.md` — §13 added; overall status updated; §12 next step replaced |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Leave table built | NO — excluded from current scope |
+| Leave data collected | NO |
+| HR leave processes removed from company truth | NO — CLAUDE.md §10.1, SRC-POLICY-001, and Mayurika's responsibilities unchanged |
+| Sensitive data (leave records, staff names, salary, health, PDPA, employee IDs) | NOT ADDED |
+| [VERIFY] item 9 (exact HR and EOD tool names) | NOT RESOLVED — leave source question is no longer the dashboard next step, but root [VERIFY] item 9 remains open |
+| CLAUDE.md | NOT UPDATED |
+| evidence/source-register.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| web-view/index.html | NOT UPDATED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items preserved |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/varmen-dashboard-no-leave-tables-2026-07-02.md`
+**Validation path:** `validation/varmen-dashboard-no-leave-tables-scope-check.md`
+
+---
+
+## Varmen Document Register Preview Build Record (2026-07-02)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Varmen selected Document Register as first safe build | Varmen chose No. 1 from PASS build options 2026-07-02; evidence: `evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md` |
+| Document Register Preview tab added | `web-view/index.html` — new tab button ("Document Register / PREVIEW") and panel (`id="tab-doc-register"`) added after Markdown Viewer tab |
+| Register sections built (4) | Root & Governance Documents (4 rows); Context Documents (4 rows); Member Workbench Documents (5 rows); Dashboard & Discovery Documents (7 rows) — 20 rows total |
+| Metadata-only note | "This register shows metadata only. It does not expose raw sensitive document contents." shown in intro box and register limits box |
+| Only real repo paths used | All 20 file rows verified against actual repository; no Varmen draft sample file names used |
+| Register Limits box | Green info box listing: real paths only, no draft sample names, git-metadata dates, sensitivity note, no [VERIFY] resolved |
+| Next-step box | Routes to Varmen for visual layout review; then choose next PASS section |
+| Evidence file created | `evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md` |
+| Validation file created | `validation/varmen-document-register-preview-build-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` — §30 Varmen Document Register Preview Build Check added |
+| Commit hash placeholder | [TBC — fill after commit] |
+| Netlify redeploy required | YES — after commit; publish directory `web-view/`; no build step |
+
+**Sensitive-data check:**
+
+| Category | Present? |
+|---|---|
+| Individual staff names | NO — role titles and confirmed management names only |
+| Leave balances or leave records | NO — excluded per Varmen 2026-07-02 and CLAUDE.md §6 |
+| KPI scores or AXIOM band placements | NO |
+| Onboarding step completion per person | NO |
+| Salary or compensation data | NO |
+| Health or medical data | NO |
+| PDPA personal data | NO |
+| Disciplinary case details | NO |
+| Candidate personal data | NO |
+| Varmen draft sample file names used as real | NO — excluded; draft-invented paths do not appear |
+
+**Forbidden tables check:**
+
+| Table | Built? |
+|---|---|
+| Team Table | NO — FAIL classification; not built |
+| Leave Requests | NO — OUT OF CURRENT BUILD SCOPE (Varmen confirmed 2026-07-02) |
+| Onboarding Tracker | NO — AMBER; domain boundary not confirmed |
+| KPI Schedule | NO — AMBER; review date source not confirmed |
+| Decisions | NO — AMBER; approval attribution routing required |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED — no new source registered |
+| context/verify-register.md | NOT UPDATED — no [VERIFY] items touched |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Attendance Dashboard card | NOT RE-ADDED — remains removed |
+| Dashboard read-only status | PRESERVED — no forms, no buttons, no backend |
+| Duplicate truth | NOT ADDED — file metadata only; no policy/KPI/AXIOM rules reproduced |
+| Backend or CDN | NOT PRESENT |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/varmen-document-register-first-build-choice-2026-07-02.md`
+**Validation path:** `validation/varmen-document-register-preview-build-check.md`
+
+**Next step:** Commit updated files; redeploy to Netlify to publish the Document Register Preview tab. Then route to Varmen for visual layout review. After Varmen confirms, choose the next PASS section (Skills, Handover, Recurring Issues, or Overview) to build.
+
+---
+
+## Professional UI Polish Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| CSS variables | Added `--preview`, `--preview-bg`, `--shadow-md`, `--shadow-hover`, `--text-secondary`, `--accent-light`, `--topbar-border`, `--radius-sm`; tightened `--border`, `--accent`, `--pass`, `--amber` colours |
+| Topbar | Gradient background (`#0f172a → #1e293b`), taller (60px), dot indicator on logo, subtitle updated to "Foundation Draft v0.1 — Read-Only Preview", badge changed to "READ ONLY", date updated to 2026-07-03 |
+| Tab bar | Hover bg tint, active tab bg tint (`--accent-light`), `top` updated to 60px, horizontal scrollbar hidden |
+| Cards | Hover shadow lift + `translateY(-2px)` transition added |
+| Tables | Zebra striping on even rows, darker header bg (`#f1f5f9`), 2px bottom border on `th`, accent-tinted row hover (`#f0f6ff`) |
+| Badges | All badge classes now have a 1px border for professional differentiation |
+| New `badge-preview` CSS | Teal/sky colour — distinct from amber |
+| New `tab-badge-preview` CSS | Applied to Document Register tab (replaced `tab-badge-amber`) |
+| Status bar | Better label/value sizing, `min-width: 100px`, `--shadow-md` |
+| Member header | Larger h2, uppercase role-label, better status note colour |
+| Blocked banner | Gradient bg, `border-top: 4px`, centred text with `max-width: 560px` |
+| Amber items | Hover shadow, better title/body/action colours |
+| File list / scope boxes | h4 gets bottom border separator, path bg changed to `#eff6ff` with blue border |
+| Details/summary (file map) | Open state: accent bg tint, `.details-body` has light bg, bottom border radius |
+| How-to / next-step / result boxes | Gradient backgrounds, stronger heading weights |
+| Source rows | Transition + hover state |
+| Safety strip | Added between search strip and tab panels — "Read-only Management AIOS preview. Sensitive HR data, leave records, onboarding records, KPI scores, and staff personal data are not shown." |
+| Dashboard footer | Added above JS block — reads: "Management AIOS — Foundation Draft v0.1 · No sensitive HR data, leave records, KPI scores, or staff personal data are shown in this preview" |
+| Mobile | Topbar-right hidden on ≤640px; safety strip wraps |
+
+**Evidence path:** `evidence/stakeholder-confirmations/dashboard-professional-ui-polish-request-2026-07-02.md`
+**Validation path:** `validation/dashboard-professional-ui-polish-check.md`
+**Dashboard check updated:** `validation/web-view-html-dashboard-check.md` — §31 added
+
+**Sensitive-data check:**
+
+| Category | Present? |
+|---|---|
+| Individual staff names | NO |
+| Salary or compensation data | NO |
+| KPI scores or AXIOM band placements | NO |
+| Leave balances or leave records | NO |
+| Health, medical, or grievance data | NO |
+| PDPA personal data | NO |
+| Candidate personal data | NO |
+| Varmen sample HR rows or draft file names | NO |
+
+**Read-only check:**
+
+| Check | Result |
+|---|---|
+| No forms added | CONFIRMED |
+| No edit/save/delete buttons added | CONFIRMED |
+| No backend or external data calls | CONFIRMED |
+| Static HTML/CSS/JS only | CONFIRMED |
+| Table data unchanged | CONFIRMED |
+| [VERIFY] items resolved | NONE |
+| CLAUDE.md, source-register.md, verify-register.md | NOT TOUCHED |
+
+Overall result: PASS — AMBER until Varmen reviews the updated visual layout
+
+Next step: Commit updated files; redeploy to Netlify (publish directory `web-view/`, no build step); visually inspect the dashboard in browser; then route to Varmen for visual layout review when available.
+
+---
+
+## Handover Preview Addition Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Request source | User — "next Handover" (2026-07-03) |
+| Build choice | Handover Preview — next safe PASS section after Skills Register |
+| Evidence path | `evidence/stakeholder-confirmations/dashboard-handover-preview-next-build-choice-2026-07-02.md` |
+| Validation path | `validation/dashboard-handover-preview-build-check.md` |
+| New tab button added | "Handover Preview" tab (`data-tab="handover-preview"`) with PREVIEW badge |
+| New tab panel added | `id="tab-handover-preview"` |
+| Summary cards | 5 cards: Safe sections built (3), Pending visual reviews (3), Blocked/gated (4), Open [VERIFY] count (9), Handover closure files (2) |
+| Handover table | 9 rows — Web-view Dashboard Closure, Member AIOS Workbench Closure, Document Register Preview, Skills Register Preview, Handover Preview (this build), Mayurika Checklist Activation, Varmen Draft Dashboard Discovery, Leave Tables (excluded), Attendance Dashboard (removed) |
+| Handover file list | 8 real files from `handover/` folder — all confirmed as existing repository files |
+| Metadata-only note | "This handover view shows metadata only. It does not expose raw sensitive HR data." shown in teal info box |
+| Varmen review pending note | "Varmen visual review is pending. This preview is not final approval." shown in amber warning box |
+| Limits box | Green info box listing: real paths only, no sample values, no sensitive data, no blocked sections, no [VERIFY] resolved |
+| Varmen draft sample values used | NO — draft Owner=Mayurika, Test=Passed, "Month 4" placeholder values not used |
+| Sensitive-data check | PASS — no staff names, leave records, salary, health, PDPA, candidate, or disciplinary data |
+| Read-only check | PASS — no forms, no edit/save/delete buttons, no backend |
+| Validation file created | `validation/dashboard-handover-preview-build-check.md` |
+| Validation check updated | `validation/web-view-html-dashboard-check.md` — §33 added |
+| Netlify redeploy required | YES — after commit; publish directory `web-view/`; no build step |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data (staff names, salary, health, PDPA, leave records, disciplinary, employee IDs) | NOT ADDED |
+| Varmen draft sample handover values used as real | NO |
+| New blocked table built | NO — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, Decisions, Attendance Dashboard all correctly excluded |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| Document Register 20 rows | UNCHANGED |
+| Skills Register metadata | UNCHANGED |
+| Mayurika checklist ACTIVE status | UNCHANGED |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Attendance Dashboard card | NOT RE-ADDED — remains removed |
+| Dashboard read-only status | PRESERVED — no forms, no buttons, no backend |
+| Duplicate truth | NOT ADDED — file metadata and short summaries only |
+| Backend or CDN | NOT PRESENT |
+| Varmen visual review | STILL PENDING — not marked complete |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`, plus `evidence/stakeholder-confirmations/dashboard-handover-preview-next-build-choice-2026-07-02.md` and `validation/dashboard-handover-preview-build-check.md`); redeploy to Netlify; visually inspect the Handover Preview tab in browser; then route to Varmen for visual layout review when available. After Varmen confirms, choose the next safe PASS section: Recurring Issues or Overview.
+
+---
+
+## Skills Register Preview Addition Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Request source | User — "next build skills, varmen is busy" (2026-07-02) |
+| Build choice | Skills Register Preview — next safe PASS section after Document Register |
+| Evidence path | `evidence/stakeholder-confirmations/dashboard-skills-register-next-build-choice-2026-07-02.md` |
+| Validation path | `validation/dashboard-skills-register-preview-build-check.md` |
+| New tab button added | "Skills Register / PREVIEW" — `data-tab="skills-register"` |
+| New tab panel added | `id="tab-skills-register"` |
+| Skills shown | 5 real skill files from `skills/` folder: management-gap-detection, kpi-axiom-review-support, policy-lookup, recruitment-quality-check, management-problem-analysis |
+| Columns shown | Skill Name, Category/Tier, Purpose, Owner/Domain, Status, Source Path, Known Limit |
+| Usage counts | HIDDEN — no confirmed usage-tracking source exists in the repository |
+| Varmen draft usage counts used | NO — 41, 89, 14, 9, 6, 18 not used anywhere in Skills Register tab |
+| Individual staff usage | NOT SHOWN — note displayed in how-to box |
+| New blocked tables built | NO — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, Decisions, Attendance Dashboard all correctly excluded |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no staff names, salary, health, PDPA, candidate, or disciplinary data |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| Document Register 20 rows | UNCHANGED |
+| Mayurika checklist ACTIVE status | UNCHANGED |
+| Mayurika workbench tab badge | UNCHANGED — remains DRAFT |
+| Suman workbench | UNCHANGED — remains ACTIVE |
+| Arun workbench | UNCHANGED — remains ACTIVE |
+| Rajiv workbench | UNCHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED — skill metadata and short descriptions only |
+| Backend or CDN | NOT PRESENT |
+| Edit/save/write feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+| PASS/AMBER overall result | PRESERVED |
+
+**AMBER notes:**
+
+- Usage counts hidden — no confirmed usage-tracking source exists yet
+- Varmen visual layout review pending (same AMBER as Document Register)
+
+**Next step:** Commit the Skills Register Preview update (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`, plus new evidence and validation files); redeploy to Netlify; visually inspect both the Document Register Preview and Skills Register Preview tabs; then route to Varmen for visual layout review when available.
+
+---
+
+## Skills/Handover Tab Visibility Fix Record (2026-07-03)
+
+**Issue reported:** User visual inspection at 127.0.0.1:5500/web-view/index.html confirmed only tabs 1–9 visible. Skills Register and Handover Preview tabs not reachable.
+
+**Root cause identified:** `.tab-bar` CSS had `overflow-x: auto` combined with `::-webkit-scrollbar { height: 0; }`. The 11-tab bar overflowed the viewport to the right, but the scrollbar was invisible — no visual indicator that more tabs existed. Tabs 10 (Skills Register) and 11 (Handover Preview) were rendered off-screen and unreachable.
+
+**Fix applied:** `flex-wrap: wrap` added to `.tab-bar`; `overflow-x` changed from `auto` to `hidden`; `::-webkit-scrollbar` rule removed. All 11 tabs now wrap to a second row and are visible and reachable without scrolling.
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `web-view/index.html` | `.tab-bar` CSS block — `flex-wrap: wrap` added; `overflow-x: hidden`; scrollbar rule removed |
+| `validation/web-view-html-dashboard-check.md` | §34 — Dashboard Skills/Handover Tab Visibility Check added |
+| `handover/2026-06-30__web-view-dashboard-closure.md` | This section — fix record added |
+| `validation/dashboard-skills-handover-tab-visibility-check.md` | CREATED — full visibility check with root cause, fix, and safety checks |
+
+**Safety checks:**
+
+| Check | Result |
+|---|---|
+| Skills Register tab visible/reachable after fix | YES |
+| Handover Preview tab visible/reachable after fix | YES |
+| Panels existed before fix | YES — both were already in the HTML with correct IDs |
+| Document Register content changed | NO |
+| Blocked table built | NO |
+| Sensitive data added | NO |
+| [VERIFY] items resolved | NO |
+| Dashboard read-only status | PRESERVED |
+| Duplicate truth added | NO |
+| CLAUDE.md / source-register.md / verify-register.md | NOT TOUCHED |
+
+**Validation path:** `validation/dashboard-skills-handover-tab-visibility-check.md`
+
+**Next step:** Refresh the local server (127.0.0.1:5500/web-view/index.html) and confirm that Skills Register and Handover Preview tabs are now visible in the top navigation bar.
+
+---
+
+## Overview Preview and Recurring Issues Preview Addition Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Request source | User — "Overview, and Recurring Issues build those" (2026-07-03) |
+| Build choice | Overview Preview and Recurring Issues Preview — next two safe PASS sections |
+| Evidence path | `evidence/stakeholder-confirmations/dashboard-overview-recurring-issues-build-choice-2026-07-03.md` |
+| Validation path | `validation/dashboard-overview-recurring-issues-preview-build-check.md` |
+| New tab buttons added | "Overview" (PREVIEW badge) and "Recurring Issues" (PREVIEW badge) added to tab nav |
+| New tab panels added | `id="tab-overview-preview"` and `id="tab-recurring-issues"` |
+| Overview: aggregate stats shown | PASS Sections Built (5), Pending Varmen Review (5), Excluded/Blocked/AMBER (5), Open [VERIFY] Items (9), Sources Registered (22), Member Workbenches (2/4), Document Register Rows (20), Skills in Register (5) |
+| Overview: section build status table | 10 sections — PASS ×5 (Doc Register, Skills, Handover, Overview, Recurring Issues); FAIL ×1 (Team Table); OUT ×1 (Leave Requests); AMBER ×3 (Onboarding, KPI Schedule, Decisions) |
+| Recurring Issues: 8 process-level records shown | Team Table (FAIL), Leave Requests (OUT), Onboarding Tracker (AMBER), KPI Schedule (AMBER), Decisions (AMBER), Varmen Visual Review (AMBER), Open [VERIFY] Items ([VERIFY]), Management Action Items (AMBER) |
+| Recurring Issues folder status shown | SKELETON ONLY — README only; no issue files filed yet |
+| Varmen draft sample counts used | NO — counts 23, 3, 6/6, "4d ago", Day 187, 11 reports, 4 reports, 3 reports not present anywhere |
+| Varmen draft issue names used | NO — "KPI meetings late", "Duplicate onboarding docs", "Leave requests lost" not present |
+| Management action record row | Derives from real filed record: `intelligence-inbox/management-action-records/mayurika-hr/2026-06-22_mayurika-hr_md-discussion_management-structure-llm-compliance.md` |
+| Aggregate/process-level metadata note (Overview) | YES — italic note: "This view uses aggregate/process-level metadata only. Sensitive HR data is not shown." |
+| Issue counts note (Recurring Issues) | YES — italic note: "Issue counts are shown only when backed by real records. Varmen draft sample counts are not used." |
+| "What this tab does NOT show" box (Recurring Issues) | YES — lists staff names, leave records, Varmen draft counts, invented issues |
+| Total PREVIEW tabs now | 5 (Document Register, Skills Register, Handover Preview, Overview Preview, Recurring Issues Preview) |
+
+**Sensitive-data check:**
+
+| Category | Present? |
+|---|---|
+| Individual staff names | NO — role titles only |
+| Leave balances or leave records | NO |
+| KPI scores or AXIOM band placements | NO |
+| Onboarding step completion per person | NO |
+| Salary or compensation data | NO |
+| Health or medical data | NO |
+| PDPA personal data | NO |
+| Disciplinary case details | NO |
+| Candidate personal data | NO |
+| Varmen draft sample values used as real | NO |
+| Varmen draft report counts used (11, 4, 3) | NO |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no personal data, salary, health, disciplinary, grievance, or PDPA data |
+| Varmen draft sample counts | NOT USED — not present anywhere in new tabs |
+| Fake issue counts | NOT ADDED — no invented issue counts |
+| New blocked table built | NO — Team Table, Leave Requests, Onboarding Tracker, KPI Schedule, Decisions, Attendance Dashboard all correctly excluded |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+| evidence/source-register.md | NOT UPDATED — no new source registered |
+| context/verify-register.md | NOT UPDATED — no [VERIFY] items touched |
+| Document Register 20 rows | UNCHANGED |
+| Skills Register metadata | UNCHANGED |
+| Handover Preview data | UNCHANGED |
+| Mayurika checklist ACTIVE status | UNCHANGED |
+| Mayurika workbench tab badge | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Attendance Dashboard card | NOT RE-ADDED — remains removed |
+| Dashboard read-only status | PRESERVED — no forms, no buttons, no backend |
+| Duplicate truth | NOT ADDED — aggregate metadata and process-level records only; no policy/KPI/AXIOM rules reproduced |
+| Backend or CDN | NOT PRESENT |
+| Varmen visual review | STILL PENDING — not marked complete |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit updated files (`web-view/index.html`, `validation/web-view-html-dashboard-check.md`, `handover/2026-06-30__web-view-dashboard-closure.md`, plus new evidence and validation files); redeploy to Netlify (publish directory `web-view/`, no build step); visually inspect all five PREVIEW tabs in the browser; then route to Varmen for visual layout review when available.
+
+---
+
+## Mayurika ACTIVE Dashboard Update Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| Mayurika tab badge | Changed from DRAFT (tab-badge-draft) to ACTIVE (tab-badge-active) |
+| Mayurika member header | Status changed to ACTIVE — Mayurika Reviewed 2026-07-03; evidence path shown |
+| Mayurika member header badges | DRAFT and "Pending Mayurika Review" badges replaced with ACTIVE and "Mayurika Reviewed 2026-07-03" badges |
+| File list description (WORKBENCH.md and quick-reference-sources.md) | Updated — no longer shows "remain DRAFT pending full workbench review" |
+| Review Queue action 2 | Changed from PENDING to COMPLETED 2026-07-03 with evidence path |
+| Review Queue action 5 | Updated — Mayurika review now complete; Suman already complete; no further workbench reviews needed |
+| AMBER 2 | Updated title and body — both files now ACTIVE; [VERIFY] item 12 still open |
+| File map mayurika-hr/ folder badge | Changed from DRAFT to ACTIVE |
+| File map WORKBENCH.md and quick-reference-sources.md entries | Updated — "Pending review" → "ACTIVE — Mayurika Reviewed 2026-07-03" |
+| Markdown Viewer Card 2 badge | Changed from DRAFT to ACTIVE |
+| Markdown Viewer Card 2 description and what-to-check | Updated to reflect ACTIVE status |
+| Document Register row (mayurika-hr/WORKBENCH.md) | Status badge changed from DRAFT to ACTIVE; notes column updated |
+| Root AIOS overall result text | Updated to reflect Mayurika now ACTIVE |
+| Root AIOS next step box | Updated — all domain reviews now complete |
+| Status bar sub-text (Root AIOS tab) | "Mayurika: DRAFT" → "Mayurika: ACTIVE" |
+| Overview status bar sub-text | "Mayurika: DRAFT" → "Mayurika: ACTIVE" |
+| Overview member workbench count | 2 / 4 → 3 / 4 |
+| Evidence file created | `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md` |
+| Validation file created | `validation/mayurika-workbench-quick-reference-activation-check.md` |
+| Dashboard check updated | `validation/web-view-html-dashboard-check.md` — §37 Mayurika ACTIVE check added |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED — no personal data, salary, health, disciplinary, grievance, or PDPA data |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| [VERIFY] item 12 resolved | NO — remains open; tool names not separately confirmed |
+| DRAFT → ACTIVE promotion | DONE for Mayurika only — based on confirmed domain owner approval 2026-07-03 |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Duplicate truth | NOT ADDED — no policy text, KPI rules, or AXIOM bands reproduced |
+| Backend or CDN | NOT PRESENT |
+| Edit/save feature | NOT PRESENT |
+| Netlify deployment wording | PRESERVED |
+| Root CLAUDE.md | NOT UPDATED — dashboard is navigation layer only |
+
+**Evidence file path:** `evidence/stakeholder-confirmations/mayurika-workbench-quick-reference-final-confirmation-2026-07-03.md`
+**Validation path:** `validation/mayurika-workbench-quick-reference-activation-check.md`
+
+**Next step:** Commit updated files and redeploy to Netlify to publish Mayurika ACTIVE status. Then confirm 5 preview HR useful tables and NSLP skill update candidate with Mayurika when available.
+
+---
+
+## Handover Preview UI Polish Record (2026-07-03)
+
+**What changed in this update:**
+
+| Item | Detail |
+| --- | --- |
+| Request source | User — screenshot with instruction "change this Ugly ui to good" |
+| Section affected | Handover Preview tab — Current Handover Summary area only |
+| CSS added | `.handover-summary-grid` (responsive grid), `.hov-card` family (5 colour-coded variants: pass, amber, blocked, verify, meta), `.hov-amber-notice` (compact amber pill), mobile breakpoint rule |
+| HTML change | `.status-bar` / `.stat-card` summary block replaced with `.handover-summary-grid` / `.hov-card` professional metric cards |
+| Amber warning | Heavy yellow paragraph replaced with compact `.hov-amber-notice` pill — same wording, lighter visual weight |
+| Table spacing | `margin-top: 8px` added to Handover Table section title |
+| Summary values | UNCHANGED — 3, 3, 4, 9, 2 preserved exactly |
+| Handover table rows | UNCHANGED — all 9 rows preserved |
+| Evidence/validation paths | UNCHANGED — all paths preserved |
+| Evidence file created | `evidence/stakeholder-confirmations/dashboard-handover-ui-polish-request-2026-07-03.md` |
+| Validation file created | `validation/dashboard-handover-ui-polish-check.md` |
+| Dashboard check updated | `validation/web-view-html-dashboard-check.md` — §36 added |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+| --- | --- |
+| Sensitive data (staff names, salary, health, PDPA, leave records, disciplinary) | NOT ADDED |
+| Business / data truth changed | NO |
+| [VERIFY] root register | NOT CHANGED — all 9 open items unchanged |
+| New blocked table built | NO |
+| CLAUDE.md / source-register.md / verify-register.md | NOT TOUCHED |
+| Dashboard read-only status | PRESERVED |
+| Mayurika workbench | NOT CHANGED — remains DRAFT |
+| Suman workbench | NOT CHANGED — remains ACTIVE |
+| Arun workbench | NOT CHANGED — remains ACTIVE |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| PASS/AMBER overall result | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Evidence path:** `evidence/stakeholder-confirmations/dashboard-handover-ui-polish-request-2026-07-03.md`
+**Validation path:** `validation/dashboard-handover-ui-polish-check.md`
+
+**Next step:** Refresh the browser (127.0.0.1:5500/web-view/index.html) and visually inspect the Handover Preview tab to confirm the new metric card grid and amber notice pill display correctly.
+
+---
+
+## Arun PH Team Source Integration Record (2026-07-06)
+
+**Task:** Integrate SRC-ARUN-PH-001 (Arun PH Team / Portfolio Holder KPI Review Prompt) into the Management AIOS system.
+
+**Approval basis:** User instruction — "No need confirm just integrate with my system" (2026-07-06)
+
+**Evidence path:** `evidence/stakeholder-confirmations/arun-ph-team-user-approved-integration-2026-07-06.md`
+
+**Validation path:** `validation/arun-ph-team-system-integration-check-2026-07-06.md`
+
+### Dashboard Update Applied
+
+| Change | Applied? |
+|---|---|
+| SRC-ARUN-PH-001 source card added to Arun Implementation tab | YES |
+| Source shown as template only — no live data | YES |
+| Marketplaces (Amazon UK, eBay UK, eBay DE, B&Q) listed | YES |
+| 15-worksheet output format noted | YES |
+| Data source requirement stated | YES |
+| Safety / limit statements included | YES |
+| No KPI scores, AXIOM bands, bonus, or PRC logic added | CONFIRMED |
+| No staff performance data added | CONFIRMED |
+| No CSV exchange-rate rows integrated | CONFIRMED |
+| Dashboard read-only maintained | CONFIRMED |
+
+### Source Register Update
+
+- SRC-ARUN-PH-001 added to `evidence/source-register.md` — status: ACTIVE
+- Source count updated: 24 → 25 (READY Full: 12 → 13; ACTIVE: 0 → 1)
+
+### Safety Checks — Preserved
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| KPI/AXIOM calculation logic | NOT CHANGED |
+| [VERIFY] root register | NOT CHANGED — all 9 open items preserved |
+| CLAUDE.md | NOT UPDATED |
+| context/verify-register.md | NOT UPDATED |
+| Mayurika workbench | NOT CHANGED |
+| Suman workbench | NOT CHANGED |
+| Arun workbench | UPDATED — SRC-ARUN-PH-001 entry added |
+| Rajiv workbench | NOT CHANGED — remains BLOCKED |
+| Dashboard read-only status | PRESERVED |
+
+### Limit
+
+Template only. No live Portfolio Holder KPI report generation. Real report generation requires factual data sources (sales, inventory, advertising, pricing) to be separately mapped and access-approved before build begins.
+
+---
+
+## Mayurika NSLP Control System Dashboard — 2026-07-06
+
+**Task:** Add NSLP Control System read-only dashboard preview to Mayurika HR tab in `web-view/index.html`.
+
+**Source:** SRC-MAYURIKA-NSLP-001 | Operating pack: `member-aios/mayurika-hr/nslp/` (commit 065fb49)
+
+**Validation:** `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` — PASS (AMBER pending Mayurika acceptance)
+
+| File | Action |
+|---|---|
+| `web-view/index.html` | EDITED — "NSLP Control System — Internal Build" section added; amber safety note; 6 collapsible control tables; source/validation strip; next-step updated |
+| `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md` | CREATED — PASS/AMBER validation |
+| `member-aios/mayurika-hr/WORKBENCH.md` | EDITED — §16 NSLP Control System Dashboard added |
+| `member-aios/mayurika-hr/quick-reference-sources.md` | EDITED — NSLP dashboard pointer added |
+| `handover/2026-06-30__web-view-dashboard-closure.md` | EDITED (this file) |
+| `handover/2026-06-30__member-aios-3-draft-workbench-closure.md` | EDITED — NSLP dashboard build record added |
+| `validation/web-view-html-dashboard-check.md` | EDITED — NSLP Control System Preview Check section added |
+
+**Dashboard remains read-only:** Static HTML only. No forms, no API, no fetch(), no backend, no database. All table rows are placeholders. No real staff data.
+
+**AMBER remaining:** Mayurika operational acceptance of NSLP templates and dashboard pending. Status: INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE.
+
+**Next step:** Route `member-aios/mayurika-hr/nslp/` to Mayurika for operational review. Once confirmed, update NSLP statuses to ACTIVE.
+
+---
+
+## Mayurika NSLP Dashboard Operational Acceptance — 2026-07-06
+
+**User report:** "She approved every files."
+
+Mayurika operationally accepted the NSLP dashboard/control system in `web-view/index.html` (Mayurika HR tab).
+
+**Status updated:** INTERNAL_BUILD_PENDING_MAYURIKA_OPERATIONAL_ACCEPTANCE → **ACTIVE — MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED**
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-nslp-system-operational-acceptance-2026-07-06.md`
+
+**Safety preserved:** No live automation or data added. Dashboard remains static/read-only. No blocked files touched.
+
+---
+
+## Mayurika NSLP Table 6 ROI / Company Value Field — 2026-07-06
+
+**Change request:** Mayurika requested ROI/company value field in NSLP Table 6 — `evidence/stakeholder-confirmations/mayurika-nslp-table-6-roi-company-value-change-request-2026-07-06.md`
+
+- Field added as reporting-only placeholder in Table 6 / Monthly NSLP Management Report Control
+- No ROI formula/calculation approved
+- No real values added
+- Validation updated: `validation/hr-nslp-dashboard-control-system-check-2026-07-06.md`
+
+---
+
+## Full System Dashboard/File Sync Check — 2026-07-06
+
+**Task:** Whole-system sync check (not limited to NSLP) covering all member tabs and general dashboard tabs against saved source files. Full report: `validation/management-aios-full-system-dashboard-sync-check-2026-07-06.md`.
+
+- Corrected stale "Sources Registered" count (was showing 22/23/13 in different tabs) to 26, matching `evidence/source-register.md`
+- Corrected stale "[VERIFY] items ... all 12 remain open" line to "all 9 remain open" in the Root AIOS Safety Rules box
+- Fixed self-contradicting Arun tab text ("Root propagation pending" shown next to a "Root Propagation Complete" badge) — text now confirms propagation is complete
+- Added a footnote under the Arun tab's Table 2 (KPI Data Source Readiness) citing the canonical `arun-ph-live-report-data-source-map-2026-07-06.md` AMBER status (0/8 confirmed) — no table rows rewritten
+- Corrected a stale internal HTML comment in the Mayurika NSLP section that still said "INTERNAL_BUILD_PENDING..." after the visible status had already moved to ACTIVE
+- Suman, Rajiv/Admin, and all remaining dashboard tabs checked — no dashboard-vs-source mismatches found
+- Dashboard safety re-confirmed: no forms, no `fetch()`, no XMLHttpRequest, no API/backend code, no sensitive staff/candidate/salary/health data, no invented numbers
+- AMBER items remaining (require separate approval, not fixed in this task): `evidence/source-register.md` row 42 note is stale relative to CLAUDE.md §5 (blocked file — not edited); `validation/arun-implementation-source-intake-check-2026-07-06.md` references an incorrect `rajiv-admin` path (not in approved edit list)
+
+---
+
+## User-Friendly UI Update — 2026-07-06
+
+**Task:** Make the dashboard more user-friendly while keeping it read-only, source-backed, and safe. UI/UX presentation improvements only — no source truth, business rules, KPI/AXIOM/BLOS/threshold logic, automation, backend, or data changed.
+
+**What changed in `web-view/index.html` (additive, presentation-only):**
+
+- Added a **clear landing summary** at the top of the Root AIOS tab — dashboard name, build status, read-only safety note, last sync note (2026-07-06 · commit 98644e2), a plain-language "What you can do here" list, and a "What is still gated" list.
+- Added a **member navigation snapshot** — one scannable card per member (Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv/Admin) showing status badge, main system/module, next action, and gated items; each card jumps to that member's tab (UI-only JS, no network/storage/calculation).
+- Extended the **status legend** with the plain-language terms ACTIVE, PASS, AMBER, GATED, READ-ONLY (existing legend items kept).
+- Added a reusable table helper style and **responsive refinements** — tab navigation becomes a single swipeable row on small screens; wide tables keep readable column widths inside their existing scroll wrappers; member/snapshot cards and card grids stack to one column.
+- Synced the topbar commit hash to the landing hero (98644e2).
+
+**Preserved:** all existing sections, member tabs, NSLP 6 tables (including Table 6 ROI / Company Value field and the "no ROI formula approved" note), Arun control/data-source tables, Rajiv BLOCKED / NOT CREATED banner, and all evidence/source paths.
+
+**Safety:** dashboard remains read-only; no forms, `fetch()`, `XMLHttpRequest`, `axios`, `WebSocket`, `onsubmit`, backend, storage, or sensitive/real data added; no [VERIFY] items resolved; member statuses unchanged.
+
+**Validation path:** `validation/web-view-user-friendly-ui-check-2026-07-06.md` (and §43 in `validation/web-view-html-dashboard-check.md`).
+
+**Result:** PASS — AMBER (dashboard remains read-only; AMBER only for user review / visual preview feedback).
+
+**Next step:** User review / Netlify preview check — confirm the landing summary, member snapshot navigation, legend, and small-screen layout read clearly, then close the AMBER.
+
+---
+
+## Overall Result
+
+**PASS — AMBER noted**
+
+Static HTML dashboard at `web-view/index.html` updated with Arun ACTIVE, Suman ACTIVE, and root propagation complete. All relevant sections updated (Arun tab badges, verify-explain-action boxes, warning box, review queue action 4, AMBER 1, file map, Root AIOS tab). Root propagation of items 8, 9, 10 correctly shown as complete with SRC-ARUN-CONF-001. Item 9 scope limit preserved throughout. Mayurika remains DRAFT. Rajiv remains BLOCKED. No sensitive data. 9 [VERIFY] items remain open in root register (items 8, 9, 10 resolved). No duplicate truth. No editing capability. Non-blocking AMBER items documented in `validation/web-view-html-dashboard-check.md`. Netlify deployment wording preserved. Mayurika HR Useful Tables (5 tables) added 2026-07-02 as PREVIEW — source-backed, read-only, no sensitive data, no [VERIFY] items resolved, no AXIOM/KPI/Admin/PRC content; Month 1 Status Categories excluded (AMBER). Skills Register Preview added 2026-07-03 — 5 real skill files from `skills/` folder; usage counts hidden (no tracking source); no Varmen draft sample counts used; no individual staff usage shown; no blocked tables built; all existing sections unchanged. Ready to commit and redeploy to Netlify.
+
+---
+
+## HR Schedule Pilot — Internal Calendar Preview Added (2026-07-06)
+
+**What changed in this update:**
+
+| Item | Detail |
+|---|---|
+| New subsection (Mayurika HR tab) | "HR Schedule Pilot — Internal Calendar Preview" added before the tab's next-step box |
+| [VERIFY] banner | 8 unconfirmed HR schedule rules listed (priority scale, HR categories, recurring-block ownership, interview/session scheduling ownership, CST meaning, durations, edit rights, replace-or-parallel) |
+| Calendar-style grid | Static Mon–Fri weekly grid with time rows; MD screenshot blocks shown as "reference only · HR applicability [VERIFY]"; dashed placeholder cells |
+| Priority queue preview | High/Medium/Low + [VERIFY] placeholder rows; no invented HR tasks |
+| Weekly schedule skeleton | Mon–Fri placeholder rows; no real staff data |
+| Read-only note | "HR schedule pilot only. Static preview. No Google Calendar connection. No automation. No live editing." |
+| Full Management Team schedule tab | NOT built — HR / Mayurika only |
+| Source | `Mareenraj_Schedule_Build_Guide.docx` — direct MD request relayed to Mayurika, 6 July 2026 |
+| Folder | `schedules/hr/` |
+| Evidence | `evidence/stakeholder-confirmations/hr-schedule-pilot-md-request-2026-07-06.md` |
+| Validation | `validation/hr-schedule-pilot-skeleton-build-check-2026-07-06.md`; dashboard §HR Schedule Pilot Calendar Preview Check in `validation/web-view-html-dashboard-check.md` |
+| Status | HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION |
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive/real staff or candidate data | NOT ADDED — placeholder rows only |
+| Invented HR tasks | NONE — placeholder task types only |
+| Google Calendar API / `fetch()` / backend / database | NOT PRESENT |
+| Forms / editable events / automation | NOT PRESENT |
+| Full Management Team schedule files | NOT CREATED (only `schedules/hr/`) |
+| Dashboard read-only | PRESERVED |
+| [VERIFY] items resolved | NO — all unconfirmed fields tagged [VERIFY] |
+| Blocked files (CLAUDE.md, source-register.md, verify-register.md, HR.Mayu.Skill.md, other member folders) | NOT EDITED |
+| Member statuses | UNCHANGED |
+| Netlify deployment wording | PRESERVED |
+
+**Next step:** Commit; redeploy to Netlify (publish directory `web-view/`, no build step). Ask Mayurika/Varmen the eight HR schedule confirmation questions before expanding the pilot. Do not build full Management Team schedules until separately requested.
+
+---
+
+## HR Schedule Pilot — Professional Calendar-Style UI Redesign (2026-07-06)
+
+**Reason:** User feedback said the existing "HR Schedule Pilot — Internal Calendar Preview" looked table-heavy and unprofessional. This update redesigns the same section's presentation into a Google Calendar-style, card-based UI (per `Mareenraj_Schedule_Build_Guide.docx`, which references the MD's shared Google Calendar month-view target look). UI/UX presentation only.
+
+**What changed in `web-view/index.html`:**
+
+- Replaced the plain [VERIFY] banner, raw CSS-grid time table, and the two `<table>`-based preview blocks (priority queue, weekly schedule skeleton) with a professional header card, a non-functional calendar toolbar mock, a Mon–Fri × Morning/Midday/Afternoon/Follow-up event-card grid, an MD-screenshot reference-blocks panel, a "Today's Priority Queue" lane panel, and a checklist-style [VERIFY] panel.
+- Section title kept unchanged: "HR Schedule Pilot — Internal Calendar Preview".
+- Added scoped CSS (`.hr-cal-*`, `.hr-chip*`, `.hr-priority-*`, `.hr-event-card*`, `.hr-verify-*`) inside the existing inline `<style>` block — no external stylesheet.
+- Evidence/source paths moved into a collapsible "Evidence / source details" `<details>` block instead of being removed.
+- Safety footer line kept: "Static preview only. No Google Calendar connection. No automation. No live editing. No staff data stored."
+
+**Validation path:** `validation/hr-schedule-pilot-professional-ui-check-2026-07-06.md` (and the new section in `validation/web-view-html-dashboard-check.md`).
+
+**No source truth changed. No schedule facts resolved.** All 8 [VERIFY] items remain open; MD screenshot blocks remain labelled reference-only/HR-applicability-[VERIFY]; no real staff/candidate data added; no forms/fetch/API/automation added (grep-confirmed).
+
+**Result:** PASS — AMBER remains until Mayurika/Varmen answer the HR schedule questions and visually approve the new UI.
+
+**Next step:** Visual review by the user/Varmen of the redesigned section, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## HR Schedule Pilot — Role Desk Views UI Alignment (2026-07-06)
+
+**Reason:** User uploaded a reference file, `aios_role_desk_views.html`, and asked that the HR Schedule Pilot section be visually aligned to its style. The uploaded file was used strictly as a UI/style reference — its role-desk sample data (owners, priorities, statuses, member schedules) is illustrative layout data only and was not copied in as fact. Approved scope stayed HR-only; no full Management Team schedule was built.
+
+**What changed in `web-view/index.html`:**
+
+- Added a navy MD-request/HR-pilot banner (styled after the reference's `md-request-banner`) stating the MD request source (6 July 2026), that current scope is HR pilot only, that the full Management Team schedule is not built yet, and that all open fields remain [VERIFY].
+- Added a compact colour legend above the calendar grid (HR placeholder task / MD screenshot reference-only / [VERIFY] unresolved field), matching the reference's `cal-legend` pattern.
+- Added a distinct "Recurring Template Reference" panel pointing to the two real source files `schedules/hr/recurring-templates/hr-schedule-block-template.md` and `schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md`.
+- Expanded the "Evidence / source details" block to list the exact paths: `schedules/hr/README.md`, `schedules/hr/mayurika.md`, `schedules/hr/priority-queue.md`, and `evidence/stakeholder-confirmations/hr-schedule-pilot-confirmation-request-2026-07-06.md`.
+- Section title kept unchanged: "HR Schedule Pilot — Internal Calendar Preview". Existing calendar grid, MD screenshot reference cards, priority queue lanes, and 8-item [VERIFY] checklist were left as previously built and are unchanged in content.
+
+**Validation path:** `validation/hr-schedule-pilot-role-desk-ui-alignment-check-2026-07-06.md` (and the new section in `validation/web-view-html-dashboard-check.md`).
+
+**No schedule facts resolved. No source truth changed.** All 8 [VERIFY] items remain open; MD screenshot blocks remain reference-only/HR-applicability-[VERIFY]; no real staff/candidate data added; no forms/fetch/API/automation added (grep-confirmed); no `schedules/members/` or Arun/Suman/Rajiv/Varmen schedule files created.
+
+**Result:** PASS — AMBER remains until Mayurika/Varmen give visual sign-off.
+
+**Next step:** Visual review of the Role-Desk-aligned section by the user/Varmen/Mayurika, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## HR Schedule Pilot — Role Desk Calendar UI Match (2026-07-07)
+
+**Reason:** The 2026-07-06 alignment pass borrowed card/banner/legend styling from `aios_role_desk_views.html` but kept a Mon–Fri time-slot grid and lane-based priority cards instead of the sample's actual month-view calendar. The user asked for a closer visual match — same month-view layout, same 7-column grid, same compact coloured chips, same table-based Priority Queue and Recurring Templates Register — plus a general reduction of visible technical detail for non-technical readers. `aios_role_desk_views.html` was used strictly as a UI/style reference again; none of its sample rows were copied in as fact.
+
+**What changed in `web-view/index.html`:**
+
+- Replaced the Mon–Fri × Morning/Midday/Afternoon/Follow-up time-slot grid with a real 7-column (Sun–Sat) month-view calendar for July 2026, using the same recurring reference blocks already documented in `schedules/hr/recurring-templates/md-screenshot-recurring-blocks-reference.md` (Merchandising, CST call, Team Leader Review, Technical interviews, Technical sessions), repeated across all 5 weeks as "reference only" chips. A single `[VERIFY]` placeholder chip appears on today's date (7 July) — not a repeated pattern — so no fabricated recurring HR task was introduced.
+- Replaced the "Today's Priority Queue" High/Medium/Low lane cards with a `<table>` (Priority / Task / Owner / Status), same 3 placeholder rows.
+- Replaced the "Recurring Template Reference" panel with a `<table>` "Recurring Templates Register" (Template / Weekday / Time / HR Applicability), same 5 recurring blocks, same [VERIFY] tags.
+- Consolidated all technical source/validation file paths — previously scattered across multiple italic captions under each card — into one collapsed "Evidence / Technical Details" section at the bottom of the HR Schedule Pilot section.
+- Added a one-line "Next safe action" statement and shortened the header/banner copy so the visible screen answers: what's scheduled, what priority it is, who owns it, what's still awaiting confirmation, and what to do next — without needing to open the collapsed evidence section.
+- Section title kept unchanged: "HR Schedule Pilot — Internal Calendar Preview". The 8-item [VERIFY] checklist, MD-request banner, header badges, and safety footer were retained with the same wording.
+- Removed the non-functional calendar toolbar mock (Today/Week/Priority/Verify Items chips) — it added visual clutter without matching anything in the Role Desk sample.
+
+**Validation path:** `validation/hr-schedule-pilot-role-desk-calendar-ui-match-check-2026-07-07.md` (and the new section in `validation/web-view-html-dashboard-check.md`).
+
+**No schedule facts resolved. No source truth changed.** All 8 [VERIFY] items remain open; MD screenshot blocks remain reference-only/HR-applicability-[VERIFY]; no real staff/candidate data added; no forms/fetch/API/automation added (grep-confirmed); no `schedules/members/` or Arun/Suman/Rajiv/Varmen schedule files created; `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, and `schedules/hr/` source files untouched.
+
+**Result:** PASS — AMBER remains until Mayurika/Varmen give visual sign-off on the calendar-matched section.
+
+**Next step:** Visual review of the month-view HR Schedule Pilot section by the user/Varmen/Mayurika, then commit and redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## HR Schedule Pilot — Role Desk Calendar Visual Sign-Off Request Created (2026-07-07)
+
+A visual sign-off request was created for the HR Schedule Pilot Role Desk calendar UI update: `evidence/stakeholder-confirmations/hr-schedule-pilot-role-desk-calendar-ui-signoff-request-2026-07-07.md`. It asks Mayurika and Varmen 8 UI-only questions (visual match, non-technical readability, HR-only scope, [VERIFY] display, collapsed evidence section, and push/Netlify-preview approval) about the calendar committed in `542d800` (`542d800bd7a06b51fb3c559152162e03f28968a8`).
+
+**AMBER remains** pending Mayurika/Varmen response. **No remote push has been performed.** No source truth changed, no [VERIFY] item resolved, and no new source ID registered by this request.
+
+---
+
+## Index/File-System Sync Refresh (2026-07-07)
+
+**Reason:** A read-only sync audit (`validation/index-file-system-sync-audit-2026-07-07.md`, committed at `d649652`) found that `web-view/index.html` was running on a stale snapshot: the registered-source count (26 vs. actual 40), the topbar commit hash/date (13 commits stale), and Suman's "next action" line (stale — two candidate sources now await her confirmation) all needed refreshing. This closure records the corresponding display-only refresh applied per the audit's "Safe Update Recommendation" list.
+
+**What changed in `web-view/index.html`:**
+
+| Item | Detail |
+|---|---|
+| Registered source count | 26 → 40 in both status-bar occurrences; sub-text now notes "+14 Mayurika confirmations (GAP-42, 2026-07-07)" |
+| Document Register row (`evidence/source-register.md`) | Date 2026-06-30 → 2026-07-07; description updated to "40 sources registered (GAP-42 batch: SRC-MAYU-CONF-007–020 added 2026-07-07)" |
+| Topbar commit hash / date | `98644e2` / 2026-07-06 → `d649652` / 2026-07-07 |
+| Landing-hero "Last sync" pill | `2026-07-06` / `98644e2` → `2026-07-07` / `d649652` |
+| Suman "Next action" snapshot line | "Review complete — no open action until MD review" → "Await Suman confirmation for two candidate sources before source registration." |
+| Mayurika snapshot card | New "Sources" row added: "GAP-42 closed — Mayurika confirmation batch SRC-MAYU-CONF-007 to SRC-MAYU-CONF-020 registered." |
+| HR Schedule Pilot "Still awaiting confirmation" panel | New note added: "HR Schedule Pilot visual sign-off request pending Mayurika/Varmen response." |
+| HR Schedule Pilot Evidence / Technical Details | New line added pointing to `evidence/stakeholder-confirmations/hr-schedule-pilot-role-desk-calendar-ui-signoff-request-2026-07-07.md` |
+
+**Validation path:** `validation/web-view-html-dashboard-check.md` §44; new standalone check: `validation/index-file-system-sync-refresh-check-2026-07-07.md`.
+
+**Preserved, not touched by this refresh:** [VERIFY] count (9 open), Arun PH live-report AMBER state, Rajiv/Admin BLOCKED state, HR Schedule Pilot schedule-truth AMBER status and 8-item confirmation checklist, and Suman's two candidate sources remain shown as NOT registered.
+
+**Blocked files confirmed untouched:** `web-view/index.html` was the only dashboard file edited for content; `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, `member-aios/`, `schedules/hr/`, `evidence/source-intake/`, and `evidence/stakeholder-confirmations/` were read-only reference sources for this refresh and were not modified.
+
+**Result:** PASS — stale display values corrected; no source truth or [VERIFY] item resolved by this refresh.
+
+**Next step:** Commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and `validation/index-file-system-sync-refresh-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## Mayurika HR Tables — MD/Varmen Confirmation Pending Notice Update (2026-07-07)
+
+**Reason:** User reported that Mayurika will create her own HR table formats and send them to MD. Only after MD confirms will MD or Varmen provide the confirmed tables back for AIOS/dashboard use. The Mayurika HR tab's existing "pending Mayurika input" placeholder (in place since the 2026-07-06 removal of 5 preview tables) was updated to reflect this fuller MD/Varmen confirmation flow.
+
+**Evidence:** `evidence/stakeholder-confirmations/mayurika-hr-tables-md-review-pending-removal-request-2026-07-07.md`
+
+**Validation:** `validation/mayurika-hr-tab-table-removal-check-2026-07-07.md`; `validation/web-view-html-dashboard-check.md` §45
+
+**What changed in `web-view/index.html`:**
+
+| Item | Detail |
+|---|---|
+| Mayurika HR table previews removed from HR tab | No live table markup existed to remove — the 5 original preview tables were already removed 2026-07-06. This pass updates the placeholder notice text only |
+| Section title | "Mayurika HR Tables" → "HR Tables — Pending MD/Varmen Confirmation" |
+| Placeholder notice body | Updated to: "Mayurika will prepare the HR table formats and send them to MD. After MD or Varmen confirms the table structure, the confirmed tables will be added here. No HR table format is approved in this dashboard yet." |
+| Evidence paths | Moved into a collapsed "Evidence / Technical Details" `<details>` block |
+| Mayurika snapshot card "Gated" line | Updated to "HR tables pending MD/Varmen confirmation — no format approved yet" |
+| Mayurika tab next-step box, step 3 | Updated to reference the send-to-MD / MD-or-Varmen-confirm flow |
+
+**Reason:** Mayurika will create table formats and send to MD; MD/Varmen confirmation is pending; no HR table format is approved yet.
+
+**Future action:** Once MD/Varmen confirmation is received and registered as a stakeholder confirmation, add only the confirmed HR tables to this section — replacing the placeholder notice.
+
+**Sections intentionally preserved:** NSLP Control System — Internal Build (6 tables, separately approved via `SRC-MAYURIKA-NSLP-001`); HR Schedule Pilot — Internal Calendar Preview (its own separate AMBER item); HR Daily Control Panel (screen-list cards, not data tables).
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| New HR table format invented | NOT PRESENT — wording/notice change only |
+| Source-register.md | NOT EDITED |
+| CLAUDE.md | NOT EDITED |
+| context/verify-register.md | NOT EDITED — all 9 open [VERIFY] items unchanged |
+| member-aios/ | NOT EDITED |
+| schedules/hr/ | NOT EDITED |
+| evidence/source-intake/, intelligence-inbox/raw-stakeholder-documents/, HR.Mayu.Skill.md | NOT EDITED |
+| Arun / Suman / Rajiv / BLOS / KPI / AXIOM files | NOT EDITED |
+| NSLP Control System tables | NOT CHANGED — untouched |
+| HR Schedule Pilot section | NOT CHANGED — untouched |
+| Dashboard read-only status | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Result:** PASS
+
+**Next step:** Commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, `evidence/stakeholder-confirmations/mayurika-hr-tables-md-review-pending-removal-request-2026-07-07.md`, and `validation/mayurika-hr-tab-table-removal-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## Mayurika HR Tab — Full Table UI Removal Correction (2026-07-07)
+
+**Reason:** Corrective removal completed after a browser screenshot showed that the previous pass had only collapsed the NSLP tables, not removed them — the 6 numbered NSLP table headings (Table 1 — NSLP Skill Register Control through Table 6 — Monthly NSLP Management Report Control) were still visibly present as collapsed accordions in the Mayurika HR tab. The user instructed: "Remove all tables." The user was asked whether to also remove HR Schedule Pilot's 2 tables (Priority Queue, Recurring Templates Register) and selected yes — remove all `<table>` elements in the tab.
+
+**Validation:** `validation/mayurika-hr-tab-all-table-headings-removal-check-2026-07-07.md`; `validation/web-view-html-dashboard-check.md` §46
+
+**What changed in `web-view/index.html` (inside `id="tab-mayurika-hr"` only):**
+
+| Item | Detail |
+|---|---|
+| NSLP 6-table accordion block | Fully removed (all 6 `<details>`/`<table>` accordions, ~590 lines) — replaced with a single summary card: "NSLP Control System — Active, Table Display Hidden" |
+| HR Schedule Pilot "Priority Queue" table | `<table>` markup removed; replaced with a short text summary retaining the same [VERIFY] status |
+| HR Schedule Pilot "Recurring Templates Register" table | `<table>` markup removed; replaced with a short text summary retaining the same [VERIFY] status |
+| Section title | "NSLP Control System — Internal Build" → "NSLP Control System" |
+
+**Result:** Mayurika HR tab no longer displays "Table 1" through "Table 6" headings, no `<table>` tag of any kind remains anywhere inside `id="tab-mayurika-hr"`, and no table-accordion UI remains visible.
+
+**NSLP remains active:** The NSLP system's ACTIVE / MAYURIKA_OPERATIONAL_ACCEPTANCE_CONFIRMED status (`SRC-MAYURIKA-NSLP-001`) is preserved and stated explicitly in the new summary card — only the 6-table visual display was removed, not the system's approved/active status. Source, canonical file, pack path, and validation references remain available in a collapsed "Evidence / Technical Details" section.
+
+**Future action:** Add confirmed HR tables (NSLP and/or HR Schedule Pilot) back to the dashboard only after Mayurika prepares formats, sends them to MD, and MD or Varmen confirms the final table structure — following the same Mayurika → MD → MD/Varmen confirmation flow already recorded for the general HR Tables placeholder.
+
+**Safety checks — preserved:**
+
+| Check | Result |
+|---|---|
+| Sensitive data | NOT ADDED |
+| New HR table format invented | NOT PRESENT — content condensed to text summaries only |
+| Source-register.md | NOT EDITED |
+| CLAUDE.md | NOT EDITED |
+| context/verify-register.md | NOT EDITED — all 9 open [VERIFY] items unchanged |
+| member-aios/ | NOT EDITED |
+| schedules/hr/ | NOT EDITED |
+| evidence/source-intake/, intelligence-inbox/raw-stakeholder-documents/, HR.Mayu.Skill.md | NOT EDITED |
+| Arun / Suman / Rajiv / BLOS / KPI / AXIOM files | NOT EDITED |
+| Other tabs' tables (Arun, Review Queue, File Map, Markdown Viewer) | NOT TOUCHED |
+| Dashboard read-only status | PRESERVED |
+| Netlify deployment wording | PRESERVED |
+
+**Result:** PASS
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** After review, commit `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and `validation/mayurika-hr-tab-all-table-headings-removal-check-2026-07-07.md` to `individual-aios`, then redeploy to Netlify (publish directory `web-view/`, no build step).
+
+---
+
+## 2026-07-07 — Dashboard Professional UI Polish (CSS-only)
+
+A visual-polish-only pass was applied to `web-view/index.html` to make the dashboard read as more professional/executive for non-technical management users: warmer off-white background and warmer neutral borders/chrome (replacing the previous cool blue-gray palette), softer and slightly larger card shadows, marginally larger corner radius, neater/smaller tab badges, and added `:focus-visible` states on tabs/search/details for accessibility. Card and grid spacing was increased marginally in places (never decreased).
+
+**No source truth changed:** All KPI/AXIOM figures, member statuses (Mayurika ACTIVE, Arun ACTIVE, Suman ACTIVE, Rajiv BLOCKED), badge-to-item mappings (Arun's "Live PH report is AMBER", Rajiv's 5 `badge-blocked` cells, HR Schedule Pilot's `hr-chip-amber` AMBER chip), and all 9 open [VERIFY] items (64 `[VERIFY]` token occurrences, unchanged before/after) are byte-identical to the pre-edit version.
+
+**No HR tables reintroduced:** `id="tab-mayurika-hr"` still contains 0 `<table>` tags (confirmed by grep), and the "NSLP Control System — Active, Table Display Hidden" summary card remains a clean non-table card, consistent with the 2026-07-07 table-removal work recorded earlier in this file.
+
+**Files touched:** `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and the new `validation/dashboard-professional-ui-polish-check-2026-07-07.md`. `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not touched.
+
+**Result:** PASS
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser to visually confirm the new warm-neutral theme, card spacing, and tab bar before this is committed and pushed — a visual/CSS change of this size cannot be fully verified from source text alone.
+
+---
+
+## 2026-07-07 — Dashboard Simplified for Non-Technical Users (Wording and Visibility Only)
+
+A wording-and-visibility-only pass was applied to `web-view/index.html` so non-technical management users see less confirmed/verified/source/evidence/status jargon in the main visible UI. The tab bar, Root AIOS, Mayurika HR (incl. HR Schedule Pilot), Suman, Arun, and Rajiv/Admin tabs were reworded: bare technical tags such as `[VERIFY]`, `PASS-AMBER`, `CANONICAL`, `AUTHORITY`, and `6 GATED` now show plain labels ("Needs Confirmation", "Master Reference", "6 Locked") in the visible badge/label text, with the original technical wording preserved via a `title="Technical label: ..."` attribute or inside a collapsed `Evidence / Technical Details` block. The Root AIOS "Overall Result" box and part of the Arun tab's evidence file list were restructured to lead with a short plain-language status sentence, with the original audit-style paragraph moved into a collapsed details block underneath, byte-identical to the original wording. The search hint was changed from technical example terms ("verify", "blocked", "arun", "draft") to plain instructional text, with the original examples preserved in a `title` attribute.
+
+**The visible UI now focuses on useful action/status:** what is active, what is blocked, what still needs confirmation, and what to do next — rather than leading with internal audit vocabulary. Technical evidence (source IDs, validation file paths, resolution history) is retained in full, either inline (unchanged) elsewhere on the same tab or inside collapsed `Evidence / Technical Details` sections, exactly matching the pattern already established in the HR Schedule Pilot section from the prior session.
+
+**Source truth unchanged:** No badge CSS class, status meaning, member status, KPI/AXIOM figure, source count, or `[VERIFY]` resolution was altered. The same 9 open confirmation items tracked in `context/verify-register.md` remain represented in the dashboard, just with friendlier wording. `evidence/source-register.md`, `CLAUDE.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not touched (all `git diff --stat` empty). Mayurika HR tab still has 0 `<table>` tags. No forbidden network/JS/storage tokens were introduced.
+
+**Files touched:** `web-view/index.html`, `validation/web-view-html-dashboard-check.md`, this closure file, and the new `validation/dashboard-non-technical-ui-simplification-check-2026-07-07.md`.
+
+**Result:** PASS — AMBER noted (human visual sign-off pending)
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser to visually confirm the simplified wording reads naturally across tabs, before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Schedule Calendar Placeholders Added (Arun, Rajiv, Suman)
+
+A placeholder-only "Schedule Calendar — Pending Confirmation" section was added to the end of the Suman
+Recruitment, Arun Implementation, and Rajiv / Admin Blocked tabs in `web-view/index.html`, reusing the
+existing HR Schedule Pilot CSS classes (no new CSS added). This is **not** an evidence-backed calendar
+build — no confirmed schedule data exists yet for any of the three members.
+
+**What was added:** For each of Arun (Implementation Officer), Rajiv (Admin Manager), and Suman (Recruiting
+Officer) — a card with two chips ("Pending Confirmation", "Placeholder only"), the exact required plain-text
+body ("Schedule Calendar — Pending Confirmation." / "No confirmed schedule data registered yet." / "Waiting
+for member/domain-owner confirmation."), a static safety footer, and a collapsed "Technical details" block
+pointing only to the new validation file (no evidence paths, source IDs, commit hashes, or PASS/AMBER text
+in the main visible UI). Rajiv's card carries an additional visible disclaimer that the placeholder does not
+imply Admin Manager authority, approval rights, or escalation authority.
+
+**What was intentionally not added:** No schedule facts, dates, times, or recurring meeting facts for any
+member; no calendar grid or priority queue (unlike the HR pilot, there is no source basis for one yet); no
+new source registered in `evidence/source-register.md`; no `[VERIFY]` item touched; no change to
+SRC-ADMIN-001 status (remains PENDING); no change to the HR Schedule Pilot's own status (remains
+`HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION`); Mayurika HR tab was not touched (still 0
+`<table>` tags — no-table rule preserved).
+
+**Files touched:** `web-view/index.html` and the new
+`validation/member-schedule-placeholder-ui-check-2026-07-08.md`. `evidence/source-register.md`, CLAUDE.md,
+`context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not touched.
+
+**Result:** AMBER — PLACEHOLDER ONLY. Member/domain-owner confirmation (Arun, Rajiv, Suman, and Varmen/MD per
+§18 Reviewer Routing Rule) is required before any real schedule data is added.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** Route to Arun, Rajiv, and Suman (and Varmen/MD where relevant) to confirm whether and how each
+member's real schedule should be captured as a registered source, following the same MD-request →
+registration → confirmation flow already used for the HR Schedule Pilot. For Rajiv specifically, real
+schedule content remains additionally gated on SRC-ADMIN-001.
+
+---
+
+## 2026-07-08 — Correction: Placeholder Cards Upgraded to Testing Calendar UI (Arun, Rajiv, Suman)
+
+**User clarification:** The small placeholder cards added earlier today were not sufficient. The user
+clarified: "Other team members should be same as Mayurika. This is for testing now. Real data will come in
+the future."
+
+**What changed:** The single-card placeholders for Arun, Rajiv, and Suman were replaced with a full
+calendar-style testing UI matching Mayurika's HR Schedule Pilot visual pattern — a 5-week month-view grid
+with a colour legend, a "Priority Preview — Sample" card, a safety footer, and a collapsed technical-details
+block. All calendar entries use only four generic sample labels ("Sample Task", "Sample Review", "Sample
+Follow-up", "Sample Planning") — no real dates/times, meeting names, staff names, or candidate names. Each
+section's header repeats three status chips: "Testing Preview Only", "Sample Data", "Real Data Pending
+Confirmation", plus the required explanation sentence: "This calendar is for UI testing only. Real schedule
+data will be added after member/domain-owner confirmation."
+
+**Rajiv's section additionally states** (visibly, five times within the section): "This does not confirm
+Admin Manager approval, escalation, or authority rules." SRC-ADMIN-001 remains PENDING and untouched.
+
+**Real schedule data is still pending future confirmation** for all three members — nothing in this update
+creates a confirmed schedule fact, a registered source, or a resolved [VERIFY] item.
+
+**Files touched:** `web-view/index.html`, the new
+`validation/member-schedule-testing-calendar-ui-check-2026-07-08.md`, and this closure file.
+`evidence/source-register.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not
+touched. Mayurika HR tab was not touched (still 0 `<table>` tags).
+
+**Result:** AMBER — TESTING UI ONLY. Member/domain-owner confirmation (Arun, Rajiv, Suman, and Varmen/MD per
+§18 Reviewer Routing Rule) is still required before any real schedule data is added.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser to visually confirm the testing calendar UI
+reads clearly as sample-only across all three tabs, before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Correction: Interactive Calendar Built Inside index.html (Not Standalone)
+
+**User correction:** The user clarified that the interactive Management Team schedule calendar must **not**
+be a standalone HTML file — it must be built inside the existing `web-view/index.html` dashboard.
+
+**What changed:** A new "Team Schedule (Test)" tab was added to `web-view/index.html`, containing an
+interactive testing calendar for all four members (Mayurika — HR, Arun — Implementation, Rajiv — Admin,
+Suman — Recruitment). Users can add, edit, view, and delete sample schedule items via a month-view calendar
+(Previous/Today/Next), a schedule form, and a schedule list. Data is stored **localStorage-only**, under the
+key `management_aios_testing_schedule_calendar_v1` — no PostgreSQL, no API, no schema, no server code of any
+kind. A "Clear Testing Data" button (with confirmation) and a visible note ("This browser stores testing data
+locally. It is not saved to GitHub or PostgreSQL.") are included. Categories are limited to the 4 approved
+generic labels (Sample Task, Sample Review, Sample Follow-up, Sample Planning). Rajiv's selection shows a
+visible note: "This testing calendar does not confirm Admin Manager approval, escalation, or authority
+rules."
+
+**Real schedule data is still pending future member/domain-owner confirmation** for all four members —
+nothing in this update creates a confirmed schedule fact, a registered source, or a resolved [VERIFY] item.
+This interactive tab is **not** the official source of truth for any member's schedule.
+
+**No standalone HTML file was created.** No `web-view/member-schedule-calendar.html` or any other separate
+calendar file exists.
+
+**Files touched:** `web-view/index.html`, the new
+`validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`, and this closure file.
+`evidence/source-register.md`, `context/verify-register.md`, `member-aios/`, and `schedules/hr/` were not
+touched. Mayurika HR tab was not touched (still 0 `<table>` tags).
+
+**Result:** AMBER — TESTING UI ONLY. Member/domain-owner confirmation (Mayurika, Arun, Rajiv, Suman, and
+Varmen/MD per §18 Reviewer Routing Rule) is required before any real schedule data replaces the local testing
+data.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the dashboard in a browser, exercise add/edit/view/delete on the new "Team
+Schedule (Test)" tab, and confirm the interactive behaviour works as expected before this is committed and
+pushed.
+
+---
+
+## 2026-07-08 — Bug Fix: Interactive Calendar Was Not Editable / Interactive
+
+**User bug report:** "I can't edit or interact with calendar."
+
+**Root cause:** The schedule form (`#mscForm`) had no `submit` handler and no `preventDefault()`. Pressing
+Enter in any form field (Title, Date, etc. — a natural action while testing) triggered the browser's default
+implicit form submission, reloading the page with no `action`/`method` set and discarding all in-progress
+interaction. This made the calendar appear completely unresponsive.
+
+**Fix applied:** Added `e.preventDefault()` on the form's `submit` event; wrapped calendar initialization in a
+named function gated on `document.readyState` (runs immediately or on `DOMContentLoaded`, whichever applies)
+for defense-in-depth; wrapped initialization in a `try/catch` that logs to `console.error` instead of
+silently failing; added the requested helper text "Choose a member, click a date, then add or edit a testing
+schedule item." No calendar logic, data model, storage key, categories, or safety text changed.
+
+**Verification:** Both inline `<script>` blocks pass a Node.js syntax check; no duplicate HTML IDs exist
+anywhere in the file; every `getElementById` call has exactly one matching element; no `pointer-events` or
+blocking overlay CSS exists. A full manual test-flow trace (member select → date click → add → edit → update
+→ view → delete with confirm → clear with confirm → prev/next/today → reload persistence) is recorded in
+`validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`.
+
+**Files touched:** `web-view/index.html` and
+`validation/member-schedule-index-interactive-calendar-check-2026-07-08.md` (updated with the bug report,
+root cause, fix, and test checklist), plus this closure file. `evidence/source-register.md`,
+`context/verify-register.md`, SRC-ADMIN-001, the HR Schedule Pilot status, and the Mayurika HR no-table rule
+were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). The fix restores intended interactivity only; it does
+not add real schedule data or resolve any confirmation item.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should re-test add/edit/view/delete/clear on the "Team Schedule (Test)" tab in an
+actual browser to confirm the fix resolves the reported issue before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Correction: Calendar Moved From Separate Tab Into Each Member Tab
+
+**User clarification:** The user found the separate "Team Schedule (Test)" tab but clarified the interactive
+calendar should live inside each member's own tab (Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv
+/ Admin), not as one standalone shared tab.
+
+**What changed:** The "Team Schedule (Test)" tab button and its tab panel were removed entirely from
+`web-view/index.html`. The old single-instance calendar script was replaced with a reusable factory
+(`mountScheduleCalendarInstance`) that mounts an independent, fully-functional calendar into every
+`.msc-instance` container found on the page — one now sits inside each of the four member tabs. The static
+sample-preview blocks previously added to Suman, Arun, and Rajiv's tabs were replaced in place by these
+interactive mounts. Mayurika's tab keeps her existing HR Schedule Pilot section completely unchanged, with a
+new, clearly separate "Mayurika Schedule Calendar — Testing Preview" interactive area added below it. No
+`<table>` markup was added to Mayurika's tab — the no-table rule is preserved.
+
+**Per-member localStorage keys** are used (the task's preferred approach over one shared key):
+`management_aios_testing_schedule_mayurika_v1`, `_suman_v1`, `_arun_v1`, `_rajiv_v1`. Every element inside a
+calendar instance is addressed via container-scoped `querySelector` — no `id` attributes are used for any
+repeated element, so the four instances cannot collide with each other. Each instance has its own form with
+`preventDefault()` wired, so Enter-key submission cannot reload the page in any of the four tabs. Rajiv's
+instance is configured to show the required Admin Manager authority disclaimer automatically.
+
+**Real schedule data is still pending future member/domain-owner confirmation** for all four members —
+nothing in this update creates a confirmed schedule fact, a registered source, or a resolved [VERIFY] item.
+None of these four calendars is the official source of truth for any member's schedule.
+
+**Files touched:** `web-view/index.html`, `validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`
+(updated with this change), and this closure file. `evidence/source-register.md`, `context/verify-register.md`,
+SRC-ADMIN-001, the HR Schedule Pilot's own status, and the Mayurika HR no-table rule were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). This is a structural relocation of the existing
+testing feature, not a change to its safety scope.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open each of the four member tabs in a browser and confirm the calendar in
+each one works independently (add/edit/view/delete/clear) and that data entered in one member's tab does not
+appear in another's, before this is committed and pushed.
+
+---
+
+## 2026-07-08 — Correction: Duplicate Static Schedule Calendar UI Removed
+
+**User feedback:** A screenshot showed the old static month-view calendar still visible in the Mayurika HR
+tab, above the new interactive calendar. The user said this static preview was unnecessary duplicate UI.
+
+**What changed:** The entire visible "HR Schedule Pilot — Internal Calendar Preview" static block (header
+card, MD banner, static month grid, legend, Priority Queue card, Recurring Templates card, verification
+checklist, safety footer) was removed from the Mayurika HR tab in `web-view/index.html`. A small note was
+added in its place: "Static HR Schedule Pilot preview removed to avoid duplicate calendars. Use the
+interactive testing calendar below. Real schedule data still needs confirmation." The collapsed Evidence /
+Technical Details section (source paths and the pending status string) was kept unchanged directly below
+the note. Suman, Arun, and Rajiv's tabs were checked and already had no static preview blocks remaining from
+the prior update. Now-orphaned CSS tied only to the removed static block was also cleaned up.
+
+**Interactive per-member calendars are now the only visible schedule UI** in all four member tabs — no
+static duplicate remains anywhere. Real schedule data is still pending future confirmation for all four
+members; none of these calendars is the official source of truth.
+
+**Files touched:** `web-view/index.html`, `validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`
+(updated with this change), and this closure file. `evidence/source-register.md`, `context/verify-register.md`,
+SRC-ADMIN-001, the HR Schedule Pilot's own status (still
+`HR_SCHEDULE_PILOT_INTERNAL_BUILD_PENDING_MAYURIKA_CONFIRMATION`, not marked complete), and the Mayurika HR
+no-table rule (still 0 `<table>` tags) were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). Duplicate visible UI removed only; no data, storage,
+or confirmation-status change.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open the Mayurika HR tab in a browser and confirm only one calendar (the
+interactive one) is now visible, then repeat for Suman, Arun, and Rajiv, before this is committed and
+pushed.
+
+---
+
+## 2026-07-08 — Correction: Per-Member Calendars Aligned to Uploaded Sample Demo Layout
+
+**User clarification:** The user uploaded `aios_role_desk_views.html` and clarified it is the sample demo
+requirement for the Management Team Schedule task — a UI/interaction pattern reference only, not confirmed
+company truth. The final dashboard was to keep interactive calendars inside each member tab, not a separate
+schedule tab (unchanged from the prior correction).
+
+**What changed:** The existing per-member interactive calendar factory in `web-view/index.html` was updated
+to match two interaction patterns from the demo: (1) calendar date cells now show up to 2 visible task chips
+(colored by category, with a "+N more" overflow chip), instead of just an item count — mirroring the demo's
+Month View density; (2) a new Priority field (High/Medium/Low, labeled "sample/demo only") was added to each
+member's schedule form, plus a new "Priority Preview — Today (Sample/Demo)" card ranking that member's own
+items by priority — mirroring the demo's Priority Queue concept, scoped per member.
+
+**Demo/sample data only:** No content, names, or meeting labels were copied from `aios_role_desk_views.html`
+into the dashboard. All calendar entries remain limited to the four approved generic category labels (Sample
+Task, Sample Review, Sample Follow-up, Sample Planning), and all new priority values are explicitly marked
+sample/demo only in the visible UI.
+
+**Real schedule data is still pending future member/domain-owner confirmation** for all four members — this
+change only aligns interaction style with the demo; it creates no new schedule facts and is not the official
+source of truth. The separate "Team Schedule (Test)" tab remains removed, and the static duplicate calendar
+UI removed in the prior update was not restored.
+
+**Files touched:** `web-view/index.html`, `validation/member-schedule-index-interactive-calendar-check-2026-07-08.md`
+(updated with this change), and this closure file. `evidence/source-register.md`, `context/verify-register.md`,
+SRC-ADMIN-001, the HR Schedule Pilot's own status, and the Mayurika HR no-table rule were not touched.
+
+**Result:** AMBER — TESTING UI ONLY (unchanged scope). Demo-inspired interaction style only; no data, storage,
+or confirmation-status change.
+
+**Not committed** — per task instruction, this change is staged for review only.
+
+**Next step:** A human should open each of the four member tabs in a browser and confirm the visible task
+chips and Priority Preview card render correctly and stay independent per member, before this is committed
+and pushed.
+
+---
+
+## 2026-07-08 — Note: HR Schedule Pilot Q1–Q8 Answers Received and Captured
+
+Written HR answers to all 8 open HR Schedule Pilot confirmation questions (priority scale, categories,
+recurring-block ownership, interview/session ownership, CST meaning, durations, edit rights,
+replace-or-parallel) were received and captured as controlled evidence in
+`evidence/stakeholder-confirmations/hr-schedule-pilot-answers-from-hr-2026-07-08.md`, with an append-only
+status update added to the original request file. This is a content-answer capture only — it does not change
+`web-view/index.html`, does not update `evidence/source-register.md` or `context/verify-register.md`, and
+does **not** mark the HR Schedule Pilot dashboard status complete. Visual sign-off on the pilot's UI remains
+a separate, still-open item. See `validation/hr-schedule-pilot-confirmation-answers-check-2026-07-08.md` for
+the full check.
+
+---
+
+## 2026-07-09 — Note: Member Tabs Simplified to Introduction / Workbench / Useful Tables / Schedule Calendar
+
+User requested that every member tab (Mayurika HR, Suman Recruitment, Arun Implementation, Rajiv Admin) show
+only an introduction, workbench file details, useful efficiency tables/cards, and the schedule calendar —
+"no log confirmation or anything." Removed visible log-confirmation, evidence/technical-details, and
+validation/provenance clutter (status badges with evidence codes, VERIFY-item explain boxes,
+root-propagation records, "What should I do next?" developer-coordination boxes, collapsed
+Evidence/Technical Details blocks, and pending-status walls) from all four member tabs in
+`web-view/index.html`. Evidence remains in repo files (`evidence/`, `validation/`, `member-aios/`) — nothing
+was deleted; only the visible dashboard UI was simplified. All four interactive schedule calendars, the
+Mayurika HR no-table rule, and the genuinely useful operational tables (e.g. Arun's 5 day-to-day control
+tables) were preserved. See `validation/member-tabs-ui-simplification-check-2026-07-09.md` for the full
+check.
+
+---
+
+## 2026-07-09 — Note: Specific "Useful for Day-to-Day Work" Blocks Removed (Follow-up)
+
+User requested removal of specific day-to-day useful blocks from HR, Suman, and Arun tabs (HR Task
+Categories, Priority Scale, Recurring Block Durations, Edit Rights & Schedule Rule, Daily Control Panel
+cards, All Daily Check Items cards for Mayurika; Recruitment Workflow, Intake Checklist, Candidate/Follow-up
+Tracking, Weekly Deliverables for Suman; the Portfolio Holder KPI Review Template block for Arun, while
+keeping Arun's 5 existing operational control tables). Calendars and workbench details retained in all four
+tabs; Rajiv's tab was not intentionally changed. Evidence files unchanged. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 2) for the full check.
+
+---
+
+## 2026-07-09 — Note: Arun's Remaining Visible Tables/Cards Removed (Follow-up)
+
+User requested Arun's remaining visible tables/cards removed (Portfolio Holder Review Preparation Tracker,
+KPI Data Source Readiness Table, PH Monthly Review Output Checklist, Risk / Coaching / Action Plan Tracker,
+Dashboard Requirement Tracker), along with their now-orphaned framing notes. Arun tab now keeps
+introduction, workbench file details, and schedule calendar only — matching the other three member tabs.
+Other tabs not intentionally changed; evidence files unchanged. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 3) for the full check.
+
+---
+
+## 2026-07-09 — Note: Visible HR Sample Testing Tables Added (Mayurika Tab)
+
+User requested visible HR sample testing tables based on HR context (not random content). Added 5 directly
+visible tables (HR Daily Work Categories, HR Priority Guide, HR Recurring Work Duration Guide, HR Schedule
+Ownership Rules, HR Weekly/Monthly Review Tracker — Sample) to the Mayurika HR tab, sourced from HR's
+already-captured Q1–Q8 written answers. Tables are sample/testing only and are not live HR records. This
+intentionally supersedes the earlier "no visible tables" preference for this tab, per the user's explicit
+request this turn. See `validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 4) for the
+full check.
+
+---
+
+## 2026-07-09 — Note: HR Testing Tables Visually Polished
+
+User requested the HR testing tables be visually polished. HR table CSS improved (card styling, stronger
+header rows, zebra striping, row hover, priority/frequency/status pills) using new scoped classes
+(`.hr-testing-table-*`, `.hr-pill-*`); table content and source meaning unchanged. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 5) for the full check.
+
+---
+
+## 2026-07-09 — Note: Suman and Arun Testing Tables Added (Similar to HR)
+
+User requested Suman and Arun testing tables similar to HR. Added visible, polished, context-based
+sample/testing tables (4 each) to the Suman Recruitment and Arun Implementation tabs, using the same
+`.member-testing-table-*` / `.member-pill-*` scoped CSS pattern as the HR tables. Suman's tables draw from
+`member-aios/suman-recruitment/WORKBENCH.md` and `weekly-deliverables-checklist.md`; Arun's tables draw from
+`member-aios/arun-implementation/WORKBENCH.md` and the SRC-ARUN-PH-001 source map. Tables are not live
+records and need member review before official use. See
+`validation/member-tabs-ui-simplification-check-2026-07-09.md` (Update 6) for the full check.
+
+---
+
+## 2026-07-09 — Note: GAP-40 / GAP-44 Deferred for Local UI Testing Scope Only
+
+GAP-40 and GAP-44 are deferred for current local UI testing/sample dashboard work only. They still block
+official HR Schedule Pilot completion and live/shared deployment. Neither gap is answered, registered, or
+closed by this note. See `validation/hr-schedule-gap-deferral-note-2026-07-09.md` for the full deferral rule.
+
+---
+
+## 2026-07-09 — Note: GAP-40 / GAP-44 Verbal Confirmation Captured
+
+Mayurika verbally confirmed GAP-40 and GAP-44 to the user. Captured as verbal confirmation only — status set
+to "VERBALLY CONFIRMED — PENDING WRITTEN CONFIRMATION / SOURCE REGISTRATION REVIEW" (GAP-40) and "VERBALLY
+CONFIRMED — PENDING WRITTEN CONFIRMATION / DEPLOYMENT APPROVAL CLARITY" (GAP-44). Written confirmation,
+source registration, and deployment approval clarity all remain separate, open steps unless later confirmed
+in writing. No source-register, verify-register, or `web-view/index.html` change was made. See
+`validation/hr-schedule-gap-40-gap-44-verbal-confirmation-check-2026-07-09.md` for the full check.
