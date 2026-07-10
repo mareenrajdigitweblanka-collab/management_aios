@@ -77,10 +77,10 @@ python -m http.server 8080 --directory web-view
 
 Then open `http://127.0.0.1:8080/index.html` with the FastAPI server above running on port 8000.
 
-**CORS (local development only):** `backend/main.py` allows any `http://localhost:<port>` or
-`http://127.0.0.1:<port>` origin, with credentials disabled (`allow_credentials=False`) — safe for local
-static-server/file-based development, not for a public deployment. No `allow_origins=["*"]` is combined
-with credentialed requests.
+**CORS:** `backend/main.py` allows any `http://localhost:<port>` or `http://127.0.0.1:<port>` origin (local
+development only) plus an explicit list read from the `ALLOWED_ORIGINS` environment variable
+(`backend/config.py`), which defaults to `https://management-aios.vercel.app` if unset. Credentials stay
+disabled (`allow_credentials=False`) in both cases. No `allow_origins=["*"]` wildcard is used anywhere.
 
 ---
 
@@ -144,6 +144,93 @@ Full automated results (backend CRUD/validation matrix and browser-driven four-m
   `postgresql+psycopg://USERNAME:PASSWORD@HOST:PORT/DATABASE`.
 - No real username, password, host, port, or connection string appears anywhere in this backend or in this
   README.
+
+---
+
+## Deploy to Vercel (connected to Neon)
+
+**Status: preparation only. Not deployed by this repository as of 2026-07-10.**
+This section documents how to deploy this backend as its own Vercel project once a
+human explicitly starts that deployment. No deployment has been performed, and no
+Vercel CLI command has been run, as part of preparing this section.
+
+- **GitHub repository:** `https://github.com/mareenrajdigitweblanka-collab/management_aios`
+- **Production branch:** `main`
+- **Frontend production origin:** `https://management-aios.vercel.app` (existing, separate Vercel project — do not confuse with the backend project below)
+
+### Vercel backend project setup
+
+1. Create a **new, separate** Vercel project ("Add New Project") from the same
+   GitHub repository. Do not reuse the existing frontend project.
+2. **Root Directory:** the repository root (leave blank / do not set it to `backend`).
+   `backend/main.py` uses package-relative imports (`from backend.config import ...`),
+   which only resolve if the build root is the repository root, not `backend/`.
+3. **Production branch:** `main`.
+4. **FastAPI entrypoint:** `backend.main:app`, declared via `[tool.vercel] entrypoint`
+   in the root `pyproject.toml`. `backend/main.py` is not one of Vercel's
+   auto-detected entrypoint filenames/locations (it lives under `backend/`, not the
+   project root or `src/`/`app/`/`api/`), so the explicit `tool.vercel.entrypoint`
+   declaration is required — see `pyproject.toml` for the exact format and why it
+   was chosen over an `api/` directory or a `vercel.json` `builds`/`routes` config.
+5. **Root dependency file:** `requirements.txt` at the repository root
+   (`-r backend/requirements.txt`) is the single source of installed packages.
+   `pyproject.toml` intentionally does not also declare `[project.dependencies]`,
+   to avoid ambiguity over which file Vercel would treat as authoritative.
+6. **Vercel environment variables (names only — set real values directly in the
+   Vercel dashboard, never in this repository):**
+   - `DATABASE_URL`
+   - `ALLOWED_ORIGINS`
+   - `ENVIRONMENT`
+7. Deploy from the Vercel dashboard (or let the GitHub integration deploy on push
+   to `main`) — not via `vercel` CLI commands run from this workstation.
+
+### Neon connection value for DATABASE_URL
+
+- Use Neon's **pooled** connection string (the `-pooler` host), not the direct
+  connection string — serverless platforms like Vercel open many short-lived
+  connections, which the pooler is designed for.
+- `sslmode=require` must be present; Neon requires TLS.
+- If the value Neon gives you starts with `postgresql://`, you do not need to
+  edit it — `backend/config.py` normalizes `postgresql://` to
+  `postgresql+psycopg://` automatically at startup (so the SQLAlchemy engine
+  resolves to the installed `psycopg` v3 driver, not the unavailable `psycopg2`).
+- Do not commit this value anywhere in this repository, in any form.
+
+### Apply the Neon schema before first use
+
+Run `database/member_schedule_events_schema.sql` once against the Neon database —
+see "Set DATABASE_URL" above for `psql`/Neon SQL Editor instructions. The script
+is idempotent (`CREATE ... IF NOT EXISTS`) and safe to re-run.
+
+### Post-deploy checks
+
+- Health: `https://<backend-project>.vercel.app/health`
+- Swagger UI: `https://<backend-project>.vercel.app/docs`
+
+### No secrets in Git
+
+`DATABASE_URL`, and any other credential, must be set only as a Vercel
+environment variable — never committed to this repository, never placed in
+`web-view/index.html` or any other frontend JavaScript file.
+
+### Public, unauthenticated API — known limitation
+
+No authentication currently protects the write endpoints
+(`POST`/`PUT`/`DELETE` under `/api/member-schedules/*`). Restricting CORS to
+known origins (`ALLOWED_ORIGINS`) reduces browser-based cross-origin abuse but
+does **not** prevent direct API calls from outside a browser (e.g. `curl`,
+scripts) — anyone with the deployed URL can currently read or write testing
+data for any of the four members. This is acceptable only because every row
+is confined to the testing/demo truth boundary below; it would not be
+acceptable if this API were ever pointed at official/live data.
+
+### Testing/pilot truth boundary (unchanged by this deployment prep)
+
+Deploying to Vercel/Neon does not change the testing/demo truth boundary
+described below — `source_scope`/`is_official_truth` still always default to
+non-official values, and this API still does not become a source of official
+HR/Admin schedule truth by virtue of being reachable over the internet
+instead of `127.0.0.1`.
 
 ---
 

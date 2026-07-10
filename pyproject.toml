@@ -1,0 +1,20 @@
+[project]
+name = "management-aios-member-schedule-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+# No [project.dependencies] here on purpose: Vercel's Python runtime accepts
+# dependencies from pyproject.toml, requirements.txt, or Pipfile, and it is
+# undocumented which one wins if more than one declares them. The root
+# requirements.txt (-r backend/requirements.txt) is the single source of
+# truth for installed packages; this file exists only for Python-version
+# pinning and Vercel entrypoint discovery.
+
+[tool.vercel]
+# backend/main.py is not auto-discovered by Vercel's default entrypoint
+# filenames (app.py/index.py/server.py/main.py/wsgi.py/asgi.py) because it
+# lives under backend/, not the project root or one of src/, app/, api/.
+# This explicitly points Vercel at the FastAPI instance already used locally
+# (`python -m uvicorn backend.main:app`), so the entrypoint is identical
+# between local dev and Vercel.
+entrypoint = "backend.main:app"
