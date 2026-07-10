@@ -4222,13 +4222,12 @@
       /* Single centralized schedule-API base for all four calendar instances.
          Local dev (opened from 127.0.0.1/localhost, e.g. `python -m http.server`)
          talks to the local FastAPI server. Any other host (e.g. the deployed
-         production dashboard) uses the production placeholder below — replace
-         REPLACE_WITH_ACTUAL_BACKEND_PROJECT with the real Vercel backend
-         project domain once it exists (see backend/README.md, "Vercel backend
-         project setup"). No backend domain is invented here. */
+         production dashboard at https://management-aios.vercel.app) talks to
+         the hosted backend at https://management-aios-api.vercel.app (see
+         backend/README.md, "Vercel backend project setup"). */
       var MEMBER_SCHEDULE_API_BASE = (function () {
         var LOCAL_BASE = 'http://127.0.0.1:8000/api/member-schedules';
-        var PRODUCTION_BASE = 'https://REPLACE_WITH_ACTUAL_BACKEND_PROJECT.vercel.app/api/member-schedules';
+        var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/member-schedules';
         var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
         return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
       }());
