@@ -90,3 +90,66 @@ task's fix (`pyproject.toml` dependency declaration, commit `adfc6c9`) was pushe
 Vercel build result has not yet been confirmed in this session. Once `https://management-aios-api.vercel.app/health`
 is confirmed returning `200`, and this frontend change is committed/pushed and redeployed, the
 end-to-end production wiring can be verified with the manual four-tab test from `backend/README.md`.
+
+---
+
+## 11. Final Closure — Hosted Browser Verification (2026-07-10)
+
+**Verification date:** 2026-07-10
+
+**Production frontend URL:** `https://management-aios.vercel.app`
+
+**Production backend URL:** `https://management-aios-api.vercel.app` (no credentials included —
+`DATABASE_URL` and all secrets remain Vercel-project-only environment variables, never present in
+this repository or this document)
+
+This section records the user's direct, in-browser confirmation of the deployed dashboard at the
+URLs above, performed after commit `64049c1` ("Connect production dashboard to hosted schedule
+API") was live. This closes out the AMBER verdict in §10, which was pending exactly this
+confirmation.
+
+**Browser verification result:** PASS
+
+- Frontend loaded successfully: YES
+- All four member tabs (Mayurika, Suman, Arun, Rajiv) opened: YES
+- No `localhost`/`127.0.0.1` error remained: YES
+
+**CRUD result:** PASS
+
+- Create succeeded: YES
+- Edit succeeded: YES
+- Delete succeeded: YES
+
+**Refresh-persistence result:** PASS
+
+- Refresh persistence succeeded: YES (create/edit/delete all survived a page refresh, confirming
+  the hosted frontend is reading from and writing to the hosted backend, not local/stale state)
+
+**Member-isolation result:** Consistent with the API-level isolation check already recorded in this
+session (test event created under one member did not appear under another); no contradicting
+observation from browser verification.
+
+**Console/CORS result:** NONE — no browser console or CORS errors reported. Consistent with the
+CORS preflight check already performed against `https://management-aios.vercel.app` as the
+`Origin`, which returned a matching `Access-Control-Allow-Origin` header.
+
+**Test-data cleanup result:** YES — test data cleaned up in the browser session; consistent with the
+API-level test event already created and deleted (and confirmed absent) earlier in this session.
+
+### Final technical-pilot verdict: **PASS**
+
+### Known limitation
+
+The public write API (`POST`/`PUT`/`DELETE` under `/api/member-schedules/*`) currently has **no
+authentication**. CORS restricts which browser origins can call it, but not direct API calls
+(`curl`, scripts) from anyone who has the URL. Acceptable only within the governance boundary
+below — would need real authentication before ever being pointed at non-testing data.
+
+### Governance boundary
+
+This deployment is **testing/pilot schedule storage only**. It is not, and does not become, a
+source of official HR/Admin schedule truth, and it does not create or feed parent-AIOS truth.
+Every row is server-forced to `source_scope='dashboard_testing'` and `is_official_truth=false`
+(`backend/routers/member_schedules.py`) regardless of request body content. GAP-40 (HR schedule
+content/fact confirmation) and GAP-44 (HR schedule visual/deployment sign-off) remain open and
+unaffected by this closure — see `validation/hr-schedule-gap-deferral-note-2026-07-09.md`.
