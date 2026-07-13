@@ -2,6 +2,15 @@
 -- Local implementation draft, 2026-07-09. Not applied to any live database
 -- by this task. Apply manually against your own PostgreSQL instance.
 --
+-- 2026-07-13: member_key CHECK constraint updated to include 'paraparan'.
+-- Because this script uses CREATE TABLE IF NOT EXISTS, re-running it against
+-- an already-existing table (e.g. the deployed Neon instance) does NOT alter
+-- an existing constraint — this file only reflects the target state for a
+-- fresh install. For an existing deployment, apply
+-- database/migrations/2026-07-13-add-paraparan-member-key.sql instead (draft
+-- only as of 2026-07-13 — not yet executed against any database by this
+-- task).
+--
 -- Testing/demo truth boundary: source_scope and is_official_truth default to
 -- non-official values. No application code in backend/ ever sets
 -- is_official_truth = TRUE or changes source_scope away from
@@ -41,7 +50,7 @@ CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events (
     deleted_at TIMESTAMPTZ NULL,
 
     CONSTRAINT member_schedule_events_member_key_check
-    CHECK (member_key IN ('mayurika', 'suman', 'arun', 'rajiv')),
+    CHECK (member_key IN ('mayurika', 'suman', 'arun', 'rajiv', 'paraparan')),
 
     CONSTRAINT member_schedule_events_priority_check
     CHECK (priority IN ('High', 'Medium', 'Low')),

@@ -4,6 +4,18 @@ This model mirrors database/member_schedule_events_schema.sql exactly. It
 does not create or alter the table itself — the SQL file is the source of
 truth for schema DDL; this class is only the Python-side mapping used by
 the API.
+
+2026-07-13: the member_key CHECK constraint below has been updated to
+include 'paraparan', matching the target state defined in
+database/member_schedule_events_schema.sql and the draft migration at
+database/migrations/2026-07-13-add-paraparan-member-key.sql. This
+CheckConstraint is inert against an already-existing table (it only takes
+effect if Base.metadata.create_all() were run against a fresh database,
+which this codebase never does) — the actual deployed table's constraint
+is not changed until that migration is explicitly applied. Until then, a
+live create/update request with member_key='paraparan' will be accepted by
+this API's Python-level validation (backend/config.py VALID_MEMBER_KEYS)
+but rejected by PostgreSQL's still-unmigrated CHECK constraint.
 """
 
 import uuid
@@ -27,7 +39,7 @@ class MemberScheduleEvent(Base):
     __tablename__ = "member_schedule_events"
     __table_args__ = (
         CheckConstraint(
-            "member_key IN ('mayurika', 'suman', 'arun', 'rajiv')",
+            "member_key IN ('mayurika', 'suman', 'arun', 'rajiv', 'paraparan')",
             name="member_schedule_events_member_key_check",
         ),
         CheckConstraint(

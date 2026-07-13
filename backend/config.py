@@ -51,7 +51,7 @@ ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 
 SERVICE_NAME = "management-aios-member-schedules"
 
-VALID_MEMBER_KEYS = ("mayurika", "suman", "arun", "rajiv")
+VALID_MEMBER_KEYS = ("mayurika", "suman", "arun", "rajiv", "paraparan")
 VALID_PRIORITIES = ("High", "Medium", "Low")
 VALID_SOURCE_SCOPES = ("dashboard_testing", "pilot", "approved_live")
 
@@ -62,4 +62,11 @@ MEMBER_LABELS = {
     "suman": "Suman — Recruiting Officer",
     "arun": "Arun — Implementation Officer",
     "rajiv": "Rajiv — Admin Manager",
+    # Paraparan's designation is currently unresolved between sources
+    # (External Auditor per SRC-ARUN-CONF-001 vs. Accountant in the
+    # HR-provided PDF) — see
+    # member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md.
+    # This label uses a neutral form pending that resolution; it is not a
+    # decision about which designation is correct.
+    "paraparan": "Paraparan",
 }
