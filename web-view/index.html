@@ -1692,8 +1692,336 @@
       color: var(--text);
     }
 
+    /* ── Calendar view switcher (Google-Calendar-inspired UX upgrade,
+       2026-07-13) ── */
+    .msc-view-switcher {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .msc-view-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      font-size: .74rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .msc-view-btn:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-view-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .msc-cal-body-layout {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .msc-mini-picker {
+      flex: 0 0 200px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+    }
+
+    .msc-mini-picker-heading {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .msc-mini-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .msc-mini-picker-headcell {
+      font-size: .6rem;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .msc-mini-picker-cell {
+      border: none;
+      background: none;
+      font-size: .68rem;
+      padding: 4px 0;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .msc-mini-picker-cell:hover {
+      background: var(--surface-tint-2);
+    }
+
+    .msc-mini-picker-cell.other-month {
+      opacity: .4;
+    }
+
+    .msc-mini-picker-cell.today {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .msc-mini-picker-cell.selected {
+      background: var(--accent);
+      color: #fff;
+    }
+
     .msc-cal-grid-wrap {
       overflow-x: auto;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* View panes — one dispatcher shows the active view, others stay in the
+       DOM (display:none) so switching views never re-fetches data. */
+    .msc-view-pane {
+      display: none;
+    }
+
+    .msc-view-pane.active {
+      display: block;
+    }
+
+    /* ── Week/Day time-grid ── */
+    .msc-tg-row {
+      display: grid;
+    }
+
+    .msc-tg-header-row {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-tg-gutter {
+      font-size: .64rem;
+      color: var(--muted);
+      padding: 6px 4px;
+    }
+
+    .msc-tg-daycol-head {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      padding: 6px 4px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .msc-tg-daycol-head.today {
+      color: var(--accent);
+    }
+
+    .msc-tg-daynum {
+      font-weight: 700;
+    }
+
+    .msc-tg-allday-row {
+      border-bottom: 1px solid var(--border);
+      min-height: 28px;
+    }
+
+    .msc-tg-allday-col {
+      padding: 3px;
+      border-left: 1px solid var(--hairline);
+      cursor: pointer;
+    }
+
+    .msc-tg-allday-chip {
+      font-size: .68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      cursor: pointer;
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .msc-tg-scroll {
+      max-height: 480px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .msc-tg-body-grid {
+      display: grid;
+      position: relative;
+    }
+
+    .msc-tg-gutter-col {
+      border-right: 1px solid var(--border);
+    }
+
+    .msc-tg-hour-label {
+      font-size: .62rem;
+      color: var(--muted);
+      text-align: right;
+      padding-right: 6px;
+      box-sizing: border-box;
+      transform: translateY(-6px);
+    }
+
+    .msc-tg-daycol {
+      position: relative;
+      border-left: 1px solid var(--hairline);
+    }
+
+    .msc-tg-hourcell {
+      border-bottom: 1px solid var(--hairline);
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+
+    .msc-tg-hourcell:hover {
+      background: var(--surface-tint-2);
+    }
+
+    .msc-tg-event {
+      position: absolute;
+      box-sizing: border-box;
+      border-radius: 4px;
+      padding: 2px 5px;
+      overflow: hidden;
+      color: #fff;
+      background: var(--accent);
+      cursor: grab;
+      font-size: .66rem;
+      touch-action: none;
+    }
+
+    .msc-tg-event--dragging {
+      opacity: .75;
+      cursor: grabbing;
+      z-index: 5;
+    }
+
+    .msc-tg-event--pending {
+      opacity: .55;
+    }
+
+    .msc-tg-event-title {
+      font-weight: 700;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .msc-tg-event-time {
+      font-size: .6rem;
+      opacity: .9;
+    }
+
+    .msc-tg-resize-handle {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 6px;
+      cursor: ns-resize;
+    }
+
+    .msc-tg-now-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #ef4444;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .msc-tg-event.task { background: #2563eb; }
+    .msc-tg-event.review { background: #7c3aed; }
+    .msc-tg-event.followup { background: #d97706; }
+    .msc-tg-event.planning { background: #059669; }
+    .msc-tg-allday-chip.task { background: #2563eb; }
+    .msc-tg-allday-chip.review { background: #7c3aed; }
+    .msc-tg-allday-chip.followup { background: #d97706; }
+    .msc-tg-allday-chip.planning { background: #059669; }
+
+    /* ── Agenda view ── */
+    .msc-agenda-day {
+      margin-bottom: 16px;
+    }
+
+    .msc-agenda-day-heading {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--text);
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-agenda-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--hairline);
+      flex-wrap: wrap;
+    }
+
+    .msc-agenda-item-time {
+      font-size: .7rem;
+      color: var(--muted);
+      min-width: 90px;
+    }
+
+    .msc-agenda-item-main {
+      flex: 1;
+      font-size: .78rem;
+      color: var(--text);
+    }
+
+    .msc-agenda-item-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .msc-agenda-item-actions button {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 4px;
+      font-size: .68rem;
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 640px) {
+      .msc-cal-body-layout {
+        flex-direction: column;
+      }
+
+      .msc-mini-picker {
+        flex: 1 1 auto;
+        width: 100%;
+      }
+
+      .msc-view-switcher {
+        width: 100%;
+      }
+
+      .msc-view-btn {
+        flex: 1;
+        text-align: center;
+      }
     }
 
     .msc-cal-grid {
@@ -2365,6 +2693,460 @@
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 12px;
+    }
+
+    /* ── Staff Table UX upgrade (2026-07-13) — toolbar, sticky table,
+       drawer, pagination, mobile cards. New class names throughout;
+       nothing above this point in the shared table/pill/badge families
+       is modified. ── */
+
+    .staff-filter-bar {
+      align-items: flex-end;
+    }
+
+    .staff-filter-search-field,
+    .staff-filter-clear-field {
+      flex-basis: 200px;
+    }
+
+    .staff-filter-search-field input[type="search"] {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .staff-filter-clear-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .staff-filter-clear-btn:hover {
+      background: var(--surface-tint-2);
+    }
+
+    .staff-filter-chips {
+      flex-basis: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .staff-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 3px 6px 3px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .staff-filter-chip-remove {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 999px;
+    }
+
+    .staff-filter-chip-remove:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .staff-table-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3, 12px);
+      margin: 4px 0 8px;
+    }
+
+    .staff-toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .staff-toolbar-btn,
+    .staff-page-btn {
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .staff-toolbar-btn:hover,
+    .staff-page-btn:hover:not(:disabled) {
+      background: var(--surface-tint-2);
+    }
+
+    .staff-page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .staff-toolbar-btn.active,
+    .staff-density-btn.active {
+      background: var(--accent, #2563eb);
+      border-color: var(--accent, #2563eb);
+      color: #fff;
+    }
+
+    .staff-density-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .staff-density-btn {
+      padding: 5px 10px;
+      border: none;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .staff-col-chooser-wrap {
+      position: relative;
+    }
+
+    .staff-col-chooser-popover {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 5;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 10px 12px;
+      min-width: 180px;
+      display: none;
+    }
+
+    .staff-col-chooser-popover.show {
+      display: block;
+    }
+
+    .staff-col-chooser-popover label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 3px 0;
+      color: var(--text);
+    }
+
+    .staff-table-scroll {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      max-height: 70vh;
+    }
+
+    .staff-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .staff-table td:first-child,
+    .staff-table th:first-child {
+      position: sticky;
+      left: 0;
+      background: inherit;
+      z-index: 1;
+    }
+
+    .staff-table thead th:first-child {
+      z-index: 3;
+    }
+
+    .staff-table th button.staff-sort-th {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      font: inherit;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .staff-table th button.staff-sort-th:hover {
+      color: var(--accent);
+    }
+
+    .staff-sort-ind {
+      font-size: 10px;
+      opacity: 0.5;
+    }
+
+    .staff-sort-ind.active {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    .staff-employee-cell {
+      min-width: 160px;
+    }
+
+    .staff-employee-name {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .staff-employee-calling {
+      font-size: var(--font-xs);
+      color: var(--muted);
+    }
+
+    .staff-employee-number {
+      font-size: var(--font-2xs);
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .staff-details-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent, #2563eb);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .staff-details-btn:hover {
+      background: var(--accent-light);
+    }
+
+    /* Compact density */
+    .staff-table--compact tbody td,
+    .staff-table--compact thead th {
+      padding: 6px 10px;
+    }
+
+    .staff-table-retry-btn {
+      margin-top: 8px;
+      padding: 5px 12px;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      background: #fff;
+      color: #991b1b;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .staff-table-retry-btn:hover {
+      background: #fee2e2;
+    }
+
+    /* Skeleton loader */
+    .staff-table-skeleton-row {
+      height: 18px;
+      border-radius: 4px;
+      margin: 10px 0;
+      background: linear-gradient(90deg, var(--surface-tint-2) 25%, var(--surface-tint-3) 37%, var(--surface-tint-2) 63%);
+      background-size: 400% 100%;
+      animation: staff-skeleton-pulse 1.4s ease infinite;
+    }
+
+    @keyframes staff-skeleton-pulse {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0 50%; }
+    }
+
+    .staff-pagination-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .staff-page-size-select {
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .staff-page-info {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Detail drawer — deliberately separate from .msc-modal (calendar-owned,
+       centered small dialog); this is a right-side slide-in panel. */
+    .staff-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 50;
+      display: none;
+    }
+
+    .staff-drawer-overlay.show {
+      display: block;
+    }
+
+    .staff-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: min(420px, 100vw);
+      background: #fff;
+      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
+      transform: translateX(100%);
+      transition: transform 0.2s ease;
+      z-index: 51;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .staff-drawer-overlay.show .staff-drawer {
+      transform: translateX(0);
+    }
+
+    .staff-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4, 16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .staff-drawer-header h4 {
+      margin: 0;
+      font-size: var(--font-md);
+      color: var(--text);
+    }
+
+    .staff-drawer-close {
+      border: none;
+      background: none;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 4px 8px;
+    }
+
+    .staff-drawer-close:hover {
+      color: var(--text);
+    }
+
+    .staff-drawer-body {
+      padding: var(--space-4, 16px);
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .staff-drawer-field {
+      margin-bottom: 14px;
+    }
+
+    .staff-drawer-field-label {
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .staff-drawer-field-value {
+      font-size: var(--font-sm);
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    @media (max-width: 640px) {
+      .staff-table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .staff-table-scroll {
+        max-height: none;
+        border: none;
+      }
+
+      .staff-table thead {
+        display: none;
+      }
+
+      .staff-table,
+      .staff-table tbody,
+      .staff-table tr,
+      .staff-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .staff-table td:first-child,
+      .staff-table th:first-child {
+        position: static;
+      }
+
+      .staff-table tbody tr {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm, 8px);
+        margin-bottom: var(--space-3, 12px);
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+      }
+
+      .staff-table tbody td {
+        border-bottom: none;
+        padding: 5px 0;
+      }
+
+      .staff-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        display: block;
+        font-size: var(--font-2xs);
+        color: var(--muted);
+      }
+
+      .staff-drawer {
+        width: 100vw;
+      }
     }
   </style>
 </head>
@@ -4491,9 +5273,90 @@
       var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
         'September', 'October', 'November', 'December'];
       var DAY_HEADS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+      /* Google-Calendar-inspired Week/Day time-grid constants (2026-07-13).
+         24 one-hour rows at a fixed pixel height keep the pixel<->minutes
+         math for drag/resize simple (see timeToMinutes/minutesToTime below). */
+      var TG_ROW_HEIGHT_PX = 48;
+      var TG_HOURS = 24;
+      var TG_DEFAULT_SCROLL_HOUR = 7;
 
       function pad(n) { return n < 10 ? '0' + n : '' + n; }
       function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+      function parseDateStr(dateStr) { return new Date(dateStr + 'T00:00:00'); }
+      function timeToMinutes(t) {
+        if (!t) return 0;
+        var parts = String(t).split(':');
+        return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+      }
+      function minutesToTime(mins) {
+        mins = Math.max(0, Math.min(24 * 60 - 1, Math.round(mins)));
+        return pad(Math.floor(mins / 60)) + ':' + pad(mins % 60);
+      }
+      function formatHourLabel(h) {
+        var period = h < 12 ? 'AM' : 'PM';
+        var hour12 = h % 12; if (hour12 === 0) hour12 = 12;
+        return hour12 + ' ' + period;
+      }
+      function formatShortDate(d) { return MONTH_NAMES[d.getMonth()].slice(0, 3) + ' ' + d.getDate(); }
+      function getWeekStart(d) {
+        var copy = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        copy.setDate(copy.getDate() - copy.getDay());
+        return copy;
+      }
+      function getWeekDays(anchor) {
+        var start = getWeekStart(anchor);
+        var days = [];
+        for (var i = 0; i < 7; i++) { var d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+        return days;
+      }
+
+      /* Shared 42-cell month-grid date math — used by both the Month view
+         and the mini date-navigation picker, so grid layout is defined once. */
+      function buildMonthGridCells(y, m) {
+        var firstOfMonth = new Date(y, m, 1);
+        var startOffset = firstOfMonth.getDay();
+        var gridStart = new Date(y, m, 1 - startOffset);
+        var cells = [];
+        for (var i = 0; i < 42; i++) {
+          var cellDate = new Date(gridStart);
+          cellDate.setDate(gridStart.getDate() + i);
+          cells.push({ date: cellDate, dateStr: toDateStr(cellDate), inMonth: cellDate.getMonth() === m });
+        }
+        return cells;
+      }
+
+      /* Greedy same-day overlap layout (the standard technique most calendar
+         UIs use): items sorted by start time each claim the first column
+         whose previous occupant has already ended, else open a new column.
+         Columns are shared across the whole day (not recomputed per
+         overlap-cluster) — a deliberate simplification that is correct but
+         can leave narrower-than-necessary columns when, e.g., one long event
+         overlaps two short back-to-back ones; acceptable for this dataset's
+         scale (a handful of sample/testing items per day). */
+      function layoutOverlappingItems(timedItems) {
+        var sorted = timedItems.slice().sort(function (a, b) {
+          var as = timeToMinutes(a.start), bs = timeToMinutes(b.start);
+          if (as !== bs) return as - bs;
+          return timeToMinutes(a.end || a.start) - timeToMinutes(b.end || b.start);
+        });
+        var columnEnds = [];
+        var placed = sorted.map(function (it) {
+          var start = timeToMinutes(it.start);
+          var end = it.end ? timeToMinutes(it.end) : start + 30;
+          var colIndex = -1;
+          for (var i = 0; i < columnEnds.length; i++) {
+            if (columnEnds[i] <= start) { colIndex = i; break; }
+          }
+          if (colIndex === -1) { colIndex = columnEnds.length; columnEnds.push(0); }
+          columnEnds[colIndex] = end;
+          return { item: it, col: colIndex, startMin: start, endMin: end };
+        });
+        var totalCols = Math.max(1, columnEnds.length);
+        placed.forEach(function (p) { p.totalCols = totalCols; });
+        return placed;
+      }
       function escapeHtml(str) {
         var div = document.createElement('div');
         div.textContent = str == null ? '' : str;
@@ -4566,13 +5429,27 @@
           '<div class="hr-table-card">' +
           '<div class="msc-cal-toolbar">' +
           '<div class="msc-cal-toolbar-btns">' +
-          '<button type="button" class="msc-tool-btn msc-prev">&larr; Previous</button>' +
+          '<button type="button" class="msc-tool-btn msc-prev" aria-label="Previous">&larr; Previous</button>' +
           '<button type="button" class="msc-tool-btn msc-today">Today</button>' +
-          '<button type="button" class="msc-tool-btn msc-next">Next &rarr;</button>' +
+          '<button type="button" class="msc-tool-btn msc-next" aria-label="Next">Next &rarr;</button>' +
           '</div>' +
           '<div class="msc-cal-heading msc-heading">&nbsp;</div>' +
+          '<div class="msc-view-switcher" role="group" aria-label="Calendar view">' +
+          '<button type="button" class="msc-view-btn active" data-view="month" aria-pressed="true">Month</button>' +
+          '<button type="button" class="msc-view-btn" data-view="week" aria-pressed="false">Week</button>' +
+          '<button type="button" class="msc-view-btn" data-view="day" aria-pressed="false">Day</button>' +
+          '<button type="button" class="msc-view-btn" data-view="agenda" aria-pressed="false">Agenda</button>' +
           '</div>' +
-          '<div class="msc-cal-grid-wrap"><div class="msc-cal-grid msc-grid"></div></div>' +
+          '</div>' +
+          '<div class="msc-cal-body-layout">' +
+          '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
+          '<div class="msc-cal-grid-wrap">' +
+          '<div class="msc-cal-grid msc-grid msc-view-pane active" data-view-pane="month"></div>' +
+          '<div class="msc-week-grid msc-view-pane" data-view-pane="week"></div>' +
+          '<div class="msc-day-grid msc-view-pane" data-view-pane="day"></div>' +
+          '<div class="msc-agenda-list msc-view-pane" data-view-pane="agenda"></div>' +
+          '</div>' +
+          '</div>' +
           '</div>' +
           '<div class="msc-form-card">' +
           '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
@@ -4665,12 +5542,20 @@
         var viewNotes = container.querySelector('.msc-view-notes');
         var viewClose = container.querySelector('.msc-view-close');
         var apiStatusEl = container.querySelector('.msc-api-status');
+        var viewSwitcherBtns = container.querySelectorAll('.msc-view-btn');
+        var miniPickerEl = container.querySelector('.msc-mini-picker');
+        var weekGridEl = container.querySelector('.msc-week-grid');
+        var dayGridEl = container.querySelector('.msc-day-grid');
+        var agendaEl = container.querySelector('.msc-agenda-list');
 
         /* Prevent Enter-key implicit form submission from reloading the page —
            no action/method is set on this form; it is never meant to submit. */
         formEl.addEventListener('submit', function (e) { e.preventDefault(); });
 
-        var state = { viewYear: null, viewMonth: null, selectedDate: null, editingId: null };
+        var state = {
+          viewYear: null, viewMonth: null, selectedDate: null, editingId: null,
+          currentView: 'month', anchorDate: null
+        };
 
         /* Presentation-only status line (Phase 1 polish, 2026-07-10): same
            (message, isError) signature and every call site as before — only
@@ -4734,30 +5619,22 @@
 
         var MAX_CAL_CHIPS = 2;
 
-        function renderCalendar() {
+        function renderMonthView() {
           var y = state.viewYear, m = state.viewMonth;
-          monthHeading.textContent = MONTH_NAMES[m] + ' ' + y;
-
-          var firstOfMonth = new Date(y, m, 1);
-          var startOffset = firstOfMonth.getDay();
-          var gridStart = new Date(y, m, 1 - startOffset);
           var todayStr = toDateStr(new Date());
+          var cells = buildMonthGridCells(y, m);
 
           var html = '';
           DAY_HEADS.forEach(function (d) { html += '<div class="msc-cal-headcell">' + d + '</div>'; });
 
-          for (var i = 0; i < 42; i++) {
-            var cellDate = new Date(gridStart);
-            cellDate.setDate(gridStart.getDate() + i);
-            var cellStr = toDateStr(cellDate);
-            var inMonth = cellDate.getMonth() === m;
-            var isToday = cellStr === todayStr;
-            var isSelected = cellStr === state.selectedDate;
-            var dayItems = itemsForDate(cellStr);
+          cells.forEach(function (c) {
+            var isToday = c.dateStr === todayStr;
+            var isSelected = c.dateStr === state.selectedDate;
+            var dayItems = itemsForDate(c.dateStr);
 
-            var cls = 'msc-cal-cell' + (inMonth ? '' : ' other-month') + (isSelected ? ' selected' : '');
-            html += '<div class="' + cls + '" data-date="' + cellStr + '">';
-            html += '<div class="msc-cal-daynum' + (isToday ? ' today' : '') + '">' + cellDate.getDate() + '</div>';
+            var cls = 'msc-cal-cell' + (c.inMonth ? '' : ' other-month') + (isSelected ? ' selected' : '');
+            html += '<div class="' + cls + '" data-date="' + c.dateStr + '">';
+            html += '<div class="msc-cal-daynum' + (isToday ? ' today' : '') + '">' + c.date.getDate() + '</div>';
             /* Demo-style visible task chips inside each date (aios_role_desk_views.html layout reference) —
                shows the actual sample/testing entries the user has added, not real schedule facts. */
             dayItems.slice(0, MAX_CAL_CHIPS).forEach(function (it) {
@@ -4770,7 +5647,7 @@
               html += '<span class="msc-cal-chip-more">+' + (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
             }
             html += '</div>';
-          }
+          });
           calGrid.innerHTML = html;
 
           calGrid.querySelectorAll('.msc-cal-cell').forEach(function (cell) {
@@ -4780,30 +5657,423 @@
           });
         }
 
+        /* ── Week/Day time-grid view (Google-Calendar-inspired) ──
+           Shared by Week (7 days) and Day (1 day) — both call this with a
+           different `days` array against a different mount (weekGridEl /
+           dayGridEl). All-day items (both start/end null — the existing
+           convention, no schema change) render in a separate top strip;
+           timed items render as absolutely-positioned blocks inside their
+           day column using layoutOverlappingItems for side-by-side overlap. */
+        function renderTimeGrid(gridRootEl, days) {
+          var todayStr = toDateStr(new Date());
+          var colTemplate = '56px repeat(' + days.length + ', 1fr)';
+
+          var headerHtml = '<div class="msc-tg-row msc-tg-header-row" style="grid-template-columns:' + colTemplate + ';">' +
+            '<div class="msc-tg-gutter"></div>';
+          days.forEach(function (d) {
+            var isToday = toDateStr(d) === todayStr;
+            headerHtml += '<div class="msc-tg-daycol-head' + (isToday ? ' today' : '') + '">' +
+              DAY_HEADS[d.getDay()] + ' <span class="msc-tg-daynum">' + d.getDate() + '</span></div>';
+          });
+          headerHtml += '</div>';
+
+          var alldayHtml = '<div class="msc-tg-row msc-tg-allday-row" style="grid-template-columns:' + colTemplate + ';">' +
+            '<div class="msc-tg-gutter">All day</div>';
+          days.forEach(function (d) {
+            var dateStr = toDateStr(d);
+            var alldayItems = itemsForDate(dateStr).filter(function (it) { return !it.start && !it.end; });
+            alldayHtml += '<div class="msc-tg-allday-col" data-date="' + dateStr + '">';
+            alldayItems.forEach(function (it) {
+              var catClass = CATEGORY_CLASS[it.category] || 'task';
+              alldayHtml += '<div class="msc-tg-allday-chip ' + catClass + '" data-id="' + it.id +
+                '" tabindex="0" role="button" title="' + escapeHtml(it.title) + '">' + escapeHtml(it.title) + '</div>';
+            });
+            alldayHtml += '</div>';
+          });
+          alldayHtml += '</div>';
+
+          var bodyHtml = '<div class="msc-tg-scroll"><div class="msc-tg-body-grid" ' +
+            'style="grid-template-columns:' + colTemplate + ';height:' + (TG_HOURS * TG_ROW_HEIGHT_PX) + 'px;">';
+          bodyHtml += '<div class="msc-tg-gutter-col">';
+          for (var h = 0; h < TG_HOURS; h++) {
+            bodyHtml += '<div class="msc-tg-hour-label" style="height:' + TG_ROW_HEIGHT_PX + 'px;">' +
+              formatHourLabel(h) + '</div>';
+          }
+          bodyHtml += '</div>';
+
+          days.forEach(function (d) {
+            var dateStr = toDateStr(d);
+            bodyHtml += '<div class="msc-tg-daycol" data-date="' + dateStr + '">';
+            for (var h2 = 0; h2 < TG_HOURS; h2++) {
+              bodyHtml += '<div class="msc-tg-hourcell" data-hour="' + h2 + '" style="height:' + TG_ROW_HEIGHT_PX + 'px;"></div>';
+            }
+            var timedItems = itemsForDate(dateStr).filter(function (it) { return it.start; });
+            layoutOverlappingItems(timedItems).forEach(function (entry) {
+              var it = entry.item;
+              var top = entry.startMin / 60 * TG_ROW_HEIGHT_PX;
+              var height = Math.max(18, (entry.endMin - entry.startMin) / 60 * TG_ROW_HEIGHT_PX);
+              var widthPct = 100 / entry.totalCols;
+              var leftPct = entry.col * widthPct;
+              var catClass = CATEGORY_CLASS[it.category] || 'task';
+              bodyHtml += '<div class="msc-tg-event ' + catClass + '" data-id="' + it.id + '" tabindex="0" role="button" ' +
+                'style="top:' + top + 'px;height:' + height + 'px;left:' + leftPct + '%;width:' + widthPct + '%;">' +
+                '<div class="msc-tg-event-title">' + escapeHtml(it.title) + '</div>' +
+                '<div class="msc-tg-event-time">' + escapeHtml(it.start) + (it.end ? '–' + escapeHtml(it.end) : '') + '</div>' +
+                '<div class="msc-tg-resize-handle" aria-hidden="true"></div>' +
+                '</div>';
+            });
+            if (dateStr === todayStr) {
+              var nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+              bodyHtml += '<div class="msc-tg-now-line" style="top:' + (nowMinutes / 60 * TG_ROW_HEIGHT_PX) + 'px;"></div>';
+            }
+            bodyHtml += '</div>';
+          });
+          bodyHtml += '</div></div>';
+
+          gridRootEl.innerHTML = headerHtml + alldayHtml + bodyHtml;
+
+          wireTimeGridInteractions(gridRootEl);
+
+          var scrollEl = gridRootEl.querySelector('.msc-tg-scroll');
+          if (scrollEl) { scrollEl.scrollTop = Math.max(0, TG_DEFAULT_SCROLL_HOUR * TG_ROW_HEIGHT_PX - 40); }
+        }
+
+        /* ── Empty-range click/drag-to-create + event drag-move/resize ──
+           Drag-move shifts an event's time-of-day within the SAME day column
+           (start and end shift together, duration preserved); moving an
+           event to a different day is done via the existing Edit form's
+           date field, not cross-column drag — a deliberate scope reduction
+           documented in validation/shared-calendar-google-inspired-ux-check-
+           2026-07-13.md. Resize only ever changes `end`. Both commit via the
+           existing PUT endpoint and WAIT for success before the item's
+           position changes — on failure nothing was mutated, so re-rendering
+           from the unchanged `items` array is a correct "snap back", not a
+           rollback of an optimistic write. */
+        function wireEmptyCellCreate(colEl, dateStr) {
+          var dragStartHour = null;
+          var dragCurrentHour = null;
+          var isDragging = false;
+
+          colEl.querySelectorAll('.msc-tg-hourcell').forEach(function (cell) {
+            cell.addEventListener('click', function () {
+              var hour = parseInt(cell.getAttribute('data-hour'), 10);
+              prefillCreateForm(dateStr, hour, hour + 1);
+            });
+            cell.addEventListener('pointerdown', function () {
+              dragStartHour = parseInt(cell.getAttribute('data-hour'), 10);
+              dragCurrentHour = dragStartHour;
+              isDragging = true;
+            });
+            cell.addEventListener('pointerenter', function () {
+              if (isDragging) { dragCurrentHour = parseInt(cell.getAttribute('data-hour'), 10); }
+            });
+          });
+
+          colEl.addEventListener('pointerup', function () {
+            if (!isDragging) return;
+            isDragging = false;
+            if (dragStartHour == null || dragCurrentHour == null) return;
+            var startHour = Math.min(dragStartHour, dragCurrentHour);
+            var lastHour = Math.max(dragStartHour, dragCurrentHour);
+            // A genuine multi-cell drag (the plain 'click' listener above
+            // already handles the single-cell case, so only act here when
+            // the range actually spans more than one hour).
+            if (startHour !== lastHour) { prefillCreateForm(dateStr, startHour, lastHour + 1); }
+            dragStartHour = null;
+            dragCurrentHour = null;
+          });
+        }
+
+        function prefillCreateForm(dateStr, startHour, endHour) {
+          selectDate(dateStr);
+          if (startHour == null) {
+            fieldStart.value = '';
+            fieldEnd.value = '';
+          } else {
+            fieldStart.value = pad(startHour) + ':00';
+            var clampedEnd = Math.min(endHour, 24);
+            fieldEnd.value = clampedEnd >= 24 ? '23:59' : (pad(clampedEnd) + ':00');
+          }
+          fieldTitle.focus();
+        }
+
+        function commitItemTimeChange(it, newDateStr, newStart, newEnd) {
+          var payload = frontendToApiPayload({
+            date: newDateStr, title: it.title, category: it.category, priority: it.priority,
+            start: newStart, end: newEnd, notes: it.notes
+          });
+          return apiRequest('PUT', apiBase + '/' + encodeURIComponent(it.id), payload).then(function (apiItem) {
+            var updated = apiItemToFrontend(apiItem);
+            var idx = items.indexOf(it);
+            if (idx !== -1) { items[idx] = updated; }
+            return updated;
+          });
+        }
+
+        function attachDragHandlers(eventEl, it) {
+          var suppressNextClick = false;
+
+          eventEl.addEventListener('pointerdown', function (e) {
+            if (e.target.closest('.msc-tg-resize-handle')) return;
+            e.preventDefault();
+            var startY = e.clientY;
+            var originalStartMin = timeToMinutes(it.start);
+            var durationMin = (it.end ? timeToMinutes(it.end) : originalStartMin + 30) - originalStartMin;
+            eventEl.classList.add('msc-tg-event--dragging');
+
+            function onMove(ev) {
+              eventEl.style.transform = 'translateY(' + (ev.clientY - startY) + 'px)';
+            }
+            function onUp(ev) {
+              document.removeEventListener('pointermove', onMove);
+              document.removeEventListener('pointerup', onUp);
+              eventEl.classList.remove('msc-tg-event--dragging');
+              var deltaMin = Math.round(((ev.clientY - startY) / TG_ROW_HEIGHT_PX * 60) / 15) * 15;
+              eventEl.style.transform = '';
+              if (!deltaMin) { return; }
+              suppressNextClick = true;
+              var newStartMin = Math.max(0, Math.min(24 * 60 - durationMin, originalStartMin + deltaMin));
+              var newEndMin = newStartMin + durationMin;
+              eventEl.classList.add('msc-tg-event--pending');
+              commitItemTimeChange(it, it.date, minutesToTime(newStartMin), minutesToTime(newEndMin))
+                .then(function () { renderActiveView(); })
+                .catch(function (err) {
+                  showApiStatus('Could not move this schedule item — reverted. Detail: ' + err.message, true);
+                  renderActiveView();
+                });
+            }
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+          });
+
+          eventEl.addEventListener('click', function (e) {
+            if (suppressNextClick) { suppressNextClick = false; return; }
+            if (e.target.closest('.msc-tg-resize-handle')) return;
+            viewItem(it.id, eventEl);
+          });
+        }
+
+        function attachResizeHandler(handleEl, eventEl, it) {
+          handleEl.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var startY = e.clientY;
+            var startMin = timeToMinutes(it.start);
+            var originalDurationMin = (it.end ? timeToMinutes(it.end) : startMin + 30) - startMin;
+
+            function onMove(ev) {
+              var deltaMin = Math.round(((ev.clientY - startY) / TG_ROW_HEIGHT_PX * 60) / 15) * 15;
+              var newDurationMin = Math.max(15, originalDurationMin + deltaMin);
+              eventEl.style.height = Math.max(18, newDurationMin / 60 * TG_ROW_HEIGHT_PX) + 'px';
+            }
+            function onUp(ev) {
+              document.removeEventListener('pointermove', onMove);
+              document.removeEventListener('pointerup', onUp);
+              var deltaMin = Math.round(((ev.clientY - startY) / TG_ROW_HEIGHT_PX * 60) / 15) * 15;
+              if (!deltaMin) { return; }
+              var newDurationMin = Math.max(15, originalDurationMin + deltaMin);
+              var newEndMin = Math.min(24 * 60, startMin + newDurationMin);
+              eventEl.classList.add('msc-tg-event--pending');
+              commitItemTimeChange(it, it.date, it.start, minutesToTime(newEndMin))
+                .then(function () { renderActiveView(); })
+                .catch(function (err) {
+                  showApiStatus('Could not resize this schedule item — reverted. Detail: ' + err.message, true);
+                  renderActiveView();
+                });
+            }
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+          });
+        }
+
+        function wireTimeGridInteractions(gridRootEl) {
+          gridRootEl.querySelectorAll('.msc-tg-daycol').forEach(function (colEl) {
+            wireEmptyCellCreate(colEl, colEl.getAttribute('data-date'));
+          });
+          gridRootEl.querySelectorAll('.msc-tg-allday-col').forEach(function (colEl) {
+            var dateStr = colEl.getAttribute('data-date');
+            colEl.addEventListener('click', function (e) {
+              if (e.target === colEl) { prefillCreateForm(dateStr, null, null); }
+            });
+          });
+          gridRootEl.querySelectorAll('.msc-tg-allday-chip').forEach(function (chipEl) {
+            chipEl.addEventListener('click', function (e) {
+              e.stopPropagation();
+              viewItem(chipEl.getAttribute('data-id'), chipEl);
+            });
+          });
+          gridRootEl.querySelectorAll('.msc-tg-event').forEach(function (eventEl) {
+            var id = eventEl.getAttribute('data-id');
+            var it = items.filter(function (x) { return x.id === id; })[0];
+            if (!it) return;
+            attachDragHandlers(eventEl, it);
+            var handle = eventEl.querySelector('.msc-tg-resize-handle');
+            if (handle) attachResizeHandler(handle, eventEl, it);
+          });
+        }
+
+        /* ── Agenda view — groups items by date within the active month. ── */
+        function formatAgendaDate(dateStr) {
+          var d = parseDateStr(dateStr);
+          return DAY_NAMES_FULL[d.getDay()] + ', ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
+        }
+
+        function renderAgendaView() {
+          var y = state.viewYear, m = state.viewMonth;
+          var grouped = {};
+          items.forEach(function (it) {
+            var d = parseDateStr(it.date);
+            if (d.getFullYear() === y && d.getMonth() === m) {
+              (grouped[it.date] = grouped[it.date] || []).push(it);
+            }
+          });
+          var dateKeys = Object.keys(grouped).sort();
+          if (!dateKeys.length) {
+            agendaEl.innerHTML = '<p class="msc-empty">No sample schedule items in ' + MONTH_NAMES[m] + ' ' + y + '.</p>';
+            return;
+          }
+          var html = '';
+          dateKeys.forEach(function (dateStr) {
+            var dayItems = grouped[dateStr].slice().sort(function (a, b) {
+              return timeToMinutes(a.start) - timeToMinutes(b.start);
+            });
+            html += '<div class="msc-agenda-day"><div class="msc-agenda-day-heading">' +
+              formatAgendaDate(dateStr) + '</div>';
+            dayItems.forEach(function (it) {
+              var catClass = CATEGORY_CLASS[it.category] || 'task';
+              var priority = it.priority || 'Medium';
+              var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
+              var timeStr = (it.start || it.end) ? (it.start || '?') + '–' + (it.end || '?') : 'All day';
+              html += '<div class="msc-agenda-item" data-id="' + it.id + '">' +
+                '<div class="msc-agenda-item-time">' + escapeHtml(timeStr) + '</div>' +
+                '<div class="msc-agenda-item-main"><span class="badge ' + badgeClass + '">' + escapeHtml(priority) +
+                '</span> <span class="msc-chip-cat ' + catClass + '">' + escapeHtml(it.category) + '</span> ' +
+                escapeHtml(it.title) + '</div>' +
+                '<div class="msc-agenda-item-actions">' +
+                '<button type="button" data-action="edit" data-id="' + it.id + '">Edit</button>' +
+                '<button type="button" data-action="delete" data-id="' + it.id + '">Delete</button>' +
+                '</div></div>';
+            });
+            html += '</div>';
+          });
+          agendaEl.innerHTML = html;
+
+          agendaEl.querySelectorAll('button[data-action]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var action = btn.getAttribute('data-action');
+              var id = btn.getAttribute('data-id');
+              if (action === 'edit') {
+                var it = items.filter(function (x) { return x.id === id; })[0];
+                if (it) { selectDate(it.date); editItem(id); }
+              } else if (action === 'delete') {
+                deleteItem(id);
+              }
+            });
+          });
+        }
+
+        /* ── Mini date-navigation picker — reuses buildMonthGridCells so
+           month-grid math is defined exactly once. Navigates whichever view
+           is currently active, not just Month. ── */
+        function renderMiniPicker() {
+          var y = state.viewYear, m = state.viewMonth;
+          var cells = buildMonthGridCells(y, m);
+          var todayStr = toDateStr(new Date());
+          var html = '<div class="msc-mini-picker-heading">' + MONTH_NAMES[m] + ' ' + y + '</div><div class="msc-mini-picker-grid">';
+          DAY_HEADS.forEach(function (d) { html += '<div class="msc-mini-picker-headcell">' + d.charAt(0) + '</div>'; });
+          cells.forEach(function (c) {
+            var cls = 'msc-mini-picker-cell' + (c.inMonth ? '' : ' other-month') +
+              (c.dateStr === todayStr ? ' today' : '') + (c.dateStr === state.selectedDate ? ' selected' : '');
+            html += '<button type="button" class="' + cls + '" data-date="' + c.dateStr + '" aria-label="' +
+              escapeHtml(formatAgendaDate(c.dateStr)) + '">' + c.date.getDate() + '</button>';
+          });
+          html += '</div>';
+          miniPickerEl.innerHTML = html;
+          miniPickerEl.querySelectorAll('.msc-mini-picker-cell').forEach(function (btn) {
+            btn.addEventListener('click', function () { selectDate(btn.getAttribute('data-date')); });
+          });
+        }
+
+        function updateHeading() {
+          if (state.currentView === 'month' || state.currentView === 'agenda') {
+            monthHeading.textContent = MONTH_NAMES[state.viewMonth] + ' ' + state.viewYear;
+          } else if (state.currentView === 'week') {
+            var days = getWeekDays(state.anchorDate);
+            monthHeading.textContent = formatShortDate(days[0]) + ' – ' + formatShortDate(days[6]) + ', ' + days[6].getFullYear();
+          } else if (state.currentView === 'day') {
+            monthHeading.textContent = DAY_NAMES_FULL[state.anchorDate.getDay()] + ', ' +
+              MONTH_NAMES[state.anchorDate.getMonth()] + ' ' + state.anchorDate.getDate() + ', ' + state.anchorDate.getFullYear();
+          }
+        }
+
+        function syncViewSwitcherButtons() {
+          viewSwitcherBtns.forEach(function (b) {
+            var active = b.getAttribute('data-view') === state.currentView;
+            b.classList.toggle('active', active);
+            b.setAttribute('aria-pressed', active ? 'true' : 'false');
+          });
+        }
+
+        /* ── Single dispatcher every nav/CRUD/view-switch path calls instead
+           of a view-specific render function — keeps Month/Week/Day/Agenda,
+           the mini-picker, and the heading always in sync with state. ── */
+        function renderActiveView() {
+          container.querySelectorAll('.msc-view-pane').forEach(function (p) {
+            p.classList.toggle('active', p.getAttribute('data-view-pane') === state.currentView);
+          });
+          updateHeading();
+          if (state.currentView === 'month') { renderMonthView(); }
+          else if (state.currentView === 'week') { renderTimeGrid(weekGridEl, getWeekDays(state.anchorDate)); }
+          else if (state.currentView === 'day') { renderTimeGrid(dayGridEl, [state.anchorDate]); }
+          else { renderAgendaView(); }
+          renderMiniPicker();
+        }
+
+        viewSwitcherBtns.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            state.currentView = btn.getAttribute('data-view');
+            syncViewSwitcherButtons();
+            renderActiveView();
+          });
+        });
+
         prevBtn.addEventListener('click', function () {
-          state.viewMonth--;
-          if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
-          renderCalendar();
+          if (state.currentView === 'month' || state.currentView === 'agenda') {
+            state.viewMonth--;
+            if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
+          } else if (state.currentView === 'week') {
+            state.anchorDate.setDate(state.anchorDate.getDate() - 7);
+          } else if (state.currentView === 'day') {
+            state.anchorDate.setDate(state.anchorDate.getDate() - 1);
+          }
+          renderActiveView();
         });
         nextBtn.addEventListener('click', function () {
-          state.viewMonth++;
-          if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
-          renderCalendar();
+          if (state.currentView === 'month' || state.currentView === 'agenda') {
+            state.viewMonth++;
+            if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
+          } else if (state.currentView === 'week') {
+            state.anchorDate.setDate(state.anchorDate.getDate() + 7);
+          } else if (state.currentView === 'day') {
+            state.anchorDate.setDate(state.anchorDate.getDate() + 1);
+          }
+          renderActiveView();
         });
         todayBtn.addEventListener('click', function () {
-          var t = new Date();
-          state.viewYear = t.getFullYear();
-          state.viewMonth = t.getMonth();
-          selectDate(toDateStr(t));
+          selectDate(toDateStr(new Date()));
         });
 
         function selectDate(dateStr) {
           state.selectedDate = dateStr;
+          var d = parseDateStr(dateStr);
+          state.anchorDate = d;
+          state.viewYear = d.getFullYear();
+          state.viewMonth = d.getMonth();
           selectedDateLabel.textContent = dateStr;
           listDateLabel.textContent = dateStr;
           fieldDate.value = dateStr;
           cancelEdit();
-          renderCalendar();
+          renderActiveView();
           renderList();
         }
 
@@ -4980,7 +6250,7 @@
             items = items.filter(function (x) { return x.id !== id; });
             showApiStatus('', false);
             if (state.editingId === id) { cancelEdit(); }
-            renderCalendar();
+            renderActiveView();
             renderList();
           }).catch(function (err) {
             showApiStatus('Could not delete this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
@@ -5045,7 +6315,7 @@
             items = [];
             showApiStatus('', false);
             cancelEdit();
-            renderCalendar();
+            renderActiveView();
             renderList();
           }).catch(function (err) {
             showApiStatus('Could not clear testing data — the local API may be unavailable. Detail: ' + err.message, true);
@@ -5056,11 +6326,27 @@
            Items are loaded from the API before the first render. No seed/sample
            data is created automatically — the list stays empty (and the calendar
            shows no chips) until the user manually adds an item, so mounting this
-           instance never writes a row to PostgreSQL by itself. */
+           instance never writes a row to PostgreSQL by itself. Narrow screens
+           default to Agenda (no hourly grid to scroll horizontally, and more
+           information-dense than Day on a small viewport); desktop keeps the
+           original Month default unchanged. */
         var t0 = new Date();
         state.viewYear = t0.getFullYear();
         state.viewMonth = t0.getMonth();
-        renderCalendar();
+        state.anchorDate = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate());
+        if (typeof window !== 'undefined' && window.innerWidth && window.innerWidth <= 640) {
+          state.currentView = 'agenda';
+        }
+        syncViewSwitcherButtons();
+        renderActiveView();
+
+        // Current-time indicator refresh — cheap full re-render is fine at
+        // this scale (a handful of items per member); only matters visually
+        // while Week/Day is the active view.
+        setInterval(function () {
+          if (state.currentView === 'week' || state.currentView === 'day') { renderActiveView(); }
+        }, 60000);
+
         loadItems().then(function (loaded) {
           items = loaded;
           selectDate(toDateStr(t0));
@@ -5149,9 +6435,51 @@
       };
       var ONBOARDING_STAGES = { 'Probation': true, 'training_7_day': true, '[VERIFY]': true };
 
+      /* Compact/default columns shown in the primary table (UX upgrade,
+         2026-07-13). `sortKey` is the sort_by value sent to GET /api/staff
+         (null = not sortable); `hideable` marks columns the column-visibility
+         chooser may hide (Employee and Actions are always shown). The fuller
+         STAFF_MAIN_COLUMNS field set above is unchanged and is reused as-is
+         for the detail drawer. */
+      var STAFF_PRIMARY_COLUMNS = [
+        { key: 'employee', label: 'Employee', sortKey: 'full_name', hideable: false },
+        { key: 'department_team', label: 'Team', sortKey: 'department_team', hideable: true },
+        { key: 'designation', label: 'Designation', sortKey: null, hideable: true },
+        { key: 'staff_status', label: 'Staff Status', sortKey: 'staff_status', hideable: true },
+        { key: 'employment_stage', label: 'Employment Stage', sortKey: 'employment_stage', hideable: true },
+        { key: 'location', label: 'Location', sortKey: 'location', hideable: true },
+        { key: 'date_of_joining', label: 'Date of Joining', sortKey: 'date_of_joining', hideable: true },
+        { key: 'actions', label: 'Actions', sortKey: null, hideable: false }
+      ];
+      var STAFF_ROWS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
+      var STAFF_DEFAULT_PAGE_SIZE = 25;
+
       function escapeHtml(s) {
         return String(s == null ? '' : s)
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function debounce(fn, waitMs) {
+        var timer = null;
+        return function () {
+          var args = arguments;
+          var ctx = this;
+          clearTimeout(timer);
+          timer = setTimeout(function () { fn.apply(ctx, args); }, waitMs);
+        };
+      }
+
+      /* CSV field escaping — quotes any value containing a comma, quote, or
+         newline, doubling internal quotes per RFC 4180. First CSV/Blob code
+         in this file — kept as one small, deliberately explicit helper
+         rather than a naive join so free-text fields (remarks, etc.) can't
+         corrupt the export. */
+      function csvEscape(value) {
+        var s = value == null ? '' : String(value);
+        if (/[",\n\r]/.test(s)) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
       }
 
       function uniqueValues(rows, field) {
@@ -5179,8 +6507,8 @@
         return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
       }());
 
-      function staffApiRequest(url) {
-        return fetch(url).then(function (res) {
+      function staffApiRequest(url, signal) {
+        return fetch(url, signal ? { signal: signal } : undefined).then(function (res) {
           if (!res.ok) {
             return res.json().catch(function () { return {}; }).then(function (errBody) {
               var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) : (res.status + ' ' + res.statusText);
@@ -5195,7 +6523,10 @@
          string (user-selected, from the shared filter dropdown) or an
          array (a tab's base pilot classification, e.g. Onboarding's
          Probation/training_7_day/[VERIFY] set) — the API accepts repeated
-         employment_stage params for exactly this reason. */
+         employment_stage params for exactly this reason. `sortBy`/`sortDir`
+         and `limit`/`offset` are populated by the per-instance table
+         controller (see mountStaffTableView) — omitting sortBy reproduces
+         the API's original hardcoded ordering exactly. */
       function buildStaffQuery(filters) {
         filters = filters || {};
         var params = [];
@@ -5206,6 +6537,10 @@
           stages.forEach(function (s) { params.push('employment_stage=' + encodeURIComponent(s)); });
         }
         if (filters.search) params.push('search=' + encodeURIComponent(filters.search));
+        if (filters.sortBy) {
+          params.push('sort_by=' + encodeURIComponent(filters.sortBy));
+          params.push('sort_direction=' + encodeURIComponent(filters.sortDir || 'asc'));
+        }
         params.push('limit=' + (filters.limit || 500));
         params.push('offset=' + (filters.offset || 0));
         return params.join('&');
@@ -5214,9 +6549,11 @@
       /* Fetches real staff records from the read-only Staff API. Returns a
          promise resolving to the full StaffListResponse shape
          ({records, total, limit, offset, filters}) so callers can display
-         an accurate total count, not just the current page's row count. */
-      function fetchStaffRecords(filters) {
-        return staffApiRequest(STAFF_API_BASE + '?' + buildStaffQuery(filters));
+         an accurate total count, not just the current page's row count.
+         `signal` (optional AbortSignal) lets a per-instance controller
+         cancel a stale in-flight request when a newer one supersedes it. */
+      function fetchStaffRecords(filters, signal) {
+        return staffApiRequest(STAFF_API_BASE + '?' + buildStaffQuery(filters), signal);
       }
 
       // ── Shared filter-merge helper — reused by Current Staff, Onboarding
@@ -5246,46 +6583,363 @@
         'onboarding-staff': { stage: ['Probation', 'training_7_day', '[VERIFY]'] }
       };
 
-      function showStaffLoading(containerEl) {
-        if (!containerEl) return;
-        containerEl.innerHTML = '<div class="staff-table-loading">Loading staff records…</div>';
-      }
-
-      function showStaffError(containerEl, message) {
-        if (!containerEl) return;
-        containerEl.innerHTML = '<div class="staff-table-error" role="alert">Could not load staff records from the ' +
-          'Staff API (' + escapeHtml(STAFF_API_BASE) + '). Is the backend running? Start it with ' +
-          '"uvicorn backend.main:app --port 8000" — see backend/README.md. Detail: ' + escapeHtml(message) + '</div>';
-      }
-
-      // ── Shared staff table renderer — reused by every staff view. Shows
-      // a "showing N of TOTAL" line so the true record count is always
-      // visible, independent of how many rows are on the current page. ──
-      function renderStaffTable(containerEl, rows, total) {
-        if (!containerEl) return;
-        var countLine = '<div class="staff-total-count">Showing ' + rows.length + ' of ' + total + ' record' +
-          (total === 1 ? '' : 's') + '</div>';
-        if (!rows.length) {
-          containerEl.innerHTML = countLine + '<div class="staff-table-empty">No staff records match the current filters.</div>';
-          return;
+      // ── Shared cell renderers — used by the primary table, the detail
+      // drawer, and (for the fuller field set) never by CSV export directly
+      // (export reads raw values so the file stays plain text). Employment
+      // stage and staff status get a text label *plus* a color chip — never
+      // color alone (Staff Table UX upgrade, 2026-07-13 — see "STATUS
+      // DISPLAY" requirement). ──
+      function renderStaffPrimaryCell(r, colKey) {
+        if (colKey === 'employee') {
+          return '<div class="staff-employee-cell">' +
+            '<div class="staff-employee-name">' + escapeHtml(r.full_name || '—') + '</div>' +
+            (r.calling_name ? '<div class="staff-employee-calling">' + escapeHtml(r.calling_name) + '</div>' : '') +
+            (r.employee_number ? '<div class="staff-employee-number">' + escapeHtml(r.employee_number) + '</div>' : '') +
+            '</div>';
         }
-        var html = countLine + '<div class="member-testing-table-scroll"><table class="member-testing-table staff-table"><thead><tr>';
-        STAFF_MAIN_COLUMNS.forEach(function (c) { html += '<th>' + STAFF_COLUMN_LABELS[c] + '</th>'; });
-        html += '</tr></thead><tbody>';
-        rows.forEach(function (r) {
-          html += '<tr>';
-          STAFF_MAIN_COLUMNS.forEach(function (c) {
-            var v = r[c] || '';
-            if (v === '[VERIFY]') {
-              html += '<td><span class="badge badge-verify">[VERIFY]</span></td>';
+        if (colKey === 'actions') {
+          return '<button type="button" class="staff-details-btn">Details</button>';
+        }
+        if (colKey === 'staff_status') {
+          var s = r.staff_status;
+          if (!s) return '';
+          if (s === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
+          var cls = s === 'Active' ? 'badge-pass' : (s === 'Inactive' ? 'badge-blocked' : 'badge-verify');
+          return '<span class="badge ' + cls + '">' + escapeHtml(s) + '</span>';
+        }
+        if (colKey === 'employment_stage') {
+          var v = r.employment_stage;
+          if (!v) return '';
+          if (v === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
+          return escapeHtml(STAGE_DISPLAY_LABELS[v] || v);
+        }
+        var raw = r[colKey];
+        if (raw === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
+        return escapeHtml(raw || '');
+      }
+
+      function renderStaffDrawerFieldValue(r, colKey) {
+        var raw = r[colKey];
+        if (raw === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
+        var display = (colKey === 'employment_stage' && STAGE_DISPLAY_LABELS[raw]) ? STAGE_DISPLAY_LABELS[raw] : raw;
+        return escapeHtml(display || '—');
+      }
+
+      /* Single centralized detail drawer, lazily created and reused by every
+         staff table instance (Current/Onboarding/Resigned/Arun/Paraparan) —
+         only one row can be inspected at a time, so one shared drawer avoids
+         mounting 5 near-identical overlay/focus-trap instances. Renders
+         exactly the STAFF_MAIN_COLUMNS field set (already the approved,
+         PII-free 13-field list) — never salary/address/personal-contact
+         fields, which do not exist on the row objects at all. */
+      var staffDrawerApi = null;
+      function ensureStaffDrawer() {
+        if (staffDrawerApi) return staffDrawerApi;
+        var overlay = document.createElement('div');
+        overlay.className = 'staff-drawer-overlay';
+        overlay.innerHTML =
+          '<div class="staff-drawer" role="dialog" aria-modal="true" aria-labelledby="staff-drawer-title">' +
+          '<div class="staff-drawer-header"><h4 id="staff-drawer-title">Staff Record</h4>' +
+          '<button type="button" class="staff-drawer-close" aria-label="Close details">&times;</button></div>' +
+          '<div class="staff-drawer-body"></div></div>';
+        document.body.appendChild(overlay);
+
+        var closeBtn = overlay.querySelector('.staff-drawer-close');
+        var bodyEl = overlay.querySelector('.staff-drawer-body');
+        var lastTrigger = null;
+
+        function close() {
+          overlay.classList.remove('show');
+          document.removeEventListener('keydown', onKeydown);
+          if (lastTrigger && typeof lastTrigger.focus === 'function') lastTrigger.focus();
+          lastTrigger = null;
+        }
+        function onKeydown(e) {
+          if (e.key === 'Escape') { close(); return; }
+          if (e.key === 'Tab') {
+            // Single focusable control in the drawer body today (the close
+            // button) — keep focus trapped there rather than escaping to
+            // the page behind the scrim.
+            e.preventDefault();
+            closeBtn.focus();
+          }
+        }
+        closeBtn.addEventListener('click', close);
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+
+        staffDrawerApi = {
+          open: function (row, triggerEl) {
+            lastTrigger = triggerEl || null;
+            bodyEl.innerHTML = STAFF_MAIN_COLUMNS.map(function (c) {
+              return '<div class="staff-drawer-field"><div class="staff-drawer-field-label">' +
+                escapeHtml(STAFF_COLUMN_LABELS[c]) + '</div><div class="staff-drawer-field-value">' +
+                renderStaffDrawerFieldValue(row, c) + '</div></div>';
+            }).join('');
+            overlay.classList.add('show');
+            document.addEventListener('keydown', onKeydown);
+            closeBtn.focus();
+          },
+          close: close
+        };
+        return staffDrawerApi;
+      }
+
+      /* Exports exactly the currently-loaded/rendered page of rows — never a
+         new fetch, and never anything beyond the approved STAFF_MAIN_COLUMNS
+         field list (so excluded PII fields, which don't exist on these row
+         objects at all, can never appear in the file). First Blob/CSV code
+         in this file (no prior pattern to reuse). */
+      function exportStaffCsvFromRows(rows, viewLabel) {
+        if (!rows || !rows.length) return;
+        var header = STAFF_MAIN_COLUMNS.map(function (c) { return csvEscape(STAFF_COLUMN_LABELS[c]); }).join(',');
+        var lines = rows.map(function (r) {
+          return STAFF_MAIN_COLUMNS.map(function (c) { return csvEscape(r[c]); }).join(',');
+        });
+        var csv = [header].concat(lines).join('\r\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'staff-export-' + (viewLabel || 'staff').replace(/[^a-z0-9_-]+/gi, '-') + '-' +
+          new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // ── Shared, reusable staff-table view controller. One instance per
+      // mounted table container (Current/Onboarding/Resigned each get their
+      // own inside the Staff Data tab; Arun and Paraparan each get their
+      // own) — every instance gains sort/pagination/density/column-visibility
+      // /export identically since they all run through this one function.
+      // `load(baseEffectiveFilters)` is called by the owning init function
+      // whenever the shared filter bar changes; sort/page/pageSize/density/
+      // column changes are handled entirely inside this controller and
+      // re-fetch using the last-given base filters. ──
+      function mountStaffTableView(containerEl, viewLabel) {
+        if (!containerEl) return { load: function () {} };
+
+        var state = {
+          sortBy: null,
+          sortDir: 'asc',
+          page: 0,
+          pageSize: STAFF_DEFAULT_PAGE_SIZE,
+          density: 'comfortable',
+          hiddenCols: {},
+          baseFilters: {},
+          rows: [],
+          total: 0,
+          abortController: null,
+          lastSignature: null
+        };
+
+        containerEl.innerHTML =
+          '<div class="staff-table-toolbar">' +
+          '<div class="staff-toolbar-group staff-density-toggle" role="group" aria-label="Table density">' +
+          '<button type="button" class="staff-density-btn active" data-density="comfortable">Comfortable</button>' +
+          '<button type="button" class="staff-density-btn" data-density="compact">Compact</button>' +
+          '</div>' +
+          '<div class="staff-toolbar-group">' +
+          '<div class="staff-col-chooser-wrap">' +
+          '<button type="button" class="staff-toolbar-btn staff-col-chooser-btn" aria-haspopup="true" aria-expanded="false">Columns</button>' +
+          '<div class="staff-col-chooser-popover"></div>' +
+          '</div>' +
+          '<button type="button" class="staff-toolbar-btn staff-export-btn">Export CSV</button>' +
+          '</div>' +
+          '</div>' +
+          '<div class="staff-table-region"></div>' +
+          '<div class="staff-pagination-bar">' +
+          '<div class="staff-page-info"></div>' +
+          '<div class="staff-toolbar-group">' +
+          '<label style="font-size:12px;color:var(--muted);">Rows per page ' +
+          '<select class="staff-page-size-select"></select></label>' +
+          '<button type="button" class="staff-page-btn staff-page-prev">&larr; Prev</button>' +
+          '<button type="button" class="staff-page-btn staff-page-next">Next &rarr;</button>' +
+          '</div>' +
+          '</div>';
+
+        var regionEl = containerEl.querySelector('.staff-table-region');
+        var pageInfoEl = containerEl.querySelector('.staff-page-info');
+        var pageSizeSel = containerEl.querySelector('.staff-page-size-select');
+        var prevBtn = containerEl.querySelector('.staff-page-prev');
+        var nextBtn = containerEl.querySelector('.staff-page-next');
+        var colChooserBtn = containerEl.querySelector('.staff-col-chooser-btn');
+        var colChooserPopover = containerEl.querySelector('.staff-col-chooser-popover');
+        var exportBtn = containerEl.querySelector('.staff-export-btn');
+        var densityBtns = containerEl.querySelectorAll('.staff-density-btn');
+
+        pageSizeSel.innerHTML = STAFF_ROWS_PER_PAGE_OPTIONS.map(function (n) {
+          return '<option value="' + n + '"' + (n === state.pageSize ? ' selected' : '') + '>' + n + '</option>';
+        }).join('');
+
+        colChooserPopover.innerHTML = STAFF_PRIMARY_COLUMNS.filter(function (c) { return c.hideable; }).map(function (c) {
+          return '<label><input type="checkbox" class="staff-col-toggle" data-col="' + c.key + '" checked /> ' +
+            escapeHtml(c.label) + '</label>';
+        }).join('');
+
+        function visibleColumns() {
+          return STAFF_PRIMARY_COLUMNS.filter(function (c) { return !state.hiddenCols[c.key]; });
+        }
+
+        function sortIndicator(col) {
+          if (state.sortBy !== col.sortKey) return '<span class="staff-sort-ind">↕</span>';
+          return '<span class="staff-sort-ind active">' + (state.sortDir === 'asc' ? '↑' : '↓') + '</span>';
+        }
+
+        function updatePaginationControls() {
+          var totalPages = Math.max(1, Math.ceil(state.total / state.pageSize));
+          var currentPage = state.page + 1;
+          pageInfoEl.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+          prevBtn.disabled = state.page <= 0;
+          nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        function renderBody() {
+          var cols = visibleColumns();
+          var countLine = '<div class="staff-total-count">Showing ' + state.rows.length + ' of ' + state.total +
+            ' record' + (state.total === 1 ? '' : 's') + '</div>';
+
+          if (!state.rows.length) {
+            regionEl.innerHTML = countLine + '<div class="staff-table-empty">No staff records match the current filters.</div>';
+            updatePaginationControls();
+            return;
+          }
+
+          var html = countLine + '<div class="staff-table-scroll"><table class="member-testing-table staff-table' +
+            (state.density === 'compact' ? ' staff-table--compact' : '') + '"><thead><tr>';
+          cols.forEach(function (c) {
+            if (c.sortKey) {
+              html += '<th><button type="button" class="staff-sort-th" data-sort-key="' + c.sortKey + '">' +
+                escapeHtml(c.label) + ' ' + sortIndicator(c) + '</button></th>';
             } else {
-              html += '<td>' + escapeHtml(v) + '</td>';
+              html += '<th>' + escapeHtml(c.label) + '</th>';
             }
           });
-          html += '</tr>';
+          html += '</tr></thead><tbody>';
+          state.rows.forEach(function (r, idx) {
+            html += '<tr data-row-index="' + idx + '">';
+            cols.forEach(function (c) {
+              html += '<td data-label="' + escapeHtml(c.label) + '">' + renderStaffPrimaryCell(r, c.key) + '</td>';
+            });
+            html += '</tr>';
+          });
+          html += '</tbody></table></div>';
+          regionEl.innerHTML = html;
+
+          regionEl.querySelectorAll('.staff-sort-th').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var key = btn.getAttribute('data-sort-key');
+              if (state.sortBy === key) {
+                state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+              } else {
+                state.sortBy = key;
+                state.sortDir = 'asc';
+              }
+              state.page = 0;
+              doFetch();
+            });
+          });
+          regionEl.querySelectorAll('.staff-details-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var tr = btn.closest('tr');
+              var idx = tr ? parseInt(tr.getAttribute('data-row-index'), 10) : -1;
+              var row = state.rows[idx];
+              if (row) ensureStaffDrawer().open(row, btn);
+            });
+          });
+
+          updatePaginationControls();
+        }
+
+        function showSkeleton() {
+          var rowsHtml = '';
+          for (var i = 0; i < 6; i++) rowsHtml += '<div class="staff-table-skeleton-row"></div>';
+          regionEl.innerHTML = '<div class="staff-table-loading">Loading staff records…</div>' + rowsHtml;
+          pageInfoEl.textContent = '';
+        }
+
+        function showError(message) {
+          regionEl.innerHTML = '<div class="staff-table-error" role="alert">Could not load staff records from the ' +
+            'Staff API (' + escapeHtml(STAFF_API_BASE) + '). Is the backend running? Start it with ' +
+            '"uvicorn backend.main:app --port 8000" — see backend/README.md. Detail: ' + escapeHtml(message) +
+            '<br /><button type="button" class="staff-table-retry-btn">Retry</button></div>';
+          var retryBtn = regionEl.querySelector('.staff-table-retry-btn');
+          if (retryBtn) retryBtn.addEventListener('click', function () { state.lastSignature = null; doFetch(); });
+        }
+
+        function doFetch() {
+          var signature = JSON.stringify({
+            f: state.baseFilters, sortBy: state.sortBy, sortDir: state.sortDir,
+            page: state.page, pageSize: state.pageSize
+          });
+          if (signature === state.lastSignature) return;
+          state.lastSignature = signature;
+          if (state.abortController) state.abortController.abort();
+          var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          state.abortController = controller;
+          showSkeleton();
+          var effective = {};
+          for (var k in state.baseFilters) { effective[k] = state.baseFilters[k]; }
+          effective.sortBy = state.sortBy;
+          effective.sortDir = state.sortDir;
+          effective.limit = state.pageSize;
+          effective.offset = state.page * state.pageSize;
+          fetchStaffRecords(effective, controller && controller.signal).then(function (resp) {
+            state.rows = resp.records;
+            state.total = resp.total;
+            renderBody();
+          }).catch(function (err) {
+            if (err && err.name === 'AbortError') return;
+            showError(err.message);
+          });
+        }
+
+        densityBtns.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            state.density = btn.getAttribute('data-density');
+            densityBtns.forEach(function (b) { b.classList.toggle('active', b === btn); });
+            renderBody();
+          });
         });
-        html += '</tbody></table></div>';
-        containerEl.innerHTML = html;
+
+        colChooserBtn.addEventListener('click', function () {
+          var showing = colChooserPopover.classList.toggle('show');
+          colChooserBtn.setAttribute('aria-expanded', showing ? 'true' : 'false');
+        });
+        document.addEventListener('click', function (e) {
+          if (!containerEl.contains(e.target)) return;
+          if (colChooserBtn.contains(e.target) || colChooserPopover.contains(e.target)) return;
+          colChooserPopover.classList.remove('show');
+          colChooserBtn.setAttribute('aria-expanded', 'false');
+        });
+        colChooserPopover.querySelectorAll('.staff-col-toggle').forEach(function (cb) {
+          cb.addEventListener('change', function () {
+            var col = cb.getAttribute('data-col');
+            if (cb.checked) delete state.hiddenCols[col]; else state.hiddenCols[col] = true;
+            renderBody();
+          });
+        });
+
+        pageSizeSel.addEventListener('change', function () {
+          state.pageSize = parseInt(pageSizeSel.value, 10) || STAFF_DEFAULT_PAGE_SIZE;
+          state.page = 0;
+          doFetch();
+        });
+        prevBtn.addEventListener('click', function () { if (state.page > 0) { state.page -= 1; doFetch(); } });
+        nextBtn.addEventListener('click', function () {
+          var totalPages = Math.max(1, Math.ceil(state.total / state.pageSize));
+          if (state.page + 1 < totalPages) { state.page += 1; doFetch(); }
+        });
+        exportBtn.addEventListener('click', function () { exportStaffCsvFromRows(state.rows, viewLabel); });
+
+        return {
+          load: function (baseEffectiveFilters) {
+            state.baseFilters = baseEffectiveFilters || {};
+            state.page = 0;
+            doFetch();
+          }
+        };
       }
 
       // ── Shared filter-bar component — one function, instantiated once per
@@ -5293,7 +6947,8 @@
       // is a plain array of team name strings (from GET
       // /api/staff/filter-options for the unlocked Staff Data tab; ignored
       // when opts.lockTeam is set for the Arun/Paraparan team-locked
-      // views). ──
+      // views). Extended (2026-07-13) with a debounced search input, a
+      // Clear-all button, and active-filter chips. ──
       function createStaffFilterBar(containerEl, teamOptions, onChange, opts) {
         if (!containerEl) return { getFilters: function () { return {}; } };
         opts = opts || {};
@@ -5320,19 +6975,76 @@
             return '<option value="' + escapeHtml(s) + '">' + escapeHtml(STAGE_DISPLAY_LABELS[s] || s) + '</option>';
           }).join('') + '</select></div>';
 
+        html += '<div class="staff-filter-field staff-filter-search-field"><label for="staff-filter-search-' +
+          escapeHtml(opts.instanceId || '') + '">Search</label>' +
+          '<input type="search" id="staff-filter-search-' + escapeHtml(opts.instanceId || '') + '" ' +
+          'class="staff-filter-search" placeholder="Name, employee #, designation…" ' +
+          'aria-label="Search staff records" /></div>';
+
+        html += '<div class="staff-filter-field staff-filter-clear-field"><label>&nbsp;</label>' +
+          '<button type="button" class="staff-filter-clear-btn">Clear all</button></div>';
+
+        html += '<div class="staff-filter-chips" aria-live="polite"></div>';
+
         containerEl.innerHTML = html;
 
         var teamSel = containerEl.querySelector('.staff-filter-team');
         var statusSel = containerEl.querySelector('.staff-filter-status');
         var stageSel = containerEl.querySelector('.staff-filter-stage');
+        var searchInput = containerEl.querySelector('.staff-filter-search');
+        var clearBtn = containerEl.querySelector('.staff-filter-clear-btn');
+        var chipsEl = containerEl.querySelector('.staff-filter-chips');
         if (opts.lockTeam) { teamSel.value = opts.lockTeam; }
 
         function currentFilters() {
-          return { team: teamSel.value, status: statusSel.value, stage: stageSel.value };
+          return { team: teamSel.value, status: statusSel.value, stage: stageSel.value, search: searchInput.value.trim() };
         }
+
+        function renderChips() {
+          var f = currentFilters();
+          var chips = [];
+          if (f.team && !opts.lockTeam) chips.push({ key: 'team', label: 'Team: ' + f.team });
+          if (f.status) chips.push({ key: 'status', label: 'Status: ' + f.status });
+          if (f.stage) chips.push({ key: 'stage', label: 'Stage: ' + (STAGE_DISPLAY_LABELS[f.stage] || f.stage) });
+          if (f.search) chips.push({ key: 'search', label: 'Search: "' + f.search + '"' });
+          if (!chips.length) { chipsEl.innerHTML = ''; return; }
+          chipsEl.innerHTML = chips.map(function (c) {
+            return '<span class="staff-filter-chip">' + escapeHtml(c.label) +
+              ' <button type="button" class="staff-filter-chip-remove" data-chip-key="' + c.key +
+              '" aria-label="Remove filter: ' + escapeHtml(c.label) + '">&times;</button></span>';
+          }).join('');
+          chipsEl.querySelectorAll('.staff-filter-chip-remove').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var key = btn.getAttribute('data-chip-key');
+              if (key === 'team' && !opts.lockTeam) teamSel.value = '';
+              if (key === 'status') statusSel.value = '';
+              if (key === 'stage') stageSel.value = '';
+              if (key === 'search') searchInput.value = '';
+              fireChange();
+            });
+          });
+        }
+
+        function fireChange() {
+          renderChips();
+          onChange(currentFilters());
+        }
+
+        var debouncedFireChange = debounce(fireChange, 300);
+
         [teamSel, statusSel, stageSel].forEach(function (sel) {
-          sel.addEventListener('change', function () { onChange(currentFilters()); });
+          sel.addEventListener('change', fireChange);
         });
+        searchInput.addEventListener('input', debouncedFireChange);
+        clearBtn.addEventListener('click', function () {
+          if (!opts.lockTeam) teamSel.value = '';
+          statusSel.value = '';
+          stageSel.value = '';
+          searchInput.value = '';
+          fireChange();
+        });
+
+        renderChips();
         return { getFilters: currentFilters };
       }
 
@@ -5401,7 +7113,12 @@
         });
       }
 
-      // ── Staff Data tab: 3 subtabs + 1 shared filter bar ──
+      // ── Staff Data tab: 3 subtabs + 1 shared filter bar. Each subtab owns
+      // its own mountStaffTableView instance (independent sort/page/density/
+      // column-visibility state), while all three share the one filter bar's
+      // team/status/stage/search selection — exactly the existing base-filter
+      // + user-filter merge behavior, just re-triggering three controllers
+      // instead of three direct fetch calls. ──
       function initStaffDataTab() {
         var panel = document.getElementById('tab-staff-data');
         if (!panel) return;
@@ -5409,24 +7126,24 @@
         var subtabBtns = panel.querySelectorAll('.staff-subtab-btn');
         var subpanels = panel.querySelectorAll('.staff-subpanel');
 
-        function renderAll(userFilters) {
+        var controllers = {};
+        subpanels.forEach(function (sp) {
+          var key = sp.id.replace('staff-subpanel-', '');
+          controllers[key] = mountStaffTableView(sp.querySelector('.staff-table-container'), key);
+        });
+
+        function loadAll(userFilters) {
           subpanels.forEach(function (sp) {
             var key = sp.id.replace('staff-subpanel-', '');
-            var tableEl = sp.querySelector('.staff-table-container');
             var effective = mergeStaffFilters(STAFF_SUBTAB_BASE_FILTERS[key], userFilters);
-            showStaffLoading(tableEl);
-            fetchStaffRecords(effective).then(function (resp) {
-              renderStaffTable(tableEl, resp.records, resp.total);
-            }).catch(function (err) {
-              showStaffError(tableEl, err.message);
-            });
+            controllers[key].load(effective);
           });
         }
 
         // Team dropdown options come from the live API (real department/team
         // values currently in the table), not a hardcoded or client-side list.
         staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
-          var filterApi = createStaffFilterBar(filterBarEl, opts.teams || [], renderAll);
+          var filterApi = createStaffFilterBar(filterBarEl, opts.teams || [], loadAll, { instanceId: 'staff-data' });
           subtabBtns.forEach(function (btn) {
             btn.addEventListener('click', function () {
               subtabBtns.forEach(function (b) {
@@ -5439,14 +7156,14 @@
               });
             });
           });
-          renderAll(filterApi.getFilters());
-        }).catch(function (err) {
+          loadAll(filterApi.getFilters());
+        }).catch(function () {
           // Filter-options fetch failed (e.g. backend not running) — still
-          // render each subtab's table with a clear error state, and fall
-          // back to an empty (unlocked, no options) filter bar rather than
-          // leaving the page half-built.
-          var filterApi = createStaffFilterBar(filterBarEl, [], renderAll);
-          renderAll(filterApi.getFilters());
+          // let each subtab's controller show its own error+Retry state, and
+          // fall back to an empty (unlocked, no options) filter bar rather
+          // than leaving the page half-built.
+          var filterApi = createStaffFilterBar(filterBarEl, [], loadAll, { instanceId: 'staff-data' });
+          loadAll(filterApi.getFilters());
         });
       }
 
@@ -5456,24 +7173,21 @@
       function initTeamScopedStaffPilot(mountEl) {
         if (!mountEl) return;
         var teamCode = mountEl.getAttribute('data-team-code') || 'PH';
+        var mountId = mountEl.id || teamCode;
         var filterBarEl = mountEl.querySelector('.staff-filter-bar');
         var tableEl = mountEl.querySelector('.staff-table-container');
         var kpiMountEl = mountEl.querySelector('.kpi-pilot-mount');
         var baseFilters = { team: teamCode };
+        var controller = mountStaffTableView(tableEl, mountId);
 
-        function renderTable(userFilters) {
+        function loadTable(userFilters) {
           var effective = mergeStaffFilters(baseFilters, userFilters);
           effective.team = teamCode; // locked — never overridden by the user
-          showStaffLoading(tableEl);
-          fetchStaffRecords(effective).then(function (resp) {
-            renderStaffTable(tableEl, resp.records, resp.total);
-          }).catch(function (err) {
-            showStaffError(tableEl, err.message);
-          });
+          controller.load(effective);
         }
 
-        var filterApi = createStaffFilterBar(filterBarEl, [teamCode], renderTable, { lockTeam: teamCode });
-        renderTable(filterApi.getFilters());
+        var filterApi = createStaffFilterBar(filterBarEl, [teamCode], loadTable, { lockTeam: teamCode, instanceId: mountId });
+        loadTable(filterApi.getFilters());
         renderKpiPanel(kpiMountEl, teamCode);
       }
 

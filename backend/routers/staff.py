@@ -20,7 +20,7 @@ the ORM model changed shape unexpectedly.
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import asc, func, or_
+from sqlalchemy import asc, desc, func, or_
 from sqlalchemy.orm import Session
 
 from backend.config import VALID_EMPLOYMENT_STAGES, VALID_STAFF_STATUSES
@@ -37,6 +37,21 @@ router = APIRouter(prefix="/api/staff", tags=["staff"])
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
+
+# UI sort key -> ORM column. Table sorting only (Staff Table UX upgrade,
+# 2026-07-13) — omitting sort_by preserves the original hardcoded order
+# below exactly, so existing callers see no behavior change.
+SORTABLE_COLUMNS = {
+    "full_name": StaffDashboardRecord.full_name,
+    "employee_number": StaffDashboardRecord.employee_number,
+    "department_team": StaffDashboardRecord.department_team,
+    "designation": StaffDashboardRecord.designation,
+    "staff_status": StaffDashboardRecord.staff_status,
+    "employment_stage": StaffDashboardRecord.employment_stage,
+    "location": StaffDashboardRecord.location,
+    "date_of_joining": StaffDashboardRecord.date_of_joining,
+}
+VALID_SORT_DIRECTIONS = ("asc", "desc")
 
 
 def _base_query(db: Session):
@@ -88,6 +103,8 @@ def list_staff_records(
     staff_status: Optional[str] = Query(default=None),
     employment_stage: Optional[List[str]] = Query(default=None),
     search: Optional[str] = Query(default=None, max_length=100),
+    sort_by: Optional[str] = Query(default=None),
+    sort_direction: str = Query(default="asc"),
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -96,15 +113,36 @@ def list_staff_records(
 
     total = query.with_entities(func.count(StaffDashboardRecord.id)).scalar()
 
-    # Deterministic ordering: full_name (nulls last), then employee_number,
-    # then source_row_reference as a final tiebreaker so pagination is
-    # stable across requests even for rows with identical/blank names.
-    rows = (
-        query.order_by(
+    if sort_by is not None:
+        if sort_by not in SORTABLE_COLUMNS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"sort_by must be one of {sorted(SORTABLE_COLUMNS)}.",
+            )
+        if sort_direction not in VALID_SORT_DIRECTIONS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"sort_direction must be one of {VALID_SORT_DIRECTIONS}.",
+            )
+        sort_col = SORTABLE_COLUMNS[sort_by]
+        primary = desc(sort_col) if sort_direction == "desc" else asc(sort_col)
+        # employee_number is a stable secondary tiebreaker for any requested
+        # sort column, matching the tiebreaker role it already plays in the
+        # default ordering below.
+        order_clauses = [primary.nulls_last(), asc(StaffDashboardRecord.employee_number)]
+    else:
+        # Deterministic default ordering: full_name (nulls last), then
+        # employee_number, then source_row_reference as a final tiebreaker
+        # so pagination is stable across requests even for rows with
+        # identical/blank names. Unchanged from before sort_by existed.
+        order_clauses = [
             asc(StaffDashboardRecord.full_name).nulls_last(),
             asc(StaffDashboardRecord.employee_number),
             asc(StaffDashboardRecord.source_row_reference),
-        )
+        ]
+
+    rows = (
+        query.order_by(*order_clauses)
         .offset(offset)
         .limit(limit)
         .all()
@@ -120,6 +158,8 @@ def list_staff_records(
             "staff_status": staff_status,
             "employment_stage": employment_stage,
             "search": search,
+            "sort_by": sort_by,
+            "sort_direction": sort_direction,
         },
     )
 
