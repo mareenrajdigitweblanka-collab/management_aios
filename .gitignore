@@ -10,3 +10,13 @@ __pycache__/
 .venv/
 venv/
 *.log
+
+# Staff Data raw source — dashboard-specific staging area only (see
+# member-aios/staff-data/README.md). HR-provided raw files are kept locally
+# outside git; only the folder placeholder is tracked. Not a repository-wide
+# *.pdf rule — scoped to this one directory.
+member-aios/staff-data/source/raw/*
+!member-aios/staff-data/source/raw/.gitkeep
+
+# Real normalized HR staff data — local only
+member-aios/staff-data/source/normalized/hr-staff-dashboard.csv

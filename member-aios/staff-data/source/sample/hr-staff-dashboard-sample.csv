@@ -1,0 +1,11 @@
+employee_number,epf_number,date_of_joining,full_name,calling_name,location,staff_status,department_team,designation,cv_reference,nic,remarks,employment_stage,source_file,source_page,source_row_reference
+SAMPLE001,[VERIFY],01/01/2020,Sample Staff One,Staff One,Jaffna,Active,PH,Portfolio Executive,SAMPLE-CV-001.pdf,SAMPLE-NIC-001,synthetic sample row,Permanent,SAMPLE-SOURCE.csv,0,sample-row-001
+SAMPLE002,[VERIFY],15/03/2021,Sample Staff Two,Staff Two,Nelliyadi,Inactive,PH,Portfolio Executive,,SAMPLE-NIC-002,synthetic sample row,[VERIFY],SAMPLE-SOURCE.csv,0,sample-row-002
+SAMPLE003,[VERIFY],10/06/2022,Sample Staff Three,Staff Three,Chankanai,Active,Digital Marketing,Digital Marketing Executive,SAMPLE-CV-003.pdf,,synthetic sample row,Probation,SAMPLE-SOURCE.csv,0,sample-row-003
+SAMPLE004,[VERIFY],05/09/2023,Sample Staff Four,Staff Four,WFH,Active,Technical Team,Automation Engineer,,SAMPLE-NIC-004,synthetic sample row,training_7_day,SAMPLE-SOURCE.csv,0,sample-row-004
+SAMPLE005,[VERIFY],20/11/2019,Sample Staff Five,Staff Five,Jaffna,Inactive,eBay,E-Commerce Executive,SAMPLE-CV-005.pdf,SAMPLE-NIC-005,synthetic sample row,[VERIFY],SAMPLE-SOURCE.csv,0,sample-row-005
+SAMPLE006,[VERIFY],12/02/2024,Sample Staff Six,Staff Six,Nelliyadi,Active,PH,E-Commerce Executive,,,synthetic sample row,Permanent,SAMPLE-SOURCE.csv,0,sample-row-006
+SAMPLE007,[VERIFY],28/04/2025,Sample Staff Seven,Staff Seven,Chankanai,Active,Accounts,Accounts Assistant,SAMPLE-CV-007.pdf,SAMPLE-NIC-007,synthetic sample row,Probation,SAMPLE-SOURCE.csv,0,sample-row-007
+SAMPLE008,[VERIFY],30/07/2018,Sample Staff Eight,Staff Eight,Jaffna,Inactive,Customer Service,Customer Service Executive,,,synthetic sample row,[VERIFY],SAMPLE-SOURCE.csv,0,sample-row-008
+SAMPLE009,[VERIFY],03/05/2026,Sample Staff Nine,Staff Nine,WFH,Active,Technical Team,Software Engineer,SAMPLE-CV-009.pdf,SAMPLE-NIC-009,synthetic sample row,training_7_day,SAMPLE-SOURCE.csv,0,sample-row-009
+SAMPLE010,[VERIFY],17/10/2020,Sample Staff Ten,Staff Ten,Nelliyadi,Active,PH,Portfolio Executive,,,synthetic sample row,Permanent,SAMPLE-SOURCE.csv,0,sample-row-010
