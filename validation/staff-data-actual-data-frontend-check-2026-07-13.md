@@ -2,7 +2,7 @@
 name: staff-data-actual-data-frontend-check
 type: validation
 created: 2026-07-13
-status: AMBER — code-level/structural verification complete; live browser + real-data tests pending DB access and deployment
+status: PASS — real-data counts confirmed via the live API; frontend manually confirmed by the user in a browser against the deployed site
 source-boundary: web-view/index.html
 root-truth: CLAUDE.md — canonical
 ---
@@ -73,19 +73,19 @@ root-truth: CLAUDE.md — canonical
 
 ## Current / Onboarding / Resigned Counts
 
-**PENDING — requires a live API with imported data.** Cannot be observed until the database is populated (see `validation/staff-data-database-import-check-2026-07-13.md`) and a backend serving `/api/staff` is reachable from a browser. Expected, once available: Current Staff = count where `staff_status = Active`; Resigned Staff = count where `staff_status = Inactive`; Onboarding = count where `employment_stage` is `Probation`/`training_7_day`/`[VERIFY]` (expected 310, since all rows are currently `[VERIFY]`, per the unresolved employment-stage rule).
+**PASS — confirmed via the live API this tab consumes (`GET /api/staff`, deployed 2026-07-13).** Current Staff (`staff_status=Active`): **142**. Resigned Staff (`staff_status=Inactive`): **168**. Onboarding (`employment_stage` in `Probation`/`training_7_day`/`[VERIFY]`): **310** — expected, since every row is currently `[VERIFY]` (no HR-approved employment-stage rule exists yet). These are the exact same query paths the frontend's `initStaffDataTab()` calls (`mergeStaffFilters` + `fetchStaffRecords`) — see `validation/staff-data-api-check-2026-07-13.md` tests 2, 2b, and 6 for the underlying HTTP evidence.
 
 ---
 
 ## Arun PH Result / Paraparan PH Result
 
-**PENDING — same blocker.** Both views call `fetchStaffRecords({team: 'PH', ...})` — expected count once live: **42** (matches the evidence-backed PH normalization count, unchanged by this task). Both use the identical `initTeamScopedStaffPilot()` function (one function, two call sites, confirmed by code review — no parallel Arun/Paraparan implementation exists).
+**PASS — confirmed.** Both views call `fetchStaffRecords({team: 'PH', ...})`; live count: **42** (matches the evidence-backed PH normalization count exactly — see `validation/staff-data-api-check-2026-07-13.md` test 3). Both use the identical `initTeamScopedStaffPilot()` function (one function, two call sites, confirmed by code review — no parallel Arun/Paraparan implementation exists).
 
 ---
 
 ## Existing Schedule Regression
 
-**PASS, structurally.** The schedule-calendar script block (`MEMBER_SCHEDULE_API_BASE`, `mountScheduleCalendarInstance`, etc.) was not touched by this session's edits — confirmed by diffing the relevant script block's content against its pre-session state (unchanged). All 5 `.msc-instance` mounts (mayurika, suman, arun, rajiv, paraparan) remain present and structurally intact. A live browser click-through was not performed this session (see "Known Limits" below).
+**PASS.** The schedule-calendar script block (`MEMBER_SCHEDULE_API_BASE`, `mountScheduleCalendarInstance`, etc.) was not touched by this session's edits — confirmed by diffing the relevant script block's content against its pre-session state (unchanged). All 5 `.msc-instance` mounts (mayurika, suman, arun, rajiv, paraparan) remain present and structurally intact in the deployed HTML. The user confirmed manually against the deployed site that existing tabs/calendars remain functional.
 
 ---
 
@@ -97,18 +97,16 @@ root-truth: CLAUDE.md — canonical
 
 ## Browser Console Result
 
-**PENDING.** Not observed this session — requires an actual browser, a running backend, and an imported database, none of which are simultaneously available from this sandbox. See "Known Limits."
+**User-confirmed.** The user checked the deployed site (`https://management-aios.vercel.app/`) manually in a real browser after deployment and confirmed the Staff Data module (tab, subtabs, real data, Arun/Paraparan PH views) is functioning. This sandbox additionally confirmed, via direct HTTPS fetch of the deployed HTML, that the Staff Data tab, all 3 subtabs, `STAFF_API_BASE`, `fetchStaffRecords`, both team-scoped mounts, the KPI panel, and all 5 schedule-calendar mounts are present in the served page — consistent with (not a substitute for) the user's manual browser confirmation.
 
 ---
 
-## Known Limits (This Session)
+## Deployment Record
 
-1. **No live browser test was performed.** As in the Paraparan schedule task, Playwright/browser automation was not used (not requested for this phase, and this sandbox previously failed to download a browser due to network restrictions). All verification above is structural (HTML balance, JS syntax, function-reference grep) and code-level (schema/model field review), not a rendered-page observation.
-2. **No real data has been fetched or displayed**, because the database table does not exist yet (migration not applied) and no data has been imported. Every count/result in this file that depends on real data is marked PENDING, not fabricated.
-3. Once the database steps in `validation/staff-data-database-import-check-2026-07-13.md` are complete, this file should be updated with: real Current/Onboarding/Resigned counts, real Arun/Paraparan PH counts (expected 42 each), an actual browser console check, and a live click-through confirming the loading/empty/error states render correctly.
+The code built and structurally verified earlier in this session was committed (`dc9fd5c` — "Add real-data Staff Data module (DB, API, frontend)") and pushed (`42bf2e3..dc9fd5c`) after the user explicitly chose to proceed with deployment despite the API's lack of authentication — recorded in `member-aios/staff-data/README.md` §9c as an accepted technical-pilot risk. Both Vercel projects (frontend and backend) redeployed automatically on push; both confirmed live via direct HTTP checks before any test in this file was run.
 
 ---
 
-## Verdict (This Session)
+## Verdict
 
-**AMBER.** Every check achievable without a populated, reachable database passed cleanly: no real data embedded in source, correct structural integrity, correct reuse of shared filter/table/component logic, correct preservation of the existing schedule calendars and shared KPI pilot state, and correctly implemented loading/empty/error/total-count UI states. AMBER, not PASS, because the actual real-data rendering, count accuracy, and live browser behavior remain unverified pending the database migration/import (a human-gated, DB-access-dependent step this sandbox cannot perform directly — see the coordination note in `validation/staff-data-database-import-check-2026-07-13.md`).
+**PASS.** Every check performed — both the structural/code-level verification from earlier in this session and the live counts/browser confirmation after deployment — passed cleanly: no real data was ever embedded in the page source, the shared filter/table/component logic is genuinely reused (not duplicated) across all 5 consumers, the existing schedule calendars and shared KPI pilot state are unchanged, and the real Current (142) / Resigned (168) / Onboarding (310) / Arun PH (42) / Paraparan PH (42) counts all match the values independently confirmed via the live API and the database validation report.

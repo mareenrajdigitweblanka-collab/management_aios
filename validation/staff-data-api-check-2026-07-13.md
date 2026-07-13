@@ -2,7 +2,7 @@
 name: staff-data-api-check
 type: validation
 created: 2026-07-13
-status: AMBER — code-level verification complete; live query tests pending DB access this sandbox cannot reach
+status: PASS — code-level verification and live production query tests both complete
 source-boundary: backend/routers/staff.py, backend/schemas.py, backend/models.py
 root-truth: CLAUDE.md — canonical
 ---
@@ -92,16 +92,26 @@ Existing `/api/member-schedules/*` routes are unchanged — Staff records were n
 
 ---
 
-## Pending — Live Query Tests (Require DB Access + an Imported Table)
+## Live Query Tests — Resolved (2026-07-13)
 
-The following require both the migration applied and the import run (see `validation/staff-data-database-import-check-2026-07-13.md`), plus a reachable database from wherever the backend/test client runs. This sandbox cannot reach the configured Neon database directly (diagnosed network restriction, consistent with the Paraparan task). Pending:
+Migration applied and import completed (see `validation/staff-data-database-import-check-2026-07-13.md`). The code was then committed, pushed (`42bf2e3..dc9fd5c`), and deployed — **an explicit user decision, recorded in `member-aios/staff-data/README.md` §9c as an accepted technical-pilot risk**, since the deployed API still has no authentication layer. Deployment confirmed live: `GET /health`-equivalent (`/api/staff/summary`) returned `200` within ~75s of push.
 
-1. `GET /api/staff` — all, with pagination (confirm `total` vs. returned row count vs. `limit`/`offset` behavior).
-2. `GET /api/staff?staff_status=Active` / `?staff_status=Inactive`.
-3. `GET /api/staff?team=PH` (expect 42 total).
-4. `GET /api/staff?employment_stage=[VERIFY]` (expect 310, since all rows are currently `[VERIFY]`).
-5. `GET /api/staff?search=<term>`.
-6. `GET /api/staff?staff_status=NotARealStatus` (expect `422`, confirmed by code review above but not yet exercised live).
-7. Excluded-field scan of an actual JSON response body (confirmed by schema/model review above; a live scan is the final, empirical confirmation).
+All tests below were run against the live production API (`https://management-aios-api.vercel.app/api/staff*`) from this sandbox — reachable because this is a standard HTTPS request, not a direct Postgres connection (the restriction that blocked the import script only applies to raw PostgreSQL-protocol traffic).
 
-This validation file will be updated once those steps are completed.
+| # | Test | Result |
+|---|---|---|
+| 1 | `GET /api/staff` with pagination (`limit=5`, then `offset=5`) | PASS — `total: 310` on both pages, 5 records returned each time, `filters` object correctly echoed |
+| 2 | `GET /api/staff?staff_status=Active` | PASS — `total: 142` |
+| 2b | `GET /api/staff?staff_status=Inactive` | PASS — `total: 168` (142+168=310, full partition) |
+| 3 | `GET /api/staff?team=PH` | PASS — `total: 42` |
+| 4 | `GET /api/staff?employment_stage=[VERIFY]` | PASS — `total: 310` |
+| 5 | `GET /api/staff?search=Executive` | PASS — `total: 182` (real substring match across name/designation fields) |
+| 5b | `GET /api/staff?search=<nonsense term>` | PASS — `total: 0` |
+| 6 | `GET /api/staff?employment_stage=Probation&employment_stage=training_7_day&employment_stage=[VERIFY]` (repeated-param multi-value, the Onboarding tab's exact base filter) | PASS — `total: 310`, `filters.employment_stage` echoed as `['Probation', 'training_7_day', '[VERIFY]']` — confirms genuine server-side OR-filtering across 3 values, not a client-side workaround |
+| 7 | `GET /api/staff?staff_status=NotARealStatus` | PASS — `422 {"detail":"staff_status must be one of ('Active', 'Inactive')."}` |
+| 7b | `GET /api/staff?employment_stage=NotARealStage` | PASS — `422 {"detail":"employment_stage must be one of (...)."}` |
+| 8 | Excluded-field scan of a real 50-record response body | PASS — **zero** of the 7 excluded field names present; response keys are exactly the 16 approved fields |
+| 9 | `GET /api/staff/filter-options` | PASS — `staff_statuses: ["Active", "Inactive"]`, `employment_stages: ["[VERIFY]"]` (both exactly matching the confirmed data state); `teams` returns ~80 distinct raw values including `"PH"` — expected, since only the PH group has been normalized (per `member-aios/staff-data/source-maps/hr-staff-source-map-draft.md` §5–§6, "normalize conservatively") |
+| 10 | Duplicate `employee_number` preservation, via a full 310-record fetch | PASS — 5 distinct values with count > 1, 11 rows total, distribution `[2, 2, 2, 2, 3]` — matches the known source condition exactly |
+
+**Verdict: PASS.** Every live test matches its expected value exactly, including the two deliberately-invalid-filter tests correctly returning `422` rather than silently succeeding or 500ing.

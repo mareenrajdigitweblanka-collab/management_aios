@@ -2,7 +2,7 @@
 name: staff-data-database-import-check
 type: validation
 created: 2026-07-13
-status: AMBER — migration reviewed and dry-run verified; apply and import --apply pending DB access this sandbox cannot reach
+status: PASS — migration applied, import completed, all expected counts confirmed live
 source-boundary: database/migrations/2026-07-13-create-staff-dashboard-records.sql, scripts/import_staff_dashboard_csv.py, member-aios/staff-data/source/normalized/hr-staff-dashboard.csv
 root-truth: CLAUDE.md — canonical
 ---
@@ -105,14 +105,31 @@ Present in the migration file as a commented block: `DROP TABLE IF EXISTS manage
 
 ---
 
-## Pending Actions (Require Database Access This Sandbox Cannot Reach)
+## Resolution — Migration Applied, Import Completed (2026-07-13)
 
-Consistent with the diagnosed restriction from the Paraparan schedule task (outbound PostgreSQL/port-5432 traffic blocked; HTTPS/443 works fine), the following require either the user applying the migration/running the import directly (e.g. via the Neon SQL Editor for the migration, and a local terminal with real network access for the import script), or another environment with real Postgres connectivity:
+Confirmed the same network restriction diagnosed in the Paraparan schedule task also blocks the import script's own DB connection attempt — even from the user's own terminal (`--dry-run` reported "DB comparison: SKIPPED" there too), narrowing the cause to outbound PostgreSQL/port-5432 traffic specifically, not a sandbox-only limitation. Two things followed from that:
 
-1. Apply `database/migrations/2026-07-13-create-staff-dashboard-records.sql`.
-2. Run the migration's 4 built-in validation queries and confirm results.
-3. Re-run `python scripts/import_staff_dashboard_csv.py --dry-run` with DB reachable, to get real insert/update/unchanged predictions (expected: 310 insert, 0 update, 0 unchanged, on a first run against an empty table).
-4. Run `python scripts/import_staff_dashboard_csv.py --apply`.
-5. Confirm: table row count = 310; PH count = 42; `[VERIFY]` employment_stage count = 310; the 5 duplicate `employee_number` values each appear the expected number of times; no unexpected `staff_status` value.
+1. **Bug fixed:** the script's DB-reachability probe originally hung indefinitely (a plain SQLAlchemy `connect_args={'connect_timeout': N}` was not honored in this environment). Fixed by running the probe in a **daemon** thread with the caller waiting on a `queue.Queue.get(timeout=8)` — this bounds the wait from the outside regardless of whether the underlying blocking call cooperates, and the daemon thread cannot prevent the script from exiting even if the abandoned attempt is still blocked.
+2. **Alternate import path added:** rather than depend on a Python-driver connection at all, a `--emit-sql` mode was added to `scripts/import_staff_dashboard_csv.py`. It reuses the exact same parsing/validation/`source_record_key`/`source_hash` logic as `--apply`, but writes a standalone, transaction-wrapped SQL upsert script (`INSERT ... ON CONFLICT (source_record_key) DO UPDATE ...`) instead of connecting to the database — runnable via any SQL client, including the Neon SQL Editor (which uses an HTTPS-based connection, unaffected by the port-5432 restriction). The generated file was written to a path matched by the new `.gitignore` rule `member-aios/staff-data/source/normalized/*.sql` (never tracked, never committed) and deleted by the user after use.
 
-This validation file will be updated once those steps are completed.
+**Migration applied:** YES — by the user, via the Neon SQL Editor, against the production Neon database.
+
+**Import applied:** YES — by the user, via the generated `--emit-sql` script, run in the Neon SQL Editor.
+
+### Confirmed Final State (via live `GET /api/staff/summary`, post-deployment)
+
+```json
+{"total":310,"active":142,"inactive":168,"ph":42,"permanent":0,"probation":0,"training_7_day":0,"verify":310}
+```
+
+| Check | Expected | Confirmed |
+|---|---|---|
+| Total row count | 310 | **310** |
+| PH count | 42 | **42** |
+| `[VERIFY]` employment_stage count | 310 | **310** |
+| Active / Inactive split | sums to 310 | **142 / 168** (142+168=310) |
+| Unexpected `staff_status` values | 0 | **0** — `active`+`inactive` already account for all 310 rows |
+| Duplicate `employee_number` preservation | 5 values, 11 rows | **Confirmed via live API** — 5 distinct values with count > 1, totaling 11 rows, distribution `[2, 2, 2, 2, 3]` (matches the known `DWL302`×3 + 4 others×2 pattern) — not deduplicated, not renumbered |
+| Excluded-field columns | 0 | **0** — confirmed via a 50-record live response scan (see `validation/staff-data-api-check-2026-07-13.md`) |
+
+**Verdict: PASS.** Every expected count matches exactly; the known, preserved source conditions (duplicate IDs, 100% `[VERIFY]` employment_stage) are confirmed present and unaltered — this is the correct, expected result, not a defect.
