@@ -91,3 +91,58 @@ class MemberScheduleEventOut(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
+
+
+class StaffRecordOut(BaseModel):
+    """Dashboard-facing staff record shape — exactly the 16 approved fields
+    (member-aios/staff-data/data-maps/staff-field-map-draft.md). Internal
+    bookkeeping columns (source_record_key, source_hash, source_status,
+    is_current, imported_at, imported_by, created_at, updated_at) are
+    intentionally not exposed here — this is a read-only dashboard
+    projection, not a full table dump. No salary/address/email/phone/
+    guardian field exists on the ORM model this is built from, so none can
+    appear here regardless of this schema's definition."""
+
+    employee_number: Optional[str] = None
+    epf_number: Optional[str] = None
+    date_of_joining: Optional[date_type] = None
+    full_name: Optional[str] = None
+    calling_name: Optional[str] = None
+    location: Optional[str] = None
+    staff_status: Optional[str] = None
+    department_team: Optional[str] = None
+    designation: Optional[str] = None
+    cv_reference: Optional[str] = None
+    nic: Optional[str] = None
+    remarks: Optional[str] = None
+    employment_stage: Optional[str] = None
+    source_file: Optional[str] = None
+    source_page: Optional[int] = None
+    source_row_reference: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class StaffListResponse(BaseModel):
+    records: list[StaffRecordOut]
+    total: int
+    limit: int
+    offset: int
+    filters: dict
+
+
+class StaffSummaryResponse(BaseModel):
+    total: int
+    active: int
+    inactive: int
+    ph: int
+    permanent: int
+    probation: int
+    training_7_day: int
+    verify: int
+
+
+class StaffFilterOptionsResponse(BaseModel):
+    teams: list[str]
+    staff_statuses: list[str]
+    employment_stages: list[str]

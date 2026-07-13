@@ -146,7 +146,9 @@ A new "Staff Data" sidebar section, with three views:
 
 ### 9c. Initial Internal Users
 
-MD, Arun, Paraparan. No authentication layer exists yet on the deployed frontend or API (see validation report, security limitation) — this module must not be deployed with real staff data until that gap is addressed, per this task's instruction that real staff API deployment remains a later approval step.
+MD, Arun, Paraparan.
+
+**Deployment decision record (2026-07-13):** the deployed frontend and API still have no authentication layer — `GET /api/staff*` is publicly reachable by anyone with the URL, the same as the existing `/api/member-schedules/*` routes (see `backend/README.md` §"Public, unauthenticated API — known limitation"). This was flagged before deployment as a condition requiring an explicit access-control decision. The user explicitly chose to proceed with deployment despite this limitation, in order to complete live API/frontend verification for this task (real database-connectivity testing was not otherwise possible from the available development environment — see `validation/staff-data-api-check-2026-07-13.md`). **This is recorded here as a user-accepted technical-pilot risk, not a resolved security decision.** No excluded field (salary/address/email/phone/guardian) is exposed regardless — that protection is structural (the columns do not exist on the table), not access-control-dependent. Real employee names, NICs, and other approved-but-sensitive fields ARE publicly readable via this API as of this deployment. An access-control mechanism (authentication, IP allowlisting, or similar) remains an open follow-up, tracked here and in the API validation report.
 
 ### 9d. Reused UI/Filter/API Structures
 

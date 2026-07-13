@@ -26,6 +26,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Integer,
     String,
     Time,
     text,
@@ -78,3 +79,70 @@ class MemberScheduleEvent(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class StaffDashboardRecord(Base):
+    """SQLAlchemy ORM model for management_aios.staff_dashboard_records.
+
+    Mirrors database/migrations/2026-07-13-create-staff-dashboard-records.sql
+    exactly. A read-model dashboard projection only — HR remains the
+    authoritative staff-record source (CLAUDE.md §9.1). The only write path
+    to this table is scripts/import_staff_dashboard_csv.py; this API is
+    read-only for staff records (no create/update/delete route exists for
+    this model).
+
+    Deliberately has no salary/home_address/personal_email/personal_phone/
+    contact_number/guardian_phone/guardian_number column — not filtered at
+    query time, simply absent from the schema.
+    """
+
+    __tablename__ = "staff_dashboard_records"
+    __table_args__ = (
+        CheckConstraint(
+            "staff_status IS NULL OR staff_status IN ('Active', 'Inactive')",
+            name="staff_dashboard_records_staff_status_check",
+        ),
+        CheckConstraint(
+            "employment_stage IS NULL OR employment_stage IN "
+            "('Permanent', 'Probation', 'training_7_day', '[VERIFY]')",
+            name="staff_dashboard_records_employment_stage_check",
+        ),
+        CheckConstraint(
+            "source_status IN ('imported', 'superseded')",
+            name="staff_dashboard_records_source_status_check",
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Deterministic, not employee_number alone — the HR source has reused
+    # employee_number values across distinct people (see
+    # member-aios/staff-data/evidence/hr-duplicate-employee-id-review-2026-07-13.md).
+    source_record_key = Column(String, nullable=False, unique=True)
+
+    employee_number = Column(String, nullable=True)
+    epf_number = Column(String, nullable=True)
+    date_of_joining = Column(Date, nullable=True)
+    full_name = Column(String, nullable=True)
+    calling_name = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    staff_status = Column(String, nullable=True)
+    department_team = Column(String, nullable=True)
+    designation = Column(String, nullable=True)
+    cv_reference = Column(String, nullable=True)
+    nic = Column(String, nullable=True)
+    remarks = Column(String, nullable=True)
+    employment_stage = Column(String, nullable=True)
+    source_file = Column(String, nullable=True)
+    source_page = Column(Integer, nullable=True)
+    source_row_reference = Column(String, nullable=True)
+
+    source_hash = Column(String, nullable=False)
+    source_status = Column(String, nullable=False, server_default="imported")
+    is_current = Column(Boolean, nullable=False, server_default=text("true"))
+    imported_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    imported_by = Column(String, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))

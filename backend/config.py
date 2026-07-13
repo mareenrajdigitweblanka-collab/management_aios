@@ -70,3 +70,49 @@ MEMBER_LABELS = {
     # decision about which designation is correct.
     "paraparan": "Paraparan",
 }
+
+# ── Staff Data dashboard constants (2026-07-13) ──────────────────────────
+# Shared between backend/routers/staff.py and scripts/import_staff_dashboard_csv.py
+# so the two never drift apart. See
+# member-aios/staff-data/data-maps/staff-field-map-draft.md for the
+# approved 16-column field list this mirrors.
+
+VALID_STAFF_STATUSES = ("Active", "Inactive")
+
+# 'training_7_day' and the literal '[VERIFY]' are real, expected stored
+# values — no HR-approved rule exists to resolve '[VERIFY]' rows (see
+# member-aios/staff-data/source-maps/hr-staff-source-map-draft.md §6). This
+# AIOS must not invent that rule; '[VERIFY]' stays a valid, queryable value.
+VALID_EMPLOYMENT_STAGES = ("Permanent", "Probation", "training_7_day", "[VERIFY]")
+
+STAFF_APPROVED_COLUMNS = (
+    "employee_number",
+    "epf_number",
+    "date_of_joining",
+    "full_name",
+    "calling_name",
+    "location",
+    "staff_status",
+    "department_team",
+    "designation",
+    "cv_reference",
+    "nic",
+    "remarks",
+    "employment_stage",
+    "source_file",
+    "source_page",
+    "source_row_reference",
+)
+
+# Defense-in-depth only — these columns must never exist on
+# StaffDashboardRecord or in the approved CSV. Used by the import script to
+# reject a source file that somehow contains one of these headers.
+STAFF_EXCLUDED_COLUMNS = (
+    "salary",
+    "home_address",
+    "personal_email",
+    "personal_phone",
+    "contact_number",
+    "guardian_phone",
+    "guardian_number",
+)

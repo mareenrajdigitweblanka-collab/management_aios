@@ -2323,6 +2323,30 @@
       font-size: 13px;
     }
 
+    .staff-table-loading {
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .staff-table-error {
+      padding: 16px;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      background: #fef2f2;
+      color: #991b1b;
+      font-size: 13px;
+    }
+
+    .staff-total-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 4px 0 8px;
+    }
+
     .staff-team-scoped-pilot {
       margin-top: 8px;
     }
@@ -2396,7 +2420,7 @@
     </button>
     <button class="tab-btn" data-tab="staff-data" role="tab" aria-selected="false">
       Staff Data
-      <span class="tab-badge tab-badge-amber" title="Technical pilot — synthetic sample data only, no real employee records, business classification rules unresolved [VERIFY]">PILOT</span>
+      <span class="tab-badge tab-badge-amber" title="Real HR-sourced staff data via the Staff API — Current/Onboarding/Resigned classification remains an unresolved technical pilot business rule [VERIFY]">LIVE — CLASSIFICATION [VERIFY]</span>
     </button>
     <button class="tab-btn" data-tab="paraparan" role="tab" aria-selected="false">
       Paraparan
@@ -3723,13 +3747,16 @@
         data-tags="arun schedule calendar testing preview interactive add edit view delete localstorage implementation officer">
       </div>
 
-      <!-- 5. Staff Data Pilot — PH Team (technical pilot, synthetic data only) -->
-      <h3 class="section-title" style="margin-top:32px;">Staff Data — PH Team Pilot</h3>
+      <!-- 5. Staff Data — PH Team (real HR-sourced data via the Staff API; KPI panel below remains a synthetic pilot) -->
+      <h3 class="section-title" style="margin-top:32px;">Staff Data — PH Team</h3>
       <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
-      <div class="member-testing-table-note" data-searchable data-tags="arun staff data ph team pilot synthetic sample verify kpi">
-        <span class="member-pill member-pill-sample">Synthetic Technical Pilot</span>
-        <span>Synthetic sample staff data only (no real employee records). Team scope is pilot-locked to PH for this
-          phase. KPI records below are shared with the Paraparan tab — same underlying data, not a separate copy.</span>
+      <div class="member-testing-table-note" data-searchable data-tags="arun staff data ph team live api verify kpi">
+        <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
+        <span>Real HR-sourced staff records via the read-only Staff API (<code>management_aios.staff_dashboard_records</code>,
+          imported from the HR-provided source — HR remains the authoritative source, CLAUDE.md §9.1). Team scope is
+          locked to PH for this phase. The KPI panel below remains a separate, synthetic technical pilot — shared
+          with the Paraparan tab, same underlying data, not a separate copy — and is not affected by this staff data
+          change.</span>
       </div>
       <div class="staff-team-scoped-pilot" id="arun-staff-pilot" data-team-code="PH">
         <div class="staff-filter-bar"></div>
@@ -3898,15 +3925,17 @@
       </div>
 
       <div class="member-testing-table-note" data-searchable
-        data-tags="staff data pilot current onboarding resigned synthetic sample verify">
-        <span class="member-pill member-pill-sample">Synthetic Technical Pilot</span>
-        <span>This tab uses only the synthetic sample dataset
-          (<code>member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv</code>) — 10 fully invented rows.
-          No real employee name, NIC, or employee number is used anywhere in this tab. The Current / Onboarding /
-          Resigned split below is a technical pilot classification for UI development only — it is not approved HR
-          policy, and final classification rules remain <span class="badge badge-verify">[VERIFY]</span> pending HR
-          confirmation (see <code>member-aios/staff-data/evidence/employment-stage-rule-review-2026-07-13.md</code>).
-          This pilot uses in-memory sample data only — nothing here is saved.</span>
+        data-tags="staff data live current onboarding resigned verify api">
+        <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
+        <span>This tab displays real HR-sourced staff records, fetched read-only from the Staff API
+          (<code>GET /api/staff</code>, backed by <code>management_aios.staff_dashboard_records</code>). HR remains
+          the authoritative source (CLAUDE.md §9.1) — this is a controlled dashboard projection, not a replacement
+          HR master. The Current / Onboarding / Resigned split below is a <strong>technical pilot classification
+          only</strong> — it is not approved HR policy, and final classification rules remain
+          <span class="badge badge-verify">[VERIFY]</span> pending HR confirmation (see
+          <code>member-aios/staff-data/evidence/employment-stage-rule-review-2026-07-13.md</code>). A synthetic
+          sample dataset (<code>member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv</code>) remains
+          available for development/fallback testing only — it is not used by this tab.</span>
       </div>
 
       <div class="staff-filter-bar" id="staff-data-filter-bar"></div>
@@ -3948,13 +3977,13 @@
       </div>
 
       <div class="member-testing-table-note" data-searchable
-        data-tags="paraparan staff data ph team pilot synthetic sample verify kpi shared auditor accountant">
-        <span class="member-pill member-pill-sample">Synthetic Technical Pilot</span>
+        data-tags="paraparan staff data ph team live api verify kpi shared auditor accountant">
+        <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
         <span>Paraparan's designation is currently unresolved between sources — External Auditor (SRC-ARUN-CONF-001)
           vs. Accountant (HR-provided PDF) — see
           <code>member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md</code>. This tab uses the
-          same synthetic sample data, shared filter component, and shared KPI pilot record set as the Arun tab. Team
-          scope is pilot-locked to PH for this phase.</span>
+          same read-only Staff API client, shared filter component, and shared KPI pilot record set as the Arun tab
+          — real HR-sourced staff data, not a separate copy. Team scope is locked to PH for this phase.</span>
       </div>
 
       <!-- Paraparan Schedule Calendar — reuses the existing centralized member
@@ -5077,9 +5106,14 @@
     (function () {
       'use strict';
 
-      // Synthetic sample dataset — generated verbatim from
+      // DEV/FALLBACK-ONLY synthetic sample dataset — generated verbatim from
       // member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv.
       // No real employee name, NIC, or employee number appears here.
+      // As of 2026-07-13 this is NOT the operational data source — real
+      // staff data is fetched live from the Staff API (STAFF_API_BASE,
+      // below). This array is retained only so this file can still be
+      // opened offline for markup/CSS development without a backend
+      // running; no init function in this script references it.
       var STAFF_DATA_SAMPLE = [
         { employee_number: "SAMPLE001", epf_number: "[VERIFY]", date_of_joining: "01/01/2020", full_name: "Sample Staff One", calling_name: "Staff One", location: "Jaffna", staff_status: "Active", department_team: "PH", designation: "Portfolio Executive", cv_reference: "SAMPLE-CV-001.pdf", nic: "SAMPLE-NIC-001", remarks: "synthetic sample row", employment_stage: "Permanent", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-001" },
         { employee_number: "SAMPLE002", epf_number: "[VERIFY]", date_of_joining: "15/03/2021", full_name: "Sample Staff Two", calling_name: "Staff Two", location: "Nelliyadi", staff_status: "Inactive", department_team: "PH", designation: "Portfolio Executive", cv_reference: "", nic: "SAMPLE-NIC-002", remarks: "synthetic sample row", employment_stage: "[VERIFY]", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-002" },
@@ -5131,37 +5165,111 @@
         return out;
       }
 
-      // ── Shared filter function — reused by Current Staff, Onboarding Staff
-      // Process, Resigned Staff, the Arun PH pilot, and the Paraparan tab. ──
-      function filterStaffRows(rows, filters) {
-        filters = filters || {};
-        return rows.filter(function (r) {
-          if (filters.team && r.department_team !== filters.team) return false;
-          if (filters.status && r.staff_status !== filters.status) return false;
-          if (filters.stage && r.employment_stage !== filters.stage) return false;
-          return true;
+      /* Single centralized Staff API base — same host-detection pattern as
+         MEMBER_SCHEDULE_API_BASE above (local dev talks to the local
+         FastAPI server; any other host talks to the hosted backend, once
+         that hosted endpoint is explicitly authorized for real staff data —
+         see the access/deployment-boundary note in the Staff Data tab and
+         validation/staff-data-api-check-2026-07-13.md). Read-only: this
+         script only ever issues GET requests to /api/staff*. */
+      var STAFF_API_BASE = (function () {
+        var LOCAL_BASE = 'http://127.0.0.1:8000/api/staff';
+        var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/staff';
+        var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+        return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
+      }());
+
+      function staffApiRequest(url) {
+        return fetch(url).then(function (res) {
+          if (!res.ok) {
+            return res.json().catch(function () { return {}; }).then(function (errBody) {
+              var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) : (res.status + ' ' + res.statusText);
+              throw new Error(detail);
+            });
+          }
+          return res.json();
         });
       }
 
-      // ── Technical pilot classification helpers — NOT approved HR policy. ──
-      function classifyCurrentStaff(rows) {
-        return rows.filter(function (r) { return r.staff_status === 'Active'; });
-      }
-      function classifyResignedStaff(rows) {
-        return rows.filter(function (r) { return r.staff_status === 'Inactive'; });
-      }
-      function classifyOnboardingStaff(rows) {
-        return rows.filter(function (r) { return !!ONBOARDING_STAGES[r.employment_stage]; });
+      /* Builds the GET /api/staff query string. `stage` may be a single
+         string (user-selected, from the shared filter dropdown) or an
+         array (a tab's base pilot classification, e.g. Onboarding's
+         Probation/training_7_day/[VERIFY] set) — the API accepts repeated
+         employment_stage params for exactly this reason. */
+      function buildStaffQuery(filters) {
+        filters = filters || {};
+        var params = [];
+        if (filters.team) params.push('team=' + encodeURIComponent(filters.team));
+        if (filters.status) params.push('staff_status=' + encodeURIComponent(filters.status));
+        if (filters.stage) {
+          var stages = Array.isArray(filters.stage) ? filters.stage : [filters.stage];
+          stages.forEach(function (s) { params.push('employment_stage=' + encodeURIComponent(s)); });
+        }
+        if (filters.search) params.push('search=' + encodeURIComponent(filters.search));
+        params.push('limit=' + (filters.limit || 500));
+        params.push('offset=' + (filters.offset || 0));
+        return params.join('&');
       }
 
-      // ── Shared staff table renderer — reused by every staff view. ──
-      function renderStaffTable(containerEl, rows) {
+      /* Fetches real staff records from the read-only Staff API. Returns a
+         promise resolving to the full StaffListResponse shape
+         ({records, total, limit, offset, filters}) so callers can display
+         an accurate total count, not just the current page's row count. */
+      function fetchStaffRecords(filters) {
+        return staffApiRequest(STAFF_API_BASE + '?' + buildStaffQuery(filters));
+      }
+
+      // ── Shared filter-merge helper — reused by Current Staff, Onboarding
+      // Staff Process, Resigned Staff, the Arun PH view, and the Paraparan
+      // view. Combines a view's fixed base classification (e.g. "Active
+      // only" for Current Staff) with whatever the user has additionally
+      // selected in the shared filter bar — the user's selection narrows
+      // within the base, it does not need to be re-specified per view. ──
+      function mergeStaffFilters(baseFilters, userFilters) {
+        userFilters = userFilters || {};
+        return {
+          team: userFilters.team || (baseFilters && baseFilters.team) || '',
+          status: userFilters.status || (baseFilters && baseFilters.status) || '',
+          stage: userFilters.stage ? userFilters.stage : (baseFilters && baseFilters.stage) || '',
+          search: userFilters.search || ''
+        };
+      }
+
+      // ── Technical pilot classification base filters — NOT approved HR
+      // policy (see member-aios/staff-data/evidence/
+      // employment-stage-rule-review-2026-07-13.md). These only decide
+      // which real staff rows appear under which subtab; they do not alter
+      // any stored data. ──
+      var STAFF_SUBTAB_BASE_FILTERS = {
+        'current-staff': { status: 'Active' },
+        'resigned-staff': { status: 'Inactive' },
+        'onboarding-staff': { stage: ['Probation', 'training_7_day', '[VERIFY]'] }
+      };
+
+      function showStaffLoading(containerEl) {
         if (!containerEl) return;
+        containerEl.innerHTML = '<div class="staff-table-loading">Loading staff records…</div>';
+      }
+
+      function showStaffError(containerEl, message) {
+        if (!containerEl) return;
+        containerEl.innerHTML = '<div class="staff-table-error" role="alert">Could not load staff records from the ' +
+          'Staff API (' + escapeHtml(STAFF_API_BASE) + '). Is the backend running? Start it with ' +
+          '"uvicorn backend.main:app --port 8000" — see backend/README.md. Detail: ' + escapeHtml(message) + '</div>';
+      }
+
+      // ── Shared staff table renderer — reused by every staff view. Shows
+      // a "showing N of TOTAL" line so the true record count is always
+      // visible, independent of how many rows are on the current page. ──
+      function renderStaffTable(containerEl, rows, total) {
+        if (!containerEl) return;
+        var countLine = '<div class="staff-total-count">Showing ' + rows.length + ' of ' + total + ' record' +
+          (total === 1 ? '' : 's') + '</div>';
         if (!rows.length) {
-          containerEl.innerHTML = '<div class="staff-table-empty">No pilot rows match the current filters.</div>';
+          containerEl.innerHTML = countLine + '<div class="staff-table-empty">No staff records match the current filters.</div>';
           return;
         }
-        var html = '<div class="member-testing-table-scroll"><table class="member-testing-table staff-table"><thead><tr>';
+        var html = countLine + '<div class="member-testing-table-scroll"><table class="member-testing-table staff-table"><thead><tr>';
         STAFF_MAIN_COLUMNS.forEach(function (c) { html += '<th>' + STAFF_COLUMN_LABELS[c] + '</th>'; });
         html += '</tr></thead><tbody>';
         rows.forEach(function (r) {
@@ -5181,11 +5289,15 @@
       }
 
       // ── Shared filter-bar component — one function, instantiated once per
-      // view (Staff Data tab, Arun PH pilot, Paraparan tab). ──
-      function createStaffFilterBar(containerEl, scopeRows, onChange, opts) {
+      // view (Staff Data tab, Arun PH pilot, Paraparan tab). `teamOptions`
+      // is a plain array of team name strings (from GET
+      // /api/staff/filter-options for the unlocked Staff Data tab; ignored
+      // when opts.lockTeam is set for the Arun/Paraparan team-locked
+      // views). ──
+      function createStaffFilterBar(containerEl, teamOptions, onChange, opts) {
         if (!containerEl) return { getFilters: function () { return {}; } };
         opts = opts || {};
-        var teams = opts.lockTeam ? [opts.lockTeam] : uniqueValues(scopeRows, 'department_team');
+        var teams = opts.lockTeam ? [opts.lockTeam] : (teamOptions || []);
         var statuses = ['Active', 'Inactive'];
         var stages = ['Permanent', 'Probation', 'training_7_day', '[VERIFY]'];
 
@@ -5297,56 +5409,71 @@
         var subtabBtns = panel.querySelectorAll('.staff-subtab-btn');
         var subpanels = panel.querySelectorAll('.staff-subpanel');
 
-        function classificationFor(key, rows) {
-          if (key === 'current-staff') return classifyCurrentStaff(rows);
-          if (key === 'resigned-staff') return classifyResignedStaff(rows);
-          if (key === 'onboarding-staff') return classifyOnboardingStaff(rows);
-          return rows;
-        }
-
-        function renderAll(filters) {
+        function renderAll(userFilters) {
           subpanels.forEach(function (sp) {
             var key = sp.id.replace('staff-subpanel-', '');
-            var base = classificationFor(key, STAFF_DATA_SAMPLE);
-            var filtered = filterStaffRows(base, filters);
-            renderStaffTable(sp.querySelector('.staff-table-container'), filtered);
+            var tableEl = sp.querySelector('.staff-table-container');
+            var effective = mergeStaffFilters(STAFF_SUBTAB_BASE_FILTERS[key], userFilters);
+            showStaffLoading(tableEl);
+            fetchStaffRecords(effective).then(function (resp) {
+              renderStaffTable(tableEl, resp.records, resp.total);
+            }).catch(function (err) {
+              showStaffError(tableEl, err.message);
+            });
           });
         }
 
-        var filterApi = createStaffFilterBar(filterBarEl, STAFF_DATA_SAMPLE, renderAll);
-
-        subtabBtns.forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            subtabBtns.forEach(function (b) {
-              var active = b === btn;
-              b.classList.toggle('active', active);
-              b.setAttribute('aria-selected', active ? 'true' : 'false');
-            });
-            subpanels.forEach(function (sp) {
-              sp.classList.toggle('active', sp.id === 'staff-subpanel-' + btn.getAttribute('data-staff-subtab'));
+        // Team dropdown options come from the live API (real department/team
+        // values currently in the table), not a hardcoded or client-side list.
+        staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
+          var filterApi = createStaffFilterBar(filterBarEl, opts.teams || [], renderAll);
+          subtabBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              subtabBtns.forEach(function (b) {
+                var active = b === btn;
+                b.classList.toggle('active', active);
+                b.setAttribute('aria-selected', active ? 'true' : 'false');
+              });
+              subpanels.forEach(function (sp) {
+                sp.classList.toggle('active', sp.id === 'staff-subpanel-' + btn.getAttribute('data-staff-subtab'));
+              });
             });
           });
+          renderAll(filterApi.getFilters());
+        }).catch(function (err) {
+          // Filter-options fetch failed (e.g. backend not running) — still
+          // render each subtab's table with a clear error state, and fall
+          // back to an empty (unlocked, no options) filter bar rather than
+          // leaving the page half-built.
+          var filterApi = createStaffFilterBar(filterBarEl, [], renderAll);
+          renderAll(filterApi.getFilters());
         });
-
-        renderAll(filterApi.getFilters());
       }
 
       // ── Team-scoped staff + KPI pilot section — used identically by the
-      // Arun PH pilot subsection and the Paraparan tab. One function, two
-      // call sites, no parallel implementations. ──
+      // Arun PH view and the Paraparan tab. One function, two call sites,
+      // no parallel implementations. ──
       function initTeamScopedStaffPilot(mountEl) {
         if (!mountEl) return;
         var teamCode = mountEl.getAttribute('data-team-code') || 'PH';
         var filterBarEl = mountEl.querySelector('.staff-filter-bar');
         var tableEl = mountEl.querySelector('.staff-table-container');
         var kpiMountEl = mountEl.querySelector('.kpi-pilot-mount');
-        var scopeRows = STAFF_DATA_SAMPLE.filter(function (r) { return r.department_team === teamCode; });
+        var baseFilters = { team: teamCode };
 
-        var filterApi = createStaffFilterBar(filterBarEl, scopeRows, function (filters) {
-          renderStaffTable(tableEl, filterStaffRows(scopeRows, filters));
-        }, { lockTeam: teamCode });
+        function renderTable(userFilters) {
+          var effective = mergeStaffFilters(baseFilters, userFilters);
+          effective.team = teamCode; // locked — never overridden by the user
+          showStaffLoading(tableEl);
+          fetchStaffRecords(effective).then(function (resp) {
+            renderStaffTable(tableEl, resp.records, resp.total);
+          }).catch(function (err) {
+            showStaffError(tableEl, err.message);
+          });
+        }
 
-        renderStaffTable(tableEl, filterStaffRows(scopeRows, filterApi.getFilters()));
+        var filterApi = createStaffFilterBar(filterBarEl, [teamCode], renderTable, { lockTeam: teamCode });
+        renderTable(filterApi.getFilters());
         renderKpiPanel(kpiMountEl, teamCode);
       }
 

@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import ALLOWED_ORIGIN_REGEX, ALLOWED_ORIGINS, SERVICE_NAME
 from backend.routers.member_schedules import router as member_schedules_router
+from backend.routers.staff import router as staff_router
 from backend.schemas import HealthResponse
 
 app = FastAPI(title="Management AIOS — Member Schedule API")
@@ -33,6 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(member_schedules_router)
+app.include_router(staff_router)
 
 
 @app.get("/health", response_model=HealthResponse)

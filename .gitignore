@@ -20,3 +20,8 @@ member-aios/staff-data/source/raw/*
 
 # Real normalized HR staff data — local only
 member-aios/staff-data/source/normalized/hr-staff-dashboard.csv
+
+# Generated SQL import scripts contain real employee data (names, NIC
+# values) as literal SQL text — local only, never committed. See
+# scripts/import_staff_dashboard_csv.py --emit-sql.
+member-aios/staff-data/source/normalized/*.sql
