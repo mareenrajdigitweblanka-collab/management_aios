@@ -301,3 +301,88 @@ WHERE member_key NOT IN ('mayurika','suman','arun','rajiv','paraparan');
 | Pending deployment status | **Code not yet deployed.** `backend/config.py`/`backend/models.py`/`web-view/index.html` changes remain uncommitted as of this point in the session — the live hosted API (confirmed via a prior `GET /api/member-schedules/paraparan` → `404 Unknown member_key`) will continue rejecting `paraparan` until these are committed and pushed (Phase 4/5 below) |
 
 No event content (titles, notes, dates) was requested, displayed, or recorded — only aggregate counts, per the task's instruction.
+
+---
+
+## Commit, Push, and Live Deployment Verification — 2026-07-13 (Session 3, continued)
+
+### Phase 3 — Changed-File Review (11-Point Checklist)
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `paraparan` exists in `VALID_MEMBER_KEYS` | PASS — `("mayurika", "suman", "arun", "rajiv", "paraparan")` |
+| 2 | `paraparan` exists in `MEMBER_LABELS` | PASS — `"paraparan": "Paraparan"` |
+| 3 | No Paraparan-specific route created | PASS — router still has exactly 5 route decorators, all generic over `{member_key}` |
+| 4 | No separate table created | PASS — single `CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events` in the whole `database/` tree |
+| 5 | One new `.msc-instance` exists | PASS — count 4 → 5 |
+| 6 | Existing generic calendar component reused | PASS — exactly one `mountScheduleCalendarInstance` function definition, unchanged |
+| 7 | No `localStorage` calendar logic | PASS — 0 occurrences of `localStorage.` |
+| 8 | PH KPI shared state unchanged | PASS — script block count still 3; the KPI pilot script's byte length (19,032 chars) is identical to the value recorded in the prior session's validation report — confirms it was not touched |
+| 9 | No real staff PII added | PASS — 0 `DWL###`-style codes, 0 NIC-pattern matches |
+| 10 | No `.env`/credential included | PASS — `git status --short .env` empty |
+| 11 | `git diff --check` passes | PASS |
+
+### Phase 4 — Commit
+
+Staged exactly 6 files by explicit path (no `git add .`/`-A`):
+`backend/config.py`, `backend/models.py`, `database/member_schedule_events_schema.sql`, `database/migrations/2026-07-13-add-paraparan-member-key.sql`, `web-view/index.html`, `validation/paraparan-member-schedule-integration-check-2026-07-13.md`.
+
+Confirmed excluded: the real normalized staff CSV, raw HR PDF, `member-aios/mayurika-hr/staff-data/`, `.env` — none were staged (all absent from `git diff --cached --name-only`).
+
+**Commit:** `b9d307d` — "Add Paraparan schedule calendar support"
+
+### Phase 5 — Push and Deployment Confirmation
+
+**Push:** `git push origin main` → `f89bb4d..b9d307d main -> main`, successful.
+
+- **Backend deployment:** confirmed live by polling `GET https://management-aios-api.vercel.app/api/member-schedules/paraparan` — returned `404 Unknown member_key` immediately after push, then `200 []` once the Vercel deployment completed (~75s later). **Backend deployment: CONFIRMED.**
+- **Frontend deployment:** confirmed by fetching `https://management-aios.vercel.app/` and finding `data-tab="paraparan"` present in the served HTML. **Frontend deployment: CONFIRMED.**
+
+### Phase 6 — Live CRUD Test (Hosted API)
+
+Synthetic event: title `"Paraparan Schedule Migration Test"`, category `Sample Task`, notes `"Temporary post-deployment verification item"`, date `2026-07-13`. No personal or operational data used.
+
+| Step | Action | Result |
+|---|---|---|
+| 1 | `POST /api/member-schedules/paraparan` | PASS — `201`-equivalent success; `member_key="paraparan"`, `source_scope="dashboard_testing"`, `is_official_truth=false` (server-controlled, correct); event id `3c4ac042-7b07-4a1f-becf-a4f5ad6c86bc` |
+| 2 | `GET /api/member-schedules/paraparan`, confirm presence | PASS — 1 row, matching id and title |
+| 3 | `PUT /api/member-schedules/paraparan/{id}`, update title | PASS — title changed to `"Paraparan Schedule Migration Test - Updated"`, `updated_at` advanced, `source_scope`/`is_official_truth` unchanged |
+| 4 | `GET` again, confirm the edit | PASS — updated title confirmed |
+| 5 | `GET /api/member-schedules/arun`, confirm absence | PASS — Arun's list returned 0 rows total; the Paraparan event id was not present |
+| 6 | Fresh `GET` (simulated refresh), confirm persistence | PASS — event still present with correct title, `source_scope="dashboard_testing"`, `is_official_truth=false`, on a separate request after a 2-second pause |
+| 7 | `DELETE /api/member-schedules/paraparan/{id}` | PASS — `{"deleted": true}` |
+| 8 | `GET /api/member-schedules/paraparan`, confirm absence | PASS — 0 rows |
+
+**Paraparan CRUD result: PASS — full lifecycle (create/read/update/delete) succeeded against the live production API and database.**
+
+**Refresh/read-back persistence: PASS** (step 6).
+
+**Arun/Paraparan isolation: PASS** — confirmed live, not just by code inspection this time: the test event never appeared under `arun`'s schedule at any point (step 5), and `arun`'s own row count (0, matching the pre-migration DB count exactly) was unaffected by any Paraparan operation.
+
+**Test cleanup: PASS — verified, not just assumed.** Post-cleanup row counts via the hosted API, cross-checked against the pre-test database-reported counts:
+
+| member_key | Pre-test (DB, Phase 1) | Post-cleanup (API) |
+|---|---|---|
+| mayurika | 94 | 94 |
+| suman | 21 | 21 |
+| rajiv | 9 | 9 |
+| arun | 0 | 0 |
+| paraparan | 0 | 0 |
+
+All five match exactly — no test data left behind, no other member's data affected.
+
+### Existing Calendar Regression (Live)
+
+**PASS.** `mayurika` (94), `suman` (21), and `rajiv` (9) row counts are unchanged from the pre-migration/pre-deployment baseline recorded in Phase 1 of this session, confirmed via live `GET` requests through the newly-deployed API — this is a stronger check than the structural/syntax-only verification from the prior session, since it confirms the live production data for the 3 members with existing events was untouched by the migration, the deployment, or the Paraparan test.
+
+### Shared PH KPI Regression (Final)
+
+**PASS.** Re-confirmed via the Phase 3 checklist above (item 8) — the KPI pilot script is byte-identical to its pre-this-task state. No live browser test of the KPI panel was performed in this session (out of scope — this session's live testing was scoped to the schedule API), but no file or line touching `PILOT_KPI_STATE`, `renderKpiPanel`, or any KPI-related function was modified.
+
+### Final Verdict
+
+**PASS.**
+
+Every phase of this task was completed and verified with real evidence, not assumption: the migration was reviewed (one gap found and fixed), applied by the user and confirmed via a direct `pg_constraint` query, pre- and post-state row counts were confirmed with zero unexpected keys, the code was reviewed against an 11-point checklist with no failures, exactly the 6 approved files were committed (`b9d307d`) and pushed, both Vercel deployments were confirmed live by direct HTTP checks (not assumed from push success alone), the full 8-step CRUD lifecycle for `paraparan` passed against the live production API and database, isolation from `arun` was confirmed live, test cleanup was verified by an exact count match against the pre-test baseline, and the three pre-existing members with data (`mayurika`, `suman`, `rajiv`) were confirmed unaffected. No credential was ever printed. No real staff PII was introduced. No protected file (`.env`, source-register, verify-register, CLAUDE.md, real staff CSV, raw HR PDF, KPI business rules, Rajiv wording) was touched.
+
+**Closure note:** this validation file was updated after the `b9d307d` push (this section did not exist at push time). Per this task's instruction, a separate closure commit was prepared — see the outer task summary for the commit hash and push result.
