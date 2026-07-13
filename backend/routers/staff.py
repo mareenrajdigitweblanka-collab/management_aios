@@ -23,7 +23,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import asc, desc, func, or_
 from sqlalchemy.orm import Session
 
-from backend.config import VALID_EMPLOYMENT_STAGES, VALID_STAFF_STATUSES
+from backend.config import VALID_EMPLOYMENT_STAGES, VALID_LOCATIONS, VALID_STAFF_STATUSES
 from backend.database import get_db
 from backend.models import StaffDashboardRecord
 from backend.schemas import (
@@ -66,6 +66,7 @@ def _apply_filters(
     staff_status: Optional[str],
     employment_stage: Optional[List[str]],
     search: Optional[str],
+    location: Optional[str] = None,
 ):
     if team:
         query = query.filter(StaffDashboardRecord.department_team == team)
@@ -76,6 +77,13 @@ def _apply_filters(
                 detail=f"staff_status must be one of {VALID_STAFF_STATUSES}.",
             )
         query = query.filter(StaffDashboardRecord.staff_status == staff_status)
+    if location:
+        if location not in VALID_LOCATIONS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"location must be one of {VALID_LOCATIONS}.",
+            )
+        query = query.filter(StaffDashboardRecord.location == location)
     if employment_stage:
         for stage in employment_stage:
             if stage not in VALID_EMPLOYMENT_STAGES:
@@ -103,13 +111,14 @@ def list_staff_records(
     staff_status: Optional[str] = Query(default=None),
     employment_stage: Optional[List[str]] = Query(default=None),
     search: Optional[str] = Query(default=None, max_length=100),
+    location: Optional[str] = Query(default=None),
     sort_by: Optional[str] = Query(default=None),
     sort_direction: str = Query(default="asc"),
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
-    query = _apply_filters(_base_query(db), team, staff_status, employment_stage, search)
+    query = _apply_filters(_base_query(db), team, staff_status, employment_stage, search, location)
 
     total = query.with_entities(func.count(StaffDashboardRecord.id)).scalar()
 
@@ -158,6 +167,7 @@ def list_staff_records(
             "staff_status": staff_status,
             "employment_stage": employment_stage,
             "search": search,
+            "location": location,
             "sort_by": sort_by,
             "sort_direction": sort_direction,
         },
@@ -214,9 +224,18 @@ def staff_filter_options(db: Session = Depends(get_db)):
         .order_by(StaffDashboardRecord.employment_stage)
         .all()
     ]
+    locations = [
+        row[0]
+        for row in base.with_entities(StaffDashboardRecord.location)
+        .filter(StaffDashboardRecord.location.isnot(None))
+        .distinct()
+        .order_by(StaffDashboardRecord.location)
+        .all()
+    ]
 
     return StaffFilterOptionsResponse(
         teams=teams,
         staff_statuses=statuses,
         employment_stages=stages,
+        locations=locations,
     )

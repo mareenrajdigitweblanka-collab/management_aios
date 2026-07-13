@@ -6537,6 +6537,7 @@
           stages.forEach(function (s) { params.push('employment_stage=' + encodeURIComponent(s)); });
         }
         if (filters.search) params.push('search=' + encodeURIComponent(filters.search));
+        if (filters.location) params.push('location=' + encodeURIComponent(filters.location));
         if (filters.sortBy) {
           params.push('sort_by=' + encodeURIComponent(filters.sortBy));
           params.push('sort_direction=' + encodeURIComponent(filters.sortDir || 'asc'));
@@ -6568,7 +6569,8 @@
           team: userFilters.team || (baseFilters && baseFilters.team) || '',
           status: userFilters.status || (baseFilters && baseFilters.status) || '',
           stage: userFilters.stage ? userFilters.stage : (baseFilters && baseFilters.stage) || '',
-          search: userFilters.search || ''
+          search: userFilters.search || '',
+          location: userFilters.location || (baseFilters && baseFilters.location) || ''
         };
       }
 
@@ -6955,6 +6957,7 @@
         var teams = opts.lockTeam ? [opts.lockTeam] : (teamOptions || []);
         var statuses = ['Active', 'Inactive'];
         var stages = ['Permanent', 'Probation', 'training_7_day', '[VERIFY]'];
+        var locations = ['Jaffna', 'Nelliyadi', 'Chankanai', 'WFH'];
 
         var html = '<div class="staff-filter-field"><label>Team</label><select class="staff-filter-team"' +
           (opts.lockTeam ? ' disabled' : '') + '>' +
@@ -6975,6 +6978,11 @@
             return '<option value="' + escapeHtml(s) + '">' + escapeHtml(STAGE_DISPLAY_LABELS[s] || s) + '</option>';
           }).join('') + '</select></div>';
 
+        html += '<div class="staff-filter-field"><label>Location</label><select class="staff-filter-location">' +
+          '<option value="">All Locations</option>' +
+          locations.map(function (l) { return '<option value="' + escapeHtml(l) + '">' + escapeHtml(l) + '</option>'; }).join('') +
+          '</select></div>';
+
         html += '<div class="staff-filter-field staff-filter-search-field"><label for="staff-filter-search-' +
           escapeHtml(opts.instanceId || '') + '">Search</label>' +
           '<input type="search" id="staff-filter-search-' + escapeHtml(opts.instanceId || '') + '" ' +
@@ -6991,13 +6999,17 @@
         var teamSel = containerEl.querySelector('.staff-filter-team');
         var statusSel = containerEl.querySelector('.staff-filter-status');
         var stageSel = containerEl.querySelector('.staff-filter-stage');
+        var locationSel = containerEl.querySelector('.staff-filter-location');
         var searchInput = containerEl.querySelector('.staff-filter-search');
         var clearBtn = containerEl.querySelector('.staff-filter-clear-btn');
         var chipsEl = containerEl.querySelector('.staff-filter-chips');
         if (opts.lockTeam) { teamSel.value = opts.lockTeam; }
 
         function currentFilters() {
-          return { team: teamSel.value, status: statusSel.value, stage: stageSel.value, search: searchInput.value.trim() };
+          return {
+            team: teamSel.value, status: statusSel.value, stage: stageSel.value,
+            search: searchInput.value.trim(), location: locationSel.value
+          };
         }
 
         function renderChips() {
@@ -7006,6 +7018,7 @@
           if (f.team && !opts.lockTeam) chips.push({ key: 'team', label: 'Team: ' + f.team });
           if (f.status) chips.push({ key: 'status', label: 'Status: ' + f.status });
           if (f.stage) chips.push({ key: 'stage', label: 'Stage: ' + (STAGE_DISPLAY_LABELS[f.stage] || f.stage) });
+          if (f.location) chips.push({ key: 'location', label: 'Location: ' + f.location });
           if (f.search) chips.push({ key: 'search', label: 'Search: "' + f.search + '"' });
           if (!chips.length) { chipsEl.innerHTML = ''; return; }
           chipsEl.innerHTML = chips.map(function (c) {
@@ -7019,6 +7032,7 @@
               if (key === 'team' && !opts.lockTeam) teamSel.value = '';
               if (key === 'status') statusSel.value = '';
               if (key === 'stage') stageSel.value = '';
+              if (key === 'location') locationSel.value = '';
               if (key === 'search') searchInput.value = '';
               fireChange();
             });
@@ -7032,7 +7046,7 @@
 
         var debouncedFireChange = debounce(fireChange, 300);
 
-        [teamSel, statusSel, stageSel].forEach(function (sel) {
+        [teamSel, statusSel, stageSel, locationSel].forEach(function (sel) {
           sel.addEventListener('change', fireChange);
         });
         searchInput.addEventListener('input', debouncedFireChange);
@@ -7040,6 +7054,7 @@
           if (!opts.lockTeam) teamSel.value = '';
           statusSel.value = '';
           stageSel.value = '';
+          locationSel.value = '';
           searchInput.value = '';
           fireChange();
         });

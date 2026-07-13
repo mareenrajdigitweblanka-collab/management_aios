@@ -85,6 +85,12 @@ VALID_STAFF_STATUSES = ("Active", "Inactive")
 # AIOS must not invent that rule; '[VERIFY]' stays a valid, queryable value.
 VALID_EMPLOYMENT_STAGES = ("Permanent", "Probation", "training_7_day", "[VERIFY]")
 
+# Controlled vocabulary observed in the HR source (see
+# member-aios/staff-data/data-maps/staff-field-map-draft.md §1). Used to
+# validate the ?location= filter param; not used to reject/alter stored
+# values that fall outside this set.
+VALID_LOCATIONS = ("Jaffna", "Nelliyadi", "Chankanai", "WFH")
+
 STAFF_APPROVED_COLUMNS = (
     "employee_number",
     "epf_number",

@@ -146,3 +146,9 @@ class StaffDashboardRecord(Base):
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+
+    # Per-update actor, distinct from imported_by (set once, at import time).
+    # Added by database/migrations/2026-07-13-add-updated-by-to-staff-dashboard-records.sql
+    # for scripts/update_staff_locations_from_hr_sources.py. Not part of the
+    # 16-field dashboard API contract (StaffRecordOut) — bookkeeping only.
+    updated_by = Column(String, nullable=True)

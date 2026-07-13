@@ -146,3 +146,4 @@ class StaffFilterOptionsResponse(BaseModel):
     teams: list[str]
     staff_statuses: list[str]
     employment_stages: list[str]
+    locations: list[str]

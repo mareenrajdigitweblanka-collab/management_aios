@@ -25,3 +25,9 @@ member-aios/staff-data/source/normalized/hr-staff-dashboard.csv
 # values) as literal SQL text — local only, never committed. See
 # scripts/import_staff_dashboard_csv.py --emit-sql.
 member-aios/staff-data/source/normalized/*.sql
+
+# HR-verified staff location reconciliation evidence — contains real
+# database row UUIDs tied to real staff records; local-only report, never
+# committed. See scripts/update_staff_locations_from_hr_sources.py and
+# validation/staff-location-source-reconciliation-check-2026-07-13.md.
+evidence/staff-location-update-reconciliation-*.csv
