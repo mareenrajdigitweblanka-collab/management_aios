@@ -2234,6 +2234,114 @@
         padding: var(--space-4) var(--space-4) var(--space-4);
       }
     }
+
+    /* ── Staff Data pilot (2026-07-13) — technical pilot only, synthetic data.
+       Deliberately new class names (not .tab-btn/.tab-panel) so this does not
+       interfere with the existing main tab-switching logic. ── */
+    .staff-pilot-classification-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #92400e;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 6px;
+      padding: 3px 10px;
+      margin: 4px 0 12px;
+    }
+
+    .staff-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4, 16px);
+      margin: 12px 0 16px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2, #f8fafc);
+    }
+
+    .staff-filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 160px;
+    }
+
+    .staff-filter-field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .staff-filter-field select {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .staff-subtab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .staff-subtab-btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .staff-subtab-btn.active {
+      background: var(--accent, #2563eb);
+      border-color: var(--accent, #2563eb);
+      color: #fff;
+    }
+
+    .staff-subpanel {
+      display: none;
+    }
+
+    .staff-subpanel.active {
+      display: block;
+    }
+
+    .staff-table-empty {
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .staff-team-scoped-pilot {
+      margin-top: 8px;
+    }
+
+    .kpi-pilot-mount {
+      margin-top: 20px;
+    }
+
+    .staff-table th,
+    .kpi-pilot-table th {
+      white-space: nowrap;
+    }
+
+    .kpi-actor-select {
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -2285,6 +2393,14 @@
       <span class="tab-badge tab-badge-amber"
         title="Technical status: REGISTERED / VERSION 1.0 WORKING DRAFT / PARTLY APPROVED, PARTLY DRAFT">ACTIVE WITH
         LIMITS</span>
+    </button>
+    <button class="tab-btn" data-tab="staff-data" role="tab" aria-selected="false">
+      Staff Data
+      <span class="tab-badge tab-badge-amber" title="Technical pilot — synthetic sample data only, no real employee records, business classification rules unresolved [VERIFY]">PILOT</span>
+    </button>
+    <button class="tab-btn" data-tab="paraparan" role="tab" aria-selected="false">
+      Paraparan
+      <span class="tab-badge tab-badge-amber" title="Technical pilot — shares PH Team KPI records with Arun; designation unresolved [VERIFY]">PILOT</span>
     </button>
     <button class="tab-btn" data-tab="file-map" role="tab" aria-selected="false">
       File Map
@@ -3607,6 +3723,20 @@
         data-tags="arun schedule calendar testing preview interactive add edit view delete localstorage implementation officer">
       </div>
 
+      <!-- 5. Staff Data Pilot — PH Team (technical pilot, synthetic data only) -->
+      <h3 class="section-title" style="margin-top:32px;">Staff Data — PH Team Pilot</h3>
+      <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
+      <div class="member-testing-table-note" data-searchable data-tags="arun staff data ph team pilot synthetic sample verify kpi">
+        <span class="member-pill member-pill-sample">Synthetic Technical Pilot</span>
+        <span>Synthetic sample staff data only (no real employee records). Team scope is pilot-locked to PH for this
+          phase. KPI records below are shared with the Paraparan tab — same underlying data, not a separate copy.</span>
+      </div>
+      <div class="staff-team-scoped-pilot" id="arun-staff-pilot" data-team-code="PH">
+        <div class="staff-filter-bar"></div>
+        <div class="staff-table-container"></div>
+        <div class="kpi-pilot-mount" data-kpi-team="PH" data-kpi-actor="arun"></div>
+      </div>
+
     </div><!-- /tab-arun-implementation -->
 
 
@@ -3755,6 +3885,85 @@
       </div>
 
     </div><!-- /tab-rajiv-blocked -->
+
+
+    <!-- ══════════════════════════════════
+       TAB — STAFF DATA (TECHNICAL PILOT)
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-staff-data" role="tabpanel">
+
+      <div class="member-header">
+        <h2>Staff Data — Technical Pilot</h2>
+        <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
+      </div>
+
+      <div class="member-testing-table-note" data-searchable
+        data-tags="staff data pilot current onboarding resigned synthetic sample verify">
+        <span class="member-pill member-pill-sample">Synthetic Technical Pilot</span>
+        <span>This tab uses only the synthetic sample dataset
+          (<code>member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv</code>) — 10 fully invented rows.
+          No real employee name, NIC, or employee number is used anywhere in this tab. The Current / Onboarding /
+          Resigned split below is a technical pilot classification for UI development only — it is not approved HR
+          policy, and final classification rules remain <span class="badge badge-verify">[VERIFY]</span> pending HR
+          confirmation (see <code>member-aios/staff-data/evidence/employment-stage-rule-review-2026-07-13.md</code>).
+          This pilot uses in-memory sample data only — nothing here is saved.</span>
+      </div>
+
+      <div class="staff-filter-bar" id="staff-data-filter-bar"></div>
+
+      <div class="staff-subtab-bar" role="tablist" aria-label="Staff Data subtabs">
+        <button class="staff-subtab-btn active" data-staff-subtab="current-staff" role="tab" aria-selected="true">Current
+          Staff</button>
+        <button class="staff-subtab-btn" data-staff-subtab="onboarding-staff" role="tab" aria-selected="false">Onboarding
+          Staff Process</button>
+        <button class="staff-subtab-btn" data-staff-subtab="resigned-staff" role="tab" aria-selected="false">Resigned
+          Staff</button>
+      </div>
+
+      <div class="staff-subpanel active" id="staff-subpanel-current-staff" role="tabpanel">
+        <p class="staff-pilot-classification-label">Pilot rule: staff_status == Active</p>
+        <div class="staff-table-container"></div>
+      </div>
+      <div class="staff-subpanel" id="staff-subpanel-onboarding-staff" role="tabpanel">
+        <p class="staff-pilot-classification-label">Pilot rule: employment_stage is Probation, 7-Day Training, or
+          [VERIFY]</p>
+        <div class="staff-table-container"></div>
+      </div>
+      <div class="staff-subpanel" id="staff-subpanel-resigned-staff" role="tabpanel">
+        <p class="staff-pilot-classification-label">Pilot rule: staff_status == Inactive</p>
+        <div class="staff-table-container"></div>
+      </div>
+
+    </div><!-- /tab-staff-data -->
+
+
+    <!-- ══════════════════════════════════
+       TAB — PARAPARAN (TECHNICAL PILOT)
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-paraparan" role="tabpanel">
+
+      <div class="member-header">
+        <h2>Paraparan</h2>
+        <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
+      </div>
+
+      <div class="member-testing-table-note" data-searchable
+        data-tags="paraparan staff data ph team pilot synthetic sample verify kpi shared auditor accountant">
+        <span class="member-pill member-pill-sample">Synthetic Technical Pilot</span>
+        <span>Paraparan's designation is currently unresolved between sources — External Auditor (SRC-ARUN-CONF-001)
+          vs. Accountant (HR-provided PDF) — see
+          <code>member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md</code>. This tab uses the
+          same synthetic sample data, shared filter component, and shared KPI pilot record set as the Arun tab. Team
+          scope is pilot-locked to PH for this phase.</span>
+      </div>
+
+      <div class="staff-team-scoped-pilot" id="paraparan-staff-pilot" data-team-code="PH">
+        <div class="staff-filter-bar"></div>
+        <div class="staff-table-container"></div>
+        <div class="kpi-pilot-mount" data-kpi-team="PH" data-kpi-actor="paraparan"></div>
+      </div>
+
+    </div><!-- /tab-paraparan -->
 
 
     <!-- ══════════════════════════════════
@@ -4837,6 +5046,310 @@
         document.addEventListener('DOMContentLoaded', initAllScheduleCalendars);
       } else {
         initAllScheduleCalendars();
+      }
+
+    }());
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       STAFF DATA TECHNICAL PILOT (2026-07-13)
+       Synthetic sample data only — see
+       member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv
+       This script is self-contained and does not modify the tab-switching
+       logic or schedule-calendar script above it. It only reads from
+       elements it adds itself (new tab panels + a new Arun subsection).
+       Business classification below is a TECHNICAL PILOT CLASSIFICATION —
+       not approved HR/KPI policy. All KPI formula/target/threshold values
+       are [VERIFY]. Nothing here is persisted — a page refresh resets any
+       in-pilot "Updated By" edit.
+  ═══════════════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Synthetic sample dataset — generated verbatim from
+      // member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv.
+      // No real employee name, NIC, or employee number appears here.
+      var STAFF_DATA_SAMPLE = [
+        { employee_number: "SAMPLE001", epf_number: "[VERIFY]", date_of_joining: "01/01/2020", full_name: "Sample Staff One", calling_name: "Staff One", location: "Jaffna", staff_status: "Active", department_team: "PH", designation: "Portfolio Executive", cv_reference: "SAMPLE-CV-001.pdf", nic: "SAMPLE-NIC-001", remarks: "synthetic sample row", employment_stage: "Permanent", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-001" },
+        { employee_number: "SAMPLE002", epf_number: "[VERIFY]", date_of_joining: "15/03/2021", full_name: "Sample Staff Two", calling_name: "Staff Two", location: "Nelliyadi", staff_status: "Inactive", department_team: "PH", designation: "Portfolio Executive", cv_reference: "", nic: "SAMPLE-NIC-002", remarks: "synthetic sample row", employment_stage: "[VERIFY]", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-002" },
+        { employee_number: "SAMPLE003", epf_number: "[VERIFY]", date_of_joining: "10/06/2022", full_name: "Sample Staff Three", calling_name: "Staff Three", location: "Chankanai", staff_status: "Active", department_team: "Digital Marketing", designation: "Digital Marketing Executive", cv_reference: "SAMPLE-CV-003.pdf", nic: "", remarks: "synthetic sample row", employment_stage: "Probation", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-003" },
+        { employee_number: "SAMPLE004", epf_number: "[VERIFY]", date_of_joining: "05/09/2023", full_name: "Sample Staff Four", calling_name: "Staff Four", location: "WFH", staff_status: "Active", department_team: "Technical Team", designation: "Automation Engineer", cv_reference: "", nic: "SAMPLE-NIC-004", remarks: "synthetic sample row", employment_stage: "training_7_day", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-004" },
+        { employee_number: "SAMPLE005", epf_number: "[VERIFY]", date_of_joining: "20/11/2019", full_name: "Sample Staff Five", calling_name: "Staff Five", location: "Jaffna", staff_status: "Inactive", department_team: "eBay", designation: "E-Commerce Executive", cv_reference: "SAMPLE-CV-005.pdf", nic: "SAMPLE-NIC-005", remarks: "synthetic sample row", employment_stage: "[VERIFY]", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-005" },
+        { employee_number: "SAMPLE006", epf_number: "[VERIFY]", date_of_joining: "12/02/2024", full_name: "Sample Staff Six", calling_name: "Staff Six", location: "Nelliyadi", staff_status: "Active", department_team: "PH", designation: "E-Commerce Executive", cv_reference: "", nic: "", remarks: "synthetic sample row", employment_stage: "Permanent", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-006" },
+        { employee_number: "SAMPLE007", epf_number: "[VERIFY]", date_of_joining: "28/04/2025", full_name: "Sample Staff Seven", calling_name: "Staff Seven", location: "Chankanai", staff_status: "Active", department_team: "Accounts", designation: "Accounts Assistant", cv_reference: "SAMPLE-CV-007.pdf", nic: "SAMPLE-NIC-007", remarks: "synthetic sample row", employment_stage: "Probation", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-007" },
+        { employee_number: "SAMPLE008", epf_number: "[VERIFY]", date_of_joining: "30/07/2018", full_name: "Sample Staff Eight", calling_name: "Staff Eight", location: "Jaffna", staff_status: "Inactive", department_team: "Customer Service", designation: "Customer Service Executive", cv_reference: "", nic: "", remarks: "synthetic sample row", employment_stage: "[VERIFY]", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-008" },
+        { employee_number: "SAMPLE009", epf_number: "[VERIFY]", date_of_joining: "03/05/2026", full_name: "Sample Staff Nine", calling_name: "Staff Nine", location: "WFH", staff_status: "Active", department_team: "Technical Team", designation: "Software Engineer", cv_reference: "SAMPLE-CV-009.pdf", nic: "SAMPLE-NIC-009", remarks: "synthetic sample row", employment_stage: "training_7_day", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-009" },
+        { employee_number: "SAMPLE010", epf_number: "[VERIFY]", date_of_joining: "17/10/2020", full_name: "Sample Staff Ten", calling_name: "Staff Ten", location: "Nelliyadi", staff_status: "Active", department_team: "PH", designation: "Portfolio Executive", cv_reference: "", nic: "", remarks: "synthetic sample row", employment_stage: "Permanent", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-010" }
+      ];
+
+      // Columns shown in the main staff table. source_file/source_page/
+      // source_row_reference are intentionally excluded from display but
+      // remain on each row object for internal traceability.
+      var STAFF_MAIN_COLUMNS = [
+        'employee_number', 'epf_number', 'date_of_joining', 'full_name', 'calling_name',
+        'location', 'staff_status', 'department_team', 'designation', 'cv_reference',
+        'nic', 'remarks', 'employment_stage'
+      ];
+      var STAFF_COLUMN_LABELS = {
+        employee_number: 'Employee Number', epf_number: 'EPF Number', date_of_joining: 'Date of Joining',
+        full_name: 'Full Name', calling_name: 'Calling Name', location: 'Location',
+        staff_status: 'Staff Status', department_team: 'Team', designation: 'Designation',
+        cv_reference: 'CV Reference', nic: 'NIC', remarks: 'Remarks', employment_stage: 'Employment Stage'
+      };
+      var STAGE_DISPLAY_LABELS = {
+        'training_7_day': '7-Day Training',
+        '[VERIFY]': '[VERIFY]',
+        'Permanent': 'Permanent',
+        'Probation': 'Probation'
+      };
+      var ONBOARDING_STAGES = { 'Probation': true, 'training_7_day': true, '[VERIFY]': true };
+
+      function escapeHtml(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function uniqueValues(rows, field) {
+        var seen = {};
+        var out = [];
+        rows.forEach(function (r) {
+          var v = r[field];
+          if (v && !seen[v]) { seen[v] = true; out.push(v); }
+        });
+        out.sort();
+        return out;
+      }
+
+      // ── Shared filter function — reused by Current Staff, Onboarding Staff
+      // Process, Resigned Staff, the Arun PH pilot, and the Paraparan tab. ──
+      function filterStaffRows(rows, filters) {
+        filters = filters || {};
+        return rows.filter(function (r) {
+          if (filters.team && r.department_team !== filters.team) return false;
+          if (filters.status && r.staff_status !== filters.status) return false;
+          if (filters.stage && r.employment_stage !== filters.stage) return false;
+          return true;
+        });
+      }
+
+      // ── Technical pilot classification helpers — NOT approved HR policy. ──
+      function classifyCurrentStaff(rows) {
+        return rows.filter(function (r) { return r.staff_status === 'Active'; });
+      }
+      function classifyResignedStaff(rows) {
+        return rows.filter(function (r) { return r.staff_status === 'Inactive'; });
+      }
+      function classifyOnboardingStaff(rows) {
+        return rows.filter(function (r) { return !!ONBOARDING_STAGES[r.employment_stage]; });
+      }
+
+      // ── Shared staff table renderer — reused by every staff view. ──
+      function renderStaffTable(containerEl, rows) {
+        if (!containerEl) return;
+        if (!rows.length) {
+          containerEl.innerHTML = '<div class="staff-table-empty">No pilot rows match the current filters.</div>';
+          return;
+        }
+        var html = '<div class="member-testing-table-scroll"><table class="member-testing-table staff-table"><thead><tr>';
+        STAFF_MAIN_COLUMNS.forEach(function (c) { html += '<th>' + STAFF_COLUMN_LABELS[c] + '</th>'; });
+        html += '</tr></thead><tbody>';
+        rows.forEach(function (r) {
+          html += '<tr>';
+          STAFF_MAIN_COLUMNS.forEach(function (c) {
+            var v = r[c] || '';
+            if (v === '[VERIFY]') {
+              html += '<td><span class="badge badge-verify">[VERIFY]</span></td>';
+            } else {
+              html += '<td>' + escapeHtml(v) + '</td>';
+            }
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        containerEl.innerHTML = html;
+      }
+
+      // ── Shared filter-bar component — one function, instantiated once per
+      // view (Staff Data tab, Arun PH pilot, Paraparan tab). ──
+      function createStaffFilterBar(containerEl, scopeRows, onChange, opts) {
+        if (!containerEl) return { getFilters: function () { return {}; } };
+        opts = opts || {};
+        var teams = opts.lockTeam ? [opts.lockTeam] : uniqueValues(scopeRows, 'department_team');
+        var statuses = ['Active', 'Inactive'];
+        var stages = ['Permanent', 'Probation', 'training_7_day', '[VERIFY]'];
+
+        var html = '<div class="staff-filter-field"><label>Team</label><select class="staff-filter-team"' +
+          (opts.lockTeam ? ' disabled' : '') + '>' +
+          (opts.lockTeam ? '' : '<option value="">All Teams</option>') +
+          teams.map(function (t) {
+            return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) +
+              (opts.lockTeam ? ' (pilot-locked)' : '') + '</option>';
+          }).join('') + '</select></div>';
+
+        html += '<div class="staff-filter-field"><label>Staff Status</label><select class="staff-filter-status">' +
+          '<option value="">All Statuses</option>' +
+          statuses.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') +
+          '</select></div>';
+
+        html += '<div class="staff-filter-field"><label>Employment Stage</label><select class="staff-filter-stage">' +
+          '<option value="">All Stages</option>' +
+          stages.map(function (s) {
+            return '<option value="' + escapeHtml(s) + '">' + escapeHtml(STAGE_DISPLAY_LABELS[s] || s) + '</option>';
+          }).join('') + '</select></div>';
+
+        containerEl.innerHTML = html;
+
+        var teamSel = containerEl.querySelector('.staff-filter-team');
+        var statusSel = containerEl.querySelector('.staff-filter-status');
+        var stageSel = containerEl.querySelector('.staff-filter-stage');
+        if (opts.lockTeam) { teamSel.value = opts.lockTeam; }
+
+        function currentFilters() {
+          return { team: teamSel.value, status: statusSel.value, stage: stageSel.value };
+        }
+        [teamSel, statusSel, stageSel].forEach(function (sel) {
+          sel.addEventListener('change', function () { onChange(currentFilters()); });
+        });
+        return { getFilters: currentFilters };
+      }
+
+      // ── Shared, in-memory-only PH Team KPI pilot state. Arun and Paraparan
+      // read and write the SAME array — there is no per-actor copy. All
+      // business values are [VERIFY]; nothing is invented. Resets on
+      // page refresh (no localStorage, no API, no database). ──
+      var PILOT_KPI_STATE = [
+        { kpi_id: 'SAMPLE-PH-KPI-001', team_code: 'PH', kpi_name: 'Sample PH KPI — YOY Growth', description: '[VERIFY]', target: '[VERIFY]', formula: '[VERIFY]', threshold: '[VERIFY]', evidence_required: '[VERIFY]', status: '[VERIFY]', updated_by: '[VERIFY]' },
+        { kpi_id: 'SAMPLE-PH-KPI-002', team_code: 'PH', kpi_name: 'Sample PH KPI — Individual Staff Net Sales', description: '[VERIFY]', target: '[VERIFY]', formula: '[VERIFY]', threshold: '[VERIFY]', evidence_required: '[VERIFY]', status: '[VERIFY]', updated_by: '[VERIFY]' },
+        { kpi_id: 'SAMPLE-PH-KPI-003', team_code: 'PH', kpi_name: 'Sample PH KPI — Category Profitability', description: '[VERIFY]', target: '[VERIFY]', formula: '[VERIFY]', threshold: '[VERIFY]', evidence_required: '[VERIFY]', status: '[VERIFY]', updated_by: '[VERIFY]' }
+      ];
+      var KPI_FIELDS = ['kpi_id', 'team_code', 'kpi_name', 'description', 'target', 'formula', 'threshold', 'evidence_required', 'status'];
+      var KPI_FIELD_LABELS = {
+        kpi_id: 'KPI ID', team_code: 'Team', kpi_name: 'KPI Name', description: 'Description',
+        target: 'Target', formula: 'Formula', threshold: 'Threshold',
+        evidence_required: 'Evidence Required', status: 'Status'
+      };
+      var KPI_ACTORS = ['arun', 'paraparan'];
+
+      function renderKpiCell(v) {
+        return v === '[VERIFY]' ? '<span class="badge badge-verify">[VERIFY]</span>' : escapeHtml(v);
+      }
+
+      // ── Shared KPI panel component — one function, mounted once for Arun
+      // and once for Paraparan. Both mounts read the same PILOT_KPI_STATE
+      // array, so an "Updated By" change made in either tab is immediately
+      // visible in both — there is no separate Arun-KPI vs Paraparan-KPI data. ──
+      function renderKpiPanel(containerEl, teamCode) {
+        if (!containerEl) return;
+        var rows = PILOT_KPI_STATE.filter(function (k) { return k.team_code === teamCode; });
+        var html = '<div class="member-testing-table-note" data-searchable' +
+          ' data-tags="kpi pilot synthetic verify shared arun paraparan ph team">' +
+          '<span class="member-pill member-pill-sample">Synthetic Technical Pilot — Shared KPI Records</span>' +
+          '<span>Arun and Paraparan share these exact KPI rows — this is the same in-memory data, not a copy. ' +
+          'All formula/target/threshold/evidence values are <span class="badge badge-verify">[VERIFY]</span> — no ' +
+          'real KPI rule has been invented. "Updated By" is audit metadata only and does not create a separate ' +
+          'record. Synthetic technical pilot — changes are not persistent.</span></div>';
+        html += '<div class="member-testing-table-scroll"><table class="member-testing-table kpi-pilot-table"><thead><tr>';
+        KPI_FIELDS.forEach(function (f) { html += '<th>' + KPI_FIELD_LABELS[f] + '</th>'; });
+        html += '<th>Updated By</th></tr></thead><tbody>';
+        rows.forEach(function (k) {
+          html += '<tr data-kpi-id="' + escapeHtml(k.kpi_id) + '">';
+          KPI_FIELDS.forEach(function (f) { html += '<td>' + renderKpiCell(k[f]) + '</td>'; });
+          html += '<td><select class="kpi-actor-select" data-kpi-id="' + escapeHtml(k.kpi_id) + '">' +
+            '<option value="[VERIFY]"' + (k.updated_by === '[VERIFY]' ? ' selected' : '') + '>[VERIFY]</option>' +
+            KPI_ACTORS.map(function (a) {
+              return '<option value="' + a + '"' + (k.updated_by === a ? ' selected' : '') + '>' + a + '</option>';
+            }).join('') + '</select></td></tr>';
+        });
+        html += '</tbody></table></div>';
+        containerEl.innerHTML = html;
+
+        containerEl.querySelectorAll('.kpi-actor-select').forEach(function (sel) {
+          sel.addEventListener('change', function () {
+            var id = sel.getAttribute('data-kpi-id');
+            for (var i = 0; i < PILOT_KPI_STATE.length; i++) {
+              if (PILOT_KPI_STATE[i].kpi_id === id) { PILOT_KPI_STATE[i].updated_by = sel.value; break; }
+            }
+            // Re-render every mounted KPI panel (Arun's and Paraparan's) so
+            // both immediately reflect the shared, updated state.
+            document.querySelectorAll('.kpi-pilot-mount').forEach(function (mount) {
+              renderKpiPanel(mount, mount.getAttribute('data-kpi-team'));
+            });
+          });
+        });
+      }
+
+      // ── Staff Data tab: 3 subtabs + 1 shared filter bar ──
+      function initStaffDataTab() {
+        var panel = document.getElementById('tab-staff-data');
+        if (!panel) return;
+        var filterBarEl = document.getElementById('staff-data-filter-bar');
+        var subtabBtns = panel.querySelectorAll('.staff-subtab-btn');
+        var subpanels = panel.querySelectorAll('.staff-subpanel');
+
+        function classificationFor(key, rows) {
+          if (key === 'current-staff') return classifyCurrentStaff(rows);
+          if (key === 'resigned-staff') return classifyResignedStaff(rows);
+          if (key === 'onboarding-staff') return classifyOnboardingStaff(rows);
+          return rows;
+        }
+
+        function renderAll(filters) {
+          subpanels.forEach(function (sp) {
+            var key = sp.id.replace('staff-subpanel-', '');
+            var base = classificationFor(key, STAFF_DATA_SAMPLE);
+            var filtered = filterStaffRows(base, filters);
+            renderStaffTable(sp.querySelector('.staff-table-container'), filtered);
+          });
+        }
+
+        var filterApi = createStaffFilterBar(filterBarEl, STAFF_DATA_SAMPLE, renderAll);
+
+        subtabBtns.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            subtabBtns.forEach(function (b) {
+              var active = b === btn;
+              b.classList.toggle('active', active);
+              b.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            subpanels.forEach(function (sp) {
+              sp.classList.toggle('active', sp.id === 'staff-subpanel-' + btn.getAttribute('data-staff-subtab'));
+            });
+          });
+        });
+
+        renderAll(filterApi.getFilters());
+      }
+
+      // ── Team-scoped staff + KPI pilot section — used identically by the
+      // Arun PH pilot subsection and the Paraparan tab. One function, two
+      // call sites, no parallel implementations. ──
+      function initTeamScopedStaffPilot(mountEl) {
+        if (!mountEl) return;
+        var teamCode = mountEl.getAttribute('data-team-code') || 'PH';
+        var filterBarEl = mountEl.querySelector('.staff-filter-bar');
+        var tableEl = mountEl.querySelector('.staff-table-container');
+        var kpiMountEl = mountEl.querySelector('.kpi-pilot-mount');
+        var scopeRows = STAFF_DATA_SAMPLE.filter(function (r) { return r.department_team === teamCode; });
+
+        var filterApi = createStaffFilterBar(filterBarEl, scopeRows, function (filters) {
+          renderStaffTable(tableEl, filterStaffRows(scopeRows, filters));
+        }, { lockTeam: teamCode });
+
+        renderStaffTable(tableEl, filterStaffRows(scopeRows, filterApi.getFilters()));
+        renderKpiPanel(kpiMountEl, teamCode);
+      }
+
+      function initStaffDataPilot() {
+        initStaffDataTab();
+        initTeamScopedStaffPilot(document.getElementById('arun-staff-pilot'));
+        initTeamScopedStaffPilot(document.getElementById('paraparan-staff-pilot'));
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initStaffDataPilot);
+      } else {
+        initStaffDataPilot();
       }
 
     }());
