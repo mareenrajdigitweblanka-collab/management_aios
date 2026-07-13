@@ -131,3 +131,26 @@ root-truth: CLAUDE.md — canonical
 | Real browser DevTools console check | **NOT PERFORMED locally** — no browser-automation tool is available in this session, and without live data most of the Staff Table's interactive checklist (sorting, filtering, pagination, drawer, export) cannot be meaningfully exercised locally anyway (every data-dependent view would only show the pre-existing "Could not reach the Staff API" error+Retry state, which is itself expected/correct behavior for an unreachable backend, not a defect) |
 
 **Interactive checklist (Current/Onboarding/Resigned/Arun/Paraparan render; sticky header/column; sort; search; Team/Status/Stage filters; chips/clear-all; pagination; rows-per-page; density; column chooser; drawer; mobile card layout; CSV export; excluded-field absence; console errors):** deferred to the **Live Browser Verification — Production** section below, appended after Phase 8.
+
+---
+
+## Live Browser Verification — Production Closure (2026-07-13)
+
+**Verification date:** 2026-07-13
+**Production URL:** `https://management-aios.vercel.app`
+
+This closes the interactive checklist deferred above. Performed by the user directly in a real browser against the live production deployment (commit `63c8f21`), following the automated (jsdom) and live-API verification already recorded in this file and confirmed independently by the assistant beforehand (default sort order unchanged, excluded PII fields absent from a live 50-row response — see prior sections).
+
+| Check | Result |
+|---|---|
+| Staff table visual check (all 5 views render correctly: Current, Onboarding, Resigned, Arun, Paraparan) | PASS |
+| Sticky header / sticky Employee column | PASS |
+| Details drawer | PASS |
+| Density toggle and column chooser | PASS |
+| Mobile card layout | PASS |
+| CSV export | PASS |
+| Console errors | NONE |
+
+**Cleanup result:** N/A for this file — no synthetic staff rows are ever created (Staff Data is read-only); the synthetic calendar test event created during this closure round (see the calendar validation file) was confirmed removed.
+
+**Final verdict: PASS.** This closes the jsdom-only limitation recorded earlier in this file (items 5, 6, 16, and 20, and the "Manual Browser Verification — Local" section above) — real-browser rendering and console behavior are now confirmed directly on production, not just structurally reviewed.

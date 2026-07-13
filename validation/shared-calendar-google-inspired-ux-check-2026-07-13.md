@@ -133,3 +133,31 @@ The task's rule — "optimistic UI only if rollback on API failure is implemente
 | Real browser DevTools console check | **NOT PERFORMED locally** — no browser-automation tool is available in this session; without a reachable backend, each calendar instance would only show its existing "Could not reach the local schedule API" status message on load (expected behavior for an unreachable backend, not a defect), which limits the value of a local-only console check anyway |
 
 **Interactive checklist (Month/Week/Day/Agenda; Today; Previous/Next; mini date picker; create/edit/delete; drag/drop persistence; resize persistence; refresh persistence; member isolation; mobile usability; console errors) for all five members:** deferred to the **Live Browser Verification — Production** section below, appended after Phase 8.
+
+---
+
+## Live Browser Verification — Production Closure (2026-07-13)
+
+**Verification date:** 2026-07-13
+**Production URL:** `https://management-aios.vercel.app`
+
+This closes the interactive checklist deferred above, in two parts: (1) an assistant-run live-API pass against production immediately after deploy (commit `63c8f21`), and (2) the user's direct real-browser confirmation.
+
+**Part 1 — assistant live-API verification (production `member-schedules` API, `paraparan`):** created a synthetic event (`SYNTH-TEST-VERIFY-DELETE-ME`, confirmed `source_scope` server-forced to `dashboard_testing`) → sent a `PUT` simulating a drag-move (start/end shifted +1hr, duration preserved) → sent a second `PUT` simulating a resize (end extended +30min, start unchanged) → re-fetched the member's list (persistence confirmed, updated values present) → confirmed zero matching events on mayurika/suman/arun/rajiv (member isolation confirmed) → deleted the event and re-confirmed the list was empty again (cleanup confirmed).
+
+**Part 2 — user's real-browser confirmation:**
+
+| Check | Result |
+|---|---|
+| Month/Week/Day/Agenda views | PASS |
+| Mini date navigation | PASS |
+| Mouse drag (actual pointer drag, not API simulation) | PASS |
+| Mouse resize (actual pointer drag on the resize handle) | PASS |
+| Refresh persistence | PASS |
+| Mobile view usability | PASS |
+| Console errors | NONE |
+| Synthetic test event removed | YES |
+
+**Cleanup result:** Confirmed — both the assistant's API-created synthetic event and the user's browser-created synthetic test event were removed; no leftover test data remains on any member's calendar.
+
+**Final verdict: PASS.** This closes the jsdom-only limitation recorded earlier in this file (item 17's mobile/compact-toolbar caveat, item 20, and the "Manual Browser Verification — Local" section above) — real mouse-driven drag/resize, real-browser rendering across all four views, and console behavior are now confirmed directly on production, not just simulated via pointer events in jsdom.
