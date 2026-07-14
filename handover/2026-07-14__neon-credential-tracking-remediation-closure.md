@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: neon-credential-tracking-remediation
-status: PENDING DEPLOYMENT HEALTH VERIFICATION
+status: PASS
 ---
 
 # Handover Closure — Neon Credential Tracking Remediation
@@ -42,15 +42,21 @@ User-confirmed: the local root `.env` has been updated with the new value. YES.
 
 ## Commit Hash
 
-PENDING — recorded after Step 7 commit.
+`647dc2a` — "Stop tracking live database environment file" (3 files: `.env` removed from tracking, `validation/neon-credential-tracking-remediation-check-2026-07-14.md`, this closure file). Pushed to `origin/main`: `fbe15f8..647dc2a main -> main`.
 
 ## Push Result
 
-PENDING.
+Success — no force-push, no rejected refs, standard fast-forward push.
 
 ## Deployment Health Result
 
-PENDING.
+PASS. Vercel auto-deployed both the frontend (`management-aios`) and backend API projects on push to `main` (existing, documented method). Confirmed:
+
+- Frontend `https://management-aios.vercel.app/` → HTTP 200
+- Backend `https://management-aios-api.vercel.app/health` → HTTP 200, `{"status":"ok","service":"management-aios-member-schedules"}`
+- Live schedule-list read (`GET /api/member-schedules/mayurika`) → HTTP 200, 92 items (count only — no titles/notes/content read or recorded)
+
+The successful database read confirms the rotated Neon credential (set in the Vercel `DATABASE_URL` environment variable) authenticates correctly in production. No database writes were performed.
 
 ## Current-History Risk
 
@@ -62,16 +68,16 @@ PENDING SEPARATE APPROVAL — a coordinated history rewrite (e.g. `git filter-re
 
 ## Queryability Result
 
-PENDING — to be confirmed after commit (README/config files must still correctly describe how to obtain `DATABASE_URL` locally, i.e. copy `.env.example` and fill in real values, without a tracked `.env` being required or expected).
+PASS. `backend/README.md` and `.env.example` already correctly describe how to obtain a local `DATABASE_URL` (copy `.env.example` → `.env`, fill in real values) independent of whether `.env` is tracked in Git — no documentation edit was needed. `backend/config.py`/`backend/database.py` read `DATABASE_URL` from the environment only, with a clear `RuntimeError` if unset; nothing in the codebase assumes or requires `.env` to be a tracked file.
 
 ## Blocker Status
 
-None identified yet — pending deployment health check (Step 9) to confirm the rotated credential works end-to-end in production.
+None. Git tracking remediation and deployment health verification are both complete.
 
 ## Next Step
 
-Proceed with commit, push, and deployment health verification (Steps 6–9); update this file with final results.
+Decide, with the user, whether and when to pursue the separately-authorized history rewrite (§"History Rewrite Decision") to remove the old credential from Git history entirely — not urgent given the password rotation, but still an open item for full remediation.
 
 ## PASS/FAIL
 
-PENDING DEPLOYMENT HEALTH VERIFICATION
+PASS
