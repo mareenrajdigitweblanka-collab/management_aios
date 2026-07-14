@@ -1834,6 +1834,18 @@
       min-width: 0;
     }
 
+    /* ── Schedule Summary section (2026-07-14 responsive layout) — lives
+       below the calendar view panes, inside .msc-calendar-content, so it
+       shares that element's full width and is never duplicated per view
+       (Month/Week/Day all share this one section). ── */
+    .msc-summary-section {
+      width: 100%;
+      min-width: 0;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
     /* View panes — one dispatcher shows the active view, others stay in the
        DOM (display:none) so switching views never re-fetches data. */
     .msc-view-pane {
@@ -2009,6 +2021,20 @@
         width: 100%;
       }
 
+      /* .msc-calendar-main's align-items: flex-start only stretches flex
+         items along the row-direction cross axis (vertical). Once
+         flex-direction switches to column above, the cross axis becomes
+         horizontal, and flex-start would let .msc-calendar-content (and
+         the summary section inside it — 2026-07-14 responsive layout)
+         shrink to a fit-content width instead of spanning the stacked
+         column's full width. align-self: stretch overrides that for this
+         one item only, so the calendar and summary both reliably use the
+         full available width when the sidebar stacks above them. */
+      .msc-calendar-content {
+        width: 100%;
+        align-self: stretch;
+      }
+
       .msc-view-switcher {
         width: 100%;
       }
@@ -2109,12 +2135,35 @@
       margin-top: 16px;
     }
 
-    /* ── Schedule Summary (2026-07-14) — reusable daily/weekly
-       scheduled-vs-unscheduled report, shared by every member instance. ── */
+    /* ── Schedule Summary (2026-07-14; responsive layout 2026-07-14) —
+       reusable daily/weekly/monthly scheduled-vs-unscheduled + duration
+       report, shared by every member instance. Lives below the calendar
+       view panes (see .msc-summary-section), so it has the full width of
+       .msc-calendar-content to work with instead of the narrow 220px
+       sidebar it previously sat inside.
+
+       Three-column desktop / two-column medium / one-column narrow is
+       driven by CSS Grid auto-fit against minmax(240px, 1fr): this reads
+       the *actual width of the grid's own container* (.msc-summary-grid
+       itself, which is exactly as wide as .msc-calendar-content) rather
+       than the viewport, so it reflows correctly whether the width change
+       came from a narrower browser window or from the sidebar being open
+       vs. collapsed. No breakpoint hardcodes a column count. */
     .msc-summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 12px;
+      width: 100%;
+    }
+
+    /* Safety net: below this width, minmax(240px, 1fr)'s 240px floor could
+       force the grid wider than its container. A bare 1fr column has no
+       floor, so it always matches the true available width — guaranteeing
+       no horizontal overflow on the narrowest supported windows. */
+    @media (max-width: 480px) {
+      .msc-summary-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
 
     .msc-summary-block {
@@ -2122,21 +2171,33 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 10px 12px;
+      min-width: 0;
     }
 
     .msc-summary-block-title {
-      font-size: .72rem;
+      font-size: .78rem;
       font-weight: 700;
       color: var(--muted-2);
       text-transform: uppercase;
       letter-spacing: .06em;
       margin-bottom: 8px;
+      overflow-wrap: break-word;
+    }
+
+    /* Groups each logical section of a card (counts / percentages /
+       coverage / comparison) with a light divider between groups, so the
+       card reads in clear chunks rather than one undifferentiated list. */
+    .msc-summary-group + .msc-summary-group {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
     }
 
     .msc-summary-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+      align-items: baseline;
+      gap: 4px 10px;
       font-size: .82rem;
       color: var(--text);
       padding: 3px 0;
@@ -2144,6 +2205,26 @@
 
     .msc-summary-row span {
       color: var(--muted);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    .msc-summary-row strong {
+      min-width: 0;
+      text-align: right;
+      overflow-wrap: break-word;
+      font-weight: 600;
+    }
+
+    @media (max-width: 420px) {
+      .msc-summary-row {
+        grid-template-columns: minmax(0, 1fr);
+        text-align: left;
+      }
+
+      .msc-summary-row strong {
+        text-align: left;
+      }
     }
 
     .msc-form-grid {
@@ -5384,10 +5465,17 @@
           '<span class="msc-chip-cat task">Scheduled Task</span>' +
           '<span class="msc-chip-cat followup">Unscheduled Task</span>' +
           '</div>' +
+          '</div>' +
+          '<div class="msc-calendar-content">' +
+          '<div class="msc-cal-grid-wrap">' +
+          '<div class="msc-cal-grid msc-grid msc-view-pane active" data-view-pane="month"></div>' +
+          '<div class="msc-week-grid msc-view-pane" data-view-pane="week"></div>' +
+          '<div class="msc-day-grid msc-view-pane" data-view-pane="day"></div>' +
+          '</div>' +
+          '<div class="msc-summary-section">' +
           '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Summary</div>' +
-          '<p class="msc-note" style="margin:0 0 8px;">Scheduled vs. Unscheduled task counts and durations from the server — ' +
-          'not calculated from only what is currently loaded in the browser. Tasks missing a start or end time are ' +
-          'counted but excluded from duration totals.</p>' +
+          '<p class="msc-note" style="margin:0 0 8px;">Counts and duration totals are calculated by the server. ' +
+          'Tasks missing a start or end time remain in counts but are excluded from duration totals.</p>' +
           '<div class="msc-summary-grid">' +
           '<div class="msc-summary-block">' +
           '<div class="msc-summary-block-title msc-summary-daily-title">Daily</div>' +
@@ -5401,13 +5489,6 @@
           '<div class="msc-summary-block-title msc-summary-monthly-title">Monthly</div>' +
           '<div class="msc-summary-stats msc-summary-monthly"><p class="msc-empty">Select a date to see the summary.</p></div>' +
           '</div>' +
-          '</div>' +
-          '</div>' +
-          '<div class="msc-calendar-content">' +
-          '<div class="msc-cal-grid-wrap">' +
-          '<div class="msc-cal-grid msc-grid msc-view-pane active" data-view-pane="month"></div>' +
-          '<div class="msc-week-grid msc-view-pane" data-view-pane="week"></div>' +
-          '<div class="msc-day-grid msc-view-pane" data-view-pane="day"></div>' +
           '</div>' +
           '</div>' +
           '</div>' +
@@ -6116,16 +6197,28 @@
            across all five member instances via this one factory function;
            no member-specific logic. ── */
         function renderSummaryStats(el, report) {
+          /* Grouped into four .msc-summary-group sections (counts,
+             percentages, coverage, comparison) purely for visual structure
+             (2026-07-14 responsive layout) — every field, label, and value
+             is unchanged from before; only the wrapping markup differs. */
           el.innerHTML =
+            '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Scheduled</span><strong>' + report.scheduled_count + ' task(s) &middot; ' + formatDuration(report.scheduled_duration_minutes) + '</strong></div>' +
             '<div class="msc-summary-row"><span>Unscheduled</span><strong>' + report.unscheduled_count + ' task(s) &middot; ' + formatDuration(report.unscheduled_duration_minutes) + '</strong></div>' +
             '<div class="msc-summary-row"><span>Total</span><strong>' + report.total_count + ' task(s) &middot; ' + formatDuration(report.total_duration_minutes) + '</strong></div>' +
+            '</div>' +
+            '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Count %</span><strong>' + report.scheduled_percentage + '% / ' + report.unscheduled_percentage + '%</strong></div>' +
             '<div class="msc-summary-row"><span>Time %</span><strong>' + formatDurationPercentage(report.scheduled_duration_percentage) + ' / ' + formatDurationPercentage(report.unscheduled_duration_percentage) + '</strong></div>' +
+            '</div>' +
+            '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Duration used</span><strong>' + report.total_duration_used_task_count + '</strong></div>' +
             '<div class="msc-summary-row"><span>Duration ignored</span><strong>' + report.total_duration_ignored_task_count + '</strong></div>' +
+            '</div>' +
+            '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Scheduled vs. previous</span><strong>' + formatChange(report.scheduled_duration_change) + '</strong></div>' +
-            '<div class="msc-summary-row"><span>Unscheduled vs. previous</span><strong>' + formatChange(report.unscheduled_duration_change) + '</strong></div>';
+            '<div class="msc-summary-row"><span>Unscheduled vs. previous</span><strong>' + formatChange(report.unscheduled_duration_change) + '</strong></div>' +
+            '</div>';
         }
 
         function loadDailySummary(dateStr) {
