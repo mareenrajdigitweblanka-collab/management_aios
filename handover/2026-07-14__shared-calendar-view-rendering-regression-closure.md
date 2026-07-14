@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: shared-calendar-view-rendering-regression
-status: PENDING — fix implemented and code-validated; commit/push/deploy/live verification steps follow in this same session
+status: PASS — committed, pushed, deployed, and post-deploy live-artifact verification confirmed. Interactive human visual click-through on the live site remains an open follow-up (sandbox tooling limitation, not a code defect).
 ---
 
 # Handover Closure — Shared Calendar View Rendering Regression Fix
@@ -37,15 +37,18 @@ This conflict predates the Phase 1 layout-shell change (introduced 2026-07-13 al
 
 ## Commit
 
-*(filled in below after commit)*
+`fc199b3` — "Fix shared calendar view rendering" (3 files: `web-view/index.html`, this handover file, the validation file). Pushed to `origin/main`: `c4e832e..fc199b3`.
 
 ## Deployment
 
-*(filled in below after push + deploy verification)*
+- Frontend: `https://management-aios.vercel.app/` — HTTP 200. Raw HTML fetched via `curl` and diffed byte-for-byte against the committed `web-view/index.html` — **zero-line diff**, confirming the live deployment is exactly commit `fc199b3`.
+- Backend: `https://management-aios-api.vercel.app/health` — HTTP 200. `GET /openapi.json` re-confirmed the schedule API surface is unchanged (same 5 routes as before this fix) — independently proves the backend was not touched.
 
 ## Live Verification
 
-*(filled in below after live verification)*
+Deployed HTML confirmed (via raw `curl` + grep, not a markdown-converting fetch) to contain the fixed `.msc-cal-grid.active` CSS rule and the `renderActiveView()` defensive-fallback guard, each exactly once (single shared factory/stylesheet, as expected). `data-view="agenda"` and `msc-agenda-list` confirmed still absent. Full detail: `validation/shared-calendar-view-rendering-regression-check-2026-07-14.md` "Deployment and Post-Deploy Live-Artifact Verification" section.
+
+**Not performed:** an actual human/browser visual look at the rendered Month grid and Week/Day panes — this sandbox has no working browser-driving tool and live DB/browser egress is blocked, the same constraint documented in the Phase 1 closure. The deployment-artifact check above (byte-identical live HTML containing the exact fixed rule, plus an unchanged backend route surface) is the strongest verification available in this environment, but it is a code/artifact check, not a rendered-pixel check — flagged honestly rather than conflated with a visual confirmation.
 
 ## Queryability
 
@@ -61,4 +64,4 @@ Human visual confirmation of Month/Week/Day rendering on the live site at the ne
 
 ## PASS / FAIL
 
-*(filled in below after deployment verification)*
+**PASS.** Committed, pushed, deployed, and deployment-artifact-verified. Root cause was identified precisely, the fix is minimal and targeted (no Phase 2 scope creep), and both reported symptoms are resolved by construction per the CSS cascade analysis. Follow-up: human visual click-through on the live site at the next opportunity (see Blocker/Next Step).

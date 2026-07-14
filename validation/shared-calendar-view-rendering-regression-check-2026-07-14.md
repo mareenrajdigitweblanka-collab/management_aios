@@ -2,7 +2,7 @@
 name: shared-calendar-view-rendering-regression-check
 type: validation
 created: 2026-07-14
-status: PASS — code-level review, static structural validation, JS syntax check, plus post-deploy live-artifact verification (pending final commit hash, filled in during Step 21 evidence update)
+status: PASS — code-level review, static structural validation, JS syntax check, plus post-deploy live-artifact verification (commit fc199b3, deployed and confirmed byte-identical)
 source-boundary: web-view/index.html (shared member-schedule calendar factory) only. backend/routers/member_schedules.py, backend/schemas.py, backend/models.py, backend/config.py, backend/main.py, database/*, member-aios/mayurika-hr/staff-data/ — all read-confirmed unchanged, not touched.
 root-truth: CLAUDE.md — canonical
 ---
@@ -119,6 +119,16 @@ Interactive browser automation was not available in this sandbox for the same do
 - **Post-deploy byte-identity + live raw-HTML grep verification** — performed after push, documented in the Deployment section below and in the handover file, following the same method that already proved reliable in Phase 1 (curl the raw deployed HTML, diff byte-for-byte against the committed file, grep for the specific fixed CSS rule).
 
 This is a narrower, purely mechanical CSS fix compared to Phase 1's structural markup change, so hand-verified cascade math plus a byte-identical deployed-artifact check is considered adequate confidence for this specific class of fix; a human visual click-through remains the one recommended follow-up, consistent with the still-open Phase 1 item.
+
+## Deployment and Post-Deploy Live-Artifact Verification
+
+Commit `fc199b3` ("Fix shared calendar view rendering") pushed to `origin/main` (`c4e832e..fc199b3`).
+
+- **Backend** (`https://management-aios-api.vercel.app/health`) — HTTP 200, `{"status":"ok",...}`. `GET /openapi.json` re-confirmed the same 5 schedule routes as before this fix — no backend change, as required.
+- **Frontend** (`https://management-aios.vercel.app/`) — HTTP 200. Raw HTML fetched via `curl` and diffed byte-for-byte (line-ending-normalized) against the committed `web-view/index.html` — **zero-line diff**. The live deployment is confirmed to be exactly commit `fc199b3`.
+- Deployed HTML confirmed to contain `.msc-cal-grid.active` (the new specificity-fixed rule) and `state.currentView !== 'month'` (the defensive-fallback guard) — 1 occurrence each, as expected for a single shared factory/stylesheet. `data-view="agenda"`/`msc-agenda-list` — 0 occurrences, confirmed still absent.
+
+This confirms the exact, already-validated fix is genuinely live in production, with the backend surface independently re-confirmed unchanged. As in Phase 1, this does not substitute for a human looking at the rendered page — that remains the one open follow-up, carried honestly rather than assumed.
 
 ## Known Limits
 
