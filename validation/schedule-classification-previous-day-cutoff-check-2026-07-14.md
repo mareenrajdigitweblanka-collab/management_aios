@@ -2,7 +2,7 @@
 name: schedule-classification-previous-day-cutoff-check
 type: validation
 created: 2026-07-14
-status: PASS — 24/24 unit tests pass; deployment and live-API results appended in Step 21 update below
+status: PASS — 24/24 unit tests pass; commit 8b04476 deployed and confirmed; 7/7 live API scenarios confirmed against production; test records cleaned up
 source-boundary: backend/routers/member_schedules.py, backend/tests/test_schedule_classification.py only. web-view/index.html, database/member_schedule_events_schema.sql, database/migrations/, historical validation/handover files — all read-confirmed unchanged, not touched.
 root-truth: CLAUDE.md — canonical
 ---
@@ -152,6 +152,33 @@ Weekday claims for #12/#13 were independently verified (`date(2026,7,20).strftim
 
 **Unaffected coverage kept as-is (confirmed no change needed):** `PercentageTests` (4 tests) and `CreateSchemaCategoryTests` (4 tests) — neither touches classification timing logic; category immutability, invalid-category rejection, and daily/weekly percentage math were not weakened.
 
+## Deployment and Live API Validation (Steps 19–20)
+
+Commit `8b04476` ("Update schedule classification cutoff rule") pushed to `origin/main` (`6ce6ca2..8b04476`).
+
+- **Backend** (`https://management-aios-api.vercel.app/health`) — HTTP 200, `{"status":"ok",...}`.
+- **Frontend** (`https://management-aios.vercel.app/`) — HTTP 200 (no frontend change expected or made).
+
+Live API validation was run against the deployed backend using disposable `dashboard_testing` records under the `rajiv` member key. The actual Asia/Colombo "today" at execution time (2026-07-14) was independently computed via a `zoneinfo` script immediately before constructing test payloads, rather than assumed, to avoid a timing-drift error. All 7 required scenarios were exercised as real HTTP requests against the live, deployed classifier (not a mock):
+
+| # | Scenario | Request | Live result | Expected | Match |
+|---|---|---|---|---|---|
+| 1 | Future-date event, requested Scheduled | `POST` date=2026-07-24, category=Scheduled Task | `"category":"Scheduled Task"` | Scheduled | YES |
+| 2 | Same-day event, requested Scheduled | `POST` date=2026-07-14, category=Scheduled Task | `"category":"Unscheduled Task"` | Unscheduled | YES |
+| 3 | Future-date event, requested Unscheduled | `POST` date=2026-07-24, category=Unscheduled Task | `"category":"Unscheduled Task"` | Unscheduled | YES |
+| 4 | Same-day untimed event, requested Scheduled | `POST` date=2026-07-14, no start/end, category=Scheduled Task | `"category":"Unscheduled Task"` | Unscheduled | YES |
+| 5 | Future untimed event, requested Scheduled | `POST` date=2026-07-24, no start/end, category=Scheduled Task | `"category":"Scheduled Task"` | Scheduled | YES |
+| 6 | PUT category-change attempt (on #1's Scheduled row, to Unscheduled) | `PUT` category=Unscheduled Task | HTTP 422, `{"detail":"Task category is permanent after creation."}` | 422 | YES |
+| 7 | Date edit (on #3's Unscheduled row) | `PUT` date=2026-07-25 (no category field sent) | Response `"category":"Unscheduled Task"` (unchanged) | Original category retained | YES |
+
+**7/7 live scenarios matched the expected result exactly**, confirming the deployed code (not just the local unit tests) behaves per the approved rule.
+
+As anticipated in Known Limits below, exact-midnight (11:59 PM / 12:00 AM) boundary timing could not be reproduced live, since the server — not the caller — generates `created_at`; that boundary is covered by unit tests #1–#4 instead (§ Tests Executed), which do control the instant precisely.
+
+## Cleanup
+
+All 5 records created during live validation were deleted individually by their returned `id` via `DELETE /api/member-schedules/rajiv/{event_id}` (HTTP 200, `"deleted":true` for each) — **not** via the bulk `clear-testing-data` endpoint, specifically to avoid deleting any pre-existing `dashboard_testing` rows Rajiv's calendar may already legitimately contain from real use. A post-cleanup `GET` on the same member confirmed zero remaining records matching the `CUTOFF-TEST` title prefix used for these records. No existing user record was read, updated, or deleted at any point.
+
 ## Known Limits
 
 - Live boundary timing (e.g. creating a real row at exactly 12:00:00 AM Asia/Colombo via the live API) cannot be reproduced through the deployed API, since the server — not the test caller — generates `created_at`. Per instruction, this is covered by the deterministic unit tests above instead, and the live API validation (Step 20, appended below) covers functional correctness (category is right on ordinary future-dated and same-day creates) rather than exact-midnight timing.
@@ -159,4 +186,4 @@ Weekday claims for #12/#13 were independently verified (`date(2026,7,20).strftim
 
 ## PASS / FAIL
 
-**PASS** at the unit-test/code level: 24/24 tests pass, the new rule matches every confirmed detail and boundary example, the update flow and immutability lock are provably untouched, no database or frontend file was modified, and the 145 existing rows are provably unreachable by this change. Deployment and live-API results are appended below after Step 21.
+**PASS.** 24/24 unit tests pass; the new rule matches every confirmed detail and boundary example; the update flow and immutability lock are provably untouched; no database or frontend file was modified; the 145 existing rows are provably unreachable by this change; commit `8b04476` is deployed and both frontend and backend respond HTTP 200; and 7/7 live API scenarios against the deployed production backend matched the expected result exactly, with all disposable test records cleaned up and zero existing user records touched.

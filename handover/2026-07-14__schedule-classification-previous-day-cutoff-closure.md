@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: schedule-classification-previous-day-cutoff
-status: PENDING — implementation complete and unit-tested; commit/push/deploy/live-verification steps follow in this same session
+status: PASS — committed, pushed, deployed, and live-verified against production with 7/7 matching scenarios; all disposable test records cleaned up
 ---
 
 # Handover Closure — Schedule Classification Previous-Day Cutoff Rule
@@ -52,15 +52,25 @@ def classify_schedule_category(requested_category, event_date, created_at):
 
 ## Deployment Result
 
-*(filled in below after push + deploy verification)*
+Frontend `https://management-aios.vercel.app/` — HTTP 200 (no frontend change expected or made). Backend `https://management-aios-api.vercel.app/health` — HTTP 200, `{"status":"ok",...}`.
 
 ## Live API Result
 
-*(filled in below after live verification)*
+All 7 required live scenarios (Step 20) run as real HTTP requests against the deployed production backend under the `rajiv` member key, using disposable `dashboard_testing` records with an identifiable `CUTOFF-TEST-` title prefix:
+
+1. Future-date, requested Scheduled → stored Scheduled — MATCH
+2. Same-day, requested Scheduled → stored Unscheduled — MATCH
+3. Future-date, requested Unscheduled → stored Unscheduled — MATCH
+4. Same-day untimed, requested Scheduled → stored Unscheduled — MATCH
+5. Future untimed, requested Scheduled → stored Scheduled — MATCH
+6. PUT category-change attempt → HTTP 422 `"Task category is permanent after creation."` — MATCH
+7. PUT date-only edit → category unchanged in response — MATCH
+
+**7/7 matched.** All 5 created records were deleted individually by ID afterward (not via the bulk `clear-testing-data` endpoint, to avoid touching any pre-existing legitimate `dashboard_testing` rows for that member); a post-cleanup `GET` confirmed zero `CUTOFF-TEST` records remain. No existing user record was read, updated, or deleted. Full request/response detail in the validation file.
 
 ## Commit
 
-*(filled in below after commit)*
+`8b04476` — "Update schedule classification cutoff rule" (4 files: `backend/routers/member_schedules.py`, `backend/tests/test_schedule_classification.py`, this handover file, the validation file). Pushed to `origin/main`: `6ce6ca2..8b04476`.
 
 ## Queryability Result
 
@@ -72,8 +82,8 @@ No technical blocker.
 
 ## Next Step
 
-Proceed to Steps 16–21: diff review, staged commit/push, deployment verification, and live API validation using disposable test records only (cleaned up afterward).
+None required for this rule change itself — it is closed. Broader next step for the wider project: resume Phase 2 (Month/Week/Day visual redesign) per the earlier discovery report's phased plan, unrelated to this classification change.
 
 ## PASS / FAIL
 
-*(filled in below after deployment and live verification)*
+**PASS.** Implemented, unit-tested (24/24), committed, pushed, deployed, and live-verified against production (7/7 scenarios matched), with cleanup confirmed and zero existing data touched.
