@@ -1721,14 +1721,59 @@
       color: #fff;
     }
 
-    .msc-cal-body-layout {
+    /* ── Shared calendar layout shell (Phase 1, 2026-07-14) ── */
+    .msc-calendar-shell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msc-calendar-header {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msc-calendar-main {
       display: flex;
       gap: 16px;
       align-items: flex-start;
     }
 
+    .msc-sidebar {
+      flex: 0 0 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      background: var(--surface);
+    }
+
+    .msc-sidebar.collapsed {
+      display: none;
+    }
+
+    .msc-sidebar-toggle {
+      font-size: .9rem;
+      line-height: 1;
+    }
+
+    .msc-sidebar-create {
+      width: 100%;
+    }
+
+    .msc-category-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .msc-calendar-content {
+      flex: 1;
+      min-width: 0;
+    }
+
     .msc-mini-picker {
-      flex: 0 0 200px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 8px;
@@ -1955,62 +2000,12 @@
     .msc-tg-allday-chip.followup { background: #d97706; }
     .msc-tg-allday-chip.planning { background: #059669; }
 
-    /* ── Agenda view ── */
-    .msc-agenda-day {
-      margin-bottom: 16px;
-    }
-
-    .msc-agenda-day-heading {
-      font-size: .78rem;
-      font-weight: 700;
-      color: var(--text);
-      padding-bottom: 4px;
-      margin-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .msc-agenda-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--hairline);
-      flex-wrap: wrap;
-    }
-
-    .msc-agenda-item-time {
-      font-size: .7rem;
-      color: var(--muted);
-      min-width: 90px;
-    }
-
-    .msc-agenda-item-main {
-      flex: 1;
-      font-size: .78rem;
-      color: var(--text);
-    }
-
-    .msc-agenda-item-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .msc-agenda-item-actions button {
-      border: 1px solid var(--border);
-      background: var(--surface);
-      border-radius: 4px;
-      font-size: .68rem;
-      padding: 3px 8px;
-      cursor: pointer;
-    }
-
     @media (max-width: 640px) {
-      .msc-cal-body-layout {
+      .msc-calendar-main {
         flex-direction: column;
       }
 
-      .msc-mini-picker {
-        flex: 1 1 auto;
+      .msc-sidebar {
         width: 100%;
       }
 
@@ -5287,12 +5282,16 @@
            same rule the rest of this factory already follows) so the view
            modal's aria-labelledby target is valid for every member tab. */
         var viewTitleId = 'msc-view-title-' + memberKey;
+        /* Same per-instance-unique-id rule, used for the sidebar toggle's
+           aria-controls target (Phase 1 layout shell, 2026-07-14). */
+        var sidebarId = 'msc-sidebar-' + memberKey;
 
         var rajivNoteHtml = showRajivNote
           ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
           : '';
 
         container.innerHTML =
+          '<div class="msc-calendar-shell">' +
           '<div class="msc-banner">' +
           '<span class="msc-banner-icon" aria-hidden="true">&#9888;&#65039;</span>' +
           '<div><strong>Testing Preview Only</strong> — stored through local FastAPI/PostgreSQL backend for ' +
@@ -5306,8 +5305,11 @@
           '<p class="msc-note msc-api-status" style="display:none;"></p>' +
           rajivNoteHtml +
           '<div class="hr-table-card">' +
+          '<div class="msc-calendar-header">' +
           '<div class="msc-cal-toolbar">' +
           '<div class="msc-cal-toolbar-btns">' +
+          '<button type="button" class="msc-tool-btn msc-sidebar-toggle" aria-expanded="true" ' +
+          'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar">&#9776;</button>' +
           '<button type="button" class="msc-tool-btn msc-prev" aria-label="Previous">&larr; Previous</button>' +
           '<button type="button" class="msc-tool-btn msc-today">Today</button>' +
           '<button type="button" class="msc-tool-btn msc-next" aria-label="Next">Next &rarr;</button>' +
@@ -5317,16 +5319,37 @@
           '<button type="button" class="msc-view-btn active" data-view="month" aria-pressed="true">Month</button>' +
           '<button type="button" class="msc-view-btn" data-view="week" aria-pressed="false">Week</button>' +
           '<button type="button" class="msc-view-btn" data-view="day" aria-pressed="false">Day</button>' +
-          '<button type="button" class="msc-view-btn" data-view="agenda" aria-pressed="false">Agenda</button>' +
           '</div>' +
           '</div>' +
-          '<div class="msc-cal-body-layout">' +
+          '</div>' +
+          '<div class="msc-calendar-main">' +
+          '<div class="msc-sidebar" id="' + escapeHtml(sidebarId) + '">' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-sidebar-create">Create task</button>' +
           '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
+          '<div class="msc-category-legend" aria-label="Task category legend">' +
+          '<span class="msc-chip-cat task">Scheduled Task</span>' +
+          '<span class="msc-chip-cat followup">Unscheduled Task</span>' +
+          '</div>' +
+          '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Summary</div>' +
+          '<p class="msc-note" style="margin:0 0 8px;">Scheduled vs. Unscheduled task counts from the server — ' +
+          'not calculated from only what is currently loaded in the browser.</p>' +
+          '<div class="msc-summary-grid">' +
+          '<div class="msc-summary-block">' +
+          '<div class="msc-summary-block-title msc-summary-daily-title">Daily</div>' +
+          '<div class="msc-summary-stats msc-summary-daily"><p class="msc-empty">Select a date to see the summary.</p></div>' +
+          '</div>' +
+          '<div class="msc-summary-block">' +
+          '<div class="msc-summary-block-title msc-summary-weekly-title">Weekly</div>' +
+          '<div class="msc-summary-stats msc-summary-weekly"><p class="msc-empty">Select a date to see the summary.</p></div>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="msc-calendar-content">' +
           '<div class="msc-cal-grid-wrap">' +
           '<div class="msc-cal-grid msc-grid msc-view-pane active" data-view-pane="month"></div>' +
           '<div class="msc-week-grid msc-view-pane" data-view-pane="week"></div>' +
           '<div class="msc-day-grid msc-view-pane" data-view-pane="day"></div>' +
-          '<div class="msc-agenda-list msc-view-pane" data-view-pane="agenda"></div>' +
+          '</div>' +
           '</div>' +
           '</div>' +
           '</div>' +
@@ -5364,21 +5387,6 @@
           '<div class="msc-list"><p class="msc-empty">Select a date on the calendar to see schedule items.</p></div>' +
           '</div>' +
           '<div class="msc-list-card">' +
-          '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Summary</div>' +
-          '<p class="msc-note" style="margin:0 0 8px;">Scheduled vs. Unscheduled task counts from the server — ' +
-          'not calculated from only what is currently loaded in the browser.</p>' +
-          '<div class="msc-summary-grid">' +
-          '<div class="msc-summary-block">' +
-          '<div class="msc-summary-block-title msc-summary-daily-title">Daily</div>' +
-          '<div class="msc-summary-stats msc-summary-daily"><p class="msc-empty">Select a date to see the summary.</p></div>' +
-          '</div>' +
-          '<div class="msc-summary-block">' +
-          '<div class="msc-summary-block-title msc-summary-weekly-title">Weekly</div>' +
-          '<div class="msc-summary-stats msc-summary-weekly"><p class="msc-empty">Select a date to see the summary.</p></div>' +
-          '</div>' +
-          '</div>' +
-          '</div>' +
-          '<div class="msc-list-card">' +
           '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
           '<p class="msc-note" style="margin:0 0 8px;">Ranks today\'s sample items High → Medium → Low, styled ' +
           'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
@@ -5402,6 +5410,7 @@
           '<p class="msc-view-priority"></p>' +
           '<p class="msc-view-notes"></p>' +
           '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
+          '</div>' +
           '</div>' +
           '</div>';
 
@@ -5445,11 +5454,36 @@
         var miniPickerEl = container.querySelector('.msc-mini-picker');
         var weekGridEl = container.querySelector('.msc-week-grid');
         var dayGridEl = container.querySelector('.msc-day-grid');
-        var agendaEl = container.querySelector('.msc-agenda-list');
+        var sidebarEl = container.querySelector('.msc-sidebar');
+        var sidebarToggleBtn = container.querySelector('.msc-sidebar-toggle');
+        var sidebarCreateBtn = container.querySelector('.msc-sidebar-create');
+        var formCardEl = container.querySelector('.msc-form-card');
 
         /* Prevent Enter-key implicit form submission from reloading the page —
            no action/method is set on this form; it is never meant to submit. */
         formEl.addEventListener('submit', function (e) { e.preventDefault(); });
+
+        /* ── Sidebar toggle (Phase 1 layout shell, 2026-07-14) — collapses
+           only this instance's own sidebar; each of the 5 mounted calendars
+           keeps an independent collapsed/expanded state. ── */
+        var sidebarCollapsed = false;
+        sidebarToggleBtn.addEventListener('click', function () {
+          sidebarCollapsed = !sidebarCollapsed;
+          if (sidebarCollapsed && sidebarEl.contains(document.activeElement)) {
+            sidebarToggleBtn.focus();
+          }
+          sidebarEl.classList.toggle('collapsed', sidebarCollapsed);
+          sidebarToggleBtn.setAttribute('aria-expanded', sidebarCollapsed ? 'false' : 'true');
+        });
+
+        /* Phase 1 "Create task" is a scroll/focus shortcut to the existing
+           persistent form — no popup yet (deferred to a later phase). */
+        sidebarCreateBtn.addEventListener('click', function () {
+          if (formCardEl && formCardEl.scrollIntoView) {
+            formCardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          if (fieldTitle && fieldTitle.focus) { fieldTitle.focus(); }
+        });
 
         var state = {
           viewYear: null, viewMonth: null, selectedDate: null, editingId: null,
@@ -5817,60 +5851,6 @@
           return DAY_NAMES_FULL[d.getDay()] + ', ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
         }
 
-        function renderAgendaView() {
-          var y = state.viewYear, m = state.viewMonth;
-          var grouped = {};
-          items.forEach(function (it) {
-            var d = parseDateStr(it.date);
-            if (d.getFullYear() === y && d.getMonth() === m) {
-              (grouped[it.date] = grouped[it.date] || []).push(it);
-            }
-          });
-          var dateKeys = Object.keys(grouped).sort();
-          if (!dateKeys.length) {
-            agendaEl.innerHTML = '<p class="msc-empty">No sample schedule items in ' + MONTH_NAMES[m] + ' ' + y + '.</p>';
-            return;
-          }
-          var html = '';
-          dateKeys.forEach(function (dateStr) {
-            var dayItems = grouped[dateStr].slice().sort(function (a, b) {
-              return timeToMinutes(a.start) - timeToMinutes(b.start);
-            });
-            html += '<div class="msc-agenda-day"><div class="msc-agenda-day-heading">' +
-              formatAgendaDate(dateStr) + '</div>';
-            dayItems.forEach(function (it) {
-              var catClass = CATEGORY_CLASS[it.category] || 'task';
-              var priority = it.priority || 'Medium';
-              var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
-              var timeStr = (it.start || it.end) ? (it.start || '?') + '–' + (it.end || '?') : 'All day';
-              html += '<div class="msc-agenda-item" data-id="' + it.id + '">' +
-                '<div class="msc-agenda-item-time">' + escapeHtml(timeStr) + '</div>' +
-                '<div class="msc-agenda-item-main"><span class="badge ' + badgeClass + '">' + escapeHtml(priority) +
-                '</span> <span class="msc-chip-cat ' + catClass + '">' + escapeHtml(it.category) + '</span> ' +
-                escapeHtml(it.title) + '</div>' +
-                '<div class="msc-agenda-item-actions">' +
-                '<button type="button" data-action="edit" data-id="' + it.id + '">Edit</button>' +
-                '<button type="button" data-action="delete" data-id="' + it.id + '">Delete</button>' +
-                '</div></div>';
-            });
-            html += '</div>';
-          });
-          agendaEl.innerHTML = html;
-
-          agendaEl.querySelectorAll('button[data-action]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-              var action = btn.getAttribute('data-action');
-              var id = btn.getAttribute('data-id');
-              if (action === 'edit') {
-                var it = items.filter(function (x) { return x.id === id; })[0];
-                if (it) { selectDate(it.date); editItem(id); }
-              } else if (action === 'delete') {
-                deleteItem(id);
-              }
-            });
-          });
-        }
-
         /* ── Mini date-navigation picker — reuses buildMonthGridCells so
            month-grid math is defined exactly once. Navigates whichever view
            is currently active, not just Month. ── */
@@ -5894,7 +5874,7 @@
         }
 
         function updateHeading() {
-          if (state.currentView === 'month' || state.currentView === 'agenda') {
+          if (state.currentView === 'month') {
             monthHeading.textContent = MONTH_NAMES[state.viewMonth] + ' ' + state.viewYear;
           } else if (state.currentView === 'week') {
             var days = getWeekDays(state.anchorDate);
@@ -5914,7 +5894,7 @@
         }
 
         /* ── Single dispatcher every nav/CRUD/view-switch path calls instead
-           of a view-specific render function — keeps Month/Week/Day/Agenda,
+           of a view-specific render function — keeps Month/Week/Day,
            the mini-picker, and the heading always in sync with state. ── */
         function renderActiveView() {
           container.querySelectorAll('.msc-view-pane').forEach(function (p) {
@@ -5923,8 +5903,7 @@
           updateHeading();
           if (state.currentView === 'month') { renderMonthView(); }
           else if (state.currentView === 'week') { renderTimeGrid(weekGridEl, getWeekDays(state.anchorDate)); }
-          else if (state.currentView === 'day') { renderTimeGrid(dayGridEl, [state.anchorDate]); }
-          else { renderAgendaView(); }
+          else { renderTimeGrid(dayGridEl, [state.anchorDate]); }
           renderMiniPicker();
         }
 
@@ -5937,7 +5916,7 @@
         });
 
         prevBtn.addEventListener('click', function () {
-          if (state.currentView === 'month' || state.currentView === 'agenda') {
+          if (state.currentView === 'month') {
             state.viewMonth--;
             if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
           } else if (state.currentView === 'week') {
@@ -5948,7 +5927,7 @@
           renderActiveView();
         });
         nextBtn.addEventListener('click', function () {
-          if (state.currentView === 'month' || state.currentView === 'agenda') {
+          if (state.currentView === 'month') {
             state.viewMonth++;
             if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
           } else if (state.currentView === 'week') {
@@ -6272,15 +6251,16 @@
            data is created automatically — the list stays empty (and the calendar
            shows no chips) until the user manually adds an item, so mounting this
            instance never writes a row to PostgreSQL by itself. Narrow screens
-           default to Agenda (no hourly grid to scroll horizontally, and more
-           information-dense than Day on a small viewport); desktop keeps the
-           original Month default unchanged. */
+           default to Day (Agenda was removed in the Phase 1 layout-shell
+           redesign, 2026-07-14; Day has no horizontal-scroll grid and is the
+           most information-dense single-column view without it); desktop
+           keeps the original Month default unchanged. */
         var t0 = new Date();
         state.viewYear = t0.getFullYear();
         state.viewMonth = t0.getMonth();
         state.anchorDate = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate());
         if (typeof window !== 'undefined' && window.innerWidth && window.innerWidth <= 640) {
-          state.currentView = 'agenda';
+          state.currentView = 'day';
         }
         syncViewSwitcherButtons();
         renderActiveView();
