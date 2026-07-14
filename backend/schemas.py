@@ -114,7 +114,19 @@ class HealthResponse(BaseModel):
     service: str
 
 
+class DurationChangeOut(BaseModel):
+    """Previous-vs-current comparison for one category's duration.
+    percentage is null exactly when direction is 'not_applicable'
+    (previous == current == 0) — see backend/routers/member_schedules.py
+    _duration_change()."""
+
+    percentage: Optional[float] = None
+    direction: Literal["increase", "decrease", "unchanged", "not_applicable"]
+
+
 class DailyScheduleReportOut(BaseModel):
+    # --- Existing fields (2026-07-14 and earlier) — preserved verbatim,
+    # count-based, unchanged meaning. Do not repoint these to duration. ---
     member_key: str
     date: date_type
     scheduled_count: int
@@ -123,8 +135,37 @@ class DailyScheduleReportOut(BaseModel):
     scheduled_percentage: int
     unscheduled_percentage: int
 
+    # --- New: duration metrics (2026-07-14 duration reporting) ---
+    scheduled_duration_minutes: int
+    unscheduled_duration_minutes: int
+    total_duration_minutes: int
+
+    scheduled_duration_used_task_count: int
+    unscheduled_duration_used_task_count: int
+    total_duration_used_task_count: int
+
+    scheduled_duration_ignored_task_count: int
+    unscheduled_duration_ignored_task_count: int
+    total_duration_ignored_task_count: int
+
+    # Null when total_duration_minutes == 0 (no valid duration to divide by).
+    scheduled_duration_percentage: Optional[float] = None
+    unscheduled_duration_percentage: Optional[float] = None
+
+    # --- New: previous-period comparison ---
+    previous_period_start: date_type
+    previous_period_end: date_type
+
+    previous_scheduled_duration_minutes: int
+    previous_unscheduled_duration_minutes: int
+    previous_total_duration_minutes: int
+
+    scheduled_duration_change: DurationChangeOut
+    unscheduled_duration_change: DurationChangeOut
+
 
 class WeeklyScheduleReportOut(BaseModel):
+    # --- Existing fields — preserved verbatim, count-based. ---
     member_key: str
     week_start: date_type
     week_end: date_type
@@ -133,6 +174,75 @@ class WeeklyScheduleReportOut(BaseModel):
     total_count: int
     scheduled_percentage: int
     unscheduled_percentage: int
+
+    # --- New: duration metrics ---
+    scheduled_duration_minutes: int
+    unscheduled_duration_minutes: int
+    total_duration_minutes: int
+
+    scheduled_duration_used_task_count: int
+    unscheduled_duration_used_task_count: int
+    total_duration_used_task_count: int
+
+    scheduled_duration_ignored_task_count: int
+    unscheduled_duration_ignored_task_count: int
+    total_duration_ignored_task_count: int
+
+    scheduled_duration_percentage: Optional[float] = None
+    unscheduled_duration_percentage: Optional[float] = None
+
+    # --- New: previous-period comparison ---
+    previous_period_start: date_type
+    previous_period_end: date_type
+
+    previous_scheduled_duration_minutes: int
+    previous_unscheduled_duration_minutes: int
+    previous_total_duration_minutes: int
+
+    scheduled_duration_change: DurationChangeOut
+    unscheduled_duration_change: DurationChangeOut
+
+
+class MonthlyScheduleReportOut(BaseModel):
+    """New report (2026-07-14 duration reporting). No count-based
+    predecessor exists for monthly, so all fields use the duration-report
+    naming introduced here — there is nothing legacy to preserve."""
+
+    member_key: str
+    month: str  # "YYYY-MM"
+    month_start: date_type
+    month_end: date_type
+
+    scheduled_count: int
+    unscheduled_count: int
+    total_count: int
+    scheduled_percentage: int
+    unscheduled_percentage: int
+
+    scheduled_duration_minutes: int
+    unscheduled_duration_minutes: int
+    total_duration_minutes: int
+
+    scheduled_duration_used_task_count: int
+    unscheduled_duration_used_task_count: int
+    total_duration_used_task_count: int
+
+    scheduled_duration_ignored_task_count: int
+    unscheduled_duration_ignored_task_count: int
+    total_duration_ignored_task_count: int
+
+    scheduled_duration_percentage: Optional[float] = None
+    unscheduled_duration_percentage: Optional[float] = None
+
+    previous_period_start: date_type
+    previous_period_end: date_type
+
+    previous_scheduled_duration_minutes: int
+    previous_unscheduled_duration_minutes: int
+    previous_total_duration_minutes: int
+
+    scheduled_duration_change: DurationChangeOut
+    unscheduled_duration_change: DurationChangeOut
 
 
 class StaffRecordOut(BaseModel):
