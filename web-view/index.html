@@ -1834,16 +1834,33 @@
       min-width: 0;
     }
 
-    /* ── Schedule Summary section (2026-07-14 responsive layout) — lives
-       below the calendar view panes, inside .msc-calendar-content, so it
-       shares that element's full width and is never duplicated per view
-       (Month/Week/Day all share this one section). ── */
+    /* ── Schedule Summary section (2026-07-14 responsive layout;
+       full-width 2026-07-14) — a direct child of .msc-calendar-shell,
+       positioned after the calendar's card (.hr-table-card wrapping
+       .msc-calendar-header/.msc-calendar-main) and before the second
+       .hr-table-card wrapping the Schedule Item form/list cards. Being a
+       shell-level sibling rather than a descendant of .msc-calendar-content
+       means it is no longer offset by the sidebar's 220px column, so it can
+       span (almost) the shell's full width. It is never duplicated per view
+       (Month/Week/Day all share this one section, which lives outside
+       .msc-cal-grid-wrap entirely). box-sizing: border-box is required
+       here specifically because width: 100% is combined with horizontal
+       padding — without it the padding would add on top of 100% and
+       overflow the shell. ── */
     .msc-summary-section {
       width: 100%;
+      box-sizing: border-box;
       min-width: 0;
+      padding: 18px 16px 20px;
       margin-top: 16px;
-      padding-top: 16px;
       border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 480px) {
+      .msc-summary-section {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
     }
 
     /* View panes — one dispatcher shows the active view, others stay in the
@@ -5472,6 +5489,9 @@
           '<div class="msc-week-grid msc-view-pane" data-view-pane="week"></div>' +
           '<div class="msc-day-grid msc-view-pane" data-view-pane="day"></div>' +
           '</div>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
           '<div class="msc-summary-section">' +
           '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Summary</div>' +
           '<p class="msc-note" style="margin:0 0 8px;">Counts and duration totals are calculated by the server. ' +
@@ -5491,8 +5511,7 @@
           '</div>' +
           '</div>' +
           '</div>' +
-          '</div>' +
-          '</div>' +
+          '<div class="hr-table-card">' +
           '<div class="msc-form-card">' +
           '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
           '<span class="msc-selected-date-label">select a date</span></div>' +
