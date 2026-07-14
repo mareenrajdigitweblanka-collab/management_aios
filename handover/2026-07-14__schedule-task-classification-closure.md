@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: schedule-task-classification
-status: PENDING MIGRATION EXECUTION AND DEPLOYMENT VERIFICATION
+status: PENDING MIGRATION EXECUTION (code + deployment PASS)
 ---
 
 # Handover Closure — Schedule Task Category Classification
@@ -31,12 +31,12 @@ Replace the four placeholder "Sample ..." calendar categories with a permanent, 
 
 ## Commits
 
-PENDING — recorded after Step 20.
+`723f30f` — "Implement permanent scheduled task classification" (11 files: backend config/schemas/models/router, new backend test package, target schema file, migration file, `web-view/index.html`, validation and handover evidence). Pushed to `origin/main`: `fb1babe..723f30f`.
 
 ## Deployment URL
 
-- Frontend: `https://management-aios.vercel.app/`
-- Backend: `https://management-aios-api.vercel.app/`
+- Frontend: `https://management-aios.vercel.app/` — HTTP 200, content-matched against the pushed commit
+- Backend: `https://management-aios-api.vercel.app/` — HTTP 200 health, new `/reports/daily` and `/reports/weekly` routes confirmed live via the OpenAPI schema
 
 ## Category Rules
 
@@ -66,15 +66,18 @@ PENDING — recorded after Step 20.
 
 PASS. `backend/routers/member_schedules.py` docstrings, `backend/config.py` comments, and the migration file's own comments each explain the classification rule, the immutability lock, and the migration's scope/rerunnability in plain language traceable back to this closure and validation file — a fresh reader does not need this conversation to understand why the code is shaped this way.
 
+## Live Validation Result
+
+PASS — 19/19 checks against the deployed backend (`https://management-aios-api.vercel.app`, member `arun`, synthetic `AIOS TEST -` titles, all rows deleted after the run): create-time classification (before/exact/after/untimed × Scheduled/Unscheduled), the permanent-lock 422 in both directions, same-category no-op updates, drag/drop- and resize-equivalent time-only updates preserving category, invalid-category rejection, member isolation (own-rows-only list + cross-member 404), and daily/weekly reporting counts/percentages (2 scheduled + 1 unscheduled = 3 total, 67%/33%, sums to 100). Full detail in `validation/schedule-task-classification-check-2026-07-14.md`.
+
 ## Blockers
 
-1. Migration not yet executed — pending the user running the three SQL blocks (pre-migration evidence, migration, post-migration confirmation) via the Neon SQL Editor and reporting results back.
-2. Deployment/live-API verification pending push and Vercel auto-deploy completion.
+1. Migration not yet executed — pending the user running the SQL (pre-migration evidence, the migration itself, post-migration confirmation) via the Neon SQL Editor and reporting results back. This is the **only** remaining blocker; all code, deployment, and live-API validation is complete and passing.
 
 ## Next Step
 
-Run the three SQL blocks provided in-conversation via the Neon SQL Editor, report the results back, and this closure/validation pair will be updated with final pre/post-migration counts, live test results, and a final PASS/FAIL.
+Run the migration SQL via the Neon SQL Editor (consolidated single-row queries already provided in-conversation for pre- and post-migration evidence), report the results back, and this closure/validation pair will be updated with final row-count-preservation and constraint confirmation for a final PASS.
 
 ## PASS/FAIL
 
-PENDING MIGRATION EXECUTION AND DEPLOYMENT VERIFICATION
+PENDING MIGRATION EXECUTION — all other criteria PASS

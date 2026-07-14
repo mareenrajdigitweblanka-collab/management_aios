@@ -3,7 +3,7 @@ name: schedule-task-classification-check
 type: validation
 created: 2026-07-14
 created-by: Mareenraj (builder)
-status: PENDING MIGRATION EXECUTION AND DEPLOYMENT VERIFICATION
+status: PENDING MIGRATION EXECUTION (code + deployment PASS; live data migration confirmation outstanding)
 ---
 
 # Schedule Task Classification Validation
@@ -89,23 +89,38 @@ OK
 | 19 | Percentages sum to 100 | `test_percentages_always_sum_to_100_when_total_positive` (6 sub-cases) |
 | 23 | Asia/Colombo boundary (UTC day ≠ Colombo day) | `test_asia_colombo_boundary_not_evaluated_as_utc` |
 
-### Live API (pending deployment — see "Deployment Result" below for status; results recorded once run)
+### Live API (run against the deployed backend, `https://management-aios-api.vercel.app`, member_key=`arun`, non-sensitive synthetic titles prefixed `AIOS TEST -`, all rows deleted after the run — confirmed 0 remaining)
+
+19/19 checks passed:
+
+| # | Scenario | Result |
+|---|---|---|
+| A | Future planned time + Scheduled selected → Scheduled | PASS — `201`, `category: "Scheduled Task"` |
+| B | Future planned time + Unscheduled selected → Unscheduled | PASS — `201`, `category: "Unscheduled Task"` |
+| C | Past planned start + Scheduled selected → forced Unscheduled | PASS — `201`, `category: "Unscheduled Task"` |
+| D | Edit Test C (title only) → category remains Unscheduled | PASS — `200`, `category: "Unscheduled Task"` |
+| 8 | Direct attempt: Unscheduled → Scheduled | PASS — `422`, `"Task category is permanent after creation."` |
+| 10 | Same-category update (Unscheduled → Unscheduled) does not fail | PASS — `200` |
+| 9/11 | Edit a Scheduled task (title only) → remains Scheduled | PASS — `200`, `category: "Scheduled Task"` |
+| — | Direct attempt: Scheduled → Unscheduled | PASS — `422`, `"Task category is permanent after creation."` |
+| 12 | Drag/drop-equivalent (time-only PUT) on Scheduled → unchanged | PASS — `200`, `category: "Scheduled Task"` |
+| 13 | Drag/drop-equivalent (time-only PUT) on Unscheduled → unchanged | PASS — `200`, `category: "Unscheduled Task"` |
+| 14 | Resize (same code path as drag/drop — `commitItemTimeChange`) | Covered by 12/13 (identical handler) |
+| 15 | Invalid category (`Sample Task`) on create → rejected | PASS — `422` |
+| 6 | Untimed + Scheduled selected → Scheduled | PASS — `201`, `category: "Scheduled Task"` |
+| 7 | Untimed + Unscheduled selected (past date) → Unscheduled | PASS — `201`, `category: "Unscheduled Task"` |
+| — | Untimed on a past *date* + Scheduled selected → still Scheduled (rule 8: no start_time = never auto-late) | PASS — `201`, `category: "Scheduled Task"` |
+| 20 | Member isolation: list only returns the requested member's own rows | PASS — 3/3 rows all `member_key: "arun"` |
+| 20 | Member isolation: a different member cannot edit another member's event id | PASS — `404` |
+| 16 | Daily report reachable and correct | PASS — `{"scheduled_count": 2, "unscheduled_count": 1, "total_count": 3, "scheduled_percentage": 67, "unscheduled_percentage": 33}` (sums to 100) |
+| 17 | Weekly report reachable and correct | PASS — same 2/1/3, 67%/33% for the containing week |
+| — | Invalid date on report query → 422 | PASS — `422` |
 
 | # | Scenario | Status |
 |---|---|---|
-| 8 | Unscheduled edited with Scheduled submitted → 422 | PENDING |
-| 9 | Scheduled edited after start → remains Scheduled | PENDING |
-| 10 | Same-category update does not fail | PENDING |
-| 11 | Scheduled edited after planned time stays Scheduled | PENDING |
-| 12 | Drag/drop preserves Scheduled | PENDING (structural: drag/drop always re-sends the existing `category` unchanged — see `commitItemTimeChange` in `web-view/index.html` — verified by code inspection; live confirmation pending) |
-| 13 | Drag/drop preserves Unscheduled | PENDING (same structural guarantee as #12) |
-| 14 | Resize preserves category | PENDING (same code path as #12/13 — `attachResizeHandler` also calls `commitItemTimeChange`) |
-| 16 | Daily counts | PENDING |
-| 17 | Weekly counts | PENDING |
-| 20 | Member isolation | PENDING |
-| 21 | Migration row count preserved | PENDING — depends on migration execution |
-| 22 | Existing rows become Scheduled Task | PENDING — depends on migration execution |
-| 24 | Refresh persistence | PENDING |
+| 21 | Migration row count preserved | PENDING — awaiting user execution of the migration via Neon SQL Editor |
+| 22 | Existing rows become Scheduled Task | PENDING — awaiting user execution of the migration via Neon SQL Editor |
+| 24 | Refresh persistence | Structurally guaranteed — `GET` always re-reads from the database (no client cache), and the live `POST`/`PUT` responses above already round-tripped through the database (SQLAlchemy `db.refresh(event)` after commit); not separately re-tested via a second `GET` in this pass but covered by the same code path exercised in every case above |
 
 ## API Examples (no sensitive task details)
 
@@ -145,21 +160,28 @@ GET /api/member-schedules/{member_key}/reports/daily?date=2026-08-01
 
 ## Member-Isolation Result
 
-PENDING — live test to confirm reports and classification never cross member boundaries; structurally guaranteed by `_validate_member_key` plus per-query `member_key` filtering, consistent with every other route in this router.
+PASS. Confirmed live: a member's own list endpoint returns only that member's rows (3/3 in the test batch were `member_key: "arun"`), and attempting to `PUT` another member's (`mayurika`) path against Arun's real event id returns `404`, not a cross-member edit. Structurally guaranteed by `_validate_member_key` plus per-query `member_key` filtering, consistent with every other route in this router — confirmed by both code inspection and live test.
 
 ## Daily/Weekly Report Validation
 
-PENDING — recorded after live fixture creation.
+PASS. Live fixture: 2 Scheduled + 1 Unscheduled task created for `arun` on `2026-12-31` (within the `2026-12-28`–`2027-01-03` week). Daily report for that date and weekly report for that week both returned `scheduled_count: 2, unscheduled_count: 1, total_count: 3, scheduled_percentage: 67, unscheduled_percentage: 33` — correct counts, and percentages sum to exactly 100. All fixture rows deleted after the run; confirmed 0 `AIOS TEST` rows remain and the daily report for that date now reads `0/0/0/0%/0%`.
 
 ## Deployment Result
 
-PENDING.
+PASS. Vercel auto-deployed both the frontend (`management-aios`) and backend API projects on push to `main` (existing, documented method). Confirmed:
+
+- Frontend `https://management-aios.vercel.app/` → HTTP 200, content byte-identical to the committed `web-view/index.html` (confirmed via direct HTTPS fetch + diff after line-ending normalization)
+- Backend `https://management-aios-api.vercel.app/health` → HTTP 200, expected body
+- Backend OpenAPI schema confirms the two new report routes are live: `GET /api/member-schedules/{member_key}/reports/daily` and `.../reports/weekly`
+- All five member calendar mounts present in the deployed frontend (`mayurika`, `suman`, `arun`, `rajiv`, `paraparan`)
+- Deployed frontend contains only `Scheduled Task` / `Unscheduled Task` category strings — zero occurrences of any of the four retired sample categories
+- "Schedule Summary" card present in the deployed frontend
 
 ## Known Limits
 
-- Direct PostgreSQL access from the builder's workstation is confirmed unreliable at the SSL/protocol-handshake layer (TCP connects instantly; the Postgres wire protocol never completes, across multiple escalating timeout attempts in this and a prior session). The migration and pre/post-migration aggregate evidence were therefore captured via the Neon SQL Editor, per the task's approved fallback method — not executed directly by this session.
-- Live API validation (drag/drop, resize, member isolation, reporting counts, refresh persistence) requires the deployed backend to be reachable, which does not require the migration to have completed first — new-task classification is independent of whether pre-existing rows have been migrated yet. Reporting totals computed before the migration runs will count any pre-migration row as "unscheduled" (any category value other than the exact string `Scheduled Task`), which is a reasonable, documented interim behavior, not a defect.
+- Direct PostgreSQL access from the builder's workstation is confirmed unreliable at the SSL/protocol-handshake layer (TCP connects instantly; the Postgres wire protocol never completes, across multiple escalating timeout attempts across this and a prior session). The migration and pre/post-migration aggregate evidence must therefore be captured via the Neon SQL Editor, per the task's approved fallback method — not executed directly by this session. **This is the one outstanding item**: the migration has not yet been confirmed executed as of this update.
+- All code-level and live-API validation (backend logic, frontend deployment, classification, immutability lock, reporting, member isolation) is complete and passing, and is independent of migration timing — new-task classification does not depend on whether pre-existing rows have been migrated yet. Reporting totals computed before the migration runs will count any pre-migration row as "unscheduled" (any category value other than the exact string `Scheduled Task`), which is a reasonable, documented interim behavior, not a defect.
 
 ## Result
 
-PENDING MIGRATION EXECUTION AND DEPLOYMENT VERIFICATION
+PENDING MIGRATION EXECUTION — all other validation criteria PASS. Final PASS is contingent solely on the user-executed migration's pre/post-migration counts and constraint confirmation, per the "Known Limits" note above.
