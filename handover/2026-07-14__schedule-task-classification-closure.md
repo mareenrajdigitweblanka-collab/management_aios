@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: schedule-task-classification
-status: PENDING MIGRATION EXECUTION (code + deployment PASS)
+status: PASS
 ---
 
 # Handover Closure — Schedule Task Category Classification
@@ -23,7 +23,7 @@ Replace the four placeholder "Sample ..." calendar categories with a permanent, 
 
 ## Migration Path
 
-`database/migrations/2026-07-14-schedule-task-category-classification.sql` — transaction-safe, rerunnable, migrates all existing rows (including soft-deleted) to `Scheduled Task` and adds the `member_schedule_events_category_check` CHECK constraint. Not executed by this session directly (workstation cannot reach Neon at the protocol layer) — handed to the user for execution via the Neon SQL Editor.
+`database/migrations/2026-07-14-schedule-task-category-classification.sql` — transaction-safe, rerunnable, migrates all existing rows (including soft-deleted) to `Scheduled Task` and adds the `member_schedule_events_category_check` CHECK constraint. Executed by the user via the Neon SQL Editor (workstation cannot reach Neon at the protocol layer). **Confirmed: 145 rows before, 145 rows after; post-migration category breakdown is exactly `Scheduled Task: 145`; constraint confirmed present.**
 
 ## Validation Path
 
@@ -60,7 +60,7 @@ Replace the four placeholder "Sample ..." calendar categories with a permanent, 
 - No Staff Data, `staff_dashboard_records`, or PH KPI code touched.
 - No second schedule table, category table, or local database created.
 - Member isolation unchanged — every new route still validates `member_key` via `_validate_member_key` and filters every query by it, matching the existing pattern.
-- No `.env`/credential exposure — no direct database connection was attempted or used by this session's code changes; the migration is handed to the user for Neon SQL Editor execution.
+- No `.env`/credential exposure — no direct database connection was attempted or used by this session's code changes; the migration was executed by the user via the Neon SQL Editor, and no credential value was ever shared back into this conversation or any evidence file.
 
 ## Queryability Result
 
@@ -70,14 +70,19 @@ PASS. `backend/routers/member_schedules.py` docstrings, `backend/config.py` comm
 
 PASS — 19/19 checks against the deployed backend (`https://management-aios-api.vercel.app`, member `arun`, synthetic `AIOS TEST -` titles, all rows deleted after the run): create-time classification (before/exact/after/untimed × Scheduled/Unscheduled), the permanent-lock 422 in both directions, same-category no-op updates, drag/drop- and resize-equivalent time-only updates preserving category, invalid-category rejection, member isolation (own-rows-only list + cross-member 404), and daily/weekly reporting counts/percentages (2 scheduled + 1 unscheduled = 3 total, 67%/33%, sums to 100). Full detail in `validation/schedule-task-classification-check-2026-07-14.md`.
 
+## Migration Confirmation
+
+- Pre-migration: 145 total rows (130 active / 15 soft-deleted); category breakdown `Sample Task: 121, Sample Follow-up: 14, Unscheduled Task: 4, Scheduled Task: 3, Sample Planning: 3`; member breakdown `mayurika: 97, suman: 21, rajiv: 12, paraparan: 8, arun: 7`.
+- Post-migration: 145 total rows (unchanged — no row inserted or deleted); category breakdown exactly `Scheduled Task: 145`; `invalid_category_rows: 0`; `member_schedule_events_category_check` constraint confirmed present via `pg_constraint` lookup.
+
 ## Blockers
 
-1. Migration not yet executed — pending the user running the SQL (pre-migration evidence, the migration itself, post-migration confirmation) via the Neon SQL Editor and reporting results back. This is the **only** remaining blocker; all code, deployment, and live-API validation is complete and passing.
+None. All items are resolved.
 
 ## Next Step
 
-Run the migration SQL via the Neon SQL Editor (consolidated single-row queries already provided in-conversation for pre- and post-migration evidence), report the results back, and this closure/validation pair will be updated with final row-count-preservation and constraint confirmation for a final PASS.
+None required for this task. Future schedule-classification work (e.g., promoting any of this data out of the `dashboard_testing` scope) would need its own separate, explicitly scoped request.
 
 ## PASS/FAIL
 
-PENDING MIGRATION EXECUTION — all other criteria PASS
+PASS

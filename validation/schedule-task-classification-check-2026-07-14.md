@@ -3,7 +3,7 @@ name: schedule-task-classification-check
 type: validation
 created: 2026-07-14
 created-by: Mareenraj (builder)
-status: PENDING MIGRATION EXECUTION (code + deployment PASS; live data migration confirmation outstanding)
+status: PASS
 ---
 
 # Schedule Task Classification Validation
@@ -45,26 +45,46 @@ Replace the four sample calendar categories (`Sample Task`, `Sample Review`, `Sa
 
 ## Pre-Migration Counts
 
-Captured via the Neon SQL Editor (approved method — direct workstation PostgreSQL access is confirmed unreliable at the SSL/protocol-handshake layer; see Known Limits). **Pending user execution of the pre-migration evidence block; to be filled in once results are provided.**
+Captured via the Neon SQL Editor (approved method — direct workstation PostgreSQL access is confirmed unreliable at the SSL/protocol-handshake layer; see Known Limits). Consolidated single-row JSON query, run 2026-07-14.
 
-- Total rows: PENDING
-- Active rows / soft-deleted rows: PENDING
-- Count by category: PENDING
-- Count by member: PENDING
-- Null category / null event_date / null start_time / invalid time range counts: PENDING
+- **Total rows:** 145
+- **Active rows:** 130 / **Soft-deleted rows:** 15
+- **Null category / null event_date / null start_time / invalid time range counts:** 0 / 0 / 15 / 0 (the 15 null-start-time rows are expected — untimed/all-day events are a legal, pre-existing case)
+- **Count by category (all rows, active + soft-deleted):**
+
+  | Category | Count |
+  |---|---|
+  | Sample Task | 121 |
+  | Sample Follow-up | 14 |
+  | Unscheduled Task | 4 |
+  | Scheduled Task | 3 |
+  | Sample Planning | 3 |
+  | **Total** | **145** |
+
+  The 4 `Unscheduled Task` / 3 `Scheduled Task` rows are from this session's own live API validation pass (all soft-deleted afterward — see "Live API" test results above) plus incidental live testing; per confirmed business rule 10 ("all existing rows, including soft-deleted rows, must be migrated to Scheduled Task"), the migration applies to every row regardless of current value, including these already-new-format ones — this is intentional, not a gap in the migration's WHERE clause.
+
+- **Count by member:**
+
+  | Member | Count |
+  |---|---|
+  | mayurika | 97 |
+  | suman | 21 |
+  | rajiv | 12 |
+  | paraparan | 8 |
+  | arun | 7 |
+  | **Total** | **145** |
 
 ## Post-Migration Counts
 
-PENDING — recorded after the migration is executed and its results are provided.
+Captured via the Neon SQL Editor, consolidated single-row `::text`-cast query, run 2026-07-14 immediately after the migration committed.
 
-- Total rows (must equal pre-migration total): PENDING
-- Count by category (must be exactly one row: `Scheduled Task`): PENDING
-- Invalid category rows (must be 0): PENDING
-- `member_schedule_events_category_check` constraint definition (must exist and match): PENDING
+- **Total rows:** 145 — **matches pre-migration total exactly (145). No row inserted or deleted.**
+- **Invalid category rows:** 0
+- **Count by category:** exactly one entry — `Scheduled Task: 145` (all four sample categories, and the pre-existing `Unscheduled Task`/`Scheduled Task` rows, are now uniformly `Scheduled Task`, per confirmed business rule 10)
 
 ## Category Constraint Evidence
 
-PENDING — recorded from the post-migration confirmation query.
+Confirmed present via `pg_constraint` lookup: `conname: "member_schedule_events_category_check"`, `definition` beginning `CHECK ((ca...` — a non-empty match on the exact constraint name this migration creates, confirming the constraint exists on the live table (the full definition text was truncated in the pasted result, but existence + correct name, combined with the migration script's own internal validation step passing, is sufficient confirmation — the constraint's defined clause is `CHECK (category IN ('Scheduled Task', 'Unscheduled Task'))`, matching `database/member_schedule_events_schema.sql`'s target state).
 
 ## Test Results
 
@@ -118,8 +138,8 @@ OK
 
 | # | Scenario | Status |
 |---|---|---|
-| 21 | Migration row count preserved | PENDING — awaiting user execution of the migration via Neon SQL Editor |
-| 22 | Existing rows become Scheduled Task | PENDING — awaiting user execution of the migration via Neon SQL Editor |
+| 21 | Migration row count preserved | PASS — 145 rows before, 145 rows after |
+| 22 | Existing rows become Scheduled Task | PASS — category breakdown post-migration is exactly one entry, `Scheduled Task: 145` |
 | 24 | Refresh persistence | Structurally guaranteed — `GET` always re-reads from the database (no client cache), and the live `POST`/`PUT` responses above already round-tripped through the database (SQLAlchemy `db.refresh(event)` after commit); not separately re-tested via a second `GET` in this pass but covered by the same code path exercised in every case above |
 
 ## API Examples (no sensitive task details)
@@ -179,9 +199,9 @@ PASS. Vercel auto-deployed both the frontend (`management-aios`) and backend API
 
 ## Known Limits
 
-- Direct PostgreSQL access from the builder's workstation is confirmed unreliable at the SSL/protocol-handshake layer (TCP connects instantly; the Postgres wire protocol never completes, across multiple escalating timeout attempts across this and a prior session). The migration and pre/post-migration aggregate evidence must therefore be captured via the Neon SQL Editor, per the task's approved fallback method — not executed directly by this session. **This is the one outstanding item**: the migration has not yet been confirmed executed as of this update.
-- All code-level and live-API validation (backend logic, frontend deployment, classification, immutability lock, reporting, member isolation) is complete and passing, and is independent of migration timing — new-task classification does not depend on whether pre-existing rows have been migrated yet. Reporting totals computed before the migration runs will count any pre-migration row as "unscheduled" (any category value other than the exact string `Scheduled Task`), which is a reasonable, documented interim behavior, not a defect.
+- Direct PostgreSQL access from the builder's workstation is confirmed unreliable at the SSL/protocol-handshake layer (TCP connects instantly; the Postgres wire protocol never completes, across multiple escalating timeout attempts across this and a prior session). The migration and pre/post-migration aggregate evidence were therefore captured and executed via the Neon SQL Editor, per the task's approved fallback method, by the user — not executed directly by this session. This did not block completion; it only changed who ran the SQL.
+- The post-migration constraint-definition text was truncated in the pasted terminal/UI result (see "Category Constraint Evidence" above) — existence and correct naming were confirmed; the exact full `CHECK` clause text was not independently re-verified character-for-character against the live database, only against the migration script's own known contents.
 
 ## Result
 
-PENDING MIGRATION EXECUTION — all other validation criteria PASS. Final PASS is contingent solely on the user-executed migration's pre/post-migration counts and constraint confirmation, per the "Known Limits" note above.
+PASS. All 24 required test scenarios are satisfied (16 automated, 19 live-API, plus the 2 migration-dependent scenarios now confirmed via the executed migration). Pre-migration total (145) equals post-migration total (145). Post-migration category breakdown is exactly `Scheduled Task: 145`. The `member_schedule_events_category_check` CHECK constraint is live. Deployment is confirmed healthy on both frontend and backend.
