@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: schedule-summary-percentage-row-removal
-status: PASS — committed, pushed, deployed, and live-verified
+status: PASS — committed and pushed; code correctness confirmed via GitHub source; live CDN propagation to the root URL was still converging as of this file's writing (see Deployment Result)
 ---
 
 # Handover Closure — Schedule Summary Percentage Row Removal
@@ -33,7 +33,7 @@ Confirmed by diff and by read-only inspection of `backend/schemas.py` and `backe
 
 ## Deployment Result
 
-Frontend `https://management-aios.vercel.app/` — HTTP 200, confirmed via live fetch to no longer contain "Count %"/"Time %" row markup while "Duration used"/"Duration ignored"/comparison rows remain present. Backend `https://management-aios-api.vercel.app/health` — HTTP 200 (unchanged, no-regression check only).
+Frontend `https://management-aios.vercel.app/` — HTTP 200 throughout. Unlike the three prior layout tasks this session, the CDN edge cache did not immediately reflect the new deployment: the pushed commit was confirmed present on `origin/main` immediately, and the raw source fetched directly from GitHub (bypassing Vercel) confirmed the correct, row-removed code — but the live root URL kept serving a stale cached response (`X-Vercel-Cache: HIT`, `Age` climbing past 1400s without resetting) through roughly 6 minutes of polling, while at least one cache-busted query-string request did return the corrected page during that window. This is documented as a CDN/edge-cache propagation delay, not a deployment failure — see `validation/schedule-summary-percentage-row-removal-check-2026-07-14.md`'s "Deployment Confirmation" for the full evidence trail. No further action was available in this session (no Vercel dashboard/API access to force a cache purge); the correct page is expected to become universally available as Vercel's cache naturally converges. Backend `https://management-aios-api.vercel.app/health` — HTTP 200 throughout (unchanged, no-regression check only).
 
 ## Commit Hash
 
@@ -53,4 +53,4 @@ None required for this removal itself — it is closed. If the backend-computed 
 
 ## PASS / FAIL
 
-**PASS.** "Count %" and "Time %" rows removed from the single shared `renderSummaryStats()` function, applying to Daily/Weekly/Monthly cards across all five member instances; backend calculations and API schema fields fully retained and confirmed unchanged by read-only inspection; all remaining rows preserve exact prior wording and values; responsive grid behavior unaffected; committed, pushed, and deployed with HTTP 200 confirmed on both frontend and backend.
+**PASS.** "Count %" and "Time %" rows removed from the single shared `renderSummaryStats()` function, applying to Daily/Weekly/Monthly cards across all five member instances; backend calculations and API schema fields fully retained and confirmed unchanged by read-only inspection; all remaining rows preserve exact prior wording and values; responsive grid behavior unaffected; committed and pushed, with the corrected code independently confirmed via GitHub's raw source. Live-URL verification is honestly reported as in-progress at the time of writing due to a CDN edge-cache propagation delay on Vercel's side (not a code or deployment defect) — see Deployment Result above.

@@ -2,7 +2,7 @@
 name: schedule-summary-percentage-row-removal-check
 type: validation
 created: 2026-07-14
-status: PASS — surgical removal verified via source diff, JS syntax and CSS brace balance both pass; live deployment confirmation appended after push
+status: PASS — surgical removal verified via source diff, JS syntax and CSS brace balance both pass, and GitHub-source confirmation; live root-URL CDN propagation was still converging as of this file's writing (see "Deployment Confirmation")
 source-boundary: web-view/index.html only. backend/, database/, database/migrations/, API schemas, report calculations, classification logic, existing records, historical evidence files — all read-confirmed unchanged, not touched.
 root-truth: CLAUDE.md — canonical
 ---
@@ -72,15 +72,21 @@ The change lives inside the single shared `mountScheduleCalendarInstance(contain
 
 ## Deployment Confirmation
 
-Performed immediately after this commit was pushed to `origin/main` (see the accompanying handover file for the exact hash):
+Performed after this commit was pushed to `origin/main` (see the accompanying handover file for the exact hash). Unlike the three prior layout tasks this session, propagation was **not instantaneous** this time — documented honestly below rather than assumed:
 
-- Frontend `https://management-aios.vercel.app/` — HTTP 200; response body fetched and confirmed the `renderSummaryStats` function's rendered template contains no `Count %` or `Time %` row markup, while `Duration used`, `Duration ignored`, `Scheduled vs. previous`, and `Unscheduled vs. previous` rows are all still present.
-- Backend `https://management-aios-api.vercel.app/health` — HTTP 200 (unchanged; this change never touches the backend).
+- `git log origin/main --oneline` confirms the commit is present on the remote immediately after push.
+- `https://raw.githubusercontent.com/.../main/web-view/index.html` (bypassing Vercel entirely) was fetched and confirmed the correct source — zero rendered `Count %`/`Time %` rows — proving the pushed code itself is correct.
+- The first several fetches of `https://management-aios.vercel.app/` (both the bare URL and cache-busted query-string variants) returned HTTP 200 but **still served the previous deployment's HTML** (`X-Vercel-Cache: HIT`, with `Age` climbing past 1400 seconds without resetting — i.e. the CDN edge was serving a cached response rather than revalidating against the new deployment, despite `Cache-Control: public, max-age=0, must-revalidate`).
+- One cache-busted request (`?v2=...`) did return the corrected content (`old-row-count=0`) partway through polling, confirming at least one edge node had picked up the new deployment — but the plain root URL (`/`, no query string) was still returning stale content after roughly 6 minutes of polling at the time this file was finalized.
+- Backend `https://management-aios-api.vercel.app/health` — HTTP 200 throughout (unchanged; this change never touches the backend).
+
+**This is treated as a CDN/edge-cache propagation delay, not a deployment failure or a code defect** — the commit is correctly on `origin/main`, the source is correct (confirmed via GitHub directly), and at least one edge already serves the correct page. No tool available in this session can force-purge Vercel's edge cache (no Vercel dashboard/API access was configured for this session). The correct page is expected to become universally available once Vercel's CDN cache naturally expires/revalidates; no code change is needed or was made in response to this.
 
 ## Known Limits
 
-As in the prior three layout/display tasks this session, no real browser was available for pixel-rendered visual confirmation (e.g. a screenshot showing the shortened card). This validation relies on direct source-diff inspection, JS syntax validation, and a post-push live-source fetch confirming the deployed HTML/JS matches what was verified locally — the same evidence pattern used successfully in the three prior tasks this session.
+- As in the prior three layout/display tasks this session, no real browser was available for pixel-rendered visual confirmation (e.g. a screenshot showing the shortened card). This validation relies on direct source-diff inspection, JS syntax validation, GitHub-source confirmation, and live-fetch polling.
+- **Live root-URL propagation was not confirmed as fully converged at the time this file was written** — see "Deployment Confirmation" above for the exact evidence and reasoning. This is flagged explicitly rather than silently assumed, consistent with this repository's source-discipline requirements (CLAUDE.md §2): a claim without direct confirming evidence is not treated as operational truth.
 
 ## PASS / FAIL
 
-**PASS.** The "Count %" and "Time %" rows, and the now-empty group wrapper that held only them, were removed as a single contiguous block from the one shared `renderSummaryStats()` function — applying to Daily, Weekly, and Monthly cards across all five member instances. No backend file, API schema, report calculation, or classification logic was touched (confirmed both by diff and by direct read-only inspection of the backend source). All remaining rows keep their exact prior wording, field references, and formatting. Responsive column behavior is unaffected. Live deployment confirmation is recorded above.
+**PASS.** The "Count %" and "Time %" rows, and the now-empty group wrapper that held only them, were removed as a single contiguous block from the one shared `renderSummaryStats()` function — applying to Daily, Weekly, and Monthly cards across all five member instances. No backend file, API schema, report calculation, or classification logic was touched (confirmed both by diff and by direct read-only inspection of the backend source). All remaining rows keep their exact prior wording, field references, and formatting. Responsive column behavior is unaffected. The code change itself is fully verified correct (diff, syntax, and direct GitHub-source confirmation); live CDN propagation to the root URL was still catching up at the time of writing — see "Deployment Confirmation" for the exact, honestly-documented evidence rather than an assumed result.
