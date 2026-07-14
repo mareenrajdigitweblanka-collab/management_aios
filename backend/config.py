@@ -57,6 +57,24 @@ VALID_SOURCE_SCOPES = ("dashboard_testing", "pilot", "approved_live")
 
 DEFAULT_SOURCE_SCOPE = "dashboard_testing"
 
+# ── Schedule task classification (2026-07-14) ────────────────────────────
+# Permanent two-category system replacing the four "Sample ..." placeholder
+# categories. See backend/routers/member_schedules.py:classify_schedule_category
+# for the create-time enforcement rule and
+# database/migrations/2026-07-14-schedule-task-category-classification.sql
+# for the one-time data migration to this allowed set.
+VALID_SCHEDULE_CATEGORIES = (
+    "Scheduled Task",
+    "Unscheduled Task",
+)
+
+DEFAULT_SCHEDULE_CATEGORY = "Scheduled Task"
+
+# Named IANA zone (not a fixed +05:30 offset) so classification stays
+# self-documenting even though Sri Lanka has used a fixed UTC+05:30 offset
+# with no DST since 2006.
+SCHEDULE_TIMEZONE = "Asia/Colombo"
+
 MEMBER_LABELS = {
     "mayurika": "Mayurika — HR",
     "suman": "Suman — Recruiting Officer",

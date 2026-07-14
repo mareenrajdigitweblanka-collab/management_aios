@@ -2105,6 +2105,43 @@
       margin-top: 16px;
     }
 
+    /* ── Schedule Summary (2026-07-14) — reusable daily/weekly
+       scheduled-vs-unscheduled report, shared by every member instance. ── */
+    .msc-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .msc-summary-block {
+      background: var(--surface-tint-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .msc-summary-block-title {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .msc-summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .82rem;
+      color: var(--text);
+      padding: 3px 0;
+    }
+
+    .msc-summary-row span {
+      color: var(--muted);
+    }
+
     .msc-form-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -5107,10 +5144,8 @@
       }());
 
       var CATEGORY_CLASS = {
-        'Sample Task': 'task',
-        'Sample Review': 'review',
-        'Sample Follow-up': 'followup',
-        'Sample Planning': 'planning'
+        'Scheduled Task': 'task',
+        'Unscheduled Task': 'followup'
       };
       var PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
       var PRIORITY_BADGE = { High: 'badge-blocked', Medium: 'badge-amber', Low: 'badge-pass' };
@@ -5300,14 +5335,14 @@
           '<span class="msc-selected-date-label">select a date</span></div>' +
           '<form class="msc-form msc-form-grid" autocomplete="off">' +
           '<label>Date<input type="date" class="msc-field-date" required /></label>' +
-          '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Sample Task" maxlength="60" required /></label>' +
+          '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Prepare weekly report" maxlength="60" required /></label>' +
           '<label>Category<select class="msc-field-category">' +
-          '<option value="Sample Task">Sample Task</option>' +
-          '<option value="Sample Review">Sample Review</option>' +
-          '<option value="Sample Follow-up">Sample Follow-up</option>' +
-          '<option value="Sample Planning">Sample Planning</option>' +
-          '</select></label>' +
-          '<label>Priority (sample/demo only)<select class="msc-field-priority">' +
+          '<option value="Scheduled Task">Scheduled Task</option>' +
+          '<option value="Unscheduled Task">Unscheduled Task</option>' +
+          '</select>' +
+          '<span class="msc-field-category-helper" style="display:none;">Category is fixed after the task is created.</span>' +
+          '</label>' +
+          '<label>Priority<select class="msc-field-priority">' +
           '<option value="High">High</option>' +
           '<option value="Medium" selected>Medium</option>' +
           '<option value="Low">Low</option>' +
@@ -5315,7 +5350,7 @@
           '<label>Start time<input type="time" class="msc-field-start" /></label>' +
           '<label>End time<input type="time" class="msc-field-end" /></label>' +
           '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
-          'placeholder="Optional testing note — no real names, meetings, or customer details"></textarea></label>' +
+          'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
           '</form>' +
           '<div class="msc-form-actions">' +
           '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
@@ -5327,6 +5362,21 @@
           '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Items — ' +
           '<span class="msc-list-date-label">select a date</span></div>' +
           '<div class="msc-list"><p class="msc-empty">Select a date on the calendar to see schedule items.</p></div>' +
+          '</div>' +
+          '<div class="msc-list-card">' +
+          '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Summary</div>' +
+          '<p class="msc-note" style="margin:0 0 8px;">Scheduled vs. Unscheduled task counts from the server — ' +
+          'not calculated from only what is currently loaded in the browser.</p>' +
+          '<div class="msc-summary-grid">' +
+          '<div class="msc-summary-block">' +
+          '<div class="msc-summary-block-title msc-summary-daily-title">Daily</div>' +
+          '<div class="msc-summary-stats msc-summary-daily"><p class="msc-empty">Select a date to see the summary.</p></div>' +
+          '</div>' +
+          '<div class="msc-summary-block">' +
+          '<div class="msc-summary-block-title msc-summary-weekly-title">Weekly</div>' +
+          '<div class="msc-summary-stats msc-summary-weekly"><p class="msc-empty">Select a date to see the summary.</p></div>' +
+          '</div>' +
+          '</div>' +
           '</div>' +
           '<div class="msc-list-card">' +
           '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
@@ -5345,7 +5395,7 @@
           '<code>validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md</code></p></details>' +
           '<div class="msc-modal-overlay msc-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(viewTitleId) + '">' +
           '<div class="msc-modal">' +
-          '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '">Sample Task</h4>' +
+          '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '"></h4>' +
           '<p class="msc-view-date"></p>' +
           '<p class="msc-view-time"></p>' +
           '<p class="msc-view-category"></p>' +
@@ -5367,6 +5417,7 @@
         var fieldDate = container.querySelector('.msc-field-date');
         var fieldTitle = container.querySelector('.msc-field-title');
         var fieldCategory = container.querySelector('.msc-field-category');
+        var fieldCategoryHelper = container.querySelector('.msc-field-category-helper');
         var fieldPriority = container.querySelector('.msc-field-priority');
         var fieldStart = container.querySelector('.msc-field-start');
         var fieldEnd = container.querySelector('.msc-field-end');
@@ -5376,6 +5427,10 @@
         var cancelBtn = container.querySelector('.msc-cancel-btn');
         var listEl = container.querySelector('.msc-list');
         var priorityListEl = container.querySelector('.msc-priority-list');
+        var dailySummaryEl = container.querySelector('.msc-summary-daily');
+        var dailySummaryTitleEl = container.querySelector('.msc-summary-daily-title');
+        var weeklySummaryEl = container.querySelector('.msc-summary-weekly');
+        var weeklySummaryTitleEl = container.querySelector('.msc-summary-weekly-title');
         var clearBtn = container.querySelector('.msc-clear-btn');
         var viewModal = container.querySelector('.msc-view-modal');
         var viewTitle = container.querySelector('.msc-view-title');
@@ -5919,6 +5974,7 @@
           cancelEdit();
           renderActiveView();
           renderList();
+          loadSummaries(dateStr);
         }
 
         function renderList() {
@@ -5994,9 +6050,51 @@
           priorityListEl.innerHTML = html;
         }
 
+        /* ── Schedule Summary — daily/unscheduled counts and percentages
+           (2026-07-14). Server-authoritative: reads the two report
+           endpoints rather than deriving counts from the `items` array
+           already loaded in the browser, per the reporting requirement
+           that the server response — not the client's local cache — is
+           the source of truth. Shared across all five member instances
+           via this one factory function; no member-specific logic. ── */
+        function renderSummaryStats(el, report) {
+          el.innerHTML =
+            '<div class="msc-summary-row"><span>Scheduled</span><strong>' + report.scheduled_count + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Unscheduled</span><strong>' + report.unscheduled_count + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Total</span><strong>' + report.total_count + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Scheduled %</span><strong>' + report.scheduled_percentage + '%</strong></div>' +
+            '<div class="msc-summary-row"><span>Unscheduled %</span><strong>' + report.unscheduled_percentage + '%</strong></div>';
+        }
+
+        function loadDailySummary(dateStr) {
+          dailySummaryTitleEl.textContent = 'Daily — ' + dateStr;
+          apiRequest('GET', apiBase + '/reports/daily?date=' + encodeURIComponent(dateStr)).then(function (report) {
+            renderSummaryStats(dailySummaryEl, report);
+          }).catch(function () {
+            dailySummaryEl.innerHTML = '<p class="msc-empty">Could not load daily summary.</p>';
+          });
+        }
+
+        function loadWeeklySummary(dateStr) {
+          var weekStartStr = toDateStr(getWeekStart(parseDateStr(dateStr)));
+          weeklySummaryTitleEl.textContent = 'Weekly — week of ' + weekStartStr;
+          apiRequest('GET', apiBase + '/reports/weekly?week_start=' + encodeURIComponent(weekStartStr)).then(function (report) {
+            renderSummaryStats(weeklySummaryEl, report);
+          }).catch(function () {
+            weeklySummaryEl.innerHTML = '<p class="msc-empty">Could not load weekly summary.</p>';
+          });
+        }
+
+        function loadSummaries(dateStr) {
+          loadDailySummary(dateStr);
+          loadWeeklySummary(dateStr);
+        }
+
         function resetForm() {
           fieldTitle.value = '';
-          fieldCategory.value = 'Sample Task';
+          fieldCategory.value = 'Scheduled Task';
+          fieldCategory.disabled = false;
+          fieldCategoryHelper.style.display = 'none';
           fieldPriority.value = 'Medium';
           fieldStart.value = '';
           fieldEnd.value = '';
@@ -6015,7 +6113,7 @@
 
         addBtn.addEventListener('click', function () {
           if (!fieldDate.value) { window.alert('Choose a date on the calendar first.'); return; }
-          if (!fieldTitle.value.trim()) { window.alert('Enter a title (e.g. Sample Task) before adding.'); return; }
+          if (!fieldTitle.value.trim()) { window.alert('Enter a title (e.g. Prepare weekly report) before adding.'); return; }
           var payload = frontendToApiPayload({
             date: fieldDate.value,
             title: fieldTitle.value.trim(),
@@ -6045,6 +6143,8 @@
           fieldDate.value = it.date;
           fieldTitle.value = it.title;
           fieldCategory.value = it.category;
+          fieldCategory.disabled = true;
+          fieldCategoryHelper.style.display = '';
           fieldPriority.value = it.priority || 'Medium';
           fieldStart.value = it.start || '';
           fieldEnd.value = it.end || '';
@@ -6096,6 +6196,7 @@
             if (state.editingId === id) { cancelEdit(); }
             renderActiveView();
             renderList();
+            if (state.selectedDate) { loadSummaries(state.selectedDate); }
           }).catch(function (err) {
             showApiStatus('Could not delete this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
           });
@@ -6136,7 +6237,7 @@
           viewDate.textContent = 'Date: ' + it.date;
           viewTime.textContent = 'Time: ' + ((it.start || it.end) ? (it.start || '?') + ' – ' + (it.end || '?') : 'Not set');
           viewCategory.textContent = 'Category: ' + it.category;
-          viewPriority.textContent = 'Priority (sample/demo only): ' + (it.priority || 'Medium');
+          viewPriority.textContent = 'Priority: ' + (it.priority || 'Medium');
           viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
           lastFocusedTrigger = triggerEl || document.activeElement;
           viewModal.classList.add('show');

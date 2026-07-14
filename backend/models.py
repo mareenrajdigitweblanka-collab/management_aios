@@ -16,6 +16,15 @@ is not changed until that migration is explicitly applied. Until then, a
 live create/update request with member_key='paraparan' will be accepted by
 this API's Python-level validation (backend/config.py VALID_MEMBER_KEYS)
 but rejected by PostgreSQL's still-unmigrated CHECK constraint.
+
+2026-07-14: same pattern applies to the new category CheckConstraint below
+— it reflects the target state adopted by
+database/member_schedule_events_schema.sql and applied to the live table
+by database/migrations/2026-07-14-schedule-task-category-classification.sql.
+It has no effect on the already-existing live table until that migration
+runs; Python-level enforcement (backend/schemas.py ScheduleCategory,
+backend/routers/member_schedules.py classify_schedule_category and the
+update-lock check) is what actually protects the API in the meantime.
 """
 
 import uuid
@@ -48,6 +57,10 @@ class MemberScheduleEvent(Base):
             name="member_schedule_events_priority_check",
         ),
         CheckConstraint(
+            "category IN ('Scheduled Task', 'Unscheduled Task')",
+            name="member_schedule_events_category_check",
+        ),
+        CheckConstraint(
             "source_scope IN ('dashboard_testing', 'pilot', 'approved_live')",
             name="member_schedule_events_source_scope_check",
         ),
@@ -65,7 +78,7 @@ class MemberScheduleEvent(Base):
 
     event_date = Column(Date, nullable=False)
     title = Column(String(60), nullable=False)
-    category = Column(String, nullable=False, server_default="Sample Task")
+    category = Column(String, nullable=False, server_default="Scheduled Task")
     priority = Column(String, nullable=False, server_default="Medium")
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)

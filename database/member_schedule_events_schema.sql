@@ -17,6 +17,17 @@
 -- 'dashboard_testing'. See backend/README.md and
 -- docs/member-dashboard-schedule-api-plan-2026-07-09.md for the full design
 -- rationale.
+--
+-- 2026-07-14: category CHECK constraint added, restricting the column to
+-- the permanent two-value classification system ('Scheduled Task' /
+-- 'Unscheduled Task'), replacing the earlier free-text placeholder values
+-- ('Sample Task' and friends). Because this script uses CREATE TABLE IF NOT
+-- EXISTS, re-running it against an already-existing table does NOT add this
+-- constraint or change the existing default — this file only reflects the
+-- target state for a fresh install. For an existing deployment, apply
+-- database/migrations/2026-07-14-schedule-task-category-classification.sql
+-- instead, which migrates existing rows to 'Scheduled Task' before adding
+-- the constraint.
 
 -- gen_random_uuid() is built into PostgreSQL core since PG 13; pgcrypto is
 -- only needed on older servers. Guarded so it is a no-op (and does not fail)
@@ -34,7 +45,7 @@ CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events (
 
     event_date DATE NOT NULL,
     title VARCHAR(60) NOT NULL,
-    category TEXT NOT NULL DEFAULT 'Sample Task',
+    category TEXT NOT NULL DEFAULT 'Scheduled Task',
     priority TEXT NOT NULL DEFAULT 'Medium',
     start_time TIME NULL,
     end_time TIME NULL,
@@ -54,6 +65,9 @@ CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events (
 
     CONSTRAINT member_schedule_events_priority_check
     CHECK (priority IN ('High', 'Medium', 'Low')),
+
+    CONSTRAINT member_schedule_events_category_check
+    CHECK (category IN ('Scheduled Task', 'Unscheduled Task')),
 
     CONSTRAINT member_schedule_events_source_scope_check
     CHECK (source_scope IN ('dashboard_testing', 'pilot', 'approved_live')),
