@@ -2020,9 +2020,18 @@
     }
 
     .msc-cal-grid {
-      display: grid;
       grid-template-columns: repeat(7, minmax(84px, 1fr));
       min-width: 630px;
+    }
+
+    /* display:grid only applies once .msc-view-pane has added .active — kept
+       off the unconditional .msc-cal-grid rule above so it can never win a
+       cascade tie against the shared .msc-view-pane { display: none; } pane-
+       hiding rule (equal specificity, source order previously favored this
+       rule, which is what caused Month to stay visible under Week/Day; see
+       validation/shared-calendar-view-rendering-regression-check-2026-07-14.md). */
+    .msc-cal-grid.active {
+      display: grid;
     }
 
     .msc-cal-headcell {
@@ -5897,6 +5906,15 @@
            of a view-specific render function — keeps Month/Week/Day,
            the mini-picker, and the heading always in sync with state. ── */
         function renderActiveView() {
+          /* Defensive fallback — an unrecognized currentView (should not
+             happen via the switcher/init paths, which only ever set
+             month/week/day) would otherwise match no pane's data-view-pane
+             and leave every pane inactive/blank. Never falls back to the
+             removed Agenda view. */
+          if (state.currentView !== 'month' && state.currentView !== 'week' && state.currentView !== 'day') {
+            state.currentView = 'month';
+            syncViewSwitcherButtons();
+          }
           container.querySelectorAll('.msc-view-pane').forEach(function (p) {
             p.classList.toggle('active', p.getAttribute('data-view-pane') === state.currentView);
           });
