@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: member-workbench-file-details-removal
-status: PENDING LIVE VERIFICATION
+status: PASS
 ---
 
 # Handover Closure — Member Workbench File Details Removal
@@ -49,19 +49,21 @@ Remove the user-facing "Workbench File Details" section from the four member tab
 
 ## Commit Hash
 
-PENDING — to be recorded after Step 6 commit.
+`1c906cc` — "Remove member workbench file detail panels" (3 files: `web-view/index.html`, `validation/member-workbench-file-details-removal-check-2026-07-14.md`, this closure file). Pushed to `origin/main`: `866cb90..1c906cc main -> main`.
 
 ## Deployment Result
 
-PENDING.
+Vercel auto-deployed the `management-aios` frontend project on push to `main` (documented/existing method — no new deployment workflow invented, no CLI or dependency installed). Deployment URL: `https://management-aios.vercel.app/`. Confirmed live via direct HTTPS fetch: HTTP 200, content byte-identical (after line-ending normalization) to the committed `web-view/index.html` — deployed commit confirmed as `1c906cc`.
 
 ## Live Verification Result
 
-PENDING.
+PASS. All four target headings (`Workbench File Details`, `Files Mayurika uses`, `Files Suman uses`, `Files Arun uses`, `Rajiv Workbench Files — Registered Source, Mixed Status`) confirmed absent on the live site. All retained content confirmed present on the live site: Suman and Arun Workbench Usage Guide tables, root Member Workbenches tile, root file-map appendix, all Testing Tables sections, Rajiv's Useful for Day-to-Day Work cards, all five schedule calendars (Mayurika/Suman/Arun/Rajiv/Paraparan), and Staff Data / PH KPI pilot mounts (15 marker occurrences intact). Full detail in `validation/member-workbench-file-details-removal-check-2026-07-14.md` §"Live Deployment Verification".
+
+**Known limit:** no browser console/runtime-error check was available in this environment (server-rendered HTML content-match only); pre-existing JS (calendar/KPI/staff-data scripts) was untouched by this diff, so this is treated as sufficient, but a human eyeball pass is still recommended as final sanity check.
 
 ## Queryability Result
 
-PENDING — to be confirmed once live verification is complete (underlying `member-aios/` files must remain independently queryable regardless of dashboard display changes).
+PASS. All actual `member-aios/*/WORKBENCH.md`, `quick-reference-sources.md`, and related Markdown files remain on disk, unedited, and independently queryable — only their dashboard-UI description was removed, not the files or any pointer to them elsewhere in the repo.
 
 ## Blocker Status
 
@@ -69,8 +71,8 @@ None. This is a UI-only cleanup; no `[VERIFY]` item, source registration, or bac
 
 ## Next Step
 
-Proceed with commit, push, deployment, and live verification (Steps 5–9 of this task); update this file and the validation file with final results.
+None required for this task. If the goal ever extends to removing workbench-file references from the adjacent "Workbench Usage Guide" tables or the root file-map appendix, that would need a separate, explicitly scoped follow-up request — those were intentionally out of scope here.
 
 ## PASS/FAIL
 
-PENDING LIVE VERIFICATION
+PASS
