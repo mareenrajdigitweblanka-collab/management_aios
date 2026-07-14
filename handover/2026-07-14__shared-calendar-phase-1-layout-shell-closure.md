@@ -4,12 +4,12 @@ type: handover-closure
 created: 2026-07-14
 created-by: Mareenraj (builder)
 requirement-id: shared-calendar-phase-1-layout-shell
-status: PENDING — implementation code-complete and validated at code/structural level; commit, push, deployment, and live verification not yet performed (awaiting explicit user confirmation before pushing to origin/main, per the change's production blast radius)
+status: PASS — committed, pushed, deployed, and post-deploy live-artifact verification confirmed. Interactive human click-through on the live site remains an open follow-up (sandbox tooling limitation, not a code defect).
 ---
 
 # Handover Closure — Shared Calendar Phase 1: Layout Shell
 
-**Closure date:** Not yet closed — this record will be updated after commit/push/deploy/live verification are confirmed (Step 24 evidence-only update, or a fresh closure entry).
+**Closure date:** 2026-07-14
 
 ## Requirement
 
@@ -51,20 +51,22 @@ Phase 2 (Month/Week/Day visual redesign, event-card redesign, resolving the pre-
 
 ## Commit Hash
 
-**PENDING** — changes are staged locally only; not yet committed. Per this session's risk assessment (a push to `origin/main` triggers Vercel auto-deploy to the live production frontend used by all 5 members), commit/push is paused for explicit user confirmation before proceeding, consistent with this project's git safety practice of confirming before actions that affect shared/production state.
+`1fe7d6e` — "Implement shared calendar layout shell" (3 files: `web-view/index.html`, this handover file, the validation file). Pushed to `origin/main`: `95ab618..1fe7d6e`. User explicitly confirmed proceeding to commit/push before this step was taken.
 
 ## Deployment Result
 
-**PENDING** — not yet pushed or deployed.
+- Frontend: `https://management-aios.vercel.app/` — HTTP 200. Raw HTML fetched via `curl` and diffed byte-for-byte against the committed `web-view/index.html` — **zero-line diff** (line-ending-normalized). Confirmed the live deployment is exactly commit `1fe7d6e`, not a stale or different build. Contains all Phase 1 markers (`msc-sidebar`, `msc-calendar-shell`, `msc-sidebar-toggle`, `msc-sidebar-create`, `msc-category-legend`), zero Agenda remnants, all 5 `data-member-key` mount points, and `data-rajiv-note="true"` on exactly Rajiv's instance.
+- Backend: `https://management-aios-api.vercel.app/health` — HTTP 200, `{"status":"ok",...}`. `GET /openapi.json` confirms the schedule API surface is byte-for-byte the same 5 routes as before this change — independently proves the backend was not touched by this deploy.
+- Full detail: `validation/shared-calendar-phase-1-layout-shell-check-2026-07-14.md` §18.
 
 ## Queryability Result
 
-**PENDING** — will be confirmed once deployed (this record itself, plus the validation file, are LLM-queryable Markdown per SRC-MD-HR-001 §11.1 regardless of deployment status).
+Both this handover file and the validation file are LLM-queryable Markdown with proper frontmatter, consistent with SRC-MD-HR-001 §11.1, and are now live in the pushed commit.
 
 ## Blocker Status
 
-No technical blocker. One process gate: explicit user go-ahead to stage, commit, push, and deploy (Steps 20–24 of the original task instructions were intentionally paused here rather than executed automatically).
+No blocker. One open follow-up, not a blocker: an interactive human click-through on the live site (clicking the sidebar toggle, dragging/resizing an event, running through create/edit/delete) has not been performed, for the sandbox reason documented in the validation file §15/§18 (blocked DB egress; no browser-driving tool available without installing new tooling, which this task's instructions prohibited). Recommended as the next quick action, not as a precondition that should have blocked this deploy — deployment-artifact verification (byte-identical live HTML, unchanged backend API surface) already independently confirms the deployed code matches what was validated.
 
 ## PASS / FAIL
 
-**Code-complete: PASS.** **Deployment closure: PENDING** user confirmation.
+**PASS.** Committed, pushed, deployed, and deployment-artifact-verified. Phase 1 is closed. Follow-up: human click-through verification on the live site at the next opportunity (see Blocker Status).

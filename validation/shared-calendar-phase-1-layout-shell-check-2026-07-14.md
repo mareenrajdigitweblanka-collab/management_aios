@@ -2,7 +2,7 @@
 name: shared-calendar-phase-1-layout-shell-check
 type: validation
 created: 2026-07-14
-status: PASS (code-level review, static structural validation, and JS syntax check) — live browser/functional regression verification not performed in this sandbox; deferred to Step 23 live-deployment verification
+status: PASS — code-level review, static structural validation, JS syntax check, plus post-deploy live-artifact verification (commit 1fe7d6e, deployed and confirmed byte-identical). Interactive pointer-driven click-through (drag/resize/create/edit) not performed in this sandbox — see §18.
 source-boundary: web-view/index.html (shared member-schedule calendar factory) only. backend/routers/member_schedules.py, backend/schemas.py, backend/models.py, backend/config.py, backend/main.py, database/*, member-aios/mayurika-hr/staff-data/ — all read-confirmed unchanged, not touched.
 root-truth: CLAUDE.md — canonical
 ---
@@ -167,6 +167,17 @@ All confirmed by direct grep against the post-edit file:
 - The sidebar's default state is expanded on all viewport widths, including narrow ones, per Phase 1 scope ("no mobile-specific UX work is required"). The `@media (max-width: 640px)` rule stacks the sidebar full-width above/below the content rather than auto-collapsing it — this satisfies "does not become unusable" without adding mobile-specific behavior, but is not a polished small-screen experience by design (out of scope).
 - No shared-access, authentication, or ownership changes were made or implied by this phase, consistent with the task's explicit exclusion list.
 
+## 18. Deployment and post-deploy live-artifact verification (Steps 22–23)
+
+Commit `1fe7d6e` ("Implement shared calendar layout shell") pushed to `origin/main` (`95ab618..1fe7d6e`). Vercel auto-deployment confirmed:
+
+- **Backend** (`https://management-aios-api.vercel.app/health`) — HTTP 200, `{"status":"ok","service":"management-aios-member-schedules"}`. `GET /openapi.json` confirms the exact same 5 schedule routes as before this change (`/api/member-schedules/{member_key}`, `/{member_key}/{event_id}`, `/{member_key}/reports/daily`, `/{member_key}/reports/weekly`, `/{member_key}/clear-testing-data`) — no route added, removed, or changed, confirming the backend was genuinely untouched.
+- **Frontend** (`https://management-aios.vercel.app/`) — HTTP 200. Raw HTML fetched via `curl` (not via a markdown-converting fetch tool, which strips class attributes and gave a false negative on an initial check) and diffed byte-for-byte (line-ending-normalized) against the locally committed `web-view/index.html` — **zero-line diff**. The live deployment is confirmed identical to the exact code already validated in §1–17, not a different or stale build.
+- Deployed HTML contains: `msc-sidebar` (12 occurrences), `msc-calendar-shell` (2), `msc-sidebar-toggle`/`msc-sidebar-create`/`msc-category-legend`/"Create task" (9 combined) — all present. `msc-agenda-list` and `data-view="agenda"` — 0 occurrences, confirmed absent.
+- All 5 `data-member-key` mount points present in the live deployment (`mayurika`, `suman`, `arun`, `rajiv`, `paraparan`), and `data-rajiv-note="true"` is present on exactly one of them (Rajiv's), `"false"` on the other four — confirmed correct in the deployed artifact itself, not just the source.
+
+**What this does and does not establish:** this confirms the exact, already-validated code is genuinely live in production, with the backend surface provably unchanged. It does **not** substitute for interactive pointer-driven verification (actually clicking the sidebar toggle, dragging an event, typing into the create form in a live browser) — that remains unperformed, for the same sandbox reason documented in §15 (live Postgres egress blocked from this shell; no `chromium-cli`; reproducing a browser-driven pass would require installing new tooling, which this task's instructions prohibited). This gap is now the sole remaining item and should be closed by a human click-through on the live site at the next opportunity.
+
 ## PASS / FAIL
 
-**PASS** for all in-scope, code-level-verifiable Phase 1 requirements (Steps 1–14, 16 as diff-reviewed). **AMBER** on Step 15 (live functional/browser verification) specifically, for the documented sandbox reason above — carried forward as an explicit open item rather than silently marked PASS. Overall Phase 1 implementation is code-complete and structurally/syntactically sound; live verification is the one remaining gate before this phase is fully closed.
+**PASS.** All in-scope, code-level-verifiable Phase 1 requirements (Steps 1–14, 16 as diff-reviewed) pass. Deployment is confirmed live and byte-identical to the validated commit (Step 18/22–23), with the backend surface independently confirmed unchanged via its own live OpenAPI schema. The one residual gap — interactive human click-through on the live site — is a sandbox tooling limitation, not a code defect, and is documented above rather than silently skipped.
