@@ -6200,35 +6200,33 @@
         }
 
         /* ── Schedule Summary — counts, durations, used/ignored task
-           totals, duration percentages, and previous-period comparisons
-           (2026-07-14 duration reporting; counts/percentages block
-           originally 2026-07-14). Server-authoritative: reads the report
-           endpoints rather than deriving counts or durations from the
-           `items` array already loaded in the browser, per the reporting
-           requirement that the server response — not the client's local
-           cache — is the source of truth. No duration, percentage, or
+           totals, and previous-period comparisons (2026-07-14 duration
+           reporting; counts block originally 2026-07-14; Count %/Time %
+           rows removed from display 2026-07-14 — see
+           validation/schedule-summary-percentage-row-removal-check-2026-07-14.md.
+           The backend still computes and returns scheduled_percentage/
+           unscheduled_percentage/scheduled_duration_percentage/
+           unscheduled_duration_percentage on every report; this renderer
+           simply no longer reads or displays them). Server-authoritative:
+           reads the report endpoints rather than deriving counts or
+           durations from the `items` array already loaded in the browser,
+           per the reporting requirement that the server response — not the
+           client's local cache — is the source of truth. No duration or
            comparison value is ever computed here; formatDuration/
-           formatDurationPercentage/formatChange only format values the
-           backend already returned. "Count %" is the pre-existing,
-           unchanged count-based percentage (scheduled_percentage/
-           unscheduled_percentage) — kept and explicitly labeled so it is
-           never mistaken for the new duration-based "Time %" row. Shared
-           across all five member instances via this one factory function;
-           no member-specific logic. ── */
+           formatChange only format values the backend already returned.
+           Shared across all five member instances via this one factory
+           function; no member-specific logic. ── */
         function renderSummaryStats(el, report) {
-          /* Grouped into four .msc-summary-group sections (counts,
-             percentages, coverage, comparison) purely for visual structure
-             (2026-07-14 responsive layout) — every field, label, and value
-             is unchanged from before; only the wrapping markup differs. */
+          /* Grouped into three .msc-summary-group sections (counts,
+             coverage, comparison) purely for visual structure (2026-07-14
+             responsive layout; percentage group removed 2026-07-14) —
+             every remaining field, label, and value is unchanged from
+             before; only the wrapping markup differs. */
           el.innerHTML =
             '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Scheduled</span><strong>' + report.scheduled_count + ' task(s) &middot; ' + formatDuration(report.scheduled_duration_minutes) + '</strong></div>' +
             '<div class="msc-summary-row"><span>Unscheduled</span><strong>' + report.unscheduled_count + ' task(s) &middot; ' + formatDuration(report.unscheduled_duration_minutes) + '</strong></div>' +
             '<div class="msc-summary-row"><span>Total</span><strong>' + report.total_count + ' task(s) &middot; ' + formatDuration(report.total_duration_minutes) + '</strong></div>' +
-            '</div>' +
-            '<div class="msc-summary-group">' +
-            '<div class="msc-summary-row"><span>Count %</span><strong>' + report.scheduled_percentage + '% / ' + report.unscheduled_percentage + '%</strong></div>' +
-            '<div class="msc-summary-row"><span>Time %</span><strong>' + formatDurationPercentage(report.scheduled_duration_percentage) + ' / ' + formatDurationPercentage(report.unscheduled_duration_percentage) + '</strong></div>' +
             '</div>' +
             '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Duration used</span><strong>' + report.total_duration_used_task_count + '</strong></div>' +
