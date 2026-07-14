@@ -1835,7 +1835,8 @@
     }
 
     /* ── Schedule Summary section (2026-07-14 responsive layout;
-       full-width 2026-07-14) — a direct child of .msc-calendar-shell,
+       full-width 2026-07-14; surface matched to Schedule Item card
+       2026-07-14) — a direct child of .msc-calendar-shell,
        positioned after the calendar's card (.hr-table-card wrapping
        .msc-calendar-header/.msc-calendar-main) and before the second
        .hr-table-card wrapping the Schedule Item form/list cards. Being a
@@ -1846,14 +1847,20 @@
        .msc-cal-grid-wrap entirely). box-sizing: border-box is required
        here specifically because width: 100% is combined with horizontal
        padding — without it the padding would add on top of 100% and
-       overflow the shell. ── */
+       overflow the shell. background/border/border-radius reuse the exact
+       same --surface/--border/--radius tokens as .hr-table-card (the
+       Schedule Item panel's outer wrapper) so the two sections read as the
+       same card treatment instead of the summary sitting on bare page
+       background. ── */
     .msc-summary-section {
       width: 100%;
       box-sizing: border-box;
       min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 18px 16px 20px;
       margin-top: 16px;
-      border-top: 1px solid var(--border);
     }
 
     @media (max-width: 480px) {
@@ -6229,8 +6236,8 @@
             '<div class="msc-summary-row"><span>Total</span><strong>' + report.total_count + ' task(s) &middot; ' + formatDuration(report.total_duration_minutes) + '</strong></div>' +
             '</div>' +
             '<div class="msc-summary-group">' +
-            '<div class="msc-summary-row"><span>Duration used</span><strong>' + report.total_duration_used_task_count + '</strong></div>' +
-            '<div class="msc-summary-row"><span>Duration ignored</span><strong>' + report.total_duration_ignored_task_count + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Tasks used</span><strong>' + report.total_duration_used_task_count + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Tasks ignored</span><strong>' + report.total_duration_ignored_task_count + '</strong></div>' +
             '</div>' +
             '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Scheduled vs. previous</span><strong>' + formatChange(report.scheduled_duration_change) + '</strong></div>' +
