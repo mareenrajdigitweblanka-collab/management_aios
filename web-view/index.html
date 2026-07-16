@@ -6584,6 +6584,36 @@
           selectDate(toDateStr(new Date()));
         });
 
+        /* ── Single shared date-sync helper (2026-07-16) ──
+           The one place that pushes the calendar's selected date (already an
+           ISO YYYY-MM-DD string — never locale-formatted or round-tripped
+           through a Date/UTC conversion) into every date-dependent form
+           field. Every date-selection path (Month cell click, mini-picker
+           click, Week/Day empty-slot click via prefillCreateForm, Today
+           button) calls selectDate(), which calls this — so there is
+           exactly one place that decides how forms react to a newly
+           selected date, not one copy per view.
+
+           This only updates the *create* forms' date fields — it never
+           calls the leave or task API and never mutates an existing saved
+           record; if a task is mid-edit, cancelEdit() (called by
+           selectDate() below) already resets that state first, matching
+           the existing pre-2026-07-16 behavior for the Schedule Item form. */
+        function syncSelectedDateToForms(dateStr) {
+          fieldDate.value = dateStr;
+          if (leaveFieldStartDate) { leaveFieldStartDate.value = dateStr; }
+          /* Multi-Day is the only leave type with a visible/applicable End
+             Date field (see updateLeaveFormFieldVisibility) — initialize it
+             to the same selected date so a fresh Multi-Day request starts
+             as a single-day range the user can then widen manually. Every
+             other leave type leaves End Date untouched — it is hidden and
+             not applicable, per the existing form logic, and this must not
+             invent a new leave rule (e.g. auto-expanding a range). */
+          if (leaveFieldEndDate && leaveFieldType && leaveFieldType.value === 'Multi-Day') {
+            leaveFieldEndDate.value = dateStr;
+          }
+        }
+
         function selectDate(dateStr) {
           state.selectedDate = dateStr;
           var d = parseDateStr(dateStr);
@@ -6593,8 +6623,7 @@
           selectedDateLabel.textContent = dateStr;
           listDateLabel.textContent = dateStr;
           if (leaveListDateLabel) { leaveListDateLabel.textContent = dateStr; }
-          fieldDate.value = dateStr;
-          if (leaveFieldStartDate && !leaveFieldStartDate.value) { leaveFieldStartDate.value = dateStr; }
+          syncSelectedDateToForms(dateStr);
           cancelEdit();
           renderActiveView();
           renderList();
