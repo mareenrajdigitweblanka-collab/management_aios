@@ -2489,6 +2489,101 @@
       color: var(--muted);
     }
 
+    /* ── Leave coordination copy (REQ-LEAVE-COPY-001) — deliberately
+       distinct from .msc-cal-chip/.msc-chip-cat (task categories) so leave
+       is never visually confused with Scheduled/Unscheduled tasks. Pending
+       uses --preview (blue), Approved uses --draft (purple) — neither
+       reuses the amber/green task-category colors. ── */
+    .msc-cal-chip-leave {
+      display: block;
+      font-size: .62rem;
+      line-height: 1.4;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 3px solid transparent;
+    }
+
+    .msc-cal-chip-leave.leave-pending {
+      background: var(--preview-bg);
+      color: var(--preview);
+      border-left-color: var(--preview);
+    }
+
+    .msc-cal-chip-leave.leave-approved {
+      background: var(--draft-bg);
+      color: var(--draft);
+      border-left-color: var(--draft);
+    }
+
+    .msc-tg-allday-chip-leave {
+      display: inline-block;
+      font-size: .68rem;
+      padding: 1px 8px;
+      border-radius: 999px;
+      margin: 1px 4px 1px 0;
+      border-left: 3px solid transparent;
+    }
+
+    .msc-tg-allday-chip-leave.leave-pending {
+      background: var(--preview-bg);
+      color: var(--preview);
+      border-left-color: var(--preview);
+    }
+
+    .msc-tg-allday-chip-leave.leave-approved {
+      background: var(--draft-bg);
+      color: var(--draft);
+      border-left-color: var(--draft);
+    }
+
+    /* Timed (Short Leave / Half-Day) leave blocks in the Week/Day time
+       grid — absolutely positioned like .msc-tg-event, but with no drag
+       handle and no data-id wiring in wireTimeGridInteractions, so these
+       are never draggable/resizable; editing goes through the leave
+       status actions only. */
+    .msc-tg-leave-block {
+      position: absolute;
+      z-index: 1;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: .68rem;
+      color: #fff;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: .92;
+    }
+
+    .msc-tg-leave-block.leave-pending { background: var(--preview); }
+    .msc-tg-leave-block.leave-approved { background: var(--draft); }
+
+    .msc-leave-status-badge {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 600;
+      padding: 1px 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+
+    .msc-leave-status-badge.leave-pending { background: var(--preview-bg); color: var(--preview); }
+    .msc-leave-status-badge.leave-approved { background: var(--draft-bg); color: var(--draft); }
+    .msc-leave-status-badge.leave-rejected { background: var(--blocked-bg); color: var(--blocked); }
+    .msc-leave-status-badge.leave-cancelled { background: var(--surface-tint); color: var(--muted); }
+
+    .msc-leave-notice {
+      font-size: .78rem;
+      color: var(--text-secondary);
+      background: var(--surface-tint);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      margin-bottom: 10px;
+    }
+
     @media (max-width: 768px) {
       .msc-form-grid {
         grid-template-columns: 1fr;
@@ -5252,10 +5347,74 @@
         return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
       }());
 
+      /* Leave coordination-copy API base (REQ-LEAVE-COPY-001) — same
+         local-vs-production host detection as MEMBER_SCHEDULE_API_BASE,
+         just a different route prefix. No leave-deduction minute value
+         (270/270/540) is ever hardcoded here or anywhere else in this
+         file — every effective_leave_minutes/summary figure this page
+         displays comes from the backend response. */
+      var MEMBER_LEAVE_API_BASE = (function () {
+        var LOCAL_BASE = 'http://127.0.0.1:8000/api/member-leave';
+        var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/member-leave';
+        var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+        return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
+      }());
+
       var CATEGORY_CLASS = {
         'Scheduled Task': 'task',
         'Unscheduled Task': 'followup'
       };
+
+      /* Leave status -> CSS class (distinct from CATEGORY_CLASS — leave is
+         never rendered with a task-category color). Rejected/Cancelled are
+         only ever encountered in the history list (normal view/list never
+         receives them from the backend). */
+      var LEAVE_STATUS_CLASS = {
+        Pending: 'leave-pending',
+        Approved: 'leave-approved',
+        Rejected: 'leave-rejected',
+        Cancelled: 'leave-cancelled'
+      };
+
+      /* Client-side mirror of the server's Monday-Friday weekday
+         expansion — DISPLAY ONLY (deciding which calendar dates a
+         Multi-Day leave chip appears on). It never computes or overrides
+         effective_leave_minutes, the short-leave cap, or any conflict
+         decision — those are always server-authoritative. */
+      function expandWeekdaysClientSide(startDateStr, endDateStr) {
+        var start = parseDateStr(startDateStr);
+        var end = parseDateStr(endDateStr);
+        var out = [];
+        var cur = new Date(start);
+        while (cur <= end) {
+          var dow = cur.getDay(); // 0 Sun .. 6 Sat
+          if (dow !== 0 && dow !== 6) { out.push(toDateStr(cur)); }
+          cur.setDate(cur.getDate() + 1);
+        }
+        return out;
+      }
+
+      /* Which calendar dates a leave record (as returned by the API)
+         covers, for Month/Week/Day rendering only. */
+      function leaveDatesForItem(lv) {
+        if (lv.leave_type === 'Multi-Day') { return expandWeekdaysClientSide(lv.start_date, lv.end_date); }
+        return [lv.start_date];
+      }
+
+      /* Display-positioning only (Week/Day time-grid placement) — mirrors
+         the confirmed leave-system clock periods so a Half-Day chip is
+         drawn at roughly the right place in the grid. This never feeds
+         into any deduction, cap, or conflict calculation — those are
+         entirely backend-authoritative and read from the API response. */
+      var LEAVE_HALF_DAY_FIRST_DISPLAY = { start: '08:30', end: '13:00' };
+      var LEAVE_HALF_DAY_SECOND_DISPLAY = { start: '13:30', end: '18:00' };
+
+      function leaveDisplayTimeRange(lv) {
+        if (lv.leave_type === 'Short Leave') { return { start: lv.start_time, end: lv.end_time }; }
+        if (lv.leave_type === 'Half-Day First') { return LEAVE_HALF_DAY_FIRST_DISPLAY; }
+        if (lv.leave_type === 'Half-Day Second') { return LEAVE_HALF_DAY_SECOND_DISPLAY; }
+        return null; // Full-Day / Multi-Day render in the all-day row, not the timed area.
+      }
       var PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
       var PRIORITY_BADGE = { High: 'badge-blocked', Medium: 'badge-amber', Low: 'badge-pass' };
       var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
@@ -5518,6 +5677,40 @@
           '</div>' +
           '</div>' +
           '</div>' +
+          '<div class="hr-table-card msc-leave-card">' +
+          '<div class="hr-table-title" style="margin-bottom:8px;">Leave Coordination (Calendar Copy)</div>' +
+          '<div class="msc-leave-notice">Calendar coordination copy only. The separate HR leave system remains ' +
+          'official. This is not an official leave balance, payroll/no-pay calculation, disciplinary decision, ' +
+          'or medical record — and status here does not represent verified HR approval identity.</div>' +
+          '<form class="msc-leave-form msc-form-grid" autocomplete="off">' +
+          '<label>Leave type<select class="msc-leave-field-type">' +
+          '<option value="Short Leave">Short Leave</option>' +
+          '<option value="Half-Day First">Half-Day Leave — First Half (08:30–13:00)</option>' +
+          '<option value="Half-Day Second">Half-Day Leave — Second Half (13:30–18:00)</option>' +
+          '<option value="Full-Day">Full-Day Leave</option>' +
+          '<option value="Multi-Day">Multi-Day Leave</option>' +
+          '</select></label>' +
+          '<label class="msc-leave-field-start-date-wrap">Start date<input type="date" class="msc-leave-field-start-date" required /></label>' +
+          '<label class="msc-leave-field-end-date-wrap" style="display:none;">End date<input type="date" class="msc-leave-field-end-date" /></label>' +
+          '<label class="msc-leave-field-time-wrap" style="display:none;">Start time<input type="time" class="msc-leave-field-start-time" /></label>' +
+          '<label class="msc-leave-field-time-wrap" style="display:none;">End time<input type="time" class="msc-leave-field-end-time" /></label>' +
+          '<label class="msc-form-full">Purpose (optional)<input type="text" class="msc-leave-field-purpose" maxlength="240" ' +
+          'placeholder="Optional — no medical detail" /></label>' +
+          '<label class="msc-form-full">External reference (optional)<input type="text" class="msc-leave-field-external-reference" ' +
+          'maxlength="120" placeholder="e.g. official HR leave system reference id" /></label>' +
+          '</form>' +
+          '<div class="msc-form-actions">' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
+          '<button type="button" class="msc-btn msc-btn-ghost msc-leave-history-toggle" aria-pressed="false">Show history</button>' +
+          '</div>' +
+          '<div class="hr-table-title" style="margin:14px 0 8px;">Leave — ' +
+          '<span class="msc-leave-list-date-label">select a date</span></div>' +
+          '<div class="msc-leave-list"><p class="msc-empty">Select a date on the calendar to see leave for that date.</p></div>' +
+          '<div class="msc-leave-history-wrap" style="display:none;">' +
+          '<div class="hr-table-title" style="margin:14px 0 8px;">Leave History — All Statuses</div>' +
+          '<div class="msc-leave-history-list"><p class="msc-empty">Loading history…</p></div>' +
+          '</div>' +
+          '</div>' +
           '<div class="hr-table-card">' +
           '<div class="msc-form-card">' +
           '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
@@ -5627,6 +5820,27 @@
         var sidebarCreateBtn = container.querySelector('.msc-sidebar-create');
         var formCardEl = container.querySelector('.msc-form-card');
 
+        /* ── Leave coordination copy (REQ-LEAVE-COPY-001) scoped refs ── */
+        var leaveApiBase = MEMBER_LEAVE_API_BASE + '/' + encodeURIComponent(memberKey);
+        var leaveFormEl = container.querySelector('.msc-leave-form');
+        var leaveFieldType = container.querySelector('.msc-leave-field-type');
+        var leaveFieldStartDate = container.querySelector('.msc-leave-field-start-date');
+        var leaveFieldEndDate = container.querySelector('.msc-leave-field-end-date');
+        var leaveFieldEndDateWrap = container.querySelector('.msc-leave-field-end-date-wrap');
+        var leaveFieldStartTime = container.querySelector('.msc-leave-field-start-time');
+        var leaveFieldEndTime = container.querySelector('.msc-leave-field-end-time');
+        var leaveFieldTimeWraps = container.querySelectorAll('.msc-leave-field-time-wrap');
+        var leaveFieldPurpose = container.querySelector('.msc-leave-field-purpose');
+        var leaveFieldExternalReference = container.querySelector('.msc-leave-field-external-reference');
+        var leaveCreateBtn = container.querySelector('.msc-leave-create-btn');
+        var leaveHistoryToggleBtn = container.querySelector('.msc-leave-history-toggle');
+        var leaveListDateLabel = container.querySelector('.msc-leave-list-date-label');
+        var leaveListEl = container.querySelector('.msc-leave-list');
+        var leaveHistoryWrapEl = container.querySelector('.msc-leave-history-wrap');
+        var leaveHistoryListEl = container.querySelector('.msc-leave-history-list');
+
+        if (leaveFormEl) { leaveFormEl.addEventListener('submit', function (e) { e.preventDefault(); }); }
+
         /* Prevent Enter-key implicit form submission from reloading the page —
            no action/method is set on this form; it is never meant to submit. */
         formEl.addEventListener('submit', function (e) { e.preventDefault(); });
@@ -5690,6 +5904,19 @@
           return fetch(url, opts).then(function (res) {
             if (!res.ok) {
               return res.json().catch(function () { return {}; }).then(function (errBody) {
+                /* REQ-LEAVE-COPY-001: a task save blocked by Approved leave
+                   returns a raw 409 body ({error:"leave_conflict", message,
+                   conflicts:[...]}) with no "detail" wrapper — surfaced here
+                   with a clear, human-readable message rather than falling
+                   through to a bare "409 Conflict". */
+                if (errBody && errBody.error === 'leave_conflict') {
+                  var conflictSummary = (errBody.conflicts || []).map(function (c) {
+                    var range = c.start_date === c.end_date ? c.start_date : (c.start_date + ' – ' + c.end_date);
+                    return c.leave_type + ' (' + c.status + ', ' + range + ')';
+                  }).join('; ');
+                  throw new Error((errBody.message || 'This task conflicts with approved leave.') +
+                    (conflictSummary ? ' [' + conflictSummary + ']' : ''));
+                }
                 var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) : (res.status + ' ' + res.statusText);
                 throw new Error(detail);
               });
@@ -5716,6 +5943,18 @@
 
         function itemsForDate(dateStr) {
           return items.filter(function (it) { return it.date === dateStr; });
+        }
+
+        /* Leave state (REQ-LEAVE-COPY-001). leaveItems = normal view
+           (Pending + Approved only, server-filtered). leaveHistoryItems =
+           all four statuses, lazy-loaded only when the history toggle is
+           first opened. */
+        var leaveItems = [];
+        var leaveHistoryItems = null;
+        var leaveHistoryVisible = false;
+
+        function leaveItemsForDate(dateStr) {
+          return leaveItems.filter(function (lv) { return leaveDatesForItem(lv).indexOf(dateStr) !== -1; });
         }
 
         var MAX_CAL_CHIPS = 2;
@@ -5747,6 +5986,16 @@
             if (dayItems.length > MAX_CAL_CHIPS) {
               html += '<span class="msc-cal-chip-more">+' + (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
             }
+            /* Leave chips (REQ-LEAVE-COPY-001) — visually distinct from
+               the task chips above (own class, own colors), never using
+               CATEGORY_CLASS. Rejected/Cancelled are never in `leaveItems`
+               (server-filtered), so they never render here. */
+            leaveItemsForDate(c.dateStr).forEach(function (lv) {
+              var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
+              var label = lv.leave_type + ' — ' + lv.status;
+              html += '<span class="msc-cal-chip-leave ' + leaveClass + '" title="' + escapeHtml(label) + '">' +
+                escapeHtml(label) + '</span>';
+            });
             html += '</div>';
           });
           calGrid.innerHTML = html;
@@ -5789,6 +6038,17 @@
               alldayHtml += '<div class="msc-tg-allday-chip ' + catClass + '" data-id="' + it.id +
                 '" tabindex="0" role="button" title="' + escapeHtml(it.title) + '">' + escapeHtml(it.title) + '</div>';
             });
+            /* Full-Day / Multi-Day leave renders here (all-day style), not
+               as a fake timed block — Short Leave / Half-Day render in the
+               timed area below instead. */
+            leaveItemsForDate(dateStr).filter(function (lv) {
+              return lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day';
+            }).forEach(function (lv) {
+              var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
+              var label = lv.leave_type + ' — ' + lv.status;
+              alldayHtml += '<div class="msc-tg-allday-chip-leave ' + leaveClass + '" title="' + escapeHtml(label) + '">' +
+                escapeHtml(label) + '</div>';
+            });
             alldayHtml += '</div>';
           });
           alldayHtml += '</div>';
@@ -5822,6 +6082,23 @@
                 '<div class="msc-tg-event-time">' + escapeHtml(it.start) + (it.end ? '–' + escapeHtml(it.end) : '') + '</div>' +
                 '<div class="msc-tg-resize-handle" aria-hidden="true"></div>' +
                 '</div>';
+            });
+            /* Short Leave / Half-Day leave blocks — non-interactive
+               (pointer-events:none via CSS, no data-id, never passed to
+               wireTimeGridInteractions), so they can never be dragged or
+               resized. Editing goes through the leave status actions only. */
+            leaveItemsForDate(dateStr).forEach(function (lv) {
+              var range = leaveDisplayTimeRange(lv);
+              if (!range || !range.start || !range.end) { return; }
+              var leaveStart = timeToMinutes(range.start);
+              var leaveEnd = timeToMinutes(range.end);
+              var leaveTop = leaveStart / 60 * TG_ROW_HEIGHT_PX;
+              var leaveHeight = Math.max(18, (leaveEnd - leaveStart) / 60 * TG_ROW_HEIGHT_PX);
+              var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
+              bodyHtml += '<div class="msc-tg-leave-block ' + leaveClass + '" ' +
+                'style="top:' + leaveTop + 'px;height:' + leaveHeight + 'px;left:2%;width:96%;" ' +
+                'title="' + escapeHtml(lv.leave_type + ' — ' + lv.status) + '">' +
+                escapeHtml(lv.leave_type) + '</div>';
             });
             if (dateStr === todayStr) {
               var nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
@@ -6126,10 +6403,13 @@
           state.viewMonth = d.getMonth();
           selectedDateLabel.textContent = dateStr;
           listDateLabel.textContent = dateStr;
+          if (leaveListDateLabel) { leaveListDateLabel.textContent = dateStr; }
           fieldDate.value = dateStr;
+          if (leaveFieldStartDate && !leaveFieldStartDate.value) { leaveFieldStartDate.value = dateStr; }
           cancelEdit();
           renderActiveView();
           renderList();
+          renderLeaveList();
           loadSummaries(dateStr);
         }
 
@@ -6242,6 +6522,17 @@
             '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Scheduled vs. previous</span><strong>' + formatChange(report.scheduled_duration_change) + '</strong></div>' +
             '<div class="msc-summary-row"><span>Unscheduled vs. previous</span><strong>' + formatChange(report.unscheduled_duration_change) + '</strong></div>' +
+            '</div>' +
+            /* Leave-coordination-copy additions (REQ-LEAVE-COPY-001) — every
+               value below is computed by the backend and simply formatted
+               here, same as every other row in this function. Labeled
+               "leave-deduction reference" rather than "expected attendance"
+               — this system has no attendance model and does not claim one. */
+            '<div class="msc-summary-group">' +
+            '<div class="msc-summary-row"><span title="Weekday count × the confirmed Full-Day leave-deduction minutes — a reference figure, not an attendance record.">Leave-deduction reference basis</span><strong>' + formatDuration(report.base_leave_deduction_reference_minutes) + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Approved leave (deduction minutes)</span><strong>' + formatDuration(report.approved_leave_minutes) + '</strong></div>' +
+            '<div class="msc-summary-row"><span title="Reference basis minus Approved leave-deduction minutes — a coordination-copy figure, not verified productive working time.">Adjusted reference (after leave)</span><strong>' + formatDuration(report.adjusted_expected_work_minutes) + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Task coverage of adjusted reference</span><strong>' + (report.task_coverage_percentage === null || report.task_coverage_percentage === undefined ? 'N/A' : report.task_coverage_percentage.toFixed(2) + '%') + '</strong></div>' +
             '</div>';
         }
 
@@ -6462,6 +6753,191 @@
           });
         });
 
+        /* ── Leave coordination copy (REQ-LEAVE-COPY-001) ──────────────
+           Own API base (leaveApiBase), own state (leaveItems/leaveHistoryItems),
+           own render functions — never mixed into the task `items` array or
+           `renderList()`, since leave is a structurally separate concept
+           (dedicated backend table, dedicated routes) from Scheduled/
+           Unscheduled tasks. ── */
+
+        function leaveApiRequest(method, url, body) {
+          var opts = { method: method, headers: {} };
+          if (body !== undefined) {
+            opts.headers['Content-Type'] = 'application/json';
+            opts.body = JSON.stringify(body);
+          }
+          return fetch(url, opts).then(function (res) {
+            if (!res.ok) {
+              return res.json().catch(function () { return {}; }).then(function (errBody) {
+                var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) :
+                  (errBody && errBody.message ? errBody.message : (res.status + ' ' + res.statusText));
+                throw new Error(detail);
+              });
+            }
+            if (res.status === 204) { return null; }
+            return res.json();
+          });
+        }
+
+        function loadLeaveItems() {
+          return leaveApiRequest('GET', leaveApiBase).then(function (rows) {
+            return rows || [];
+          }).catch(function () { return []; });
+        }
+
+        function loadLeaveHistory() {
+          leaveHistoryListEl.innerHTML = '<p class="msc-empty">Loading history…</p>';
+          leaveApiRequest('GET', leaveApiBase + '/history').then(function (rows) {
+            leaveHistoryItems = rows || [];
+            renderLeaveHistoryList();
+          }).catch(function (err) {
+            leaveHistoryListEl.innerHTML = '<p class="msc-empty">Could not load leave history. Detail: ' +
+              escapeHtml(err.message) + '</p>';
+          });
+        }
+
+        function updateLeaveFormFieldVisibility() {
+          var leaveType = leaveFieldType.value;
+          var isShortLeave = leaveType === 'Short Leave';
+          var isMultiDay = leaveType === 'Multi-Day';
+          leaveFieldTimeWraps.forEach(function (wrap) { wrap.style.display = isShortLeave ? '' : 'none'; });
+          leaveFieldEndDateWrap.style.display = isMultiDay ? '' : 'none';
+        }
+        leaveFieldType.addEventListener('change', updateLeaveFormFieldVisibility);
+        updateLeaveFormFieldVisibility();
+
+        function resetLeaveForm() {
+          leaveFieldType.value = 'Short Leave';
+          leaveFieldStartDate.value = '';
+          leaveFieldEndDate.value = '';
+          leaveFieldStartTime.value = '';
+          leaveFieldEndTime.value = '';
+          leaveFieldPurpose.value = '';
+          leaveFieldExternalReference.value = '';
+          updateLeaveFormFieldVisibility();
+        }
+
+        leaveCreateBtn.addEventListener('click', function () {
+          var leaveType = leaveFieldType.value;
+          if (!leaveFieldStartDate.value) { window.alert('Choose a start date for this leave request.'); return; }
+          var payload = {
+            leave_type: leaveType,
+            start_date: leaveFieldStartDate.value,
+            purpose: leaveFieldPurpose.value.trim() || null,
+            external_reference: leaveFieldExternalReference.value.trim() || null
+          };
+          if (leaveType === 'Multi-Day') {
+            if (!leaveFieldEndDate.value) { window.alert('Choose an end date for Multi-Day leave.'); return; }
+            payload.end_date = leaveFieldEndDate.value;
+          }
+          if (leaveType === 'Short Leave') {
+            if (!leaveFieldStartTime.value || !leaveFieldEndTime.value) {
+              window.alert('Short Leave requires both a start time and an end time.'); return;
+            }
+            payload.start_time = leaveFieldStartTime.value;
+            payload.end_time = leaveFieldEndTime.value;
+          }
+          leaveCreateBtn.disabled = true;
+          leaveApiRequest('POST', leaveApiBase, payload).then(function (record) {
+            leaveItems.push(record);
+            resetLeaveForm();
+            renderActiveView();
+            renderLeaveList();
+          }).catch(function (err) {
+            window.alert('Could not create this leave request. Detail: ' + err.message);
+          }).then(function () { leaveCreateBtn.disabled = false; });
+        });
+
+        function allowedLeaveTransitions(status) {
+          if (status === 'Pending') { return ['Approved', 'Rejected', 'Cancelled']; }
+          if (status === 'Approved') { return ['Cancelled']; }
+          return [];
+        }
+
+        function applyLeaveStatusChange(leaveId, newStatus, btn) {
+          if (btn) { btn.disabled = true; }
+          var request = newStatus === 'Cancelled'
+            ? leaveApiRequest('POST', leaveApiBase + '/' + encodeURIComponent(leaveId) + '/cancel')
+            : leaveApiRequest('PUT', leaveApiBase + '/' + encodeURIComponent(leaveId), { status: newStatus });
+          request.then(function (record) {
+            if (newStatus === 'Cancelled' || newStatus === 'Rejected') {
+              // No longer in the normal (Pending+Approved) view.
+              leaveItems = leaveItems.filter(function (lv) { return lv.id !== leaveId; });
+            } else {
+              var idx = leaveItems.findIndex(function (lv) { return lv.id === leaveId; });
+              if (idx !== -1) { leaveItems[idx] = record; }
+            }
+            renderActiveView();
+            renderLeaveList();
+            if (leaveHistoryVisible) { loadLeaveHistory(); }
+            if (state.selectedDate) { loadSummaries(state.selectedDate); }
+          }).catch(function (err) {
+            window.alert('Could not update this leave request. Detail: ' + err.message);
+          }).then(function () { if (btn) { btn.disabled = false; } });
+        }
+
+        function renderLeaveList() {
+          if (!state.selectedDate) {
+            leaveListEl.innerHTML = '<p class="msc-empty">Select a date on the calendar to see leave for that date.</p>';
+            return;
+          }
+          var dayLeave = leaveItemsForDate(state.selectedDate);
+          if (!dayLeave.length) {
+            leaveListEl.innerHTML = '<p class="msc-empty">No Pending or Approved leave for ' +
+              escapeHtml(memberLabel) + ' on ' + state.selectedDate + '.</p>';
+            return;
+          }
+          var html = '';
+          dayLeave.forEach(function (lv) {
+            var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
+            var dateRange = lv.start_date === lv.end_date ? lv.start_date : (lv.start_date + ' – ' + lv.end_date);
+            var timeStr = (lv.start_time && lv.end_time) ? (lv.start_time.slice(0, 5) + '–' + lv.end_time.slice(0, 5)) : '';
+            html += '<div class="msc-item" data-leave-id="' + lv.id + '">';
+            html += '<div><div class="msc-item-title"><span class="msc-leave-status-badge ' + leaveClass + '">' +
+              escapeHtml(lv.status) + '</span> ' + escapeHtml(lv.leave_type) + '</div>';
+            html += '<div class="msc-item-meta">' + escapeHtml(dateRange) + (timeStr ? ' &middot; ' + escapeHtml(timeStr) : '') +
+              (lv.effective_leave_minutes ? ' &middot; ' + lv.effective_leave_minutes + ' leave-deduction min' : '') + '</div>';
+            if (lv.purpose) { html += '<div class="msc-item-meta">' + escapeHtml(lv.purpose) + '</div>'; }
+            html += '</div><div class="msc-item-actions">';
+            allowedLeaveTransitions(lv.status).forEach(function (target) {
+              html += '<button type="button" data-leave-action="' + target + '" data-leave-id="' + lv.id + '">' + target + '</button>';
+            });
+            html += '</div></div>';
+          });
+          leaveListEl.innerHTML = html;
+          leaveListEl.querySelectorAll('button[data-leave-action]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              applyLeaveStatusChange(btn.getAttribute('data-leave-id'), btn.getAttribute('data-leave-action'), btn);
+            });
+          });
+        }
+
+        function renderLeaveHistoryList() {
+          if (!leaveHistoryItems || !leaveHistoryItems.length) {
+            leaveHistoryListEl.innerHTML = '<p class="msc-empty">No leave history for ' + escapeHtml(memberLabel) + ' yet.</p>';
+            return;
+          }
+          var sorted = leaveHistoryItems.slice().sort(function (a, b) { return a.start_date < b.start_date ? 1 : -1; });
+          var html = '';
+          sorted.forEach(function (lv) {
+            var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
+            var dateRange = lv.start_date === lv.end_date ? lv.start_date : (lv.start_date + ' – ' + lv.end_date);
+            html += '<div class="msc-item">';
+            html += '<div><div class="msc-item-title"><span class="msc-leave-status-badge ' + leaveClass + '">' +
+              escapeHtml(lv.status) + '</span> ' + escapeHtml(lv.leave_type) + '</div>';
+            html += '<div class="msc-item-meta">' + escapeHtml(dateRange) + '</div></div></div>';
+          });
+          leaveHistoryListEl.innerHTML = html;
+        }
+
+        leaveHistoryToggleBtn.addEventListener('click', function () {
+          leaveHistoryVisible = !leaveHistoryVisible;
+          leaveHistoryToggleBtn.setAttribute('aria-pressed', leaveHistoryVisible ? 'true' : 'false');
+          leaveHistoryToggleBtn.textContent = leaveHistoryVisible ? 'Hide history' : 'Show history';
+          leaveHistoryWrapEl.style.display = leaveHistoryVisible ? '' : 'none';
+          if (leaveHistoryVisible) { loadLeaveHistory(); }
+        });
+
         /* ── Init this instance ──
            Items are loaded from the API before the first render. No seed/sample
            data is created automatically — the list stays empty (and the calendar
@@ -6490,6 +6966,9 @@
 
         loadItems().then(function (loaded) {
           items = loaded;
+          return loadLeaveItems();
+        }).then(function (loadedLeave) {
+          leaveItems = loadedLeave;
           selectDate(toDateStr(t0));
         });
       }
