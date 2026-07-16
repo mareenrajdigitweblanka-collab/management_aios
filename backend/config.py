@@ -7,6 +7,7 @@ and formats (placeholder values only).
 """
 
 import os
+from datetime import time
 
 from dotenv import load_dotenv
 
@@ -140,3 +141,68 @@ STAFF_EXCLUDED_COLUMNS = (
     "guardian_phone",
     "guardian_number",
 )
+
+# ── Member Leave Coordination Copy (REQ-LEAVE-COPY-001, 2026-07-16) ──────
+# Source contract: docs/2026-07-16_management-calendar-leave-copy-requirement.md
+# and docs/management-calendar-leave-copy-design.md. This feature is a
+# calendar coordination copy only — the separate official HR leave system
+# remains the source of truth for leave balance, payroll, no-pay, and
+# disciplinary determinations. Nothing below claims otherwise.
+
+VALID_LEAVE_TYPES = (
+    "Short Leave",
+    "Half-Day First",
+    "Half-Day Second",
+    "Full-Day",
+    "Multi-Day",
+)
+
+VALID_LEAVE_STATUSES = ("Pending", "Approved", "Rejected", "Cancelled")
+
+# Only populated (as "First"/"Second") for the two half-day leave types;
+# NULL for every other leave type. Redundant with leave_type by design —
+# kept as its own column so half-day rows can be filtered/reported on
+# without string-matching leave_type (see the design document's table §4).
+VALID_HALF_DAY_PERIODS = ("First", "Second")
+
+LEAVE_POLICY_SOURCE_ID = "SRC-POLICY-001"
+
+LEAVE_COORDINATION_COPY_NOTICE = (
+    "Calendar coordination copy only. The separate HR leave system remains "
+    "official."
+)
+
+SHORT_LEAVE_MAX_REQUEST_MINUTES = 120
+SHORT_LEAVE_MONTHLY_CAP_MINUTES = 120
+
+# Leave-system time periods (mirrored from the separate official leave
+# system — NOT derived from ACTUAL_OFFICE_BREAK_START/END below). These are
+# the confirmed values from the approved requirement document §6.1/§8.5.
+# The three *_DEDUCTION_MINUTES constants are "leave deduction minutes" /
+# "leave-system credited minutes" — the official leave system's own
+# credited figures for a half-day or full-day absence. They must never be
+# described or reasoned about as independently verified actual productive
+# working time.
+LEAVE_HALF_DAY_FIRST_START = time(8, 30)
+LEAVE_HALF_DAY_FIRST_END = time(13, 0)
+LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES = 270
+
+LEAVE_HALF_DAY_SECOND_START = time(13, 30)
+LEAVE_HALF_DAY_SECOND_END = time(18, 0)
+LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES = 270
+
+LEAVE_FULL_DAY_START = time(8, 30)
+LEAVE_FULL_DAY_END = time(18, 0)
+LEAVE_FULL_DAY_DEDUCTION_MINUTES = 540
+
+# The actual company office break. A separate, physical-schedule fact —
+# informational only. Never used to calculate, adjust, or validate any
+# leave-deduction value above (requirement §6.2, design §7.1).
+ACTUAL_OFFICE_BREAK_START = time(12, 45)
+ACTUAL_OFFICE_BREAK_END = time(13, 30)
+
+# Maximum leave-deduction minutes any single calendar date may accumulate,
+# even if multiple overlapping Approved leave records cover it (design §9 —
+# interval-based overlap deduplication; a Full-Day/Multi-Day weekday
+# dominates any partial-day leave on the same date).
+LEAVE_MAX_DAILY_DEDUCTION_MINUTES = LEAVE_FULL_DAY_DEDUCTION_MINUTES

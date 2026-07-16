@@ -25,17 +25,20 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy import asc, nullslast
 from sqlalchemy.orm import Session
 
 from backend.config import (
     DEFAULT_SOURCE_SCOPE,
+    LEAVE_FULL_DAY_DEDUCTION_MINUTES,
     MEMBER_LABELS,
     SCHEDULE_TIMEZONE,
     VALID_MEMBER_KEYS,
 )
 from backend.database import get_db
 from backend.models import MemberScheduleEvent
+from backend.routers import leave_logic
 from backend.schemas import (
     DailyScheduleReportOut,
     DurationChangeOut,
@@ -341,6 +344,40 @@ def _build_duration_comparison(current: dict, previous: dict) -> dict:
     }
 
 
+def _leave_report_additions(
+    db: Session, member_key: str, date_from: date_type, date_to: date_type, scheduled_duration_minutes: int
+) -> dict:
+    """Additive leave-coordination-copy fields (REQ-LEAVE-COPY-001), layered
+    on top of the existing Scheduled/Unscheduled counts/durations/
+    percentages without altering any of them. base_leave_deduction_reference_minutes
+    is a weekday-count reference figure built from the confirmed Full-Day
+    leave-deduction constant — this system has no attendance/working-hours
+    model and none is invented here; these are leave-deduction minutes /
+    leave-system credited minutes, never a claim of verified actual
+    productive working time or official attendance."""
+    weekday_count = len(leave_logic.expand_weekdays(date_from, date_to))
+    base_reference_minutes = weekday_count * LEAVE_FULL_DAY_DEDUCTION_MINUTES
+
+    approved_leave_minutes = leave_logic.compute_approved_leave_minutes_for_period(
+        db, member_key, date_from, date_to
+    )
+
+    adjusted_expected_work_minutes = max(base_reference_minutes - approved_leave_minutes, 0)
+
+    task_coverage_percentage = None
+    if adjusted_expected_work_minutes > 0:
+        task_coverage_percentage = round(
+            scheduled_duration_minutes / adjusted_expected_work_minutes * 100, 2
+        )
+
+    return {
+        "base_leave_deduction_reference_minutes": base_reference_minutes,
+        "approved_leave_minutes": approved_leave_minutes,
+        "adjusted_expected_work_minutes": adjusted_expected_work_minutes,
+        "task_coverage_percentage": task_coverage_percentage,
+    }
+
+
 @router.get("/{member_key}", response_model=List[MemberScheduleEventOut])
 def list_member_schedule_events(
     member_key: str,
@@ -391,6 +428,9 @@ def get_daily_schedule_report(
     previous = _aggregate_schedule_period(db, member_key, previous_date, previous_date)
 
     comparison = _build_duration_comparison(current, previous)
+    leave_additions = _leave_report_additions(
+        db, member_key, date, date, current["scheduled_duration_minutes"]
+    )
 
     return DailyScheduleReportOut(
         member_key=member_key,
@@ -399,6 +439,7 @@ def get_daily_schedule_report(
         previous_period_end=previous_date,
         **current,
         **comparison,
+        **leave_additions,
     )
 
 
@@ -431,6 +472,9 @@ def get_weekly_schedule_report(
     )
 
     comparison = _build_duration_comparison(current, previous)
+    leave_additions = _leave_report_additions(
+        db, member_key, monday, sunday, current["scheduled_duration_minutes"]
+    )
 
     return WeeklyScheduleReportOut(
         member_key=member_key,
@@ -440,6 +484,7 @@ def get_weekly_schedule_report(
         previous_period_end=previous_sunday,
         **current,
         **comparison,
+        **leave_additions,
     )
 
 
@@ -473,6 +518,9 @@ def get_monthly_schedule_report(
     previous = _aggregate_schedule_period(db, member_key, previous_start, previous_end)
 
     comparison = _build_duration_comparison(current, previous)
+    leave_additions = _leave_report_additions(
+        db, member_key, month_start, month_end, current["scheduled_duration_minutes"]
+    )
 
     return MonthlyScheduleReportOut(
         member_key=member_key,
@@ -483,6 +531,7 @@ def get_monthly_schedule_report(
         previous_period_end=previous_end,
         **current,
         **comparison,
+        **leave_additions,
     )
 
 
@@ -504,6 +553,14 @@ def create_member_schedule_event(
         event_date=payload.date,
         created_at=created_at,
     )
+
+    conflicts = leave_logic.find_conflicting_approved_leave(
+        db, member_key, payload.date, payload.start, payload.end
+    )
+    if conflicts:
+        return JSONResponse(
+            status_code=409, content=leave_logic.leave_conflict_response_body(conflicts)
+        )
 
     event = MemberScheduleEvent(
         member_key=member_key,
@@ -548,6 +605,18 @@ def update_member_schedule_event(
         raise HTTPException(
             status_code=422,
             detail="Task category is permanent after creation.",
+        )
+
+    effective_date = update_data.get("date", event.event_date)
+    effective_start = update_data.get("start", event.start_time)
+    effective_end = update_data.get("end", event.end_time)
+
+    conflicts = leave_logic.find_conflicting_approved_leave(
+        db, member_key, effective_date, effective_start, effective_end
+    )
+    if conflicts:
+        return JSONResponse(
+            status_code=409, content=leave_logic.leave_conflict_response_body(conflicts)
         )
 
     if "date" in update_data:

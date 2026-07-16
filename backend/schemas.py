@@ -29,7 +29,16 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from backend.config import DEFAULT_SCHEDULE_CATEGORY, VALID_PRIORITIES
+from backend.config import (
+    DEFAULT_SCHEDULE_CATEGORY,
+    LEAVE_COORDINATION_COPY_NOTICE,
+    LEAVE_FULL_DAY_DEDUCTION_MINUTES,
+    LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES,
+    LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES,
+    LEAVE_POLICY_SOURCE_ID,
+    SHORT_LEAVE_MONTHLY_CAP_MINUTES,
+    VALID_PRIORITIES,
+)
 
 ScheduleCategory = Literal["Scheduled Task", "Unscheduled Task"]
 
@@ -163,6 +172,18 @@ class DailyScheduleReportOut(BaseModel):
     scheduled_duration_change: DurationChangeOut
     unscheduled_duration_change: DurationChangeOut
 
+    # --- New: leave-coordination-copy additions (REQ-LEAVE-COPY-001). These
+    # are additive only — none of the fields above are altered in value or
+    # meaning. base_leave_deduction_reference_minutes is a weekday-count
+    # reference figure built from the confirmed Full-Day leave-deduction
+    # constant (LEAVE_FULL_DAY_DEDUCTION_MINUTES) — it is NOT an official
+    # attendance model or a claim about actual productive working time;
+    # this system has no such model and does not invent one here. ---
+    base_leave_deduction_reference_minutes: int
+    approved_leave_minutes: int
+    adjusted_expected_work_minutes: int
+    task_coverage_percentage: Optional[float] = None
+
 
 class WeeklyScheduleReportOut(BaseModel):
     # --- Existing fields — preserved verbatim, count-based. ---
@@ -201,6 +222,11 @@ class WeeklyScheduleReportOut(BaseModel):
 
     scheduled_duration_change: DurationChangeOut
     unscheduled_duration_change: DurationChangeOut
+
+    base_leave_deduction_reference_minutes: int
+    approved_leave_minutes: int
+    adjusted_expected_work_minutes: int
+    task_coverage_percentage: Optional[float] = None
 
 
 class MonthlyScheduleReportOut(BaseModel):
@@ -243,6 +269,166 @@ class MonthlyScheduleReportOut(BaseModel):
 
     scheduled_duration_change: DurationChangeOut
     unscheduled_duration_change: DurationChangeOut
+
+    base_leave_deduction_reference_minutes: int
+    approved_leave_minutes: int
+    adjusted_expected_work_minutes: int
+    task_coverage_percentage: Optional[float] = None
+
+
+LeaveType = Literal[
+    "Short Leave", "Half-Day First", "Half-Day Second", "Full-Day", "Multi-Day"
+]
+LeaveStatus = Literal["Pending", "Approved", "Rejected", "Cancelled"]
+
+_SINGLE_DATE_LEAVE_TYPES = ("Short Leave", "Half-Day First", "Half-Day Second", "Full-Day")
+
+
+class MemberLeaveRecordCreate(BaseModel):
+    """leave_type is immutable after creation (no update path changes it —
+    mirrors the existing task category-immutability convention in
+    backend/routers/member_schedules.py). half_day_period is never accepted
+    from the client — the router derives it from leave_type server-side, so
+    a client can never send a leave_type/half_day_period mismatch.
+
+    status is intentionally absent: every new record is server-forced to
+    Pending (requirement §7 — "Prefer server-controlled initial Pending
+    status"). coordination_copy_only, policy_source_id, and
+    effective_leave_minutes are likewise server-controlled only."""
+
+    leave_type: LeaveType
+    start_date: date_type
+    end_date: Optional[date_type] = None
+    start_time: Optional[time_type] = None
+    end_time: Optional[time_type] = None
+    purpose: Optional[str] = Field(default=None, max_length=240)
+    external_reference: Optional[str] = Field(default=None, max_length=120)
+    created_by: Optional[str] = Field(default=None, max_length=120)
+
+    @model_validator(mode="after")
+    def apply_and_validate_dates(self) -> "MemberLeaveRecordCreate":
+        if self.leave_type in _SINGLE_DATE_LEAVE_TYPES:
+            if self.end_date is not None and self.end_date != self.start_date:
+                raise ValueError(
+                    f"{self.leave_type} requires end_date to equal start_date."
+                )
+            self.end_date = self.start_date
+        else:  # Multi-Day
+            if self.end_date is None:
+                raise ValueError("Multi-Day leave requires end_date.")
+            if self.end_date < self.start_date:
+                raise ValueError("end_date must not be before start_date.")
+        return self
+
+    @model_validator(mode="after")
+    def validate_time_fields(self) -> "MemberLeaveRecordCreate":
+        if self.leave_type == "Short Leave":
+            if self.start_time is None or self.end_time is None:
+                raise ValueError("Short Leave requires both start_time and end_time.")
+            if self.end_time <= self.start_time:
+                raise ValueError("end_time must be later than start_time.")
+        else:
+            if self.start_time is not None or self.end_time is not None:
+                raise ValueError(
+                    f"{self.leave_type} does not accept start_time/end_time."
+                )
+        return self
+
+
+class MemberLeaveRecordUpdate(BaseModel):
+    """Editable fields plus an optional status transition. leave_type and
+    half_day_period are never accepted here — changing the fundamental
+    nature of a leave request requires cancelling it and creating a new
+    one, same rationale as task category immutability.
+
+    Legality of a requested status transition (e.g. Rejected -> Pending)
+    is NOT checked here — that requires knowing the record's current
+    status, which this schema does not have. The router
+    (backend/routers/member_leave.py) checks
+    leave_logic.is_transition_allowed() before applying any status change."""
+
+    start_date: Optional[date_type] = None
+    end_date: Optional[date_type] = None
+    start_time: Optional[time_type] = None
+    end_time: Optional[time_type] = None
+    purpose: Optional[str] = Field(default=None, max_length=240)
+    external_reference: Optional[str] = Field(default=None, max_length=120)
+    updated_by: Optional[str] = Field(default=None, max_length=120)
+    status: Optional[LeaveStatus] = None
+
+    @model_validator(mode="after")
+    def end_after_start(self) -> "MemberLeaveRecordUpdate":
+        if self.start_time is not None and self.end_time is not None and self.end_time <= self.start_time:
+            raise ValueError("end_time must be later than start_time when both are provided.")
+        if self.start_date is not None and self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("end_date must not be before start_date.")
+        return self
+
+
+class MemberLeaveRecordOut(BaseModel):
+    id: UUID
+    member_key: str
+    member_label: str
+    leave_type: str
+    half_day_period: Optional[str] = None
+    start_date: date_type
+    end_date: date_type
+    start_time: Optional[time_type] = None
+    end_time: Optional[time_type] = None
+    status: str
+    purpose: Optional[str] = None
+    external_reference: Optional[str] = None
+    coordination_copy_only: bool = True
+    policy_source_id: str
+    effective_leave_minutes: Optional[int] = None
+    created_by: Optional[str] = None
+    updated_by: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    official_truth_notice: str = LEAVE_COORDINATION_COPY_NOTICE
+
+    model_config = {"from_attributes": True, "populate_by_name": True}
+
+
+class LeaveConfigurationOut(BaseModel):
+    half_day_first_deduction_minutes: int = LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES
+    half_day_second_deduction_minutes: int = LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES
+    full_day_deduction_minutes: int = LEAVE_FULL_DAY_DEDUCTION_MINUTES
+    short_leave_monthly_cap_minutes: int = SHORT_LEAVE_MONTHLY_CAP_MINUTES
+
+
+class LeaveSummaryOut(BaseModel):
+    member_key: str
+    month: str  # "YYYY-MM"
+    short_leave_approved_minutes: int
+    short_leave_cap_minutes: int
+    short_leave_remaining_minutes: int
+    configuration: LeaveConfigurationOut
+    coordination_copy_only: bool = True
+    official_truth_notice: str = LEAVE_COORDINATION_COPY_NOTICE
+    policy_source_id: str = LEAVE_POLICY_SOURCE_ID
+
+
+class LeaveConflictItemOut(BaseModel):
+    leave_id: str
+    leave_type: str
+    status: str
+    start_date: date_type
+    end_date: date_type
+    start_time: Optional[time_type] = None
+    end_time: Optional[time_type] = None
+
+
+class LeaveConflictResponseOut(BaseModel):
+    """Documents the exact 409 body shape returned by
+    backend/routers/member_schedules.py when a task save conflicts with
+    Approved leave. Not used as a FastAPI response_model (the route returns
+    a JSONResponse directly so the body has no "detail" wrapper) — this
+    schema exists so the contract is typed and testable."""
+
+    error: Literal["leave_conflict"] = "leave_conflict"
+    message: str
+    conflicts: list[LeaveConflictItemOut]
 
 
 class StaffRecordOut(BaseModel):

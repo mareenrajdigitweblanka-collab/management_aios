@@ -94,6 +94,110 @@ class MemberScheduleEvent(Base):
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class MemberLeaveRecord(Base):
+    """SQLAlchemy ORM model for management_aios.member_leave_records
+    (REQ-LEAVE-COPY-001). Mirrors database/member_leave_records_schema.sql
+    exactly — same "Python mapping only, SQL file is DDL truth" convention
+    as MemberScheduleEvent above.
+
+    This table is a calendar coordination copy of leave, never official HR
+    leave truth. coordination_copy_only is fixed TRUE at both the DB
+    (CheckConstraint) and API layers and is never client-settable. No
+    field on this model calculates or claims official leave balance,
+    payroll, no-pay status, disciplinary status, or medical truth.
+    created_by/updated_by are optional, unauthenticated free-text labels —
+    this feature has no auth/session/role model, matching
+    MemberScheduleEvent.
+    """
+
+    __tablename__ = "member_leave_records"
+    __table_args__ = (
+        CheckConstraint(
+            "member_key IN ('mayurika', 'suman', 'arun', 'rajiv', 'paraparan')",
+            name="member_leave_records_member_key_check",
+        ),
+        CheckConstraint(
+            "leave_type IN ('Short Leave', 'Half-Day First', 'Half-Day Second', "
+            "'Full-Day', 'Multi-Day')",
+            name="member_leave_records_leave_type_check",
+        ),
+        CheckConstraint(
+            "status IN ('Pending', 'Approved', 'Rejected', 'Cancelled')",
+            name="member_leave_records_status_check",
+        ),
+        CheckConstraint(
+            "(leave_type IN ('Half-Day First', 'Half-Day Second') "
+            "AND half_day_period IS NOT NULL) "
+            "OR (leave_type NOT IN ('Half-Day First', 'Half-Day Second') "
+            "AND half_day_period IS NULL)",
+            name="member_leave_records_half_day_period_pairing_check",
+        ),
+        CheckConstraint(
+            "half_day_period IS NULL OR half_day_period IN ('First', 'Second')",
+            name="member_leave_records_half_day_period_value_check",
+        ),
+        CheckConstraint(
+            "end_date >= start_date",
+            name="member_leave_records_date_range_check",
+        ),
+        CheckConstraint(
+            "leave_type = 'Multi-Day' OR end_date = start_date",
+            name="member_leave_records_single_day_range_check",
+        ),
+        CheckConstraint(
+            "leave_type != 'Short Leave' "
+            "OR (start_time IS NOT NULL AND end_time IS NOT NULL)",
+            name="member_leave_records_short_leave_time_required_check",
+        ),
+        CheckConstraint(
+            "leave_type = 'Short Leave' "
+            "OR (start_time IS NULL AND end_time IS NULL)",
+            name="member_leave_records_non_short_leave_no_time_check",
+        ),
+        CheckConstraint(
+            "start_time IS NULL OR end_time IS NULL OR end_time > start_time",
+            name="member_leave_records_time_check",
+        ),
+        CheckConstraint(
+            "coordination_copy_only = TRUE",
+            name="member_leave_records_coordination_copy_check",
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    member_key = Column(String, nullable=False)
+    member_label = Column(String, nullable=False)
+
+    leave_type = Column(String, nullable=False)
+    half_day_period = Column(String, nullable=True)
+
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=True)
+    end_time = Column(Time, nullable=True)
+
+    status = Column(String, nullable=False, server_default="Pending")
+
+    purpose = Column(String(240), nullable=True)
+    external_reference = Column(String(120), nullable=True)
+
+    coordination_copy_only = Column(Boolean, nullable=False, server_default=text("true"))
+    policy_source_id = Column(String, nullable=False, server_default="SRC-POLICY-001")
+
+    # Snapshotted once, at the moment status becomes Approved. NULL until
+    # then. Never recomputed from live configuration afterward — see
+    # backend/routers/leave_logic.py snapshot_effective_leave_minutes().
+    effective_leave_minutes = Column(Integer, nullable=True)
+
+    created_by = Column(String, nullable=True)
+    updated_by = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+
 class StaffDashboardRecord(Base):
     """SQLAlchemy ORM model for management_aios.staff_dashboard_records.
 
