@@ -5564,6 +5564,31 @@
         Cancelled: 'leave-cancelled'
       };
 
+      /* User-facing leave-type wording for normal calendar chips/blocks
+         (Month/Week/Day/Multi-Day). Maps stored leave_type values to the
+         approved display labels — never appends workflow status. Status
+         still drives leaveClass/LEAVE_STATUS_CLASS styling and remains
+         visible in the leave list, history, and status-action controls;
+         this only controls the calendar chip/block text. */
+      var LEAVE_TYPE_DISPLAY_LABEL = {
+        'Short Leave': 'Short Leave',
+        'Half-Day First': 'First-Half Leave',
+        'Half-Day Second': 'Second-Half Leave',
+        'Full-Day': 'Full-Day Leave',
+        'Multi-Day': 'Multi-Day Leave'
+      };
+
+      function formatLeaveCalendarLabel(lv) {
+        return LEAVE_TYPE_DISPLAY_LABEL[lv.leave_type] || lv.leave_type;
+      }
+
+      /* For title/aria-label only — pairs the type-only label with status
+         so the information is still available non-visually (§9 a11y),
+         while the visible chip/block text stays type-only. */
+      function leaveCalendarAccessibleLabel(lv) {
+        return formatLeaveCalendarLabel(lv) + ', status ' + lv.status;
+      }
+
       /* Client-side mirror of the server's Monday-Friday weekday
          expansion — DISPLAY ONLY (deciding which calendar dates a
          Multi-Day leave chip appears on). It never computes or overrides
@@ -6210,9 +6235,9 @@
                (server-filtered), so they never render here. */
             leaveItemsForDate(c.dateStr).forEach(function (lv) {
               var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
-              var label = lv.leave_type + ' — ' + lv.status;
-              html += '<span class="msc-cal-chip-leave ' + leaveClass + '" title="' + escapeHtml(label) + '">' +
-                escapeHtml(label) + '</span>';
+              html += '<span class="msc-cal-chip-leave ' + leaveClass + '" title="' +
+                escapeHtml(leaveCalendarAccessibleLabel(lv)) + '">' +
+                escapeHtml(formatLeaveCalendarLabel(lv)) + '</span>';
             });
             html += '</div>';
           });
@@ -6263,9 +6288,9 @@
               return lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day';
             }).forEach(function (lv) {
               var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
-              var label = lv.leave_type + ' — ' + lv.status;
-              alldayHtml += '<div class="msc-tg-allday-chip-leave ' + leaveClass + '" title="' + escapeHtml(label) + '">' +
-                escapeHtml(label) + '</div>';
+              alldayHtml += '<div class="msc-tg-allday-chip-leave ' + leaveClass + '" title="' +
+                escapeHtml(leaveCalendarAccessibleLabel(lv)) + '">' +
+                escapeHtml(formatLeaveCalendarLabel(lv)) + '</div>';
             });
             alldayHtml += '</div>';
           });
@@ -6315,8 +6340,8 @@
               var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
               bodyHtml += '<div class="msc-tg-leave-block ' + leaveClass + '" ' +
                 'style="top:' + leaveTop + 'px;height:' + leaveHeight + 'px;left:2%;width:96%;" ' +
-                'title="' + escapeHtml(lv.leave_type + ' — ' + lv.status) + '">' +
-                escapeHtml(lv.leave_type) + '</div>';
+                'title="' + escapeHtml(leaveCalendarAccessibleLabel(lv)) + '">' +
+                escapeHtml(formatLeaveCalendarLabel(lv)) + '</div>';
             });
             if (dateStr === todayStr) {
               var nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
