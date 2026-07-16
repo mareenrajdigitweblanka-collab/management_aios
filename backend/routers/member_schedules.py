@@ -354,15 +354,20 @@ def _leave_report_additions(
     leave-deduction constant — this system has no attendance/working-hours
     model and none is invented here; these are leave-deduction minutes /
     leave-system credited minutes, never a claim of verified actual
-    productive working time or official attendance."""
+    productive working time or official attendance.
+
+    active_leave_minutes (2026-07-16 simplification amendment — renamed
+    from approved_leave_minutes) sums every leave row where
+    deleted_at IS NULL; there is no Pending/Approved workflow to
+    distinguish."""
     weekday_count = len(leave_logic.expand_weekdays(date_from, date_to))
     base_reference_minutes = weekday_count * LEAVE_FULL_DAY_DEDUCTION_MINUTES
 
-    approved_leave_minutes = leave_logic.compute_approved_leave_minutes_for_period(
+    active_leave_minutes = leave_logic.compute_active_leave_minutes_for_period(
         db, member_key, date_from, date_to
     )
 
-    adjusted_expected_work_minutes = max(base_reference_minutes - approved_leave_minutes, 0)
+    adjusted_expected_work_minutes = max(base_reference_minutes - active_leave_minutes, 0)
 
     task_coverage_percentage = None
     if adjusted_expected_work_minutes > 0:
@@ -372,7 +377,7 @@ def _leave_report_additions(
 
     return {
         "base_leave_deduction_reference_minutes": base_reference_minutes,
-        "approved_leave_minutes": approved_leave_minutes,
+        "active_leave_minutes": active_leave_minutes,
         "adjusted_expected_work_minutes": adjusted_expected_work_minutes,
         "task_coverage_percentage": task_coverage_percentage,
     }
@@ -554,7 +559,7 @@ def create_member_schedule_event(
         created_at=created_at,
     )
 
-    conflicts = leave_logic.find_conflicting_approved_leave(
+    conflicts = leave_logic.find_conflicting_active_leave(
         db, member_key, payload.date, payload.start, payload.end
     )
     if conflicts:
@@ -611,7 +616,7 @@ def update_member_schedule_event(
     effective_start = update_data.get("start", event.start_time)
     effective_end = update_data.get("end", event.end_time)
 
-    conflicts = leave_logic.find_conflicting_approved_leave(
+    conflicts = leave_logic.find_conflicting_active_leave(
         db, member_key, effective_date, effective_start, effective_end
     )
     if conflicts:

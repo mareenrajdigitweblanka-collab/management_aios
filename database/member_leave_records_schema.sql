@@ -4,13 +4,21 @@
 -- (MemberLeaveRecord) exactly. Uses CREATE TABLE IF NOT EXISTS, so re-running
 -- this against an already-existing table does NOT alter its constraints —
 -- for an existing deployment, apply
--- database/migrations/2026-07-16-create-member-leave-records.sql instead.
+-- database/migrations/2026-07-16-create-member-leave-records.sql followed by
+-- database/migrations/2026-07-16-remove-member-leave-status-workflow.sql
+-- instead.
 --
 -- Official-truth boundary: this table is a calendar coordination COPY of
 -- leave. The separate official HR leave system remains authoritative for
 -- leave balance, payroll, no-pay, and disciplinary determinations.
 -- coordination_copy_only is fixed TRUE by CHECK constraint and is never set
 -- to FALSE by any application code.
+--
+-- Lifecycle (2026-07-16 simplification amendment, REQ-LEAVE-COPY-001):
+-- there is no approval/status workflow. Every saved row is immediately
+-- active; the only lifecycle event after creation is soft-deletion
+-- (deleted_at). A row's existence with deleted_at IS NULL is its active
+-- state — no status/active-inactive enum column exists.
 --
 -- Does not alter management_aios.member_schedule_events or
 -- management_aios.staff_dashboard_records.
@@ -33,17 +41,17 @@ CREATE TABLE IF NOT EXISTS management_aios.member_leave_records (
     start_time TIME NULL,
     end_time TIME NULL,
 
-    status TEXT NOT NULL DEFAULT 'Pending',
-
     purpose VARCHAR(240) NULL,
     external_reference VARCHAR(120) NULL,
 
     coordination_copy_only BOOLEAN NOT NULL DEFAULT TRUE,
     policy_source_id TEXT NOT NULL DEFAULT 'SRC-POLICY-001',
 
-    -- Snapshotted once, at the moment status becomes 'Approved'. NULL until
-    -- then. Never recomputed from live configuration afterward, so a later
-    -- configuration change cannot silently rewrite historical reporting.
+    -- Snapshotted once, at creation, and recalculated in the same
+    -- transaction whenever a date/time field is edited. Never recomputed
+    -- from live configuration on GET/report read, so a later configuration
+    -- change cannot silently rewrite an existing record's historical
+    -- reporting contribution.
     effective_leave_minutes INTEGER NULL,
 
     created_by TEXT NULL,
@@ -57,9 +65,6 @@ CREATE TABLE IF NOT EXISTS management_aios.member_leave_records (
 
     CONSTRAINT member_leave_records_leave_type_check
     CHECK (leave_type IN ('Short Leave', 'Half-Day First', 'Half-Day Second', 'Full-Day', 'Multi-Day')),
-
-    CONSTRAINT member_leave_records_status_check
-    CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Cancelled')),
 
     CONSTRAINT member_leave_records_half_day_period_pairing_check
     CHECK (
@@ -94,14 +99,15 @@ CREATE INDEX IF NOT EXISTS idx_member_leave_records_member_date
 ON management_aios.member_leave_records (member_key, start_date)
 WHERE deleted_at IS NULL;
 
--- History / status-filtered queries, and the short-leave monthly-cap sum
--- (which always filters by member_key + leave_type + status='Approved').
-CREATE INDEX IF NOT EXISTS idx_member_leave_records_member_status
-ON management_aios.member_leave_records (member_key, status)
-WHERE deleted_at IS NULL;
+-- Short-leave monthly cap sum (member + leave_type = 'Short Leave', active
+-- rows only).
+CREATE INDEX IF NOT EXISTS idx_member_leave_records_short_leave_active
+ON management_aios.member_leave_records (member_key, start_date)
+WHERE deleted_at IS NULL AND leave_type = 'Short Leave';
 
--- Approved-leave conflict checks against task saves (member + date range +
--- status — partial index keeps it small since most rows are not Approved).
-CREATE INDEX IF NOT EXISTS idx_member_leave_records_approved_conflict
+-- Active-leave conflict checks against task saves (member + date range,
+-- active rows only — every active row can conflict with a task under the
+-- simplified lifecycle, so this is no longer status-partial).
+CREATE INDEX IF NOT EXISTS idx_member_leave_records_active_conflict
 ON management_aios.member_leave_records (member_key, start_date, end_date)
-WHERE deleted_at IS NULL AND status = 'Approved';
+WHERE deleted_at IS NULL;

@@ -6,6 +6,15 @@ official_truth_notice stating the separate HR leave system remains
 official. No route here calculates or claims official leave balance,
 payroll, no-pay status, disciplinary status, or medical truth.
 
+Lifecycle (2026-07-16 simplification amendment — REQ-LEAVE-COPY-001
+SIMPLIFICATION AMENDMENT): there is no approval/status workflow. Every
+saved leave record is immediately active — it appears in the normal
+calendar, blocks conflicting task saves, and contributes leave-deduction
+minutes as soon as it is created. The only way to remove a leave record is
+DELETE, which soft-deletes it (deleted_at). A row's existence with
+deleted_at IS NULL is its active state; no status/active-inactive enum
+column exists.
+
 No authentication or role-based authorization exists anywhere in this
 router (matches the existing member-schedules access model) —
 created_by/updated_by, if supplied, are optional unauthenticated free-text
@@ -45,8 +54,6 @@ from backend.schemas import (
 )
 
 router = APIRouter(prefix="/api/member-leave", tags=["member-leave"])
-
-NORMAL_VISIBLE_STATUSES = ("Pending", "Approved")
 
 
 def _validate_member_key(member_key: str) -> str:
@@ -91,7 +98,6 @@ def _to_out(record: MemberLeaveRecord) -> MemberLeaveRecordOut:
         end_date=record.end_date,
         start_time=record.start_time,
         end_time=record.end_time,
-        status=record.status,
         purpose=record.purpose,
         external_reference=record.external_reference,
         coordination_copy_only=record.coordination_copy_only,
@@ -112,38 +118,10 @@ def list_member_leave_records(
     end_date: Optional[date_type] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    """Normal view: Pending and Approved only (requirement §8.1). Rejected
-    and Cancelled are excluded server-side, not merely hidden by the
-    frontend — see /history for those."""
-    _validate_member_key(member_key)
-
-    if start_date is not None and end_date is not None and start_date > end_date:
-        raise HTTPException(status_code=422, detail="start_date must not be after end_date.")
-
-    query = db.query(MemberLeaveRecord).filter(
-        MemberLeaveRecord.member_key == member_key,
-        MemberLeaveRecord.deleted_at.is_(None),
-        MemberLeaveRecord.status.in_(NORMAL_VISIBLE_STATUSES),
-    )
-    if start_date is not None:
-        query = query.filter(MemberLeaveRecord.end_date >= start_date)
-    if end_date is not None:
-        query = query.filter(MemberLeaveRecord.start_date <= end_date)
-
-    query = query.order_by(asc(MemberLeaveRecord.start_date), asc(MemberLeaveRecord.created_at))
-    return [_to_out(record) for record in query.all()]
-
-
-@router.get("/{member_key}/history", response_model=List[MemberLeaveRecordOut])
-def list_member_leave_history(
-    member_key: str,
-    start_date: Optional[date_type] = Query(default=None),
-    end_date: Optional[date_type] = Query(default=None),
-    status: Optional[str] = Query(default=None),
-    db: Session = Depends(get_db),
-):
-    """All four statuses retained and queryable (requirement §8.1). This is
-    read/display functionality only — no delete-from-history action."""
+    """Every active leave row (deleted_at IS NULL). There is no
+    Pending/Approved/Rejected/Cancelled workflow — a saved record is
+    immediately active and stays that way until deleted; a deleted record
+    is server-side excluded here, not merely hidden by the frontend."""
     _validate_member_key(member_key)
 
     if start_date is not None and end_date is not None and start_date > end_date:
@@ -157,8 +135,6 @@ def list_member_leave_history(
         query = query.filter(MemberLeaveRecord.end_date >= start_date)
     if end_date is not None:
         query = query.filter(MemberLeaveRecord.start_date <= end_date)
-    if status is not None:
-        query = query.filter(MemberLeaveRecord.status == status)
 
     query = query.order_by(asc(MemberLeaveRecord.start_date), asc(MemberLeaveRecord.created_at))
     return [_to_out(record) for record in query.all()]
@@ -170,8 +146,12 @@ def create_member_leave_record(
     payload: MemberLeaveRecordCreate,
     db: Session = Depends(get_db),
 ):
-    """Every new record is server-forced to Pending — the client cannot
-    supply an initial status (requirement §7)."""
+    """Every new record is immediately active — there is no Pending/Approved
+    workflow to move through. effective_leave_minutes is computed and
+    snapshotted right here, at creation, not left NULL pending a later
+    approval step. A Short Leave create is blocked before it is stored if
+    it would push the member's active monthly Short Leave total over the
+    cap."""
     _validate_member_key(member_key)
 
     try:
@@ -185,6 +165,18 @@ def create_member_leave_record(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    effective_minutes = leave_logic.compute_effective_leave_minutes(
+        payload.leave_type, payload.start_date, payload.end_date, payload.start_time, payload.end_time
+    )
+
+    if payload.leave_type == "Short Leave":
+        try:
+            leave_logic.assert_active_short_leave_monthly_cap_not_exceeded(
+                db, member_key, payload.start_date, effective_minutes
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     now = datetime.now(timezone.utc)
     half_day_period = leave_logic.half_day_period_for_leave_type(payload.leave_type)
 
@@ -197,12 +189,11 @@ def create_member_leave_record(
         end_date=payload.end_date,
         start_time=payload.start_time,
         end_time=payload.end_time,
-        status="Pending",
         purpose=payload.purpose,
         external_reference=payload.external_reference,
         coordination_copy_only=True,
         policy_source_id=LEAVE_POLICY_SOURCE_ID,
-        effective_leave_minutes=None,
+        effective_leave_minutes=effective_minutes,
         created_by=payload.created_by,
         created_at=now,
         updated_at=now,
@@ -220,18 +211,18 @@ def update_member_leave_record(
     payload: MemberLeaveRecordUpdate,
     db: Session = Depends(get_db),
 ):
-    """Edits fields and/or applies a status transition. leave_type and
+    """Edits fields on an active leave record. leave_type and
     half_day_period are never editable (immutable after creation, same
-    convention as task category immutability). If the record is (or is
-    becoming) Approved and any date/time field changed, effective_leave_minutes
-    is re-validated and re-snapshotted in this same transaction (design's
-    "Config Snapshot Rule" — historical meaning is never silently altered by
-    a stale value)."""
+    convention as task category immutability). A soft-deleted record
+    cannot be edited (_get_active_record_or_404 excludes it, returning
+    404). Any date/time field change re-validates the leave shape,
+    recalculates effective_leave_minutes in this same transaction, and — for
+    Short Leave — re-checks the *destination* month's active cap, excluding
+    this record's own prior contribution."""
     _validate_member_key(member_key)
     record = _get_active_record_or_404(db, member_key, leave_id)
 
     update_data = payload.model_dump(exclude_unset=True)
-    requested_status = update_data.pop("status", None)
 
     new_start_date = update_data.get("start_date", record.start_date)
     new_end_date = update_data.get("end_date", record.end_date)
@@ -242,24 +233,8 @@ def update_member_leave_record(
         key in update_data for key in ("start_date", "end_date", "start_time", "end_time")
     )
 
-    if requested_status is not None and not leave_logic.is_transition_allowed(
-        record.status, requested_status
-    ):
-        raise HTTPException(
-            status_code=422,
-            detail=(
-                f"Transition from '{record.status}' to '{requested_status}' is not "
-                "allowed. Create a new leave record instead of reopening a "
-                "Rejected or Cancelled one."
-            ),
-        )
-
-    target_status = requested_status or record.status
-
-    # Any date/time edit on a record that is (or is becoming) Approved must
-    # be re-validated and, for Short Leave, re-checked against the monthly
-    # cap using the *destination* month — not the original.
-    if fields_changed or (requested_status == "Approved"):
+    new_effective_minutes = record.effective_leave_minutes
+    if fields_changed:
         try:
             leave_logic.validate_leave_dates_and_times(
                 record.leave_type, new_start_date, new_end_date, new_start_time, new_end_time
@@ -267,16 +242,17 @@ def update_member_leave_record(
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    if target_status == "Approved" and record.leave_type == "Short Leave":
-        proposed_minutes = leave_logic.validate_short_leave_duration_minutes(
-            new_start_time, new_end_time
+        new_effective_minutes = leave_logic.compute_effective_leave_minutes(
+            record.leave_type, new_start_date, new_end_date, new_start_time, new_end_time
         )
-        try:
-            leave_logic.assert_short_leave_monthly_cap_not_exceeded(
-                db, member_key, new_start_date, proposed_minutes, exclude_id=record.id
-            )
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        if record.leave_type == "Short Leave":
+            try:
+                leave_logic.assert_active_short_leave_monthly_cap_not_exceeded(
+                    db, member_key, new_start_date, new_effective_minutes, exclude_id=record.id
+                )
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     # Apply field edits only after all validation above has passed.
     if "start_date" in update_data:
@@ -294,13 +270,8 @@ def update_member_leave_record(
     if "updated_by" in update_data:
         record.updated_by = update_data["updated_by"]
 
-    if requested_status is not None:
-        record.status = requested_status
-
-    if target_status == "Approved":
-        record.effective_leave_minutes = leave_logic.compute_effective_leave_minutes(
-            record.leave_type, record.start_date, record.end_date, record.start_time, record.end_time
-        )
+    if fields_changed:
+        record.effective_leave_minutes = new_effective_minutes
 
     record.updated_at = datetime.now(timezone.utc)
 
@@ -309,31 +280,23 @@ def update_member_leave_record(
     return _to_out(record)
 
 
-@router.post("/{member_key}/{leave_id}/cancel", response_model=MemberLeaveRecordOut)
-def cancel_member_leave_record(
-    member_key: str,
-    leave_id: UUID,
-    db: Session = Depends(get_db),
+@router.delete("/{member_key}/{leave_id}", status_code=200)
+def delete_member_leave_record(
+    member_key: str, leave_id: UUID, db: Session = Depends(get_db)
 ):
-    """Convenience wrapper for the Pending->Cancelled and Approved->Cancelled
-    transitions. Cancelling frees short-leave monthly cap capacity and
-    removes the record's reporting/conflict effect (both filter on
-    status='Approved'), but the record itself is retained — never deleted
-    from history."""
+    """Soft-deletes an active leave record — the only removal mechanism now
+    that there is no Cancelled/Rejected status. A deleted record
+    immediately stops appearing in GET, stops blocking conflicting task
+    saves, and stops contributing leave-deduction minutes to reports.
+    Repeating this call on an already-deleted (or nonexistent) id returns
+    404, matching the existing member_schedules delete convention
+    (_get_active_event_or_404 in backend/routers/member_schedules.py)."""
     _validate_member_key(member_key)
     record = _get_active_record_or_404(db, member_key, leave_id)
 
-    if not leave_logic.is_transition_allowed(record.status, "Cancelled"):
-        raise HTTPException(
-            status_code=422,
-            detail=f"Transition from '{record.status}' to 'Cancelled' is not allowed.",
-        )
-
-    record.status = "Cancelled"
-    record.updated_at = datetime.now(timezone.utc)
+    record.deleted_at = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(record)
-    return _to_out(record)
+    return {"id": str(record.id), "deleted": True}
 
 
 @router.get("/{member_key}/summary", response_model=LeaveSummaryOut)
@@ -347,15 +310,15 @@ def get_member_leave_summary(
     year_str, month_str = month.split("-")
     year, month_number = int(year_str), int(month_str)
 
-    approved_minutes = leave_logic.compute_short_leave_approved_minutes_for_month(
+    active_minutes = leave_logic.compute_short_leave_active_minutes_for_month(
         db, member_key, year, month_number
     )
-    remaining = max(SHORT_LEAVE_MONTHLY_CAP_MINUTES - approved_minutes, 0)
+    remaining = max(SHORT_LEAVE_MONTHLY_CAP_MINUTES - active_minutes, 0)
 
     return LeaveSummaryOut(
         member_key=member_key,
         month=month,
-        short_leave_approved_minutes=approved_minutes,
+        short_leave_active_minutes=active_minutes,
         short_leave_cap_minutes=SHORT_LEAVE_MONTHLY_CAP_MINUTES,
         short_leave_remaining_minutes=remaining,
         configuration=LeaveConfigurationOut(

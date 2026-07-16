@@ -157,8 +157,6 @@ VALID_LEAVE_TYPES = (
     "Multi-Day",
 )
 
-VALID_LEAVE_STATUSES = ("Pending", "Approved", "Rejected", "Cancelled")
-
 # Only populated (as "First"/"Second") for the two half-day leave types;
 # NULL for every other leave type. Redundant with leave_type by design —
 # kept as its own column so half-day rows can be filtered/reported on

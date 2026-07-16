@@ -35,29 +35,7 @@ from backend.config import (
 )
 from backend.models import MemberLeaveRecord
 
-# Statuses that never consume the short-leave monthly cap and never
-# contribute to reporting/conflict checks. Only "Approved" does either.
-LEAVE_STATUSES_EXCLUDED_FROM_CAP = ("Pending", "Rejected", "Cancelled")
-
-# Server-enforced status state machine (requirement §7 / design §11).
-# Rejected and Cancelled are terminal — a new record is required instead of
-# reopening one. Approved may only move to Cancelled, never back to
-# Rejected (that would rewrite history rather than represent a fresh
-# decision).
-ALLOWED_STATUS_TRANSITIONS = {
-    "Pending": {"Approved", "Rejected", "Cancelled"},
-    "Approved": {"Cancelled"},
-    "Rejected": set(),
-    "Cancelled": set(),
-}
-
 HALF_DAY_LEAVE_TYPES = ("Half-Day First", "Half-Day Second")
-
-
-def is_transition_allowed(current_status: str, new_status: str) -> bool:
-    if current_status == new_status:
-        return True
-    return new_status in ALLOWED_STATUS_TRANSITIONS.get(current_status, set())
 
 
 def half_day_period_for_leave_type(leave_type: str) -> Optional[str]:
@@ -147,9 +125,11 @@ def compute_effective_leave_minutes(
     end_time: Optional[time_type],
 ) -> int:
     """The leave-deduction minutes snapshotted onto effective_leave_minutes
-    at the moment a record becomes Approved (requirement §8.5, design §7 —
-    "Config Snapshot Rule"). These are leave-system credited minutes, not
-    independently verified actual productive working time."""
+    at creation, and recomputed here again whenever a date/time field is
+    edited (design §7 — "Config Snapshot Rule", adapted to the 2026-07-16
+    simplification amendment's immediate-active lifecycle). These are
+    leave-system credited minutes, not independently verified actual
+    productive working time."""
     if leave_type == "Short Leave":
         return validate_short_leave_duration_minutes(start_time, end_time)
     if leave_type == "Half-Day First":
@@ -164,7 +144,7 @@ def compute_effective_leave_minutes(
     raise ValueError(f"Unknown leave_type '{leave_type}'.")
 
 
-def compute_short_leave_approved_minutes_for_month(
+def compute_short_leave_active_minutes_for_month(
     db: Session,
     member_key: str,
     year: int,
@@ -172,19 +152,19 @@ def compute_short_leave_approved_minutes_for_month(
     exclude_id=None,
     lock: bool = False,
 ) -> int:
-    """Sum of Approved Short Leave minutes for member_key in the given
-    calendar month. Only status='Approved' rows count — Pending, Rejected,
-    Cancelled, and soft-deleted rows never contribute (requirement §8.2).
+    """Sum of active Short Leave minutes for member_key in the given
+    calendar month. Every row where deleted_at IS NULL counts — there is no
+    Pending/Approved distinction (2026-07-16 simplification amendment);
+    only soft-deleted rows never contribute.
 
     When lock=True, takes a SELECT ... FOR UPDATE row lock on the matching
-    rows so a concurrent transaction attempting to approve another Short
+    rows so a concurrent transaction attempting to save another Short
     Leave request for the same member/month cannot read a stale sum before
     this transaction commits — see backend/routers/member_leave.py for the
     transaction boundary this is always called within when lock=True."""
     query = db.query(MemberLeaveRecord).filter(
         MemberLeaveRecord.member_key == member_key,
         MemberLeaveRecord.leave_type == "Short Leave",
-        MemberLeaveRecord.status == "Approved",
         MemberLeaveRecord.deleted_at.is_(None),
     )
     if exclude_id is not None:
@@ -199,29 +179,30 @@ def compute_short_leave_approved_minutes_for_month(
     return total
 
 
-def assert_short_leave_monthly_cap_not_exceeded(
+def assert_active_short_leave_monthly_cap_not_exceeded(
     db: Session,
     member_key: str,
     target_date: date_type,
     proposed_minutes: int,
     exclude_id=None,
 ) -> None:
-    """Raises ValueError if approving proposed_minutes of Short Leave for
-    member_key in target_date's calendar month would push the Approved
+    """Raises ValueError if saving proposed_minutes of Short Leave for
+    member_key in target_date's calendar month would push the active
     monthly total over SHORT_LEAVE_MONTHLY_CAP_MINUTES (120). Always call
     within a transaction that has already taken the row lock (see
-    compute_short_leave_approved_minutes_for_month(lock=True)) so two
-    concurrent approvals cannot both pass this check before either commits."""
-    existing = compute_short_leave_approved_minutes_for_month(
+    compute_short_leave_active_minutes_for_month(lock=True)) so two
+    concurrent creates/edits cannot both pass this check before either
+    commits."""
+    existing = compute_short_leave_active_minutes_for_month(
         db, member_key, target_date.year, target_date.month, exclude_id=exclude_id, lock=True
     )
     if existing + proposed_minutes > SHORT_LEAVE_MONTHLY_CAP_MINUTES:
         raise ValueError(
-            f"Approving this request would bring {member_key}'s Approved Short "
+            f"Saving this request would bring {member_key}'s active Short "
             f"Leave total for {target_date.strftime('%Y-%m')} to "
             f"{existing + proposed_minutes} minutes, exceeding the "
             f"{SHORT_LEAVE_MONTHLY_CAP_MINUTES}-minute monthly cap "
-            f"({existing} already Approved)."
+            f"({existing} already active)."
         )
 
 
@@ -232,7 +213,7 @@ def _minutes_since_midnight(t: time_type) -> int:
 def _leave_record_day_interval(
     record: MemberLeaveRecord, target_date: date_type
 ) -> Optional[Tuple[int, int]]:
-    """The (start_minutes, end_minutes) interval a single Approved leave
+    """The (start_minutes, end_minutes) interval a single active leave
     record contributes on target_date, or None if it doesn't cover that
     date. Half-Day/Full-Day intervals use the configured leave-system
     period, not the actual office break (backend/config.py)."""
@@ -277,8 +258,8 @@ def _leave_record_day_interval(
 def merge_intervals(intervals: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
     """Standard sorted interval merge. Overlapping or touching intervals
     (start <= previous end) are combined into one, so overlapping
-    Short/Half-Day Approved leave periods on the same date are never
-    double-counted (design §9 — overlap deduplication)."""
+    Short/Half-Day active leave periods are never double-counted (design
+    §9 — overlap deduplication)."""
     if not intervals:
         return []
     ordered = sorted(intervals)
@@ -292,18 +273,18 @@ def merge_intervals(intervals: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
     return merged
 
 
-def approved_leave_minutes_for_date(
-    approved_rows: List[MemberLeaveRecord], target_date: date_type
+def active_leave_minutes_for_date(
+    active_rows: List[MemberLeaveRecord], target_date: date_type
 ) -> int:
     """Leave-deduction minutes for a single date, computed by merging every
-    Approved leave record's contributed interval on that date and capping
+    active leave record's contributed interval on that date and capping
     the total at LEAVE_MAX_DAILY_DEDUCTION_MINUTES (540). A Full-Day or
     Multi-Day-included weekday's interval spans the whole leave-system
     workday, so merging naturally makes it dominate any overlapping
     partial-day (Short/Half-Day) contribution on the same date rather than
     summing on top of it."""
     intervals = []
-    for row in approved_rows:
+    for row in active_rows:
         interval = _leave_record_day_interval(row, target_date)
         if interval is not None:
             intervals.append(interval)
@@ -312,18 +293,18 @@ def approved_leave_minutes_for_date(
     return min(total, LEAVE_MAX_DAILY_DEDUCTION_MINUTES)
 
 
-def compute_approved_leave_minutes_for_period(
+def compute_active_leave_minutes_for_period(
     db: Session, member_key: str, date_from: date_type, date_to: date_type
 ) -> int:
     """Total leave-deduction minutes for member_key across
     [date_from, date_to] inclusive, with same-date overlap deduplication
-    (design §9) — duplicate/overlapping Approved leave records covering the
-    same date never double-deduct."""
+    (design §9) — duplicate/overlapping active leave records covering the
+    same date never double-deduct. Every row where deleted_at IS NULL
+    counts — there is no Pending/Approved distinction."""
     rows = (
         db.query(MemberLeaveRecord)
         .filter(
             MemberLeaveRecord.member_key == member_key,
-            MemberLeaveRecord.status == "Approved",
             MemberLeaveRecord.deleted_at.is_(None),
             MemberLeaveRecord.start_date <= date_to,
             MemberLeaveRecord.end_date >= date_from,
@@ -336,21 +317,21 @@ def compute_approved_leave_minutes_for_period(
     total = 0
     current = date_from
     while current <= date_to:
-        total += approved_leave_minutes_for_date(rows, current)
+        total += active_leave_minutes_for_date(rows, current)
         current += timedelta(days=1)
     return total
 
 
-def find_conflicting_approved_leave(
+def find_conflicting_active_leave(
     db: Session,
     member_key: str,
     task_date: date_type,
     task_start_time: Optional[time_type],
     task_end_time: Optional[time_type],
 ) -> List[MemberLeaveRecord]:
-    """Approved leave records that conflict with a task on task_date.
-    Pending leave is never included (requirement §8.6) — only
-    status='Approved' rows are queried at all.
+    """Active leave records (deleted_at IS NULL) that conflict with a task
+    on task_date. There is no Pending/Approved distinction (2026-07-16
+    simplification amendment) — every active row is queried.
 
     - Full-Day / Multi-Day (included weekday): conflicts with ANY task on
       that date, timed or untimed.
@@ -363,7 +344,6 @@ def find_conflicting_approved_leave(
         db.query(MemberLeaveRecord)
         .filter(
             MemberLeaveRecord.member_key == member_key,
-            MemberLeaveRecord.status == "Approved",
             MemberLeaveRecord.deleted_at.is_(None),
             MemberLeaveRecord.start_date <= task_date,
             MemberLeaveRecord.end_date >= task_date,
@@ -396,16 +376,17 @@ def find_conflicting_approved_leave(
 
 def leave_conflict_response_body(conflicts: List[MemberLeaveRecord]) -> dict:
     """Builds the 409 response body. Deliberately omits `purpose` and any
-    other free-text field beyond leave_id/leave_type/status/date/time
-    (requirement §8.7 — "omit unnecessary sensitive purpose text")."""
+    other free-text field beyond leave_id/leave_type/date/time (requirement
+    §8.7 — "omit unnecessary sensitive purpose text"). No `status` field
+    (2026-07-16 simplification amendment) — there is no workflow status to
+    report."""
     return {
         "error": "leave_conflict",
-        "message": "This task conflicts with approved leave.",
+        "message": "This task conflicts with active leave.",
         "conflicts": [
             {
                 "leave_id": str(record.id),
                 "leave_type": record.leave_type,
-                "status": record.status,
                 "start_date": record.start_date.isoformat(),
                 "end_date": record.end_date.isoformat(),
                 "start_time": record.start_time.isoformat() if record.start_time else None,

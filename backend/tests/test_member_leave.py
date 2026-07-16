@@ -1,5 +1,6 @@
 """Automated tests for the member leave coordination-copy feature
-(REQ-LEAVE-COPY-001).
+(REQ-LEAVE-COPY-001, 2026-07-16 simplification amendment — approval/status
+workflow removed).
 
 Pure-function / schema-level tests only — no database connection is
 required or attempted, matching this session's confirmed workstation
@@ -10,10 +11,10 @@ see handover/member-schedule-vercel-neon-deployment-preparation-2026-07-10.md
 backend/tests/test_schedule_duration_reports.py).
 
 Functions in backend/routers/leave_logic.py that require a live db.Session
-(compute_short_leave_approved_minutes_for_month,
-compute_approved_leave_minutes_for_period, find_conflicting_approved_leave)
+(compute_short_leave_active_minutes_for_month,
+compute_active_leave_minutes_for_period, find_conflicting_active_leave)
 are exercised here only through their DB-free building blocks
-(_leave_record_day_interval, merge_intervals, approved_leave_minutes_for_date,
+(_leave_record_day_interval, merge_intervals, active_leave_minutes_for_date,
 compute_effective_leave_minutes, expand_weekdays) using lightweight fake
 leave-record objects rather than ORM rows — the query construction itself
 is not covered by an automated test in this environment (documented as a
@@ -42,17 +43,16 @@ from backend.config import (
 )
 from backend.routers.leave_logic import (
     _leave_record_day_interval,
-    approved_leave_minutes_for_date,
+    active_leave_minutes_for_date,
     compute_effective_leave_minutes,
     expand_weekdays,
     half_day_period_for_leave_type,
-    is_transition_allowed,
     leave_conflict_response_body,
     merge_intervals,
     validate_leave_dates_and_times,
     validate_short_leave_duration_minutes,
 )
-from backend.schemas import MemberLeaveRecordCreate
+from backend.schemas import MemberLeaveRecordCreate, MemberLeaveRecordOut, MemberLeaveRecordUpdate
 
 
 @dataclass
@@ -66,7 +66,6 @@ class FakeLeaveRecord:
     end_date: date
     start_time: Optional[time] = None
     end_time: Optional[time] = None
-    status: str = "Approved"
     id: object = None
 
     def __post_init__(self):
@@ -207,35 +206,21 @@ class EffectiveLeaveMinutesSnapshotTests(unittest.TestCase):
         self.assertEqual(minutes, 0)
 
 
-class StatusTransitionTests(unittest.TestCase):
-    def test_pending_to_approved_allowed(self):
-        self.assertTrue(is_transition_allowed("Pending", "Approved"))
+class SimplifiedLifecycleTests(unittest.TestCase):
+    """2026-07-16 simplification amendment — there is no approval/status
+    workflow anywhere in this feature. These tests confirm the status
+    concept has been fully removed from the schema layer (the ORM/DB layer
+    is confirmed by the migration's own validation queries — see
+    evidence/database/member-leave-status-removal-migration-execution-2026-07-16.md)."""
 
-    def test_pending_to_rejected_allowed(self):
-        self.assertTrue(is_transition_allowed("Pending", "Rejected"))
+    def test_leave_record_out_has_no_status_field(self):
+        self.assertNotIn("status", MemberLeaveRecordOut.model_fields)
 
-    def test_pending_to_cancelled_allowed(self):
-        self.assertTrue(is_transition_allowed("Pending", "Cancelled"))
+    def test_leave_record_update_has_no_status_field(self):
+        self.assertNotIn("status", MemberLeaveRecordUpdate.model_fields)
 
-    def test_approved_to_cancelled_allowed(self):
-        self.assertTrue(is_transition_allowed("Approved", "Cancelled"))
-
-    def test_rejected_to_pending_disallowed(self):
-        self.assertFalse(is_transition_allowed("Rejected", "Pending"))
-
-    def test_cancelled_to_pending_disallowed(self):
-        self.assertFalse(is_transition_allowed("Cancelled", "Pending"))
-
-    def test_approved_to_rejected_disallowed(self):
-        self.assertFalse(is_transition_allowed("Approved", "Rejected"))
-
-    def test_rejected_is_terminal(self):
-        self.assertFalse(is_transition_allowed("Rejected", "Approved"))
-        self.assertFalse(is_transition_allowed("Rejected", "Cancelled"))
-
-    def test_cancelled_is_terminal(self):
-        self.assertFalse(is_transition_allowed("Cancelled", "Approved"))
-        self.assertFalse(is_transition_allowed("Cancelled", "Rejected"))
+    def test_leave_record_create_has_no_status_field(self):
+        self.assertNotIn("status", MemberLeaveRecordCreate.model_fields)
 
 
 class HalfDayPeriodMappingTests(unittest.TestCase):
@@ -272,7 +257,7 @@ class OverlapDeduplicationTests(unittest.TestCase):
         ]
         # Union of 09:00-10:30 and 10:00-11:00 is 09:00-11:00 = 120 minutes,
         # not 90+60=150.
-        self.assertEqual(approved_leave_minutes_for_date(rows, target), 120)
+        self.assertEqual(active_leave_minutes_for_date(rows, target), 120)
 
     def test_full_day_dominates_overlapping_short_leave(self):
         target = date(2026, 7, 17)
@@ -280,7 +265,7 @@ class OverlapDeduplicationTests(unittest.TestCase):
             FakeLeaveRecord("Full-Day", target, target),
             FakeLeaveRecord("Short Leave", target, target, time(9, 0), time(10, 0)),
         ]
-        self.assertEqual(approved_leave_minutes_for_date(rows, target), 540)
+        self.assertEqual(active_leave_minutes_for_date(rows, target), 540)
 
     def test_half_day_pair_sums_to_540_without_exceeding_cap(self):
         target = date(2026, 7, 17)
@@ -288,7 +273,7 @@ class OverlapDeduplicationTests(unittest.TestCase):
             FakeLeaveRecord("Half-Day First", target, target),
             FakeLeaveRecord("Half-Day Second", target, target),
         ]
-        self.assertEqual(approved_leave_minutes_for_date(rows, target), 540)
+        self.assertEqual(active_leave_minutes_for_date(rows, target), 540)
 
     def test_daily_cap_enforced_even_if_intervals_would_exceed_it(self):
         target = date(2026, 7, 17)
@@ -299,19 +284,19 @@ class OverlapDeduplicationTests(unittest.TestCase):
             FakeLeaveRecord("Short Leave", target, target, time(6, 0), time(11, 0)),
         ]
         self.assertEqual(
-            approved_leave_minutes_for_date(rows, target), LEAVE_MAX_DAILY_DEDUCTION_MINUTES
+            active_leave_minutes_for_date(rows, target), LEAVE_MAX_DAILY_DEDUCTION_MINUTES
         )
 
     def test_multi_day_included_weekday_contributes_full_day_interval(self):
         # Friday of a Friday-Monday Multi-Day request.
         friday = date(2026, 7, 17)
         rows = [FakeLeaveRecord("Multi-Day", date(2026, 7, 17), date(2026, 7, 20))]
-        self.assertEqual(approved_leave_minutes_for_date(rows, friday), 540)
+        self.assertEqual(active_leave_minutes_for_date(rows, friday), 540)
 
     def test_multi_day_weekend_date_contributes_nothing(self):
         saturday = date(2026, 7, 18)
         rows = [FakeLeaveRecord("Multi-Day", date(2026, 7, 17), date(2026, 7, 20))]
-        self.assertEqual(approved_leave_minutes_for_date(rows, saturday), 0)
+        self.assertEqual(active_leave_minutes_for_date(rows, saturday), 0)
 
     def test_leave_record_day_interval_short_leave(self):
         target = date(2026, 7, 17)
@@ -328,9 +313,7 @@ class OverlapDeduplicationTests(unittest.TestCase):
 class ConflictResponseBodyTests(unittest.TestCase):
     def test_response_body_shape_and_no_purpose_field(self):
         target = date(2026, 7, 17)
-        record = FakeLeaveRecord(
-            "Full-Day", target, target, status="Approved"
-        )
+        record = FakeLeaveRecord("Full-Day", target, target)
         body = leave_conflict_response_body([record])
         self.assertEqual(body["error"], "leave_conflict")
         self.assertIn("message", body)
@@ -338,9 +321,10 @@ class ConflictResponseBodyTests(unittest.TestCase):
         conflict = body["conflicts"][0]
         self.assertEqual(
             set(conflict.keys()),
-            {"leave_id", "leave_type", "status", "start_date", "end_date", "start_time", "end_time"},
+            {"leave_id", "leave_type", "start_date", "end_date", "start_time", "end_time"},
         )
         self.assertNotIn("purpose", conflict)
+        self.assertNotIn("status", conflict)
 
     def test_empty_conflicts_list(self):
         body = leave_conflict_response_body([])

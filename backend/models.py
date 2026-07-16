@@ -108,6 +108,12 @@ class MemberLeaveRecord(Base):
     created_by/updated_by are optional, unauthenticated free-text labels —
     this feature has no auth/session/role model, matching
     MemberScheduleEvent.
+
+    Lifecycle (2026-07-16 simplification amendment): there is no approval/
+    status workflow. A row is active the moment it is created and stays
+    active until soft-deleted — deleted_at IS NULL is the row's only
+    lifecycle signal, matching MemberScheduleEvent's own soft-delete
+    convention. No status/active-inactive enum column exists.
     """
 
     __tablename__ = "member_leave_records"
@@ -120,10 +126,6 @@ class MemberLeaveRecord(Base):
             "leave_type IN ('Short Leave', 'Half-Day First', 'Half-Day Second', "
             "'Full-Day', 'Multi-Day')",
             name="member_leave_records_leave_type_check",
-        ),
-        CheckConstraint(
-            "status IN ('Pending', 'Approved', 'Rejected', 'Cancelled')",
-            name="member_leave_records_status_check",
         ),
         CheckConstraint(
             "(leave_type IN ('Half-Day First', 'Half-Day Second') "
@@ -178,17 +180,16 @@ class MemberLeaveRecord(Base):
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)
 
-    status = Column(String, nullable=False, server_default="Pending")
-
     purpose = Column(String(240), nullable=True)
     external_reference = Column(String(120), nullable=True)
 
     coordination_copy_only = Column(Boolean, nullable=False, server_default=text("true"))
     policy_source_id = Column(String, nullable=False, server_default="SRC-POLICY-001")
 
-    # Snapshotted once, at the moment status becomes Approved. NULL until
-    # then. Never recomputed from live configuration afterward — see
-    # backend/routers/leave_logic.py snapshot_effective_leave_minutes().
+    # Snapshotted once, at creation, and recalculated in the same
+    # transaction whenever a date/time field is edited (see
+    # backend/routers/member_leave.py). Never recomputed from live
+    # configuration on GET/report read.
     effective_leave_minutes = Column(Integer, nullable=True)
 
     created_by = Column(String, nullable=True)

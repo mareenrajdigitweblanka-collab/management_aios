@@ -179,9 +179,13 @@ class DailyScheduleReportOut(BaseModel):
     # reference figure built from the confirmed Full-Day leave-deduction
     # constant (LEAVE_FULL_DAY_DEDUCTION_MINUTES) — it is NOT an official
     # attendance model or a claim about actual productive working time;
-    # this system has no such model and does not invent one here. ---
+    # this system has no such model and does not invent one here.
+    # active_leave_minutes (2026-07-16 simplification amendment — renamed
+    # from approved_leave_minutes) counts every leave row where
+    # deleted_at IS NULL; there is no Pending/Approved workflow to
+    # distinguish. ---
     base_leave_deduction_reference_minutes: int
-    approved_leave_minutes: int
+    active_leave_minutes: int
     adjusted_expected_work_minutes: int
     task_coverage_percentage: Optional[float] = None
 
@@ -225,7 +229,7 @@ class WeeklyScheduleReportOut(BaseModel):
     unscheduled_duration_change: DurationChangeOut
 
     base_leave_deduction_reference_minutes: int
-    approved_leave_minutes: int
+    active_leave_minutes: int
     adjusted_expected_work_minutes: int
     task_coverage_percentage: Optional[float] = None
 
@@ -272,7 +276,7 @@ class MonthlyScheduleReportOut(BaseModel):
     unscheduled_duration_change: DurationChangeOut
 
     base_leave_deduction_reference_minutes: int
-    approved_leave_minutes: int
+    active_leave_minutes: int
     adjusted_expected_work_minutes: int
     task_coverage_percentage: Optional[float] = None
 
@@ -280,7 +284,6 @@ class MonthlyScheduleReportOut(BaseModel):
 LeaveType = Literal[
     "Short Leave", "Half-Day First", "Half-Day Second", "Full-Day", "Multi-Day"
 ]
-LeaveStatus = Literal["Pending", "Approved", "Rejected", "Cancelled"]
 
 _SINGLE_DATE_LEAVE_TYPES = ("Short Leave", "Half-Day First", "Half-Day Second", "Full-Day")
 
@@ -292,10 +295,11 @@ class MemberLeaveRecordCreate(BaseModel):
     from the client — the router derives it from leave_type server-side, so
     a client can never send a leave_type/half_day_period mismatch.
 
-    status is intentionally absent: every new record is server-forced to
-    Pending (requirement §7 — "Prefer server-controlled initial Pending
-    status"). coordination_copy_only, policy_source_id, and
-    effective_leave_minutes are likewise server-controlled only."""
+    There is no status field (2026-07-16 simplification amendment) — every
+    new record is immediately active. coordination_copy_only,
+    policy_source_id, and effective_leave_minutes are server-controlled
+    only; effective_leave_minutes is computed and snapshotted at creation,
+    not left NULL pending a later approval step."""
 
     leave_type: LeaveType
     start_date: date_type
@@ -337,16 +341,15 @@ class MemberLeaveRecordCreate(BaseModel):
 
 
 class MemberLeaveRecordUpdate(BaseModel):
-    """Editable fields plus an optional status transition. leave_type and
+    """Editable fields for an active leave record. leave_type and
     half_day_period are never accepted here — changing the fundamental
-    nature of a leave request requires cancelling it and creating a new
+    nature of a leave request requires deleting it and creating a new
     one, same rationale as task category immutability.
 
-    Legality of a requested status transition (e.g. Rejected -> Pending)
-    is NOT checked here — that requires knowing the record's current
-    status, which this schema does not have. The router
-    (backend/routers/member_leave.py) checks
-    leave_logic.is_transition_allowed() before applying any status change."""
+    There is no status field to transition (2026-07-16 simplification
+    amendment) — an active record stays active until deleted via
+    DELETE /api/member-leave/{member_key}/{leave_id}, which this schema
+    does not model (no request body)."""
 
     start_date: Optional[date_type] = None
     end_date: Optional[date_type] = None
@@ -355,7 +358,6 @@ class MemberLeaveRecordUpdate(BaseModel):
     purpose: Optional[str] = Field(default=None, max_length=240)
     external_reference: Optional[str] = Field(default=None, max_length=120)
     updated_by: Optional[str] = Field(default=None, max_length=120)
-    status: Optional[LeaveStatus] = None
 
     @model_validator(mode="after")
     def end_after_start(self) -> "MemberLeaveRecordUpdate":
@@ -376,7 +378,6 @@ class MemberLeaveRecordOut(BaseModel):
     end_date: date_type
     start_time: Optional[time_type] = None
     end_time: Optional[time_type] = None
-    status: str
     purpose: Optional[str] = None
     external_reference: Optional[str] = None
     coordination_copy_only: bool = True
@@ -401,7 +402,7 @@ class LeaveConfigurationOut(BaseModel):
 class LeaveSummaryOut(BaseModel):
     member_key: str
     month: str  # "YYYY-MM"
-    short_leave_approved_minutes: int
+    short_leave_active_minutes: int
     short_leave_cap_minutes: int
     short_leave_remaining_minutes: int
     configuration: LeaveConfigurationOut
@@ -413,7 +414,6 @@ class LeaveSummaryOut(BaseModel):
 class LeaveConflictItemOut(BaseModel):
     leave_id: str
     leave_type: str
-    status: str
     start_date: date_type
     end_date: date_type
     start_time: Optional[time_type] = None
@@ -423,9 +423,11 @@ class LeaveConflictItemOut(BaseModel):
 class LeaveConflictResponseOut(BaseModel):
     """Documents the exact 409 body shape returned by
     backend/routers/member_schedules.py when a task save conflicts with
-    Approved leave. Not used as a FastAPI response_model (the route returns
-    a JSONResponse directly so the body has no "detail" wrapper) — this
-    schema exists so the contract is typed and testable."""
+    active leave (every leave row where deleted_at IS NULL — there is no
+    approval workflow to distinguish, 2026-07-16 simplification amendment).
+    Not used as a FastAPI response_model (the route returns a JSONResponse
+    directly so the body has no "detail" wrapper) — this schema exists so
+    the contract is typed and testable."""
 
     error: Literal["leave_conflict"] = "leave_conflict"
     message: str
