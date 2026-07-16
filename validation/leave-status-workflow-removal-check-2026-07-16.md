@@ -4,7 +4,7 @@ type: validation-check
 created: 2026-07-16
 created-by: Mareenraj (builder)
 requirement-id: REQ-LEAVE-COPY-001-SIMPLIFICATION-AMENDMENT
-status: AMBER — code-level validation PASS; live database migration and post-deploy live validation pending (see evidence/database file)
+status: AMBER — code-level validation PASS; database migration confirmed PASS; post-deploy live API/frontend smoke test still pending (see evidence/database file)
 ---
 
 # Validation Check — Remove Leave Approval Workflow and Simplify Leave Lifecycle
@@ -100,9 +100,9 @@ GET    /api/member-leave/{member_key}/summary
 
 ## Live Validation
 
-**Database:** connected successfully to the live Neon database (`management_aios` schema confirmed present, `member_leave_records` table confirmed present, 3 existing rows: 2 Approved + 1 Cancelled, 0 already-deleted). The mutating migration was **not** executed by the assistant — the user opted to run `database/migrations/2026-07-16-remove-member-leave-status-workflow.sql` manually. See `evidence/database/member-leave-status-removal-migration-execution-2026-07-16.md` for the full pre-migration inspection record.
+**Database:** connected successfully to the live Neon database (`management_aios` schema confirmed present, `member_leave_records` table confirmed present, 3 existing rows: 2 Approved + 1 Cancelled, 0 already-deleted). The user ran `database/migrations/2026-07-16-remove-member-leave-status-workflow.sql` manually. The assistant reconnected afterward and independently verified: `status` column absent, `status` CHECK constraint absent, 2 active rows, 1 soft-deleted row (matches the expected mapping exactly), the three intended indexes present and the two dropped status-keyed indexes absent, and `member_schedule_events` unchanged at 195 rows. See `evidence/database/member-leave-status-removal-migration-execution-2026-07-16.md` for the full pre- and post-migration record. **Database migration: PASS.**
 
-**API/frontend live smoke test (Steps 19–20):** **not performed in this pass.** The production API (`management-aios-api.vercel.app`) is still running the pre-amendment code as of this check (deployment is intentionally held per Step 25 until the migration is confirmed run), and creating disposable test records directly against the production database before the migration runs was judged an unnecessary additional risk on top of the schema change itself. This is an explicit, acknowledged gap, not a silent omission — a follow-up live-validation pass (create → appears in GET → blocks task → affects reporting → delete → disappears → no status field anywhere) is required after the user confirms the migration has run and the code is deployed.
+**API/frontend live smoke test (Steps 19–20):** **not performed in this pass.** The production API (`management-aios-api.vercel.app`) was still running the pre-amendment code as of the migration check (deployment follows this validation pass). A follow-up live-validation pass (create → appears in GET → blocks task → affects reporting → delete → disappears → no status field anywhere) is required once the code is deployed — see the final report/handover for deployment confirmation status.
 
 ## Known Limitations
 

@@ -3,7 +3,7 @@ name: member-leave-status-removal-migration-execution
 type: database-execution-evidence
 created: 2026-07-16
 requirement-id: REQ-LEAVE-COPY-001-SIMPLIFICATION-AMENDMENT
-status: AMBER — connected to the correct database, pre-migration inspection completed; mutating migration NOT executed by the assistant (user opted to run it manually)
+status: PASS — migration executed by the user against the live database; post-migration state independently verified by the assistant
 ---
 
 # Database Migration Execution Evidence — Status Workflow Removal — 2026-07-16
@@ -46,16 +46,28 @@ No row content beyond aggregate counts and column names was read, logged, or pri
 
 ## Execution Decision
 
-Given this is the live database backing the deployed production application, and the migration drops a column and a CHECK constraint and soft-deletes the 1 `Cancelled` row (a schema change plus a data mutation, not purely additive), the assistant paused and asked the user for explicit confirmation before running it. **The user chose to run the migration manually themselves** rather than have the assistant execute it directly.
+Given this is the live database backing the deployed production application, and the migration drops a column and a CHECK constraint and soft-deletes the 1 `Cancelled` row (a schema change plus a data mutation, not purely additive), the assistant paused and asked the user for explicit confirmation before running it. **The user chose to run the migration manually themselves** rather than have the assistant execute it directly, and confirmed it completed successfully.
 
-**Result: the mutating migration (`BEGIN...COMMIT` body of `2026-07-16-remove-member-leave-status-workflow.sql`) was NOT executed by the assistant in this session.** No column was dropped, no constraint was removed, no row was soft-deleted, and no index was created or dropped as a result of this evidence-gathering pass.
+## Post-Migration Verification (performed by the assistant, read-only)
 
-## What Must Happen Before This Feature Is Considered Fully Deployed
+Reconnected to the same database and independently re-queried its state after the user ran the migration:
 
-1. The user runs `database/migrations/2026-07-16-remove-member-leave-status-workflow.sql` against the same Neon database confirmed above (e.g. `psql "$DATABASE_URL" -f database/migrations/2026-07-16-remove-member-leave-status-workflow.sql`, or pasted into the Neon SQL console).
-2. The migration's own embedded post-`COMMIT` validation queries are run and their results recorded (status column absent, status constraint absent, active row count, soft-deleted row count, index list, unaffected `member_schedule_events` count).
-3. This evidence file (or a dated follow-up) is updated with those post-migration results before the AMBER status is upgraded to PASS.
-4. Only after the migration has run: deploy/confirm the backend application code (already committed) against this database, since the new backend code no longer references the `status` column at all (it is backward-compatible with the pre-migration table shape — the column simply becomes unused dead weight until the migration runs) but the task's own instruction is not to claim full deployment until the migration has succeeded.
+| Check | Result |
+|---|---|
+| `status` column present in `member_leave_records`? | **No** — absent from the column list |
+| `member_leave_records_status_check` constraint present? | **No** — 0 rows in `pg_constraint` |
+| Active row count (`deleted_at IS NULL`) | **2** |
+| Soft-deleted row count (`deleted_at IS NOT NULL`) | **1** |
+| Indexes on `member_leave_records` | `idx_member_leave_records_active_conflict`, `idx_member_leave_records_member_date`, `idx_member_leave_records_short_leave_active`, `member_leave_records_pkey` — matches the migration's intended end state exactly; the two dropped status-keyed indexes are absent |
+| `member_schedule_events` row count | **195** — unchanged from the pre-migration baseline, confirming no cross-table effect |
+
+This matches the pre-migration state exactly as predicted by the mapping rule: the 2 `Approved` rows became active (unchanged `deleted_at`), and the 1 `Cancelled` row became soft-deleted. No `Pending`/`Rejected` rows existed to migrate.
+
+**Result: the migration executed successfully.** The `status` column and its CHECK constraint are gone, the intended replacement indexes exist, row counts match the expected mapping, and `member_schedule_events` is confirmed untouched.
+
+## What Happens Next
+
+With the migration confirmed, the application code (already committed: `b2280b8`, `99fd0a8`, `74da817`) can be pushed and deployed — the new backend code maps exactly to this post-migration table shape (no `status` column reference anywhere).
 
 ## Sensitive-Data Confirmation
 
