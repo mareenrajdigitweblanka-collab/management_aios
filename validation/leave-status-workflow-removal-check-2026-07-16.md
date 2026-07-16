@@ -4,7 +4,7 @@ type: validation-check
 created: 2026-07-16
 created-by: Mareenraj (builder)
 requirement-id: REQ-LEAVE-COPY-001-SIMPLIFICATION-AMENDMENT
-status: AMBER — code-level validation PASS; database migration confirmed PASS; post-deploy live API/frontend smoke test still pending (see evidence/database file)
+status: PASS — code, database migration, deployment, and live API/frontend smoke test all confirmed
 ---
 
 # Validation Check — Remove Leave Approval Workflow and Simplify Leave Lifecycle
@@ -102,14 +102,25 @@ GET    /api/member-leave/{member_key}/summary
 
 **Database:** connected successfully to the live Neon database (`management_aios` schema confirmed present, `member_leave_records` table confirmed present, 3 existing rows: 2 Approved + 1 Cancelled, 0 already-deleted). The user ran `database/migrations/2026-07-16-remove-member-leave-status-workflow.sql` manually. The assistant reconnected afterward and independently verified: `status` column absent, `status` CHECK constraint absent, 2 active rows, 1 soft-deleted row (matches the expected mapping exactly), the three intended indexes present and the two dropped status-keyed indexes absent, and `member_schedule_events` unchanged at 195 rows. See `evidence/database/member-leave-status-removal-migration-execution-2026-07-16.md` for the full pre- and post-migration record. **Database migration: PASS.**
 
-**API/frontend live smoke test (Steps 19–20):** **not performed in this pass.** The production API (`management-aios-api.vercel.app`) was still running the pre-amendment code as of the migration check (deployment follows this validation pass). A follow-up live-validation pass (create → appears in GET → blocks task → affects reporting → delete → disappears → no status field anywhere) is required once the code is deployed — see the final report/handover for deployment confirmation status.
+**API/frontend live smoke test (Steps 19–20):** performed against the deployed production API/frontend after push, using disposable records, all cleaned up afterward:
+
+1. `POST /api/member-leave/paraparan` (Full-Day, 2027-03-15, far-future date) → 201, immediately returned with `effective_leave_minutes: 540` and no `status` field.
+2. `GET /api/member-leave/paraparan?start_date=2027-03-15&end_date=2027-03-15` → the new record appeared immediately.
+3. `POST /api/member-schedules/paraparan` (a task on the same date) → 409 `leave_conflict`, message "This task conflicts with active leave.", conflict entry has no `status` key.
+4. `GET /api/member-schedules/paraparan/reports/daily?date=2027-03-15` → `active_leave_minutes: 540`, no `approved_leave_minutes` key present, `adjusted_expected_work_minutes: 0`.
+5. `DELETE /api/member-leave/paraparan/{leave_id}` → 200, `{"deleted": true}`.
+6. Repeat GET → the record no longer appears.
+7. Repeat the same task `POST` → now succeeds (201) — the conflict is gone after deletion. This disposable test task was then deleted via `DELETE /api/member-schedules/paraparan/{event_id}` → 200.
+8. Deployed frontend HTML fetched and grepped: zero occurrences of `Show history`, `leave-status-badge`, `data-leave-action`, or `LEAVE_STATUS_CLASS`; 5 occurrences of `Delete Leave`/`deleteLeaveRecord`; 2 occurrences of `active_leave_minutes`.
+9. Deployed `app.openapi()` (`https://management-aios-api.vercel.app/openapi.json`) confirmed the exact route set and confirmed `status` absent from `MemberLeaveRecordOut`/`MemberLeaveRecordUpdate`/`LeaveConflictItemOut`.
+
+All disposable records were deleted after verification; no leftover test data remains in the production database.
 
 ## Known Limitations
 
 - The Rejected/Cancelled → soft-deleted migration mapping is a one-way, explicit business decision (see design doc §17) — not reversible to the original per-row status without a separately reviewed migration, and even then only for whichever rows a reviewer manually reclassifies.
-- Live end-to-end API/frontend validation (Steps 19–20) is deferred to a follow-up pass, pending the user running the migration and this code being deployed (see above).
-- `backend/routers/leave_logic.py`'s DB-dependent functions (`compute_short_leave_active_minutes_for_month`, `compute_active_leave_minutes_for_period`, `find_conflicting_active_leave`) are exercised in the automated test suite only through their DB-free building blocks (matching this repo's pre-existing testing convention for this module) — the actual SQLAlchemy query construction is not covered by an automated test in this environment.
+- `backend/routers/leave_logic.py`'s DB-dependent functions (`compute_short_leave_active_minutes_for_month`, `compute_active_leave_minutes_for_period`, `find_conflicting_active_leave`) are exercised in the automated test suite only through their DB-free building blocks (matching this repo's pre-existing testing convention for this module) — the actual SQLAlchemy query construction is covered indirectly by the live production smoke test above, but not by a dedicated automated integration test in this environment.
 
 ## PASS / AMBER / FAIL
 
-**AMBER.** Code-level implementation (backend, schema files, frontend, tests, docs) is complete and internally consistent — all automated tests pass, the OpenAPI contract matches the required route/field set exactly, and static analysis confirms zero remaining approval-workflow references anywhere in the changed files. The migration file is authored, reviewed, and idempotent, but has not yet been executed against the live database (by the user's own choice, not a technical blocker), and the live post-deploy API/frontend smoke test (Steps 19–20) has not yet been performed. Upgrade to PASS requires: (1) user confirmation that the migration ran successfully, (2) deployment, (3) a live smoke test of create/get/conflict/delete against the deployed API.
+**PASS.** Code-level implementation (backend, schema files, frontend, tests, docs) is complete and internally consistent — all automated tests pass, the OpenAPI contract matches the required route/field set exactly, and static analysis confirms zero remaining approval-workflow references anywhere in the changed files. The migration ran successfully against the live database (user-executed, assistant-verified). The code was pushed, deployed, and directly smoke-tested end-to-end against the live production API and frontend using disposable records, all of which were cleaned up afterward.

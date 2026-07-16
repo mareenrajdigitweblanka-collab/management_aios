@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-16
 created-by: Mareenraj (builder)
 requirement-id: REQ-LEAVE-COPY-001-SIMPLIFICATION-AMENDMENT
-status: AMBER — code complete and tested; live DB migration execution and post-deploy live validation pending
+status: PASS — code, migration, deployment, and live smoke test all confirmed
 ---
 
 # Handover Closure — Remove Leave Approval Workflow and Simplify Leave Lifecycle
@@ -47,7 +47,7 @@ User decision: remove the Pending/Approved/Rejected/Cancelled approval/status wo
 
 `database/migrations/2026-07-16-remove-member-leave-status-workflow.sql`. Mapping: Pending/Approved → active row (unchanged); Rejected/Cancelled → soft-deleted (`deleted_at` populated via `COALESCE`, preserving any already-deleted row's original timestamp). Drops `status` column, its CHECK constraint, and two status-keyed indexes; adds two `deleted_at`-keyed replacement indexes. Idempotent, wrapped in `BEGIN`/`COMMIT`.
 
-**Execution status:** connected to the live Neon database and completed a read-only pre-migration inspection (3 existing rows: 2 Approved, 1 Cancelled, 0 already-deleted — see the paired evidence file). The user chose to run the mutating migration manually rather than have it executed by the assistant in this session. **The migration has not yet been confirmed as run** as of this closure.
+**Execution status:** connected to the live Neon database and completed a read-only pre-migration inspection (3 existing rows: 2 Approved, 1 Cancelled, 0 already-deleted — see the paired evidence file). The user ran the mutating migration manually. The assistant reconnected afterward and independently confirmed: `status` column absent, `status` CHECK constraint absent, 2 active rows, 1 soft-deleted row (exact expected mapping), correct index set, `member_schedule_events` unaffected (195 rows, unchanged). **Migration confirmed successful.**
 
 ## Rollback
 
@@ -60,11 +60,11 @@ Not a simple reverse-migration, since this migration drops a column and a constr
 
 ## Deployment
 
-**Held, per the task's own instruction not to deploy application changes until the status-removal database migration has successfully run.** Push to `origin/main` (which triggers Vercel's existing auto-deploy) is deferred until the user confirms the migration has been executed. See the final report for the actual commit hash(es) and current push/deploy status at the time this session ends.
+Pushed to `origin/main` after the user confirmed the migration ran successfully; Vercel auto-deployed both the frontend (`management-aios.vercel.app`) and backend API (`management-aios-api.vercel.app`) projects. Confirmed live: backend `/health` → HTTP 200; frontend → HTTP 200; deployed `app.openapi()` shows the exact new route set (no `/history`, no `/cancel`, `DELETE` present) and confirms `status` absent from every leave-related schema.
 
 ## Commit Hashes
 
-Recorded in `git log` as the commit(s) introducing these files, made after this closure file. See the final report delivered alongside this closure for the exact short hash(es) captured at commit time (not embedded here to avoid a self-referential value inside a file whose own content determines that hash).
+`b2280b8` "Remove leave approval workflow" (backend + database), `99fd0a8` "Simplify leave calendar UI" (frontend), `74da817` "Add migration and validation evidence" (docs + validation + handover + DB evidence), `ba6d335` "Record post-migration database verification" (evidence update after the user confirmed the migration ran). Pushed to `origin/main`: `4244c06..ba6d335 main -> main`.
 
 ## Queryability Result
 
@@ -72,8 +72,8 @@ PASS — this closure file, its paired validation file, the database evidence fi
 
 ## PASS / FAIL
 
-**AMBER** (see paired validation file for the detailed breakdown) — code complete, tested, and internally consistent; live database migration execution and post-deploy live validation are the two remaining steps before this closes as a full PASS.
+**PASS** (see paired validation file for the full breakdown) — code complete and tested, migration executed and verified, code deployed, and a live end-to-end smoke test (create → appears in GET → blocks a conflicting task → contributes to reporting → delete → disappears → conflict clears) performed against production with disposable records, all cleaned up afterward.
 
 ## One Next Step
 
-After running `database/migrations/2026-07-16-remove-member-leave-status-workflow.sql` against the live Neon database, run its embedded post-`COMMIT` validation queries, record the results in a follow-up update to `evidence/database/member-leave-status-removal-migration-execution-2026-07-16.md`, then push/deploy and perform the live create → get → conflict → delete smoke test described in the validation file's "Live Validation" section before upgrading this closure's status to PASS.
+Ask Mayurika and Arun (per §15 of the requirement document) to review the amended requirement/design docs and confirm the simplified create-active-delete lifecycle meets their operational expectations, since the original approval-workflow design was never formally signed off before this amendment superseded it.
