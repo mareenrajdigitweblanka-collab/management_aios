@@ -5851,55 +5851,6 @@
           '</div>' +
           '</div>' +
           '</div>' +
-          '<div class="hr-table-card msc-leave-card">' +
-          '<div class="msc-leave-card-head">' +
-          '<h4 class="msc-leave-title"><span class="msc-leave-title-icon" aria-hidden="true">&#128197;</span>Leave Coordination ' +
-          '<span style="font-weight:600;color:var(--muted);">(Calendar Copy)</span></h4>' +
-          '<p class="msc-leave-subtitle">Create, track, and coordinate leave for ' + escapeHtml(memberLabel) +
-          ' directly on this calendar.</p>' +
-          '</div>' +
-          '<div class="msc-leave-notice"><span class="msc-leave-notice-icon" aria-hidden="true">&#8505;&#65039;</span>' +
-          '<span>Calendar coordination copy only. The separate HR leave system remains ' +
-          'official. This is not an official leave balance, payroll/no-pay calculation, disciplinary decision, ' +
-          'or medical record — and status here does not represent verified HR approval identity.</span></div>' +
-          '<div class="msc-leave-section">' +
-          '<div class="msc-leave-section-title">New Leave Request</div>' +
-          '<div class="msc-leave-form-panel">' +
-          '<form class="msc-leave-form msc-form-grid" autocomplete="off">' +
-          '<label>Leave type<select class="msc-leave-field-type">' +
-          '<option value="Short Leave">Short Leave</option>' +
-          '<option value="Half-Day First">Half-Day Leave — First Half (08:30–13:00)</option>' +
-          '<option value="Half-Day Second">Half-Day Leave — Second Half (13:30–18:00)</option>' +
-          '<option value="Full-Day">Full-Day Leave</option>' +
-          '<option value="Multi-Day">Multi-Day Leave</option>' +
-          '</select></label>' +
-          '<label class="msc-leave-field-start-date-wrap">Start date<input type="date" class="msc-leave-field-start-date" required /></label>' +
-          '<label class="msc-leave-field-end-date-wrap" style="display:none;">End date<input type="date" class="msc-leave-field-end-date" /></label>' +
-          '<label class="msc-leave-field-time-wrap" style="display:none;">Start time<input type="time" class="msc-leave-field-start-time" /></label>' +
-          '<label class="msc-leave-field-time-wrap" style="display:none;">End time<input type="time" class="msc-leave-field-end-time" /></label>' +
-          '<label class="msc-form-full">Purpose (optional)<input type="text" class="msc-leave-field-purpose" maxlength="240" ' +
-          'placeholder="Optional — no medical detail" /></label>' +
-          '<label class="msc-form-full">External reference (optional)<input type="text" class="msc-leave-field-external-reference" ' +
-          'maxlength="120" placeholder="e.g. official HR leave system reference id" /></label>' +
-          '</form>' +
-          '<div class="msc-form-actions">' +
-          '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
-          '<button type="button" class="msc-btn msc-btn-ghost msc-leave-history-toggle" aria-pressed="false">Show history</button>' +
-          '</div>' +
-          '</div>' +
-          '</div>' +
-          '<div class="msc-leave-section">' +
-          '<div class="msc-leave-section-title">Leave — ' +
-          '<span class="msc-leave-list-date-label">select a date</span></div>' +
-          '<div class="msc-leave-list"><p class="msc-leave-empty">Select a date on the calendar to see leave for that date.</p></div>' +
-          '</div>' +
-          '<div class="msc-leave-section msc-leave-history-wrap" style="display:none;">' +
-          '<div class="msc-leave-section-title">Leave History — All Statuses</div>' +
-          '<div class="msc-leave-history-panel">' +
-          '<div class="msc-leave-history-list"><p class="msc-leave-empty">Loading history…</p></div>' +
-          '</div>' +
-          '</div>' +
-          '</div>' +
           '<div class="hr-table-card">' +
           '<div class="msc-form-card">' +
           '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
@@ -5958,6 +5909,55 @@
           '<p class="msc-view-priority"></p>' +
           '<p class="msc-view-notes"></p>' +
           '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="hr-table-card msc-leave-card">' +
+          '<div class="msc-leave-card-head">' +
+          '<h4 class="msc-leave-title"><span class="msc-leave-title-icon" aria-hidden="true">&#128197;</span>Leave Coordination ' +
+          '<span style="font-weight:600;color:var(--muted);">(Calendar Copy)</span></h4>' +
+          '<p class="msc-leave-subtitle">Create, track, and coordinate leave for ' + escapeHtml(memberLabel) +
+          ' directly on this calendar.</p>' +
+          '</div>' +
+          '<div class="msc-leave-notice"><span class="msc-leave-notice-icon" aria-hidden="true">&#8505;&#65039;</span>' +
+          '<span>Calendar coordination copy only. The separate HR leave system remains ' +
+          'official. This is not an official leave balance, payroll/no-pay calculation, disciplinary decision, ' +
+          'or medical record — and status here does not represent verified HR approval identity.</span></div>' +
+          '<div class="msc-leave-section">' +
+          '<div class="msc-leave-section-title">New Leave Request</div>' +
+          '<div class="msc-leave-form-panel">' +
+          '<form class="msc-leave-form msc-form-grid" autocomplete="off">' +
+          '<label>Leave type<select class="msc-leave-field-type">' +
+          '<option value="Short Leave">Short Leave</option>' +
+          '<option value="Half-Day First">Half-Day Leave — First Half (08:30–13:00)</option>' +
+          '<option value="Half-Day Second">Half-Day Leave — Second Half (13:30–18:00)</option>' +
+          '<option value="Full-Day">Full-Day Leave</option>' +
+          '<option value="Multi-Day">Multi-Day Leave</option>' +
+          '</select></label>' +
+          '<label class="msc-leave-field-start-date-wrap">Start date<input type="date" class="msc-leave-field-start-date" required /></label>' +
+          '<label class="msc-leave-field-end-date-wrap" style="display:none;">End date<input type="date" class="msc-leave-field-end-date" /></label>' +
+          '<label class="msc-leave-field-time-wrap" style="display:none;">Start time<input type="time" class="msc-leave-field-start-time" /></label>' +
+          '<label class="msc-leave-field-time-wrap" style="display:none;">End time<input type="time" class="msc-leave-field-end-time" /></label>' +
+          '<label class="msc-form-full">Purpose (optional)<input type="text" class="msc-leave-field-purpose" maxlength="240" ' +
+          'placeholder="Optional — no medical detail" /></label>' +
+          '<label class="msc-form-full">External reference (optional)<input type="text" class="msc-leave-field-external-reference" ' +
+          'maxlength="120" placeholder="e.g. official HR leave system reference id" /></label>' +
+          '</form>' +
+          '<div class="msc-form-actions">' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
+          '<button type="button" class="msc-btn msc-btn-ghost msc-leave-history-toggle" aria-pressed="false">Show history</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="msc-leave-section">' +
+          '<div class="msc-leave-section-title">Leave — ' +
+          '<span class="msc-leave-list-date-label">select a date</span></div>' +
+          '<div class="msc-leave-list"><p class="msc-leave-empty">Select a date on the calendar to see leave for that date.</p></div>' +
+          '</div>' +
+          '<div class="msc-leave-section msc-leave-history-wrap" style="display:none;">' +
+          '<div class="msc-leave-section-title">Leave History — All Statuses</div>' +
+          '<div class="msc-leave-history-panel">' +
+          '<div class="msc-leave-history-list"><p class="msc-leave-empty">Loading history…</p></div>' +
           '</div>' +
           '</div>' +
           '</div>';
