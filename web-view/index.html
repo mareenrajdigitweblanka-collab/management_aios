@@ -2266,6 +2266,20 @@
       font-weight: 600;
     }
 
+    /* Schedule Item title character counter (2026-07-16, title limit
+       raised from 60 to 120) — purely informational; maxlength on the
+       input itself is what actually enforces the limit. */
+    .msc-field-title-counter {
+      align-self: flex-end;
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--muted-2);
+    }
+
+    .msc-field-title-counter.msc-field-title-counter--near-limit {
+      color: var(--amber);
+    }
+
     .msc-form-grid input,
     .msc-form-grid select,
     .msc-form-grid textarea {
@@ -5857,7 +5871,8 @@
           '<span class="msc-selected-date-label">select a date</span></div>' +
           '<form class="msc-form msc-form-grid" autocomplete="off">' +
           '<label>Date<input type="date" class="msc-field-date" required /></label>' +
-          '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Prepare weekly report" maxlength="60" required /></label>' +
+          '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Prepare weekly report" maxlength="120" required />' +
+          '<span class="msc-field-title-counter">0 / 120</span></label>' +
           '<label>Category<select class="msc-field-category">' +
           '<option value="Scheduled Task">Scheduled Task</option>' +
           '<option value="Unscheduled Task">Unscheduled Task</option>' +
@@ -5973,6 +5988,20 @@
         var listDateLabel = container.querySelector('.msc-list-date-label');
         var fieldDate = container.querySelector('.msc-field-date');
         var fieldTitle = container.querySelector('.msc-field-title');
+        var fieldTitleCounter = container.querySelector('.msc-field-title-counter');
+        var TITLE_MAX_LENGTH = 120;
+
+        /* Container-scoped, no global id — mirrors the input's own
+           maxlength (the actual enforcement); this only reflects it. */
+        function updateTitleCounter() {
+          if (!fieldTitleCounter) { return; }
+          var len = fieldTitle.value.length;
+          fieldTitleCounter.textContent = len + ' / ' + TITLE_MAX_LENGTH;
+          fieldTitleCounter.classList.toggle(
+            'msc-field-title-counter--near-limit', len >= TITLE_MAX_LENGTH - 10
+          );
+        }
+        if (fieldTitle) { fieldTitle.addEventListener('input', updateTitleCounter); }
         var fieldCategory = container.querySelector('.msc-field-category');
         var fieldCategoryHelper = container.querySelector('.msc-field-category-helper');
         var fieldPriority = container.querySelector('.msc-field-priority');
@@ -6796,6 +6825,7 @@
 
         function resetForm() {
           fieldTitle.value = '';
+          updateTitleCounter();
           fieldCategory.value = 'Scheduled Task';
           fieldCategory.disabled = false;
           fieldCategoryHelper.style.display = 'none';
@@ -6846,6 +6876,7 @@
           state.editingId = id;
           fieldDate.value = it.date;
           fieldTitle.value = it.title;
+          updateTitleCounter();
           fieldCategory.value = it.category;
           fieldCategory.disabled = true;
           fieldCategoryHelper.style.display = '';

@@ -77,7 +77,7 @@ class MemberScheduleEvent(Base):
     member_label = Column(String, nullable=False)
 
     event_date = Column(Date, nullable=False)
-    title = Column(String(60), nullable=False)
+    title = Column(String(120), nullable=False)
     category = Column(String, nullable=False, server_default="Scheduled Task")
     priority = Column(String, nullable=False, server_default="Medium")
     start_time = Column(Time, nullable=True)

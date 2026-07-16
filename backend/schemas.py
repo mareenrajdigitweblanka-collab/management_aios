@@ -1,7 +1,8 @@
 """Pydantic request/response schemas for the member schedule API.
 
 Validation rules implemented here (per implementation requirements):
-- title required, max 60 characters
+- title required, max 120 characters (raised from 60 on 2026-07-16 — see
+  database/migrations/2026-07-16-increase-member-schedule-title-limit.sql)
 - notes max 240 characters
 - priority must be High / Medium / Low
 - date must be a valid date
@@ -45,7 +46,7 @@ ScheduleCategory = Literal["Scheduled Task", "Unscheduled Task"]
 
 class MemberScheduleEventCreate(BaseModel):
     date: date_type
-    title: str = Field(..., max_length=60, min_length=1)
+    title: str = Field(..., max_length=120, min_length=1)
     category: ScheduleCategory = DEFAULT_SCHEDULE_CATEGORY
     priority: str = Field(default="Medium")
     start: Optional[time_type] = None
@@ -78,7 +79,7 @@ class MemberScheduleEventUpdate(BaseModel):
     row in this router regardless of value."""
 
     date: Optional[date_type] = None
-    title: Optional[str] = Field(default=None, max_length=60, min_length=1)
+    title: Optional[str] = Field(default=None, max_length=120, min_length=1)
     category: Optional[str] = None
     priority: Optional[str] = None
     start: Optional[time_type] = None

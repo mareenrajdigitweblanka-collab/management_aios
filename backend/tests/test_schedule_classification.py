@@ -35,7 +35,7 @@ from backend.routers.member_schedules import (
     _percentages,
     classify_schedule_category,
 )
-from backend.schemas import MemberScheduleEventCreate
+from backend.schemas import MemberScheduleEventCreate, MemberScheduleEventUpdate
 
 
 class ClassifyScheduleCategoryTests(unittest.TestCase):
@@ -271,6 +271,65 @@ class CreateSchemaCategoryTests(unittest.TestCase):
     def test_arbitrary_category_rejected(self):
         with self.assertRaises(ValidationError):
             MemberScheduleEventCreate(**self._base_payload(category="Not A Real Category"))
+
+
+class TitleLengthLimitTests(unittest.TestCase):
+    """Schedule Item title limit raised from 60 to 120 characters
+    (2026-07-16) — see backend/schemas.py, backend/models.py, and
+    database/migrations/2026-07-16-increase-member-schedule-title-limit.sql.
+    Covers both MemberScheduleEventCreate and MemberScheduleEventUpdate,
+    since both apply the same max_length/min_length constraint."""
+
+    def _base_create_payload(self, **overrides):
+        payload = {"date": "2026-07-20", "title": "Prepare weekly report"}
+        payload.update(overrides)
+        return payload
+
+    def test_120_char_title_accepted_on_create(self):
+        title = "A" * 120
+        event = MemberScheduleEventCreate(**self._base_create_payload(title=title))
+        self.assertEqual(event.title, title)
+        self.assertEqual(len(event.title), 120)
+
+    def test_121_char_title_rejected_on_create(self):
+        with self.assertRaises(ValidationError):
+            MemberScheduleEventCreate(**self._base_create_payload(title="A" * 121))
+
+    def test_120_char_title_accepted_on_update(self):
+        title = "B" * 120
+        event = MemberScheduleEventUpdate(title=title)
+        self.assertEqual(event.title, title)
+
+    def test_121_char_title_rejected_on_update(self):
+        with self.assertRaises(ValidationError):
+            MemberScheduleEventUpdate(title="B" * 121)
+
+    def test_existing_short_title_still_succeeds(self):
+        event = MemberScheduleEventCreate(**self._base_create_payload(title="Prepare weekly report"))
+        self.assertEqual(event.title, "Prepare weekly report")
+
+    def test_old_60_char_title_still_within_new_limit(self):
+        # A title at the previous 60-character ceiling must still succeed
+        # under the new 120-character limit — this is a strict widening,
+        # never a narrowing, of what is accepted.
+        title = "C" * 60
+        event = MemberScheduleEventCreate(**self._base_create_payload(title=title))
+        self.assertEqual(len(event.title), 60)
+
+    def test_empty_title_still_rejected(self):
+        with self.assertRaises(ValidationError):
+            MemberScheduleEventCreate(**self._base_create_payload(title=""))
+
+    def test_whitespace_only_title_behavior_unchanged(self):
+        # The Pydantic schema has never trimmed or specially rejected
+        # whitespace-only titles — only min_length=1 (character count) is
+        # enforced here; the frontend's own .trim() check (unchanged,
+        # unaffected by this task) is what actually blocks a whitespace-only
+        # submission in the UI. This test locks in that the raising of the
+        # max_length limit did not introduce new schema-level whitespace
+        # handling that wasn't there before.
+        event = MemberScheduleEventCreate(**self._base_create_payload(title=" "))
+        self.assertEqual(event.title, " ")
 
 
 if __name__ == "__main__":

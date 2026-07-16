@@ -28,6 +28,13 @@
 -- database/migrations/2026-07-14-schedule-task-category-classification.sql
 -- instead, which migrates existing rows to 'Scheduled Task' before adding
 -- the constraint.
+--
+-- 2026-07-16: title column widened from VARCHAR(60) to VARCHAR(120). Because
+-- this script uses CREATE TABLE IF NOT EXISTS, re-running it against an
+-- already-existing table does NOT widen an existing column — this file only
+-- reflects the target state for a fresh install. For an existing deployment,
+-- apply database/migrations/2026-07-16-increase-member-schedule-title-limit.sql
+-- instead, which safely widens the live column via ALTER COLUMN ... TYPE.
 
 -- gen_random_uuid() is built into PostgreSQL core since PG 13; pgcrypto is
 -- only needed on older servers. Guarded so it is a no-op (and does not fail)
@@ -44,7 +51,7 @@ CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events (
     member_label TEXT NOT NULL,
 
     event_date DATE NOT NULL,
-    title VARCHAR(60) NOT NULL,
+    title VARCHAR(120) NOT NULL,
     category TEXT NOT NULL DEFAULT 'Scheduled Task',
     priority TEXT NOT NULL DEFAULT 'Medium',
     start_time TIME NULL,

@@ -480,6 +480,33 @@ class MemberLeaveRecordCreateSchemaTests(unittest.TestCase):
         self.assertEqual(payload.purpose, "Family event")
         self.assertEqual(payload.external_reference, "HR-2026-001")
 
+    def test_purpose_limit_unchanged_at_240_by_schedule_item_title_increase(self):
+        # The Schedule Item title limit was raised to 120 (2026-07-16) —
+        # this must not have touched the unrelated Leave purpose limit,
+        # which stays at 240.
+        payload = MemberLeaveRecordCreate(
+            leave_type="Full-Day", start_date=date(2026, 7, 17), purpose="D" * 240
+        )
+        self.assertEqual(len(payload.purpose), 240)
+        with self.assertRaises(ValidationError):
+            MemberLeaveRecordCreate(
+                leave_type="Full-Day", start_date=date(2026, 7, 17), purpose="D" * 241
+            )
+
+    def test_external_reference_limit_unchanged_at_120(self):
+        # external_reference's limit (120) is unrelated to and unchanged by
+        # the Schedule Item title limit increase, even though both now
+        # happen to be 120 — this confirms it is still independently
+        # enforced, not accidentally removed.
+        payload = MemberLeaveRecordCreate(
+            leave_type="Full-Day", start_date=date(2026, 7, 17), external_reference="E" * 120
+        )
+        self.assertEqual(len(payload.external_reference), 120)
+        with self.assertRaises(ValidationError):
+            MemberLeaveRecordCreate(
+                leave_type="Full-Day", start_date=date(2026, 7, 17), external_reference="E" * 121
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
