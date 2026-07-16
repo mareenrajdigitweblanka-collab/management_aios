@@ -4,16 +4,26 @@ type: handover-closure
 created: 2026-07-16
 created-by: Mareenraj (builder)
 requirement-id: REQ-LEAVE-COPY-001
-status: PASS — requirement and design documented; no implementation performed; 3 numeric configuration values open pending HR confirmation
+status: PASS — requirement and design documented; leave-system deduction minutes confirmed (270/270/540, mirrors official leave system); actual office break (12:45–13:30) recorded as a separate concept; no implementation performed
 ---
 
 # Handover Closure — Management Calendar Leave Coordination Copy Requirement — 2026-07-16
 
-**Closure date:** 2026-07-16
+**Closure date:** 2026-07-16 (original pass), corrected 2026-07-16 (same-day correction pass — leave-time interpretation)
 
 ## Requirement
 
 Produce the formal written requirement and design contract for a calendar-managed leave coordination-copy feature (`management_aios.member_leave_records`), covering the 5 existing calendar members, 5 leave types, 4-status lifecycle, short-leave monthly cap, half/full/multi-day configuration handling, Approved-leave task-conflict blocking, and additive expected-hours reporting — as a documentation-only pass. No backend code, no migration, no frontend change was authorized or performed in this pass.
+
+## Correction Pass (2026-07-16)
+
+A same-day correction was applied to the requirement and design documents to record confirmed leave-time values and to distinguish two previously-conflated concepts:
+
+- **Actual company office break** — `ACTUAL_OFFICE_BREAK_START=12:45`, `ACTUAL_OFFICE_BREAK_END=13:30` — a physical-schedule fact, recorded as its own concept (requirement §6.2, design §7.1).
+- **Official leave-system periods** — First Half 08:30–13:00, Second Half 13:30–18:00, Full-Day 08:30–18:00 — mirrored from the separate official HR leave system, **not** recalculated from the actual break duration (requirement §6.1, design §7.1).
+- **Leave-deduction minutes**, now confirmed: `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES=270`, `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES=270`, `LEAVE_FULL_DAY_DEDUCTION_MINUTES=540`. These resolve the three previously-open numeric configuration items and are explicitly labeled as leave-system credited minutes, not verified actual productive working time.
+
+No backend, database, or frontend file was touched in this correction pass, consistent with the original pass.
 
 ## Files Created
 
@@ -46,11 +56,13 @@ Produce the formal written requirement and design contract for a calendar-manage
 
 ## Open Items
 
-1. `LEAVE_HALF_DAY_FIRST_EXPECTED_MINUTES` — value not yet confirmed.
-2. `LEAVE_HALF_DAY_SECOND_EXPECTED_MINUTES` — value not yet confirmed.
-3. `LEAVE_FULL_DAY_EXPECTED_MINUTES` — value not yet confirmed.
+All three numeric configuration values are now resolved (see Correction Pass above):
 
-No open architecture questions remain (storage model, multi-day representation, cap-enforcement transaction strategy, config-snapshot timing, and overlap-deduplication algorithm are all resolved in the design document).
+1. ~~`LEAVE_HALF_DAY_FIRST_EXPECTED_MINUTES`~~ — resolved as `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES = 270`.
+2. ~~`LEAVE_HALF_DAY_SECOND_EXPECTED_MINUTES`~~ — resolved as `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES = 270`.
+3. ~~`LEAVE_FULL_DAY_EXPECTED_MINUTES`~~ — resolved as `LEAVE_FULL_DAY_DEDUCTION_MINUTES = 540`.
+
+Remaining: reviewer sign-off (Arun, Mayurika — requirement §15) before implementation begins. No open architecture questions remain (storage model, multi-day representation, cap-enforcement transaction strategy, config-snapshot timing, and overlap-deduplication algorithm are all resolved in the design document).
 
 ## Compatibility Result
 
@@ -74,12 +86,12 @@ All four files are LLM-queryable Markdown with proper frontmatter, consistent wi
 
 ## Blocker Status
 
-No technical blocker. Three numeric configuration values require HR confirmation before implementation may begin (CLAUDE.md §11.3 — development must not start before 85%+ specification, and these are the remaining 15%-class leaf values, not an architecture gap).
+No technical blocker and no remaining numeric configuration gap — all three leave-deduction values are confirmed (270/270/540, mirroring the official leave system). Remaining step is reviewer sign-off only (CLAUDE.md §11.3 — 85%+ specification is met).
 
 ## Next Step
 
-Route the three open configuration values to Mayurika (HR) for confirmation against actual company working-hour conventions. Once confirmed, both documents should receive reviewer sign-off (Arun for the Approved-conflict/KPI-adjacent reporting rules, Mayurika for HR/leave-policy alignment) before any implementation work begins.
+Route this document and the companion design document to Arun (Approved-conflict/KPI-adjacent reporting rules) and Mayurika (HR/leave-policy alignment) for reviewer sign-off before any implementation work begins.
 
 ## PASS / FAIL
 
-**PASS.** Requirement and design documents drafted and internally consistent; readiness check confirms the 85%+ specification threshold with exactly 3 open numeric values and 0 open architecture questions; no implementation of any kind was performed; no existing file was modified; the protected staff-data folder was not accessed.
+**PASS.** Requirement and design documents drafted, corrected, and internally consistent; readiness check confirms the 85%+ specification threshold with 0 open numeric values and 0 open architecture questions; the actual office break (12:45–13:30) is correctly recorded as distinct from the mirrored official leave-system periods and deduction minutes (270/270/540); no implementation of any kind was performed; no existing file was modified; the protected staff-data folder was not accessed.

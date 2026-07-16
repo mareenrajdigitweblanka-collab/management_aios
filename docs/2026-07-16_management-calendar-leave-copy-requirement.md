@@ -3,7 +3,7 @@ name: management-calendar-leave-copy-requirement
 type: requirement-document
 created: 2026-07-16
 created-by: Mareenraj (builder)
-status: DRAFT — NOT IMPLEMENTED — awaiting three configuration values and reviewer sign-off
+status: DRAFT — NOT IMPLEMENTED — leave-system time periods and deduction minutes confirmed (mirrors official leave system); awaiting reviewer sign-off
 requirement-id: REQ-LEAVE-COPY-001
 ---
 
@@ -19,12 +19,12 @@ source-registered, verify-registered, or promoted to parent-AIOS truth.**
 |---|---|
 | Project Name | Management Calendar Leave Coordination Copy |
 | Start Date | 2026-07-16 |
-| Expected Deadline | Not yet set — pending reviewer sign-off and the three open configuration values |
+| Expected Deadline | Not yet set — pending reviewer sign-off |
 | User / Stakeholder | Mayurika (HR), Arun (Implementation/KPI), Suman (Recruitment), Rajiv (Admin Manager), Paraparan — the five calendar members; HR Lead Mayurika as primary AIOS operational owner |
 | Company Value Contribution | Reduces onboarding/leave-recording inconsistency (one of the four core problem areas named in CLAUDE.md §1, SRC-VAR-001); improves task-conflict prevention and expected-hours reporting accuracy in the management calendar |
 | MVP Submission Date | Not yet set |
 | Project Owner | Mareenraj (builder), guidance from Varmen; Mayurika as ongoing operational owner post-handover |
-| Status | Requirement drafted, ~85%+ specified, 3 numeric values and 1 architecture confirmation still open (see §17) |
+| Status | Requirement drafted, ~95%+ specified — leave-system time periods and deduction minutes confirmed (mirrors official leave system, §6.1); actual office break also recorded (§6.2); reviewer sign-off still open (see §17) |
 
 ---
 
@@ -79,10 +79,33 @@ No employee number or general staff identifier is introduced. No member outside 
 ## 6. Leave Types
 
 1. **Short Leave** — single date, `start_time`/`end_time` required.
-2. **Half-Day Leave — First Half** — single date, no user-entered time; duration/time range comes from backend configuration.
-3. **Half-Day Leave — Second Half** — single date, same configuration-driven approach.
-4. **Full-Day Leave** — single date, no user-entered time; expected minutes come from backend configuration.
+2. **Half-Day Leave — First Half** — single date, no user-entered time; leave-system period and deduction minutes come from backend configuration (§6.1).
+3. **Half-Day Leave — Second Half** — single date, same configuration-driven approach (§6.1).
+4. **Full-Day Leave** — single date, no user-entered time; leave-deduction minutes come from backend configuration (§6.1).
 5. **Multi-Day Leave** — `start_date`/`end_date` range; each included weekday behaves as Full-Day leave; Saturdays and Sundays excluded automatically.
+
+### 6.1 Leave-System Time Periods (Mirrored, Not Locally Calculated)
+
+The Management AIOS leave feature is a coordination copy and **mirrors** the separate official leave system's defined periods. These periods and their deduction minutes are **confirmed values**, not derived or recalculated from any internal AIOS observation of office activity:
+
+| Leave type | Leave-system period | Configuration constant | Leave-deduction minutes |
+|---|---|---|---|
+| Half-Day — First Half | 08:30–13:00 | `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES` | 270 |
+| Half-Day — Second Half | 13:30–18:00 | `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES` | 270 |
+| Full-Day | 08:30–18:00 | `LEAVE_FULL_DAY_DEDUCTION_MINUTES` | 540 |
+
+These values are **leave-system credited minutes** (recorded here as `effective_leave_minutes` once a record is Approved — §8.5, §10) — they represent what the official leave system attributes to a half-day or full-day absence. They must **not** be described or reasoned about as independently verified actual productive working time; see §6.2 for why the two concepts are separate.
+
+### 6.2 Actual Office Break (Distinct From Leave-System Periods)
+
+The actual company break is a separate, physical-schedule fact and is **not** the basis for any leave-deduction calculation in this feature:
+
+| Constant | Value |
+|---|---|
+| `ACTUAL_OFFICE_BREAK_START` | 12:45 |
+| `ACTUAL_OFFICE_BREAK_END` | 13:30 |
+
+The leave-system's own period boundaries (First Half ending 13:00, Second Half starting 13:30) do **not** reflect the actual 45-minute office break duration — they are the official leave system's own definitions, adopted here for mirroring purposes only. Do not recalculate, adjust, or reconcile the 270/270/540 leave-deduction minutes using the actual 12:45–13:30 break window; the two concepts are tracked independently in this document.
 
 ## 7. Statuses and Transitions
 
@@ -135,34 +158,39 @@ The normal `GET` endpoint must server-side filter out Rejected/Cancelled rows (n
 ### 8.3 Half-Day and Full-Day Rules
 
 - Single date. Half-Day requires a First/Second Half selection; no user-entered start/end time for either Half-Day or Full-Day.
-- Duration/time range for both halves, and expected minutes for Full-Day, come from **backend configuration only** — never a frontend-hardcoded value.
+- The clock periods (First Half 08:30–13:00, Second Half 13:30–18:00, Full-Day 08:30–18:00) and their leave-deduction minutes mirror the separate official leave system (§6.1) — they are **not** derived from the actual office break (§6.2) and must never be recalculated using it.
+- Leave-deduction minutes for both halves and for Full-Day come from **backend configuration only** — never a frontend-hardcoded value.
 - A **Pending** record may be saved even if the relevant configuration value is missing.
 - **Approval is blocked** until the required configuration value exists (see §8.5).
 
 ### 8.4 Multi-Day Rules
 
 - One request row with `start_date`/`end_date`; `end_date >= start_date`.
-- Saturdays and Sundays are excluded automatically from the expected-minutes calculation.
-- Each included weekday uses the configured Full-Day expected minutes.
+- Saturdays and Sundays are excluded automatically from the leave-deduction calculation.
+- Each included Monday–Friday date uses the configured Full-Day leave-deduction minutes (540 minutes, per §6.1) — one Full-Day-equivalent deduction per included weekday.
 - **Public holidays receive no special handling in this phase** — this is an explicit, deferred scope boundary, not an oversight. No holiday calendar is introduced. A weekday that happens to be a public holiday is still treated as a normal working weekday for this feature's purposes until a future phase addresses it.
 - Pending may be saved while Full-Day configuration is missing; approval is blocked until it exists.
 
-### 8.5 Temporary Configuration Placeholders
+### 8.5 Configuration Values — Confirmed (Mirrors Official Leave System)
 
-Three numeric values are required and **are not yet confirmed** — no value is invented in this document:
+The three configuration values are now confirmed. They are **not invented** by this document — they mirror the separate official leave system's own First Half / Second Half / Full-Day periods (§6.1), and are **not** derived, adjusted, or recalculated from the actual office break (§6.2):
 
-- `LEAVE_HALF_DAY_FIRST_EXPECTED_MINUTES`
-- `LEAVE_HALF_DAY_SECOND_EXPECTED_MINUTES`
-- `LEAVE_FULL_DAY_EXPECTED_MINUTES`
+| Configuration constant | Confirmed value |
+|---|---|
+| `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES` | 270 |
+| `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES` | 270 |
+| `LEAVE_FULL_DAY_DEDUCTION_MINUTES` | 540 |
+
+**Terminology:** these are **leave deduction minutes** / **leave-system credited minutes**, stored per-record as `effective_leave_minutes` once Approved. They must not be described as verified actual productive working time or actual office minutes — they are the official leave system's own credited figures, mirrored here for coordination purposes only.
 
 Requirements on these values:
 
 - Exist only in the backend (e.g. `backend/config.py`, environment-variable-driven — same mechanism `DATABASE_URL`/`ALLOWED_ORIGINS` already use).
 - Never duplicated as a frontend constant in `web-view/index.html`.
-- Returned as API response metadata where useful, so the frontend can display "configured" vs. "configuration missing" without hardcoding a copy.
+- Returned as API response metadata where useful, so the frontend can display the configured leave-deduction minutes without hardcoding a copy.
 - **Snapshotted** as `effective_leave_minutes` on the leave record at the moment it becomes Approved, so a later configuration change never silently rewrites an already-Approved record's historical reporting contribution.
 
-**Missing-configuration behavior:** Pending save is permitted without the value; **approval is blocked with a clear configuration error** until the value exists. This is stricter than "store silently with zero deduction" — a silently-stored Approved record with an undetected zero deduction would misreport expected hours as unchanged when leave actually occurred, which directly contradicts this feature's purpose.
+**Missing-configuration behavior (still applicable — e.g. if a value is later unset or a new leave type is added without configuration):** Pending save is permitted without the value; **approval is blocked with a clear configuration error** until the value exists. This is stricter than "store silently with zero deduction" — a silently-stored Approved record with an undetected zero deduction would misreport expected hours as unchanged when leave actually occurred, which directly contradicts this feature's purpose.
 
 ### 8.6 Pending Behavior
 
@@ -179,7 +207,7 @@ Pending leave:
 Approved leave **blocks** conflicting task saves. Conflict cases requiring a backend-authoritative check:
 
 1. Timed task overlaps Approved Short Leave.
-2. Task overlaps the configured Approved Half-Day period.
+2. Task overlaps the Approved Half-Day leave-system period (First Half 08:30–13:00, or Second Half 13:30–18:00 — §6.1).
 3. Any task occurs on an Approved Full-Day date.
 4. Any task occurs on an included weekday of Approved Multi-Day leave.
 5. An existing task is edited into a leave period.
@@ -201,7 +229,7 @@ The backend must **never**, as a side effect of a conflict: auto-cancel the task
 Existing task calculations (`_task_duration_minutes`, `_aggregate_schedule_period`, `_duration_percentages`, `_duration_change` in `backend/routers/member_schedules.py`) remain **unchanged** — this requirement is strictly additive on top of them.
 
 - Approved leave never appears in the Scheduled count, the Unscheduled count, or task duration totals.
-- Approved leave **reduces expected working minutes**.
+- Approved leave **reduces expected working minutes** by its leave-system credited minutes (`effective_leave_minutes`) — this is a credited-minutes deduction mirrored from the official leave system, not a measurement of actual observed productive time.
 - Pending, Rejected, and Cancelled leave have **no** expected-hours impact.
 
 **Proposed additive fields** (superposed on `DailyScheduleReportOut`/`WeeklyScheduleReportOut`/`MonthlyScheduleReportOut`):
@@ -211,14 +239,15 @@ Existing task calculations (`_task_duration_minutes`, `_aggregate_schedule_perio
 - `adjusted_expected_work_minutes`
 - `task_coverage_percentage`
 
-**Expected-hour deduction per leave type:**
+**Expected-hour deduction per leave type (leave-deduction minutes, not verified actual working time):**
 
-| Leave type | Deduction basis |
-|---|---|
-| Short Leave | Exact Approved request minutes |
-| Half-Day (First/Second) | Snapshotted `effective_leave_minutes` configured value |
-| Full-Day | Snapshotted `effective_leave_minutes` configured value |
-| Multi-Day | Configured Full-Day minutes × count of included weekdays that overlap the report's own date range |
+| Leave type | Deduction basis | Minutes |
+|---|---|---|
+| Short Leave | Exact Approved request minutes | Up to 120 (request-specific) |
+| Half-Day — First Half | Snapshotted `effective_leave_minutes` (§6.1) | 270 |
+| Half-Day — Second Half | Snapshotted `effective_leave_minutes` (§6.1) | 270 |
+| Full-Day | Snapshotted `effective_leave_minutes` (§6.1) | 540 |
+| Multi-Day | 540 (configured Full-Day minutes) × count of included Monday–Friday dates that overlap the report's own date range | 540 per included weekday |
 
 Overlapping/duplicate Approved leave records covering the same date must **not** double-deduct — the design document specifies a date-union deduplication safeguard (see design document §8).
 
@@ -313,12 +342,17 @@ No Varmen approval is required for this ongoing work unless explicitly requested
 
 ## 17. Open Items (must be resolved before implementation)
 
-1. **`LEAVE_HALF_DAY_FIRST_EXPECTED_MINUTES`** — exact value, awaiting user/HR confirmation. Not invented here.
-2. **`LEAVE_HALF_DAY_SECOND_EXPECTED_MINUTES`** — exact value, awaiting user/HR confirmation. Not invented here.
-3. **`LEAVE_FULL_DAY_EXPECTED_MINUTES`** — exact value, awaiting user/HR confirmation. Not invented here.
+**Resolved since original draft (2026-07-16 correction pass):**
+
+1. ~~`LEAVE_HALF_DAY_FIRST_EXPECTED_MINUTES`~~ — **confirmed as `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES = 270`**, mirroring the official leave system's First Half period 08:30–13:00 (§6.1). Not derived from the actual office break.
+2. ~~`LEAVE_HALF_DAY_SECOND_EXPECTED_MINUTES`~~ — **confirmed as `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES = 270`**, mirroring the official leave system's Second Half period 13:30–18:00 (§6.1). Not derived from the actual office break.
+3. ~~`LEAVE_FULL_DAY_EXPECTED_MINUTES`~~ — **confirmed as `LEAVE_FULL_DAY_DEDUCTION_MINUTES = 540`**, mirroring the official leave system's Full-Day period 08:30–18:00 (§6.1). Not derived from the actual office break.
+
+**Remaining open item:**
+
 4. **Pending-leave conflict policy** — this document specifies "Pending does not block task saving, may warn" (§8.6) as the recommended and now-confirmed interpretation for this requirement; if a future reviewer wants Pending to also block, that is a scope change to this document, not an ambiguity within it.
 
-No open architecture question remains — the dedicated `member_leave_records` table, the status-transition set, the cap-consumption rule (Approved-only), and the missing-configuration behavior (block approval, allow Pending) are all settled by this document.
+No open architecture question remains — the dedicated `member_leave_records` table, the status-transition set, the cap-consumption rule (Approved-only), and the missing-configuration behavior (block approval, allow Pending) are all settled by this document. **0 numeric configuration values remain open** — all three leave-deduction minute values are now confirmed (§6.1, §8.5).
 
 ## 18. Acceptance Criteria
 
@@ -338,15 +372,15 @@ No open architecture question remains — the dedicated `member_leave_records` t
 
 **PASS** requires all of the following to be true simultaneously:
 
-- Exactly 3 open numeric configuration values remain (§17 items 1–3) — not more, not fewer.
+- 0 open numeric configuration values remain (§17 items 1–3 are resolved: 270/270/540, mirroring the official leave-system periods — §6.1).
 - 0 open architecture questions remain.
 - All 11 acceptance criteria in §18 are testable as written (verified in the companion design document's test matrix) without requiring further clarification.
 - No implementation artifact (backend code, migration, frontend change) exists as a result of this requirement's authoring.
 
-**FAIL** if any acceptance criterion cannot be tested as written, if an architecture question remains open, or if any implementation file was created/modified during this requirement-authoring pass.
+**FAIL** if any acceptance criterion cannot be tested as written, if an architecture question remains open, if any document claims the confirmed leave-deduction minutes were calculated from the actual 12:45–13:30 office break rather than mirrored from the official leave system, or if any implementation file was created/modified during this requirement-authoring pass.
 
 This requirement currently scores **PASS** against this rule (see validation readiness check for the detailed specification-percentage tally).
 
 ## 20. Next Step
 
-Route the three open configuration values (§17, items 1–3) to Mayurika (HR) for confirmation against actual company working-hour conventions. Implementation must not begin until those values are confirmed and this document (plus the companion design document) receives reviewer sign-off per §15.
+All three leave-deduction configuration values are now confirmed (§6.1, §8.5) and require no further routing to HR. Route this document and the companion design document to Arun (KPI/reporting-adjacent rules) and Mayurika (HR/leave-policy alignment) for reviewer sign-off per §15. Implementation must not begin until that sign-off is recorded.

@@ -132,11 +132,24 @@ WHERE member_key = :member_key
 
 ## 7. Half-Day / Full-Day / Multi-Day Configuration Handling
 
-- New `backend/config.py` constants, environment-variable-driven, each `Optional[int]` (minutes): `LEAVE_HALF_DAY_FIRST_EXPECTED_MINUTES`, `LEAVE_HALF_DAY_SECOND_EXPECTED_MINUTES`, `LEAVE_FULL_DAY_EXPECTED_MINUTES`. Values remain unset (`None`) until confirmed — no hardcoded fallback.
+### 7.1 Actual Office Break vs. Leave-System Periods (do not conflate)
+
+The actual company break is `ACTUAL_OFFICE_BREAK_START=12:45` / `ACTUAL_OFFICE_BREAK_END=13:30` (a 45-minute physical-schedule fact). It is a **separate concept** from the official leave system's own period boundaries and is never used to calculate, adjust, or validate any leave-deduction value below. The leave system's periods are mirrored as-is:
+
+| Leave type | Leave-system period | Configuration constant | Confirmed value |
+|---|---|---|---|
+| Half-Day First | 08:30–13:00 | `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES` | 270 |
+| Half-Day Second | 13:30–18:00 | `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES` | 270 |
+| Full-Day | 08:30–18:00 | `LEAVE_FULL_DAY_DEDUCTION_MINUTES` | 540 |
+
+### 7.2 Configuration Mechanism
+
+- New `backend/config.py` constants, environment-variable-driven, each `Optional[int]` (minutes): `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES`, `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES`, `LEAVE_FULL_DAY_DEDUCTION_MINUTES`. Values are now confirmed (§7.1) — no hardcoded fallback is needed once the environment variables are set to these confirmed values, but the router must still treat the constant as `Optional[int]` and apply the missing-configuration behavior below for defense-in-depth (e.g. a deployment environment where the variable was not yet set).
 - **Pending save:** allowed even when the relevant constant is `None`.
 - **Approval:** the router must read the relevant config constant at approval time; if `None`, reject the status-change request with a configuration error (e.g. 422/503, error code `leave_configuration_missing`) rather than approving with an undefined deduction.
 - **Snapshot on Approval:** when a status change to `Approved` succeeds, `effective_leave_minutes` is set once, from the config value read at that moment, and never recomputed from current config afterward. This guarantees a later config change cannot silently rewrite an already-Approved record's historical reporting contribution — reports always read `effective_leave_minutes` from the row, never the live config value, once a record is Approved.
-- **API metadata:** leave-creation and summary responses should include a `configuration` object, e.g. `{"full_day_configured": false, "notice": "temporary configuration not yet set — approval blocked until confirmed"}`, so the frontend can render a "temporary configuration" notice without hardcoding its own numbers.
+- **API metadata:** leave-creation and summary responses should include a `configuration` object, e.g. `{"full_day_configured": true, "full_day_deduction_minutes": 540}` or, if unset, `{"full_day_configured": false, "notice": "configuration not yet set — approval blocked until confirmed"}`, so the frontend can render the configured leave-deduction minutes without hardcoding its own numbers.
+- **Terminology:** `effective_leave_minutes` and the three `*_DEDUCTION_MINUTES` constants are **leave-deduction minutes** / **leave-system credited minutes** — the official leave system's own credited figures, mirrored for coordination purposes. They must never be labeled or reasoned about in code comments, API docs, or UI copy as verified actual productive working minutes or actual office minutes.
 
 ## 8. Expected-Hours Algorithm
 
@@ -149,14 +162,15 @@ adjusted_expected_work_minutes    = base_expected_work_minutes - approved_leave_
 task_coverage_percentage          = scheduled_task_minutes / adjusted_expected_work_minutes  (guard divide-by-zero → null)
 ```
 
-**Per-type deduction basis:**
+**Per-type deduction basis (leave-deduction minutes, not measured productive time):**
 
-| Leave type | Minutes source |
-|---|---|
-| Short Leave | Exact Approved request minutes (`end_time - start_time`) |
-| Half-Day (either half) | `effective_leave_minutes` (snapshotted) |
-| Full-Day | `effective_leave_minutes` (snapshotted) |
-| Multi-Day | `effective_leave_minutes` × count of included weekdays overlapping the report's own date range (partial-period overlap handled by intersecting `[start_date, end_date]` with the report window before counting weekdays) |
+| Leave type | Minutes source | Confirmed minutes |
+|---|---|---|
+| Short Leave | Exact Approved request minutes (`end_time - start_time`) | Up to 120 (request-specific) |
+| Half-Day First | `effective_leave_minutes` (snapshotted from `LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES`) | 270 |
+| Half-Day Second | `effective_leave_minutes` (snapshotted from `LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES`) | 270 |
+| Full-Day | `effective_leave_minutes` (snapshotted from `LEAVE_FULL_DAY_DEDUCTION_MINUTES`) | 540 |
+| Multi-Day | `effective_leave_minutes` (540) × count of included Monday–Friday dates overlapping the report's own date range (partial-period overlap handled by intersecting `[start_date, end_date]` with the report window before counting weekdays) | 540 per included weekday |
 
 ## 9. Overlap Deduplication Algorithm
 
@@ -177,10 +191,12 @@ on task create/update with (member_key, event_date, start_time, end_time):
     1. query Approved leave rows for member_key where the task's event_date falls
        within [start_date, end_date] (Multi-Day: also confirm event_date is an
        included weekday, i.e. not a Sat/Sun inside the range)
-    2. for Short Leave / Half-Day rows (which carry their own start_time/end_time
-       or configured period): additionally require a time-range overlap against
-       the task's start_time/end_time (if the task is untimed, any same-date
-       Short/Half-Day Approved leave is itself a conflict per requirement case 7)
+    2. for Short Leave / Half-Day rows (Half-Day's period is the leave-system
+       period mirrored in §7.1 — First Half 08:30-13:00, Second Half 13:30-18:00 —
+       not derived from the actual 12:45-13:30 office break): additionally require
+       a time-range overlap against the task's start_time/end_time (if the task
+       is untimed, any same-date Short/Half-Day Approved leave is itself a
+       conflict per requirement case 7)
     3. for Full-Day / Multi-Day rows: any task on that date is a conflict
        regardless of the task's own start_time/end_time (untimed or timed)
     4. if any conflict row found:
@@ -244,7 +260,7 @@ Both list routes accept optional `start_date`/`end_date` filters, mirroring the 
 
 **Full-Day:** single-date creation; Pending save with missing config; approval blocked with missing config; snapshot behavior identical to Half-Day.
 
-**Multi-Day:** date-range creation; reversed range (`end_date < start_date`) rejected; weekend exclusion verified (e.g. Fri–Mon request deducts only Fri+Mon); month/year rollover range computes correctly; public holiday within range receives no special handling (deducted as a normal weekday).
+**Multi-Day:** date-range creation; reversed range (`end_date < start_date`) rejected; weekend exclusion verified (e.g. Fri–Mon request deducts only Fri+Mon, 540 minutes each = 1080 total, not counting Sat/Sun); month/year rollover range computes correctly; public holiday within range receives no special handling (deducted as a normal weekday at 540 minutes).
 
 **Status:** every allowed transition succeeds; every disallowed transition (Rejected→Pending, Cancelled→Pending, Approved→Rejected) returns 422 and leaves status unchanged; Rejected/Cancelled hidden from normal list; history returns all four statuses.
 
