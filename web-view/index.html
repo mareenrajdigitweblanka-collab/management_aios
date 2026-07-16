@@ -2561,32 +2561,206 @@
     .msc-tg-leave-block.leave-approved { background: var(--draft); }
 
     .msc-leave-status-badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       font-size: .68rem;
-      font-weight: 600;
-      padding: 1px 8px;
+      font-weight: 700;
+      letter-spacing: .01em;
+      padding: 2px 10px;
       border-radius: 999px;
       margin-right: 6px;
+      border: 1px solid transparent;
     }
 
-    .msc-leave-status-badge.leave-pending { background: var(--preview-bg); color: var(--preview); }
-    .msc-leave-status-badge.leave-approved { background: var(--draft-bg); color: var(--draft); }
-    .msc-leave-status-badge.leave-rejected { background: var(--blocked-bg); color: var(--blocked); }
-    .msc-leave-status-badge.leave-cancelled { background: var(--surface-tint); color: var(--muted); }
+    .msc-leave-status-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
 
+    .msc-leave-status-badge.leave-pending { background: var(--preview-bg); color: var(--preview); border-color: rgba(3,105,161,.18); }
+    .msc-leave-status-badge.leave-pending::before { background: var(--preview); }
+    .msc-leave-status-badge.leave-approved { background: var(--draft-bg); color: var(--draft); border-color: rgba(109,40,217,.18); }
+    .msc-leave-status-badge.leave-approved::before { background: var(--draft); }
+    .msc-leave-status-badge.leave-rejected { background: var(--blocked-bg); color: var(--blocked); border-color: rgba(185,28,28,.18); }
+    .msc-leave-status-badge.leave-rejected::before { background: var(--blocked); }
+    .msc-leave-status-badge.leave-cancelled { background: var(--surface-tint-3); color: var(--muted); border-color: var(--border); }
+    .msc-leave-status-badge.leave-cancelled::before { background: var(--muted-2); }
+
+    /* ── Leave Coordination section polish (UI-only, 2026-07-16) ──
+       Same design tokens as the rest of this calendar page (--surface,
+       --border, --radius, --status-info-*, .hr-table-title,
+       .msc-form-grid, .msc-btn) — no new visual language, no business
+       logic. Purely presentational structure so the section reads as an
+       intentional card rather than raw text/form dropped on the page. ── */
+    .msc-leave-card {
+      padding: 18px 20px 20px;
+    }
+
+    .msc-leave-card-head {
+      margin-bottom: 14px;
+    }
+
+    .msc-leave-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .msc-leave-title-icon {
+      font-size: .95rem;
+      line-height: 1;
+    }
+
+    .msc-leave-subtitle {
+      font-size: .8rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    /* Informational, non-alarming notice — reuses the same
+       status-info tokens already used by .msc-api-status--info
+       elsewhere on this page, so it visually matches rather than
+       introducing a new color language. */
     .msc-leave-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
       font-size: .78rem;
-      color: var(--text-secondary);
-      background: var(--surface-tint);
+      line-height: 1.6;
+      color: var(--status-info-text);
+      background: var(--status-info-bg);
+      border: 1px solid var(--status-info-border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 18px;
+    }
+
+    .msc-leave-notice-icon {
+      flex-shrink: 0;
+      font-size: .92rem;
+      line-height: 1.6;
+    }
+
+    /* Subsections (create form / active list / history) — a light
+       divider plus a small uppercase label, the same grouping technique
+       already used by .msc-summary-group inside Schedule Summary, so the
+       page's internal rhythm stays consistent. */
+    .msc-leave-section + .msc-leave-section {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .msc-leave-section-title {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 0 0 10px;
+    }
+
+    .msc-leave-section-title .msc-leave-list-date-label,
+    .msc-leave-section-title .msc-leave-list-count {
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .msc-leave-form-panel {
+      background: var(--surface-tint-2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 8px 12px;
-      margin-bottom: 10px;
+      padding: 14px 16px;
+    }
+
+    .msc-leave-form-panel .msc-form-grid {
+      gap: 12px 16px;
+    }
+
+    .msc-leave-form-panel .msc-form-actions {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Clean empty state — centered, dashed boundary, calmer than a bare
+       line of muted text sitting directly on the card background. */
+    .msc-leave-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: .8rem;
+      padding: 18px 12px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-tint-2);
+    }
+
+    /* Individual leave entries as their own rounded cards rather than a
+       plain divided list — mirrors .msc-summary-block's card treatment. */
+    .msc-leave-item-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .msc-leave-item-card + .msc-leave-item-card {
+      margin-top: 8px;
+    }
+
+    .msc-leave-history-panel {
+      background: var(--surface-tint-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .msc-leave-history-panel .msc-leave-item-card {
+      background: var(--surface);
+    }
+
+    .msc-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
     }
 
     @media (max-width: 768px) {
       .msc-form-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .msc-leave-card {
+        padding: 14px 14px 16px;
+      }
+
+      .msc-leave-item-card {
+        flex-direction: column;
+      }
+
+      .msc-leave-item-card .msc-item-actions {
+        width: 100%;
+      }
+
+      .msc-leave-item-card .msc-item-actions button {
+        flex: 1 1 auto;
       }
     }
 
@@ -5678,10 +5852,19 @@
           '</div>' +
           '</div>' +
           '<div class="hr-table-card msc-leave-card">' +
-          '<div class="hr-table-title" style="margin-bottom:8px;">Leave Coordination (Calendar Copy)</div>' +
-          '<div class="msc-leave-notice">Calendar coordination copy only. The separate HR leave system remains ' +
+          '<div class="msc-leave-card-head">' +
+          '<h4 class="msc-leave-title"><span class="msc-leave-title-icon" aria-hidden="true">&#128197;</span>Leave Coordination ' +
+          '<span style="font-weight:600;color:var(--muted);">(Calendar Copy)</span></h4>' +
+          '<p class="msc-leave-subtitle">Create, track, and coordinate leave for ' + escapeHtml(memberLabel) +
+          ' directly on this calendar.</p>' +
+          '</div>' +
+          '<div class="msc-leave-notice"><span class="msc-leave-notice-icon" aria-hidden="true">&#8505;&#65039;</span>' +
+          '<span>Calendar coordination copy only. The separate HR leave system remains ' +
           'official. This is not an official leave balance, payroll/no-pay calculation, disciplinary decision, ' +
-          'or medical record — and status here does not represent verified HR approval identity.</div>' +
+          'or medical record — and status here does not represent verified HR approval identity.</span></div>' +
+          '<div class="msc-leave-section">' +
+          '<div class="msc-leave-section-title">New Leave Request</div>' +
+          '<div class="msc-leave-form-panel">' +
           '<form class="msc-leave-form msc-form-grid" autocomplete="off">' +
           '<label>Leave type<select class="msc-leave-field-type">' +
           '<option value="Short Leave">Short Leave</option>' +
@@ -5703,12 +5886,18 @@
           '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
           '<button type="button" class="msc-btn msc-btn-ghost msc-leave-history-toggle" aria-pressed="false">Show history</button>' +
           '</div>' +
-          '<div class="hr-table-title" style="margin:14px 0 8px;">Leave — ' +
+          '</div>' +
+          '</div>' +
+          '<div class="msc-leave-section">' +
+          '<div class="msc-leave-section-title">Leave — ' +
           '<span class="msc-leave-list-date-label">select a date</span></div>' +
-          '<div class="msc-leave-list"><p class="msc-empty">Select a date on the calendar to see leave for that date.</p></div>' +
-          '<div class="msc-leave-history-wrap" style="display:none;">' +
-          '<div class="hr-table-title" style="margin:14px 0 8px;">Leave History — All Statuses</div>' +
-          '<div class="msc-leave-history-list"><p class="msc-empty">Loading history…</p></div>' +
+          '<div class="msc-leave-list"><p class="msc-leave-empty">Select a date on the calendar to see leave for that date.</p></div>' +
+          '</div>' +
+          '<div class="msc-leave-section msc-leave-history-wrap" style="display:none;">' +
+          '<div class="msc-leave-section-title">Leave History — All Statuses</div>' +
+          '<div class="msc-leave-history-panel">' +
+          '<div class="msc-leave-history-list"><p class="msc-leave-empty">Loading history…</p></div>' +
+          '</div>' +
           '</div>' +
           '</div>' +
           '<div class="hr-table-card">' +
@@ -6878,12 +7067,12 @@
 
         function renderLeaveList() {
           if (!state.selectedDate) {
-            leaveListEl.innerHTML = '<p class="msc-empty">Select a date on the calendar to see leave for that date.</p>';
+            leaveListEl.innerHTML = '<p class="msc-leave-empty">Select a date on the calendar to see leave for that date.</p>';
             return;
           }
           var dayLeave = leaveItemsForDate(state.selectedDate);
           if (!dayLeave.length) {
-            leaveListEl.innerHTML = '<p class="msc-empty">No Pending or Approved leave for ' +
+            leaveListEl.innerHTML = '<p class="msc-leave-empty">No Pending or Approved leave for ' +
               escapeHtml(memberLabel) + ' on ' + state.selectedDate + '.</p>';
             return;
           }
@@ -6892,7 +7081,7 @@
             var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
             var dateRange = lv.start_date === lv.end_date ? lv.start_date : (lv.start_date + ' – ' + lv.end_date);
             var timeStr = (lv.start_time && lv.end_time) ? (lv.start_time.slice(0, 5) + '–' + lv.end_time.slice(0, 5)) : '';
-            html += '<div class="msc-item" data-leave-id="' + lv.id + '">';
+            html += '<div class="msc-leave-item-card" data-leave-id="' + lv.id + '">';
             html += '<div><div class="msc-item-title"><span class="msc-leave-status-badge ' + leaveClass + '">' +
               escapeHtml(lv.status) + '</span> ' + escapeHtml(lv.leave_type) + '</div>';
             html += '<div class="msc-item-meta">' + escapeHtml(dateRange) + (timeStr ? ' &middot; ' + escapeHtml(timeStr) : '') +
@@ -6914,7 +7103,7 @@
 
         function renderLeaveHistoryList() {
           if (!leaveHistoryItems || !leaveHistoryItems.length) {
-            leaveHistoryListEl.innerHTML = '<p class="msc-empty">No leave history for ' + escapeHtml(memberLabel) + ' yet.</p>';
+            leaveHistoryListEl.innerHTML = '<p class="msc-leave-empty">No leave history for ' + escapeHtml(memberLabel) + ' yet.</p>';
             return;
           }
           var sorted = leaveHistoryItems.slice().sort(function (a, b) { return a.start_date < b.start_date ? 1 : -1; });
@@ -6922,7 +7111,7 @@
           sorted.forEach(function (lv) {
             var leaveClass = LEAVE_STATUS_CLASS[lv.status] || 'leave-pending';
             var dateRange = lv.start_date === lv.end_date ? lv.start_date : (lv.start_date + ' – ' + lv.end_date);
-            html += '<div class="msc-item">';
+            html += '<div class="msc-leave-item-card">';
             html += '<div><div class="msc-item-title"><span class="msc-leave-status-badge ' + leaveClass + '">' +
               escapeHtml(lv.status) + '</span> ' + escapeHtml(lv.leave_type) + '</div>';
             html += '<div class="msc-item-meta">' + escapeHtml(dateRange) + '</div></div></div>';
