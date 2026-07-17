@@ -713,6 +713,21 @@
       margin-top: 16px;
     }
 
+    /* ── Header-safe scroll targets (2026-07-17 header-safe-scroll task) ──
+       .msc-form-card is scrolled into view verbatim by the "Create task"
+       handler (its own top edge IS the Schedule Item heading's card, so
+       scroll-margin-top belongs on the card itself). .msc-list-heading is
+       the specific heading element navigateToScheduleItemListForDate()
+       scrolls to (added in the month-task-list-navigation task) — giving
+       it its own scroll-margin-top keeps the offset scoped to the actual
+       scroll target rather than the whole .msc-list-card. Both read the
+       same --scroll-target-offset token (tokens.css) — one source of
+       truth, no per-handler duplicated JS offset math. */
+    .msc-form-card,
+    .msc-list-heading {
+      scroll-margin-top: var(--scroll-target-offset);
+    }
+
     /* ── Schedule Summary (2026-07-14; responsive layout 2026-07-14) —
        reusable daily/weekly/monthly scheduled-vs-unscheduled + duration
        report, shared by every member instance. Lives below the calendar
@@ -815,7 +830,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      font-size: .74rem;
+      font-size: .77rem;
       color: var(--muted);
       font-weight: 600;
     }
@@ -840,7 +855,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 6px 8px;
-      font-size: .82rem;
+      font-size: .88rem;
       font-family: inherit;
       color: var(--text);
       background: #fff;

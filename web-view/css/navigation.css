@@ -49,38 +49,77 @@
     .search-tools {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       flex: 1 1 320px;
       min-width: 0;
     }
 
+    /* ── Professional search pill (2026-07-17 header-safe-scroll/search/
+       sidebar/typography task) — same #searchInput id, same doSearch()/
+       data-searchable logic; only the container/icon/sizing changed. The
+       icon+input share one rounded pill (border/background/focus ring
+       live on .workspace-search, not the bare input) so focusing the
+       input highlights the whole control, not just a thin inner box. ── */
+    .workspace-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 380px;
+      min-width: 0;
+      padding: 0 12px;
+      height: 38px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface-tint);
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+
+    .workspace-search:focus-within {
+      border-color: var(--accent);
+      box-shadow: var(--focus-ring);
+      background: var(--surface);
+    }
+
+    .workspace-search-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      color: var(--muted-2);
+    }
+
+    .workspace-search:focus-within .workspace-search-icon {
+      color: var(--accent);
+    }
+
     #searchInput {
       flex: 1;
-      max-width: 360px;
-      padding: 6px 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: var(--font-sm);
-      background: var(--surface-tint);
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-size: var(--font-base);
       color: var(--text);
       outline: none;
-      transition: border-color .15s, box-shadow .15s;
     }
 
     #searchInput::placeholder {
       color: var(--muted-2);
     }
 
-    #searchInput:focus {
-      border-color: var(--accent);
-      box-shadow: var(--focus-ring);
-      background: var(--surface);
+    /* The pill (.workspace-search:focus-within above) carries the visible
+       focus ring; the bare input keeps no outline of its own so the ring
+       isn't drawn twice. */
+    #searchInput:focus-visible {
+      outline: none;
     }
 
     #searchClear {
-      padding: 6px 12px;
+      padding: 0 14px;
+      height: 38px;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       background: var(--surface);
       color: var(--muted);
       font-size: var(--font-sm);
@@ -95,8 +134,7 @@
       border-color: var(--muted-2);
     }
 
-    #searchClear:focus-visible,
-    #searchInput:focus-visible {
+    #searchClear:focus-visible {
       outline: none;
       box-shadow: var(--focus-ring);
     }
@@ -165,9 +203,15 @@
         flex-wrap: wrap;
       }
 
-      #searchInput {
+      /* Full-width search pill on its own row, Clear + result count on
+         the row below — neither the input nor Clear is ever clipped. */
+      .workspace-search {
         max-width: none;
         flex-basis: 100%;
+      }
+
+      #searchClear {
+        flex: 0 0 auto;
       }
     }
 
@@ -327,6 +371,115 @@
 
     .app-nav-btn-badge {
       flex-shrink: 0;
+    }
+
+    /* ── Desktop sidebar collapse/expand (2026-07-17 header-safe-scroll/
+       search/sidebar/typography task) ── One application-level state:
+       body.sidebar-collapsed. Desktop only (>=1024px, the repository's
+       existing drawer breakpoint) — below that, .app-sidebar-toggle in
+       the header remains the only sidebar control (no competing button;
+       this collapse toggle is hidden there). flex-basis is the single
+       property that drives the width change; .tab-main already has
+       flex:1, so it grows into the freed space automatically — no
+       JavaScript width calculation anywhere. */
+    .app-sidebar-collapse-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      align-self: flex-end;
+      width: 26px;
+      height: 26px;
+      margin-bottom: var(--space-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform .2s ease, background .12s ease, align-self .2s ease;
+    }
+
+    .app-sidebar-collapse-toggle:hover {
+      background: var(--surface-tint-3);
+      color: var(--text);
+    }
+
+    .app-sidebar-collapse-toggle:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .app-sidebar-collapse-toggle svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (min-width: 1024px) {
+      .app-sidebar-collapse-toggle {
+        display: flex;
+      }
+
+      .app-sidebar {
+        transition: flex-basis .2s ease;
+      }
+
+      .app-nav-btn-text {
+        overflow: hidden;
+        white-space: nowrap;
+        opacity: 1;
+        transition: opacity .15s ease, flex-basis .2s ease;
+      }
+
+      .app-sidebar-title {
+        overflow: hidden;
+        white-space: nowrap;
+        opacity: 1;
+        transition: opacity .15s ease, height .2s ease, margin .2s ease, padding .2s ease;
+      }
+
+      body.sidebar-collapsed .app-sidebar {
+        flex-basis: var(--sidebar-collapsed-width);
+      }
+
+      body.sidebar-collapsed .app-sidebar-collapse-toggle {
+        align-self: center;
+        transform: rotate(180deg);
+      }
+
+      /* Text is collapsed to flex-basis:0 + opacity:0, not display:none —
+         it stays in the DOM/accessibility tree (still the accessible name
+         source for the button; the native title attribute above is a
+         secondary hover/focus tooltip, not a replacement for it). */
+      body.sidebar-collapsed .app-nav-btn-text {
+        flex: 0 0 0;
+        opacity: 0;
+      }
+
+      body.sidebar-collapsed .app-nav-btn-badge {
+        display: none;
+      }
+
+      body.sidebar-collapsed .app-nav-btn {
+        justify-content: center;
+        padding-left: 9px;
+        padding-right: 9px;
+      }
+
+      body.sidebar-collapsed .app-sidebar-title {
+        height: 0;
+        padding: 0;
+        margin: var(--space-2) 0 0;
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .app-sidebar,
+      .app-sidebar-collapse-toggle,
+      .app-nav-btn-text,
+      .app-sidebar-title {
+        transition: none !important;
+      }
     }
 
     /* <1024px: sidebar becomes a fixed drawer. body.sidebar-open toggles

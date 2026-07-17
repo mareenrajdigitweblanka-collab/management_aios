@@ -83,6 +83,27 @@ export function initNavigation() {
     }
   });
 
+  /* ── Desktop sidebar collapse/expand (2026-07-17 header-safe-scroll/
+     search/sidebar/typography task) ── One application-level state
+     (body.sidebar-collapsed), one toggle button. Session-only — this
+     project has no existing localStorage usage for UI preferences
+     (confirmed by inspection: calendar/staff-data explicitly avoid it),
+     so no new persistence key is introduced here; the sidebar simply
+     starts expanded on every page load. Desktop-only control — at
+     <1024px this button is hidden (see navigation.css) and the existing
+     drawer toggle above remains the sole sidebar control, so the two
+     never compete. */
+  var collapseToggle = document.getElementById('sidebarCollapseToggle');
+  if (collapseToggle) {
+    collapseToggle.addEventListener('click', function () {
+      var collapsed = !document.body.classList.contains('sidebar-collapsed');
+      document.body.classList.toggle('sidebar-collapsed', collapsed);
+      collapseToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      collapseToggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+      collapseToggle.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    });
+  }
+
   /* ── Search (across all panels) ── */
   var searchInput = document.getElementById('searchInput');
   var searchClear = document.getElementById('searchClear');

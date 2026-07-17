@@ -34,13 +34,19 @@
       --shadow-md: 0 2px 7px rgba(30, 25, 15, .06), 0 6px 20px rgba(30, 25, 15, .06);
       --shadow-hover: 0 6px 22px rgba(30, 25, 15, .11), 0 3px 9px rgba(30, 25, 15, .07);
 
-      /* ── Type scale (Phase 1 polish, 2026-07-10) — named tokens for sizes already
-         in use across the file; extending, not replacing, existing rem values. ── */
-      --font-2xs: .68rem;
-      --font-xs: .76rem;
-      --font-sm: .82rem;
-      --font-base: .86rem;
-      --font-md: .95rem;
+      /* ── Type scale (Phase 1 polish, 2026-07-10; readability pass 2026-07-17) ──
+         Named tokens for sizes already in use across the file. The 2026-07-17
+         pass raises the sizes that carry general body copy, navigation labels,
+         and card/section sub-headings by a small, documented amount each
+         (see validation/header-safe-scroll-search-sidebar-ux-check-2026-07-17.md
+         for the full old->new px table, computed against the unchanged 15px
+         root — html's font-size was deliberately left untouched so rem-based
+         calendar chip sizes, which do not use these tokens, are unaffected). ── */
+      --font-2xs: .70rem;
+      --font-xs: .79rem;
+      --font-sm: .88rem;
+      --font-base: .92rem;
+      --font-md: .99rem;
       --font-lg: 1.05rem;
       --font-xl: 1.25rem;
       --font-2xl: 1.35rem;
@@ -103,7 +109,20 @@
 
       --header-height: 56px;
       --sidebar-width: 252px;
+      --sidebar-collapsed-width: 76px;
       --content-max-width: 1240px;
+
+      /* ── Header-safe scroll offset (2026-07-17 header-safe-scroll task) ──
+         Single source of truth for "how far below the fixed header a
+         scrolled-to section heading must land". Applied via
+         scroll-margin-top on the actual scroll targets (see calendar.css)
+         rather than duplicated as a JS offset subtraction in each handler.
+         --header-height is a fixed 56px at every breakpoint (no media
+         query changes .topbar's height — verified), so this single value
+         covers desktop, tablet, and mobile alike; if a future breakpoint
+         ever changes --header-height, this token updates automatically
+         since it derives from it. */
+      --scroll-target-offset: calc(var(--header-height) + 16px);
     }
 
     html {
@@ -111,7 +130,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -119,5 +138,19 @@
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* No @font-face / external font URL is loaded — "Inter" only applies
+       if the visitor's OS already has it installed; every browser falls
+       back to the safe system stack after it automatically. Form
+       controls don't inherit body's font by default in most browsers'
+       UA stylesheets, so this reset is required for the professional
+       stack (and the size bumps below) to actually reach inputs/selects/
+       textareas/buttons site-wide, not just plain text. */
+    input,
+    select,
+    textarea,
+    button {
+      font-family: inherit;
     }
 

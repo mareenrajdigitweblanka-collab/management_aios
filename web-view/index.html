@@ -53,49 +53,56 @@
   <div class="app-body">
     <div class="app-sidebar-backdrop" id="sidebarBackdrop"></div>
     <nav class="app-sidebar" id="appSidebar" aria-label="Dashboard navigation">
+      <button type="button" class="app-sidebar-collapse-toggle" id="sidebarCollapseToggle" aria-expanded="true"
+        aria-controls="appSidebar" aria-label="Collapse sidebar" title="Collapse sidebar">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.5 4l-6 6 6 6" />
+        </svg>
+      </button>
       <div class="app-sidebar-group">
         <div class="app-sidebar-title">Overview</div>
-        <button type="button" class="app-nav-btn active" data-tab="root-aios" aria-current="page">
+        <button type="button" class="app-nav-btn active" data-tab="root-aios" aria-current="page" title="Root AIOS">
           <span class="app-nav-icon" aria-hidden="true">RA</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Root AIOS</span></span>
           <span class="tab-badge tab-badge-amber app-nav-btn-badge" title="Technical result: PASS-AMBER">Needs
             Confirmation</span>
         </button>
-        <button type="button" class="app-nav-btn" data-tab="file-map">
+        <button type="button" class="app-nav-btn" data-tab="file-map" title="File Map">
           <span class="app-nav-icon" aria-hidden="true">FM</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">File Map</span></span>
         </button>
       </div>
       <div class="app-sidebar-group">
         <div class="app-sidebar-title">Members</div>
-        <button type="button" class="app-nav-btn" data-tab="mayurika-hr">
+        <button type="button" class="app-nav-btn" data-tab="mayurika-hr" title="Mayurika — HR">
           <span class="app-nav-icon" aria-hidden="true">M</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Mayurika</span><span
               class="app-nav-btn-sub">HR</span></span>
         </button>
-        <button type="button" class="app-nav-btn" data-tab="suman-recruitment">
+        <button type="button" class="app-nav-btn" data-tab="suman-recruitment" title="Suman — Recruitment">
           <span class="app-nav-icon" aria-hidden="true">S</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Suman</span><span
               class="app-nav-btn-sub">Recruitment</span></span>
         </button>
-        <button type="button" class="app-nav-btn" data-tab="arun-implementation">
+        <button type="button" class="app-nav-btn" data-tab="arun-implementation" title="Arun — Implementation">
           <span class="app-nav-icon" aria-hidden="true">A</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Arun</span><span
               class="app-nav-btn-sub">Implementation</span></span>
         </button>
-        <button type="button" class="app-nav-btn" data-tab="rajiv-blocked">
+        <button type="button" class="app-nav-btn" data-tab="rajiv-blocked" title="Rajiv — Admin">
           <span class="app-nav-icon" aria-hidden="true">R</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Rajiv</span><span
               class="app-nav-btn-sub">Admin</span></span>
         </button>
-        <button type="button" class="app-nav-btn" data-tab="paraparan">
+        <button type="button" class="app-nav-btn" data-tab="paraparan" title="Paraparan">
           <span class="app-nav-icon" aria-hidden="true">P</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Paraparan</span></span>
         </button>
       </div>
       <div class="app-sidebar-group">
         <div class="app-sidebar-title">Data</div>
-        <button type="button" class="app-nav-btn" data-tab="staff-data">
+        <button type="button" class="app-nav-btn" data-tab="staff-data" title="Staff Data">
           <span class="app-nav-icon" aria-hidden="true">SD</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Staff Data</span></span>
         </button>
@@ -111,8 +118,15 @@
     <div class="workspace-toolbar">
       <div class="search-tools" role="search">
         <label for="searchInput" class="visually-hidden">Search across all tabs</label>
-        <input id="searchInput" type="search" placeholder="Search across all tabs…" autocomplete="off"
-          aria-describedby="searchHint" />
+        <div class="workspace-search">
+          <svg class="workspace-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="8.5" cy="8.5" r="5.5" />
+            <path d="M17 17l-4-4" />
+          </svg>
+          <input id="searchInput" type="search" placeholder="Search people, topics, tasks, or status…"
+            autocomplete="off" aria-describedby="searchHint" />
+        </div>
         <button id="searchClear" type="button">Clear</button>
         <span id="searchResults"></span>
         <span id="searchHint" class="visually-hidden">Search by person, topic, task, or status. Examples: verify,
