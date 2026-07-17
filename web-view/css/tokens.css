@@ -1,0 +1,103 @@
+    /* ── Reset & base ── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f7f5f1;
+      --surface: #ffffff;
+      --border: #e6e1d8;
+      --text: #1e293b;
+      --text-secondary: #44403c;
+      --muted: #78716c;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --pass: #15803d;
+      --pass-bg: #dcfce7;
+      --amber: #b45309;
+      --amber-bg: #fef3c7;
+      --draft: #6d28d9;
+      --draft-bg: #ede9fe;
+      --blocked: #b91c1c;
+      --blocked-bg: #fee2e2;
+      --preview: #0369a1;
+      --preview-bg: #e0f2fe;
+      --topbar: #0f172a;
+      --topbar-border: #1e2d3d;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 1px 3px rgba(30, 25, 15, .05), 0 3px 14px rgba(30, 25, 15, .045);
+      --shadow-md: 0 2px 7px rgba(30, 25, 15, .06), 0 6px 20px rgba(30, 25, 15, .06);
+      --shadow-hover: 0 6px 22px rgba(30, 25, 15, .11), 0 3px 9px rgba(30, 25, 15, .07);
+
+      /* ── Type scale (Phase 1 polish, 2026-07-10) — named tokens for sizes already
+         in use across the file; extending, not replacing, existing rem values. ── */
+      --font-2xs: .68rem;
+      --font-xs: .76rem;
+      --font-sm: .82rem;
+      --font-base: .86rem;
+      --font-md: .95rem;
+      --font-lg: 1.05rem;
+      --font-xl: 1.25rem;
+      --font-2xl: 1.35rem;
+
+      /* ── Spacing scale ── */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-7: 32px;
+      --space-8: 40px;
+
+      /* ── Pill / badge shape tokens (shared by badges, tab-badges, pills, chips) ── */
+      --pill-radius: 999px;
+      --pill-pad-y: 3px;
+      --pill-pad-x: 10px;
+
+      /* ── Named neutrals/surfaces — extending the token set to cover repeated
+         hardcoded hex values found across the file (table stripes, hover tints,
+         subtle borders, dark inset panels). ── */
+      --surface-tint: #f6f3ee;
+      --surface-tint-2: #faf8f4;
+      --surface-tint-3: #f0ede6;
+      --surface-tint-4: #f5f2ea;
+      --hairline: #efece4;
+      --muted-2: #a8a29e;
+      --panel-dark-amber: #402a06;
+      --panel-dark-amber-text: #FDECC8;
+      --draft-tint-bg: #eeebf3;
+      --draft-tint-text: #6c5b96;
+
+      /* ── API status states (calendar) ── */
+      --status-info-bg: #eff6ff;
+      --status-info-border: #bfdbfe;
+      --status-info-text: #1e3a5f;
+      --status-success-bg: var(--pass-bg);
+      --status-success-border: #86efac;
+      --status-success-text: var(--pass);
+      --status-error-bg: var(--blocked-bg);
+      --status-error-border: #fca5a5;
+      --status-error-text: var(--blocked);
+    }
+
+    html {
+      font-size: 15px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+

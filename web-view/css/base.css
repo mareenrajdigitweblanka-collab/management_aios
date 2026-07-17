@@ -1,0 +1,77 @@
+    /* ── Top bar ── */
+    .topbar {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--topbar-border);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-logo {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: .3px;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-logo::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(37, 99, 235, .7);
+    }
+
+    .topbar-logo span {
+      color: #60a5fa;
+    }
+
+    .topbar-sep {
+      width: 1px;
+      height: 22px;
+      background: #334155;
+    }
+
+    .topbar-sub {
+      font-size: .78rem;
+      color: #94a3b8;
+      letter-spacing: .01em;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .75rem;
+      color: #94a3b8;
+    }
+
+    .topbar-commit {
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid #334155;
+      border-radius: var(--radius-sm);
+      padding: 3px 9px;
+      font-family: ui-monospace, monospace;
+      font-size: .73rem;
+      color: #7dd3fc;
+    }
+

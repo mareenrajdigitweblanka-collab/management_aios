@@ -1,0 +1,1305 @@
+    /* ═══ Management Team Schedule Calendar — Testing Preview (interactive, local FastAPI/PostgreSQL backend) ═══ */
+    .msc-banner {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: var(--panel-dark-amber);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      color: var(--panel-dark-amber-text);
+      font-size: .82rem;
+      line-height: 1.6;
+    }
+
+    .msc-banner .msc-banner-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .msc-banner strong {
+      color: #fff;
+    }
+
+    .msc-note {
+      font-size: .78rem;
+      color: var(--muted);
+      margin: 0 0 16px;
+      line-height: 1.6;
+    }
+
+    /* Calendar API status line (Phase 1 polish, 2026-07-10) — visually distinct
+       from the static .msc-note instructional paragraphs above it, so a real
+       loading/saving/error state doesn't get lost in a wall of muted help text.
+       Presentation only: showApiStatus() still drives the same isError boolean
+       and message text as before; fetch calls/CRUD flow are unchanged. */
+    .msc-api-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--font-xs);
+      line-height: 1.5;
+      margin: 0 0 var(--space-4);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+    }
+
+    .msc-api-status::before {
+      content: '';
+      flex-shrink: 0;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .msc-api-status--info {
+      background: var(--status-info-bg);
+      border-color: var(--status-info-border);
+      color: var(--status-info-text);
+    }
+
+    .msc-api-status--info::before {
+      background: var(--accent);
+    }
+
+    .msc-api-status--error {
+      background: var(--status-error-bg);
+      border-color: var(--status-error-border);
+      color: var(--status-error-text);
+      font-weight: 600;
+    }
+
+    .msc-api-status--error::before {
+      background: var(--status-error-text);
+    }
+
+    .msc-rajiv-note {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+      border: 1px solid #fbbf24;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: .78rem;
+      margin-bottom: 14px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .msc-rajiv-note.show {
+      display: block;
+    }
+
+    /* ── Calendar top toolbar (Google-Calendar-inspired polish, 2026-07-17)
+       — a left cluster (nav controls + active date-range title) and a right
+       segmented Month/Week/Day switcher, using only existing tokens. ── */
+    .msc-cal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .msc-cal-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .msc-cal-toolbar-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .msc-tool-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+
+    .msc-tool-btn:hover {
+      background: var(--surface-tint-3);
+      border-color: var(--muted-2);
+    }
+
+    /* Circular icon buttons for sidebar-toggle / previous / next — the
+       glyphs are pure Unicode (&#9776; &#8249; &#8250;), no Google assets. */
+    .msc-tool-btn--icon {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      line-height: 1;
+      border-radius: 50%;
+    }
+
+    .msc-sidebar-toggle.msc-tool-btn--icon {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .msc-sidebar-toggle.msc-tool-btn--icon:hover {
+      background: var(--surface-tint-3);
+    }
+
+    /* "Today" reads as a rounded pill, matching a familiar calendar toolbar. */
+    .msc-tool-btn--today {
+      border-radius: 999px;
+      padding: 6px 16px;
+    }
+
+    .msc-cal-heading {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -.01em;
+      white-space: nowrap;
+    }
+
+    /* ── Calendar view switcher (Google-Calendar-inspired UX upgrade,
+       2026-07-13; segmented-control polish 2026-07-17) ── */
+    .msc-view-switcher {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .msc-view-btn {
+      border: none;
+      border-left: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 0;
+      font-size: .76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+    }
+
+    .msc-view-btn:first-child {
+      border-left: none;
+    }
+
+    .msc-view-btn:hover {
+      background: var(--surface-tint-3);
+      color: var(--text);
+    }
+
+    .msc-view-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* ── Shared calendar layout shell (Phase 1, 2026-07-14) ── */
+    .msc-calendar-shell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Elevated calendar surface (Google-Calendar-inspired depth, 2026-07-17)
+       — scoped marker class so only the calendar card gains the shadow, not
+       every .hr-table-card on the page. */
+    .msc-calendar-card {
+      box-shadow: var(--shadow);
+    }
+
+    .msc-calendar-header {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msc-calendar-main {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 14px 16px 16px;
+    }
+
+    .msc-sidebar {
+      flex: 0 0 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      background: var(--surface);
+    }
+
+    .msc-sidebar.collapsed {
+      display: none;
+    }
+
+    .msc-sidebar-toggle {
+      font-size: .9rem;
+      line-height: 1;
+    }
+
+    .msc-sidebar-create {
+      width: 100%;
+    }
+
+    .msc-category-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .msc-calendar-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .msc-mini-picker {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+    }
+
+    .msc-mini-picker-heading {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .msc-mini-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .msc-mini-picker-headcell {
+      font-size: .6rem;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .msc-mini-picker-cell {
+      border: none;
+      background: none;
+      font-size: .68rem;
+      aspect-ratio: 1 / 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--text);
+      transition: background .1s ease;
+    }
+
+    .msc-mini-picker-cell:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-mini-picker-cell.other-month {
+      opacity: .4;
+    }
+
+    .msc-mini-picker-cell.today {
+      font-weight: 700;
+      color: var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .msc-mini-picker-cell.selected {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .msc-cal-grid-wrap {
+      overflow-x: auto;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* ── Schedule Summary section (2026-07-14 responsive layout;
+       full-width 2026-07-14; surface matched to Schedule Item card
+       2026-07-14) — a direct child of .msc-calendar-shell,
+       positioned after the calendar's card (.hr-table-card wrapping
+       .msc-calendar-header/.msc-calendar-main) and before the second
+       .hr-table-card wrapping the Schedule Item form/list cards. Being a
+       shell-level sibling rather than a descendant of .msc-calendar-content
+       means it is no longer offset by the sidebar's 220px column, so it can
+       span (almost) the shell's full width. It is never duplicated per view
+       (Month/Week/Day all share this one section, which lives outside
+       .msc-cal-grid-wrap entirely). box-sizing: border-box is required
+       here specifically because width: 100% is combined with horizontal
+       padding — without it the padding would add on top of 100% and
+       overflow the shell. background/border/border-radius reuse the exact
+       same --surface/--border/--radius tokens as .hr-table-card (the
+       Schedule Item panel's outer wrapper) so the two sections read as the
+       same card treatment instead of the summary sitting on bare page
+       background. ── */
+    .msc-summary-section {
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 16px 20px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 480px) {
+      .msc-summary-section {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+    }
+
+    /* View panes — one dispatcher shows the active view, others stay in the
+       DOM (display:none) so switching views never re-fetches data. */
+    .msc-view-pane {
+      display: none;
+    }
+
+    .msc-view-pane.active {
+      display: block;
+    }
+
+    /* ── Week/Day time-grid ── */
+    .msc-tg-row {
+      display: grid;
+    }
+
+    .msc-tg-header-row {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-tg-gutter {
+      font-size: .64rem;
+      color: var(--muted);
+      padding: 6px 4px;
+    }
+
+    .msc-tg-daycol-head {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      padding: 6px 4px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .msc-tg-daycol-head.today {
+      color: var(--accent);
+    }
+
+    .msc-tg-daynum {
+      font-weight: 700;
+    }
+
+    .msc-tg-daycol-head.today .msc-tg-daynum {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .msc-tg-allday-row {
+      border-bottom: 1px solid var(--border);
+      min-height: 28px;
+    }
+
+    .msc-tg-allday-col {
+      padding: 3px;
+      border-left: 1px solid var(--hairline);
+      cursor: pointer;
+    }
+
+    .msc-tg-allday-chip {
+      font-size: .68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      cursor: pointer;
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .msc-tg-scroll {
+      max-height: 480px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .msc-tg-body-grid {
+      display: grid;
+      position: relative;
+    }
+
+    .msc-tg-gutter-col {
+      border-right: 1px solid var(--border);
+    }
+
+    .msc-tg-hour-label {
+      font-size: .62rem;
+      color: var(--muted);
+      text-align: right;
+      padding-right: 6px;
+      box-sizing: border-box;
+      transform: translateY(-6px);
+    }
+
+    .msc-tg-daycol {
+      position: relative;
+      border-left: 1px solid var(--hairline);
+    }
+
+    .msc-tg-hourcell {
+      border-bottom: 1px solid var(--hairline);
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+
+    .msc-tg-hourcell:hover {
+      background: var(--surface-tint-2);
+    }
+
+    .msc-tg-event {
+      position: absolute;
+      box-sizing: border-box;
+      border-radius: 5px;
+      padding: 2px 6px;
+      overflow: hidden;
+      color: #fff;
+      background: var(--accent);
+      cursor: grab;
+      font-size: .66rem;
+      touch-action: none;
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), 0 1px 2px rgba(30, 25, 15, .18);
+      transition: filter .1s ease, box-shadow .1s ease;
+    }
+
+    .msc-tg-event:hover {
+      filter: brightness(1.04);
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), var(--shadow-md);
+    }
+
+    .msc-tg-event--dragging {
+      opacity: .75;
+      cursor: grabbing;
+      z-index: 5;
+    }
+
+    .msc-tg-event--pending {
+      opacity: .55;
+    }
+
+    .msc-tg-event-title {
+      font-weight: 700;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .msc-tg-event-time {
+      font-size: .6rem;
+      opacity: .9;
+    }
+
+    .msc-tg-resize-handle {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 6px;
+      cursor: ns-resize;
+    }
+
+    .msc-tg-now-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #ef4444;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    /* Google-style red dot at the start of the current-time line — pure CSS,
+       no asset. */
+    .msc-tg-now-line::before {
+      content: "";
+      position: absolute;
+      left: -1px;
+      top: -4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+
+    .msc-tg-event.task { background: #2563eb; }
+    .msc-tg-event.review { background: #7c3aed; }
+    .msc-tg-event.followup { background: #d97706; }
+    .msc-tg-event.planning { background: #059669; }
+    .msc-tg-allday-chip.task { background: #2563eb; }
+    .msc-tg-allday-chip.review { background: #7c3aed; }
+    .msc-tg-allday-chip.followup { background: #d97706; }
+    .msc-tg-allday-chip.planning { background: #059669; }
+
+    @media (max-width: 640px) {
+      .msc-calendar-main {
+        flex-direction: column;
+      }
+
+      .msc-sidebar {
+        width: 100%;
+      }
+
+      /* .msc-calendar-main's align-items: flex-start only stretches flex
+         items along the row-direction cross axis (vertical). Once
+         flex-direction switches to column above, the cross axis becomes
+         horizontal, and flex-start would let .msc-calendar-content (and
+         the summary section inside it — 2026-07-14 responsive layout)
+         shrink to a fit-content width instead of spanning the stacked
+         column's full width. align-self: stretch overrides that for this
+         one item only, so the calendar and summary both reliably use the
+         full available width when the sidebar stacks above them. */
+      .msc-calendar-content {
+        width: 100%;
+        align-self: stretch;
+      }
+
+      .msc-view-switcher {
+        width: 100%;
+      }
+
+      .msc-view-btn {
+        flex: 1;
+        text-align: center;
+      }
+    }
+
+    .msc-cal-grid {
+      grid-template-columns: repeat(7, minmax(84px, 1fr));
+      min-width: 630px;
+    }
+
+    /* display:grid only applies once .msc-view-pane has added .active — kept
+       off the unconditional .msc-cal-grid rule above so it can never win a
+       cascade tie against the shared .msc-view-pane { display: none; } pane-
+       hiding rule (equal specificity, source order previously favored this
+       rule, which is what caused Month to stay visible under Week/Day; see
+       validation/shared-calendar-view-rendering-regression-check-2026-07-14.md). */
+    .msc-cal-grid.active {
+      display: grid;
+    }
+
+    .msc-cal-headcell {
+      padding: 8px 8px;
+      font-size: .66rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-tint);
+      text-align: center;
+    }
+
+    .msc-cal-cell {
+      min-height: 92px;
+      padding: 4px 6px 6px;
+      border-right: 1px solid var(--hairline);
+      border-bottom: 1px solid var(--hairline);
+      vertical-align: top;
+      cursor: pointer;
+      position: relative;
+      transition: background .1s ease;
+    }
+
+    .msc-cal-cell:hover {
+      background: var(--surface-tint-2);
+    }
+
+    .msc-cal-cell.other-month {
+      opacity: .4;
+    }
+
+    .msc-cal-cell.selected {
+      background: var(--accent-light);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .msc-cal-daynum {
+      font-size: .74rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 2px auto 4px;
+      text-align: center;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .msc-cal-daynum.today {
+      color: #fff;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    @media (max-width: 640px) {
+      .msc-cal-cell {
+        min-height: 62px;
+      }
+    }
+
+    .msc-cal-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-right: 3px;
+    }
+
+    .msc-cal-count {
+      font-size: .62rem;
+      color: var(--muted);
+    }
+
+    .msc-form-card,
+    .msc-list-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-top: 16px;
+    }
+
+    /* ── Schedule Summary (2026-07-14; responsive layout 2026-07-14) —
+       reusable daily/weekly/monthly scheduled-vs-unscheduled + duration
+       report, shared by every member instance. Lives below the calendar
+       view panes (see .msc-summary-section), so it has the full width of
+       .msc-calendar-content to work with instead of the narrow 220px
+       sidebar it previously sat inside.
+
+       Three-column desktop / two-column medium / one-column narrow is
+       driven by CSS Grid auto-fit against minmax(240px, 1fr): this reads
+       the *actual width of the grid's own container* (.msc-summary-grid
+       itself, which is exactly as wide as .msc-calendar-content) rather
+       than the viewport, so it reflows correctly whether the width change
+       came from a narrower browser window or from the sidebar being open
+       vs. collapsed. No breakpoint hardcodes a column count. */
+    .msc-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* Safety net: below this width, minmax(240px, 1fr)'s 240px floor could
+       force the grid wider than its container. A bare 1fr column has no
+       floor, so it always matches the true available width — guaranteeing
+       no horizontal overflow on the narrowest supported windows. */
+    @media (max-width: 480px) {
+      .msc-summary-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .msc-summary-block {
+      background: var(--surface-tint-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .msc-summary-block-title {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+      overflow-wrap: break-word;
+    }
+
+    /* Groups each logical section of a card (counts / percentages /
+       coverage / comparison) with a light divider between groups, so the
+       card reads in clear chunks rather than one undifferentiated list. */
+    .msc-summary-group + .msc-summary-group {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+    }
+
+    .msc-summary-row {
+      display: grid;
+      grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+      align-items: baseline;
+      gap: 4px 10px;
+      font-size: .82rem;
+      color: var(--text);
+      padding: 3px 0;
+    }
+
+    .msc-summary-row span {
+      color: var(--muted);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    .msc-summary-row strong {
+      min-width: 0;
+      text-align: right;
+      overflow-wrap: break-word;
+      font-weight: 600;
+    }
+
+    @media (max-width: 420px) {
+      .msc-summary-row {
+        grid-template-columns: minmax(0, 1fr);
+        text-align: left;
+      }
+
+      .msc-summary-row strong {
+        text-align: left;
+      }
+    }
+
+    .msc-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 10px 14px;
+    }
+
+    .msc-form-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: .74rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* Schedule Item title character counter (2026-07-16, title limit
+       raised from 60 to 120) — purely informational; maxlength on the
+       input itself is what actually enforces the limit. */
+    .msc-field-title-counter {
+      align-self: flex-end;
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--muted-2);
+    }
+
+    .msc-field-title-counter.msc-field-title-counter--near-limit {
+      color: var(--amber);
+    }
+
+    .msc-form-grid input,
+    .msc-form-grid select,
+    .msc-form-grid textarea {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .82rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+
+    .msc-form-grid textarea {
+      resize: vertical;
+      min-height: 50px;
+    }
+
+    .msc-form-full {
+      grid-column: 1 / -1;
+    }
+
+    .msc-form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .msc-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+
+    .msc-btn:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .msc-btn-primary:hover {
+      background: #1d4fd7;
+      border-color: #1d4fd7;
+      box-shadow: var(--shadow);
+    }
+
+    .msc-btn-danger {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .msc-btn-danger:hover {
+      background: #fecaca;
+    }
+
+    .msc-btn-ghost {
+      background: transparent;
+    }
+
+    /* Prominent sidebar "Create" — a familiar rounded, elevated primary
+       action; its "+" glyph is plain text, not a Google asset. */
+    .msc-create-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 9px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .msc-create-btn:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .msc-create-btn-plus {
+      font-size: 1.15rem;
+      line-height: 1;
+      font-weight: 400;
+    }
+
+    .msc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-item:last-child {
+      border-bottom: none;
+    }
+
+    .msc-item-title {
+      font-weight: 700;
+      font-size: .85rem;
+      color: var(--text);
+    }
+
+    .msc-item-meta {
+      font-size: .74rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .msc-item-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .msc-item-actions button {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: .72rem;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .msc-empty {
+      font-size: .8rem;
+      color: var(--muted);
+      padding: 8px 0;
+    }
+
+    .msc-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .45);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .msc-modal-overlay.show {
+      display: flex;
+    }
+
+    .msc-modal {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .25);
+    }
+
+    .msc-modal h4 {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      font-size: 1.05rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-modal p {
+      font-size: .82rem;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .msc-modal-close {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: .8rem;
+    }
+
+    .msc-modal-close:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
+    }
+
+    .msc-chip-cat {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 600;
+      padding: 1px 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+    }
+
+    .msc-chip-cat.task {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+    }
+
+    .msc-chip-cat.review {
+      background: var(--draft-tint-bg);
+      color: var(--draft-tint-text);
+    }
+
+    .msc-chip-cat.followup {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    .msc-chip-cat.planning {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    /* Demo-style visible task chips inside calendar date cells (aios_role_desk_views.html layout reference) */
+    .msc-cal-chip {
+      display: block;
+      font-size: .64rem;
+      font-weight: 600;
+      line-height: 1.5;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: filter .1s ease;
+    }
+
+    .msc-cal-chip:hover {
+      filter: brightness(.97);
+    }
+
+    .msc-cal-chip.task {
+      background: var(--amber-bg);
+      color: #8a5e1e;
+    }
+
+    .msc-cal-chip.review {
+      background: var(--draft-tint-bg);
+      color: var(--draft-tint-text);
+    }
+
+    .msc-cal-chip.followup {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    .msc-cal-chip.planning {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .msc-cal-chip-more {
+      display: block;
+      font-size: .62rem;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 0 6px;
+      margin-top: 1px;
+    }
+
+    /* ── Leave coordination copy (REQ-LEAVE-COPY-001) — deliberately
+       distinct from .msc-cal-chip/.msc-chip-cat (task categories) so leave
+       is never visually confused with Scheduled/Unscheduled tasks. Single
+       --draft (purple) treatment for every active leave record — there is
+       no approval/status workflow (2026-07-16 simplification amendment),
+       so no per-status color variant exists. ── */
+    .msc-cal-chip-leave {
+      display: block;
+      font-size: .62rem;
+      line-height: 1.4;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 3px solid var(--draft);
+      background: var(--draft-bg);
+      color: var(--draft);
+    }
+
+    .msc-tg-allday-chip-leave {
+      display: inline-block;
+      font-size: .68rem;
+      padding: 1px 8px;
+      border-radius: 999px;
+      margin: 1px 4px 1px 0;
+      border-left: 3px solid var(--draft);
+      background: var(--draft-bg);
+      color: var(--draft);
+    }
+
+    /* Timed (Short Leave / Half-Day) leave blocks in the Week/Day time
+       grid — absolutely positioned like .msc-tg-event, but with no drag
+       handle and no data-id wiring in wireTimeGridInteractions, so these
+       are never draggable/resizable; editing/removal goes through the
+       leave form / Delete Leave action only. */
+    .msc-tg-leave-block {
+      position: absolute;
+      z-index: 1;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: .68rem;
+      color: #fff;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: .92;
+      background: var(--draft);
+    }
+
+    /* ── Leave Coordination section polish (UI-only, 2026-07-16) ──
+       Same design tokens as the rest of this calendar page (--surface,
+       --border, --radius, --status-info-*, .hr-table-title,
+       .msc-form-grid, .msc-btn) — no new visual language, no business
+       logic. Purely presentational structure so the section reads as an
+       intentional card rather than raw text/form dropped on the page. ── */
+    .msc-leave-card {
+      padding: 18px 20px 20px;
+    }
+
+    .msc-leave-card-head {
+      margin-bottom: 14px;
+    }
+
+    .msc-leave-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .msc-leave-title-icon {
+      font-size: .95rem;
+      line-height: 1;
+    }
+
+    .msc-leave-subtitle {
+      font-size: .8rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    /* Informational, non-alarming notice — reuses the same
+       status-info tokens already used by .msc-api-status--info
+       elsewhere on this page, so it visually matches rather than
+       introducing a new color language. */
+    .msc-leave-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .78rem;
+      line-height: 1.6;
+      color: var(--status-info-text);
+      background: var(--status-info-bg);
+      border: 1px solid var(--status-info-border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 18px;
+    }
+
+    .msc-leave-notice-icon {
+      flex-shrink: 0;
+      font-size: .92rem;
+      line-height: 1.6;
+    }
+
+    /* Subsections (create form / active list) — a light divider plus a
+       small uppercase label, the same grouping technique already used by
+       .msc-summary-group inside Schedule Summary, so the page's internal
+       rhythm stays consistent. */
+    .msc-leave-section + .msc-leave-section {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .msc-leave-section-title {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 0 0 10px;
+    }
+
+    .msc-leave-section-title .msc-leave-list-date-label,
+    .msc-leave-section-title .msc-leave-list-count {
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .msc-leave-form-panel {
+      background: var(--surface-tint-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .msc-leave-form-panel .msc-form-grid {
+      gap: 12px 16px;
+    }
+
+    .msc-leave-form-panel .msc-form-actions {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Clean empty state — centered, dashed boundary, calmer than a bare
+       line of muted text sitting directly on the card background. */
+    .msc-leave-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: .8rem;
+      padding: 18px 12px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-tint-2);
+    }
+
+    /* Individual leave entries as their own rounded cards rather than a
+       plain divided list — mirrors .msc-summary-block's card treatment. */
+    .msc-leave-item-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .msc-leave-item-card + .msc-leave-item-card {
+      margin-top: 8px;
+    }
+
+    .msc-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+    }
+
+    @media (max-width: 768px) {
+      .msc-form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .msc-leave-card {
+        padding: 14px 14px 16px;
+      }
+
+      .msc-leave-item-card {
+        flex-direction: column;
+      }
+
+      .msc-leave-item-card .msc-item-actions {
+        width: 100%;
+      }
+
+      .msc-leave-item-card .msc-item-actions button {
+        flex: 1 1 auto;
+      }
+    }
+

@@ -1,0 +1,285 @@
+    /* ── Tab bar ──
+       Phase 1 polish: desktop keeps a single row via a horizontal scroller
+       (same mechanism as mobile) instead of silently wrapping to a second
+       row and shifting the sticky bar's height. */
+    .tab-bar {
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      flex-wrap: nowrap;
+      gap: 0;
+      padding: 0 28px;
+      position: sticky;
+      top: 60px;
+      z-index: 90;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .05);
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 14px 15px 11px;
+      font-size: .81rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      transition: color .15s, border-color .15s, background .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: -2px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: var(--surface-tint);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      font-weight: 700;
+      border-bottom-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .tab-btn:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab-badge {
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      line-height: 1;
+      padding: 2px 7px;
+      border-radius: var(--pill-radius);
+      letter-spacing: .02em;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .tab-badge-amber {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
+    .tab-badge-active {
+      background: var(--pass-bg);
+      color: var(--pass);
+    }
+
+    /* ── Search strip ── */
+    .search-strip {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 9px 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    #searchInput {
+      flex: 1;
+      max-width: 400px;
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: .84rem;
+      background: var(--surface-tint);
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    #searchInput::placeholder {
+      color: var(--muted-2);
+    }
+
+    #searchInput:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+      background: var(--surface);
+    }
+
+    #searchClear {
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: .81rem;
+      cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+
+    #searchClear:hover {
+      background: var(--surface-tint-3);
+      border-color: var(--muted-2);
+    }
+
+    #searchClear:focus-visible,
+    #searchInput:focus-visible {
+      outline: none;
+    }
+
+    #searchResults {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    .search-hint {
+      font-size: .75rem;
+      color: var(--muted-2);
+    }
+
+    /* ── Tab panels ── */
+    .tab-main {
+      flex: 1;
+    }
+
+    .tab-panel {
+      display: none;
+      padding: 28px 32px 40px;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+
+    /* ── Application member sidebar (2026-07-17 navigation restructure) ──
+       Member/panel navigation moved out of the top tab bar into this
+       persistent left application sidebar. ONE shared navigation controller
+       (js/navigation.js) drives both the remaining global top tabs
+       (Root AIOS, File Map) and these member items over the same .tab-panel
+       set — no per-member navigation code. This is the APPLICATION sidebar
+       (member/panel navigation); it is deliberately distinct from each
+       calendars own internal .msc-sidebar (Create / mini-calendar / legend).
+       .tab-main already carries flex:1, so activating .app-body as a flex row
+       is all that is needed to give the calendar the remaining width — the
+       .tab-main width rule is not duplicated here. */
+    .app-body {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+    }
+
+    .app-sidebar {
+      flex: 0 0 210px;
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 16px 10px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+
+    .app-sidebar-title {
+      font-size: .66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted-2);
+      padding: 4px 12px 8px;
+    }
+
+    .app-nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: .86rem;
+      font-weight: 600;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+    }
+
+    .app-nav-btn:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .app-nav-btn.active {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .app-nav-btn:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
+    }
+
+    .app-nav-btn-sub {
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .app-nav-btn.active .app-nav-btn-sub {
+      color: var(--accent);
+    }
+
+    .app-nav-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 10px;
+    }
+
+    /* Narrow screens: the application sidebar becomes a horizontal, keyboard-
+       reachable, scrollable nav strip stacked above the content (no clipping,
+       no page-level horizontal overflow). */
+    @media (max-width: 768px) {
+      .app-body {
+        flex-direction: column;
+      }
+
+      .app-sidebar {
+        flex: none;
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 8px 10px;
+        gap: 4px;
+      }
+
+      .app-sidebar-title {
+        display: none;
+      }
+
+      .app-nav-btn {
+        width: auto;
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+
+      .app-nav-btn-sub {
+        display: none;
+      }
+
+      .app-nav-sep {
+        display: none;
+      }
+    }

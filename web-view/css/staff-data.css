@@ -1,0 +1,799 @@
+    /* ═══ Shared testing-table / status-pill component (Phase 1 polish, 2026-07-10) ═══
+       Mayurika's ".hr-testing-table-*" set and Suman/Arun's ".member-testing-table-*"
+       set were near-duplicate CSS (same component, different prefix per tab owner).
+       Grouped selectors below merge them into one ruleset — zero HTML changes, so no
+       table content, class names, or business wording in any tab was touched. Canonical
+       aliases (.data-table-card / .data-table-wrap / .data-table / .status-pill) are
+       included in the same groups for future markup, but every existing hr-*/member-*
+       class name keeps working exactly as before. ═══ */
+    .hr-testing-table-note,
+    .member-testing-table-note {
+      background: var(--status-info-bg);
+      border: 1px solid var(--status-info-border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--font-sm);
+      color: var(--status-info-text);
+      line-height: 1.6;
+      margin: 0 0 var(--space-6);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .hr-testing-table-note span.hr-pill,
+    .member-testing-table-note span.member-pill {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .hr-testing-table-card,
+    .member-testing-table-card,
+    .data-table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: var(--space-5) var(--space-5) var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+
+    .hr-testing-table-head,
+    .member-testing-table-head,
+    .data-table-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: 2px;
+    }
+
+    .hr-testing-table-title,
+    .member-testing-table-title,
+    .data-table-card-title {
+      font-size: var(--font-md);
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .hr-testing-table-sub,
+    .member-testing-table-sub,
+    .data-table-card-sub {
+      font-size: var(--font-xs);
+      color: var(--muted);
+      margin: 3px 0 var(--space-4);
+      line-height: 1.5;
+    }
+
+    .hr-testing-table-scroll,
+    .member-testing-table-scroll,
+    .data-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .hr-testing-table,
+    .member-testing-table,
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--font-sm);
+      min-width: 560px;
+    }
+
+    .hr-testing-table thead th,
+    .member-testing-table thead th,
+    .data-table thead th {
+      text-align: left;
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-secondary);
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface-tint-4);
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .hr-testing-table tbody td,
+    .member-testing-table tbody td,
+    .data-table tbody td {
+      padding: 13px var(--space-4);
+      border-bottom: 1px solid var(--hairline);
+      color: var(--text);
+      vertical-align: top;
+      line-height: 1.55;
+    }
+
+    .hr-testing-table tbody tr:nth-child(even) td,
+    .member-testing-table tbody tr:nth-child(even) td,
+    .data-table tbody tr:nth-child(even) td {
+      background: var(--surface-tint-2);
+    }
+
+    .hr-testing-table tbody tr:hover td,
+    .member-testing-table tbody tr:hover td,
+    .data-table tbody tr:hover td {
+      background: var(--accent-light);
+    }
+
+    .hr-testing-table tbody tr:last-child td,
+    .member-testing-table tbody tr:last-child td,
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .hr-testing-table-footnote,
+    .member-testing-table-footnote,
+    .data-table-card-footnote {
+      font-size: var(--font-xs);
+      color: var(--muted);
+      margin: var(--space-1) 0 var(--space-5);
+      line-height: 1.5;
+    }
+
+    /* Status pills — priority / frequency / sample-status labels. One shared
+       shape (.status-pill) with color modifiers; hr-pill-*/member-pill-* keep
+       working as aliases so no HTML in any member tab needed to change. */
+    .hr-pill,
+    .member-pill,
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      letter-spacing: .02em;
+      padding: var(--pill-pad-y) var(--pill-pad-x);
+      border-radius: var(--pill-radius);
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+
+    .hr-pill-critical {
+      background: var(--blocked-bg);
+      color: var(--blocked);
+      border: 1px solid #fca5a5;
+    }
+
+    .hr-pill-amber,
+    .member-pill-pending {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid #fde68a;
+    }
+
+    .hr-pill-green,
+    .member-pill-ready {
+      background: var(--pass-bg);
+      color: var(--pass);
+      border: 1px solid #bbf7d0;
+    }
+
+    .hr-pill-daily,
+    .member-pill-review {
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+    }
+
+    .hr-pill-weekly {
+      background: var(--draft-tint-bg);
+      color: var(--draft-tint-text);
+      border: 1px solid #ddd6fe;
+    }
+
+    .hr-pill-monthly {
+      background: #e4f1ee;
+      color: #2e7a72;
+      border: 1px solid #99d8ce;
+    }
+
+    .hr-pill-sample,
+    .member-pill-sample {
+      background: var(--surface-tint-3);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 640px) {
+
+      .hr-testing-table-card,
+      .member-testing-table-card,
+      .data-table-card {
+        padding: var(--space-4) var(--space-4) var(--space-4);
+      }
+    }
+
+    /* ── Staff Data pilot (2026-07-13) — technical pilot only, synthetic data.
+       Deliberately new class names (not .tab-btn/.tab-panel) so this does not
+       interfere with the existing main tab-switching logic. ── */
+    .staff-pilot-classification-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #92400e;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 6px;
+      padding: 3px 10px;
+      margin: 4px 0 12px;
+    }
+
+    .staff-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4, 16px);
+      margin: 12px 0 16px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2, #f8fafc);
+    }
+
+    .staff-filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 160px;
+    }
+
+    .staff-filter-field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .staff-filter-field select {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .staff-subtab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .staff-subtab-btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .staff-subtab-btn.active {
+      background: var(--accent, #2563eb);
+      border-color: var(--accent, #2563eb);
+      color: #fff;
+    }
+
+    .staff-subpanel {
+      display: none;
+    }
+
+    .staff-subpanel.active {
+      display: block;
+    }
+
+    .staff-table-empty {
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .staff-table-loading {
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .staff-table-error {
+      padding: 16px;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      background: #fef2f2;
+      color: #991b1b;
+      font-size: 13px;
+    }
+
+    .staff-total-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 4px 0 8px;
+    }
+
+    .staff-team-scoped-pilot {
+      margin-top: 8px;
+    }
+
+    .kpi-pilot-mount {
+      margin-top: 20px;
+    }
+
+    .staff-table th,
+    .kpi-pilot-table th {
+      white-space: nowrap;
+    }
+
+    .kpi-actor-select {
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    /* ── Staff Table UX upgrade (2026-07-13) — toolbar, sticky table,
+       drawer, pagination, mobile cards. New class names throughout;
+       nothing above this point in the shared table/pill/badge families
+       is modified. ── */
+
+    .staff-filter-bar {
+      align-items: flex-end;
+    }
+
+    .staff-filter-search-field,
+    .staff-filter-clear-field {
+      flex-basis: 200px;
+    }
+
+    .staff-filter-search-field input[type="search"] {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .staff-filter-clear-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .staff-filter-clear-btn:hover {
+      background: var(--surface-tint-2);
+    }
+
+    .staff-filter-chips {
+      flex-basis: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .staff-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 3px 6px 3px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .staff-filter-chip-remove {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 999px;
+    }
+
+    .staff-filter-chip-remove:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .staff-table-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3, 12px);
+      margin: 4px 0 8px;
+    }
+
+    .staff-toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .staff-toolbar-btn,
+    .staff-page-btn {
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .staff-toolbar-btn:hover,
+    .staff-page-btn:hover:not(:disabled) {
+      background: var(--surface-tint-2);
+    }
+
+    .staff-page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .staff-toolbar-btn.active,
+    .staff-density-btn.active {
+      background: var(--accent, #2563eb);
+      border-color: var(--accent, #2563eb);
+      color: #fff;
+    }
+
+    .staff-density-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .staff-density-btn {
+      padding: 5px 10px;
+      border: none;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .staff-col-chooser-wrap {
+      position: relative;
+    }
+
+    .staff-col-chooser-popover {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 5;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 10px 12px;
+      min-width: 180px;
+      display: none;
+    }
+
+    .staff-col-chooser-popover.show {
+      display: block;
+    }
+
+    .staff-col-chooser-popover label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 3px 0;
+      color: var(--text);
+    }
+
+    .staff-table-scroll {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      max-height: 70vh;
+    }
+
+    .staff-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .staff-table td:first-child,
+    .staff-table th:first-child {
+      position: sticky;
+      left: 0;
+      background: inherit;
+      z-index: 1;
+    }
+
+    .staff-table thead th:first-child {
+      z-index: 3;
+    }
+
+    .staff-table th button.staff-sort-th {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      font: inherit;
+      text-transform: inherit;
+      letter-spacing: inherit;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .staff-table th button.staff-sort-th:hover {
+      color: var(--accent);
+    }
+
+    .staff-sort-ind {
+      font-size: 10px;
+      opacity: 0.5;
+    }
+
+    .staff-sort-ind.active {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    .staff-employee-cell {
+      min-width: 160px;
+    }
+
+    .staff-employee-name {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .staff-employee-calling {
+      font-size: var(--font-xs);
+      color: var(--muted);
+    }
+
+    .staff-employee-number {
+      font-size: var(--font-2xs);
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .staff-details-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent, #2563eb);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .staff-details-btn:hover {
+      background: var(--accent-light);
+    }
+
+    /* Compact density */
+    .staff-table--compact tbody td,
+    .staff-table--compact thead th {
+      padding: 6px 10px;
+    }
+
+    .staff-table-retry-btn {
+      margin-top: 8px;
+      padding: 5px 12px;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      background: #fff;
+      color: #991b1b;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .staff-table-retry-btn:hover {
+      background: #fee2e2;
+    }
+
+    /* Skeleton loader */
+    .staff-table-skeleton-row {
+      height: 18px;
+      border-radius: 4px;
+      margin: 10px 0;
+      background: linear-gradient(90deg, var(--surface-tint-2) 25%, var(--surface-tint-3) 37%, var(--surface-tint-2) 63%);
+      background-size: 400% 100%;
+      animation: staff-skeleton-pulse 1.4s ease infinite;
+    }
+
+    @keyframes staff-skeleton-pulse {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0 50%; }
+    }
+
+    .staff-pagination-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .staff-page-size-select {
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .staff-page-info {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Detail drawer — deliberately separate from .msc-modal (calendar-owned,
+       centered small dialog); this is a right-side slide-in panel. */
+    .staff-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 50;
+      display: none;
+    }
+
+    .staff-drawer-overlay.show {
+      display: block;
+    }
+
+    .staff-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: min(420px, 100vw);
+      background: #fff;
+      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
+      transform: translateX(100%);
+      transition: transform 0.2s ease;
+      z-index: 51;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .staff-drawer-overlay.show .staff-drawer {
+      transform: translateX(0);
+    }
+
+    .staff-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4, 16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .staff-drawer-header h4 {
+      margin: 0;
+      font-size: var(--font-md);
+      color: var(--text);
+    }
+
+    .staff-drawer-close {
+      border: none;
+      background: none;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 4px 8px;
+    }
+
+    .staff-drawer-close:hover {
+      color: var(--text);
+    }
+
+    .staff-drawer-body {
+      padding: var(--space-4, 16px);
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .staff-drawer-field {
+      margin-bottom: 14px;
+    }
+
+    .staff-drawer-field-label {
+      font-size: var(--font-2xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .staff-drawer-field-value {
+      font-size: var(--font-sm);
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    @media (max-width: 640px) {
+      .staff-table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .staff-table-scroll {
+        max-height: none;
+        border: none;
+      }
+
+      .staff-table thead {
+        display: none;
+      }
+
+      .staff-table,
+      .staff-table tbody,
+      .staff-table tr,
+      .staff-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .staff-table td:first-child,
+      .staff-table th:first-child {
+        position: static;
+      }
+
+      .staff-table tbody tr {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm, 8px);
+        margin-bottom: var(--space-3, 12px);
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+      }
+
+      .staff-table tbody td {
+        border-bottom: none;
+        padding: 5px 0;
+      }
+
+      .staff-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        display: block;
+        font-size: var(--font-2xs);
+        color: var(--muted);
+      }
+
+      .staff-drawer {
+        width: 100vw;
+      }
+    }
