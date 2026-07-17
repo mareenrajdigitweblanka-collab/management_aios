@@ -104,6 +104,13 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '</div>' +
     '</div>' +
+    /* ── Section order (2026-07-17 month-task-list-navigation task) ──
+       Split from the former single hr-table-card that wrapped
+       form+list+priority+clear+footer+modal together, so the confirmed
+       page order — 1) Schedule Item creation form, 2) Leave applying
+       form, 3) Schedule Item list — can be produced by re-sequencing
+       these three existing, unmodified blocks rather than rewriting any
+       of them. No id/class/data-attribute inside any block changed. */
     '<div class="hr-table-card">' +
     '<div class="msc-form-card">' +
     '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
@@ -132,37 +139,6 @@ function mountScheduleCalendarInstance(container) {
     '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
     '<button type="button" class="msc-btn msc-btn-primary msc-update-btn" style="display:none;">Update schedule</button>' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-cancel-btn" style="display:none;">Cancel edit</button>' +
-    '</div>' +
-    '</div>' +
-    '<div class="msc-list-card">' +
-    '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Items — ' +
-    '<span class="msc-list-date-label">select a date</span></div>' +
-    '<div class="msc-list"><p class="msc-empty">Select a date on the calendar to see schedule items.</p></div>' +
-    '</div>' +
-    '<div class="msc-list-card">' +
-    '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
-    '<p class="msc-note" style="margin:0 0 8px;">Ranks today\'s sample items High → Medium → Low, styled ' +
-    'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
-    '<div class="msc-priority-list"></div>' +
-    '</div>' +
-    '<div class="msc-form-actions" style="margin-top:16px;">' +
-    '<button type="button" class="msc-btn msc-btn-danger msc-clear-btn">Clear Testing Data</button>' +
-    '</div>' +
-    '<div class="hr-cal-footer">Testing calendar. Data is stored via a local FastAPI + PostgreSQL backend ' +
-    '(<code>' + escapeHtml(apiBase) + '</code>), for dashboard testing only. Not connected to Google Calendar ' +
-    'or GitHub. Not official schedule truth.</div>' +
-    '<details style="margin-top:6px;margin-bottom:18px;"><summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">' +
-    'Technical details</summary><p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Validation: ' +
-    '<code>validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md</code></p></details>' +
-    '<div class="msc-modal-overlay msc-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(viewTitleId) + '">' +
-    '<div class="msc-modal">' +
-    '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '"></h4>' +
-    '<p class="msc-view-date"></p>' +
-    '<p class="msc-view-time"></p>' +
-    '<p class="msc-view-category"></p>' +
-    '<p class="msc-view-priority"></p>' +
-    '<p class="msc-view-notes"></p>' +
-    '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
     '</div>' +
     '</div>' +
     '</div>' +
@@ -207,6 +183,39 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-leave-section-title">Leave — ' +
     '<span class="msc-leave-list-date-label">select a date</span></div>' +
     '<div class="msc-leave-list"><p class="msc-leave-empty">Select a date on the calendar to see leave for that date.</p></div>' +
+    '</div>' +
+    '</div>' +
+    '<div class="hr-table-card">' +
+    '<div class="msc-list-card">' +
+    '<div class="hr-table-title msc-list-heading" tabindex="-1" style="margin-bottom:8px;">Schedule Items — ' +
+    '<span class="msc-list-date-label">select a date</span></div>' +
+    '<div class="msc-list"><p class="msc-empty">Select a date on the calendar to see schedule items.</p></div>' +
+    '</div>' +
+    '<div class="msc-list-card">' +
+    '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
+    '<p class="msc-note" style="margin:0 0 8px;">Ranks today\'s sample items High → Medium → Low, styled ' +
+    'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
+    '<div class="msc-priority-list"></div>' +
+    '</div>' +
+    '<div class="msc-form-actions" style="margin-top:16px;">' +
+    '<button type="button" class="msc-btn msc-btn-danger msc-clear-btn">Clear Testing Data</button>' +
+    '</div>' +
+    '<div class="hr-cal-footer">Testing calendar. Data is stored via a local FastAPI + PostgreSQL backend ' +
+    '(<code>' + escapeHtml(apiBase) + '</code>), for dashboard testing only. Not connected to Google Calendar ' +
+    'or GitHub. Not official schedule truth.</div>' +
+    '<details style="margin-top:6px;margin-bottom:18px;"><summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">' +
+    'Technical details</summary><p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Validation: ' +
+    '<code>validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md</code></p></details>' +
+    '<div class="msc-modal-overlay msc-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(viewTitleId) + '">' +
+    '<div class="msc-modal">' +
+    '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '"></h4>' +
+    '<p class="msc-view-date"></p>' +
+    '<p class="msc-view-time"></p>' +
+    '<p class="msc-view-category"></p>' +
+    '<p class="msc-view-priority"></p>' +
+    '<p class="msc-view-notes"></p>' +
+    '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
+    '</div>' +
     '</div>' +
     '</div>';
 
@@ -407,6 +416,17 @@ function mountScheduleCalendarInstance(container) {
 
   var MAX_CAL_CHIPS = 2;
 
+  /* ── Month-view click rules (2026-07-17 month-task-list-navigation task) ──
+     Task-presence rule (Step 3): a Month date is task-bearing when
+     itemsForDate(dateStr) — the same loaded `items` array every other
+     Month/Week/Day renderer already reads, filtered with the same date
+     normalization — returns at least one item. Leave is never counted
+     (leaveItemsForDate is a separate, independent lookup). Month-view
+     only: renderTimeGrid() (Week/Day) is untouched by this section. */
+  function isKeyActivation(e) {
+    return e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar';
+  }
+
   function renderMonthView() {
     var y = state.viewYear, m = state.viewMonth;
     var todayStr = toDateStr(new Date());
@@ -419,26 +439,51 @@ function mountScheduleCalendarInstance(container) {
       var isToday = c.dateStr === todayStr;
       var isSelected = c.dateStr === state.selectedDate;
       var dayItems = itemsForDate(c.dateStr);
+      var taskCount = dayItems.length;
+      var actionable = taskCount > 0;
 
-      var cls = 'msc-cal-cell' + (c.inMonth ? '' : ' other-month') + (isSelected ? ' selected' : '');
-      html += '<div class="' + cls + '" data-date="' + c.dateStr + '">';
+      var cls = 'msc-cal-cell' + (c.inMonth ? '' : ' other-month') + (isSelected ? ' selected' : '') +
+        (actionable ? ' msc-cal-cell--actionable' : '');
+      html += '<div class="' + cls + '" data-date="' + c.dateStr + '"';
+      /* Only task-bearing cells get button semantics (Step 17) — empty
+         and leave-only cells stay plain, non-focusable divs so they are
+         never presented as actionable. */
+      if (actionable) {
+        var cellLabel = c.date.getDate() + ' ' + MONTH_NAMES[c.date.getMonth()] + ' ' + c.date.getFullYear() +
+          ', ' + taskCount + ' task' + (taskCount === 1 ? '' : 's') + '. Open Schedule Item list.';
+        html += ' role="button" tabindex="0" aria-label="' + escapeHtml(cellLabel) + '"';
+      }
+      html += '>';
       html += '<div class="msc-cal-daynum' + (isToday ? ' today' : '') + '">' + c.date.getDate() + '</div>';
       /* Demo-style visible task chips inside each date (aios_role_desk_views.html layout reference) —
-         shows the actual sample/testing entries the user has added, not real schedule facts. */
+         shows the actual sample/testing entries the user has added, not real schedule facts.
+         Task chips navigate to the filtered Schedule Item list (Step 7) — Month chips never
+         opened a task-detail view before this change, so there is no modal behavior to
+         suppress here; Week/Day's viewItem() modal (separate renderer, renderTimeGrid) is
+         unaffected. */
       dayItems.slice(0, MAX_CAL_CHIPS).forEach(function (it) {
         var catClass = CATEGORY_CLASS[it.category] || 'task';
         var label = (it.start ? it.start + ' ' : '') + it.title;
-        html += '<span class="msc-cal-chip ' + catClass + '" title="' + escapeHtml(label) + '">' +
+        html += '<span class="msc-cal-chip ' + catClass + '" data-date="' + c.dateStr + '" ' +
+          'role="button" tabindex="0" title="' + escapeHtml(label) + '">' +
           escapeHtml(label) + '</span>';
       });
       if (dayItems.length > MAX_CAL_CHIPS) {
-        html += '<span class="msc-cal-chip-more">+' + (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
+        /* Step 8: this overflow count is derived from `dayItems` (tasks
+           only, see itemsForDate above) — leave is rendered separately
+           below and never contributes to this count, so "+N more" is
+           always task-bearing whenever it is rendered at all. */
+        html += '<span class="msc-cal-chip-more" data-date="' + c.dateStr + '" role="button" tabindex="0">+' +
+          (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
       }
       /* Leave chips (REQ-LEAVE-COPY-001) — visually distinct from
          the task chips above (own class, own colors), never using
          CATEGORY_CLASS. Deleted leave is never in `leaveItems`
          (server-filtered on deleted_at IS NULL), so it never renders
-         here. */
+         here. Step 9: leave chips never navigate to the Schedule Item
+         list — no role/tabindex added, and their own click handler
+         below only stops propagation (relevant on a mixed task+leave
+         cell, where the cell background itself is actionable). */
       leaveItemsForDate(c.dateStr).forEach(function (lv) {
         var label = formatLeaveCalendarLabel(lv);
         html += '<span class="msc-cal-chip-leave" title="' + escapeHtml(label) + '">' +
@@ -448,10 +493,32 @@ function mountScheduleCalendarInstance(container) {
     });
     calGrid.innerHTML = html;
 
-    calGrid.querySelectorAll('.msc-cal-cell').forEach(function (cell) {
-      cell.addEventListener('click', function () {
-        selectDate(cell.getAttribute('data-date'));
-      });
+    /* Step 6: only actionable (task-bearing) cells get a listener at
+       all — empty and leave-only cells have none, so clicking them does
+       nothing (no selectDate, no scroll, no focus, no form change). */
+    calGrid.querySelectorAll('.msc-cal-cell--actionable').forEach(function (cell) {
+      var go = function () { navigateToScheduleItemListForDate(cell.getAttribute('data-date')); };
+      cell.addEventListener('click', go);
+      cell.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(); } });
+    });
+    calGrid.querySelectorAll('.msc-cal-chip').forEach(function (chip) {
+      var go = function (e) {
+        e.stopPropagation();
+        navigateToScheduleItemListForDate(chip.getAttribute('data-date'));
+      };
+      chip.addEventListener('click', go);
+      chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
+    });
+    calGrid.querySelectorAll('.msc-cal-chip-more').forEach(function (chip) {
+      var go = function (e) {
+        e.stopPropagation();
+        navigateToScheduleItemListForDate(chip.getAttribute('data-date'));
+      };
+      chip.addEventListener('click', go);
+      chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
+    });
+    calGrid.querySelectorAll('.msc-cal-chip-leave').forEach(function (chip) {
+      chip.addEventListener('click', function (e) { e.stopPropagation(); });
     });
   }
 
@@ -888,6 +955,30 @@ function mountScheduleCalendarInstance(container) {
     renderList();
     renderLeaveList();
     loadSummaries(dateStr);
+  }
+
+  /* ── Centralized Month task-list navigation (Step 4, 2026-07-17) ──
+     The single helper every Month-view actionable trigger (task-bearing
+     cell background, task chip, "+N more") calls. Reuses selectDate() —
+     the existing selected-date source of truth — rather than
+     duplicating it: selectDate() already (1) sets state.selectedDate,
+     (2) syncs the Schedule Item/Leave form dates via
+     syncSelectedDateToForms(), (3)/(4) re-renders renderList(), which
+     already filters the existing loaded `items` array to
+     state.selectedDate (msc-list-date-label already shows that date as
+     the list's context label) — so there is no separate filter
+     variable or second task list to introduce. This helper only adds
+     the scroll + focus step on top, and keeps the current member scope
+     by operating solely through container-scoped closure references
+     (no window-global state). */
+  function navigateToScheduleItemListForDate(dateStr) {
+    selectDate(dateStr);
+    var listHeading = container.querySelector('.msc-list-heading');
+    var scrollTarget = listHeading || listEl;
+    if (scrollTarget && scrollTarget.scrollIntoView) {
+      scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (listHeading && listHeading.focus) { listHeading.focus(); }
   }
 
   function renderList() {

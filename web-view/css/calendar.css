@@ -636,13 +636,24 @@
       border-right: 1px solid var(--hairline);
       border-bottom: 1px solid var(--hairline);
       vertical-align: top;
-      cursor: pointer;
       position: relative;
       transition: background .1s ease;
     }
 
-    .msc-cal-cell:hover {
+    /* Only task-bearing cells are navigable (2026-07-17 month-task-list-
+       navigation task) — empty/leave-only cells must not look clickable
+       (no cursor/hover), matching their now-absent click handler. */
+    .msc-cal-cell--actionable {
+      cursor: pointer;
+    }
+
+    .msc-cal-cell--actionable:hover {
       background: var(--surface-tint-2);
+    }
+
+    .msc-cal-cell--actionable:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
     }
 
     .msc-cal-cell.other-month {
@@ -1055,10 +1066,17 @@
       overflow: hidden;
       text-overflow: ellipsis;
       transition: filter .1s ease;
+      cursor: pointer;
     }
 
     .msc-cal-chip:hover {
       filter: brightness(.97);
+    }
+
+    .msc-cal-chip:focus-visible,
+    .msc-cal-chip-more:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
     }
 
     .msc-cal-chip.task {
@@ -1088,6 +1106,7 @@
       color: var(--muted);
       padding: 0 6px;
       margin-top: 1px;
+      cursor: pointer;
     }
 
     /* ── Leave coordination copy (REQ-LEAVE-COPY-001) — deliberately
