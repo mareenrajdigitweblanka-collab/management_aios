@@ -1657,18 +1657,30 @@
       display: block;
     }
 
+    /* ── Calendar top toolbar (Google-Calendar-inspired polish, 2026-07-17)
+       — a left cluster (nav controls + active date-range title) and a right
+       segmented Month/Week/Day switcher, using only existing tokens. ── */
     .msc-cal-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
       padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
     }
 
+    .msc-cal-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
     .msc-cal-toolbar-btns {
       display: flex;
+      align-items: center;
       gap: 6px;
     }
 
@@ -1676,48 +1688,90 @@
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: var(--radius-sm);
-      font-size: .76rem;
+      font-size: .78rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
     }
 
     .msc-tool-btn:hover {
       background: var(--surface-tint-3);
+      border-color: var(--muted-2);
+    }
+
+    /* Circular icon buttons for sidebar-toggle / previous / next — the
+       glyphs are pure Unicode (&#9776; &#8249; &#8250;), no Google assets. */
+    .msc-tool-btn--icon {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      line-height: 1;
+      border-radius: 50%;
+    }
+
+    .msc-sidebar-toggle.msc-tool-btn--icon {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .msc-sidebar-toggle.msc-tool-btn--icon:hover {
+      background: var(--surface-tint-3);
+    }
+
+    /* "Today" reads as a rounded pill, matching a familiar calendar toolbar. */
+    .msc-tool-btn--today {
+      border-radius: 999px;
+      padding: 6px 16px;
     }
 
     .msc-cal-heading {
-      font-size: .92rem;
+      font-size: 1.15rem;
       font-weight: 700;
       color: var(--text);
+      letter-spacing: -.01em;
+      white-space: nowrap;
     }
 
     /* ── Calendar view switcher (Google-Calendar-inspired UX upgrade,
-       2026-07-13) ── */
+       2026-07-13; segmented-control polish 2026-07-17) ── */
     .msc-view-switcher {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--surface);
     }
 
     .msc-view-btn {
-      border: 1px solid var(--border);
-      background: var(--surface);
+      border: none;
+      border-left: 1px solid var(--border);
+      background: transparent;
       color: var(--muted);
-      padding: 5px 10px;
-      border-radius: var(--radius-sm);
-      font-size: .74rem;
+      padding: 6px 14px;
+      border-radius: 0;
+      font-size: .76rem;
       font-weight: 600;
       cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+    }
+
+    .msc-view-btn:first-child {
+      border-left: none;
     }
 
     .msc-view-btn:hover {
       background: var(--surface-tint-3);
+      color: var(--text);
     }
 
     .msc-view-btn.active {
       background: var(--accent);
-      border-color: var(--accent);
       color: #fff;
     }
 
@@ -1725,6 +1779,13 @@
     .msc-calendar-shell {
       display: flex;
       flex-direction: column;
+    }
+
+    /* Elevated calendar surface (Google-Calendar-inspired depth, 2026-07-17)
+       — scoped marker class so only the calendar card gains the shadow, not
+       every .hr-table-card on the page. */
+    .msc-calendar-card {
+      box-shadow: var(--shadow);
     }
 
     .msc-calendar-header {
@@ -1736,6 +1797,7 @@
       display: flex;
       gap: 16px;
       align-items: flex-start;
+      padding: 14px 16px 16px;
     }
 
     .msc-sidebar {
@@ -1804,14 +1866,19 @@
       border: none;
       background: none;
       font-size: .68rem;
-      padding: 4px 0;
-      border-radius: 4px;
+      aspect-ratio: 1 / 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
       cursor: pointer;
       color: var(--text);
+      transition: background .1s ease;
     }
 
     .msc-mini-picker-cell:hover {
-      background: var(--surface-tint-2);
+      background: var(--surface-tint-3);
     }
 
     .msc-mini-picker-cell.other-month {
@@ -1821,11 +1888,13 @@
     .msc-mini-picker-cell.today {
       font-weight: 700;
       color: var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
     }
 
     .msc-mini-picker-cell.selected {
       background: var(--accent);
       color: #fff;
+      box-shadow: none;
     }
 
     .msc-cal-grid-wrap {
@@ -1913,6 +1982,18 @@
       font-weight: 700;
     }
 
+    .msc-tg-daycol-head.today .msc-tg-daynum {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+    }
+
     .msc-tg-allday-row {
       border-bottom: 1px solid var(--border);
       min-height: 28px;
@@ -1976,14 +2057,21 @@
     .msc-tg-event {
       position: absolute;
       box-sizing: border-box;
-      border-radius: 4px;
-      padding: 2px 5px;
+      border-radius: 5px;
+      padding: 2px 6px;
       overflow: hidden;
       color: #fff;
       background: var(--accent);
       cursor: grab;
       font-size: .66rem;
       touch-action: none;
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), 0 1px 2px rgba(30, 25, 15, .18);
+      transition: filter .1s ease, box-shadow .1s ease;
+    }
+
+    .msc-tg-event:hover {
+      filter: brightness(1.04);
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), var(--shadow-md);
     }
 
     .msc-tg-event--dragging {
@@ -2025,6 +2113,19 @@
       background: #ef4444;
       z-index: 4;
       pointer-events: none;
+    }
+
+    /* Google-style red dot at the start of the current-time line — pure CSS,
+       no asset. */
+    .msc-tg-now-line::before {
+      content: "";
+      position: absolute;
+      left: -1px;
+      top: -4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
     }
 
     .msc-tg-event.task { background: #2563eb; }
@@ -2085,25 +2186,26 @@
     }
 
     .msc-cal-headcell {
-      padding: 6px 8px;
-      font-size: .68rem;
-      letter-spacing: .04em;
+      padding: 8px 8px;
+      font-size: .66rem;
+      letter-spacing: .06em;
       text-transform: uppercase;
       color: var(--muted);
       font-weight: 700;
       border-bottom: 1px solid var(--border);
       background: var(--surface-tint);
-      text-align: left;
+      text-align: center;
     }
 
     .msc-cal-cell {
-      min-height: 62px;
-      padding: 5px 6px;
+      min-height: 92px;
+      padding: 4px 6px 6px;
       border-right: 1px solid var(--hairline);
       border-bottom: 1px solid var(--hairline);
       vertical-align: top;
       cursor: pointer;
       position: relative;
+      transition: background .1s ease;
     }
 
     .msc-cal-cell:hover {
@@ -2120,20 +2222,28 @@
     }
 
     .msc-cal-daynum {
-      font-size: .68rem;
+      font-size: .74rem;
+      font-weight: 600;
       color: var(--muted);
-      margin-bottom: 3px;
+      margin: 2px auto 4px;
+      text-align: center;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .msc-cal-daynum.today {
       color: #fff;
       background: var(--accent);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
       border-radius: 50%;
+    }
+
+    @media (max-width: 640px) {
+      .msc-cal-cell {
+        min-height: 62px;
+      }
     }
 
     .msc-cal-dot {
@@ -2317,6 +2427,11 @@
       font-size: .8rem;
       font-weight: 600;
       cursor: pointer;
+      transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+
+    .msc-btn:hover {
+      background: var(--surface-tint-3);
     }
 
     .msc-btn-primary {
@@ -2325,18 +2440,46 @@
       color: #fff;
     }
 
+    .msc-btn-primary:hover {
+      background: #1d4fd7;
+      border-color: #1d4fd7;
+      box-shadow: var(--shadow);
+    }
+
     .msc-btn-danger {
       background: #fee2e2;
       border-color: #fca5a5;
       color: #991b1b;
     }
 
+    .msc-btn-danger:hover {
+      background: #fecaca;
+    }
+
     .msc-btn-ghost {
       background: transparent;
     }
 
-    .msc-btn:hover {
-      opacity: .9;
+    /* Prominent sidebar "Create" — a familiar rounded, elevated primary
+       action; its "+" glyph is plain text, not a Google asset. */
+    .msc-create-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 9px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .msc-create-btn:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .msc-create-btn-plus {
+      font-size: 1.15rem;
+      line-height: 1;
+      font-weight: 400;
     }
 
     .msc-item {
@@ -2410,8 +2553,10 @@
     }
 
     .msc-modal h4 {
-      margin-bottom: 8px;
-      font-size: .95rem;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      font-size: 1.05rem;
+      border-bottom: 1px solid var(--border);
     }
 
     .msc-modal p {
@@ -2467,14 +2612,20 @@
     /* Demo-style visible task chips inside calendar date cells (aios_role_desk_views.html layout reference) */
     .msc-cal-chip {
       display: block;
-      font-size: .62rem;
-      line-height: 1.4;
-      padding: 1px 5px;
+      font-size: .64rem;
+      font-weight: 600;
+      line-height: 1.5;
+      padding: 1px 6px;
       border-radius: 4px;
       margin-bottom: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: filter .1s ease;
+    }
+
+    .msc-cal-chip:hover {
+      filter: brightness(.97);
     }
 
     .msc-cal-chip.task {
@@ -2499,8 +2650,11 @@
 
     .msc-cal-chip-more {
       display: block;
-      font-size: .6rem;
+      font-size: .62rem;
+      font-weight: 600;
       color: var(--muted);
+      padding: 0 6px;
+      margin-top: 1px;
     }
 
     /* ── Leave coordination copy (REQ-LEAVE-COPY-001) — deliberately
@@ -5762,17 +5916,19 @@
           'sample testing data.</p>' +
           '<p class="msc-note msc-api-status" style="display:none;"></p>' +
           rajivNoteHtml +
-          '<div class="hr-table-card">' +
+          '<div class="hr-table-card msc-calendar-card">' +
           '<div class="msc-calendar-header">' +
           '<div class="msc-cal-toolbar">' +
+          '<div class="msc-cal-toolbar-left">' +
           '<div class="msc-cal-toolbar-btns">' +
-          '<button type="button" class="msc-tool-btn msc-sidebar-toggle" aria-expanded="true" ' +
-          'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar">&#9776;</button>' +
-          '<button type="button" class="msc-tool-btn msc-prev" aria-label="Previous">&larr; Previous</button>' +
-          '<button type="button" class="msc-tool-btn msc-today">Today</button>' +
-          '<button type="button" class="msc-tool-btn msc-next" aria-label="Next">Next &rarr;</button>' +
+          '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-sidebar-toggle" aria-expanded="true" ' +
+          'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar" title="Toggle sidebar">&#9776;</button>' +
+          '<button type="button" class="msc-tool-btn msc-tool-btn--today msc-today">Today</button>' +
+          '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-prev" aria-label="Previous day, week or month" title="Previous">&#8249;</button>' +
+          '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-next" aria-label="Next day, week or month" title="Next">&#8250;</button>' +
           '</div>' +
           '<div class="msc-cal-heading msc-heading">&nbsp;</div>' +
+          '</div>' +
           '<div class="msc-view-switcher" role="group" aria-label="Calendar view">' +
           '<button type="button" class="msc-view-btn active" data-view="month" aria-pressed="true">Month</button>' +
           '<button type="button" class="msc-view-btn" data-view="week" aria-pressed="false">Week</button>' +
@@ -5782,7 +5938,8 @@
           '</div>' +
           '<div class="msc-calendar-main">' +
           '<div class="msc-sidebar" id="' + escapeHtml(sidebarId) + '">' +
-          '<button type="button" class="msc-btn msc-btn-primary msc-sidebar-create">Create task</button>' +
+          '<button type="button" class="msc-btn msc-btn-primary msc-create-btn msc-sidebar-create">' +
+          '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Create task</button>' +
           '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
           '<div class="msc-category-legend" aria-label="Task category legend">' +
           '<span class="msc-chip-cat task">Scheduled Task</span>' +
