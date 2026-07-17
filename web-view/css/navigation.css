@@ -374,29 +374,45 @@
     }
 
     /* ── Desktop sidebar collapse/expand (2026-07-17 header-safe-scroll/
-       search/sidebar/typography task) ── One application-level state:
-       body.sidebar-collapsed. Desktop only (>=1024px, the repository's
-       existing drawer breakpoint) — below that, .app-sidebar-toggle in
-       the header remains the only sidebar control (no competing button;
-       this collapse toggle is hidden there). flex-basis is the single
-       property that drives the width change; .tab-main already has
-       flex:1, so it grows into the freed space automatically — no
-       JavaScript width calculation anywhere. */
+       search/sidebar/typography task; toggle repositioned + collapsed
+       workspace width 2026-07-17 follow-up) ── One application-level
+       state: body.sidebar-collapsed. Desktop only (>=1024px, the
+       repository's existing drawer breakpoint) — below that,
+       .app-sidebar-toggle in the header remains the only sidebar
+       control (no competing button; this collapse toggle is hidden
+       there). flex-basis is the single property that drives the width
+       change; .tab-main already has flex:1, so it grows into the freed
+       space automatically — no JavaScript width calculation anywhere.
+
+       The toggle now lives in .app-sidebar-top-row, sharing a row with
+       the OVERVIEW heading (title left, toggle right) instead of
+       floating above every group as its own row — this is what makes
+       its vertical center align with OVERVIEW by construction, not by
+       a fragile arbitrary top offset. */
+    .app-sidebar-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+
+    .app-sidebar-top-row .app-sidebar-title {
+      padding: 4px 0 8px 10px;
+    }
+
     .app-sidebar-collapse-toggle {
       display: none;
       align-items: center;
       justify-content: center;
-      align-self: flex-end;
       width: 26px;
       height: 26px;
-      margin-bottom: var(--space-2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: var(--surface);
       color: var(--muted);
       cursor: pointer;
       flex-shrink: 0;
-      transition: transform .2s ease, background .12s ease, align-self .2s ease;
+      transition: transform .2s ease, background .12s ease;
     }
 
     .app-sidebar-collapse-toggle:hover {
@@ -437,12 +453,40 @@
         transition: opacity .15s ease, height .2s ease, margin .2s ease, padding .2s ease;
       }
 
+      /* Collapsed workspace-width recovery (2026-07-17 follow-up) — the
+         gap on each side of .tab-panel in collapsed mode is proven (see
+         validation doc) to be almost entirely the auto-centering margin
+         .tab-panel's margin:0 auto produces once .tab-main (viewport
+         width minus the now-76px sidebar) exceeds --content-max-width
+         (1240px); the 16px padding-inline component is left untouched
+         (it is deliberate reading-edge spacing, not "unused" space).
+         new-max-width = (old-max-width + available-width) / 2 is the
+         exact algebraic point that halves that auto-margin on each side
+         at every viewport — not a guessed fixed bump. Derivation:
+           available = 100vw - sidebar-collapsed-width
+           new-max-width = (content-max-width + available) / 2
+                          = 50vw + (content-max-width - sidebar-collapsed-width) / 2
+         Verified against 1920/1600/1440/1366px in the validation doc;
+         at <=~1316px available width (e.g. 1024px) new-max-width already
+         exceeds the available space so max-width simply stops
+         constraining — identical to today's unchanged behavior there. */
+      body.sidebar-collapsed .tab-panel {
+        max-width: calc(50vw + (var(--content-max-width) - var(--sidebar-collapsed-width)) / 2);
+      }
+
       body.sidebar-collapsed .app-sidebar {
         flex-basis: var(--sidebar-collapsed-width);
       }
 
+      /* The toggle now shares .app-sidebar-top-row with the OVERVIEW
+         title; centering the row (rather than the toggle alone) is what
+         keeps the toggle centered in the 76px rail once the title's own
+         width collapses to 0 below. */
+      body.sidebar-collapsed .app-sidebar-top-row {
+        justify-content: center;
+      }
+
       body.sidebar-collapsed .app-sidebar-collapse-toggle {
-        align-self: center;
         transform: rotate(180deg);
       }
 
@@ -463,6 +507,21 @@
         justify-content: center;
         padding-left: 9px;
         padding-right: 9px;
+      }
+
+      /* OVERVIEW's title (inside .app-sidebar-top-row) also collapses
+         its width to 0 so the toggle alone gets centered by the row's
+         justify-content:center above; MEMBERS/DATA's titles (not in a
+         row with anything else) only need the original height-collapse
+         — this compound selector is more specific, so it wins over the
+         general rule below for OVERVIEW specifically. */
+      body.sidebar-collapsed .app-sidebar-top-row .app-sidebar-title {
+        flex: 0 0 0;
+        width: 0;
+        height: 0;
+        padding: 0;
+        margin: 0;
+        opacity: 0;
       }
 
       body.sidebar-collapsed .app-sidebar-title {

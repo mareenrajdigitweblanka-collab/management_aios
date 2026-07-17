@@ -53,15 +53,17 @@
   <div class="app-body">
     <div class="app-sidebar-backdrop" id="sidebarBackdrop"></div>
     <nav class="app-sidebar" id="appSidebar" aria-label="Dashboard navigation">
-      <button type="button" class="app-sidebar-collapse-toggle" id="sidebarCollapseToggle" aria-expanded="true"
-        aria-controls="appSidebar" aria-label="Collapse sidebar" title="Collapse sidebar">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-          stroke-linejoin="round" aria-hidden="true">
-          <path d="M12.5 4l-6 6 6 6" />
-        </svg>
-      </button>
       <div class="app-sidebar-group">
-        <div class="app-sidebar-title">Overview</div>
+        <div class="app-sidebar-top-row">
+          <div class="app-sidebar-title">Overview</div>
+          <button type="button" class="app-sidebar-collapse-toggle" id="sidebarCollapseToggle" aria-expanded="true"
+            aria-controls="appSidebar" aria-label="Collapse sidebar" title="Collapse sidebar">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.5 4l-6 6 6 6" />
+            </svg>
+          </button>
+        </div>
         <button type="button" class="app-nav-btn active" data-tab="root-aios" aria-current="page" title="Root AIOS">
           <span class="app-nav-icon" aria-hidden="true">RA</span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Root AIOS</span></span>
