@@ -197,3 +197,82 @@ can be verified from source. The result is AMBER rather than PASS solely
 because Steps 26–27 (real browser visual validation, console-error check,
 and screenshot evidence) could not be performed in this environment — see
 §14. No business, backend, database, or API risk was introduced.
+
+---
+
+## Addendum (2026-07-17) — Workspace Side-Gap 50% Reduction
+
+**Requirement:** halve the desktop horizontal gaps between (1) the sidebar
+and the main content, and (2) the main content and the right browser edge.
+
+### Selector changed
+
+`.tab-panel` in `web-view/css/navigation.css` — the **only** rule that sets
+horizontal spacing on the shared main-workspace container. Confirmed by
+grepping every `.tab-panel` occurrence across all 6 CSS files: the only other
+padding rule targeting `.tab-panel` is the pre-existing, already-distinct
+mobile override at `components.css` `@media (max-width:768px)` (`padding:
+18px 16px`), which was left untouched (see Tablet/Mobile result below).
+`.app-body` (`gap: 0`) and `.tab-main` (no padding/margin) contribute nothing
+to the gap.
+
+### Investigation (Step 2/5 — max-width vs padding)
+
+`.tab-panel` combines `padding` (horizontal) with `max-width: 1240px;
+margin: 0 auto`. Whether the gap is padding-driven or max-width/auto-margin
+driven depends on viewport width vs. `sidebar-width (252px) + max-width
+(1240px) = 1492px`:
+
+| Viewport | Available width (viewport − 252px sidebar) | max-width (1240px) engaged? |
+|---|---|---|
+| 1440px | 1188px | No |
+| 1366px | 1114px | No |
+| 1024px | 772px | No |
+| 768px | 768px (sidebar is a drawer here, full width) | No |
+| 390px | 390px (drawer) | No |
+
+At every required test width, available width is below 1240px, so
+`max-width` never constrains the panel and `margin: 0 auto` contributes zero
+extra margin. **Padding is proven to be the sole source of both gaps at
+every required breakpoint.** Per Step 4/5, `max-width` was left unchanged —
+increasing or removing it was not necessary and not evidenced.
+
+### Current vs. new values
+
+| | Old | New | Reduction |
+|---|---|---|---|
+| padding-left (sidebar↔content gap) | `var(--space-7)` = **32px** | `calc(var(--space-7) / 2)` = **16px** | exactly 50% |
+| padding-right (content↔edge gap) | `var(--space-7)` = **32px** | `calc(var(--space-7) / 2)` = **16px** | exactly 50% |
+| padding-top (preserved) | `var(--space-7)` = 32px | 32px (unchanged) | — |
+| padding-bottom (preserved) | `var(--space-8)` = 40px | 40px (unchanged) | — |
+| max-width (preserved) | 1240px | 1240px (unchanged) | — |
+| sidebar width (preserved) | 252px | 252px (unchanged) | — |
+
+Calculation: 32px × 0.5 = 16px exactly (no rounding required — `--space-7`
+is an even px value). Expressed as `calc(var(--space-7) / 2)` rather than a
+new hardcoded/duplicate token, so the halving relationship to the existing
+token stays self-evident and won't silently drift if `--space-7` changes.
+
+### Desktop / tablet / mobile result
+
+- **Desktop (1440px, 1366px, 1024px):** left and right gaps both reduced from 32px to 16px — exactly 50%, confirmed by the calculation above (padding is the only contributor at these widths). Content cards expand to fill the freed 32px total (16px each side); sidebar width, section-heading alignment, and table layout are unaffected since none of those selectors were touched.
+- **Tablet/mobile (768px, 390px):** sidebar is already a drawer at these widths (unrelated `<1024px` breakpoint, untouched); the separate mobile `.tab-panel` padding rule (`18px 16px`, `components.css`) was not touched, so mobile spacing is unchanged from before this task, per Step 6's instruction to preserve mobile padding not derived from the same excessive desktop value.
+
+### Overflow result
+
+No page-level horizontal overflow risk: the change strictly *reduces* a
+padding value (32px→16px); it cannot widen any box beyond its previous
+maximum, and no width/margin was made negative. No other selector was
+touched.
+
+### Schedule Summary / regression result
+
+Unchanged — `git diff --stat` shows exactly one file (`web-view/css/navigation.css`), one rule (`.tab-panel`) changed. Zero diff on `calendar.css`, `staff-data.css`, `components.css`, `base.css`, `tokens.css`, `index.html`, and every `web-view/js/` file. Overview/member navigation, Staff Data, search, read-only notice, calendar, Schedule Summary, forms, tables, and the responsive drawer are therefore structurally unaffected by this change.
+
+### Static checks (this addendum)
+
+CSS brace balance (all 6 files OK), HTML tag balance (0 unclosed/0 mismatches), local static server (all checked assets HTTP 200, served CSS confirmed to reflect the new padding value), `git diff --stat -- web-view/js/` empty, `git diff --stat -- backend/ database/` empty.
+
+### Result
+
+**PASS** for this specific spacing change — fully verifiable by calculation and static inspection (no rendering-dependent judgment call was required, since the exact contributing property was proven algebraically for every required breakpoint). The dashboard's overall result remains **AMBER** per §17 above, pending the outstanding real-browser visual validation from the prior redesign task.

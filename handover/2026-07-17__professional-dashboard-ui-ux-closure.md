@@ -135,3 +135,28 @@ issues are found).
 ## 13. Result
 
 **AMBER** — see validation doc §17 for the full rationale.
+
+---
+
+## Addendum (2026-07-17) — Workspace Side-Gap 50% Reduction
+
+**Spacing adjustment:** `.tab-panel`'s horizontal padding halved from 32px
+(`var(--space-7)`) to 16px (`calc(var(--space-7) / 2)`) per side. Vertical
+padding (32px top / 40px bottom), `max-width` (1240px), and sidebar width
+(252px) are all unchanged. Investigation proved `max-width` never engages
+at any required breakpoint (1440/1366/1024/768/390px — see validation doc
+addendum for the full per-width calculation), so padding was the sole gap
+source and is the only property changed.
+
+**File changed:** `web-view/css/navigation.css` (one selector, `.tab-panel`).
+
+**Commit hash:** `3e27786` ("Reduce dashboard workspace side gaps").
+
+**Deployment result:** Pushed to `origin/main`; live-site confirmation
+pending — see final report for the `management-aios.vercel.app` check
+performed after this addendum.
+
+**One next step:** Confirm in a real browser at 1440px that the sidebar↔
+content and content↔edge gaps visually read as half their previous width,
+then fold this into the outstanding browser-validation next step already
+recorded in §12 above.
