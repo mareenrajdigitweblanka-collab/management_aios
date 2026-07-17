@@ -5903,6 +5903,7 @@
           '<label class="msc-form-full">External reference (optional)<input type="text" class="msc-leave-field-external-reference" ' +
           'maxlength="120" placeholder="e.g. official HR leave system reference id" /></label>' +
           '</form>' +
+          '<p class="msc-note msc-api-status msc-leave-form-status" style="display:none;"></p>' +
           '<div class="msc-form-actions">' +
           '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
           '</div>' +
@@ -5991,6 +5992,7 @@
         var leaveCreateBtn = container.querySelector('.msc-leave-create-btn');
         var leaveListDateLabel = container.querySelector('.msc-leave-list-date-label');
         var leaveListEl = container.querySelector('.msc-leave-list');
+        var leaveFormStatusEl = container.querySelector('.msc-leave-form-status');
 
         if (leaveFormEl) { leaveFormEl.addEventListener('submit', function (e) { e.preventDefault(); }); }
 
@@ -6956,6 +6958,24 @@
           return fetch(url, opts).then(function (res) {
             if (!res.ok) {
               return res.json().catch(function () { return {}; }).then(function (errBody) {
+                /* member-leave-overlap-prevention (2026-07-17): a create/
+                   edit blocked by another active leave record this member
+                   already holds returns a raw 409 body
+                   ({error:"leave_overlap", message, conflicts:[...]}) with
+                   no "detail" wrapper — same shape convention as the
+                   existing leave_conflict (task-vs-leave) contract in
+                   apiRequest() above. Tagged on the thrown Error so the
+                   leave-create click handler can show it inline near the
+                   form instead of a generic alert. */
+                if (errBody && errBody.error === 'leave_overlap') {
+                  var overlapErr = new Error(
+                    errBody.message ||
+                    'This member already has leave that overlaps the selected date or time.'
+                  );
+                  overlapErr.isLeaveOverlap = true;
+                  overlapErr.conflicts = errBody.conflicts || [];
+                  throw overlapErr;
+                }
                 var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) :
                   (errBody && errBody.message ? errBody.message : (res.status + ' ' + res.statusText));
                 throw new Error(detail);
@@ -6964,6 +6984,27 @@
             if (res.status === 204) { return null; }
             return res.json();
           });
+        }
+
+        /* Inline status line for the leave create form only — same
+           (message, isError) contract and .msc-api-status visual language
+           as showApiStatus() above, kept as a separate element/function so
+           a leave-overlap rejection is shown next to the leave form
+           without disturbing the calendar-wide status line. */
+        function showLeaveFormStatus(message, isError) {
+          if (!leaveFormStatusEl) { return; }
+          if (!message) {
+            leaveFormStatusEl.style.display = 'none';
+            leaveFormStatusEl.textContent = '';
+            leaveFormStatusEl.removeAttribute('role');
+            leaveFormStatusEl.classList.remove('msc-api-status--info', 'msc-api-status--error');
+            return;
+          }
+          leaveFormStatusEl.style.display = '';
+          leaveFormStatusEl.classList.toggle('msc-api-status--error', !!isError);
+          leaveFormStatusEl.classList.toggle('msc-api-status--info', !isError);
+          leaveFormStatusEl.setAttribute('role', isError ? 'alert' : 'status');
+          leaveFormStatusEl.textContent = message;
         }
 
         function loadLeaveItems() {
@@ -6979,7 +7020,10 @@
           leaveFieldTimeWraps.forEach(function (wrap) { wrap.style.display = isShortLeave ? '' : 'none'; });
           leaveFieldEndDateWrap.style.display = isMultiDay ? '' : 'none';
         }
-        leaveFieldType.addEventListener('change', updateLeaveFormFieldVisibility);
+        leaveFieldType.addEventListener('change', function () {
+          updateLeaveFormFieldVisibility();
+          showLeaveFormStatus('', false);
+        });
         updateLeaveFormFieldVisibility();
 
         function resetLeaveForm() {
@@ -6995,6 +7039,7 @@
 
         leaveCreateBtn.addEventListener('click', function () {
           var leaveType = leaveFieldType.value;
+          showLeaveFormStatus('', false);
           if (!leaveFieldStartDate.value) { window.alert('Choose a start date for this leave request.'); return; }
           var payload = {
             leave_type: leaveType,
@@ -7020,7 +7065,21 @@
             renderActiveView();
             renderLeaveList();
           }).catch(function (err) {
-            window.alert('Could not create this leave request. Detail: ' + err.message);
+            /* member-leave-overlap-prevention (2026-07-17): on a 409
+               leave_overlap rejection, the form is deliberately NOT reset
+               (entered fields stay exactly as the user left them) and no
+               chip/list entry is created (leaveItems.push above never
+               runs on this path) — the backend rejected the write, so
+               nothing was ever stored. The message is shown inline next
+               to the form rather than a blocking window.alert, and focus
+               moves to the start-date field so the user can see/adjust
+               the conflicting date. */
+            if (err.isLeaveOverlap) {
+              showLeaveFormStatus(err.message, true);
+              if (leaveFieldStartDate && leaveFieldStartDate.focus) { leaveFieldStartDate.focus(); }
+            } else {
+              window.alert('Could not create this leave request. Detail: ' + err.message);
+            }
           }).then(function () { leaveCreateBtn.disabled = false; });
         });
 

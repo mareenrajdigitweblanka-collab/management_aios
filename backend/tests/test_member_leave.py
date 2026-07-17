@@ -42,12 +42,17 @@ from backend.config import (
     SHORT_LEAVE_MONTHLY_CAP_MINUTES,
 )
 from backend.routers.leave_logic import (
+    LeaveOverlapError,
     _leave_record_day_interval,
+    acquire_member_leave_lock,
     active_leave_minutes_for_date,
+    assert_no_leave_overlap,
     compute_effective_leave_minutes,
     expand_weekdays,
+    find_overlapping_leave_records,
     half_day_period_for_leave_type,
     leave_conflict_response_body,
+    leave_overlap_response_body,
     merge_intervals,
     validate_leave_dates_and_times,
     validate_short_leave_duration_minutes,
@@ -71,6 +76,50 @@ class FakeLeaveRecord:
     def __post_init__(self):
         if self.id is None:
             self.id = uuid4()
+
+
+class _FakeQuery:
+    """Minimal duck-typed stand-in for a sqlalchemy.orm.Query — supports
+    only the chain find_overlapping_leave_records() actually calls
+    (.filter(...).filter(...).with_for_update().all()). filter() and
+    with_for_update() are no-ops that return self; the row list passed to
+    _FakeSession is what .all() returns, standing in for "what the real SQL
+    filters (member_key match, deleted_at IS NULL, exclude_leave_id,
+    date-range overlap) would have already narrowed the result set to" —
+    matching this repo's established convention that DB-free tests exercise
+    a function's own decision logic, not SQL construction itself (see the
+    module docstring above and find_conflicting_active_leave's equivalent
+    testing gap)."""
+
+    def __init__(self, rows):
+        self._rows = list(rows)
+
+    def filter(self, *args, **kwargs):
+        return self
+
+    def with_for_update(self):
+        return self
+
+    def all(self):
+        return list(self._rows)
+
+
+class _FakeSession:
+    """Minimal duck-typed stand-in for sqlalchemy.orm.Session — records
+    every raw SQL string passed to execute() (for asserting
+    acquire_member_leave_lock's statement without a live Postgres
+    connection) and returns a fixed candidate row list from query()."""
+
+    def __init__(self, rows=()):
+        self._rows = list(rows)
+        self.executed = []
+
+    def query(self, model):
+        return _FakeQuery(self._rows)
+
+    def execute(self, statement, params=None):
+        self.executed.append((str(statement), params))
+        return None
 
 
 class ConfigurationValueTests(unittest.TestCase):
@@ -490,6 +539,265 @@ class MemberLeaveRecordCreateSchemaTests(unittest.TestCase):
             MemberLeaveRecordCreate(
                 leave_type="Full-Day", start_date=date(2026, 7, 17), external_reference="E" * 121
             )
+
+
+class LeaveOverlapMatrixTests(unittest.TestCase):
+    """member-leave-overlap-prevention (2026-07-17) — the approved OVERLAP
+    MATRIX, exercised end-to-end through find_overlapping_leave_records()
+    against a _FakeSession (DB-free, per this module's established
+    convention). Required test matrix cases 1-14."""
+
+    def _overlap(self, proposed, existing_rows, exclude_leave_id=None):
+        session = _FakeSession(existing_rows)
+        leave_type, start_date, end_date, start_time, end_time = proposed
+        return find_overlapping_leave_records(
+            session, "mayurika", leave_type, start_date, end_date, start_time, end_time,
+            exclude_leave_id=exclude_leave_id,
+        )
+
+    # 1. Full-Day + Full-Day same member/date -> conflict.
+    def test_full_day_vs_full_day_same_date_conflicts(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Full-Day", d, d)
+        result = self._overlap(("Full-Day", d, d, None, None), [existing])
+        self.assertEqual(result, [existing])
+
+    # 2. Full-Day + Short Leave same member/date -> conflict.
+    def test_full_day_vs_short_leave_same_date_conflicts(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Short Leave", d, d, time(9, 0), time(10, 0))
+        result = self._overlap(("Full-Day", d, d, None, None), [existing])
+        self.assertEqual(result, [existing])
+
+    # 3. Full-Day + First-Half same member/date -> conflict.
+    def test_full_day_vs_half_day_first_same_date_conflicts(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Half-Day First", d, d)
+        result = self._overlap(("Full-Day", d, d, None, None), [existing])
+        self.assertEqual(result, [existing])
+
+    # 4. Full-Day + Second-Half same member/date -> conflict.
+    def test_full_day_vs_half_day_second_same_date_conflicts(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Half-Day Second", d, d)
+        result = self._overlap(("Full-Day", d, d, None, None), [existing])
+        self.assertEqual(result, [existing])
+
+    # 5. Multi-Day covering date + Full-Day -> conflict.
+    def test_multi_day_covering_date_vs_full_day_conflicts(self):
+        # Friday 2026-07-17 .. Monday 2026-07-20.
+        existing = FakeLeaveRecord("Full-Day", date(2026, 7, 17), date(2026, 7, 17))
+        result = self._overlap(
+            ("Multi-Day", date(2026, 7, 17), date(2026, 7, 20), None, None), [existing]
+        )
+        self.assertEqual(result, [existing])
+
+    # 6. Multi-Day covering date + Short Leave -> conflict.
+    def test_multi_day_covering_date_vs_short_leave_conflicts(self):
+        existing = FakeLeaveRecord(
+            "Short Leave", date(2026, 7, 20), date(2026, 7, 20), time(9, 0), time(10, 0)
+        )
+        result = self._overlap(
+            ("Multi-Day", date(2026, 7, 17), date(2026, 7, 20), None, None), [existing]
+        )
+        self.assertEqual(result, [existing])
+
+    # 7. Multi-Day weekend-only non-overlap case -> allowed.
+    def test_multi_day_weekend_only_range_never_conflicts(self):
+        # 2026-07-18 (Sat) - 2026-07-19 (Sun): expand_weekdays() is empty,
+        # so this proposal occupies zero dates and can never conflict.
+        existing = FakeLeaveRecord("Full-Day", date(2026, 7, 18), date(2026, 7, 18))
+        result = self._overlap(
+            ("Multi-Day", date(2026, 7, 18), date(2026, 7, 19), None, None), [existing]
+        )
+        self.assertEqual(result, [])
+
+    def test_multi_day_only_shared_date_is_excluded_weekend_allowed(self):
+        # Multi-Day Fri(17)-Mon(20) occupies {17, 20} only (18/19 excluded).
+        # An existing Full-Day sitting only on Saturday the 18th shares no
+        # occupied date with the proposal, even though the raw date ranges
+        # overlap (matrix "Allow" case 4).
+        existing = FakeLeaveRecord("Full-Day", date(2026, 7, 18), date(2026, 7, 18))
+        result = self._overlap(
+            ("Multi-Day", date(2026, 7, 17), date(2026, 7, 20), None, None), [existing]
+        )
+        self.assertEqual(result, [])
+
+    # 8. First-Half + First-Half -> conflict.
+    def test_half_day_first_vs_half_day_first_conflicts(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Half-Day First", d, d)
+        result = self._overlap(("Half-Day First", d, d, None, None), [existing])
+        self.assertEqual(result, [existing])
+
+    # 9. Second-Half + Second-Half -> conflict.
+    def test_half_day_second_vs_half_day_second_conflicts(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Half-Day Second", d, d)
+        result = self._overlap(("Half-Day Second", d, d, None, None), [existing])
+        self.assertEqual(result, [existing])
+
+    # 10. First-Half + Second-Half -> allowed.
+    def test_half_day_first_vs_half_day_second_allowed(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Half-Day Second", d, d)
+        result = self._overlap(("Half-Day First", d, d, None, None), [existing])
+        self.assertEqual(result, [])
+
+    # 11. Short 09:00-10:00 + Short 09:30-10:30 -> conflict.
+    def test_short_leave_overlapping_intervals_conflict(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Short Leave", d, d, time(9, 0), time(10, 0))
+        result = self._overlap(
+            ("Short Leave", d, d, time(9, 30), time(10, 30)), [existing]
+        )
+        self.assertEqual(result, [existing])
+
+    # 12. Short 09:00-10:00 + Short 10:00-11:00 -> allowed (adjacent, not overlapping).
+    def test_short_leave_adjacent_intervals_allowed(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Short Leave", d, d, time(9, 0), time(10, 0))
+        result = self._overlap(
+            ("Short Leave", d, d, time(10, 0), time(11, 0)), [existing]
+        )
+        self.assertEqual(result, [])
+
+    # 13. Short overlapping First-Half -> conflict.
+    def test_short_leave_overlapping_half_day_first_conflicts(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Half-Day First", d, d)
+        result = self._overlap(
+            ("Short Leave", d, d, time(12, 30), time(13, 15)), [existing]
+        )
+        self.assertEqual(result, [existing])
+
+    # 14. Short outside First-Half but within Second-Half comparison -> correct result.
+    def test_short_leave_immediately_after_half_day_first_boundary(self):
+        d = date(2026, 7, 24)
+        first_half = FakeLeaveRecord("Half-Day First", d, d)   # 08:30-13:00
+        second_half = FakeLeaveRecord("Half-Day Second", d, d)  # 13:30-18:00
+        # 13:30-14:00 does not overlap First-Half (ends exactly at 13:00)...
+        no_conflict = self._overlap(
+            ("Short Leave", d, d, time(13, 30), time(14, 0)), [first_half]
+        )
+        self.assertEqual(no_conflict, [])
+        # ...but does overlap Second-Half (starts exactly at 13:30).
+        conflict = self._overlap(
+            ("Short Leave", d, d, time(13, 30), time(14, 0)), [second_half]
+        )
+        self.assertEqual(conflict, [second_half])
+
+
+class LeaveOverlapSelfExcludeAndFilterTests(unittest.TestCase):
+    """Required cases 15-18. Self-exclusion (15/16) is independently
+    verified here because find_overlapping_leave_records applies a
+    redundant Python-side exclude_leave_id filter in addition to the SQL
+    one (see leave_logic.py). Soft-deleted (17) and different-member (18)
+    exclusion happen only at the SQL query layer (deleted_at IS NULL /
+    member_key match) — those two are not independently exercised by an
+    automated test in this DB-free environment; the _FakeSession candidate
+    list here already represents "what the real filtered query would have
+    returned", which is the same documented limitation as
+    find_conflicting_active_leave's existing test coverage."""
+
+    # 15. Same leave ID excluded during update -> no self-conflict.
+    def test_self_id_excluded_no_self_conflict(self):
+        d = date(2026, 7, 24)
+        being_edited = FakeLeaveRecord("Full-Day", d, d)
+        session = _FakeSession([being_edited])
+        result = find_overlapping_leave_records(
+            session, "mayurika", "Full-Day", d, d, None, None,
+            exclude_leave_id=being_edited.id,
+        )
+        self.assertEqual(result, [])
+
+    # 16. Edit into another leave -> conflict.
+    def test_edit_into_another_active_leave_conflicts(self):
+        d = date(2026, 7, 24)
+        being_edited = FakeLeaveRecord("Short Leave", d, d, time(9, 0), time(10, 0))
+        other = FakeLeaveRecord("Full-Day", d, d)
+        session = _FakeSession([being_edited, other])
+        result = find_overlapping_leave_records(
+            session, "mayurika", "Full-Day", d, d, None, None,
+            exclude_leave_id=being_edited.id,
+        )
+        self.assertEqual(result, [other])
+
+    # 17. Soft-deleted record does not conflict (query-layer exclusion —
+    # simulated here by simply not including it in the candidate set the
+    # fake query "returns", matching the deleted_at IS NULL filter).
+    def test_soft_deleted_record_not_in_candidate_set_no_conflict(self):
+        d = date(2026, 7, 24)
+        session = _FakeSession([])  # the soft-deleted row is not returned
+        result = find_overlapping_leave_records(session, "mayurika", "Full-Day", d, d, None, None)
+        self.assertEqual(result, [])
+
+    # 18. Different member same date -> allowed (query-layer exclusion —
+    # simulated the same way; a different member's row is never part of
+    # this member's candidate set).
+    def test_different_member_not_in_candidate_set_no_conflict(self):
+        d = date(2026, 7, 24)
+        session = _FakeSession([])  # arun's Full-Day is not in mayurika's candidate set
+        result = find_overlapping_leave_records(session, "mayurika", "Full-Day", d, d, None, None)
+        self.assertEqual(result, [])
+
+
+class AssertNoLeaveOverlapTests(unittest.TestCase):
+    def test_raises_leave_overlap_error_with_conflicts_on_overlap(self):
+        d = date(2026, 7, 24)
+        existing = FakeLeaveRecord("Full-Day", d, d)
+        session = _FakeSession([existing])
+        with self.assertRaises(LeaveOverlapError) as ctx:
+            assert_no_leave_overlap(session, "mayurika", "Full-Day", d, d, None, None)
+        self.assertEqual(ctx.exception.conflicts, [existing])
+
+    def test_does_not_raise_when_no_overlap(self):
+        d = date(2026, 7, 24)
+        session = _FakeSession([])
+        assert_no_leave_overlap(session, "mayurika", "Full-Day", d, d, None, None)  # does not raise
+
+
+class LeaveOverlapResponseBodyTests(unittest.TestCase):
+    # 20. Conflict response omits purpose.
+    def test_response_body_shape_and_no_purpose_field(self):
+        target = date(2026, 7, 24)
+        record = FakeLeaveRecord("Full-Day", target, target)
+        body = leave_overlap_response_body([record])
+        self.assertEqual(body["error"], "leave_overlap")
+        self.assertEqual(
+            body["message"],
+            "This member already has leave that overlaps the selected date or time.",
+        )
+        self.assertEqual(len(body["conflicts"]), 1)
+        conflict = body["conflicts"][0]
+        self.assertEqual(
+            set(conflict.keys()),
+            {"leave_id", "leave_type", "start_date", "end_date", "start_time", "end_time"},
+        )
+        self.assertNotIn("purpose", conflict)
+        self.assertNotIn("status", conflict)
+
+    def test_empty_conflicts_list(self):
+        body = leave_overlap_response_body([])
+        self.assertEqual(body["conflicts"], [])
+
+
+class AcquireMemberLeaveLockTests(unittest.TestCase):
+    """Required case 21 (concurrency safety). True concurrent-request
+    testing requires a live PostgreSQL connection and is not attempted in
+    this environment (backend/tests/test_member_leave.py never opens one —
+    see the module docstring); this confirms acquire_member_leave_lock
+    issues the expected transaction-scoped advisory lock statement, keyed
+    on member_key, as the best available DB-free verification."""
+
+    def test_issues_pg_advisory_xact_lock_keyed_on_member(self):
+        session = _FakeSession([])
+        acquire_member_leave_lock(session, "mayurika")
+        self.assertEqual(len(session.executed), 1)
+        statement, params = session.executed[0]
+        self.assertIn("pg_advisory_xact_lock", statement)
+        self.assertIn("hashtext", statement)
+        self.assertEqual(params, {"member_key": "mayurika"})
 
 
 if __name__ == "__main__":

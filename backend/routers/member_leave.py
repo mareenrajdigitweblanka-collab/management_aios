@@ -29,6 +29,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy import asc
 from sqlalchemy.orm import Session
 
@@ -151,7 +152,16 @@ def create_member_leave_record(
     snapshotted right here, at creation, not left NULL pending a later
     approval step. A Short Leave create is blocked before it is stored if
     it would push the member's active monthly Short Leave total over the
-    cap."""
+    cap.
+
+    member-leave-overlap-prevention (2026-07-17): before any of that, this
+    member's leave-write transaction is serialized
+    (leave_logic.acquire_member_leave_lock) and the proposed leave is
+    checked against every other active leave record the member already
+    holds (leave_logic.assert_no_leave_overlap) — a 409 is returned before
+    anything is written if it overlaps. The lock + overlap check + cap
+    check + insert all happen in this one request's transaction, committed
+    together, so two concurrent same-member creates can never both pass."""
     _validate_member_key(member_key)
 
     try:
@@ -164,6 +174,24 @@ def create_member_leave_record(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    leave_logic.acquire_member_leave_lock(db, member_key)
+
+    try:
+        leave_logic.assert_no_leave_overlap(
+            db,
+            member_key,
+            payload.leave_type,
+            payload.start_date,
+            payload.end_date,
+            payload.start_time,
+            payload.end_time,
+        )
+    except leave_logic.LeaveOverlapError as exc:
+        db.rollback()
+        return JSONResponse(
+            status_code=409, content=leave_logic.leave_overlap_response_body(exc.conflicts)
+        )
 
     effective_minutes = leave_logic.compute_effective_leave_minutes(
         payload.leave_type, payload.start_date, payload.end_date, payload.start_time, payload.end_time
@@ -216,9 +244,16 @@ def update_member_leave_record(
     convention as task category immutability). A soft-deleted record
     cannot be edited (_get_active_record_or_404 excludes it, returning
     404). Any date/time field change re-validates the leave shape,
-    recalculates effective_leave_minutes in this same transaction, and — for
-    Short Leave — re-checks the *destination* month's active cap, excluding
-    this record's own prior contribution."""
+    re-checks the edit's destination date/time against every other active
+    leave record this member holds (leave_logic.assert_no_leave_overlap,
+    excluding this record's own id — member-leave-overlap-prevention,
+    2026-07-17; returns 409 leave_overlap before anything is written if it
+    overlaps), recalculates effective_leave_minutes in this same
+    transaction, and — for Short Leave — re-checks the *destination*
+    month's active cap, excluding this record's own prior contribution.
+    A purpose/external_reference/updated_by-only edit (no date/time field
+    present) never touches overlap or cap validation — the leave's actual
+    occupied date/time did not change."""
     _validate_member_key(member_key)
     record = _get_active_record_or_404(db, member_key, leave_id)
 
@@ -241,6 +276,25 @@ def update_member_leave_record(
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        leave_logic.acquire_member_leave_lock(db, member_key)
+
+        try:
+            leave_logic.assert_no_leave_overlap(
+                db,
+                member_key,
+                record.leave_type,
+                new_start_date,
+                new_end_date,
+                new_start_time,
+                new_end_time,
+                exclude_leave_id=record.id,
+            )
+        except leave_logic.LeaveOverlapError as exc:
+            db.rollback()
+            return JSONResponse(
+                status_code=409, content=leave_logic.leave_overlap_response_body(exc.conflicts)
+            )
 
         new_effective_minutes = leave_logic.compute_effective_leave_minutes(
             record.leave_type, new_start_date, new_end_date, new_start_time, new_end_time

@@ -17,6 +17,7 @@ and docs/management-calendar-leave-copy-design.md.
 from datetime import date as date_type, time as time_type, timedelta
 from typing import List, Optional, Tuple
 
+from sqlalchemy import text as sa_text
 from sqlalchemy.orm import Session
 
 from backend.config import (
@@ -383,6 +384,259 @@ def leave_conflict_response_body(conflicts: List[MemberLeaveRecord]) -> dict:
     return {
         "error": "leave_conflict",
         "message": "This task conflicts with active leave.",
+        "conflicts": [
+            {
+                "leave_id": str(record.id),
+                "leave_type": record.leave_type,
+                "start_date": record.start_date.isoformat(),
+                "end_date": record.end_date.isoformat(),
+                "start_time": record.start_time.isoformat() if record.start_time else None,
+                "end_time": record.end_time.isoformat() if record.end_time else None,
+            }
+            for record in conflicts
+        ],
+    }
+
+
+# ── Leave-versus-leave overlap prevention (member-leave-overlap-prevention,
+# 2026-07-17) ─────────────────────────────────────────────────────────────
+#
+# Distinct from find_conflicting_active_leave() above, which blocks a TASK
+# save against active leave. This section blocks a member from ever holding
+# two overlapping active LEAVE records at once (the reported bug: two
+# Full-Day rows for the same member on the same date). Active leave
+# definition is unchanged: deleted_at IS NULL — there is no
+# Pending/Approved/Rejected/Cancelled workflow (2026-07-16 simplification
+# amendment); only soft-deleted rows are excluded.
+#
+# Full-Day dominance (per the approved overlap matrix): a Full-Day or
+# Multi-Day-included-weekday occupies the ENTIRE date for overlap purposes
+# and conflicts with any other active leave on that date, regardless of
+# that other record's own time window. This is deliberately NOT implemented
+# by reusing _leave_record_day_interval()'s 08:30-18:00 Full-Day window in
+# a plain interval-overlap test — an untimed Short Leave request outside
+# that configured window (e.g. a hypothetical 07:00 start) would then be
+# incorrectly treated as non-overlapping. Dominance is checked explicitly
+# instead, before any time-interval comparison is attempted.
+
+_FULL_DAY_DOMINANT_LEAVE_TYPES = ("Full-Day", "Multi-Day")
+_PARTIAL_DAY_LEAVE_TYPES = ("Short Leave", "Half-Day First", "Half-Day Second")
+
+
+class LeaveOverlapError(Exception):
+    """Raised by assert_no_leave_overlap when the proposed leave overlaps
+    one or more of the member's existing active leave records. Callers
+    catch this and translate it into an HTTP 409 using
+    leave_overlap_response_body(exc.conflicts)."""
+
+    def __init__(self, conflicts: List[MemberLeaveRecord]):
+        self.conflicts = conflicts
+        super().__init__("Proposed leave overlaps existing active leave.")
+
+
+def _leave_dates(leave_type: str, start_date: date_type, end_date: date_type) -> List[date_type]:
+    """The set of calendar dates a leave record (proposed or stored)
+    actually occupies for overlap purposes. Multi-Day expands to its
+    included Monday-Friday dates only (Saturday/Sunday are never occupied —
+    OVERLAP MATRIX "Allow" case 4); every other leave_type occupies exactly
+    its single start_date (start_date == end_date is already guaranteed for
+    these types by the model/schema CHECK constraints)."""
+    if leave_type == "Multi-Day":
+        return expand_weekdays(start_date, end_date)
+    return [start_date]
+
+
+def _partial_day_minutes_interval(
+    leave_type: str, start_time: Optional[time_type], end_time: Optional[time_type]
+) -> Tuple[int, int]:
+    """(start_minutes, end_minutes) for a partial-day leave_type only —
+    never call this with a Full-Day-dominant leave_type (see
+    _FULL_DAY_DOMINANT_LEAVE_TYPES; dominance is decided before this is
+    reached). Half-Day windows use the fixed configured leave-system clock
+    period, not any caller-supplied time."""
+    if leave_type == "Short Leave":
+        return (_minutes_since_midnight(start_time), _minutes_since_midnight(end_time))
+    if leave_type == "Half-Day First":
+        return (
+            _minutes_since_midnight(LEAVE_HALF_DAY_FIRST_START),
+            _minutes_since_midnight(LEAVE_HALF_DAY_FIRST_END),
+        )
+    if leave_type == "Half-Day Second":
+        return (
+            _minutes_since_midnight(LEAVE_HALF_DAY_SECOND_START),
+            _minutes_since_midnight(LEAVE_HALF_DAY_SECOND_END),
+        )
+    raise ValueError(
+        f"_partial_day_minutes_interval called with non-partial-day leave_type '{leave_type}'."
+    )
+
+
+def _leave_pair_overlaps_on_shared_date(
+    a_leave_type: str,
+    a_start_time: Optional[time_type],
+    a_end_time: Optional[time_type],
+    b_leave_type: str,
+    b_start_time: Optional[time_type],
+    b_end_time: Optional[time_type],
+) -> bool:
+    """True if leave A and leave B conflict on a calendar date both are
+    known to occupy (caller has already established the shared date via
+    _leave_dates()). Implements the approved OVERLAP MATRIX:
+
+    - Either side is Full-Day or Multi-Day (that date) -> always overlaps,
+      independent of the other side's leave_type or time (FULL-DAY
+      DOMINANCE — matrix rows 1-5).
+    - Otherwise both sides are partial-day (Short Leave / Half-Day First /
+      Half-Day Second) -> half-open time-interval overlap:
+      new_start < existing_end AND new_end > existing_start (matrix rows
+      6-10; adjacent periods such as 10:00-11:00 touching 09:00-10:00 are
+      NOT an overlap, and First-Half/Second-Half never overlap each other
+      since their configured windows do not touch)."""
+    if a_leave_type in _FULL_DAY_DOMINANT_LEAVE_TYPES or b_leave_type in _FULL_DAY_DOMINANT_LEAVE_TYPES:
+        return True
+
+    a_start, a_end = _partial_day_minutes_interval(a_leave_type, a_start_time, a_end_time)
+    b_start, b_end = _partial_day_minutes_interval(b_leave_type, b_start_time, b_end_time)
+    return a_start < b_end and b_start < a_end
+
+
+def find_overlapping_leave_records(
+    db: Session,
+    member_key: str,
+    leave_type: str,
+    start_date: date_type,
+    end_date: date_type,
+    start_time: Optional[time_type],
+    end_time: Optional[time_type],
+    exclude_leave_id=None,
+    lock: bool = False,
+) -> List[MemberLeaveRecord]:
+    """CENTRAL HELPER (member-leave-overlap-prevention, CORE RULE) — the one
+    place both create and edit leave-overlap validation is implemented, so
+    POST and PUT in backend/routers/member_leave.py never duplicate this
+    logic.
+
+    Returns every active (deleted_at IS NULL) leave record belonging to
+    member_key that overlaps the proposed leave described by
+    (leave_type, start_date, end_date, start_time, end_time), per the
+    approved OVERLAP MATRIX. Does not mutate any row.
+
+    - exclude_leave_id: pass the record's own id on an edit so it is never
+      compared against itself (matrix "Allow" — self is not a conflict).
+    - lock: when True, takes SELECT ... FOR UPDATE on the candidate rows,
+      the same row-locking convention already used by
+      assert_active_short_leave_monthly_cap_not_exceeded above. Always
+      called with lock=True from assert_no_leave_overlap, which callers use
+      inside a transaction that has also acquired acquire_member_leave_lock
+      (the member-scoped advisory lock) — the row lock alone cannot close
+      the race between two brand-new leave records that would only overlap
+      each other (neither yet exists to be locked); the advisory lock is
+      what actually serializes that case. See acquire_member_leave_lock's
+      docstring."""
+    proposed_dates = set(_leave_dates(leave_type, start_date, end_date))
+    if not proposed_dates:
+        return []
+
+    query = db.query(MemberLeaveRecord).filter(
+        MemberLeaveRecord.member_key == member_key,
+        MemberLeaveRecord.deleted_at.is_(None),
+        MemberLeaveRecord.start_date <= end_date,
+        MemberLeaveRecord.end_date >= start_date,
+    )
+    if exclude_leave_id is not None:
+        query = query.filter(MemberLeaveRecord.id != exclude_leave_id)
+    if lock:
+        query = query.with_for_update()
+
+    candidates = query.all()
+    # Redundant Python-side exclude guard (the query above already excludes
+    # exclude_leave_id at the SQL layer) — kept so this self-exclusion rule
+    # is independently verifiable by backend/tests/test_member_leave.py's
+    # DB-free fake-session tests, matching this codebase's established
+    # testing convention (no test in this repo opens a live database
+    # connection).
+    if exclude_leave_id is not None:
+        candidates = [record for record in candidates if record.id != exclude_leave_id]
+    if not candidates:
+        return []
+
+    conflicts = []
+    for record in candidates:
+        record_dates = set(_leave_dates(record.leave_type, record.start_date, record.end_date))
+        if not (proposed_dates & record_dates):
+            continue
+        if _leave_pair_overlaps_on_shared_date(
+            leave_type, start_time, end_time,
+            record.leave_type, record.start_time, record.end_time,
+        ):
+            conflicts.append(record)
+
+    return conflicts
+
+
+def acquire_member_leave_lock(db: Session, member_key: str) -> None:
+    """Transaction-scoped PostgreSQL advisory lock (pg_advisory_xact_lock)
+    keyed on a hash of member_key. Must be called, inside the write
+    transaction, before find_overlapping_leave_records/
+    assert_no_leave_overlap on every leave create/edit path.
+
+    Why this exists in addition to the SELECT ... FOR UPDATE row lock in
+    find_overlapping_leave_records: a row lock can only lock rows that
+    already exist. Two concurrent requests creating a member's very first
+    leave record (or two brand-new records that only overlap each other and
+    nothing pre-existing) would each run their overlap SELECT against zero
+    matching rows, both find no conflict, and both commit — a plain
+    unlocked SELECT-then-INSERT race the task requirements explicitly call
+    out as insufficient. The advisory lock closes this: it is member-scoped
+    (not row-scoped), so a second concurrent transaction for the same
+    member_key blocks at this call until the first transaction commits or
+    rolls back, at which point its own overlap check sees the first
+    transaction's now-committed row. Automatically released at
+    COMMIT/ROLLBACK (the _xact_ variant, not pg_advisory_lock) — no
+    explicit unlock call is needed and a crashed request can never leave
+    the lock held.
+
+    Requires a PostgreSQL session. Not exercised by backend/tests/
+    test_member_leave.py, which — per this repo's established testing
+    convention — never opens a live database connection; documented as a
+    known limitation in validation/member-leave-overlap-prevention-check-2026-07-17.md."""
+    db.execute(sa_text("SELECT pg_advisory_xact_lock(hashtext(:member_key))"), {"member_key": member_key})
+
+
+def assert_no_leave_overlap(
+    db: Session,
+    member_key: str,
+    leave_type: str,
+    start_date: date_type,
+    end_date: date_type,
+    start_time: Optional[time_type],
+    end_time: Optional[time_type],
+    exclude_leave_id=None,
+) -> None:
+    """Raises LeaveOverlapError if the proposed leave overlaps any of
+    member_key's existing active leave records. Always locks the candidate
+    rows (lock=True) — callers must have already called
+    acquire_member_leave_lock(db, member_key) earlier in the same
+    transaction so the two locks together close the race described in
+    acquire_member_leave_lock's docstring."""
+    conflicts = find_overlapping_leave_records(
+        db, member_key, leave_type, start_date, end_date, start_time, end_time,
+        exclude_leave_id=exclude_leave_id, lock=True,
+    )
+    if conflicts:
+        raise LeaveOverlapError(conflicts)
+
+
+def leave_overlap_response_body(conflicts: List[MemberLeaveRecord]) -> dict:
+    """Builds the 409 leave_overlap response body (member-leave-overlap-
+    prevention CORE RULE). Deliberately omits `purpose` and any other
+    free-text field beyond leave_id/leave_type/date/time, matching
+    leave_conflict_response_body's convention above."""
+    return {
+        "error": "leave_overlap",
+        "message": (
+            "This member already has leave that overlaps the selected date or time."
+        ),
         "conflicts": [
             {
                 "leave_id": str(record.id),

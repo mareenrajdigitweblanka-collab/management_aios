@@ -434,6 +434,33 @@ class LeaveConflictResponseOut(BaseModel):
     conflicts: list[LeaveConflictItemOut]
 
 
+class LeaveOverlapItemOut(BaseModel):
+    """Same shape as LeaveConflictItemOut — kept as its own class (rather
+    than reused) since the two 409 contracts (leave-vs-task,
+    leave-vs-leave) are documented independently and may diverge later."""
+
+    leave_id: str
+    leave_type: str
+    start_date: date_type
+    end_date: date_type
+    start_time: Optional[time_type] = None
+    end_time: Optional[time_type] = None
+
+
+class LeaveOverlapResponseOut(BaseModel):
+    """Documents the exact 409 body shape returned by
+    backend/routers/member_leave.py (create and update) when a proposed
+    leave record overlaps another active leave record already held by the
+    same member (member-leave-overlap-prevention, 2026-07-17). Not used as
+    a FastAPI response_model (the routes return a JSONResponse directly) —
+    this schema exists so the contract is typed and testable. Deliberately
+    has no `purpose` field on either the response or LeaveOverlapItemOut."""
+
+    error: Literal["leave_overlap"] = "leave_overlap"
+    message: str
+    conflicts: list[LeaveOverlapItemOut]
+
+
 class StaffRecordOut(BaseModel):
     """Dashboard-facing staff record shape — exactly the 16 approved fields
     (member-aios/staff-data/data-maps/staff-field-map-draft.md). Internal
