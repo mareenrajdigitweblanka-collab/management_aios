@@ -1,62 +1,10 @@
-    /* ── Tab bar ──
-       Phase 1 polish: desktop keeps a single row via a horizontal scroller
-       (same mechanism as mobile) instead of silently wrapping to a second
-       row and shifting the sticky bar's height. */
-    .tab-bar {
-      background: var(--surface);
-      border-bottom: 2px solid var(--border);
-      display: flex;
-      align-items: flex-end;
-      flex-wrap: nowrap;
-      gap: 0;
-      padding: 0 28px;
-      position: sticky;
-      top: 60px;
-      z-index: 90;
-      overflow-x: auto;
-      scrollbar-width: thin;
-      flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .05);
-    }
-
-    .tab-btn {
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
-      padding: 14px 15px 11px;
-      font-size: .81rem;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      white-space: nowrap;
-      flex: 0 0 auto;
-      transition: color .15s, border-color .15s, background .15s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: -2px;
-      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-    }
-
-    .tab-btn:hover {
-      color: var(--text);
-      background: var(--surface-tint);
-    }
-
-    .tab-btn.active {
-      color: var(--accent);
-      font-weight: 700;
-      border-bottom-color: var(--accent);
-      background: var(--accent-light);
-    }
-
-    .tab-btn:focus-visible {
-      outline: none;
-      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
-      position: relative;
-      z-index: 1;
-    }
-
+    /* ── Sidebar item status badge (2026-07-17) ──
+       Formerly the top tab-strip's ".tab-badge"; the top tab strip (Root
+       AIOS / File Map as separate tabs above the page) was removed and
+       those items moved into the application sidebar's OVERVIEW group
+       (see .app-nav-btn-badge below). The badge component itself — e.g.
+       Root AIOS's "Needs Confirmation" indicator — is unchanged visually,
+       just relocated into the sidebar row. */
     .tab-badge {
       font-size: var(--font-2xs);
       font-weight: 700;
@@ -78,24 +26,41 @@
       color: var(--pass);
     }
 
-    /* ── Search strip ── */
-    .search-strip {
+    /* ── Workspace toolbar (2026-07-17 redesign) ──
+       Replaces the former full-bleed .search-strip + .safety-strip pair
+       (two stacked, visually disconnected bars) with one compact row:
+       search tools on the left, the read-only notice on the right. Same
+       #searchInput/#searchClear/#searchResults IDs and search-hint content
+       as before — navigation.js's doSearch()/data-searchable logic is
+       untouched; only presentation changed. Wraps to a stacked layout on
+       narrow screens (see media query below). */
+    .workspace-toolbar {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 9px 28px;
+      padding: 10px 28px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
       flex-shrink: 0;
+    }
+
+    .search-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1 1 320px;
+      min-width: 0;
     }
 
     #searchInput {
       flex: 1;
-      max-width: 400px;
-      padding: 7px 14px;
+      max-width: 360px;
+      padding: 6px 12px;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      font-size: .84rem;
+      font-size: var(--font-sm);
       background: var(--surface-tint);
       color: var(--text);
       outline: none;
@@ -108,19 +73,21 @@
 
     #searchInput:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+      box-shadow: var(--focus-ring);
       background: var(--surface);
     }
 
     #searchClear {
-      padding: 7px 14px;
+      padding: 6px 12px;
       border: 1px solid var(--border);
       border-radius: var(--radius);
       background: var(--surface);
       color: var(--muted);
-      font-size: .81rem;
+      font-size: var(--font-sm);
+      font-weight: 600;
       cursor: pointer;
       transition: background .12s, border-color .12s;
+      flex-shrink: 0;
     }
 
     #searchClear:hover {
@@ -131,27 +98,89 @@
     #searchClear:focus-visible,
     #searchInput:focus-visible {
       outline: none;
+      box-shadow: var(--focus-ring);
     }
 
     #searchResults {
-      font-size: .78rem;
+      font-size: var(--font-xs);
       color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    .search-hint {
-      font-size: .75rem;
-      color: var(--muted-2);
+    /* Search helper copy is now an accessible description (aria-describedby)
+       rather than a third visible row of text — visually-hidden, not removed. */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+      padding: 0;
+      margin: -1px;
+    }
+
+    /* ── Read-only notice (redesigned §11: subtle informational banner) ── */
+    .readonly-notice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 1 480px;
+      min-width: 0;
+      background: var(--surface-tint);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px 12px;
+    }
+
+    .readonly-notice-icon {
+      font-size: .78rem;
+      flex-shrink: 0;
+    }
+
+    .readonly-notice-text {
+      font-size: var(--font-2xs);
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .readonly-notice-text strong {
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 900px) {
+      .workspace-toolbar {
+        padding: 10px 16px;
+      }
+
+      .readonly-notice {
+        flex-basis: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .search-tools {
+        flex-wrap: wrap;
+      }
+
+      #searchInput {
+        max-width: none;
+        flex-basis: 100%;
+      }
     }
 
     /* ── Tab panels ── */
     .tab-main {
       flex: 1;
+      min-width: 0;
     }
 
     .tab-panel {
       display: none;
-      padding: 28px 32px 40px;
-      max-width: 1240px;
+      padding: var(--space-7) var(--space-7) var(--space-8);
+      max-width: var(--content-max-width);
       margin: 0 auto;
     }
 
@@ -160,32 +189,45 @@
     }
 
 
-    /* ── Application member sidebar (2026-07-17 navigation restructure) ──
-       Member/panel navigation moved out of the top tab bar into this
-       persistent left application sidebar. ONE shared navigation controller
-       (js/navigation.js) drives both the remaining global top tabs
-       (Root AIOS, File Map) and these member items over the same .tab-panel
-       set — no per-member navigation code. This is the APPLICATION sidebar
-       (member/panel navigation); it is deliberately distinct from each
-       calendars own internal .msc-sidebar (Create / mini-calendar / legend).
-       .tab-main already carries flex:1, so activating .app-body as a flex row
-       is all that is needed to give the calendar the remaining width — the
-       .tab-main width rule is not duplicated here. */
+    /* ── Application sidebar (2026-07-17 professional dashboard redesign) ──
+       ONE persistent left sidebar drives the entire dashboard: OVERVIEW
+       (Root AIOS, File Map — formerly a separate top tab strip), MEMBERS
+       (Mayurika, Suman, Arun, Rajiv, Paraparan — order preserved exactly),
+       and DATA (Staff Data). One shared navigation controller
+       (js/navigation.js) drives every item over the same .tab-panel set —
+       no per-item navigation code. This is the APPLICATION sidebar (page
+       navigation); it is deliberately distinct from each calendar's own
+       internal .msc-sidebar (Create / mini-calendar / legend).
+       Desktop (≥1024px): static column, width var(--sidebar-width).
+       <1024px: fixed-position drawer, toggled via .app-sidebar-toggle in
+       the header and closed by Escape/backdrop/item-select (navigation.js). */
     .app-body {
       display: flex;
       align-items: flex-start;
       gap: 0;
     }
 
+    .app-sidebar-backdrop {
+      display: none;
+    }
+
     .app-sidebar {
-      flex: 0 0 210px;
+      flex: 0 0 var(--sidebar-width);
       align-self: stretch;
+      position: sticky;
+      top: var(--header-height);
+      height: calc(100vh - var(--header-height));
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 2px;
-      padding: 16px 10px;
-      background: var(--surface);
+      padding: var(--space-4) var(--space-3);
+      background: var(--sidebar-bg);
       border-right: 1px solid var(--border);
+    }
+
+    .app-sidebar-group + .app-sidebar-group {
+      margin-top: var(--space-3);
     }
 
     .app-sidebar-title {
@@ -194,25 +236,61 @@
       text-transform: uppercase;
       letter-spacing: .07em;
       color: var(--muted-2);
-      padding: 4px 12px 8px;
+      padding: 4px 10px 8px;
     }
 
     .app-nav-btn {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1px;
+      align-items: center;
+      gap: 10px;
       width: 100%;
       text-align: left;
       border: none;
+      border-left: 3px solid transparent;
       background: transparent;
       color: var(--text);
-      font-size: .86rem;
+      font-size: var(--font-base);
       font-weight: 600;
-      padding: 9px 12px;
+      padding: 7px 10px 7px 9px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background .12s ease, color .12s ease;
+      transition: background .12s ease, color .12s ease, border-color .12s ease;
+    }
+
+    .app-nav-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+
+    .app-nav-btn.active .app-nav-icon {
+      background: var(--accent-light);
+      border-color: #bfdbfe;
+      color: var(--accent);
+    }
+
+    .app-nav-btn-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .app-nav-btn-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .app-nav-btn:hover {
@@ -222,11 +300,12 @@
     .app-nav-btn.active {
       background: var(--accent-light);
       color: var(--accent);
+      border-left-color: var(--accent);
     }
 
     .app-nav-btn:focus-visible {
       outline: none;
-      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
+      box-shadow: var(--focus-ring);
     }
 
     .app-nav-btn-sub {
@@ -239,47 +318,50 @@
       color: var(--accent);
     }
 
-    .app-nav-sep {
-      height: 1px;
-      background: var(--border);
-      margin: 8px 10px;
+    .app-nav-btn-badge {
+      flex-shrink: 0;
     }
 
-    /* Narrow screens: the application sidebar becomes a horizontal, keyboard-
-       reachable, scrollable nav strip stacked above the content (no clipping,
-       no page-level horizontal overflow). */
-    @media (max-width: 768px) {
-      .app-body {
-        flex-direction: column;
-      }
-
+    /* <1024px: sidebar becomes a fixed drawer. body.sidebar-open toggles
+       visibility; navigation.js manages the class, aria-expanded, and
+       Escape/backdrop/item-select close behaviour. No page-level
+       horizontal overflow is introduced — the drawer is position:fixed,
+       out of normal document flow. */
+    @media (max-width: 1023px) {
       .app-sidebar {
-        flex: none;
-        width: 100%;
-        flex-direction: row;
-        align-items: center;
-        overflow-x: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 8px 10px;
-        gap: 4px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: min(var(--sidebar-width), 82vw);
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+        box-shadow: var(--shadow-hover);
+        padding-top: calc(var(--header-height) + var(--space-3));
       }
 
-      .app-sidebar-title {
-        display: none;
+      body.sidebar-open .app-sidebar {
+        transform: translateX(0);
       }
 
-      .app-nav-btn {
-        width: auto;
-        flex: 0 0 auto;
-        white-space: nowrap;
+      .app-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, .45);
+        z-index: 190;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease;
       }
 
-      .app-nav-btn-sub {
-        display: none;
+      body.sidebar-open .app-sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
       }
 
-      .app-nav-sep {
-        display: none;
+      body.sidebar-open {
+        overflow: hidden;
       }
     }

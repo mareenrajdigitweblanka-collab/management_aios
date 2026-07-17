@@ -84,6 +84,26 @@
       --status-error-bg: var(--blocked-bg);
       --status-error-border: #fca5a5;
       --status-error-text: var(--blocked);
+
+      /* ── Application shell tokens (Professional dashboard redesign, 2026-07-17) ──
+         Named aliases + shell-layout dimensions used by the header/sidebar/toolbar
+         redesign. Existing --pass/--amber/--blocked/etc. tokens above are unchanged;
+         these add semantic names and layout constants on top of them. */
+      --success: var(--pass);
+      --success-bg: var(--pass-bg);
+      --warning: var(--amber);
+      --warning-bg: var(--amber-bg);
+      --error: var(--blocked);
+      --error-bg: var(--blocked-bg);
+
+      --surface-elevated: #ffffff;
+      --sidebar-bg: var(--surface-tint-2);
+      --focus-ring: 0 0 0 3px rgba(37, 99, 235, .25);
+      --radius-lg: 14px;
+
+      --header-height: 56px;
+      --sidebar-width: 252px;
+      --content-max-width: 1240px;
     }
 
     html {

@@ -1,44 +1,83 @@
-    /* ── Top bar ── */
+    /* ── Top bar (compact application header, 2026-07-17 redesign) ──
+       Height reduced 60px → var(--header-height) (56px); metadata weight
+       reduced; READ ONLY promoted to a standing pill that is never hidden
+       at any viewport (previously .topbar-right — including READ ONLY —
+       was hidden outright below 640px; that regression is fixed below). */
     .topbar {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: #e2e8f0;
-      padding: 0 28px;
-      height: 60px;
+      padding: 0 20px;
+      height: var(--header-height);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
       position: sticky;
       top: 0;
       z-index: 100;
       border-bottom: 1px solid var(--topbar-border);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, .2);
       flex-shrink: 0;
     }
 
     .topbar-left {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    /* Sidebar/drawer toggle — hidden on desktop (sidebar is always visible
+       there); shown at <1024px alongside the drawer rules in navigation.css. */
+    .app-sidebar-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border: 1px solid #334155;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, .05);
+      color: #e2e8f0;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .app-sidebar-toggle:hover {
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .app-sidebar-toggle:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .app-sidebar-toggle svg {
+      width: 18px;
+      height: 18px;
     }
 
     .topbar-logo {
-      font-size: 1.05rem;
+      font-size: .98rem;
       font-weight: 800;
       letter-spacing: .3px;
       color: #f1f5f9;
       display: flex;
       align-items: center;
       gap: 8px;
+      white-space: nowrap;
     }
 
     .topbar-logo::before {
       content: '';
       display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: var(--accent);
       box-shadow: 0 0 8px rgba(37, 99, 235, .7);
+      flex-shrink: 0;
     }
 
     .topbar-logo span {
@@ -47,31 +86,81 @@
 
     .topbar-sep {
       width: 1px;
-      height: 22px;
+      height: 18px;
       background: #334155;
+      flex-shrink: 0;
     }
 
     .topbar-sub {
-      font-size: .78rem;
+      font-size: .74rem;
       color: #94a3b8;
       letter-spacing: .01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .topbar-right {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: .75rem;
+      gap: 8px;
+      font-size: .72rem;
       color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .topbar-readonly-pill {
+      font-size: .66rem;
+      letter-spacing: .07em;
+      flex-shrink: 0;
+    }
+
+    .topbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .topbar-commit {
       background: rgba(255, 255, 255, .07);
       border: 1px solid #334155;
       border-radius: var(--radius-sm);
-      padding: 3px 9px;
+      padding: 2px 8px;
       font-family: ui-monospace, monospace;
-      font-size: .73rem;
+      font-size: .7rem;
       color: #7dd3fc;
+    }
+
+    .topbar-date {
+      white-space: nowrap;
+    }
+
+    /* Narrow header: drop the least-essential metadata first, but the
+       product identity and the READ ONLY pill are never hidden. */
+    @media (max-width: 900px) {
+      .topbar-sub {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-sidebar-toggle {
+        display: inline-flex;
+      }
+
+      .topbar {
+        padding: 0 14px;
+      }
+
+      .topbar-date,
+      .topbar-meta .topbar-sep {
+        display: none;
+      }
+    }
+
+    @media (min-width: 641px) and (max-width: 1023px) {
+      .app-sidebar-toggle {
+        display: inline-flex;
+      }
     }
 

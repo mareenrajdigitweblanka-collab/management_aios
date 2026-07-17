@@ -16,77 +16,115 @@
 <body>
 
   <!-- ═══════════════════════════════════
-     TOP BAR
+     TOP BAR — compact application header (2026-07-17 redesign)
 ═══════════════════════════════════ -->
   <header class="topbar">
     <div class="topbar-left">
+      <button type="button" class="app-sidebar-toggle" id="sidebarToggle" aria-expanded="false"
+        aria-controls="appSidebar" aria-label="Toggle navigation menu">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          aria-hidden="true">
+          <path d="M3 5.5h14M3 10h14M3 14.5h14" />
+        </svg>
+      </button>
       <span class="topbar-logo">Management <span>AIOS</span></span>
       <div class="topbar-sep"></div>
       <span class="topbar-sub">Dashboard v0.1 — Internal Build</span>
     </div>
     <div class="topbar-right">
-      <span class="badge badge-viewonly" style="font-size:.7rem;letter-spacing:.07em;">READ ONLY</span>
-      <div class="topbar-sep" style="height:18px;"></div>
-      <span>Branch: <strong style="color:#e2e8f0;">individual-aios</strong></span>
-      <div class="topbar-sep" style="height:18px;"></div>
-      <span>Commit:</span>
-      <span class="topbar-commit">d649652</span>
-      <div class="topbar-sep" style="height:18px;"></div>
-      <span style="color:#64748b;">2026-07-07</span>
+      <span class="badge badge-viewonly topbar-readonly-pill">READ ONLY</span>
+      <div class="topbar-meta">
+        <div class="topbar-sep"></div>
+        <span>Branch: <strong style="color:#e2e8f0;">individual-aios</strong></span>
+        <div class="topbar-sep"></div>
+        <span>Commit:</span>
+        <span class="topbar-commit">d649652</span>
+        <span class="topbar-date">2026-07-07</span>
+      </div>
     </div>
   </header>
 
   <!-- ═══════════════════════════════════
-     TAB BAR
-═══════════════════════════════════ -->
-  <nav class="tab-bar" role="tablist" aria-label="Dashboard tabs">
-    <button class="tab-btn active" data-tab="root-aios" role="tab" aria-selected="true">
-      Root AIOS
-      <span class="tab-badge tab-badge-amber" title="Technical result: PASS-AMBER">Needs Confirmation</span>
-    </button>
-    <button class="tab-btn" data-tab="file-map" role="tab" aria-selected="false">
-      File Map
-    </button>
-  </nav>
-
-  <!-- ═══════════════════════════════════
-     SEARCH STRIP
-═══════════════════════════════════ -->
-  <div class="search-strip">
-    <input id="searchInput" type="search" placeholder="Search across all tabs…" autocomplete="off" />
-    <button id="searchClear">Clear</button>
-    <span id="searchResults"></span>
-    <span class="search-hint" title="Examples: verify, blocked, arun, draft">Search by person, topic, task, or
-      status.</span>
-  </div>
-
-  <!-- ═══════════════════════════════════
-     SAFETY NOTE STRIP
-═══════════════════════════════════ -->
-  <div class="safety-strip" role="note" aria-label="Read-only safety note">
-    <span class="safety-strip-icon" aria-hidden="true">&#128274;</span>
-    <span class="safety-strip-text"><strong>This dashboard is a read-only internal build.</strong> Sensitive HR data,
-      leave records, onboarding records, KPI scores, staff personal data, salary, health, PDPA, candidate, disciplinary,
-      and production data are not shown.</span>
-  </div>
-
-  <!-- ═══════════════════════════════════
-     TAB PANELS
-═══════════════════════════════════ -->
-  <!-- ═══════════════════════════════════
-     APPLICATION BODY — member sidebar navigation + panels (2026-07-17)
+     APPLICATION BODY — sidebar navigation + workspace (2026-07-17)
+     Root AIOS / File Map moved from the former top tab strip into the
+     sidebar's OVERVIEW group (see below); the sidebar now drives all
+     panel navigation through one shared controller (js/navigation.js).
      ═══════════════════════════════════ -->
   <div class="app-body">
-    <nav class="app-sidebar" aria-label="Member navigation">
-      <div class="app-sidebar-title">Members</div>
-      <button type="button" class="app-nav-btn" data-tab="mayurika-hr">Mayurika<span class="app-nav-btn-sub">HR</span></button>
-      <button type="button" class="app-nav-btn" data-tab="suman-recruitment">Suman<span class="app-nav-btn-sub">Recruitment</span></button>
-      <button type="button" class="app-nav-btn" data-tab="arun-implementation">Arun<span class="app-nav-btn-sub">Implementation</span></button>
-      <button type="button" class="app-nav-btn" data-tab="rajiv-blocked">Rajiv<span class="app-nav-btn-sub">Admin</span></button>
-      <button type="button" class="app-nav-btn" data-tab="paraparan">Paraparan</button>
-      <button type="button" class="app-nav-btn" data-tab="staff-data">Staff Data</button>
+    <div class="app-sidebar-backdrop" id="sidebarBackdrop"></div>
+    <nav class="app-sidebar" id="appSidebar" aria-label="Dashboard navigation">
+      <div class="app-sidebar-group">
+        <div class="app-sidebar-title">Overview</div>
+        <button type="button" class="app-nav-btn active" data-tab="root-aios" aria-current="page">
+          <span class="app-nav-icon" aria-hidden="true">RA</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Root AIOS</span></span>
+          <span class="tab-badge tab-badge-amber app-nav-btn-badge" title="Technical result: PASS-AMBER">Needs
+            Confirmation</span>
+        </button>
+        <button type="button" class="app-nav-btn" data-tab="file-map">
+          <span class="app-nav-icon" aria-hidden="true">FM</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">File Map</span></span>
+        </button>
+      </div>
+      <div class="app-sidebar-group">
+        <div class="app-sidebar-title">Members</div>
+        <button type="button" class="app-nav-btn" data-tab="mayurika-hr">
+          <span class="app-nav-icon" aria-hidden="true">M</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Mayurika</span><span
+              class="app-nav-btn-sub">HR</span></span>
+        </button>
+        <button type="button" class="app-nav-btn" data-tab="suman-recruitment">
+          <span class="app-nav-icon" aria-hidden="true">S</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Suman</span><span
+              class="app-nav-btn-sub">Recruitment</span></span>
+        </button>
+        <button type="button" class="app-nav-btn" data-tab="arun-implementation">
+          <span class="app-nav-icon" aria-hidden="true">A</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Arun</span><span
+              class="app-nav-btn-sub">Implementation</span></span>
+        </button>
+        <button type="button" class="app-nav-btn" data-tab="rajiv-blocked">
+          <span class="app-nav-icon" aria-hidden="true">R</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Rajiv</span><span
+              class="app-nav-btn-sub">Admin</span></span>
+        </button>
+        <button type="button" class="app-nav-btn" data-tab="paraparan">
+          <span class="app-nav-icon" aria-hidden="true">P</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Paraparan</span></span>
+        </button>
+      </div>
+      <div class="app-sidebar-group">
+        <div class="app-sidebar-title">Data</div>
+        <button type="button" class="app-nav-btn" data-tab="staff-data">
+          <span class="app-nav-icon" aria-hidden="true">SD</span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Staff Data</span></span>
+        </button>
+      </div>
     </nav>
   <main class="tab-main">
+
+    <!-- ═══════════════════════════════════
+       WORKSPACE TOOLBAR — compact search + read-only notice (2026-07-17)
+       Same #searchInput/#searchClear/#searchResults IDs and search logic
+       as before; only the layout/styling changed.
+    ═══════════════════════════════════ -->
+    <div class="workspace-toolbar">
+      <div class="search-tools" role="search">
+        <label for="searchInput" class="visually-hidden">Search across all tabs</label>
+        <input id="searchInput" type="search" placeholder="Search across all tabs…" autocomplete="off"
+          aria-describedby="searchHint" />
+        <button id="searchClear" type="button">Clear</button>
+        <span id="searchResults"></span>
+        <span id="searchHint" class="visually-hidden">Search by person, topic, task, or status. Examples: verify,
+          blocked, arun, draft.</span>
+      </div>
+      <div class="readonly-notice" role="note" aria-label="Read-only safety note">
+        <span class="readonly-notice-icon" aria-hidden="true">&#128274;</span>
+        <span class="readonly-notice-text"><strong>This dashboard is a read-only internal build.</strong> Sensitive
+          HR data, leave records, onboarding records, KPI scores, staff personal data, salary, health, PDPA,
+          candidate, disciplinary, and production data are not shown.</span>
+      </div>
+    </div>
 
     <!-- ══════════════════════════════════
        TAB 1 — ROOT AIOS

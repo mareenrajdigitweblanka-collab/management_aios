@@ -1,26 +1,20 @@
 /* navigation.js — application navigation controller. Extracted from the former
-   inline tab-switching IIFE (2026-07-17 frontend modularization) and extended so
-   ONE controller drives BOTH the remaining global top tabs (Root AIOS, File Map)
-   and the new left application member sidebar (Mayurika, Suman, Arun, Rajiv,
-   Paraparan, Staff Data) over the same single .tab-panel set. One source of truth
-   for the active panel — no per-member navigation code. Search + data-goto jump
-   behaviour preserved verbatim. Wired exactly once by app.js after DOMContentLoaded. */
+   inline tab-switching IIFE (2026-07-17 frontend modularization), then extended
+   for the professional dashboard redesign (2026-07-17) so ONE controller drives
+   the entire sidebar (Overview: Root AIOS/File Map, Members: Mayurika/Suman/
+   Arun/Rajiv/Paraparan, Data: Staff Data) over the same single .tab-panel set —
+   the former separate top tab strip was removed; every nav item is now an
+   .app-nav-btn. One source of truth for the active panel — no per-item
+   navigation code. Search + data-goto jump behaviour preserved verbatim.
+   Wired exactly once by app.js after DOMContentLoaded. */
 
 export function initNavigation() {
   'use strict';
 
-  /* Two button groups, one panel set. Top tabs keep role="tab"/aria-selected;
-     the sidebar member buttons use aria-current="page" for their active state. */
-  var tabBtns = document.querySelectorAll('.tab-btn');
   var sideNavBtns = document.querySelectorAll('.app-nav-btn');
   var tabPanels = document.querySelectorAll('.tab-panel');
 
   function activatePanel(targetId) {
-    tabBtns.forEach(function (btn) {
-      var on = btn.getAttribute('data-tab') === targetId;
-      btn.classList.toggle('active', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
     sideNavBtns.forEach(function (btn) {
       var on = btn.getAttribute('data-tab') === targetId;
       btn.classList.toggle('active', on);
@@ -32,15 +26,10 @@ export function initNavigation() {
     });
   }
 
-  tabBtns.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      activatePanel(btn.getAttribute('data-tab'));
-    });
-  });
-
   sideNavBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
       activatePanel(btn.getAttribute('data-tab'));
+      closeDrawer();
     });
   });
 
@@ -48,8 +37,50 @@ export function initNavigation() {
   document.querySelectorAll('[data-goto]').forEach(function (el) {
     el.addEventListener('click', function () {
       activatePanel(el.getAttribute('data-goto'));
+      closeDrawer();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+  });
+
+  /* ── Responsive sidebar drawer (<1024px) ──
+     Desktop keeps the sidebar as a static column (no toggle shown, see
+     base.css); below 1024px it becomes a fixed drawer opened via the
+     header toggle, closed by Escape, backdrop click, or selecting a nav
+     item (handled above). Focus returns to the toggle button on close so
+     keyboard users are never dropped into an invisible panel. */
+  var sidebarToggle = document.getElementById('sidebarToggle');
+  var sidebar = document.getElementById('appSidebar');
+  var backdrop = document.getElementById('sidebarBackdrop');
+
+  function openDrawer() {
+    document.body.classList.add('sidebar-open');
+    if (sidebarToggle) { sidebarToggle.setAttribute('aria-expanded', 'true'); }
+  }
+
+  function closeDrawer(returnFocus) {
+    if (!document.body.classList.contains('sidebar-open')) { return; }
+    document.body.classList.remove('sidebar-open');
+    if (sidebarToggle) {
+      sidebarToggle.setAttribute('aria-expanded', 'false');
+      if (returnFocus) { sidebarToggle.focus(); }
+    }
+  }
+
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', function () {
+      var isOpen = document.body.classList.contains('sidebar-open');
+      if (isOpen) { closeDrawer(false); } else { openDrawer(); }
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', function () { closeDrawer(false); });
+  }
+
+  document.addEventListener('keydown', function (evt) {
+    if (evt.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+      closeDrawer(true);
+    }
   });
 
   /* ── Search (across all panels) ── */
