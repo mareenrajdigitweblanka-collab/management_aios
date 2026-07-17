@@ -177,9 +177,16 @@
       min-width: 0;
     }
 
+    /* Desktop side gaps (2026-07-17 spacing reduction): horizontal padding
+       halved 32px → 16px per side (top/bottom unchanged). This is the sole
+       source of the sidebar↔content and content↔viewport-edge gaps at every
+       required breakpoint (1440/1366/1024/768/390px) — sidebar width (252px)
+       + max-width (1240px) = 1492px, wider than all of them, so max-width's
+       auto-centering margin never engages at these widths and was left
+       untouched rather than assumed to be the cause. */
     .tab-panel {
       display: none;
-      padding: var(--space-7) var(--space-7) var(--space-8);
+      padding: var(--space-7) calc(var(--space-7) / 2) var(--space-8) calc(var(--space-7) / 2);
       max-width: var(--content-max-width);
       margin: 0 auto;
     }
