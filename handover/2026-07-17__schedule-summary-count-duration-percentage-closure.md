@@ -68,10 +68,14 @@ parity plus live render (below).
 Vercel GitHub auto-deploy on push to `origin/main` (frontend `management-aios`, backend
 `management-aios-api`). No CLI deploy, no env/DB change required.
 
-- Commit hash: **<FILLED AT COMMIT — see final report>**
-- Push result: **<FILLED AFTER PUSH>**
-- Deployment / live result: **<FILLED AFTER DEPLOY — do not claim success until the four rows
-  render correctly at https://management-aios.vercel.app/>**
+- Commit hash: **`b568803`** ("Add schedule count and duration percentages").
+- Push result: **pushed to `origin/main`** (`f0dfdae..b568803`).
+- Deployment / live result: **LIVE, confirmed.** Backend
+  (`https://management-aios-api.vercel.app`) returns the four fields on daily/weekly/monthly for
+  all five members — mixed live split at paraparan monthly 2026-07 (count 29.41 / 70.59,
+  duration 23.02 / 76.98), N/A on empty periods (mayurika 2026-12-25, arun 2026-07). Frontend
+  raw HTML (`https://management-aios.vercel.app`) contains the four labels once each in the
+  correct order (below Total, above Tasks used) plus `formatPercentage`. See validation §10.
 
 ---
 
@@ -96,12 +100,14 @@ LLM can answer "how is Scheduled Count % computed and when is it N/A?" from thes
 
 ## One next step
 
-After the Vercel deploy of this commit is live, open a Daily card with only Unscheduled tasks
-and confirm Scheduled Count % = `0.00%` and Unscheduled Count % = `100.00%`, then record the
-live results in §10 of the validation file and the Deployment block above.
+Live confirmation is done (validation §10). Next: when a member naturally records a
+zero-scheduled day (or a card owner asks), open that Daily card in the dashboard and eyeball
+that Scheduled Count % renders `0.00%` and Unscheduled Count % renders `100.00%` — the only
+requirement example case (A/B/D boundaries) not yet observed on live data (currently covered by
+unit tests COUNT 2 / DURATION 6 / MATRIX 8). No code change is expected.
 
 ---
 
 ## Verdict
 
-Backend + tests + frontend static: **PASS**. Live: **pending deploy confirmation**.
+Backend + tests + frontend static + **live (commit `b568803`)**: **PASS**.

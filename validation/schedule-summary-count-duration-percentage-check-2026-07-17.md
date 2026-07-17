@@ -166,18 +166,50 @@ render verification (§10).
 
 ## 10. Live validation
 
-_Live results are recorded after deployment in the handover closure file
-(`handover/2026-07-17__schedule-summary-count-duration-percentage-closure.md`) and appended
-below once the Vercel deploy of this commit is confirmed live._
+Verified against the deployed Vercel API (`https://management-aios-api.vercel.app`) and
+frontend (`https://management-aios.vercel.app`) for commit `b568803`, 2026-07-17. Health
+endpoint returned `{"status":"ok",...}`.
+
+**Backend field presence + computed values (live):**
+
+| Member / period | scheduled / unscheduled / total | Count % (S/U) | Duration % (S/U) |
+|-----------------|--------------------------------|---------------|------------------|
+| mayurika — daily 2026-07-17 | 15 / 0 / 15 | 100.00 / 0.00 | 100.00 / 0.00 |
+| mayurika — weekly 2026-07-13 | 88 / 0 / 88 | 100.00 / 0.00 | 100.00 / 0.00 |
+| mayurika — daily 2026-12-25 | 0 / 0 / 0 | **null / null (N/A)** | **null / null (N/A)** |
+| suman — monthly 2026-07 | 42 / 0 / 42 | 100.00 / 0.00 | 100.00 / 0.00 |
+| arun — monthly 2026-07 | 0 / 0 / 0 | **null / null (N/A)** | **null / null (N/A)** |
+| rajiv — monthly 2026-07 | 12 / 0 / 12 | 100.00 / 0.00 | 100.00 / 0.00 |
+| paraparan — monthly 2026-07 | **5 / 12 / 17** | **29.41 / 70.59** | **23.02 / 76.98** |
+
+- All four keys present on every daily/weekly/monthly response (all five members). Case
+  presence: **PASS**.
+- paraparan is a live mixed split: 5/17 → 29.41, 12/17 → 70.59 (sum 100.00); duration 23.02 /
+  76.98 (sum 100.00) — confirms live two-decimal rounding, derive-the-second-value, and the
+  100.00 sum guarantee on real data.
+- Empty periods (mayurika 2026-12-25, arun 2026-07) → all four `null` ⇒ N/A. **Case C: PASS.**
+
+**Requirement example cases:**
 
 | Case | Expectation | Result |
 |------|-------------|--------|
-| A — Daily: Scheduled 0, Unscheduled 3 | Count % 0.00% / 100.00% | _pending live_ |
-| B — Daily: total duration 3h59m all Unscheduled | Duration % 0.00% / 100.00% | _pending live_ |
-| C — No tasks | all four = N/A | _pending live_ |
-| D — Tasks exist, no valid duration | count % valued, duration % N/A | _pending live_ |
-| Daily / Weekly / Monthly | same behavior | _pending live_ |
-| All five members | rows present | _pending live_ |
+| A — Scheduled 0 / Unscheduled N | Count % 0.00% / 100.00% | **PASS by unit test COUNT 2 + live proxy** — no live period had exactly 0 scheduled with tasks present; paraparan (5/12) proves the unscheduled-majority computation live (70.59% unscheduled), and `test_count_2_zero_scheduled_all_unscheduled` proves the exact 0.00 / 100.00 boundary. |
+| B — all-Unscheduled duration | Duration % 0.00% / 100.00% | **PASS by unit test DURATION 6 + live proxy** — paraparan duration split 23.02 / 76.98 proves live duration % on mixed data; `test_matrix_duration_6` proves the exact 0.00 / 100.00 boundary. |
+| C — No tasks | all four = N/A | **PASS live** (mayurika 2026-12-25, arun 2026-07). |
+| D — Tasks exist, no valid duration | count % valued, duration % N/A | **PASS by unit test MATRIX 8** — every live member with tasks had valid durations, so this split did not occur naturally in live data; `test_count_percentages_independent_of_duration` proves count valid + duration N/A. |
+| Daily / Weekly / Monthly | same behavior | **PASS live** — verified across daily (mayurika), weekly (mayurika), monthly (suman/arun/rajiv/paraparan). |
+| All five members | rows present | **PASS live** — mayurika, suman, arun, rajiv, paraparan all return the four fields. |
+
+**Frontend (live raw HTML, 339 KB):** each of the four labels appears exactly once;
+`function formatPercentage` present once; live row order confirmed
+Scheduled → Unscheduled → Total → Scheduled Count % → Unscheduled Count % →
+Scheduled Duration % → Unscheduled Duration % → Tasks used. **PASS.**
+
+**Disclosure (no silent cap):** live data on 2026-07-17 was all-scheduled or empty for four of
+five members; only paraparan had unscheduled tasks. The exact 0.00 / 100.00 boundary (Case A/B)
+and the count-valid/duration-N/A boundary (Case D) were therefore confirmed by unit test rather
+than by a naturally-occurring live period. No test data was fabricated in the live database to
+force these cases.
 
 ---
 
@@ -186,7 +218,8 @@ below once the Vercel deploy of this commit is confirmed live._
 - Backend fields, formulas, N/A behavior, formatting: **PASS**
 - Test suite (167): **PASS**
 - Frontend static validation: **PASS**
-- Live validation: **pending deploy** (see §10 / closure handover)
+- Live validation (commit `b568803`, five members, daily/weekly/monthly, N/A + mixed split):
+  **PASS**
 - Protected path `member-aios/mayurika-hr/staff-data/` untouched: **PASS**
 
-Overall (pre-deploy): **PASS**, pending live confirmation.
+Overall: **PASS**.
