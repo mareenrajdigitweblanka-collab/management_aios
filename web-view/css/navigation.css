@@ -272,7 +272,15 @@
       display: flex;
       flex-direction: column;
       gap: 2px;
-      padding: var(--space-4) var(--space-3);
+      /* Top padding raised --space-4 -> --space-5 (16px -> 20px) so the
+         collapse toggle (and, expanded, the OVERVIEW row) reads as
+         intentionally spaced below the sticky header rather than
+         crowding it (2026-07-17 collapsed-sidebar-alignment polish).
+         Left/right stays --space-3 (12px, already symmetric — proven in
+         the validation doc that the rail's horizontal padding was never
+         the misalignment source). Shared, harmless improvement applied
+         to both expanded and collapsed modes per Step 10. */
+      padding: var(--space-5) var(--space-3);
       background: var(--sidebar-bg);
       border-right: 1px solid var(--border);
     }
@@ -290,22 +298,47 @@
       padding: 4px 10px 8px;
     }
 
+    /* Active-state accent (2026-07-17 collapsed-sidebar-alignment polish):
+       the former border-left:3px (always reserved, only its color
+       changed on .active) consumed 3px of layout width asymmetrically
+       against the button's symmetric padding, and combined with a
+       phantom flex gap (see collapsed-mode notes below) to visibly
+       shift icons off-center. Replaced with position:relative +
+       ::before (Step 6 option B — an absolutely positioned inset
+       accent) so the accent never affects layout width in either mode;
+       padding is now uniform on both sides. */
     .app-nav-btn {
       display: flex;
       align-items: center;
       gap: 10px;
       width: 100%;
+      position: relative;
       text-align: left;
       border: none;
-      border-left: 3px solid transparent;
       background: transparent;
       color: var(--text);
       font-size: var(--font-base);
       font-weight: 600;
-      padding: 7px 10px 7px 9px;
+      padding: 7px 10px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background .12s ease, color .12s ease, border-color .12s ease;
+      transition: background .12s ease, color .12s ease;
+    }
+
+    .app-nav-btn::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: transparent;
+      transition: background .12s ease;
+    }
+
+    .app-nav-btn.active::before {
+      background: var(--accent);
     }
 
     .app-nav-icon {
@@ -351,7 +384,6 @@
     .app-nav-btn.active {
       background: var(--accent-light);
       color: var(--accent);
-      border-left-color: var(--accent);
     }
 
     .app-nav-btn:focus-visible {
@@ -394,6 +426,13 @@
       align-items: center;
       justify-content: space-between;
       gap: var(--space-2);
+      /* The row's own height is driven by the 26px toggle, not the
+         shorter title text, so the title's padding-bottom never actually
+         produced visible space before Root AIOS — an explicit
+         margin-bottom here is what Members/Data's standalone titles get
+         "for free" from their own padding-bottom (2026-07-17 alignment
+         polish; fixes the inconsistent vertical rhythm this caused). */
+      margin-bottom: var(--space-2);
     }
 
     .app-sidebar-top-row .app-sidebar-title {
@@ -481,9 +520,18 @@
       /* The toggle now shares .app-sidebar-top-row with the OVERVIEW
          title; centering the row (rather than the toggle alone) is what
          keeps the toggle centered in the 76px rail once the title's own
-         width collapses to 0 below. */
+         width collapses to 0 below.
+         gap:0 (2026-07-17 alignment polish, proven root cause): flexbox
+         `gap` still reserves space for a sibling even when that sibling
+         has been shrunk to width:0 — the title's zero-width box does not
+         remove its share of .app-sidebar-top-row's --space-2 gap, which
+         was pushing the toggle ~4px right of the rail's true center
+         (half the 8px gap). Zeroing the gap here (only the toggle
+         remains as visible content once the title collapses) restores
+         exact centering — proven algebraically in the validation doc. */
       body.sidebar-collapsed .app-sidebar-top-row {
         justify-content: center;
+        gap: 0;
       }
 
       body.sidebar-collapsed .app-sidebar-collapse-toggle {
@@ -503,10 +551,18 @@
         display: none;
       }
 
+      /* gap:0 (2026-07-17 alignment polish, same root cause as the
+         top-row above): .app-nav-btn's gap:10px between the icon and
+         .app-nav-btn-text still reserved 10px even once the text
+         collapsed to width:0, shifting every icon ~5px left of the
+         row's true center (half the gap). Base padding (7px 10px) is
+         already symmetric, so with the phantom gap removed the icon
+         centers exactly on the shared rail center line — proven
+         algebraically in the validation doc, matching the toggle's
+         center exactly. */
       body.sidebar-collapsed .app-nav-btn {
         justify-content: center;
-        padding-left: 9px;
-        padding-right: 9px;
+        gap: 0;
       }
 
       /* OVERVIEW's title (inside .app-sidebar-top-row) also collapses
