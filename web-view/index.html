@@ -5593,7 +5593,14 @@
         var mins = total % 60;
         return hours + 'h ' + mins + 'm';
       }
-      function formatDurationPercentage(value) {
+      /* Single shared percentage formatter for the Schedule Summary count
+         and duration split percentages (schedule-summary-count-duration-
+         percentage, 2026-07-17). Backend-authoritative: it only formats a
+         value the backend already computed — null/undefined (zero
+         denominator) renders as N/A, never coerced to 0.00%; a numeric
+         value renders to exactly two decimals plus '%' (e.g. 59.33%,
+         0.00%, 100.00%). No calculation, and never reads a leave field. */
+      function formatPercentage(value) {
         if (value === null || value === undefined) return 'N/A';
         return value.toFixed(2) + '%';
       }
@@ -6669,15 +6676,20 @@
           priorityListEl.innerHTML = html;
         }
 
-        /* ── Schedule Summary — counts, durations, used/ignored task
-           totals, and previous-period comparisons (2026-07-14 duration
-           reporting; counts block originally 2026-07-14; Count %/Time %
-           rows removed from display 2026-07-14 — see
-           validation/schedule-summary-percentage-row-removal-check-2026-07-14.md.
-           The backend still computes and returns scheduled_percentage/
-           unscheduled_percentage/scheduled_duration_percentage/
-           unscheduled_duration_percentage on every report; this renderer
-           simply no longer reads or displays them). Server-authoritative:
+        /* ── Schedule Summary — counts, durations, split percentages,
+           used/ignored task totals, and previous-period comparisons
+           (2026-07-14 duration reporting; counts block originally
+           2026-07-14). Count %/Time % rows were removed from display on
+           2026-07-14 (validation/schedule-summary-percentage-row-removal-check-2026-07-14.md)
+           and re-added — as four two-decimal split-percentage rows below
+           Total — on 2026-07-17
+           (schedule-summary-count-duration-percentage; see
+           validation/schedule-summary-count-duration-percentage-check-2026-07-17.md).
+           The whole-number scheduled_percentage/unscheduled_percentage
+           fields the backend still returns remain unused here; the rows
+           read the two-decimal scheduled_count_percentage/
+           unscheduled_count_percentage/scheduled_duration_percentage/
+           unscheduled_duration_percentage fields instead. Server-authoritative:
            reads the report endpoints rather than deriving counts or
            durations from the `items` array already loaded in the browser,
            per the reporting requirement that the server response — not the
@@ -6687,16 +6699,30 @@
            Shared across all five member instances via this one factory
            function; no member-specific logic. ── */
         function renderSummaryStats(el, report) {
-          /* Grouped into three .msc-summary-group sections (counts,
-             coverage, comparison) purely for visual structure (2026-07-14
-             responsive layout; percentage group removed 2026-07-14) —
-             every remaining field, label, and value is unchanged from
-             before; only the wrapping markup differs. */
+          /* Grouped into .msc-summary-group sections (counts + split
+             percentages, coverage, comparison, leave) purely for visual
+             structure (2026-07-14 responsive layout). The four split-
+             percentage rows (2026-07-17) sit inside the counts group,
+             below Total and above the Tasks used group. */
           el.innerHTML =
             '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Scheduled</span><strong>' + report.scheduled_count + ' task(s) &middot; ' + formatDuration(report.scheduled_duration_minutes) + '</strong></div>' +
             '<div class="msc-summary-row"><span>Unscheduled</span><strong>' + report.unscheduled_count + ' task(s) &middot; ' + formatDuration(report.unscheduled_duration_minutes) + '</strong></div>' +
             '<div class="msc-summary-row"><span>Total</span><strong>' + report.total_count + ' task(s) &middot; ' + formatDuration(report.total_duration_minutes) + '</strong></div>' +
+            /* Count and duration split percentages (schedule-summary-count-
+               duration-percentage, 2026-07-17). Placed directly below Total
+               and before Tasks used. Every value is computed by the backend
+               (scheduled_count_percentage / unscheduled_count_percentage /
+               scheduled_duration_percentage / unscheduled_duration_percentage)
+               and only formatted here — null (zero denominator) -> N/A. These
+               describe only the Scheduled/Unscheduled split; no leave-
+               deduction / adjusted-reference figure is involved. Kept in the
+               same counts group as Scheduled/Unscheduled/Total (no extra
+               divider) to avoid an unnecessary blank gap. */
+            '<div class="msc-summary-row"><span>Scheduled Count %</span><strong>' + formatPercentage(report.scheduled_count_percentage) + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Unscheduled Count %</span><strong>' + formatPercentage(report.unscheduled_count_percentage) + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Scheduled Duration %</span><strong>' + formatPercentage(report.scheduled_duration_percentage) + '</strong></div>' +
+            '<div class="msc-summary-row"><span>Unscheduled Duration %</span><strong>' + formatPercentage(report.unscheduled_duration_percentage) + '</strong></div>' +
             '</div>' +
             '<div class="msc-summary-group">' +
             '<div class="msc-summary-row"><span>Tasks used</span><strong>' + report.total_duration_used_task_count + '</strong></div>' +

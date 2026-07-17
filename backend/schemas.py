@@ -145,6 +145,16 @@ class DailyScheduleReportOut(BaseModel):
     scheduled_percentage: int
     unscheduled_percentage: int
 
+    # --- New: count-based split percentages (schedule-summary-count-
+    # duration-percentage, 2026-07-17). Two-decimal floats, null exactly
+    # when total_count == 0 (no tasks to divide by -> N/A on the frontend).
+    # Denominator is total_count only; never a leave-deduction or
+    # adjusted-reference figure. Distinct from the whole-number
+    # scheduled_percentage/unscheduled_percentage fields above, which are
+    # preserved verbatim. ---
+    scheduled_count_percentage: Optional[float] = None
+    unscheduled_count_percentage: Optional[float] = None
+
     # --- New: duration metrics (2026-07-14 duration reporting) ---
     scheduled_duration_minutes: int
     unscheduled_duration_minutes: int
@@ -201,6 +211,11 @@ class WeeklyScheduleReportOut(BaseModel):
     scheduled_percentage: int
     unscheduled_percentage: int
 
+    # --- New: count-based split percentages (schedule-summary-count-
+    # duration-percentage, 2026-07-17) — see DailyScheduleReportOut. ---
+    scheduled_count_percentage: Optional[float] = None
+    unscheduled_count_percentage: Optional[float] = None
+
     # --- New: duration metrics ---
     scheduled_duration_minutes: int
     unscheduled_duration_minutes: int
@@ -249,6 +264,11 @@ class MonthlyScheduleReportOut(BaseModel):
     total_count: int
     scheduled_percentage: int
     unscheduled_percentage: int
+
+    # --- New: count-based split percentages (schedule-summary-count-
+    # duration-percentage, 2026-07-17) — see DailyScheduleReportOut. ---
+    scheduled_count_percentage: Optional[float] = None
+    unscheduled_count_percentage: Optional[float] = None
 
     scheduled_duration_minutes: int
     unscheduled_duration_minutes: int

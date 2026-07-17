@@ -21,6 +21,7 @@ import unittest
 from datetime import date, time, timedelta
 
 from backend.routers.member_schedules import (
+    _count_percentages,
     _duration_change,
     _duration_percentages,
     _month_boundaries,
@@ -133,6 +134,18 @@ class DurationPercentageTests(unittest.TestCase):
     def test_12_zero_total_duration_returns_none(self):
         self.assertEqual(_duration_percentages(0, 0), (None, None))
 
+    def test_matrix_duration_5_sixty_thirty_split(self):
+        # DURATION 5: Scheduled 60 min, Unscheduled 30 min (total 90) ->
+        # 66.67 / 33.33.
+        scheduled_pct, unscheduled_pct = _duration_percentages(60, 90)
+        self.assertEqual((scheduled_pct, unscheduled_pct), (66.67, 33.33))
+
+    def test_matrix_duration_6_zero_scheduled_all_unscheduled(self):
+        # DURATION 6: Scheduled 0 min, Unscheduled 120 min -> 0.00 / 100.00
+        # (valid zero share, not N/A).
+        scheduled_pct, unscheduled_pct = _duration_percentages(0, 120)
+        self.assertEqual((scheduled_pct, unscheduled_pct), (0.0, 100.0))
+
     def test_13_rounds_to_two_decimals_and_sums_to_100(self):
         # 1/3 of total is the classic case that breaks naive independent
         # rounding; scheduled derived first, unscheduled derived from the
@@ -160,6 +173,75 @@ class DurationPercentageTests(unittest.TestCase):
         self.assertEqual((scheduled_pct, unscheduled_pct), (75, 25))
         self.assertIsInstance(scheduled_pct, int)
         self.assertIsInstance(unscheduled_pct, int)
+
+
+class CountPercentageTests(unittest.TestCase):
+    """schedule-summary-count-duration-percentage (2026-07-17) — COUNT test
+    matrix (1-4). _count_percentages() returns two-decimal floats and
+    (None, None) on a zero denominator, distinct from the whole-number
+    _percentages() helper which returns (0, 0). Denominator is
+    scheduled + unscheduled only — no leave/adjusted-reference figure."""
+
+    def test_count_1_three_one_split(self):
+        # COUNT 1: Scheduled 3, Unscheduled 1 -> 75.00 / 25.00.
+        scheduled_pct, unscheduled_pct = _count_percentages(3, 4)
+        self.assertEqual((scheduled_pct, unscheduled_pct), (75.0, 25.0))
+
+    def test_count_2_zero_scheduled_all_unscheduled(self):
+        # COUNT 2: Scheduled 0, Unscheduled 3 -> 0.00 / 100.00 (a real
+        # zero share with a valid denominator, NOT N/A).
+        scheduled_pct, unscheduled_pct = _count_percentages(0, 3)
+        self.assertEqual((scheduled_pct, unscheduled_pct), (0.0, 100.0))
+
+    def test_count_3_zero_total_returns_none(self):
+        # COUNT 3: Scheduled 0, Unscheduled 0 -> null/null (N/A), never 0.00.
+        self.assertEqual(_count_percentages(0, 0), (None, None))
+
+    def test_count_4_one_two_split_rounds_and_sums_to_100(self):
+        # COUNT 4: Scheduled 1, Unscheduled 2 -> 33.33 / 66.67 after
+        # display formatting; unscheduled derived from the same fraction so
+        # the two sum to exactly 100.00.
+        scheduled_pct, unscheduled_pct = _count_percentages(1, 3)
+        self.assertEqual(scheduled_pct, 33.33)
+        self.assertEqual(unscheduled_pct, 66.67)
+        self.assertEqual(round(scheduled_pct + unscheduled_pct, 2), 100.0)
+
+    def test_count_full_scheduled_share(self):
+        # Exact full share renders as 100.00 / 0.00, not N/A.
+        self.assertEqual(_count_percentages(4, 4), (100.0, 0.0))
+
+    def test_count_returns_floats_not_ints(self):
+        scheduled_pct, unscheduled_pct = _count_percentages(3, 4)
+        self.assertIsInstance(scheduled_pct, float)
+        self.assertIsInstance(unscheduled_pct, float)
+
+    def test_count_sums_to_100_across_a_range_of_splits(self):
+        for scheduled_count, total_count in [
+            (1, 3), (2, 3), (1, 7), (5, 6), (1, 1), (0, 1), (17, 60), (43, 90),
+        ]:
+            with self.subTest(scheduled=scheduled_count, total=total_count):
+                scheduled_pct, unscheduled_pct = _count_percentages(
+                    scheduled_count, total_count
+                )
+                self.assertEqual(round(scheduled_pct + unscheduled_pct, 2), 100.0)
+
+    def test_count_percentages_independent_of_duration(self):
+        """COUNT/DURATION 8: counts can exist while every task lacks a valid
+        duration. Count percentages are computed from counts and stay valid;
+        duration percentages (total_duration_minutes == 0) go to N/A. The two
+        helpers never share a denominator."""
+        count_result = _count_percentages(1, 3)
+        duration_result = _duration_percentages(0, 0)
+        self.assertEqual(count_result, (33.33, 66.67))
+        self.assertEqual(duration_result, (None, None))
+
+    def test_count_distinct_from_whole_number_helper_on_zero(self):
+        """Guards the key behavioural difference: the pre-existing
+        _percentages() returns (0, 0) on a zero denominator; the new
+        _count_percentages() returns (None, None) so the frontend can show
+        N/A rather than a misleading 0.00%."""
+        self.assertEqual(_percentages(0, 0), (0, 0))
+        self.assertEqual(_count_percentages(0, 0), (None, None))
 
 
 class DurationChangeTests(unittest.TestCase):

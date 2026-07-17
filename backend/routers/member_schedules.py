@@ -139,6 +139,28 @@ def _percentages(scheduled: int, total: int) -> Tuple[int, int]:
     return scheduled_percentage, unscheduled_percentage
 
 
+def _count_percentages(
+    scheduled_count: int, total_count: int
+) -> Tuple[Optional[float], Optional[float]]:
+    """Count-based Scheduled/Unscheduled split percentages
+    (schedule-summary-count-duration-percentage, 2026-07-17), rounded to
+    two decimal places. Distinct from the pre-existing whole-number
+    _percentages() helper: this one returns two-decimal floats and, like
+    _duration_percentages(), returns (None, None) when the denominator is
+    zero rather than (0, 0) — a valid 0.00%/0.00% split is a different
+    claim from 'no tasks to divide by', so None (-> N/A on the frontend)
+    is returned instead of 0.0. total_count is scheduled_count +
+    unscheduled_count only; no leave-deduction / adjusted-reference /
+    expected-working figure is ever used as the denominator. Unscheduled
+    is derived from the same raw fraction (100 - share) so the two always
+    sum to exactly 100.00, mirroring _duration_percentages()."""
+    if total_count == 0:
+        return None, None
+    scheduled_percentage = round(scheduled_count / total_count * 100, 2)
+    unscheduled_percentage = round(100 - (scheduled_count / total_count * 100), 2)
+    return scheduled_percentage, unscheduled_percentage
+
+
 def _duration_percentages(
     scheduled_minutes: int, total_minutes: int
 ) -> Tuple[Optional[float], Optional[float]]:
@@ -244,6 +266,9 @@ def _aggregate_schedule_period(
 
     total_count = scheduled_count + unscheduled_count
     scheduled_pct, unscheduled_pct = _percentages(scheduled_count, total_count)
+    scheduled_count_pct, unscheduled_count_pct = _count_percentages(
+        scheduled_count, total_count
+    )
 
     total_duration = scheduled_duration + unscheduled_duration
     scheduled_duration_pct, unscheduled_duration_pct = _duration_percentages(
@@ -256,6 +281,8 @@ def _aggregate_schedule_period(
         "total_count": total_count,
         "scheduled_percentage": scheduled_pct,
         "unscheduled_percentage": unscheduled_pct,
+        "scheduled_count_percentage": scheduled_count_pct,
+        "unscheduled_count_percentage": unscheduled_count_pct,
         "scheduled_duration_minutes": scheduled_duration,
         "unscheduled_duration_minutes": unscheduled_duration,
         "total_duration_minutes": total_duration,
