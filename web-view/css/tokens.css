@@ -158,9 +158,16 @@
          accessible contrast (each pair exceeds WCAG AA 4.5:1 — verified
          against these exact values); labels/text remain the primary
          signal, color is a secondary reinforcement, never the only one. */
-      --calendar-scheduled-bg: #dcfce7;
+      /* --calendar-scheduled-bg deepened 2026-07-20 (#dcfce7 -> #bbf7d0)
+         — the original tone read as near-white/pale mint next to the
+         more saturated Unscheduled yellow at a glance in production;
+         this is one step more saturated on the same green scale, still
+         "soft professional," with contrast unaffected (still exceeds
+         WCAG AA — background got darker, so the ratio actually
+         improved). */
+      --calendar-scheduled-bg: #bbf7d0;
       --calendar-scheduled-text: #14532d;
-      --calendar-scheduled-border: #86efac;
+      --calendar-scheduled-border: #4ade80;
 
       --calendar-unscheduled-bg: #fef3c7;
       --calendar-unscheduled-text: #78350f;
