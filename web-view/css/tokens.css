@@ -123,6 +123,33 @@
          ever changes --header-height, this token updates automatically
          since it derives from it. */
       --scroll-target-offset: calc(var(--header-height) + 16px);
+
+      /* ── Calendar workspace tokens (Google-Calendar-style redesign,
+         2026-07-20) — presentation-only constants scoped to
+         web-view/css/calendar.css. These mirror existing semantic
+         tokens above (--accent, --border, task/leave colors) rather
+         than introducing a second color language. ── */
+      --cal-toolbar-height: 60px;
+      --cal-toolbar-control-size: 40px;
+      --cal-sidebar-width: 248px;
+      --cal-event-radius: 4px;
+      --cal-now-red: #ea4335;
+
+      /* Month/Week/Day canvas height — approximates "100vh minus the
+         fixed app header minus the calendar toolbar minus safe
+         margins" (Step 5 of the 2026-07-20 redesign task). Derivation:
+         --header-height (56px, sticky, confirmed unchanged at every
+         breakpoint — see the --scroll-target-offset comment above) +
+         --cal-toolbar-height (60px) + ~120px for the banner/
+         instructional paragraphs and API-status line that sit above
+         the calendar card (.msc-banner/.msc-note in calendar.css) +
+         ~64px for .tab-panel's own top+bottom padding (navigation.css)
+         = ~300px reserved. The max(560px, …) floor keeps six Month
+         rows and the Week/Day timeline usable on short viewports
+         instead of collapsing to an unreadably thin strip. See
+         validation/google-calendar-pixel-close-ui-check-2026-07-20.md
+         for the viewports this was checked against. */
+      --cal-canvas-height: max(560px, calc(100vh - var(--header-height) - 300px));
     }
 
     html {

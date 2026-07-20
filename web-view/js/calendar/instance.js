@@ -453,6 +453,11 @@ function mountScheduleCalendarInstance(container) {
           ', ' + taskCount + ' task' + (taskCount === 1 ? '' : 's') + '. Open Schedule Item list.';
         html += ' role="button" tabindex="0" aria-label="' + escapeHtml(cellLabel) + '"';
       }
+      /* Selected date's accessible state (Step 26, 2026-07-20 redesign)
+         — the existing .selected class already carries the visible
+         highlight; aria-current="date" exposes the same state to
+         assistive tech without changing selection logic. */
+      if (isSelected) { html += ' aria-current="date"'; }
       html += '>';
       html += '<div class="msc-cal-daynum' + (isToday ? ' today' : '') + '">' + c.date.getDate() + '</div>';
       /* Demo-style visible task chips inside each date (aios_role_desk_views.html layout reference) —
@@ -617,7 +622,8 @@ function mountScheduleCalendarInstance(container) {
       });
       if (dateStr === todayStr) {
         var nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-        bodyHtml += '<div class="msc-tg-now-line" style="top:' + (nowMinutes / 60 * TG_ROW_HEIGHT_PX) + 'px;"></div>';
+        bodyHtml += '<div class="msc-tg-now-line" aria-hidden="true" style="top:' +
+          (nowMinutes / 60 * TG_ROW_HEIGHT_PX) + 'px;"></div>';
       }
       bodyHtml += '</div>';
     });
@@ -821,10 +827,12 @@ function mountScheduleCalendarInstance(container) {
     var html = '<div class="msc-mini-picker-heading">' + MONTH_NAMES[m] + ' ' + y + '</div><div class="msc-mini-picker-grid">';
     DAY_HEADS.forEach(function (d) { html += '<div class="msc-mini-picker-headcell">' + d.charAt(0) + '</div>'; });
     cells.forEach(function (c) {
+      var isSelected = c.dateStr === state.selectedDate;
       var cls = 'msc-mini-picker-cell' + (c.inMonth ? '' : ' other-month') +
-        (c.dateStr === todayStr ? ' today' : '') + (c.dateStr === state.selectedDate ? ' selected' : '');
+        (c.dateStr === todayStr ? ' today' : '') + (isSelected ? ' selected' : '');
       html += '<button type="button" class="' + cls + '" data-date="' + c.dateStr + '" aria-label="' +
-        escapeHtml(formatAgendaDate(c.dateStr)) + '">' + c.date.getDate() + '</button>';
+        escapeHtml(formatAgendaDate(c.dateStr)) + '"' + (isSelected ? ' aria-current="date"' : '') + '>' +
+        c.date.getDate() + '</button>';
     });
     html += '</div>';
     miniPickerEl.innerHTML = html;

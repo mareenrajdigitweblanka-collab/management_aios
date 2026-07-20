@@ -73,10 +73,15 @@ export var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June'
 export var DAY_HEADS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export var DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-/* Google-Calendar-inspired Week/Day time-grid constants (2026-07-13).
-   24 one-hour rows at a fixed pixel height keep the pixel<->minutes
-   math for drag/resize simple (see timeToMinutes/minutesToTime below). */
-export var TG_ROW_HEIGHT_PX = 48;
+/* Google-Calendar-inspired Week/Day time-grid constants (2026-07-13;
+   row height raised 48->56px in the 2026-07-20 pixel-close redesign,
+   within Google Calendar's own ~48-64px hour-row range). 24 one-hour
+   rows at a fixed pixel height keep the pixel<->minutes math for
+   drag/resize simple (see timeToMinutes/minutesToTime below) — every
+   consumer (row rendering, event top/height positioning, drag delta,
+   resize delta, current-time line position) reads this single
+   constant, so raising it does not require touching instance.js. */
+export var TG_ROW_HEIGHT_PX = 56;
 export var TG_HOURS = 24;
 export var TG_DEFAULT_SCROLL_HOUR = 7;
 

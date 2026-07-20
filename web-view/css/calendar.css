@@ -1,4 +1,16 @@
     /* ═══ Management Team Schedule Calendar — Testing Preview (interactive, local FastAPI/PostgreSQL backend) ═══ */
+
+    /* Browser-safe Google-Calendar-like type stack (Step 20, 2026-07-20
+       redesign) — scoped to the calendar workspace only, so the rest
+       of the Management AIOS (which uses Inter via base.css's global
+       body rule) is unaffected. No remote font is loaded; every
+       browser falls back to its own system sans-serif if Roboto isn't
+       already installed, same fallback pattern base.css already uses
+       for Inter. */
+    .msc-calendar-shell {
+      font-family: Roboto, Arial, ui-sans-serif, system-ui, sans-serif;
+    }
+
     .msc-banner {
       display: flex;
       gap: 10px;
@@ -98,7 +110,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px 16px;
+      min-height: var(--cal-toolbar-height);
+      padding: 10px 18px;
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
     }
@@ -137,13 +150,13 @@
     /* Circular icon buttons for sidebar-toggle / previous / next — the
        glyphs are pure Unicode (&#9776; &#8249; &#8250;), no Google assets. */
     .msc-tool-btn--icon {
-      width: 34px;
-      height: 34px;
+      width: var(--cal-toolbar-control-size);
+      height: var(--cal-toolbar-control-size);
       padding: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       line-height: 1;
       border-radius: 50%;
     }
@@ -160,12 +173,13 @@
     /* "Today" reads as a rounded pill, matching a familiar calendar toolbar. */
     .msc-tool-btn--today {
       border-radius: 999px;
-      padding: 6px 16px;
+      padding: 7px 18px;
+      font-size: .82rem;
     }
 
     .msc-cal-heading {
-      font-size: 1.15rem;
-      font-weight: 700;
+      font-size: var(--font-2xl);
+      font-weight: 500;
       color: var(--text);
       letter-spacing: -.01em;
       white-space: nowrap;
@@ -214,11 +228,17 @@
       flex-direction: column;
     }
 
-    /* Elevated calendar surface (Google-Calendar-inspired depth, 2026-07-17)
-       — scoped marker class so only the calendar card gains the shadow, not
-       every .hr-table-card on the page. */
+    /* Google-Calendar-style flattened workspace (2026-07-20 redesign) —
+       scoped marker class so only the calendar card is affected, not
+       every .hr-table-card on the page (those keep the shared --radius/
+       box-shadow-free look they already had). Previously carried
+       box-shadow: var(--shadow), which read as a "card floating on the
+       page"; Google Calendar's own canvas sits flush against its
+       toolbar with only a thin structural border, so the shadow is
+       dropped and the corner radius reduced from the shared 10px. */
     .msc-calendar-card {
-      box-shadow: var(--shadow);
+      box-shadow: none;
+      border-radius: 8px;
     }
 
     .msc-calendar-header {
@@ -230,11 +250,11 @@
       display: flex;
       gap: 16px;
       align-items: flex-start;
-      padding: 14px 16px 16px;
+      padding: 10px 14px 14px;
     }
 
     .msc-sidebar {
-      flex: 0 0 220px;
+      flex: 0 0 var(--cal-sidebar-width);
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -269,17 +289,16 @@
     }
 
     .msc-mini-picker {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px;
+      border: none;
+      padding: 4px 2px 8px;
     }
 
     .msc-mini-picker-heading {
-      font-size: .72rem;
+      font-size: .76rem;
       font-weight: 700;
-      color: var(--muted);
+      color: var(--text);
       text-align: center;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .msc-mini-picker-grid {
@@ -298,7 +317,7 @@
     .msc-mini-picker-cell {
       border: none;
       background: none;
-      font-size: .68rem;
+      font-size: .72rem;
       aspect-ratio: 1 / 1;
       padding: 0;
       display: flex;
@@ -308,6 +327,11 @@
       cursor: pointer;
       color: var(--text);
       transition: background .1s ease;
+    }
+
+    .msc-mini-picker-cell:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
     }
 
     .msc-mini-picker-cell:hover {
@@ -398,11 +422,11 @@
     }
 
     .msc-tg-daycol-head {
-      font-size: .72rem;
+      font-size: .78rem;
       font-weight: 700;
       color: var(--text);
       text-align: center;
-      padding: 6px 4px;
+      padding: 8px 4px;
       text-transform: uppercase;
       letter-spacing: .03em;
     }
@@ -419,17 +443,35 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 20px;
-      height: 20px;
+      min-width: 22px;
+      height: 22px;
       padding: 0 5px;
       border-radius: 999px;
       background: var(--accent);
       color: #fff;
     }
 
+    /* Day view shares renderTimeGrid()'s markup with Week (same JS,
+       one shared implementation — Step 15 of the 2026-07-20 redesign
+       explicitly forbids duplicating that logic), but a single full-
+       width day column has room for a much larger Google-style date
+       header than a 7-column Week grid does. Pure presentational
+       differentiation via the two views' distinct mount containers
+       (.msc-week-grid / .msc-day-grid), no JS/markup change. */
+    .msc-day-grid .msc-tg-daycol-head {
+      font-size: 1.05rem;
+      padding: 10px 8px;
+    }
+
+    .msc-day-grid .msc-tg-daycol-head.today .msc-tg-daynum {
+      min-width: 40px;
+      height: 40px;
+      font-size: 1.15rem;
+    }
+
     .msc-tg-allday-row {
       border-bottom: 1px solid var(--border);
-      min-height: 28px;
+      min-height: 32px;
     }
 
     .msc-tg-allday-col {
@@ -448,10 +490,33 @@
       background: var(--accent);
     }
 
+    /* Viewport-relative scrollable timeline canvas (Step 5/19,
+       2026-07-20 redesign) — occupies most of the visible page height
+       instead of a small fixed 480px strip, while the 24-hour body
+       grid itself (.msc-tg-body-grid, sized from TG_HOURS *
+       TG_ROW_HEIGHT_PX in instance.js) still scrolls inside this
+       viewport rather than stretching the whole document. Subtle,
+       always-present scrollbar (not auto-hidden) so scrolling remains
+       discoverable. */
     .msc-tg-scroll {
-      max-height: 480px;
+      max-height: var(--cal-canvas-height);
       overflow-y: auto;
       position: relative;
+      scrollbar-width: thin;
+      scrollbar-color: var(--muted-2) transparent;
+    }
+
+    .msc-tg-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .msc-tg-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .msc-tg-scroll::-webkit-scrollbar-thumb {
+      background: var(--muted-2);
+      border-radius: 4px;
     }
 
     .msc-tg-body-grid {
@@ -490,7 +555,7 @@
     .msc-tg-event {
       position: absolute;
       box-sizing: border-box;
-      border-radius: 5px;
+      border-radius: var(--cal-event-radius);
       padding: 2px 6px;
       overflow: hidden;
       color: #fff;
@@ -500,6 +565,12 @@
       touch-action: none;
       box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), 0 1px 2px rgba(30, 25, 15, .18);
       transition: filter .1s ease, box-shadow .1s ease;
+    }
+
+    .msc-tg-event:focus-visible,
+    .msc-tg-allday-chip:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
     }
 
     .msc-tg-event:hover {
@@ -543,7 +614,7 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: #ef4444;
+      background: var(--cal-now-red);
       z-index: 4;
       pointer-events: none;
     }
@@ -558,7 +629,7 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: #ef4444;
+      background: var(--cal-now-red);
     }
 
     .msc-tg-event.task { background: #2563eb; }
@@ -614,8 +685,17 @@
        hiding rule (equal specificity, source order previously favored this
        rule, which is what caused Month to stay visible under Week/Day; see
        validation/shared-calendar-view-rendering-regression-check-2026-07-14.md). */
+    /* Month canvas fills the visible calendar area instead of floating
+       as a small fixed-height grid inside a large card (Step 5,
+       2026-07-20 redesign) — 1 auto header row + 6 fr week rows inside
+       a --cal-canvas-height container, so all six week rows share the
+       available height evenly. Reverted to auto-height/fixed cell
+       min-height on narrow viewports below (mobile media query) where
+       a vh-based canvas would be too cramped for stacked task chips. */
     .msc-cal-grid.active {
       display: grid;
+      grid-template-rows: auto repeat(6, minmax(0, 1fr));
+      height: var(--cal-canvas-height);
     }
 
     .msc-cal-headcell {
@@ -631,7 +711,8 @@
     }
 
     .msc-cal-cell {
-      min-height: 92px;
+      min-height: 0;
+      overflow: hidden;
       padding: 4px 6px 6px;
       border-right: 1px solid var(--hairline);
       border-bottom: 1px solid var(--hairline);
@@ -665,11 +746,15 @@
       box-shadow: inset 0 0 0 2px var(--accent);
     }
 
+    /* Top-left day number (Google-Calendar-style — the current
+       "today" badge stays a circle, but the resting position hugs the
+       cell's own top-left corner instead of centering across the full
+       cell width). */
     .msc-cal-daynum {
-      font-size: .74rem;
+      font-size: .76rem;
       font-weight: 600;
       color: var(--muted);
-      margin: 2px auto 4px;
+      margin: 2px 0 4px;
       text-align: center;
       width: 24px;
       height: 24px;
@@ -685,8 +770,14 @@
     }
 
     @media (max-width: 640px) {
+      .msc-cal-grid.active {
+        height: auto;
+        grid-template-rows: auto;
+      }
+
       .msc-cal-cell {
         min-height: 62px;
+        overflow: visible;
       }
     }
 
@@ -927,7 +1018,8 @@
       justify-content: center;
       gap: 8px;
       border-radius: 999px;
-      padding: 9px 18px;
+      padding: 10px 20px;
+      font-size: .85rem;
       box-shadow: var(--shadow);
     }
 
@@ -1122,6 +1214,11 @@
       padding: 0 6px;
       margin-top: 1px;
       cursor: pointer;
+    }
+
+    .msc-cal-chip-more:hover {
+      color: var(--text);
+      text-decoration: underline;
     }
 
     /* ── Leave coordination copy (REQ-LEAVE-COPY-001) — deliberately
