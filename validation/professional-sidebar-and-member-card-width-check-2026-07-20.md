@@ -30,7 +30,7 @@ Only three files changed (confirmed via `git diff --stat`):
 |---|---|
 | `web-view/index.html` | Arun's icon SVG paths; collapse-toggle button now holds two purpose-drawn SVGs instead of one rotated chevron |
 | `web-view/css/navigation.css` | Nav icon box 24px→32px (svg 14px→18px); row padding 7px→6px vertical (44-45px row height); collapse-toggle 26px→32px, rotate-transform replaced with icon show/hide; sidebar-scoped badge size reduced to reclaim label width |
-| `web-view/css/components.css` | `.role-label`/`.member-header-lede`/`.member-header-note` max-width 60ch/68ch/68ch → 88ch (one shared rule) |
+| `web-view/css/components.css` | `.member-header-info` set to `flex:1 1 auto` (stretches to fill the card); `.role-label`/`.member-header-lede`/`.member-header-note` ch-based `max-width` cap removed entirely — text now wraps at the full card width (see §12 for the revision history: 60/68ch → 88ch → no cap, based on direct production review) |
 
 `base.css`, `tokens.css`, `navigation.js`, `app.js` were inspected (per
 task instruction) but required no change — confirmed zero diff on all
@@ -219,59 +219,72 @@ for any of the five members — one shared rule
 (`.role-label`/`.member-header-lede`/`.member-header-note` in
 `components.css`) covers all applicable cases.
 
-## 12. Old vs. new member-text width (Steps 12-13)
+## 12. Old vs. new member-text width (Steps 12-13, revised after production review)
 
-| Element | Old max-width | New max-width |
-|---|---|---|
-| `.member-header-info .role-label` | 60ch | 88ch |
-| `.member-header-lede` | 68ch | 88ch |
-| `.member-header-note` | 68ch | 88ch |
+**Revision note:** the first deployed version of this task capped the
+text at `max-width: 88ch` (up from 60ch/68ch), per Step 13's
+readability-cap instruction. After that version was live, direct
+review of the deployed page (`management-aios.vercel.app`) showed the
+88ch cap still left a large visible gap on the right of wide
+calendar-tab cards — the user pointed at it directly and asked for the
+text to use the full card width. This section reflects the corrected,
+final state; the 88ch-cap intermediate version was superseded before
+being reported as final.
 
-88ch sits inside the requested 75-95ch band and is a `max-width` (not a
-fixed `width`), so on narrow/mobile screens it still shrinks to 100% of
-the available card width exactly as before — no new mobile-specific
-rule was needed. No wording changed anywhere (confirmed — diff touches
-only the `max-width` numeric values, zero text content edits).
+| Element | Original | Intermediate (88ch) | **Final (deployed)** |
+|---|---|---|---|
+| `.member-header-info` (flex item) | `flex: 0 1 auto` (shrink-to-fit) | unchanged | **`flex: 1 1 auto; min-width: 0`** (stretches to fill the row) |
+| `.member-header-info .role-label` | `max-width: 60ch` | `max-width: 88ch` | **no cap — wraps at the full card width** |
+| `.member-header-lede` | `max-width: 68ch` | `max-width: 88ch` | **no cap — wraps at the full card width** |
+| `.member-header-note` | `max-width: 68ch` | `max-width: 88ch` | **no cap — wraps at the full card width** |
+
+No wording changed anywhere at any stage (confirmed — diff touches only
+`max-width`/`flex` layout properties, zero text content edits). On
+narrow/mobile screens the text still naturally fills 100% of the card
+exactly as before — no separate mobile override was ever needed, since
+removing a `max-width` cap doesn't change behavior below that cap.
 
 Measured via Playwright (`results.json`, Arun's card, representative of
-the shared rule):
+the shared rule) — final state:
 
-| Viewport | Card width | Lede width — old (68ch, computed) | Lede width — new (88ch, measured) |
+| Viewport | Card width | Lede width (final) | Right-side gap (final) |
 |---|---|---|---|
-| 1024px (laptop) | 647px | ~484px | 597px (near-full, container-capped) |
-| 1366-1920px (desktop) | 948-1436px | ~484px | 626px (ch-capped) |
-| Tablet 834px | 702px | ~484px | 626px (near-full) |
-| Mobile 390px | 311px | 100% of card | 261px (100% of card, unchanged behavior) |
+| 1024px (laptop) | 647px | 597px | ~50px (card padding only) |
+| 1366px | 948px | 898px | ~50px (card padding only) |
+| 1440px | 1013px | 963px | ~50px (card padding only) |
+| 1600px | 1154px | 1104px | ~50px (card padding only) |
+| 1920px | 1436px | 1386px | ~50px (card padding only) |
+| Tablet 834px | 702px | 652px | ~50px (card padding only) |
+| Mobile 390px | 311px | 261px | ~50px (card padding only, unchanged) |
 
-The gap is **substantially reduced, not eliminated**, by design — Step
-13 explicitly forbids forcing full-width text without a readability
-cap, so at very wide viewports (1920px) some right-side space remains
-intentionally (a ~90ch-wide paragraph is standard reading-width
-practice regardless of container width).
+The remaining ~50px at every width is exactly the card's own left+right
+padding (`22px 24px` in `.member-header`) — not a readability cap. Text
+now uses the full available card width at every breakpoint, matching
+the user's direct correction.
 
 ## 13. Per-member result (Step 14)
 
 | Member | Result |
 |---|---|
-| Mayurika | `role-label`/`lede`/`note` all present, all now capped at 88ch, verified rendering with no overflow/clipping at 1600px screenshot |
+| Mayurika | `role-label`/`lede`/`note` all present, all now fill the full card width, verified rendering with no overflow/clipping (`member-mayurika-hr.png`) |
 | Suman | Same shared rule applied, verified rendering correctly |
-| Arun | Same shared rule applied, verified rendering correctly (see `1920x1080-arun.png`) |
+| Arun | Same shared rule applied, verified rendering correctly at 1920px with no right-side gap (`1920x1080-arun.png`) |
 | Rajiv | `role-label`/`lede` present (no `note`, pre-existing), same shared rule applied, verified rendering correctly |
 | Paraparan | No `role-label`/`lede`/`note` in its `member-header` (different, lighter structure — see §11); its descriptive text already renders at full card width via the pre-existing `.member-testing-table-note` banner; confirmed no gap regression and no wording change; sidebar/nav label still reads "Paraparan — Auditor" |
 
 No horizontal overflow at any tested viewport for any of the five
-(`bodyOverflowX:false` throughout).
+(`bodyOverflowX:false` throughout, before and after the revision).
 
 ## 14. Responsive matrix (Step 18)
 
 | Viewport | Sidebar (expanded/collapsed) | Icon alignment | Collapse-control alignment | Label/subtitle clipping | Member-card gap | Overflow-x |
 |---|---|---|---|---|---|---|
-| 1920×1080 | 252px / 76px | Single axis, cx=38 | Same axis as icons | None beyond pre-existing Root AIOS badge note (§7) | Reduced substantially, capped at 88ch by design | No |
-| 1600×900 | 252px / 76px | Single axis | Aligned | None (beyond §7) | Reduced substantially | No |
-| 1440×900 | 252px / 76px | Single axis | Aligned | None (beyond §7) | Reduced substantially | No |
-| 1366×768 | 252px / 76px | Single axis | Aligned | None (beyond §7) | Reduced substantially | No |
-| 1024px | 252px / 76px | Single axis | Aligned | None (beyond §7) | Near-full width (container-capped) | No |
-| Tablet 834px | Drawer (252px, off-canvas by default) | N/A (drawer, not rail) | Toggle hidden (mobile hamburger only, correct) | Full labels visible in drawer | Near-full width | No |
+| 1920×1080 | 252px / 76px | Single axis, cx=38 | Same axis as icons | None beyond pre-existing Root AIOS badge note (§7) | Card padding only (~50px) — text fills full width | No |
+| 1600×900 | 252px / 76px | Single axis | Aligned | None (beyond §7) | Card padding only | No |
+| 1440×900 | 252px / 76px | Single axis | Aligned | None (beyond §7) | Card padding only | No |
+| 1366×768 | 252px / 76px | Single axis | Aligned | None (beyond §7) | Card padding only | No |
+| 1024px | 252px / 76px | Single axis | Aligned | None (beyond §7) | Card padding only | No |
+| Tablet 834px | Drawer (252px, off-canvas by default) | N/A (drawer, not rail) | Toggle hidden (mobile hamburger only, correct) | Full labels visible in drawer | Card padding only | No |
 | Mobile 390px | Drawer (min(252px,82vw)) | N/A | Toggle hidden (correct) | Full labels visible in drawer | Full width (100%, unchanged mobile behavior) | No |
 
 ## 15. Accessibility (Step 19)
@@ -291,8 +304,8 @@ No horizontal overflow at any tested viewport for any of the five
   sidebar"` (existing `navigation.js` logic, unchanged, verified live).
 - `:focus-visible` box-shadow ring present on both nav buttons and the
   collapse toggle (unchanged rule, still applies to the enlarged boxes).
-- Text/icon sizes were only increased (18-20px icons, 88ch text cap),
-  never decreased — no new 200%-zoom regression risk introduced.
+- Text/icon sizes were only increased (18-20px icons, full-width member
+  text), never decreased — no new 200%-zoom regression risk introduced.
 
 ## 16. Calendar / Schedule Summary / backend / database / API (Steps 15, 20)
 
@@ -367,11 +380,23 @@ the app has no backend in this environment, and this task did not touch
 that fetch logic). One `404` (browser's automatic `/favicon.ico`
 request — the page has no `<link rel="icon">`, pre-existing, unrelated).
 
+**Follow-up round (production review):** after the first version
+deployed (88ch-capped member text), the user reviewed the live site at
+`management-aios.vercel.app` and pointed out the cards still had a
+large right-side gap, asking for full card width instead. The
+`max-width` cap was removed (see §12) and the fix was re-verified with
+the same Playwright harness against the local static server before
+being redeployed — full-width rendering confirmed at every breakpoint
+(§12 table), zero new console errors, zero overflow-x.
+
 ## 19. Overall result
 
 **PASS**, with one transparently-documented pre-existing observation
 (§7 — Root AIOS badge/label crowding, improved but not fully resolved,
-out of this task's scope, not a regression this task introduced).
+out of this task's scope, not a regression this task introduced). The
+member-card width requirement went through one production-review-driven
+revision (§12) — the deployed/final state is full card width, not the
+88ch-capped intermediate version.
 
 All 9 user-confirmed requirements (§2) met:
 1-2. Arun icon replaced with a workflow/implementation icon — done.

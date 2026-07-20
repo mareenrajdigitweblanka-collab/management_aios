@@ -136,6 +136,19 @@
       flex-wrap: wrap;
     }
 
+    /* Stretches to fill the row instead of shrink-wrapping to its
+       content (professional-sidebar-and-member-card-width task,
+       2026-07-20 follow-up) — a ch-based readability cap on the
+       paragraphs below still left a large empty right-hand gap on wide
+       calendar-tab cards in production; per direct user review of the
+       deployed page, the description text should use the full card
+       width instead. min-width:0 keeps long unbroken tokens from
+       forcing the flex row wider than the card. */
+    .member-header-info {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
     .member-header-info h2 {
       font-size: 1.18rem;
       font-weight: 800;
@@ -150,7 +163,6 @@
       margin-bottom: 10px;
       font-weight: 600;
       line-height: 1.4;
-      max-width: 88ch;
     }
 
     .member-header-info .status-note {
@@ -163,20 +175,21 @@
        replaces identical inline style="" attributes previously repeated on
        every member tab's intro paragraphs (Mayurika/Suman/Arun/Rajiv).
        Wording is unchanged; only the styling mechanism moved to a class. */
-    /* Widened 68ch -> 88ch (professional-sidebar-and-member-card-width
-       task, 2026-07-20) — one shared cap for every member tab
-       (Mayurika/Suman/Arun/Rajiv; Paraparan uses a different intro
-       structure, see validation doc), still within the 75-95ch readable
-       band but using substantially more of the wide calendar-tab card
-       (up to ~88vw) than the old 68ch, which left a large empty gap on
-       the right. max-width (not a fixed width) so it still shrinks to
-       100% of the card on narrow/mobile screens exactly as before. */
+    /* ch-based readability cap removed (professional-sidebar-and-
+       member-card-width task, 2026-07-20 follow-up) — a 68ch, then
+       88ch, cap both still left a large empty gap on the right of wide
+       calendar-tab cards in production; per direct user review of the
+       deployed page, these now wrap at the full width of
+       .member-header-info (which itself now stretches to fill the
+       card — see .member-header-info above) rather than a fixed
+       character-count column. Wording unchanged, one shared rule for
+       every member tab (Mayurika/Suman/Arun/Rajiv; Paraparan uses a
+       different intro structure, see validation doc). */
     .member-header-lede {
       font-size: var(--font-sm);
       color: var(--text-secondary);
       line-height: 1.65;
       margin-top: var(--space-3);
-      max-width: 88ch;
     }
 
     .member-header-note {
@@ -184,7 +197,6 @@
       color: var(--muted);
       line-height: 1.6;
       margin-top: var(--space-2);
-      max-width: 88ch;
     }
 
     .member-header-badges {
