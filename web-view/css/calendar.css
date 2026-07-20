@@ -632,13 +632,35 @@
       background: var(--cal-now-red);
     }
 
-    .msc-tg-event.task { background: #2563eb; }
+    /* Same semantic mapping as Month (.msc-cal-chip above) — soft
+       background + dark text, not the previous solid-fill/white-text
+       treatment, so Month/Week/Day share one visual language (Step 17,
+       2026-07-20 color-mapping task). review/planning are unused by
+       current category data (see the .msc-chip-cat comment above) —
+       left as their pre-existing solid colors, out of scope. */
+    .msc-tg-event.task {
+      background: var(--calendar-scheduled-bg);
+      color: var(--calendar-scheduled-text);
+      border-left: 3px solid var(--calendar-scheduled-border);
+    }
     .msc-tg-event.review { background: #7c3aed; }
-    .msc-tg-event.followup { background: #d97706; }
+    .msc-tg-event.followup {
+      background: var(--calendar-unscheduled-bg);
+      color: var(--calendar-unscheduled-text);
+      border-left: 3px solid var(--calendar-unscheduled-border);
+    }
     .msc-tg-event.planning { background: #059669; }
-    .msc-tg-allday-chip.task { background: #2563eb; }
+    .msc-tg-allday-chip.task {
+      background: var(--calendar-scheduled-bg);
+      color: var(--calendar-scheduled-text);
+      border-left: 3px solid var(--calendar-scheduled-border);
+    }
     .msc-tg-allday-chip.review { background: #7c3aed; }
-    .msc-tg-allday-chip.followup { background: #d97706; }
+    .msc-tg-allday-chip.followup {
+      background: var(--calendar-unscheduled-bg);
+      color: var(--calendar-unscheduled-text);
+      border-left: 3px solid var(--calendar-unscheduled-border);
+    }
     .msc-tg-allday-chip.planning { background: #059669; }
 
     @media (max-width: 640px) {
@@ -1131,6 +1153,146 @@
       box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
     }
 
+    /* ── "+ Create" dropdown (Google-style create workflow, 2026-07-20)
+       — compact menu anchored to the sidebar button. No Google assets;
+       icons are plain Unicode glyphs (set in instance.js markup). ── */
+    .msc-create-wrap {
+      position: relative;
+    }
+
+    .msc-create-btn-caret {
+      font-size: .65rem;
+      margin-left: 2px;
+      line-height: 1;
+    }
+
+    .msc-create-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 180px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      padding: 6px;
+      z-index: 60;
+    }
+
+    .msc-create-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: .84rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .msc-create-menu-item:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-create-menu-item:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
+    }
+
+    .msc-create-menu-icon {
+      font-size: .95rem;
+      line-height: 1;
+    }
+
+    /* ── Task/Leave create popups (Google-style create workflow,
+       2026-07-20) — reuse the existing .msc-modal-overlay/.msc-modal
+       backdrop pattern (same show/hide, same backdrop) with a wider,
+       form-sized variant. Fits within the viewport and scrolls
+       internally rather than growing past it (Step 10). ── */
+    .msc-modal-form {
+      max-width: 640px;
+      max-height: calc(100vh - 64px);
+      overflow-y: auto;
+      text-align: left;
+    }
+
+    .msc-modal-form-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-modal-form-head h4 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .msc-modal-form-head .msc-modal-close {
+      margin-top: 0;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    /* The moved form/leave-panel already carry their own card chrome
+       (border/padding/background) from their former lower-page
+       position — neutralized here so they don't render as a card
+       nested inside the popup's own card. Field IDs/classes/structure
+       are otherwise untouched (Step 4 — one form, reused verbatim). */
+    .msc-task-popup .msc-form-card {
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      margin-top: 0;
+      background: transparent;
+    }
+
+    .msc-leave-popup .msc-leave-form-panel {
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
+    }
+
+    .msc-leave-popup .msc-leave-notice {
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .msc-modal-form {
+        max-width: 92vw;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .msc-modal-form {
+        max-width: 100%;
+        max-height: calc(100vh - 32px);
+      }
+
+      .msc-create-menu {
+        left: auto;
+        right: 0;
+      }
+    }
+
     .msc-chip-cat {
       display: inline-block;
       font-size: .68rem;
@@ -1140,9 +1302,17 @@
       margin-right: 6px;
     }
 
+    /* Semantic category colors (2026-07-20) — Scheduled Task = green,
+       Unscheduled Task = yellow/amber, shared with .msc-cal-chip/
+       .msc-tg-event/.msc-tg-allday-chip below via the same
+       --calendar-scheduled-*/--calendar-unscheduled-* tokens
+       (tokens.css) so Month/Week/Day/legend/list all read from one
+       source. review/planning are unused by current category data
+       (core.js CATEGORY_CLASS only maps task/followup) — left
+       unchanged, out of scope. */
     .msc-chip-cat.task {
-      background: var(--amber-bg);
-      color: #8a5e1e;
+      background: var(--calendar-scheduled-bg);
+      color: var(--calendar-scheduled-text);
     }
 
     .msc-chip-cat.review {
@@ -1151,8 +1321,8 @@
     }
 
     .msc-chip-cat.followup {
-      background: var(--pass-bg);
-      color: var(--pass);
+      background: var(--calendar-unscheduled-bg);
+      color: var(--calendar-unscheduled-text);
     }
 
     .msc-chip-cat.planning {
@@ -1187,8 +1357,9 @@
     }
 
     .msc-cal-chip.task {
-      background: var(--amber-bg);
-      color: #8a5e1e;
+      background: var(--calendar-scheduled-bg);
+      color: var(--calendar-scheduled-text);
+      border-left: 3px solid var(--calendar-scheduled-border);
     }
 
     .msc-cal-chip.review {
@@ -1197,8 +1368,9 @@
     }
 
     .msc-cal-chip.followup {
-      background: var(--pass-bg);
-      color: var(--pass);
+      background: var(--calendar-unscheduled-bg);
+      color: var(--calendar-unscheduled-text);
+      border-left: 3px solid var(--calendar-unscheduled-border);
     }
 
     .msc-cal-chip.planning {
@@ -1224,9 +1396,13 @@
     /* ── Leave coordination copy (REQ-LEAVE-COPY-001) — deliberately
        distinct from .msc-cal-chip/.msc-chip-cat (task categories) so leave
        is never visually confused with Scheduled/Unscheduled tasks. Single
-       --draft (purple) treatment for every active leave record — there is
+       red treatment for every active leave record — there is
        no approval/status workflow (2026-07-16 simplification amendment),
-       so no per-status color variant exists. ── */
+       so no per-status color variant exists. Recolored from purple
+       (--draft) to red (--calendar-leave-*) 2026-07-20 per the confirmed
+       calendar color mapping — same soft-bg/dark-text/left-border
+       pattern as the Scheduled/Unscheduled chips above, so all three
+       categories read as one consistent visual family. ── */
     .msc-cal-chip-leave {
       display: block;
       font-size: .62rem;
@@ -1237,9 +1413,9 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      border-left: 3px solid var(--draft);
-      background: var(--draft-bg);
-      color: var(--draft);
+      border-left: 3px solid var(--calendar-leave-border);
+      background: var(--calendar-leave-bg);
+      color: var(--calendar-leave-text);
     }
 
     .msc-tg-allday-chip-leave {
@@ -1248,9 +1424,9 @@
       padding: 1px 8px;
       border-radius: 999px;
       margin: 1px 4px 1px 0;
-      border-left: 3px solid var(--draft);
-      background: var(--draft-bg);
-      color: var(--draft);
+      border-left: 3px solid var(--calendar-leave-border);
+      background: var(--calendar-leave-bg);
+      color: var(--calendar-leave-text);
     }
 
     /* Timed (Short Leave / Half-Day) leave blocks in the Week/Day time
@@ -1264,11 +1440,12 @@
       border-radius: 4px;
       padding: 2px 6px;
       font-size: .68rem;
-      color: #fff;
+      color: var(--calendar-leave-text);
       overflow: hidden;
       pointer-events: none;
       opacity: .92;
-      background: var(--draft);
+      border-left: 3px solid var(--calendar-leave-border);
+      background: var(--calendar-leave-bg);
     }
 
     /* ── Leave Coordination section polish (UI-only, 2026-07-16) ──

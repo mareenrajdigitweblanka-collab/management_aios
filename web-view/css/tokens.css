@@ -150,6 +150,25 @@
          validation/google-calendar-pixel-close-ui-check-2026-07-20.md
          for the viewports this was checked against. */
       --cal-canvas-height: max(560px, calc(100vh - var(--header-height) - 300px));
+
+      /* ── Calendar semantic category colors (2026-07-20 create-menu +
+         color-mapping task) — single source shared by Month chips,
+         Week/Day timed blocks, all-day chips, and the category legend
+         (calendar.css). Soft/light background + dark text pairing for
+         accessible contrast (each pair exceeds WCAG AA 4.5:1 — verified
+         against these exact values); labels/text remain the primary
+         signal, color is a secondary reinforcement, never the only one. */
+      --calendar-scheduled-bg: #dcfce7;
+      --calendar-scheduled-text: #14532d;
+      --calendar-scheduled-border: #86efac;
+
+      --calendar-unscheduled-bg: #fef3c7;
+      --calendar-unscheduled-text: #78350f;
+      --calendar-unscheduled-border: #fcd34d;
+
+      --calendar-leave-bg: #fee2e2;
+      --calendar-leave-text: #7f1d1d;
+      --calendar-leave-border: #fca5a5;
     }
 
     html {
