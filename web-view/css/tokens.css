@@ -151,16 +151,27 @@
          for the viewports this was checked against. */
       --cal-canvas-height: max(560px, calc(100vh - var(--header-height) - 300px));
 
-      /* "+N more" popup horizontal-resize bounds (calendar-popup-resize-
-         edit-cancel-and-hover-ux task, 2026-07-20) — user-adjustable via
-         the native CSS `resize: horizontal` handle (calendar.css), clamped
-         so it can never shrink below a usable width or grow past the
-         viewport. --more-popup-default-width keeps the popup's initial
-         open size identical to the prior fixed max-width (320px) — only
-         the ceiling and the ability to widen are new. */
-      --more-popup-min-width: 220px;
-      --more-popup-default-width: 320px;
-      --more-popup-max-width: min(560px, calc(100vw - 32px));
+      /* "+N more" popup automatic responsive width (calendar-more-popup-
+         auto-responsive-width task, 2026-07-20) — replaces the prior
+         manual `resize: horizontal` bounds. No user drag interaction;
+         width is computed purely from viewport size via clamp()/vw so it
+         reads consistently for every user without requiring discovery of
+         a resize handle. Desktop/laptop tier (default, >1024px viewport):
+         27vw scales the preferred width between the 360px floor (reached
+         around the 1366px laptop breakpoint) and the 480px ceiling
+         (reached once the viewport is wide enough, ~1780px+) — see
+         validation/calendar-more-popup-auto-responsive-width-check-
+         2026-07-20.md for the per-breakpoint computed values this was
+         checked against. Tablet and mobile tiers are defined in
+         calendar.css media queries (1024px/480px) using the *-tablet
+         tokens below and a fixed near-full-width mobile rule respectively. */
+      --more-popup-width: clamp(360px, 27vw, 480px);
+      --more-popup-min-width: min(320px, calc(100vw - 32px));
+      --more-popup-max-width: calc(100vw - 32px);
+
+      --more-popup-width-tablet: clamp(300px, 46vw, 420px);
+      --more-popup-min-width-tablet: min(280px, calc(100vw - 40px));
+      --more-popup-max-width-tablet: calc(100vw - 40px);
 
       /* ── Calendar semantic category colors (2026-07-20 create-menu +
          color-mapping task) — single source shared by Month chips,

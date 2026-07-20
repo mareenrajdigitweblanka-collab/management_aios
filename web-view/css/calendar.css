@@ -1334,23 +1334,26 @@
        .msc-create-menu below) rather than a centered .msc-modal-overlay
        backdrop — "preferably anchored near the +N more link", per the
        confirmed requirement. */
-    /* Horizontally user-resizable (calendar-popup-resize-edit-cancel-and-
-       hover-ux task, 2026-07-20) — native `resize: horizontal` rather than
-       JS-computed widths, since positionMorePopup() (instance.js) anchors
-       the popup with an explicit `left`/`top` (never `right`/`bottom`),
-       so the browser's native resize handle grows the box rightward from
-       that fixed left edge without any position recalculation needed.
-       Vertical sizing is untouched — max-height/scroll behavior below is
-       unchanged, only overflow-y broadened to overflow (both axes) so the
-       resize handle renders. */
+    /* Automatic responsive width (calendar-more-popup-auto-responsive-
+       width task, 2026-07-20) — replaces the prior manual
+       `resize: horizontal` behavior. No drag handle, no discoverability
+       problem, no risk of an awkwardly-wide popup covering nearby
+       calendar cells: width is computed purely from viewport size via
+       the --more-popup-* clamp()/vw tokens (tokens.css) and the tablet/
+       mobile overrides below. positionMorePopup() (instance.js) still
+       anchors with an explicit `left`/`top` and clamps both against the
+       viewport edges — unchanged, since it already reads the popup's
+       *rendered* width via offsetWidth rather than assuming a fixed
+       value, so it works the same whether that width came from a user
+       drag or (now) purely from CSS. */
     .msc-more-popup {
       position: fixed;
       min-width: var(--more-popup-min-width);
-      width: var(--more-popup-default-width);
+      width: var(--more-popup-width);
       max-width: var(--more-popup-max-width);
       max-height: min(360px, calc(100vh - 32px));
-      overflow: auto;
-      resize: horizontal;
+      overflow-y: auto;
+      overflow-x: hidden;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -1359,29 +1362,20 @@
       z-index: 70;
     }
 
-    /* Restrained resize-grip reinforcement (Step 7) — the native corner
-       handle the `resize` property already draws can read as very faint
-       against --surface, especially in dark mode; these few diagonal
-       strokes sit on top of it (decorative only, pointer-events:none —
-       the browser's own resize hit-testing is unaffected) so the popup's
-       widenability doesn't depend on the user noticing a 12px native
-       glyph. No JS, no extra DOM node. */
-    .msc-more-popup::after {
-      content: "";
-      position: absolute;
-      right: 2px;
-      bottom: 2px;
-      width: 9px;
-      height: 9px;
-      pointer-events: none;
-      opacity: .55;
-      background:
-        linear-gradient(135deg, transparent 0 45%, var(--muted-2) 45% 55%, transparent 55%) 0 0 / 9px 9px,
-        linear-gradient(135deg, transparent 0 70%, var(--muted-2) 70% 80%, transparent 80%) 0 0 / 9px 9px;
-    }
-
     .msc-more-popup[hidden] {
       display: none;
+    }
+
+    /* Tablet tier (Step 4/9) — viewport-relative width via the
+       *-tablet tokens (tokens.css), narrower ceiling than the desktop/
+       laptop default above since less viewport width is typically
+       available for the calendar card itself at this size. */
+    @media (max-width: 1024px) {
+      .msc-more-popup {
+        min-width: var(--more-popup-min-width-tablet);
+        width: var(--more-popup-width-tablet);
+        max-width: var(--more-popup-max-width-tablet);
+      }
     }
 
     .msc-more-popup-head {
@@ -1467,20 +1461,13 @@
       white-space: nowrap;
     }
 
-    /* Mobile/touch (Step 15) — a resize drag handle is impractical to hit
-       precisely with a fingertip, and can't be required for the popup to
-       be usable, so resize is disabled here and the popup instead takes
-       a fixed, already-safe full-bleed width. */
+    /* Mobile tier (Step 4/9) — near-full width with safe 8px side
+       margins; no drag interaction of any kind is required or offered. */
     @media (max-width: 480px) {
       .msc-more-popup {
         min-width: 0;
         width: calc(100vw - 16px);
         max-width: calc(100vw - 16px);
-        resize: none;
-      }
-
-      .msc-more-popup::after {
-        display: none;
       }
     }
 
