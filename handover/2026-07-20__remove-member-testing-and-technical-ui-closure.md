@@ -110,8 +110,9 @@ is needed.
 
 ## Commit hashes
 
-Filled in after commit (see final report). Repo `HEAD` before this
-task's edits: `697e821`.
+- Repo `HEAD` before this task's edits: `697e821`
+- Implementation commit: `66924c9` — "Remove testing and technical UI from member panels"
+- Evidence commit: `3a4c77f` — "Document member UI cleanup validation"
 
 ## Known limitations
 
