@@ -27,6 +27,12 @@ function mountScheduleCalendarInstance(container) {
   /* Same per-instance-unique-id rule, used for the sidebar toggle's
      aria-controls target (Phase 1 layout shell, 2026-07-14). */
   var sidebarId = 'msc-sidebar-' + memberKey;
+  /* Same per-instance-unique-id rule (create-menu popup workflow,
+     2026-07-20) — the "+ Create" dropdown's aria-controls target and
+     the Task/Leave popups' aria-labelledby targets. */
+  var createMenuId = 'msc-create-menu-' + memberKey;
+  var taskPopupTitleId = 'msc-task-popup-title-' + memberKey;
+  var leavePopupTitleId = 'msc-leave-popup-title-' + memberKey;
 
   var rajivNoteHtml = showRajivNote
     ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
@@ -68,8 +74,18 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '<div class="msc-calendar-main">' +
     '<div class="msc-sidebar" id="' + escapeHtml(sidebarId) + '">' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-create-btn msc-sidebar-create">' +
-    '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Create task</button>' +
+    '<div class="msc-create-wrap">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-create-btn msc-sidebar-create" ' +
+    'aria-haspopup="true" aria-expanded="false" aria-controls="' + escapeHtml(createMenuId) + '">' +
+    '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Create' +
+    '<span class="msc-create-btn-caret" aria-hidden="true">&#9662;</span></button>' +
+    '<div class="msc-create-menu" id="' + escapeHtml(createMenuId) + '" role="menu" aria-label="Create" hidden>' +
+    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="task">' +
+    '<span class="msc-create-menu-icon" aria-hidden="true">&#128221;</span>Task</button>' +
+    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="leave">' +
+    '<span class="msc-create-menu-icon" aria-hidden="true">&#128197;</span>Leave</button>' +
+    '</div>' +
+    '</div>' +
     '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
     '<div class="msc-category-legend" aria-label="Task category legend">' +
     '<span class="msc-chip-cat task">Scheduled Task</span>' +
@@ -104,80 +120,20 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '</div>' +
     '</div>' +
-    /* ── Section order (2026-07-17 month-task-list-navigation task) ──
-       Split from the former single hr-table-card that wrapped
-       form+list+priority+clear+footer+modal together, so the confirmed
-       page order — 1) Schedule Item creation form, 2) Leave applying
-       form, 3) Schedule Item list — can be produced by re-sequencing
-       these three existing, unmodified blocks rather than rewriting any
-       of them. No id/class/data-attribute inside any block changed. */
-    '<div class="hr-table-card">' +
-    '<div class="msc-form-card">' +
-    '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
-    '<span class="msc-selected-date-label">select a date</span></div>' +
-    '<form class="msc-form msc-form-grid" autocomplete="off">' +
-    '<label>Date<input type="date" class="msc-field-date" required /></label>' +
-    '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Prepare weekly report" maxlength="120" required />' +
-    '<span class="msc-field-title-counter">0 / 120</span></label>' +
-    '<label>Category<select class="msc-field-category">' +
-    '<option value="Scheduled Task">Scheduled Task</option>' +
-    '<option value="Unscheduled Task">Unscheduled Task</option>' +
-    '</select>' +
-    '<span class="msc-field-category-helper" style="display:none;">Category is fixed after the task is created.</span>' +
-    '</label>' +
-    '<label>Priority<select class="msc-field-priority">' +
-    '<option value="High">High</option>' +
-    '<option value="Medium" selected>Medium</option>' +
-    '<option value="Low">Low</option>' +
-    '</select></label>' +
-    '<label>Start time<input type="time" class="msc-field-start" /></label>' +
-    '<label>End time<input type="time" class="msc-field-end" /></label>' +
-    '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
-    'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
-    '</form>' +
-    '<div class="msc-form-actions">' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-update-btn" style="display:none;">Update schedule</button>' +
-    '<button type="button" class="msc-btn msc-btn-ghost msc-cancel-btn" style="display:none;">Cancel edit</button>' +
-    '</div>' +
-    '</div>' +
-    '</div>' +
+    /* ── Section order (2026-07-17 month-task-list-navigation task;
+       creation forms moved into popups 2026-07-20 — see the
+       msc-task-popup/msc-leave-popup blocks below, sited near the
+       existing msc-view-modal. The Task creation form and the Leave
+       creation form each exist exactly once in the DOM, inside their
+       popup; only the two remaining lower-page sections — Leave list,
+       Schedule Item list — stay in their prior page position.) ──
+       Page order: 1) Leave Coordination list, 2) Schedule Item list. */
     '<div class="hr-table-card msc-leave-card">' +
     '<div class="msc-leave-card-head">' +
     '<h4 class="msc-leave-title"><span class="msc-leave-title-icon" aria-hidden="true">&#128197;</span>Leave Coordination ' +
     '<span style="font-weight:600;color:var(--muted);">(Calendar Copy)</span></h4>' +
-    '<p class="msc-leave-subtitle">Create, track, and coordinate leave for ' + escapeHtml(memberLabel) +
-    ' directly on this calendar.</p>' +
-    '</div>' +
-    '<div class="msc-leave-notice"><span class="msc-leave-notice-icon" aria-hidden="true">&#8505;&#65039;</span>' +
-    '<span>Calendar coordination copy only. The separate HR leave system remains ' +
-    'official. This is not an official leave balance, payroll/no-pay calculation, disciplinary decision, ' +
-    'or medical record — and no field here represents an official HR approval decision.</span></div>' +
-    '<div class="msc-leave-section">' +
-    '<div class="msc-leave-section-title">New Leave Request</div>' +
-    '<div class="msc-leave-form-panel">' +
-    '<form class="msc-leave-form msc-form-grid" autocomplete="off">' +
-    '<label>Leave type<select class="msc-leave-field-type">' +
-    '<option value="Short Leave">Short Leave</option>' +
-    '<option value="Half-Day First">Half-Day Leave — First Half (08:30–13:00)</option>' +
-    '<option value="Half-Day Second">Half-Day Leave — Second Half (13:30–18:00)</option>' +
-    '<option value="Full-Day">Full-Day Leave</option>' +
-    '<option value="Multi-Day">Multi-Day Leave</option>' +
-    '</select></label>' +
-    '<label class="msc-leave-field-start-date-wrap">Start date<input type="date" class="msc-leave-field-start-date" required /></label>' +
-    '<label class="msc-leave-field-end-date-wrap" style="display:none;">End date<input type="date" class="msc-leave-field-end-date" /></label>' +
-    '<label class="msc-leave-field-time-wrap" style="display:none;">Start time<input type="time" class="msc-leave-field-start-time" /></label>' +
-    '<label class="msc-leave-field-time-wrap" style="display:none;">End time<input type="time" class="msc-leave-field-end-time" /></label>' +
-    '<label class="msc-form-full">Purpose (optional)<input type="text" class="msc-leave-field-purpose" maxlength="240" ' +
-    'placeholder="Optional — no medical detail" /></label>' +
-    '<label class="msc-form-full">External reference (optional)<input type="text" class="msc-leave-field-external-reference" ' +
-    'maxlength="120" placeholder="e.g. official HR leave system reference id" /></label>' +
-    '</form>' +
-    '<p class="msc-note msc-api-status msc-leave-form-status" style="display:none;"></p>' +
-    '<div class="msc-form-actions">' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
-    '</div>' +
-    '</div>' +
+    '<p class="msc-leave-subtitle">Track and coordinate leave for ' + escapeHtml(memberLabel) +
+    ' on this calendar. Use + Create &#8594; Leave to add a new request.</p>' +
     '</div>' +
     '<div class="msc-leave-section">' +
     '<div class="msc-leave-section-title">Leave — ' +
@@ -215,6 +171,88 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-view-priority"></p>' +
     '<p class="msc-view-notes"></p>' +
     '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
+    '</div>' +
+    '</div>' +
+    /* ── Task creation popup (Google-style create workflow, 2026-07-20)
+       — the one and only Schedule Item creation/edit form in the DOM,
+       moved here verbatim (same field classes, same title-counter,
+       same category-locked-on-edit helper, same Add/Update/Cancel
+       buttons) from its former lower-page position. */
+    '<div class="msc-modal-overlay msc-task-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(taskPopupTitleId) + '">' +
+    '<div class="msc-modal msc-modal-form">' +
+    '<div class="msc-modal-form-head">' +
+    '<h4 id="' + escapeHtml(taskPopupTitleId) + '">Create Task</h4>' +
+    '<button type="button" class="msc-modal-close msc-task-popup-close" aria-label="Close">&times;</button>' +
+    '</div>' +
+    '<div class="msc-form-card">' +
+    '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
+    '<span class="msc-selected-date-label">select a date</span></div>' +
+    '<form class="msc-form msc-form-grid" autocomplete="off">' +
+    '<label>Date<input type="date" class="msc-field-date" required /></label>' +
+    '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Prepare weekly report" maxlength="120" required />' +
+    '<span class="msc-field-title-counter">0 / 120</span></label>' +
+    '<label>Category<select class="msc-field-category">' +
+    '<option value="Scheduled Task">Scheduled Task</option>' +
+    '<option value="Unscheduled Task">Unscheduled Task</option>' +
+    '</select>' +
+    '<span class="msc-field-category-helper" style="display:none;">Category is fixed after the task is created.</span>' +
+    '</label>' +
+    '<label>Priority<select class="msc-field-priority">' +
+    '<option value="High">High</option>' +
+    '<option value="Medium" selected>Medium</option>' +
+    '<option value="Low">Low</option>' +
+    '</select></label>' +
+    '<label>Start time<input type="time" class="msc-field-start" /></label>' +
+    '<label>End time<input type="time" class="msc-field-end" /></label>' +
+    '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
+    'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
+    '</form>' +
+    '<p class="msc-note msc-api-status msc-task-popup-status" style="display:none;"></p>' +
+    '<div class="msc-form-actions">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-update-btn" style="display:none;">Update schedule</button>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-cancel-btn" style="display:none;">Cancel edit</button>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
+    /* ── Leave creation popup — the one and only Leave creation form in
+       the DOM (moved verbatim, including its truth notice and its own
+       dedicated status line), moved here from its former lower-page
+       position. */
+    '<div class="msc-modal-overlay msc-leave-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(leavePopupTitleId) + '">' +
+    '<div class="msc-modal msc-modal-form">' +
+    '<div class="msc-modal-form-head">' +
+    '<h4 id="' + escapeHtml(leavePopupTitleId) + '">Create Leave</h4>' +
+    '<button type="button" class="msc-modal-close msc-leave-popup-close" aria-label="Close">&times;</button>' +
+    '</div>' +
+    '<div class="msc-leave-notice"><span class="msc-leave-notice-icon" aria-hidden="true">&#8505;&#65039;</span>' +
+    '<span>Calendar coordination copy only. The separate HR leave system remains ' +
+    'official. This is not an official leave balance, payroll/no-pay calculation, disciplinary decision, ' +
+    'or medical record — and no field here represents an official HR approval decision.</span></div>' +
+    '<div class="msc-leave-form-panel">' +
+    '<form class="msc-leave-form msc-form-grid" autocomplete="off">' +
+    '<label>Leave type<select class="msc-leave-field-type">' +
+    '<option value="Short Leave">Short Leave</option>' +
+    '<option value="Half-Day First">Half-Day Leave — First Half (08:30–13:00)</option>' +
+    '<option value="Half-Day Second">Half-Day Leave — Second Half (13:30–18:00)</option>' +
+    '<option value="Full-Day">Full-Day Leave</option>' +
+    '<option value="Multi-Day">Multi-Day Leave</option>' +
+    '</select></label>' +
+    '<label class="msc-leave-field-start-date-wrap">Start date<input type="date" class="msc-leave-field-start-date" required /></label>' +
+    '<label class="msc-leave-field-end-date-wrap" style="display:none;">End date<input type="date" class="msc-leave-field-end-date" /></label>' +
+    '<label class="msc-leave-field-time-wrap" style="display:none;">Start time<input type="time" class="msc-leave-field-start-time" /></label>' +
+    '<label class="msc-leave-field-time-wrap" style="display:none;">End time<input type="time" class="msc-leave-field-end-time" /></label>' +
+    '<label class="msc-form-full">Purpose (optional)<input type="text" class="msc-leave-field-purpose" maxlength="240" ' +
+    'placeholder="Optional — no medical detail" /></label>' +
+    '<label class="msc-form-full">External reference (optional)<input type="text" class="msc-leave-field-external-reference" ' +
+    'maxlength="120" placeholder="e.g. official HR leave system reference id" /></label>' +
+    '</form>' +
+    '<p class="msc-note msc-api-status msc-leave-form-status" style="display:none;"></p>' +
+    '<div class="msc-form-actions">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
+    '</div>' +
+    '</div>' +
     '</div>' +
     '</div>' +
     '</div>';
@@ -278,7 +316,17 @@ function mountScheduleCalendarInstance(container) {
   var sidebarEl = container.querySelector('.msc-sidebar');
   var sidebarToggleBtn = container.querySelector('.msc-sidebar-toggle');
   var sidebarCreateBtn = container.querySelector('.msc-sidebar-create');
-  var formCardEl = container.querySelector('.msc-form-card');
+
+  /* ── Create dropdown + Task/Leave popups (Google-style create
+     workflow, 2026-07-20) ── */
+  var createWrapEl = container.querySelector('.msc-create-wrap');
+  var createMenuEl = container.querySelector('.msc-create-menu');
+  var createMenuItems = container.querySelectorAll('.msc-create-menu-item');
+  var taskPopupOverlay = container.querySelector('.msc-task-popup');
+  var taskPopupClose = container.querySelector('.msc-task-popup-close');
+  var taskPopupStatusEl = container.querySelector('.msc-task-popup-status');
+  var leavePopupOverlay = container.querySelector('.msc-leave-popup');
+  var leavePopupClose = container.querySelector('.msc-leave-popup-close');
 
   /* ── Leave coordination copy (REQ-LEAVE-COPY-001) scoped refs ── */
   var leaveApiBase = MEMBER_LEAVE_API_BASE + '/' + encodeURIComponent(memberKey);
@@ -316,13 +364,127 @@ function mountScheduleCalendarInstance(container) {
     sidebarToggleBtn.setAttribute('aria-expanded', sidebarCollapsed ? 'false' : 'true');
   });
 
-  /* Phase 1 "Create task" is a scroll/focus shortcut to the existing
-     persistent form — no popup yet (deferred to a later phase). */
-  sidebarCreateBtn.addEventListener('click', function () {
-    if (formCardEl && formCardEl.scrollIntoView) {
-      formCardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  /* ── "+ Create" dropdown (Google-style create workflow, 2026-07-20)
+     — replaces the former scroll-to-form shortcut. Only one dropdown
+     can be open per instance (createMenuOpen is closure-scoped to
+     this mount); each of the 5 member calendars keeps independent
+     state, same pattern as the sidebar-collapse toggle above. */
+  var createMenuOpen = false;
+
+  function closeCreateMenu() {
+    if (!createMenuOpen) { return; }
+    createMenuOpen = false;
+    createMenuEl.hidden = true;
+    sidebarCreateBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onDocClickForCreateMenu, true);
+    document.removeEventListener('keydown', onCreateMenuKeydown, true);
+  }
+
+  function openCreateMenu() {
+    if (createMenuOpen) { return; }
+    createMenuOpen = true;
+    createMenuEl.hidden = false;
+    sidebarCreateBtn.setAttribute('aria-expanded', 'true');
+    document.addEventListener('click', onDocClickForCreateMenu, true);
+    document.addEventListener('keydown', onCreateMenuKeydown, true);
+  }
+
+  function onDocClickForCreateMenu(e) {
+    if (createWrapEl && createWrapEl.contains(e.target)) { return; }
+    closeCreateMenu();
+  }
+
+  function onCreateMenuKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      e.preventDefault();
+      closeCreateMenu();
+      sidebarCreateBtn.focus();
     }
+  }
+
+  sidebarCreateBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (createMenuOpen) { closeCreateMenu(); } else { openCreateMenu(); }
+  });
+
+  createMenuItems.forEach(function (item) {
+    item.addEventListener('click', function () {
+      var kind = item.getAttribute('data-create-kind');
+      closeCreateMenu();
+      if (kind === 'task') {
+        cancelEdit();
+        openTaskPopup();
+      } else if (kind === 'leave') {
+        openLeavePopup();
+      }
+    });
+  });
+
+  /* ── Task/Leave popup focus trap + open/close (Google-style create
+     workflow, 2026-07-20) — Tab/Shift+Tab cycle within the popup's
+     own focusable elements (a real trap, unlike the single-control
+     view-modal's Tab-pinned pattern above, since these popups host a
+     full multi-field form). Escape and backdrop-click close; focus
+     always returns to "+ Create" per the confirmed requirement,
+     regardless of what originally triggered the open (dropdown item
+     or an Edit click from the Schedule Items list). */
+  function getFocusableEls(root) {
+    return Array.prototype.slice.call(root.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+      'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(function (el) { return el.offsetParent !== null; });
+  }
+
+  function trapPopupTab(overlayEl, e) {
+    var focusables = getFocusableEls(overlayEl.querySelector('.msc-modal'));
+    if (!focusables.length) { return; }
+    var first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  function onTaskPopupKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeTaskPopup(); }
+    else if (e.key === 'Tab') { trapPopupTab(taskPopupOverlay, e); }
+  }
+
+  function openTaskPopup() {
+    taskPopupOverlay.classList.add('show');
+    taskPopupOverlay.addEventListener('keydown', onTaskPopupKeydown);
     if (fieldTitle && fieldTitle.focus) { fieldTitle.focus(); }
+  }
+
+  function closeTaskPopup() {
+    taskPopupOverlay.classList.remove('show');
+    taskPopupOverlay.removeEventListener('keydown', onTaskPopupKeydown);
+    if (sidebarCreateBtn && sidebarCreateBtn.focus) { sidebarCreateBtn.focus(); }
+  }
+
+  taskPopupClose.addEventListener('click', closeTaskPopup);
+  taskPopupOverlay.addEventListener('click', function (e) {
+    if (e.target === taskPopupOverlay) { closeTaskPopup(); }
+  });
+
+  function onLeavePopupKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeLeavePopup(); }
+    else if (e.key === 'Tab') { trapPopupTab(leavePopupOverlay, e); }
+  }
+
+  function openLeavePopup() {
+    leavePopupOverlay.classList.add('show');
+    leavePopupOverlay.addEventListener('keydown', onLeavePopupKeydown);
+    if (leaveFieldType && leaveFieldType.focus) { leaveFieldType.focus(); }
+  }
+
+  function closeLeavePopup() {
+    leavePopupOverlay.classList.remove('show');
+    leavePopupOverlay.removeEventListener('keydown', onLeavePopupKeydown);
+    if (sidebarCreateBtn && sidebarCreateBtn.focus) { sidebarCreateBtn.focus(); }
+  }
+
+  leavePopupClose.addEventListener('click', closeLeavePopup);
+  leavePopupOverlay.addEventListener('click', function (e) {
+    if (e.target === leavePopupOverlay) { closeLeavePopup(); }
   });
 
   var state = {
@@ -335,19 +497,28 @@ function mountScheduleCalendarInstance(container) {
      how the message is styled/announced changed. Non-error messages
      (loading/saving/deleting) use role="status" (polite); a genuine
      error switches to role="alert" (assertive) so it isn't missed. */
-  function showApiStatus(message, isError) {
+  /* targetEl (Google-style create workflow, 2026-07-20) — optional
+     third argument, defaults to the original calendar-wide status
+     line (apiStatusEl) so loadItems/drag/resize-commit/delete/clear-
+     testing-data are entirely unchanged (still 2-arg calls below).
+     The Task Add/Update handlers pass taskPopupStatusEl explicitly so
+     a save/validation error is visible inside the open popup instead
+     of on a banner hidden behind the popup's backdrop — same message
+     text, same toggle mechanics, just a different display target. */
+  function showApiStatus(message, isError, targetEl) {
+    var el = targetEl || apiStatusEl;
     if (!message) {
-      apiStatusEl.style.display = 'none';
-      apiStatusEl.textContent = '';
-      apiStatusEl.removeAttribute('role');
-      apiStatusEl.classList.remove('msc-api-status--info', 'msc-api-status--error');
+      el.style.display = 'none';
+      el.textContent = '';
+      el.removeAttribute('role');
+      el.classList.remove('msc-api-status--info', 'msc-api-status--error');
       return;
     }
-    apiStatusEl.style.display = '';
-    apiStatusEl.classList.toggle('msc-api-status--error', !!isError);
-    apiStatusEl.classList.toggle('msc-api-status--info', !isError);
-    apiStatusEl.setAttribute('role', isError ? 'alert' : 'status');
-    apiStatusEl.textContent = message;
+    el.style.display = '';
+    el.classList.toggle('msc-api-status--error', !!isError);
+    el.classList.toggle('msc-api-status--info', !isError);
+    el.setAttribute('role', isError ? 'alert' : 'status');
+    el.textContent = message;
   }
 
   /* ── API helpers — no localStorage; this is the only place calendar data
@@ -1211,14 +1382,15 @@ function mountScheduleCalendarInstance(container) {
     });
     var addedDate = fieldDate.value;
     addBtn.disabled = true;
-    showApiStatus('Saving…', false);
+    showApiStatus('Saving…', false, taskPopupStatusEl);
     apiRequest('POST', apiBase, payload).then(function (apiItem) {
       items.push(apiItemToFrontend(apiItem));
-      showApiStatus('', false);
+      showApiStatus('', false, taskPopupStatusEl);
       selectDate(addedDate);
       resetForm();
+      closeTaskPopup();
     }).catch(function (err) {
-      showApiStatus('Could not save this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+      showApiStatus('Could not save this schedule item — the local API may be unavailable. Detail: ' + err.message, true, taskPopupStatusEl);
     }).then(function () { addBtn.disabled = false; });
   });
 
@@ -1239,6 +1411,11 @@ function mountScheduleCalendarInstance(container) {
     addBtn.style.display = 'none';
     updateBtn.style.display = '';
     cancelBtn.style.display = '';
+    /* Edit (from the Schedule Items list, Step 20) opens the same
+       single Task popup the fields above just populated — the form
+       only exists inside the popup now, so without this the fields
+       would be filled while hidden. */
+    openTaskPopup();
   }
 
   updateBtn.addEventListener('click', function () {
@@ -1257,16 +1434,17 @@ function mountScheduleCalendarInstance(container) {
     });
     var editingId = state.editingId;
     updateBtn.disabled = true;
-    showApiStatus('Saving…', false);
+    showApiStatus('Saving…', false, taskPopupStatusEl);
     apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiItem) {
       var updated = apiItemToFrontend(apiItem);
       var idx = items.indexOf(it);
       if (idx !== -1) { items[idx] = updated; }
-      showApiStatus('', false);
+      showApiStatus('', false, taskPopupStatusEl);
       selectDate(updated.date);
       cancelEdit();
+      closeTaskPopup();
     }).catch(function (err) {
-      showApiStatus('Could not update this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+      showApiStatus('Could not update this schedule item — the local API may be unavailable. Detail: ' + err.message, true, taskPopupStatusEl);
     }).then(function () { updateBtn.disabled = false; });
   });
 
@@ -1476,6 +1654,14 @@ function mountScheduleCalendarInstance(container) {
       resetLeaveForm();
       renderActiveView();
       renderLeaveList();
+      /* Refresh leave-deduction reporting on successful save (Step 13,
+         2026-07-20 popup workflow) — same guarded call
+         deleteLeaveRecord() below already uses; previously only
+         delete refreshed summaries, not create. Calls the existing,
+         unmodified loadSummaries()/report endpoints — no Schedule
+         Summary logic changed. */
+      if (state.selectedDate) { loadSummaries(state.selectedDate); }
+      closeLeavePopup();
     }).catch(function (err) {
       /* member-leave-overlap-prevention (2026-07-17): on a 409
          leave_overlap rejection, the form is deliberately NOT reset
