@@ -1,8 +1,21 @@
-    /* ── Top bar (compact application header, 2026-07-17 redesign) ──
-       Height reduced 60px → var(--header-height) (56px); metadata weight
-       reduced; READ ONLY promoted to a standing pill that is never hidden
-       at any viewport (previously .topbar-right — including READ ONLY —
-       was hidden outright below 640px; that regression is fixed below). */
+    /* ── Top bar (compact application header, 2026-07-17 redesign;
+       search moved in / internal-build metadata removed, 2026-07-20
+       header-and-sidebar-UX task) ──
+       Height: var(--header-height) (56px). The READ ONLY pill, Branch/
+       Commit/date metadata, and the read-only warning panel that used to
+       sit beneath this header are gone (frontend-only visual cleanup —
+       no repository metadata or Git behavior changed). Search now lives
+       here (see .topbar-search below) in the space they occupied. */
+    /* justify-content: flex-start (was space-between, back when a second
+       flex child — .topbar-right — existed) — 2026-07-20 header-and-
+       sidebar-UX task. With only .topbar-left and .topbar-search as flex
+       children now, space-between would put ALL of the header's free
+       space into one gap between them, pinning search hard against the
+       right edge on wide screens instead of growing naturally next to
+       the title. flex-start + .topbar-search's own flex-grow (up to its
+       max-width) fills the space immediately after the title instead,
+       leaving only a normal trailing margin at the far right — avoids
+       "large empty space" per Step 14. */
     .topbar {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: #e2e8f0;
@@ -10,7 +23,7 @@
       height: var(--header-height);
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 12px;
       position: sticky;
       top: 0;
@@ -100,46 +113,119 @@
       text-overflow: ellipsis;
     }
 
-    .topbar-right {
+    /* ── Header search (2026-07-20 header-and-sidebar-UX task) ──
+       Replaces the former light-themed .search-tools/.workspace-search
+       (navigation.css, now removed) with dark-header-appropriate styling
+       in the space the READ ONLY pill / Branch / Commit / date metadata
+       used to occupy. Same #searchInput/#searchClear/#searchResults IDs
+       and navigation.js doSearch()/data-searchable logic — presentation
+       only. flex:1 lets it grow into the available header width; a
+       max-width keeps it from stretching edge-to-edge on very wide
+       screens (Step 4 "sensible maximum width"). */
+    .topbar-search {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: .72rem;
-      color: #94a3b8;
-      flex-shrink: 0;
+      flex: 1 1 auto;
+      max-width: 460px;
+      min-width: 0;
+      margin-left: 16px;
     }
 
-    .topbar-readonly-pill {
-      font-size: .66rem;
-      letter-spacing: .07em;
-      flex-shrink: 0;
-    }
-
-    .topbar-meta {
+    .topbar-search-pill {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-
-    .topbar-commit {
-      background: rgba(255, 255, 255, .07);
+      flex: 1;
+      min-width: 0;
+      padding: 0 12px;
+      height: 34px;
       border: 1px solid #334155;
-      border-radius: var(--radius-sm);
-      padding: 2px 8px;
-      font-family: ui-monospace, monospace;
-      font-size: .7rem;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, .06);
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+
+    .topbar-search-pill:focus-within {
+      border-color: var(--accent);
+      box-shadow: var(--focus-ring);
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .topbar-search-icon {
+      flex-shrink: 0;
+      width: 15px;
+      height: 15px;
+      color: #94a3b8;
+    }
+
+    .topbar-search-pill:focus-within .topbar-search-icon {
       color: #7dd3fc;
     }
 
-    .topbar-date {
-      white-space: nowrap;
+    #searchInput {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-size: var(--font-sm);
+      color: #f1f5f9;
+      outline: none;
     }
 
-    /* Narrow header: drop the least-essential metadata first, but the
-       product identity and the READ ONLY pill are never hidden. */
+    #searchInput::placeholder {
+      color: #94a3b8;
+    }
+
+    /* The pill (.topbar-search-pill:focus-within above) carries the
+       visible focus ring; the bare input keeps no outline of its own so
+       the ring isn't drawn twice. */
+    #searchInput:focus-visible {
+      outline: none;
+    }
+
+    #searchClear {
+      padding: 0 12px;
+      height: 34px;
+      border: 1px solid #334155;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, .05);
+      color: #cbd5e1;
+      font-size: var(--font-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .12s, border-color .12s;
+      flex-shrink: 0;
+    }
+
+    #searchClear:hover {
+      background: rgba(255, 255, 255, .1);
+      border-color: #475569;
+    }
+
+    #searchClear:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    #searchResults {
+      font-size: var(--font-2xs);
+      color: #94a3b8;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Narrow header: drop the least-essential elements first, but the
+       product identity and search are never hidden. */
     @media (max-width: 900px) {
       .topbar-sub {
         display: none;
+      }
+
+      .topbar-search {
+        max-width: 320px;
       }
     }
 
@@ -152,9 +238,26 @@
         padding: 0 14px;
       }
 
-      .topbar-date,
-      .topbar-meta .topbar-sep {
+      .topbar-search {
+        max-width: none;
+        margin-left: 10px;
+      }
+
+      /* Compact/controlled shrink rather than a second header row (Step 4
+         "controlled expandable layout") — a second row would change the
+         header's rendered height, which --header-height (tokens.css)
+         assumes is a fixed 56px everywhere else (scroll-margin-top offset,
+         calendar canvas-height formula) — kept single-row to avoid that
+         unrelated side effect. The result count is the least essential
+         piece at this width; Clear's padding is trimmed so the input
+         keeps as much of the remaining space as possible. Nothing here
+         hides the sidebar toggle, logo, search input, or Clear itself. */
+      #searchResults {
         display: none;
+      }
+
+      #searchClear {
+        padding: 0 10px;
       }
     }
 

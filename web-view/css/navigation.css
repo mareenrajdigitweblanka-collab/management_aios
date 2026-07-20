@@ -26,128 +26,14 @@
       color: var(--pass);
     }
 
-    /* ── Workspace toolbar (2026-07-17 redesign) ──
-       Replaces the former full-bleed .search-strip + .safety-strip pair
-       (two stacked, visually disconnected bars) with one compact row:
-       search tools on the left, the read-only notice on the right. Same
-       #searchInput/#searchClear/#searchResults IDs and search-hint content
-       as before — navigation.js's doSearch()/data-searchable logic is
-       untouched; only presentation changed. Wraps to a stacked layout on
-       narrow screens (see media query below). */
-    .workspace-toolbar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
-    }
-
-    .search-tools {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex: 1 1 320px;
-      min-width: 0;
-    }
-
-    /* ── Professional search pill (2026-07-17 header-safe-scroll/search/
-       sidebar/typography task) — same #searchInput id, same doSearch()/
-       data-searchable logic; only the container/icon/sizing changed. The
-       icon+input share one rounded pill (border/background/focus ring
-       live on .workspace-search, not the bare input) so focusing the
-       input highlights the whole control, not just a thin inner box. ── */
-    .workspace-search {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-      max-width: 380px;
-      min-width: 0;
-      padding: 0 12px;
-      height: 38px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      background: var(--surface-tint);
-      transition: border-color .15s, box-shadow .15s, background .15s;
-    }
-
-    .workspace-search:focus-within {
-      border-color: var(--accent);
-      box-shadow: var(--focus-ring);
-      background: var(--surface);
-    }
-
-    .workspace-search-icon {
-      flex-shrink: 0;
-      width: 16px;
-      height: 16px;
-      color: var(--muted-2);
-    }
-
-    .workspace-search:focus-within .workspace-search-icon {
-      color: var(--accent);
-    }
-
-    #searchInput {
-      flex: 1;
-      min-width: 0;
-      height: 100%;
-      padding: 0;
-      border: none;
-      background: transparent;
-      font-size: var(--font-base);
-      color: var(--text);
-      outline: none;
-    }
-
-    #searchInput::placeholder {
-      color: var(--muted-2);
-    }
-
-    /* The pill (.workspace-search:focus-within above) carries the visible
-       focus ring; the bare input keeps no outline of its own so the ring
-       isn't drawn twice. */
-    #searchInput:focus-visible {
-      outline: none;
-    }
-
-    #searchClear {
-      padding: 0 14px;
-      height: 38px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: var(--font-sm);
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .12s, border-color .12s;
-      flex-shrink: 0;
-    }
-
-    #searchClear:hover {
-      background: var(--surface-tint-3);
-      border-color: var(--muted-2);
-    }
-
-    #searchClear:focus-visible {
-      outline: none;
-      box-shadow: var(--focus-ring);
-    }
-
-    #searchResults {
-      font-size: var(--font-xs);
-      color: var(--muted);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* Search helper copy is now an accessible description (aria-describedby)
-       rather than a third visible row of text — visually-hidden, not removed. */
+    /* Search helper copy is an accessible description (aria-describedby)
+       rather than a visible row of text — visually-hidden, not removed.
+       Used by the header search's label/hint (index.html) since search
+       moved into .topbar (2026-07-20 header-and-sidebar-UX task; see
+       base.css's .topbar-search rules for the search's own styling). The
+       former .workspace-toolbar/.search-tools/.workspace-search/
+       .readonly-notice rules that used to live here were removed along
+       with the row itself — no longer referenced anywhere in the DOM. */
     .visually-hidden {
       position: absolute;
       width: 1px;
@@ -158,61 +44,6 @@
       border: 0;
       padding: 0;
       margin: -1px;
-    }
-
-    /* ── Read-only notice (redesigned §11: subtle informational banner) ── */
-    .readonly-notice {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 0 1 480px;
-      min-width: 0;
-      background: var(--surface-tint);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 6px 12px;
-    }
-
-    .readonly-notice-icon {
-      font-size: .78rem;
-      flex-shrink: 0;
-    }
-
-    .readonly-notice-text {
-      font-size: var(--font-2xs);
-      color: var(--muted);
-      line-height: 1.35;
-    }
-
-    .readonly-notice-text strong {
-      color: var(--text-secondary);
-    }
-
-    @media (max-width: 900px) {
-      .workspace-toolbar {
-        padding: 10px 16px;
-      }
-
-      .readonly-notice {
-        flex-basis: 100%;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .search-tools {
-        flex-wrap: wrap;
-      }
-
-      /* Full-width search pill on its own row, Clear + result count on
-         the row below — neither the input nor Clear is ever clipped. */
-      .workspace-search {
-        max-width: none;
-        flex-basis: 100%;
-      }
-
-      #searchClear {
-        flex: 0 0 auto;
-      }
     }
 
     /* ── Tab panels ── */
@@ -371,6 +202,14 @@
       background: var(--accent);
     }
 
+    /* Semantic per-item SVG icons (2026-07-20 header-and-sidebar-UX task)
+       replace the former two-letter initials (RA/FM/M/S/A/R/P/SD) — same
+       24px box, same active/inactive coloring via `color` (the icons use
+       stroke="currentColor" so .app-nav-btn.active .app-nav-icon below
+       already recolors them, no extra rule needed). Decorative only —
+       aria-hidden="true" is on both the wrapping span and the <svg>
+       itself (index.html); each button's own visible text is still the
+       accessible name source, unchanged. */
     .app-nav-icon {
       display: flex;
       align-items: center;
@@ -382,9 +221,11 @@
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--muted);
-      font-size: .62rem;
-      font-weight: 800;
-      letter-spacing: .01em;
+    }
+
+    .app-nav-icon svg {
+      width: 14px;
+      height: 14px;
     }
 
     .app-nav-btn.active .app-nav-icon {

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Management AIOS — Dashboard v0.1 | Internal Build</title>
+  <title>Management AIOS — Dashboard v0.1</title>
   <link rel="stylesheet" href="./css/tokens.css" />
   <link rel="stylesheet" href="./css/base.css" />
   <link rel="stylesheet" href="./css/navigation.css" />
@@ -29,18 +29,30 @@
       </button>
       <span class="topbar-logo">Management <span>AIOS</span></span>
       <div class="topbar-sep"></div>
-      <span class="topbar-sub">Dashboard v0.1 — Internal Build</span>
+      <span class="topbar-sub">Dashboard v0.1</span>
     </div>
-    <div class="topbar-right">
-      <span class="badge badge-viewonly topbar-readonly-pill">READ ONLY</span>
-      <div class="topbar-meta">
-        <div class="topbar-sep"></div>
-        <span>Branch: <strong style="color:#e2e8f0;">individual-aios</strong></span>
-        <div class="topbar-sep"></div>
-        <span>Commit:</span>
-        <span class="topbar-commit">d649652</span>
-        <span class="topbar-date">2026-07-07</span>
+    <!-- Search moved into the top header (2026-07-20 header/sidebar UX task)
+         — same #searchInput/#searchClear/#searchResults/#searchHint IDs and
+         the same navigation.js doSearch()/data-searchable logic as before;
+         only the surrounding container/classes and dark-header styling
+         changed. The former workspace-toolbar row (below the header) and
+         its read-only warning panel are removed — see navigation.js and
+         base.css for the unchanged handlers / new styling respectively. -->
+    <div class="topbar-search" role="search">
+      <label for="searchInput" class="visually-hidden">Search across all tabs</label>
+      <div class="topbar-search-pill">
+        <svg class="topbar-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="8.5" cy="8.5" r="5.5" />
+          <path d="M17 17l-4-4" />
+        </svg>
+        <input id="searchInput" type="search" placeholder="Search people, topics, tasks, or status…"
+          autocomplete="off" aria-describedby="searchHint" />
       </div>
+      <button id="searchClear" type="button">Clear</button>
+      <span id="searchResults"></span>
+      <span id="searchHint" class="visually-hidden">Search by person, topic, task, or status. Examples: verify,
+        blocked, arun, draft.</span>
     </div>
   </header>
 
@@ -65,82 +77,104 @@
           </button>
         </div>
         <button type="button" class="app-nav-btn active" data-tab="root-aios" aria-current="page" title="Root AIOS">
-          <span class="app-nav-icon" aria-hidden="true">RA</span>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M3.5 9.5L10 4l6.5 5.5" />
+              <path d="M5.5 8.5V16h9V8.5" />
+            </svg>
+          </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Root AIOS</span></span>
           <span class="tab-badge tab-badge-amber app-nav-btn-badge" title="Technical result: PASS-AMBER">Needs
             Confirmation</span>
         </button>
         <button type="button" class="app-nav-btn" data-tab="file-map" title="File Map">
-          <span class="app-nav-icon" aria-hidden="true">FM</span>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path
+                d="M3 6a1 1 0 0 1 1-1h3.2l1.3 1.6H16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+            </svg>
+          </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">File Map</span></span>
         </button>
       </div>
       <div class="app-sidebar-group">
         <div class="app-sidebar-title">Members</div>
         <button type="button" class="app-nav-btn" data-tab="mayurika-hr" title="Mayurika — HR">
-          <span class="app-nav-icon" aria-hidden="true">M</span>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <circle cx="10" cy="7" r="3" />
+              <path d="M4.5 16.5c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6" />
+            </svg>
+          </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Mayurika</span><span
               class="app-nav-btn-sub">HR</span></span>
         </button>
         <button type="button" class="app-nav-btn" data-tab="suman-recruitment" title="Suman — Recruitment">
-          <span class="app-nav-icon" aria-hidden="true">S</span>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <circle cx="8.5" cy="7" r="3" />
+              <path d="M3 16.5c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5" />
+              <path d="M15.5 5.5v5M13 8h5" />
+            </svg>
+          </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Suman</span><span
               class="app-nav-btn-sub">Recruitment</span></span>
         </button>
         <button type="button" class="app-nav-btn" data-tab="arun-implementation" title="Arun — Implementation">
-          <span class="app-nav-icon" aria-hidden="true">A</span>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 3.5l6.5 3.2-6.5 3.2-6.5-3.2z" />
+              <path d="M3.5 10l6.5 3.2 6.5-3.2" />
+              <path d="M3.5 13.3l6.5 3.2 6.5-3.2" />
+            </svg>
+          </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Arun</span><span
               class="app-nav-btn-sub">Implementation</span></span>
         </button>
         <button type="button" class="app-nav-btn" data-tab="rajiv-blocked" title="Rajiv — Admin">
-          <span class="app-nav-icon" aria-hidden="true">R</span>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 3l5.5 2v4c0 3.8-2.4 6.6-5.5 7.5-3.1-.9-5.5-3.7-5.5-7.5V5z" />
+            </svg>
+          </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Rajiv</span><span
               class="app-nav-btn-sub">Admin</span></span>
         </button>
-        <button type="button" class="app-nav-btn" data-tab="paraparan" title="Paraparan">
-          <span class="app-nav-icon" aria-hidden="true">P</span>
-          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Paraparan</span></span>
+        <button type="button" class="app-nav-btn" data-tab="paraparan" title="Paraparan — Auditor">
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <rect x="5" y="4.5" width="10" height="12.5" rx="1.3" />
+              <path d="M8 3.3h4v2.2H8z" />
+              <path d="M7.5 10.7l1.8 1.8 3.2-3.6" />
+            </svg>
+          </span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Paraparan</span><span
+              class="app-nav-btn-sub">Auditor</span></span>
         </button>
       </div>
       <div class="app-sidebar-group">
         <div class="app-sidebar-title">Data</div>
         <button type="button" class="app-nav-btn" data-tab="staff-data" title="Staff Data">
-          <span class="app-nav-icon" aria-hidden="true">SD</span>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <ellipse cx="10" cy="5.3" rx="5.8" ry="2" />
+              <path d="M4.2 5.3v9.4c0 1.1 2.6 2 5.8 2s5.8-.9 5.8-2V5.3" />
+              <path d="M4.2 10c0 1.1 2.6 2 5.8 2s5.8-.9 5.8-2" />
+            </svg>
+          </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Staff Data</span></span>
         </button>
       </div>
     </nav>
   <main class="tab-main">
-
-    <!-- ═══════════════════════════════════
-       WORKSPACE TOOLBAR — compact search + read-only notice (2026-07-17)
-       Same #searchInput/#searchClear/#searchResults IDs and search logic
-       as before; only the layout/styling changed.
-    ═══════════════════════════════════ -->
-    <div class="workspace-toolbar">
-      <div class="search-tools" role="search">
-        <label for="searchInput" class="visually-hidden">Search across all tabs</label>
-        <div class="workspace-search">
-          <svg class="workspace-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="8.5" cy="8.5" r="5.5" />
-            <path d="M17 17l-4-4" />
-          </svg>
-          <input id="searchInput" type="search" placeholder="Search people, topics, tasks, or status…"
-            autocomplete="off" aria-describedby="searchHint" />
-        </div>
-        <button id="searchClear" type="button">Clear</button>
-        <span id="searchResults"></span>
-        <span id="searchHint" class="visually-hidden">Search by person, topic, task, or status. Examples: verify,
-          blocked, arun, draft.</span>
-      </div>
-      <div class="readonly-notice" role="note" aria-label="Read-only safety note">
-        <span class="readonly-notice-icon" aria-hidden="true">&#128274;</span>
-        <span class="readonly-notice-text"><strong>This dashboard is a read-only internal build.</strong> Sensitive
-          HR data, leave records, onboarding records, KPI scores, staff personal data, salary, health, PDPA,
-          candidate, disciplinary, and production data are not shown.</span>
-      </div>
-    </div>
 
     <!-- ══════════════════════════════════
        TAB 1 — ROOT AIOS

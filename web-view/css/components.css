@@ -745,7 +745,7 @@
     @media print {
       .app-sidebar,
       .app-sidebar-toggle,
-      .workspace-toolbar {
+      .topbar-search {
         display: none;
       }
 
@@ -812,10 +812,7 @@
       font-size: .7rem;
     }
 
-    /* ── Responsive ──
-       NOTE: the header's READ ONLY pill (.topbar-right) must never be
-       hidden at any width — see base.css's compact-header media queries,
-       which drop only lower-priority metadata (subtitle, date) instead. */
+    /* ── Responsive ── */
     @media (max-width: 640px) {
       .dashboard-footer {
         flex-direction: column;
