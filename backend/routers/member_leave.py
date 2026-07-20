@@ -193,6 +193,25 @@ def create_member_leave_record(
             status_code=409, content=leave_logic.leave_overlap_response_body(exc.conflicts)
         )
 
+    # calendar-empty-slot-create-and-overlap-rules (2026-07-20): "Leave
+    # records must not overlap Task records" — the reverse direction of the
+    # existing task-vs-leave check in member_schedules.py. Same 409-before-
+    # anything-is-written pattern as the leave-vs-leave check just above.
+    task_conflicts = leave_logic.find_conflicting_active_tasks(
+        db,
+        member_key,
+        payload.leave_type,
+        payload.start_date,
+        payload.end_date,
+        payload.start_time,
+        payload.end_time,
+    )
+    if task_conflicts:
+        db.rollback()
+        return JSONResponse(
+            status_code=409, content=leave_logic.task_conflict_response_body(task_conflicts)
+        )
+
     effective_minutes = leave_logic.compute_effective_leave_minutes(
         payload.leave_type, payload.start_date, payload.end_date, payload.start_time, payload.end_time
     )
@@ -294,6 +313,25 @@ def update_member_leave_record(
             db.rollback()
             return JSONResponse(
                 status_code=409, content=leave_logic.leave_overlap_response_body(exc.conflicts)
+            )
+
+        # calendar-empty-slot-create-and-overlap-rules (2026-07-20) — same
+        # leave-vs-task check as create, re-run here because fields_changed
+        # is true (the edit's destination date/time differs from what was
+        # already validated at creation).
+        task_conflicts = leave_logic.find_conflicting_active_tasks(
+            db,
+            member_key,
+            record.leave_type,
+            new_start_date,
+            new_end_date,
+            new_start_time,
+            new_end_time,
+        )
+        if task_conflicts:
+            db.rollback()
+            return JSONResponse(
+                status_code=409, content=leave_logic.task_conflict_response_body(task_conflicts)
             )
 
         new_effective_minutes = leave_logic.compute_effective_leave_minutes(

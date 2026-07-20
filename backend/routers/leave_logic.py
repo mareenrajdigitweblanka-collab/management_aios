@@ -34,7 +34,7 @@ from backend.config import (
     SHORT_LEAVE_MAX_REQUEST_MINUTES,
     SHORT_LEAVE_MONTHLY_CAP_MINUTES,
 )
-from backend.models import MemberLeaveRecord
+from backend.models import MemberLeaveRecord, MemberScheduleEvent
 
 HALF_DAY_LEAVE_TYPES = ("Half-Day First", "Half-Day Second")
 
@@ -394,6 +394,130 @@ def leave_conflict_response_body(conflicts: List[MemberLeaveRecord]) -> dict:
                 "end_time": record.end_time.isoformat() if record.end_time else None,
             }
             for record in conflicts
+        ],
+    }
+
+
+# ── Leave-versus-task overlap prevention (calendar-empty-slot-create-and-
+# overlap-rules, 2026-07-20) ────────────────────────────────────────────
+#
+# The reverse direction of find_conflicting_active_leave() above: that
+# function blocks a TASK save against active leave; this one blocks a LEAVE
+# save against active tasks (member-confirmed requirement "Leave records
+# must not overlap Task records"). Mirrors the same Full-Day-dominance /
+# partial-day-interval asymmetry find_conflicting_active_leave() already
+# applies from the task side, just with the roles of "proposed" and
+# "candidate" swapped — kept as its own function rather than a generic
+# bidirectional helper so each direction's docstring/tests stay legible on
+# their own, matching this module's existing task-vs-leave /
+# leave-vs-leave split.
+#
+# Forward-references _leave_dates()/_partial_day_minutes_interval()/
+# _FULL_DAY_DOMINANT_LEAVE_TYPES, defined further below in the
+# leave-versus-leave section — valid Python (names are resolved when this
+# function is called, not when it is defined) and reads in the natural
+# order task-vs-leave -> leave-vs-task -> leave-vs-leave.
+
+
+def find_conflicting_active_tasks(
+    db: Session,
+    member_key: str,
+    leave_type: str,
+    start_date: date_type,
+    end_date: date_type,
+    start_time: Optional[time_type],
+    end_time: Optional[time_type],
+) -> List[MemberScheduleEvent]:
+    """Active schedule/task rows (deleted_at IS NULL) that conflict with a
+    proposed leave record (leave_type, start_date, end_date, start_time,
+    end_time — the same shape callers already pass to
+    assert_no_leave_overlap).
+
+    - Full-Day / Multi-Day (each included weekday): conflicts with ANY task
+      on that date, timed or untimed — same Full-Day-dominance rule
+      find_conflicting_active_leave() already applies from the task side.
+    - Short Leave / Half-Day First / Half-Day Second: conflicts only with a
+      TIMED task whose [start,end) overlaps the leave's own time window. An
+      untimed task never conflicts with a partial-day leave request — same
+      asymmetry find_conflicting_active_leave() already applies.
+
+    Concurrency note (documented per Step 14 rather than silently
+    redesigned): this issues a plain SELECT with no row lock and no
+    schedule-side advisory lock — acquire_member_leave_lock (called by
+    every leave create/update path before this) only serializes concurrent
+    LEAVE writes for member_key; it does not lock member_schedule_events
+    rows, and task creation takes no lock of its own. A task could
+    therefore be committed for this member, for an affected date, in the
+    narrow window between this SELECT and the leave write's own commit,
+    producing an unflagged overlap. This is the same class of race
+    find_conflicting_active_leave() (the existing task-vs-leave direction)
+    already has, unresolved, on the task side — pre-existing in this
+    codebase, not introduced here. Closing it would require either locking
+    member_schedule_events rows or a cross-table constraint, both out of
+    this task's explicitly approved scope (no schema/migration changes)."""
+    occupied_dates = set(_leave_dates(leave_type, start_date, end_date))
+    if not occupied_dates:
+        return []
+
+    candidates = (
+        db.query(MemberScheduleEvent)
+        .filter(
+            MemberScheduleEvent.member_key == member_key,
+            MemberScheduleEvent.deleted_at.is_(None),
+            MemberScheduleEvent.event_date.in_(occupied_dates),
+        )
+        .all()
+    )
+    if not candidates:
+        return []
+
+    full_day_dominant = leave_type in _FULL_DAY_DOMINANT_LEAVE_TYPES
+    leave_start = leave_end = None
+    if not full_day_dominant:
+        leave_start, leave_end = _partial_day_minutes_interval(leave_type, start_time, end_time)
+
+    conflicts = []
+    for task in candidates:
+        # Defensive re-check, not reliant on the SQL filter above having
+        # actually run (matches _leave_record_day_interval's equivalent
+        # target_date guard on the task-vs-leave side) — a candidate whose
+        # event_date isn't one of the leave's occupied dates is never a
+        # conflict, regardless of how it ended up in `candidates`.
+        if task.event_date not in occupied_dates:
+            continue
+        if full_day_dominant:
+            conflicts.append(task)
+            continue
+        if task.start_time is None or task.end_time is None:
+            continue
+        task_start = _minutes_since_midnight(task.start_time)
+        task_end = _minutes_since_midnight(task.end_time)
+        if task_start < leave_end and leave_start < task_end:
+            conflicts.append(task)
+
+    return conflicts
+
+
+def task_conflict_response_body(conflicts: List[MemberScheduleEvent]) -> dict:
+    """Builds the 409 response body when a proposed leave overlaps one or
+    more active tasks. New contract (2026-07-20) — the reverse direction of
+    leave_conflict_response_body above. Deliberately omits `notes` (the
+    task's own free-text field) and `title`, matching
+    leave_conflict_response_body's "omit unnecessary sensitive text"
+    convention; `category`/`event_date`/times are the safe conflict
+    identifiers Step 12 permits."""
+    return {
+        "error": "task_conflict",
+        "message": "This leave request conflicts with one or more active tasks.",
+        "conflicts": [
+            {
+                "task_id": str(task.id),
+                "category": task.category,
+                "event_date": task.event_date.isoformat(),
+                "start_time": task.start_time.isoformat() if task.start_time else None,
+                "end_time": task.end_time.isoformat() if task.end_time else None,
+            }
+            for task in conflicts
         ],
     }
 
