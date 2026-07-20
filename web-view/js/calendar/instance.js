@@ -84,10 +84,15 @@ function mountScheduleCalendarInstance(container) {
     '<span class="msc-create-btn-caret" aria-hidden="true">&#9662;</span></button>' +
     '<div class="msc-create-menu" id="' + escapeHtml(createMenuId) + '" role="menu" aria-label="Create" hidden>' +
     '<div class="msc-create-menu-heading" aria-hidden="true">Create</div>' +
-    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="task">' +
-    '<span class="msc-create-menu-icon" aria-hidden="true">&#128221;</span>Create Task</button>' +
-    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="leave">' +
-    '<span class="msc-create-menu-icon" aria-hidden="true">&#128197;</span>Create Leave</button>' +
+    /* Visible labels shortened to "Task"/"Leave" (2026-07-20 chooser-label
+       task) — the "Create" heading above already states the action once;
+       repeating it on every item read as redundant. aria-label keeps the
+       fuller "Create Task"/"Create Leave" accessible name for screen-reader
+       users even though the visible text is shorter (Step 3 requirement). */
+    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="task" aria-label="Create Task">' +
+    '<span class="msc-create-menu-icon" aria-hidden="true">&#128221;</span>Task</button>' +
+    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="leave" aria-label="Create Leave">' +
+    '<span class="msc-create-menu-icon" aria-hidden="true">&#128197;</span>Leave</button>' +
     '</div>' +
     '</div>' +
     '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
@@ -698,7 +703,63 @@ function mountScheduleCalendarInstance(container) {
     return leaveItems.filter(function (lv) { return leaveDatesForItem(lv).indexOf(dateStr) !== -1; });
   }
 
-  var MAX_CAL_CHIPS = 2;
+  /* ── Month chip visible-capacity (Step 4/5/6, calendar-chooser-label-
+     and-more-responsive task, 2026-07-20) ── Replaces the former fixed
+     `MAX_CAL_CHIPS = 2` constant, which assumed the Month chip's older,
+     smaller line height. Once Task/Leave/"+N more" text was enlarged (the
+     prior calendar-readability task raised --calendar-event-font-size and
+     --calendar-event-line-height, calendar.css), 2 fixed chips plus the
+     day number could leave too little of the cell's actual, viewport-
+     height-driven content box (--cal-canvas-height / 6 rows,
+     .msc-cal-cell's own overflow:hidden) for the "+N more" line — clipping
+     or hiding it entirely on ordinary desktop viewport heights (~560-900px
+     tall), not just on any one member's data.
+
+     computeMonthChipCapacity() mirrors the exact same viewport-height
+     arithmetic --cal-canvas-height already uses (tokens.css) — the one
+     live input that formula depends on (window.innerHeight) — rather than
+     a second, disconnected guess, so a future change to that token's
+     derivation and this function are the two places that must be kept in
+     sync (documented here and there). The per-line geometry constants
+     below (chip height, gap, "+N more" height) mirror the
+     --calendar-month-* tokens (tokens.css) that calendar.css's own
+     .msc-cal-chip/.msc-cal-chip-more rules consume — not an unrelated
+     duplicate number, the one place those tokens don't reach directly
+     since this file has no CSS-custom-property-read bridge.
+
+     Every estimate below is rounded UP (fixed overhead: header row, day-
+     number block, cell padding) or the capacity itself rounded DOWN
+     (chip/more math), so the function can only ever under-count how many
+     chips fit, never over-count — the failure mode is "one fewer chip
+     shown," never "+N more clipped again." Computed once per
+     renderMonthView() call (view switch / date select / prev-next-month /
+     CRUD save-delete already re-render Month), not on a live resize
+     listener — matching the existing architecture, where no other Month
+     geometry reacts to an in-place window resize either; a resize alone
+     without a subsequent calendar action keeps the previous capacity until
+     the next render, same as every other Month render input. */
+  function computeMonthChipCapacity() {
+    var APP_HEADER_HEIGHT = 56;   // --header-height (tokens.css)
+    var CANVAS_RESERVED = 300;    // --cal-canvas-height's own reserved-space term (tokens.css)
+    var CANVAS_FLOOR = 560;       // --cal-canvas-height's own floor (tokens.css)
+    var vh = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 900;
+    var canvasHeight = Math.max(CANVAS_FLOOR, vh - APP_HEADER_HEIGHT - CANVAS_RESERVED);
+
+    var MONTH_HEADER_ROW = 30;    // .msc-cal-headcell — 16px padding + ~13px text line, rounded up
+    var rowHeight = (canvasHeight - MONTH_HEADER_ROW) / 6;
+
+    var CELL_PADDING = 10;        // .msc-cal-cell — 4px top + 6px bottom
+    var DAYNUM_BLOCK = 30;        // .msc-cal-daynum — 24px box + 2px top + 4px bottom margin
+    var CHIP_HEIGHT = 21;         // --calendar-month-chip-height (tokens.css)
+    var CHIP_GAP = 2;             // --calendar-month-chip-gap (tokens.css)
+    var MORE_HEIGHT = 17;         // --calendar-month-more-height (tokens.css), includes its own gap
+
+    var contentHeight = rowHeight - CELL_PADDING - DAYNUM_BLOCK;
+    var chipSlot = CHIP_HEIGHT + CHIP_GAP;
+    var capNoMore = Math.max(1, Math.floor(contentHeight / chipSlot));
+    var capWithMore = Math.max(1, Math.floor((contentHeight - MORE_HEIGHT) / chipSlot));
+    return { capNoMore: capNoMore, capWithMore: Math.min(capWithMore, capNoMore) };
+  }
 
   /* ── Month-view click rules (2026-07-17 month-task-list-navigation task) ──
      Task-presence rule (Step 3): a Month date is task-bearing when
@@ -715,6 +776,12 @@ function mountScheduleCalendarInstance(container) {
     var y = state.viewYear, m = state.viewMonth;
     var todayStr = toDateStr(new Date());
     var cells = buildMonthGridCells(y, m);
+    /* Computed once per render, not once per cell — every cell in the 6-row
+       grid shares the same row height (grid-template-rows: auto repeat(6,
+       minmax(0,1fr)) against one shared --cal-canvas-height, calendar.css),
+       so the same capacity applies to all of them regardless of which
+       member's calendar this is or how many events any single day has. */
+    var chipCapacity = computeMonthChipCapacity();
 
     var html = '';
     DAY_HEADS.forEach(function (d) { html += '<div class="msc-cal-headcell">' + d + '</div>'; });
@@ -723,6 +790,11 @@ function mountScheduleCalendarInstance(container) {
       var isToday = c.dateStr === todayStr;
       var isSelected = c.dateStr === state.selectedDate;
       var dayItems = itemsForDate(c.dateStr);
+      /* Only reserve the "+N more" line's worth of space when it will
+         actually be needed (Step 6 "if fewer tasks exist, no unnecessary
+         blank reserved line") — a day within capNoMore's fit-without-more
+         capacity shows every item and no "+more" link at all. */
+      var visibleCap = dayItems.length > chipCapacity.capNoMore ? chipCapacity.capWithMore : chipCapacity.capNoMore;
 
       /* Every cell's own blank-background click/keyboard action is
          "open the Task/Leave create chooser" (calendar-empty-slot-
@@ -750,7 +822,7 @@ function mountScheduleCalendarInstance(container) {
          shows the actual sample/testing entries the user has added, not real schedule facts.
          A chip click opens the shared task-detail popup (viewItem(), same popup Week/Day/
          all-day use) — see the .msc-cal-chip click wiring below. */
-      dayItems.slice(0, MAX_CAL_CHIPS).forEach(function (it) {
+      dayItems.slice(0, visibleCap).forEach(function (it) {
         var catClass = CATEGORY_CLASS[it.category] || 'task';
         var label = (it.start ? it.start + ' ' : '') + it.title;
         html += '<span class="msc-cal-chip ' + catClass + '" data-date="' + c.dateStr + '" data-id="' + it.id + '" ' +
@@ -758,7 +830,7 @@ function mountScheduleCalendarInstance(container) {
           'aria-label="View task details: ' + escapeHtml(label) + '">' +
           escapeHtml(label) + '</span>';
       });
-      if (dayItems.length > MAX_CAL_CHIPS) {
+      if (dayItems.length > visibleCap) {
         /* Step 8: this overflow count is derived from `dayItems` (tasks
            only, see itemsForDate above) — leave is rendered separately
            below and never contributes to this count, so "+N more" is
@@ -767,7 +839,7 @@ function mountScheduleCalendarInstance(container) {
            removed Schedule Item list. */
         html += '<span class="msc-cal-chip-more" data-date="' + c.dateStr + '" role="button" tabindex="0" ' +
           'aria-label="View all tasks for ' + escapeHtml(formatAgendaDate(c.dateStr)) + '">+' +
-          (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
+          (dayItems.length - visibleCap) + ' more</span>';
       }
       /* Leave chips (REQ-LEAVE-COPY-001) — visually distinct from
          the task chips above (own class, own colors), never using

@@ -1688,7 +1688,7 @@
       line-height: var(--calendar-event-line-height);
       padding: 2px 6px;
       border-radius: 4px;
-      margin-bottom: 2px;
+      margin-bottom: var(--calendar-month-chip-gap);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1734,13 +1734,18 @@
       color: var(--accent);
     }
 
+    /* margin-top unified to --calendar-month-chip-gap (was a one-off 1px) —
+       calendar-chooser-label-and-more-responsive task, 2026-07-20 — so
+       every stacked Month line (chip/leave/more) uses the same gap value
+       computeMonthChipCapacity() (instance.js) assumes when reserving this
+       line's space. */
     .msc-cal-chip-more {
       display: block;
       font-size: .68rem;
       font-weight: 600;
       color: var(--muted);
       padding: 1px 6px;
-      margin-top: 1px;
+      margin-top: var(--calendar-month-chip-gap);
       border-radius: 4px;
       cursor: pointer;
       transition: background .1s ease, box-shadow .1s ease, color .1s ease;
@@ -1776,7 +1781,7 @@
       line-height: 1.35;
       padding: 1px 5px;
       border-radius: 4px;
-      margin-bottom: 2px;
+      margin-bottom: var(--calendar-month-chip-gap);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;

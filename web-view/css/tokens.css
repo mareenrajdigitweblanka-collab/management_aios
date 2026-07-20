@@ -201,6 +201,24 @@
       --calendar-event-time-font-size: .75rem;
       --calendar-event-line-height: 1.3;
       --calendar-more-list-font-size: .9rem;
+
+      /* ── Month chip capacity geometry (calendar-chooser-label-and-more-
+         responsive task, 2026-07-20) — single source for the "how tall is
+         one stacked Month-cell line" math, consumed directly by
+         .msc-cal-chip/.msc-cal-chip-more/.msc-cal-chip-leave (calendar.css)
+         AND mirrored as literal, documented constants in instance.js's
+         computeMonthChipCapacity() (there is no CSS-custom-property-read
+         bridge in this vanilla JS file, so the numbers cannot be read
+         directly — the two are kept in sync by comment cross-reference
+         instead). This is the fix for "+N more" being clipped after Task
+         text was enlarged: the old visible-chip count was a fixed constant
+         that never accounted for the taller chip height, so this token
+         (and the JS capacity function that reads its value) is the single
+         place that must change if chip geometry changes again, rather than
+         a second silently-drifting guess. */
+      --calendar-month-chip-height: 21px;
+      --calendar-month-chip-gap: 2px;
+      --calendar-month-more-height: 17px;
     }
 
     html {
