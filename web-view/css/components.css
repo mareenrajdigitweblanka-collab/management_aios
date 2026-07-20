@@ -150,7 +150,7 @@
       margin-bottom: 10px;
       font-weight: 600;
       line-height: 1.4;
-      max-width: 60ch;
+      max-width: 88ch;
     }
 
     .member-header-info .status-note {
@@ -163,12 +163,20 @@
        replaces identical inline style="" attributes previously repeated on
        every member tab's intro paragraphs (Mayurika/Suman/Arun/Rajiv).
        Wording is unchanged; only the styling mechanism moved to a class. */
+    /* Widened 68ch -> 88ch (professional-sidebar-and-member-card-width
+       task, 2026-07-20) — one shared cap for every member tab
+       (Mayurika/Suman/Arun/Rajiv; Paraparan uses a different intro
+       structure, see validation doc), still within the 75-95ch readable
+       band but using substantially more of the wide calendar-tab card
+       (up to ~88vw) than the old 68ch, which left a large empty gap on
+       the right. max-width (not a fixed width) so it still shrinks to
+       100% of the card on narrow/mobile screens exactly as before. */
     .member-header-lede {
       font-size: var(--font-sm);
       color: var(--text-secondary);
       line-height: 1.65;
       margin-top: var(--space-3);
-      max-width: 68ch;
+      max-width: 88ch;
     }
 
     .member-header-note {
@@ -176,7 +184,7 @@
       color: var(--muted);
       line-height: 1.6;
       margin-top: var(--space-2);
-      max-width: 68ch;
+      max-width: 88ch;
     }
 
     .member-header-badges {

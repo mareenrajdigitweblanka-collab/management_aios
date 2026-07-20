@@ -180,7 +180,11 @@
       color: var(--text);
       font-size: var(--font-base);
       font-weight: 600;
-      padding: 7px 10px;
+      /* 6px top/bottom + 32px icon box = 44px row height, inside the
+         42-48px comfortable click-target band (professional-sidebar-
+         polish task, 2026-07-20). Left/right stays 10px, symmetric —
+         required for the collapsed-rail centering math below. */
+      padding: 6px 10px;
       border-radius: var(--radius-sm);
       cursor: pointer;
       transition: background .12s ease, color .12s ease;
@@ -210,22 +214,27 @@
        aria-hidden="true" is on both the wrapping span and the <svg>
        itself (index.html); each button's own visible text is still the
        accessible name source, unchanged. */
+    /* Icon box enlarged 24px -> 32px, SVG 14px -> 18px (professional-
+       sidebar-polish task, 2026-07-20) — within the 30-34px box /
+       18-20px glyph target so icons read clearly instead of feeling
+       cramped inside their surface. Purely a size change; the box's
+       centering/coloring rules below (active/hover state) are unchanged. */
     .app-nav-icon {
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      width: 24px;
-      height: 24px;
-      border-radius: 7px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--muted);
     }
 
     .app-nav-icon svg {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
     }
 
     .app-nav-btn.active .app-nav-icon {
@@ -272,8 +281,18 @@
       color: var(--accent);
     }
 
+    /* Scoped down from the shared .tab-badge size (professional-sidebar-
+       polish task, 2026-07-20) — the Root AIOS row's "Needs Confirmation"
+       badge was already claiming most of the row's available width before
+       this task (pre-existing, confirmed against the prior commit), and
+       the row's own enlarged 32px icon (see .app-nav-icon above) leaves it
+       even less room; shrinking only this sidebar-scoped badge instance
+       (not the shared .tab-badge rule used elsewhere) reclaims label
+       width without touching any other badge on the page. */
     .app-nav-btn-badge {
       flex-shrink: 0;
+      font-size: .62rem;
+      padding: 2px 6px;
     }
 
     /* ── Desktop sidebar collapse/expand (2026-07-17 header-safe-scroll/
@@ -297,7 +316,7 @@
       align-items: center;
       justify-content: space-between;
       gap: var(--space-2);
-      /* The row's own height is driven by the 26px toggle, not the
+      /* The row's own height is driven by the 32px toggle, not the
          shorter title text, so the title's padding-bottom never actually
          produced visible space before Root AIOS — an explicit
          margin-bottom here is what Members/Data's standalone titles get
@@ -310,19 +329,27 @@
       padding: 4px 0 8px 10px;
     }
 
+    /* Redesigned as a professional "panel" control (professional-sidebar-
+       polish task, 2026-07-20) — sized to match the enlarged 32px nav-icon
+       boxes so it reads as part of the same rail, not a detached small
+       arrow. It now holds two distinct SVGs (collapse-state / expand-state,
+       see index.html) shown/hidden below via body.sidebar-collapsed,
+       replacing the previous single-chevron + rotate(180deg) approach —
+       each state gets its own purpose-drawn icon instead of one glyph spun
+       to face the other way. */
     .app-sidebar-collapse-toggle {
       display: none;
       align-items: center;
       justify-content: center;
-      width: 26px;
-      height: 26px;
+      width: 32px;
+      height: 32px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: var(--surface);
       color: var(--muted);
       cursor: pointer;
       flex-shrink: 0;
-      transition: transform .2s ease, background .12s ease;
+      transition: background .12s ease, color .12s ease;
     }
 
     .app-sidebar-collapse-toggle:hover {
@@ -335,9 +362,14 @@
       box-shadow: var(--focus-ring);
     }
 
-    .app-sidebar-collapse-toggle svg {
-      width: 14px;
-      height: 14px;
+    .app-sidebar-collapse-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Expanded (default) state: show the "collapse" icon, hide "expand". */
+    .app-sidebar-collapse-icon-expand {
+      display: none;
     }
 
     @media (min-width: 1024px) {
@@ -420,8 +452,14 @@
         gap: 0;
       }
 
-      body.sidebar-collapsed .app-sidebar-collapse-toggle {
-        transform: rotate(180deg);
+      /* Swap which purpose-drawn icon is visible instead of rotating one
+         icon 180deg — see the .app-sidebar-collapse-icon-* rules above. */
+      body.sidebar-collapsed .app-sidebar-collapse-icon-collapse {
+        display: none;
+      }
+
+      body.sidebar-collapsed .app-sidebar-collapse-icon-expand {
+        display: block;
       }
 
       /* Text is collapsed to flex-basis:0 + opacity:0, not display:none —
