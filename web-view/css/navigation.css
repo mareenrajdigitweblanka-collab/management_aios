@@ -239,6 +239,36 @@
       display: block;
     }
 
+    /* ── Calendar workspace width (Step 10/11, calendar-create-chooser-
+       readability-and-width task, 2026-07-20) ── .tab-panel--calendar
+       (set in index.html) marks only the 5 member tabs that embed a
+       Schedule Calendar (Mayurika/Suman/Arun/Rajiv/Paraparan) — Root
+       AIOS, File Map, and Staff Data keep the plain .tab-panel rule
+       above untouched, so this does not change their width.
+
+       Replaces the fixed --content-max-width (1240px) cap for these
+       tabs with a percentage of the actual available width (.tab-main —
+       viewport minus the application sidebar) so the side gap is a
+       consistent ~6% at every desktop size, matching the confirmed
+       "approximately 5%-10% gap on both sides" requirement, instead of
+       today's --content-max-width behavior which produces very
+       inconsistent gaps across sizes (0% at 1366-1440px, since 1240px
+       exceeds the available width there and never binds; ~13% at
+       1920px). One shared rule for all 5 tabs — no per-member override.
+
+       .tab-panel.tab-panel--calendar (compound selector) is used
+       throughout so every override here beats the plain .tab-panel /
+       body.sidebar-collapsed .tab-panel rules on specificity alone,
+       regardless of source order. Below 1024px the application sidebar
+       is an off-canvas drawer (see the max-width:1023px block below),
+       so .tab-main is already ~100vw there — this base (non-media) rule
+       covers that range with a plain vw formula; the two min-width:1024px
+       overrides further down refine it once the static sidebar column
+       actually occupies horizontal space. */
+    .tab-panel.tab-panel--calendar {
+      max-width: 88vw;
+    }
+
 
     /* ── Application sidebar (2026-07-17 professional dashboard redesign) ──
        ONE persistent left sidebar drives the entire dashboard: OVERVIEW
@@ -511,6 +541,21 @@
          constraining — identical to today's unchanged behavior there. */
       body.sidebar-collapsed .tab-panel {
         max-width: calc(50vw + (var(--content-max-width) - var(--sidebar-collapsed-width)) / 2);
+      }
+
+      /* Calendar-tab overrides (Step 10/11, same task) — available width
+         = 100vw minus whichever sidebar width is currently in effect;
+         target width = 88% of that (~6% gap each side), consistent with
+         the base rule above. body.sidebar-collapsed variant needs the
+         higher-specificity 3-class-equivalent selector below to reliably
+         beat the plain body.sidebar-collapsed .tab-panel rule just
+         above, since both are equal specificity otherwise. */
+      .tab-panel.tab-panel--calendar {
+        max-width: calc((100vw - var(--sidebar-width)) * .88);
+      }
+
+      body.sidebar-collapsed .tab-panel.tab-panel--calendar {
+        max-width: calc((100vw - var(--sidebar-collapsed-width)) * .88);
       }
 
       body.sidebar-collapsed .app-sidebar {

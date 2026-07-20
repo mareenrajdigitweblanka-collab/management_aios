@@ -83,10 +83,11 @@ function mountScheduleCalendarInstance(container) {
     '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Create' +
     '<span class="msc-create-btn-caret" aria-hidden="true">&#9662;</span></button>' +
     '<div class="msc-create-menu" id="' + escapeHtml(createMenuId) + '" role="menu" aria-label="Create" hidden>' +
+    '<div class="msc-create-menu-heading" aria-hidden="true">Create</div>' +
     '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="task">' +
-    '<span class="msc-create-menu-icon" aria-hidden="true">&#128221;</span>Task</button>' +
+    '<span class="msc-create-menu-icon" aria-hidden="true">&#128221;</span>Create Task</button>' +
     '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="leave">' +
-    '<span class="msc-create-menu-icon" aria-hidden="true">&#128197;</span>Leave</button>' +
+    '<span class="msc-create-menu-icon" aria-hidden="true">&#128197;</span>Create Leave</button>' +
     '</div>' +
     '</div>' +
     '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
@@ -428,7 +429,7 @@ function mountScheduleCalendarInstance(container) {
      horizontally (responsive positioning, Step 7). */
   function positionCreateMenu(anchorEl) {
     var rect = anchorEl.getBoundingClientRect();
-    var menuWidth = createMenuEl.offsetWidth || 180;
+    var menuWidth = createMenuEl.offsetWidth || 260;
     var left = rect.left;
     if (left + menuWidth > window.innerWidth - 8) {
       left = Math.max(8, window.innerWidth - menuWidth - 8);
@@ -839,8 +840,16 @@ function mountScheduleCalendarInstance(container) {
     var headerHtml = '<div class="msc-tg-row msc-tg-header-row" style="grid-template-columns:' + colTemplate + ';">' +
       '<div class="msc-tg-gutter"></div>';
     days.forEach(function (d) {
-      var isToday = toDateStr(d) === todayStr;
-      headerHtml += '<div class="msc-tg-daycol-head' + (isToday ? ' today' : '') + '">' +
+      var dStr = toDateStr(d);
+      var isToday = dStr === todayStr;
+      /* Selected-date header highlight (Step 9, calendar-create-chooser-
+         readability-and-width task, 2026-07-20) — same state.selectedDate
+         source of truth the Month grid's .msc-cal-cell.selected already
+         reads (selectDate() above), applied here only as a presentational
+         class/attribute; no new selection logic. */
+      var isSelected = dStr === state.selectedDate;
+      headerHtml += '<div class="msc-tg-daycol-head' + (isToday ? ' today' : '') + (isSelected ? ' selected' : '') + '"' +
+        (isSelected ? ' aria-current="date"' : '') + '>' +
         DAY_HEADS[d.getDay()] + ' <span class="msc-tg-daynum">' + d.getDate() + '</span></div>';
     });
     headerHtml += '</div>';

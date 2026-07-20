@@ -435,6 +435,18 @@
       color: var(--accent);
     }
 
+    /* Selected-date header highlight (Step 9) — mirrors the Month grid's
+       .msc-cal-cell.selected ring treatment so "selected" reads the same
+       visual language across every view. Distinct from .today by shape/
+       position (a surrounding ring + tint), not by color alone, so the
+       two remain individually recognizable when the same day is both
+       today and selected. */
+    .msc-tg-daycol-head.selected {
+      background: var(--accent-light);
+      box-shadow: inset 0 0 0 2px var(--accent);
+      border-radius: var(--radius-sm);
+    }
+
     .msc-tg-daynum {
       font-weight: 700;
     }
@@ -484,9 +496,12 @@
     /* Same "don't paint the create-cue over a task/leave child" rule as
        the Month cell (.msc-cal-cell--actionable above) — this column's
        own blank-background click is the create action; its chip
-       children are view/leave actions with their own hover treatment. */
+       children are view/leave actions with their own hover treatment.
+       Strengthened (Step 8) with a visible inset ring alongside the
+       existing tint. */
     .msc-tg-allday-col:hover:not(:has(.msc-tg-allday-chip:hover, .msc-tg-allday-chip-leave:hover)) {
       background: var(--surface-tint-2);
+      box-shadow: inset 0 0 0 1px var(--border);
     }
 
     /* Keyboard focus ring (Step 19, 2026-07-20) — the all-day column is
@@ -502,8 +517,12 @@
       box-shadow: inset var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
     }
 
+    /* Font size raised modestly (.68rem -> .78rem, Step 5 "ALL-DAY
+       ITEMS" — "increase text modestly while preserving row height and
+       horizontal fit") — .msc-tg-allday-row's 32px min-height comfortably
+       clears this at the existing 2px 6px padding. */
     .msc-tg-allday-chip {
-      font-size: .68rem;
+      font-size: .78rem;
       padding: 2px 6px;
       border-radius: 4px;
       margin-bottom: 2px;
@@ -515,7 +534,7 @@
 
     .msc-tg-allday-chip:hover {
       filter: brightness(1.04);
-      box-shadow: 0 1px 3px rgba(15, 23, 42, .2);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .2), 0 0 0 2px rgba(37, 99, 235, .3);
     }
 
     /* Viewport-relative scrollable timeline canvas (Step 5/19,
@@ -576,8 +595,14 @@
       cursor: pointer;
     }
 
+    /* Strengthened (Step 8 "WEEK/DAY EMPTY SLOTS") — an inset ring added
+       to the existing tint; this cell is deliberately not a separate
+       tab stop (see the Step 19 comment on .msc-tg-allday-col above), so
+       no :focus-visible rule is needed here, and drag/resize (bound to
+       .msc-tg-event, not this cell) are unaffected. */
     .msc-tg-hourcell:hover {
-      background: var(--surface-tint-2);
+      background: var(--surface-tint-3);
+      box-shadow: inset 0 0 0 1px var(--border);
     }
 
     .msc-tg-event {
@@ -589,7 +614,6 @@
       color: #fff;
       background: var(--accent);
       cursor: grab;
-      font-size: .66rem;
       touch-action: none;
       box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), 0 1px 2px rgba(30, 25, 15, .18);
       transition: filter .1s ease, box-shadow .1s ease;
@@ -601,9 +625,17 @@
       box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
     }
 
+    /* Strengthened (Step 8) — a visible ring added on top of the
+       existing brightness/shadow-md hover. No transform/translate here:
+       .msc-tg-event is the one draggable/resizable element in this file
+       (attachDragHandlers/attachResizeHandler, instance.js) and its
+       drag math reads live top/left/height styles, not a CSS transform,
+       but a hover-only translate risked visually fighting an in-progress
+       drag's own position updates — left out to keep drag/resize exactly
+       as before. */
     .msc-tg-event:hover {
       filter: brightness(1.04);
-      box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), var(--shadow-md);
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, .35), var(--shadow-md), 0 0 0 2px rgba(37, 99, 235, .3);
     }
 
     .msc-tg-event--dragging {
@@ -616,7 +648,18 @@
       opacity: .55;
     }
 
+    /* Title/time raised from the block's former blanket .66rem/.6rem to
+       the shared tokens (Step 6/7, calendar-create-chooser-readability-
+       and-width task, 2026-07-20) — title stays the larger, bolder line;
+       time stays visibly smaller so the two never compete for
+       attention. Block height is computed from actual duration
+       (TG_ROW_HEIGHT_PX in instance.js, unchanged), so very short
+       (<=15min) events can still clip under overflow:hidden above —
+       the same pre-existing behavior as before this task, just with a
+       slightly larger minimum readable size. */
     .msc-tg-event-title {
+      font-size: var(--calendar-event-font-size);
+      line-height: var(--calendar-event-line-height);
       font-weight: 700;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -624,7 +667,8 @@
     }
 
     .msc-tg-event-time {
-      font-size: .6rem;
+      font-size: var(--calendar-event-time-font-size);
+      line-height: var(--calendar-event-line-height);
       opacity: .9;
     }
 
@@ -788,6 +832,7 @@
        below, unaffected by this rule. */
     .msc-cal-cell--actionable:hover:not(:has(.msc-cal-chip:hover, .msc-cal-chip-more:hover, .msc-cal-chip-leave:hover)) {
       background: var(--surface-tint-2);
+      box-shadow: inset 0 0 0 1px var(--border);
     }
 
     .msc-cal-cell--actionable:focus-visible {
@@ -799,9 +844,13 @@
       opacity: .4;
     }
 
+    /* Selected-cell ring strengthened 2px -> 3px (Step 9) with a soft
+       outer glow added, so the clicked cell is unmistakable even next to
+       today's own accent-colored badge; still an inset ring only, so it
+       never covers chip content inside the cell. */
     .msc-cal-cell.selected {
       background: var(--accent-light);
-      box-shadow: inset 0 0 0 2px var(--accent);
+      box-shadow: inset 0 0 0 3px var(--accent), 0 2px 8px rgba(37, 99, 235, .22);
     }
 
     /* Top-left day number (Google-Calendar-style — the current
@@ -1180,6 +1229,15 @@
       font-size: .8rem;
     }
 
+    /* Hover cue added (Step 5 "task-detail popup where relevant") — this
+       shared close button previously had a :focus-visible ring but no
+       :hover feedback at all. One rule covers every popup that reuses
+       it (task-detail view-modal, more-popup, task/leave create
+       popups). */
+    .msc-modal-close:hover {
+      background: var(--surface-tint-3);
+    }
+
     .msc-modal-close:focus-visible {
       outline: none;
       box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
@@ -1342,19 +1400,24 @@
       flex-shrink: 0;
     }
 
+    /* Font size raised .78rem -> the shared --calendar-more-list-font-
+       size (~13.5px, Step 6/7 "MORE POPUP" target of 13-15px) — applies
+       to both the time and title spans below via inheritance. */
     .msc-more-popup-item {
       display: flex;
       align-items: baseline;
       gap: 8px;
-      padding: 6px 8px;
+      padding: 7px 8px;
       border-radius: var(--radius-sm);
       border-left: 3px solid transparent;
       cursor: pointer;
-      font-size: .78rem;
+      font-size: var(--calendar-more-list-font-size);
+      transition: background .1s ease, box-shadow .1s ease;
     }
 
     .msc-more-popup-item:hover {
       background: var(--surface-tint-3);
+      box-shadow: inset 0 0 0 1px var(--border);
     }
 
     .msc-more-popup-item:focus-visible {
@@ -1428,46 +1491,70 @@
        both the sidebar-button and calendar-cell-click cases; inline
        styles win regardless of specificity, so these values only matter
        if that JS somehow never ran. */
+    /* Enlarged and made visually prominent (Step 4, calendar-create-
+       chooser-readability-and-width task, 2026-07-20) — was a compact
+       180px-wide menu with an 8px/6px.84rem item; now a wider, higher-
+       contrast panel with a visible "Create" heading (below) so an
+       empty-cell click reads unambiguously as a creation action, not a
+       generic small menu. Still an anchored popover, not a full-page
+       modal — position:fixed + viewport clamping remains entirely
+       JS-driven (positionCreateMenu(), unchanged). */
     .msc-create-menu {
       position: absolute;
       top: calc(100% + 6px);
       left: 0;
-      min-width: 180px;
+      min-width: 260px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      box-shadow: var(--shadow-md);
-      padding: 6px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-hover);
+      padding: 10px;
       z-index: 60;
+    }
+
+    /* Visible "Create" heading (Step 3) — the menu already carries
+       aria-label="Create" for assistive tech (instance.js), so this
+       heading is aria-hidden and purely the sighted-user-visible label
+       the confirmed requirement asks for. */
+    .msc-create-menu-heading {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--text);
+      padding: 6px 10px 10px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
     }
 
     .msc-create-menu-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
       border: none;
       background: transparent;
       color: var(--text);
-      padding: 8px 10px;
+      padding: 12px 14px;
       border-radius: var(--radius-sm);
-      font-size: .84rem;
+      font-size: .92rem;
       font-weight: 600;
       text-align: left;
       cursor: pointer;
+      transition: background .12s ease, box-shadow .12s ease;
     }
 
     .msc-create-menu-item:hover {
       background: var(--surface-tint-3);
+      box-shadow: inset 0 0 0 1px var(--border);
     }
 
     .msc-create-menu-item:focus-visible {
       outline: none;
-      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
+      background: var(--surface-tint-3);
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25)), inset 0 0 0 1px var(--accent);
     }
 
     .msc-create-menu-icon {
-      font-size: .95rem;
+      font-size: 1.1rem;
       line-height: 1;
     }
 
@@ -1587,25 +1674,36 @@
       color: var(--accent);
     }
 
-    /* Demo-style visible task chips inside calendar date cells (aios_role_desk_views.html layout reference) */
+    /* Demo-style visible task chips inside calendar date cells (aios_role_desk_views.html layout reference).
+       Font size raised from .64rem (~9.6px) to the shared
+       --calendar-event-font-size (~13px) (Step 6/7, calendar-create-
+       chooser-readability-and-width task, 2026-07-20) — single-line
+       ellipsis truncation (white-space/overflow/text-overflow below)
+       and the cell's own overflow:hidden are unchanged, so a long title
+       still truncates instead of overflowing the date cell. */
     .msc-cal-chip {
       display: block;
-      font-size: .64rem;
+      font-size: var(--calendar-event-font-size);
       font-weight: 600;
-      line-height: 1.5;
-      padding: 1px 6px;
+      line-height: var(--calendar-event-line-height);
+      padding: 2px 6px;
       border-radius: 4px;
       margin-bottom: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: filter .1s ease;
+      transition: filter .1s ease, box-shadow .1s ease, transform .1s ease;
       cursor: pointer;
     }
 
+    /* Strengthened hover/focus (Step 8) — brightness dim + a visible
+       ring + a small lift, on top of the existing shadow. Month chips
+       are never draggable (only Week/Day timed blocks are), so the
+       transform here cannot interfere with any drag/resize math. */
     .msc-cal-chip:hover {
-      filter: brightness(.97);
-      box-shadow: 0 1px 3px rgba(15, 23, 42, .2);
+      filter: brightness(.95);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, .28), inset 0 0 0 1px rgba(15, 23, 42, .15);
+      transform: translateY(-1px);
     }
 
     .msc-cal-chip:focus-visible,
@@ -1638,19 +1736,24 @@
 
     .msc-cal-chip-more {
       display: block;
-      font-size: .62rem;
+      font-size: .68rem;
       font-weight: 600;
       color: var(--muted);
-      padding: 0 6px;
+      padding: 1px 6px;
       margin-top: 1px;
+      border-radius: 4px;
       cursor: pointer;
+      transition: background .1s ease, box-shadow .1s ease, color .1s ease;
     }
 
+    /* Strengthened (Step 8) — adds a visible ring on top of the existing
+       background/underline/color change so it reads as clearly as the
+       Task/Leave chips above it, not just a plain text-link hover. */
     .msc-cal-chip-more:hover {
       color: var(--text);
       background: var(--surface-tint-3);
       text-decoration: underline;
-      border-radius: 4px;
+      box-shadow: inset 0 0 0 1px var(--border);
     }
 
     /* ── Leave coordination copy (REQ-LEAVE-COPY-001) — deliberately
@@ -1663,10 +1766,14 @@
        calendar color mapping — same soft-bg/dark-text/left-border
        pattern as the Scheduled/Unscheduled chips above, so all three
        categories read as one consistent visual family. ── */
+    /* Font size raised .62rem -> .76rem (Step 8, same task) — still
+       visibly smaller than the Task chip's ~13px so Task/Leave stay
+       easy to tell apart at a glance without relying on color alone;
+       red background/border/text (--calendar-leave-*) are unchanged. */
     .msc-cal-chip-leave {
       display: block;
-      font-size: .62rem;
-      line-height: 1.4;
+      font-size: .76rem;
+      line-height: 1.35;
       padding: 1px 5px;
       border-radius: 4px;
       margin-bottom: 2px;
@@ -1676,17 +1783,34 @@
       border-left: 3px solid var(--calendar-leave-border);
       background: var(--calendar-leave-bg);
       color: var(--calendar-leave-text);
+      transition: filter .1s ease, box-shadow .1s ease;
+    }
+
+    /* Comparable clickability cue to Task chips (Step 8 "LEAVE CHIPS /
+       BLOCKS") without implying a click action leave chips don't have —
+       their own click handler only stops propagation (no popup opens,
+       by design; see the Month-view render comment above), so cursor
+       stays the inherited default rather than pointer. */
+    .msc-cal-chip-leave:hover {
+      filter: brightness(.97);
+      box-shadow: 0 1px 3px rgba(127, 29, 29, .25);
     }
 
     .msc-tg-allday-chip-leave {
       display: inline-block;
-      font-size: .68rem;
+      font-size: .78rem;
       padding: 1px 8px;
       border-radius: 999px;
       margin: 1px 4px 1px 0;
       border-left: 3px solid var(--calendar-leave-border);
       background: var(--calendar-leave-bg);
       color: var(--calendar-leave-text);
+      transition: filter .1s ease, box-shadow .1s ease;
+    }
+
+    .msc-tg-allday-chip-leave:hover {
+      filter: brightness(.97);
+      box-shadow: 0 1px 3px rgba(127, 29, 29, .25);
     }
 
     /* Timed (Short Leave / Half-Day) leave blocks in the Week/Day time
@@ -1710,7 +1834,7 @@
       z-index: 1;
       border-radius: 4px;
       padding: 2px 6px;
-      font-size: .68rem;
+      font-size: .78rem;
       color: var(--calendar-leave-text);
       overflow: hidden;
       pointer-events: auto;
@@ -1718,6 +1842,12 @@
       opacity: .92;
       border-left: 3px solid var(--calendar-leave-border);
       background: var(--calendar-leave-bg);
+      transition: filter .1s ease, box-shadow .1s ease;
+    }
+
+    .msc-tg-leave-block:hover {
+      filter: brightness(.97);
+      box-shadow: 0 1px 3px rgba(127, 29, 29, .22);
     }
 
     /* ── Leave Coordination section polish (UI-only, 2026-07-16) ──
