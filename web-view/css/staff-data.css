@@ -533,7 +533,18 @@
       z-index: 1;
     }
 
+    /* th:first-child (Employee column) is matched by the rule above, whose
+       higher specificity (.staff-table th:first-child) overrides the shared
+       header background (.member-testing-table thead th) with `background:
+       inherit` — meant for the sticky-left *data* column so it blends with
+       row striping, but on the header cell it resolves to the <tr>'s
+       transparent background. With no opaque paint behind it, scrolled rows
+       show through/behind the pinned "Employee" header, which is exactly
+       the name/preferred-name/employee-number overlap reported (that data
+       lives in this first column). Restoring the same solid header
+       background used by every other header cell fixes it. */
     .staff-table thead th:first-child {
+      background: var(--surface-tint-4);
       z-index: 3;
     }
 
