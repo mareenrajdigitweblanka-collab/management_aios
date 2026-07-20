@@ -839,18 +839,14 @@
       margin-top: 16px;
     }
 
-    /* ── Header-safe scroll targets (2026-07-17 header-safe-scroll task) ──
-       .msc-form-card is scrolled into view verbatim by the "Create task"
-       handler (its own top edge IS the Schedule Item heading's card, so
-       scroll-margin-top belongs on the card itself). .msc-list-heading is
-       the specific heading element navigateToScheduleItemListForDate()
-       scrolls to (added in the month-task-list-navigation task) — giving
-       it its own scroll-margin-top keeps the offset scoped to the actual
-       scroll target rather than the whole .msc-list-card. Both read the
-       same --scroll-target-offset token (tokens.css) — one source of
-       truth, no per-handler duplicated JS offset math. */
-    .msc-form-card,
-    .msc-list-heading {
+    /* ── Header-safe scroll target (2026-07-17 header-safe-scroll task) ──
+       .msc-form-card's own top edge is the Schedule Item heading's card;
+       reads the shared --scroll-target-offset token (tokens.css). The
+       former .msc-list-heading scroll target (Schedule Items list) was
+       removed with the list itself 2026-07-20 (calendar-task-detail-and-
+       more-popup task) — every Task click now opens a popup in place,
+       never scrolls the page (confirmed requirement). */
+    .msc-form-card {
       scroll-margin-top: var(--scroll-target-offset);
     }
 
@@ -1164,6 +1160,178 @@
     .msc-modal-close:focus-visible {
       outline: none;
       box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
+    }
+
+    /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
+       and-more-popup task, 2026-07-20) — reuses .msc-modal-overlay/
+       .msc-modal (above) for the backdrop/card, adds a compact header
+       row (semantic-color dot + title + round × close, same visual
+       language as .msc-modal-form-head below) and a footer actions row
+       for Edit/Delete. No new fields, no Google branding/assets. ── */
+    .msc-view-modal-inner {
+      text-align: left;
+    }
+
+    .msc-view-modal-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-view-modal-head .msc-view-title {
+      flex: 1;
+      margin: 0;
+      padding: 0;
+      border: none;
+      font-size: 1.05rem;
+    }
+
+    .msc-view-modal-head .msc-modal-close {
+      margin-top: 0;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    /* Semantic-color accent marker (Step 12 — color as a marker, never
+       the only meaning; category text remains in .msc-view-category).
+       Reuses the same --calendar-scheduled-border/--calendar-unscheduled-
+       border tokens the Month chips' left-border accent already reads. */
+    .msc-view-color-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--muted);
+    }
+
+    .msc-view-color-dot.task {
+      background: var(--calendar-scheduled-border);
+    }
+
+    .msc-view-color-dot.followup {
+      background: var(--calendar-unscheduled-border);
+    }
+
+    .msc-view-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Month "+N more" date-specific popup (Step 8/9/10, same task) ──
+       An anchored popover (position:fixed set in JS, same technique as
+       .msc-create-menu below) rather than a centered .msc-modal-overlay
+       backdrop — "preferably anchored near the +N more link", per the
+       confirmed requirement. */
+    .msc-more-popup {
+      position: fixed;
+      min-width: 220px;
+      max-width: 320px;
+      max-height: min(360px, calc(100vh - 32px));
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      padding: 10px;
+      z-index: 70;
+    }
+
+    .msc-more-popup[hidden] {
+      display: none;
+    }
+
+    .msc-more-popup-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-more-popup-title {
+      margin: 0;
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .msc-more-popup-head .msc-modal-close {
+      margin-top: 0;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .msc-more-popup-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      font-size: .78rem;
+    }
+
+    .msc-more-popup-item:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-more-popup-item:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
+    }
+
+    .msc-more-popup-item.task {
+      border-left-color: var(--calendar-scheduled-border);
+    }
+
+    .msc-more-popup-item.followup {
+      border-left-color: var(--calendar-unscheduled-border);
+    }
+
+    .msc-more-popup-item-time {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .msc-more-popup-item-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 480px) {
+      .msc-more-popup {
+        min-width: 0;
+        max-width: calc(100vw - 16px);
+      }
     }
 
     /* ── "+ Create" dropdown (Google-style create workflow, 2026-07-20)

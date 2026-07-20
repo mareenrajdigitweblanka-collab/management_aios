@@ -33,6 +33,9 @@ function mountScheduleCalendarInstance(container) {
   var createMenuId = 'msc-create-menu-' + memberKey;
   var taskPopupTitleId = 'msc-task-popup-title-' + memberKey;
   var leavePopupTitleId = 'msc-leave-popup-title-' + memberKey;
+  /* Same per-instance-unique-id rule (task-detail "+N more" popup,
+     2026-07-20 calendar-task-detail-and-more-popup task). */
+  var morePopupTitleId = 'msc-more-popup-title-' + memberKey;
 
   var rajivNoteHtml = showRajivNote
     ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
@@ -125,9 +128,12 @@ function mountScheduleCalendarInstance(container) {
        msc-task-popup/msc-leave-popup blocks below, sited near the
        existing msc-view-modal. The Task creation form and the Leave
        creation form each exist exactly once in the DOM, inside their
-       popup; only the two remaining lower-page sections — Leave list,
-       Schedule Item list — stay in their prior page position.) ──
-       Page order: 1) Leave Coordination list, 2) Schedule Item list. */
+       popup. The lower-page Schedule Item list was removed 2026-07-20
+       (calendar-task-detail-and-more-popup task) — every Task click
+       (Month chip, Week/Day block, all-day chip, "+N more" popup row)
+       now opens the shared msc-view-modal task-detail popup instead;
+       only the Leave Coordination list remains in its prior page
+       position, followed by the Priority Preview list-card.) ── */
     '<div class="hr-table-card msc-leave-card">' +
     '<div class="msc-leave-card-head">' +
     '<h4 class="msc-leave-title"><span class="msc-leave-title-icon" aria-hidden="true">&#128197;</span>Leave Coordination ' +
@@ -143,11 +149,6 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '<div class="hr-table-card">' +
     '<div class="msc-list-card">' +
-    '<div class="hr-table-title msc-list-heading" tabindex="-1" style="margin-bottom:8px;">Schedule Items — ' +
-    '<span class="msc-list-date-label">select a date</span></div>' +
-    '<div class="msc-list"><p class="msc-empty">Select a date on the calendar to see schedule items.</p></div>' +
-    '</div>' +
-    '<div class="msc-list-card">' +
     '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
     '<p class="msc-note" style="margin:0 0 8px;">Ranks today\'s sample items High → Medium → Low, styled ' +
     'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
@@ -162,16 +163,41 @@ function mountScheduleCalendarInstance(container) {
     '<details style="margin-top:6px;margin-bottom:18px;"><summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">' +
     'Technical details</summary><p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Validation: ' +
     '<code>validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md</code></p></details>' +
+    /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
+       and-more-popup task, 2026-07-20) — the ONE task-detail popup used
+       by every calendar view (Month chip, Week/Day timed block, all-day
+       chip, "+N more" popup row). Fields are the existing Task fields
+       only (title/date/time/category/priority/notes) — no new fields
+       invented. Edit/Delete reuse the existing editItem()/deleteItem()
+       functions; nothing new is added to backend/API contracts. */
     '<div class="msc-modal-overlay msc-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(viewTitleId) + '">' +
-    '<div class="msc-modal">' +
+    '<div class="msc-modal msc-view-modal-inner">' +
+    '<div class="msc-view-modal-head">' +
+    '<span class="msc-view-color-dot" aria-hidden="true"></span>' +
     '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '"></h4>' +
+    '<button type="button" class="msc-modal-close msc-view-close" aria-label="Close">&times;</button>' +
+    '</div>' +
     '<p class="msc-view-date"></p>' +
     '<p class="msc-view-time"></p>' +
     '<p class="msc-view-category"></p>' +
     '<p class="msc-view-priority"></p>' +
     '<p class="msc-view-notes"></p>' +
-    '<button type="button" class="msc-modal-close msc-view-close">Close</button>' +
+    '<div class="msc-view-actions">' +
+    '<button type="button" class="msc-btn msc-btn-danger msc-view-delete-btn">Delete</button>' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-view-edit-btn">Edit</button>' +
     '</div>' +
+    '</div>' +
+    '</div>' +
+    /* ── Month "+N more" date-specific popup (Step 8/9, same task) —
+       compact, anchored near the "+N more" link; lists only Task
+       records (never Leave) for the active member/date. Each row opens
+       the shared msc-view-modal above via the existing viewItem(). ── */
+    '<div class="msc-more-popup" role="dialog" aria-labelledby="' + escapeHtml(morePopupTitleId) + '" hidden>' +
+    '<div class="msc-more-popup-head">' +
+    '<h4 class="msc-more-popup-title" id="' + escapeHtml(morePopupTitleId) + '"></h4>' +
+    '<button type="button" class="msc-modal-close msc-more-popup-close" aria-label="Close">&times;</button>' +
+    '</div>' +
+    '<div class="msc-more-popup-list"></div>' +
     '</div>' +
     /* ── Task creation popup (Google-style create workflow, 2026-07-20)
        — the one and only Schedule Item creation/edit form in the DOM,
@@ -265,7 +291,6 @@ function mountScheduleCalendarInstance(container) {
   var todayBtn = container.querySelector('.msc-today');
   var nextBtn = container.querySelector('.msc-next');
   var selectedDateLabel = container.querySelector('.msc-selected-date-label');
-  var listDateLabel = container.querySelector('.msc-list-date-label');
   var fieldDate = container.querySelector('.msc-field-date');
   var fieldTitle = container.querySelector('.msc-field-title');
   var fieldTitleCounter = container.querySelector('.msc-field-title-counter');
@@ -291,7 +316,6 @@ function mountScheduleCalendarInstance(container) {
   var addBtn = container.querySelector('.msc-add-btn');
   var updateBtn = container.querySelector('.msc-update-btn');
   var cancelBtn = container.querySelector('.msc-cancel-btn');
-  var listEl = container.querySelector('.msc-list');
   var priorityListEl = container.querySelector('.msc-priority-list');
   var dailySummaryEl = container.querySelector('.msc-summary-daily');
   var dailySummaryTitleEl = container.querySelector('.msc-summary-daily-title');
@@ -301,6 +325,7 @@ function mountScheduleCalendarInstance(container) {
   var monthlySummaryTitleEl = container.querySelector('.msc-summary-monthly-title');
   var clearBtn = container.querySelector('.msc-clear-btn');
   var viewModal = container.querySelector('.msc-view-modal');
+  var viewColorDot = container.querySelector('.msc-view-color-dot');
   var viewTitle = container.querySelector('.msc-view-title');
   var viewDate = container.querySelector('.msc-view-date');
   var viewTime = container.querySelector('.msc-view-time');
@@ -308,6 +333,8 @@ function mountScheduleCalendarInstance(container) {
   var viewPriority = container.querySelector('.msc-view-priority');
   var viewNotes = container.querySelector('.msc-view-notes');
   var viewClose = container.querySelector('.msc-view-close');
+  var viewEditBtn = container.querySelector('.msc-view-edit-btn');
+  var viewDeleteBtn = container.querySelector('.msc-view-delete-btn');
   var apiStatusEl = container.querySelector('.msc-api-status');
   var viewSwitcherBtns = container.querySelectorAll('.msc-view-btn');
   var miniPickerEl = container.querySelector('.msc-mini-picker');
@@ -327,6 +354,13 @@ function mountScheduleCalendarInstance(container) {
   var taskPopupStatusEl = container.querySelector('.msc-task-popup-status');
   var leavePopupOverlay = container.querySelector('.msc-leave-popup');
   var leavePopupClose = container.querySelector('.msc-leave-popup-close');
+
+  /* ── Month "+N more" date-specific popup refs (Step 8/9,
+     calendar-task-detail-and-more-popup task, 2026-07-20) ── */
+  var morePopupOverlay = container.querySelector('.msc-more-popup');
+  var morePopupTitle = container.querySelector('.msc-more-popup-title');
+  var morePopupList = container.querySelector('.msc-more-popup-list');
+  var morePopupClose = container.querySelector('.msc-more-popup-close');
 
   /* ── Leave coordination copy (REQ-LEAVE-COPY-001) scoped refs ── */
   var leaveApiBase = MEMBER_LEAVE_API_BASE + '/' + encodeURIComponent(memberKey);
@@ -689,17 +723,15 @@ function mountScheduleCalendarInstance(container) {
       var isSelected = c.dateStr === state.selectedDate;
       var dayItems = itemsForDate(c.dateStr);
 
-      /* Every cell's own blank-background click/keyboard action is now
+      /* Every cell's own blank-background click/keyboard action is
          "open the Task/Leave create chooser" (calendar-empty-slot-
-         create-and-overlap-rules, 2026-07-20; confirmed requirement) —
-         including cells that already have tasks, which previously
-         navigated to the filtered Schedule Item list on a background
-         click. That list-navigation shortcut is intentionally replaced
-         for the cell background; it remains reachable exactly as
-         before by clicking an individual task chip or "+N more" (their
-         own handlers below, unchanged, still call
-         navigateToScheduleItemListForDate and still stopPropagation so
-         they never also trigger this cell-level handler). ── */
+         create-and-overlap-rules, 2026-07-20) — including cells that
+         already have tasks. It remains reachable exactly as before by
+         clicking an individual task chip (opens the shared task-detail
+         popup, see viewItem() below) or "+N more" (opens the
+         date-specific more-popup, see openMorePopup() below); their own
+         handlers still call e.stopPropagation() so they never also
+         trigger this cell-level handler. ── */
       var cls = 'msc-cal-cell msc-cal-cell--actionable' + (c.inMonth ? '' : ' other-month') +
         (isSelected ? ' selected' : '');
       var cellLabel = c.date.getDate() + ' ' + MONTH_NAMES[c.date.getMonth()] + ' ' + c.date.getFullYear() +
@@ -715,14 +747,12 @@ function mountScheduleCalendarInstance(container) {
       html += '<div class="msc-cal-daynum' + (isToday ? ' today' : '') + '">' + c.date.getDate() + '</div>';
       /* Demo-style visible task chips inside each date (aios_role_desk_views.html layout reference) —
          shows the actual sample/testing entries the user has added, not real schedule facts.
-         Task chips navigate to the filtered Schedule Item list (Step 7) — Month chips never
-         opened a task-detail view before this change, so there is no modal behavior to
-         suppress here; Week/Day's viewItem() modal (separate renderer, renderTimeGrid) is
-         unaffected. */
+         A chip click opens the shared task-detail popup (viewItem(), same popup Week/Day/
+         all-day use) — see the .msc-cal-chip click wiring below. */
       dayItems.slice(0, MAX_CAL_CHIPS).forEach(function (it) {
         var catClass = CATEGORY_CLASS[it.category] || 'task';
         var label = (it.start ? it.start + ' ' : '') + it.title;
-        html += '<span class="msc-cal-chip ' + catClass + '" data-date="' + c.dateStr + '" ' +
+        html += '<span class="msc-cal-chip ' + catClass + '" data-date="' + c.dateStr + '" data-id="' + it.id + '" ' +
           'role="button" tabindex="0" title="' + escapeHtml(label) + '">' +
           escapeHtml(label) + '</span>';
       });
@@ -730,7 +760,9 @@ function mountScheduleCalendarInstance(container) {
         /* Step 8: this overflow count is derived from `dayItems` (tasks
            only, see itemsForDate above) — leave is rendered separately
            below and never contributes to this count, so "+N more" is
-           always task-bearing whenever it is rendered at all. */
+           always task-bearing whenever it is rendered at all. Opens the
+           date-specific more-popup (openMorePopup() below), not the
+           removed Schedule Item list. */
         html += '<span class="msc-cal-chip-more" data-date="' + c.dateStr + '" role="button" tabindex="0">+' +
           (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
       }
@@ -773,7 +805,7 @@ function mountScheduleCalendarInstance(container) {
     calGrid.querySelectorAll('.msc-cal-chip').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
-        navigateToScheduleItemListForDate(chip.getAttribute('data-date'));
+        viewItem(chip.getAttribute('data-id'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
@@ -781,7 +813,7 @@ function mountScheduleCalendarInstance(container) {
     calGrid.querySelectorAll('.msc-cal-chip-more').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
-        navigateToScheduleItemListForDate(chip.getAttribute('data-date'));
+        openMorePopup(chip.getAttribute('data-date'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
@@ -1281,84 +1313,13 @@ function mountScheduleCalendarInstance(container) {
     state.viewYear = d.getFullYear();
     state.viewMonth = d.getMonth();
     selectedDateLabel.textContent = dateStr;
-    listDateLabel.textContent = dateStr;
     if (leaveListDateLabel) { leaveListDateLabel.textContent = dateStr; }
     syncSelectedDateToForms(dateStr);
     cancelEdit();
     renderActiveView();
-    renderList();
+    renderPriorityPreview();
     renderLeaveList();
     loadSummaries(dateStr);
-  }
-
-  /* ── Centralized Month task-list navigation (Step 4, 2026-07-17) ──
-     The single helper every Month-view actionable trigger (task-bearing
-     cell background, task chip, "+N more") calls. Reuses selectDate() —
-     the existing selected-date source of truth — rather than
-     duplicating it: selectDate() already (1) sets state.selectedDate,
-     (2) syncs the Schedule Item/Leave form dates via
-     syncSelectedDateToForms(), (3)/(4) re-renders renderList(), which
-     already filters the existing loaded `items` array to
-     state.selectedDate (msc-list-date-label already shows that date as
-     the list's context label) — so there is no separate filter
-     variable or second task list to introduce. This helper only adds
-     the scroll + focus step on top, and keeps the current member scope
-     by operating solely through container-scoped closure references
-     (no window-global state). */
-  function navigateToScheduleItemListForDate(dateStr) {
-    selectDate(dateStr);
-    var listHeading = container.querySelector('.msc-list-heading');
-    var scrollTarget = listHeading || listEl;
-    if (scrollTarget && scrollTarget.scrollIntoView) {
-      scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    if (listHeading && listHeading.focus) { listHeading.focus(); }
-  }
-
-  function renderList() {
-    if (!state.selectedDate) {
-      listEl.innerHTML = '<p class="msc-empty">Select a date on the calendar to see schedule items.</p>';
-      renderPriorityPreview();
-      return;
-    }
-    var dayItems = items.filter(function (it) { return it.date === state.selectedDate; });
-    if (!dayItems.length) {
-      listEl.innerHTML = '<p class="msc-empty">No sample schedule items for ' + escapeHtml(memberLabel) +
-        ' on ' + state.selectedDate + ' yet. Use the form above to add one for testing.</p>';
-      renderPriorityPreview();
-      return;
-    }
-    var html = '';
-    dayItems.forEach(function (it) {
-      var catClass = CATEGORY_CLASS[it.category] || 'task';
-      var priority = it.priority || 'Medium';
-      var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
-      var timeStr = (it.start || it.end) ? (it.start || '?') + '–' + (it.end || '?') : 'No time set';
-      html += '<div class="msc-item" data-id="' + it.id + '">';
-      html += '<div><div class="msc-item-title"><span class="badge ' + badgeClass + '" ' +
-        'title="Sample/demo priority only">' + escapeHtml(priority) + '</span> ' +
-        '<span class="msc-chip-cat ' + catClass + '">' + it.category +
-        '</span>' + escapeHtml(it.title) + '</div>';
-      html += '<div class="msc-item-meta">' + timeStr + '</div></div>';
-      html += '<div class="msc-item-actions">';
-      html += '<button type="button" data-action="view" data-id="' + it.id + '">View</button>';
-      html += '<button type="button" data-action="edit" data-id="' + it.id + '">Edit</button>';
-      html += '<button type="button" data-action="delete" data-id="' + it.id + '">Delete</button>';
-      html += '</div></div>';
-    });
-    listEl.innerHTML = html;
-
-    listEl.querySelectorAll('button[data-action]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var action = btn.getAttribute('data-action');
-        var id = btn.getAttribute('data-id');
-        if (action === 'view') { viewItem(id, btn); }
-        else if (action === 'edit') { editItem(id); }
-        else if (action === 'delete') { deleteItem(id); }
-      });
-    });
-
-    renderPriorityPreview();
   }
 
   /* Demo-style "Priority Queue" preview (aios_role_desk_views.html layout reference) — ranks
@@ -1566,10 +1527,10 @@ function mountScheduleCalendarInstance(container) {
     addBtn.style.display = 'none';
     updateBtn.style.display = '';
     cancelBtn.style.display = '';
-    /* Edit (from the Schedule Items list, Step 20) opens the same
-       single Task popup the fields above just populated — the form
-       only exists inside the popup now, so without this the fields
-       would be filled while hidden. */
+    /* Edit (from the task-detail popup's Edit button, or directly)
+       opens the same single Task popup the fields above just
+       populated — the form only exists inside the popup, so without
+       this the fields would be filled while hidden. */
     openTaskPopup();
   }
 
@@ -1603,56 +1564,75 @@ function mountScheduleCalendarInstance(container) {
     }).then(function () { updateBtn.disabled = false; });
   });
 
+  /* Returns a Promise<boolean> (true only on a confirmed, successful
+     delete) so the task-detail popup's Delete button (Step 6) can close
+     the popup only after the delete actually succeeds — every other
+     existing caller of deleteItem() ignores the return value, unchanged. */
   function deleteItem(id) {
     var it = items.filter(function (x) { return x.id === id; })[0];
-    if (!it) { return; }
+    if (!it) { return Promise.resolve(false); }
     var ok = window.confirm('Delete this sample schedule item ("' + it.title + '")? This only removes ' +
       'testing data from the local API/database — it does not touch any real source or database.');
-    if (!ok) { return; }
+    if (!ok) { return Promise.resolve(false); }
     showApiStatus('Deleting…', false);
-    apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
+    return apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
       items = items.filter(function (x) { return x.id !== id; });
       showApiStatus('', false);
       if (state.editingId === id) { cancelEdit(); }
       renderActiveView();
-      renderList();
+      renderPriorityPreview();
       if (state.selectedDate) { loadSummaries(state.selectedDate); }
+      return true;
     }).catch(function (err) {
       showApiStatus('Could not delete this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
+      return false;
     });
   }
 
-  /* Modal focus management (Phase 1 polish, 2026-07-10) — presentation/
-     keyboard-behaviour only, no change to calendar item data or CRUD
-     calls. lastFocusedTrigger lets Close/Escape/backdrop-click return
-     focus to whichever "View" button opened the modal. Since the modal
-     body only ever contains one interactive control (the Close button),
-     Tab is simply pinned there — a correct, minimal focus trap for this
-     content rather than a general-purpose one. */
+  /* Modal focus management (Phase 1 polish, 2026-07-10; Edit/Delete
+     actions added calendar-task-detail-and-more-popup task, 2026-07-20)
+     — presentation/keyboard-behaviour only, no change to calendar item
+     data or CRUD calls beyond reusing the existing editItem()/
+     deleteItem() functions. lastFocusedTrigger lets Close/Escape/
+     backdrop-click return focus to whichever task chip/block/chip
+     opened the popup ("restore focus to the originating task where
+     practical", Step 6). The popup now hosts three controls (Close,
+     Edit, Delete), so Tab cycles through them via the shared
+     trapPopupTab() helper (Step 5/6, same helper the Task/Leave create
+     popups already use) rather than being pinned to a single control. */
   var lastFocusedTrigger = null;
+  var currentViewItemId = null;
 
   function onViewModalKeydown(e) {
     if (e.key === 'Escape' || e.key === 'Esc') {
       e.preventDefault();
       closeViewModal();
     } else if (e.key === 'Tab') {
-      e.preventDefault();
-      viewClose.focus();
+      trapPopupTab(viewModal, e);
     }
   }
 
   function closeViewModal() {
     viewModal.classList.remove('show');
     viewModal.removeEventListener('keydown', onViewModalKeydown);
+    currentViewItemId = null;
     if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function') {
       lastFocusedTrigger.focus();
     }
     lastFocusedTrigger = null;
   }
 
+  /* The ONE shared task-detail popup for Month/Week/Day/all-day/"+N
+     more" (Step 5) — every call site above (Month chip, Week/Day timed
+     block via attachDragHandlers, all-day chip, more-popup row) already
+     calls this same function; nothing view-specific is duplicated here.
+     Fields are the existing Task fields only — no new field invented. */
   function viewItem(id, triggerEl) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return; }
+    currentViewItemId = id;
+    var catClass = CATEGORY_CLASS[it.category] || 'task';
+    if (viewColorDot) { viewColorDot.className = 'msc-view-color-dot ' + catClass; }
     viewTitle.textContent = it.title;
     viewDate.textContent = 'Date: ' + it.date;
     viewTime.textContent = 'Time: ' + ((it.start || it.end) ? (it.start || '?') + ' – ' + (it.end || '?') : 'Not set');
@@ -1670,6 +1650,127 @@ function mountScheduleCalendarInstance(container) {
     if (e.target === viewModal) { closeViewModal(); }
   });
 
+  /* Edit (Step 6) — closes the detail popup and reuses the existing
+     editItem() flow verbatim (same Task popup, same prefill, same
+     validation, same immutable-category-on-edit rule, same task/leave
+     conflict handling on save) — no new edit implementation. */
+  if (viewEditBtn) {
+    viewEditBtn.addEventListener('click', function () {
+      var id = currentViewItemId;
+      closeViewModal();
+      if (id) { editItem(id); }
+    });
+  }
+
+  /* Delete (Step 6) — reuses the existing deleteItem() confirmation +
+     delete flow verbatim; the popup only closes once deleteItem()'s
+     returned promise resolves true (a confirmed, successful delete),
+     so a cancelled confirm or a failed API call leaves the popup open
+     with its data intact. */
+  if (viewDeleteBtn) {
+    viewDeleteBtn.addEventListener('click', function () {
+      var id = currentViewItemId;
+      if (!id) { return; }
+      deleteItem(id).then(function (deleted) {
+        if (deleted) { closeViewModal(); }
+      });
+    });
+  }
+
+  /* ── Month "+N more" date-specific popup (Step 8/9/10, same task) ──
+     Anchored near the "+N more" link (or selected date cell), same
+     document-click-outside + Escape close pattern the existing "+
+     Create" dropdown (openCreateMenu/closeCreateMenu above) already
+     uses — reused rather than re-implemented. Lists Task records only
+     (itemsForDate — never leaveItems) for the active member/date;
+     excludes deleted records by construction, since `items` never
+     contains them. Each row opens the shared task-detail popup above. */
+  var morePopupOpen = false;
+
+  function positionMorePopup(anchorEl) {
+    var rect = anchorEl.getBoundingClientRect();
+    var popupWidth = morePopupOverlay.offsetWidth || 260;
+    var left = rect.left;
+    if (left + popupWidth > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - popupWidth - 8);
+    }
+    var top = rect.bottom + 6;
+    var popupHeight = morePopupOverlay.offsetHeight || 200;
+    if (top + popupHeight > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - popupHeight - 6);
+    }
+    morePopupOverlay.style.position = 'fixed';
+    morePopupOverlay.style.top = top + 'px';
+    morePopupOverlay.style.left = left + 'px';
+  }
+
+  function closeMorePopup(focusTarget) {
+    if (!morePopupOpen) { return; }
+    morePopupOpen = false;
+    morePopupOverlay.hidden = true;
+    document.removeEventListener('click', onDocClickForMorePopup, true);
+    document.removeEventListener('keydown', onMorePopupKeydown, true);
+    if (focusTarget && focusTarget.focus) { focusTarget.focus(); }
+  }
+
+  function onDocClickForMorePopup(e) {
+    if (morePopupOverlay.contains(e.target)) { return; }
+    closeMorePopup();
+  }
+
+  /* Escape-only (same pattern as the existing "+ Create" dropdown's
+     onCreateMenuKeydown above) — this is an anchored popover, not a
+     centered .msc-modal overlay, so it has no .msc-modal child for
+     trapPopupTab() to cycle within; Tab is left to flow naturally,
+     same as the create-menu. */
+  function onMorePopupKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      e.preventDefault();
+      closeMorePopup(morePopupAnchorEl);
+    }
+  }
+
+  var morePopupAnchorEl = null;
+
+  function openMorePopup(dateStr, anchorEl) {
+    var dayItems = itemsForDate(dateStr).slice().sort(function (a, b) {
+      var at = a.start || '99:99', bt = b.start || '99:99';
+      return at < bt ? -1 : (at > bt ? 1 : 0);
+    });
+    morePopupAnchorEl = anchorEl;
+    morePopupTitle.textContent = formatAgendaDate(dateStr);
+    var html = '';
+    dayItems.forEach(function (it) {
+      var catClass = CATEGORY_CLASS[it.category] || 'task';
+      var timeStr = it.start ? (it.start + (it.end ? '–' + it.end : '')) : 'No time set';
+      html += '<div class="msc-more-popup-item ' + catClass + '" data-id="' + it.id + '" role="button" tabindex="0" ' +
+        'aria-label="' + escapeHtml((it.start ? it.start + ' ' : '') + it.title) + '">' +
+        '<span class="msc-more-popup-item-time">' + escapeHtml(timeStr) + '</span>' +
+        '<span class="msc-more-popup-item-title">' + escapeHtml(it.title) + '</span>' +
+        '</div>';
+    });
+    morePopupList.innerHTML = html || '<p class="msc-empty">No tasks for this date.</p>';
+    morePopupList.querySelectorAll('.msc-more-popup-item').forEach(function (row) {
+      var go = function () {
+        var id = row.getAttribute('data-id');
+        closeMorePopup();
+        viewItem(id, morePopupAnchorEl);
+      };
+      row.addEventListener('click', go);
+      row.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(); } });
+    });
+    morePopupOverlay.hidden = false;
+    morePopupOpen = true;
+    positionMorePopup(anchorEl);
+    document.addEventListener('click', onDocClickForMorePopup, true);
+    document.addEventListener('keydown', onMorePopupKeydown, true);
+    if (morePopupClose && morePopupClose.focus) { morePopupClose.focus(); }
+  }
+
+  if (morePopupClose) {
+    morePopupClose.addEventListener('click', function () { closeMorePopup(morePopupAnchorEl); });
+  }
+
   clearBtn.addEventListener('click', function () {
     var ok = window.confirm('Clear ALL testing schedule data for ' + memberLabel +
       ' from the local API/database? This cannot be undone. Only "dashboard_testing" rows are affected — ' +
@@ -1681,7 +1782,7 @@ function mountScheduleCalendarInstance(container) {
       showApiStatus('', false);
       cancelEdit();
       renderActiveView();
-      renderList();
+      renderPriorityPreview();
     }).catch(function (err) {
       showApiStatus('Could not clear testing data — the local API may be unavailable. Detail: ' + err.message, true);
     });
@@ -1689,8 +1790,8 @@ function mountScheduleCalendarInstance(container) {
 
   /* ── Leave coordination copy (REQ-LEAVE-COPY-001) ──────────────
      Own API base (leaveApiBase), own state (leaveItems), own render
-     functions — never mixed into the task `items` array or
-     `renderList()`, since leave is a structurally separate concept
+     functions — never mixed into the task `items` array or its
+     rendering, since leave is a structurally separate concept
      (dedicated backend table, dedicated routes) from Scheduled/
      Unscheduled tasks. ── */
 
