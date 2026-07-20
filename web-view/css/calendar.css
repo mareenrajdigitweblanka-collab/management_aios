@@ -11,28 +11,6 @@
       font-family: Roboto, Arial, ui-sans-serif, system-ui, sans-serif;
     }
 
-    .msc-banner {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      background: var(--panel-dark-amber);
-      border-radius: var(--radius);
-      padding: 14px 18px;
-      margin-bottom: 12px;
-      color: var(--panel-dark-amber-text);
-      font-size: .82rem;
-      line-height: 1.6;
-    }
-
-    .msc-banner .msc-banner-icon {
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
-
-    .msc-banner strong {
-      color: #fff;
-    }
-
     .msc-note {
       font-size: .78rem;
       color: var(--muted);

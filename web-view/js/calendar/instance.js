@@ -43,16 +43,7 @@ function mountScheduleCalendarInstance(container) {
 
   container.innerHTML =
     '<div class="msc-calendar-shell">' +
-    '<div class="msc-banner">' +
-    '<span class="msc-banner-icon" aria-hidden="true">&#9888;&#65039;</span>' +
-    '<div><strong>Testing Preview Only</strong> — stored through local FastAPI/PostgreSQL backend for ' +
-    'dashboard testing; not official HR/Admin truth.</div>' +
-    '</div>' +
-    '<p class="msc-note">Schedule items here are saved to a local FastAPI + PostgreSQL backend for testing ' +
-    'purposes only (see <code>backend/README.md</code>). This is not official HR/Admin schedule truth.</p>' +
-    '<p class="msc-note" style="font-weight:600;color:var(--text);">Click a date, then add or edit a testing schedule item.</p>' +
-    '<p class="msc-note">This follows the Management Team Schedule demo layout, but all entries here are ' +
-    'sample testing data.</p>' +
+    '<p class="msc-note" style="font-weight:600;color:var(--text);">Click a date to create or manage a schedule item.</p>' +
     '<p class="msc-note msc-api-status" style="display:none;"></p>' +
     rajivNoteHtml +
     '<div class="hr-table-card msc-calendar-card">' +
@@ -160,15 +151,6 @@ function mountScheduleCalendarInstance(container) {
     'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
     '<div class="msc-priority-list"></div>' +
     '</div>' +
-    '<div class="msc-form-actions" style="margin-top:16px;">' +
-    '<button type="button" class="msc-btn msc-btn-danger msc-clear-btn">Clear Testing Data</button>' +
-    '</div>' +
-    '<div class="hr-cal-footer">Testing calendar. Data is stored via a local FastAPI + PostgreSQL backend ' +
-    '(<code>' + escapeHtml(apiBase) + '</code>), for dashboard testing only. Not connected to Google Calendar ' +
-    'or GitHub. Not official schedule truth.</div>' +
-    '<details style="margin-top:6px;margin-bottom:18px;"><summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">' +
-    'Technical details</summary><p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Validation: ' +
-    '<code>validation/member-dashboard-schedule-frontend-api-wiring-check-2026-07-09.md</code></p></details>' +
     /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
        and-more-popup task, 2026-07-20) — the ONE task-detail popup used
        by every calendar view (Month chip, Week/Day timed block, all-day
@@ -329,7 +311,6 @@ function mountScheduleCalendarInstance(container) {
   var weeklySummaryTitleEl = container.querySelector('.msc-summary-weekly-title');
   var monthlySummaryEl = container.querySelector('.msc-summary-monthly');
   var monthlySummaryTitleEl = container.querySelector('.msc-summary-monthly-title');
-  var clearBtn = container.querySelector('.msc-clear-btn');
   var viewModal = container.querySelector('.msc-view-modal');
   var viewColorDot = container.querySelector('.msc-view-color-dot');
   var viewTitle = container.querySelector('.msc-view-title');
@@ -1843,23 +1824,6 @@ function mountScheduleCalendarInstance(container) {
   if (morePopupClose) {
     morePopupClose.addEventListener('click', function () { closeMorePopup(morePopupAnchorEl); });
   }
-
-  clearBtn.addEventListener('click', function () {
-    var ok = window.confirm('Clear ALL testing schedule data for ' + memberLabel +
-      ' from the local API/database? This cannot be undone. Only "dashboard_testing" rows are affected — ' +
-      'it does not touch any real source, official record, or database.');
-    if (!ok) { return; }
-    showApiStatus('Clearing testing data…', false);
-    apiRequest('DELETE', apiBase + '/clear-testing-data').then(function () {
-      items = [];
-      showApiStatus('', false);
-      cancelEdit();
-      renderActiveView();
-      renderPriorityPreview();
-    }).catch(function (err) {
-      showApiStatus('Could not clear testing data — the local API may be unavailable. Detail: ' + err.message, true);
-    });
-  });
 
   /* ── Leave coordination copy (REQ-LEAVE-COPY-001) ──────────────
      Own API base (leaveApiBase), own state (leaveItems), own render

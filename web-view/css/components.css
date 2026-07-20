@@ -791,55 +791,6 @@
       border-radius: 3px;
     }
 
-    /* ── Dashboard footer ── */
-    .dashboard-footer {
-      background: #0f172a;
-      color: #64748b;
-      padding: 14px 28px;
-      font-size: .73rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-      flex-shrink: 0;
-      border-top: 1px solid #1e2d3d;
-    }
-
-    .dashboard-footer-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .dashboard-footer-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, .06);
-      border: 1px solid #334155;
-      border-radius: 4px;
-      padding: 2px 8px;
-      color: #94a3b8;
-      font-size: .7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-
-    .dashboard-footer-right {
-      color: #475569;
-      font-size: .7rem;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-      .dashboard-footer {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-
     /* ═══════════════════════════════════════════
        USER-FRIENDLY UI LAYER — added 2026-07-06
        Presentation-only. No data, no logic, no network.
@@ -1177,16 +1128,5 @@
       padding: 2px 8px;
       border-radius: 999px;
       white-space: nowrap;
-    }
-
-    /* Footer */
-    .hr-cal-footer {
-      font-size: .76rem;
-      color: var(--muted);
-      text-align: center;
-      padding: 10px 14px;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-sm);
-      margin-bottom: 10px;
     }
 

@@ -75,8 +75,6 @@
       --surface-tint-4: #f5f2ea;
       --hairline: #efece4;
       --muted-2: #a8a29e;
-      --panel-dark-amber: #402a06;
-      --panel-dark-amber-text: #FDECC8;
       --draft-tint-bg: #eeebf3;
       --draft-tint-text: #6c5b96;
 
@@ -147,11 +145,15 @@
          margins" (Step 5 of the 2026-07-20 redesign task). Derivation:
          --header-height (56px, sticky, confirmed unchanged at every
          breakpoint — see the --scroll-target-offset comment above) +
-         --cal-toolbar-height (60px) + ~120px for the banner/
-         instructional paragraphs and API-status line that sit above
-         the calendar card (.msc-banner/.msc-note in calendar.css) +
+         --cal-toolbar-height (60px) + ~120px for the instructional
+         paragraph and API-status line that sit above the calendar
+         card (.msc-note in calendar.css; the testing-preview banner
+         formerly counted here was removed 2026-07-20, see
+         validation/remove-member-testing-and-technical-ui-check-2026-07-20.md) +
          ~64px for .tab-panel's own top+bottom padding (navigation.css)
-         = ~300px reserved. The max(560px, …) floor keeps six Month
+         = ~300px reserved (now a conservative over-reserve — kept as-is,
+         not re-tuned, since shrinking it needs visual verification). The
+         max(560px, …) floor keeps six Month
          rows and the Week/Day timeline usable on short viewports
          instead of collapsing to an unreadably thin strip. See
          validation/google-calendar-pixel-close-ui-check-2026-07-20.md
