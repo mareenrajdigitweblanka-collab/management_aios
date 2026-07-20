@@ -703,63 +703,27 @@ function mountScheduleCalendarInstance(container) {
     return leaveItems.filter(function (lv) { return leaveDatesForItem(lv).indexOf(dateStr) !== -1; });
   }
 
-  /* ── Month chip visible-capacity (Step 4/5/6, calendar-chooser-label-
-     and-more-responsive task, 2026-07-20) ── Replaces the former fixed
-     `MAX_CAL_CHIPS = 2` constant, which assumed the Month chip's older,
-     smaller line height. Once Task/Leave/"+N more" text was enlarged (the
-     prior calendar-readability task raised --calendar-event-font-size and
-     --calendar-event-line-height, calendar.css), 2 fixed chips plus the
-     day number could leave too little of the cell's actual, viewport-
-     height-driven content box (--cal-canvas-height / 6 rows,
-     .msc-cal-cell's own overflow:hidden) for the "+N more" line — clipping
-     or hiding it entirely on ordinary desktop viewport heights (~560-900px
-     tall), not just on any one member's data.
+  /* ── Month visible-task-preview cap (Step 3/4/6, calendar-two-task-
+     preview-and-cell-height task, 2026-07-20) ── Always exactly 2, per the
+     confirmed display rule: 0 tasks -> none; 1 -> one; 2 -> two; 3+ -> two
+     plus a complete "+N more". Uniform for every member — no per-member
+     value, and never dynamically shown as fewer than 2 wherever 2+ tasks
+     exist.
 
-     computeMonthChipCapacity() mirrors the exact same viewport-height
-     arithmetic --cal-canvas-height already uses (tokens.css) — the one
-     live input that formula depends on (window.innerHeight) — rather than
-     a second, disconnected guess, so a future change to that token's
-     derivation and this function are the two places that must be kept in
-     sync (documented here and there). The per-line geometry constants
-     below (chip height, gap, "+N more" height) mirror the
-     --calendar-month-* tokens (tokens.css) that calendar.css's own
-     .msc-cal-chip/.msc-cal-chip-more rules consume — not an unrelated
-     duplicate number, the one place those tokens don't reach directly
-     since this file has no CSS-custom-property-read bridge.
-
-     Every estimate below is rounded UP (fixed overhead: header row, day-
-     number block, cell padding) or the capacity itself rounded DOWN
-     (chip/more math), so the function can only ever under-count how many
-     chips fit, never over-count — the failure mode is "one fewer chip
-     shown," never "+N more clipped again." Computed once per
-     renderMonthView() call (view switch / date select / prev-next-month /
-     CRUD save-delete already re-render Month), not on a live resize
-     listener — matching the existing architecture, where no other Month
-     geometry reacts to an in-place window resize either; a resize alone
-     without a subsequent calendar action keeps the previous capacity until
-     the next render, same as every other Month render input. */
-  function computeMonthChipCapacity() {
-    var APP_HEADER_HEIGHT = 56;   // --header-height (tokens.css)
-    var CANVAS_RESERVED = 300;    // --cal-canvas-height's own reserved-space term (tokens.css)
-    var CANVAS_FLOOR = 560;       // --cal-canvas-height's own floor (tokens.css)
-    var vh = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 900;
-    var canvasHeight = Math.max(CANVAS_FLOOR, vh - APP_HEADER_HEIGHT - CANVAS_RESERVED);
-
-    var MONTH_HEADER_ROW = 30;    // .msc-cal-headcell — 16px padding + ~13px text line, rounded up
-    var rowHeight = (canvasHeight - MONTH_HEADER_ROW) / 6;
-
-    var CELL_PADDING = 10;        // .msc-cal-cell — 4px top + 6px bottom
-    var DAYNUM_BLOCK = 30;        // .msc-cal-daynum — 24px box + 2px top + 4px bottom margin
-    var CHIP_HEIGHT = 21;         // --calendar-month-chip-height (tokens.css)
-    var CHIP_GAP = 2;             // --calendar-month-chip-gap (tokens.css)
-    var MORE_HEIGHT = 17;         // --calendar-month-more-height (tokens.css), includes its own gap
-
-    var contentHeight = rowHeight - CELL_PADDING - DAYNUM_BLOCK;
-    var chipSlot = CHIP_HEIGHT + CHIP_GAP;
-    var capNoMore = Math.max(1, Math.floor(contentHeight / chipSlot));
-    var capWithMore = Math.max(1, Math.floor((contentHeight - MORE_HEIGHT) / chipSlot));
-    return { capNoMore: capNoMore, capWithMore: Math.min(capWithMore, capNoMore) };
-  }
+     This replaces the calendar-chooser-label-and-more-responsive task's
+     viewport-height-dependent computeMonthChipCapacity() — that fix could
+     still fall back to a single visible preview at common laptop
+     viewport heights (~768-900px tall), which is the exact bug this task
+     fixes. A plain constant is now safe (rather than a live calculation)
+     because --calendar-month-row-min-height (tokens.css), consumed by
+     .msc-cal-grid.active's grid-template-rows minmax floor
+     (calendar.css), structurally guarantees every Month row has enough
+     content height for the day number + 2 Task chips + one complete
+     "+N more" line at every viewport height — see that CSS rule's comment
+     for the exact derivation. The geometry lives in one place (the CSS
+     token); this constant only encodes the display-count business rule,
+     not a height calculation. */
+  var MONTH_VISIBLE_TASK_CAP = 2;
 
   /* ── Month-view click rules (2026-07-17 month-task-list-navigation task) ──
      Task-presence rule (Step 3): a Month date is task-bearing when
@@ -776,12 +740,6 @@ function mountScheduleCalendarInstance(container) {
     var y = state.viewYear, m = state.viewMonth;
     var todayStr = toDateStr(new Date());
     var cells = buildMonthGridCells(y, m);
-    /* Computed once per render, not once per cell — every cell in the 6-row
-       grid shares the same row height (grid-template-rows: auto repeat(6,
-       minmax(0,1fr)) against one shared --cal-canvas-height, calendar.css),
-       so the same capacity applies to all of them regardless of which
-       member's calendar this is or how many events any single day has. */
-    var chipCapacity = computeMonthChipCapacity();
 
     var html = '';
     DAY_HEADS.forEach(function (d) { html += '<div class="msc-cal-headcell">' + d + '</div>'; });
@@ -790,11 +748,10 @@ function mountScheduleCalendarInstance(container) {
       var isToday = c.dateStr === todayStr;
       var isSelected = c.dateStr === state.selectedDate;
       var dayItems = itemsForDate(c.dateStr);
-      /* Only reserve the "+N more" line's worth of space when it will
-         actually be needed (Step 6 "if fewer tasks exist, no unnecessary
-         blank reserved line") — a day within capNoMore's fit-without-more
-         capacity shows every item and no "+more" link at all. */
-      var visibleCap = dayItems.length > chipCapacity.capNoMore ? chipCapacity.capWithMore : chipCapacity.capNoMore;
+      /* Same shared cap for every cell/member (Step 13) — a day with fewer
+         than MONTH_VISIBLE_TASK_CAP tasks simply shows all of them (slice
+         returns however many actually exist) and no "+more" link. */
+      var visibleCap = MONTH_VISIBLE_TASK_CAP;
 
       /* Every cell's own blank-background click/keyboard action is
          "open the Task/Leave create chooser" (calendar-empty-slot-

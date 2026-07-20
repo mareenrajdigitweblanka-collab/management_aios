@@ -785,10 +785,25 @@
        a --cal-canvas-height container, so all six week rows share the
        available height evenly. Reverted to auto-height/fixed cell
        min-height on narrow viewports below (mobile media query) where
-       a vh-based canvas would be too cramped for stacked task chips. */
+       a vh-based canvas would be too cramped for stacked task chips.
+
+       Row floor raised 0 -> --calendar-month-row-min-height (calendar-
+       two-task-preview-and-cell-height task, 2026-07-20) — minmax's
+       minimum is a hard floor the 1fr distribution can never shrink
+       below, so every row now guarantees enough content height for 2
+       Task chips + a complete "+N more" line (tokens.css derivation),
+       regardless of --cal-canvas-height. On short viewports where 6 ×
+       the floor plus the header row exceeds --cal-canvas-height, the
+       grid's own rendered height simply grows past its nominal `height`
+       to satisfy the row minimums (standard CSS Grid track-sizing
+       behavior — minimums are never violated); .msc-cal-grid-wrap has no
+       overflow-y rule (defaults to visible), so this only pushes later
+       page content down, never clips or double-scrolls. --cal-canvas-
+       height itself is untouched — Week/Day's .msc-tg-scroll (which reads
+       the same token for its own max-height) is unaffected. */
     .msc-cal-grid.active {
       display: grid;
-      grid-template-rows: auto repeat(6, minmax(0, 1fr));
+      grid-template-rows: auto repeat(6, minmax(var(--calendar-month-row-min-height), 1fr));
       height: var(--cal-canvas-height);
     }
 
