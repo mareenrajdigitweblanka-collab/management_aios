@@ -1322,7 +1322,7 @@
     /* Semantic category colors (2026-07-20) — Scheduled Task = green,
        Unscheduled Task = yellow/amber, shared with .msc-cal-chip/
        .msc-tg-event/.msc-tg-allday-chip below via the same
-       --calendar-scheduled-*/--calendar-unscheduled-* tokens
+       --calendar-scheduled-* / --calendar-unscheduled-* tokens
        (tokens.css) so Month/Week/Day/legend/list all read from one
        source. review/planning are unused by current category data
        (core.js CATEGORY_CLASS only maps task/followup) — left
