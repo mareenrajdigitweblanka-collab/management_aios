@@ -389,6 +389,47 @@ the same Playwright harness against the local static server before
 being redeployed — full-width rendering confirmed at every breakpoint
 (§12 table), zero new console errors, zero overflow-x.
 
+## 18b. Follow-up: dark sidebar color (Step 4, "professional and attractive")
+
+After the above rounds were live, the user asked to "apply appropriate
+color to sidebar," then clarified: "make like top bar." The sidebar
+(`.app-sidebar`) previously used `--sidebar-bg: var(--surface-tint-2)`
+(#faf8f4) — a near-white tint barely distinguishable from the page
+background (`--bg` #f7f5f1) — with a light border and dark text/icons.
+It now matches `.topbar`'s own dark palette (`base.css`):
+
+| Element | Old | New |
+|---|---|---|
+| `--sidebar-bg` (token, `tokens.css`) | `var(--surface-tint-2)` (#faf8f4) | `linear-gradient(180deg, #0f172a 0%, #1e293b 100%)` — same two colors as `.topbar`'s gradient, oriented vertically for a tall column |
+| Sidebar right border | `var(--border)` (#e6e1d8, light) | `var(--topbar-border)` (#1e2d3d) — matches `.topbar`'s own bottom border, so the header and sidebar read as one continuous dark shell |
+| Group titles (OVERVIEW/MEMBERS/DATA) | `var(--muted-2)` (#a8a29e) | `#94a3b8` (matches `.topbar-sub`) |
+| Nav button text | `var(--text)` (#1e293b, dark) | `#e2e8f0` (matches `.topbar`'s own text color) |
+| Icon box | white (`var(--surface)`) + light border | `rgba(255,255,255,.06)` translucent + `rgba(255,255,255,.1)` border — same "translucent chip" treatment as `.topbar-search-pill`/`.app-sidebar-toggle` |
+| Icon color (inactive) | `var(--muted)` (#78716c) | `#94a3b8` |
+| Hover background | `var(--surface-tint-3)` (light) | `rgba(255,255,255,.06)` |
+| Active row background/text | `var(--accent-light)` (#eff6ff pale blue) / `var(--accent)` | `rgba(37,99,235,.18)` translucent blue / `#7dd3fc` bright blue |
+| Active icon box | `var(--accent-light)` / `#bfdbfe` border / `var(--accent)` | `rgba(37,99,235,.25)` / `rgba(96,165,250,.5)` border / `#7dd3fc` |
+| Subtitle text (role labels) | `var(--muted)` | `#94a3b8` (active: `#7dd3fc`) |
+| Collapse-toggle button | white box, light border/icon | translucent chip matching `.app-sidebar-toggle` (`rgba(255,255,255,.05)` bg, `#e2e8f0` icon) |
+
+The active-row accent bar (`::before`) keeps `var(--accent)` unchanged
+— it already matches the topbar logo's accent-dot color exactly, so no
+change was needed there. `--focus-ring` (global token, used site-wide)
+was left unchanged — it remains visibly distinguishable against the
+dark background (confirmed via screenshot) and changing it would affect
+every other focusable element on the page, out of scope for a
+sidebar-only color request.
+
+Verified via the same Playwright harness: expanded (`1440x900-expanded.png`),
+collapsed (`1440x900-collapsed.png`), mobile drawer
+(`mobile-390-drawer.png`), hover (`sidebar-hover-focus.png`), and
+collapse-toggle focus (`sidebar-toggle-focus.png`) all render correctly
+— text/icons legible against the dark background in every state, active
+state clearly distinguishable from hover, zero `bodyOverflowX` at any
+of the 7 tested viewports, zero new console errors. Only `tokens.css`
+and `navigation.css` changed for this step; `index.html` and
+`components.css` were not touched.
+
 ## 19. Overall result
 
 **PASS**, with one transparently-documented pre-existing observation

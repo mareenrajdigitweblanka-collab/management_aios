@@ -143,7 +143,7 @@
          to both expanded and collapsed modes per Step 10. */
       padding: var(--space-5) var(--space-3);
       background: var(--sidebar-bg);
-      border-right: 1px solid var(--border);
+      border-right: 1px solid var(--topbar-border);
     }
 
     .app-sidebar-group + .app-sidebar-group {
@@ -155,7 +155,9 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .07em;
-      color: var(--muted-2);
+      /* Light muted (matching .topbar-sub in base.css) — dark-sidebar
+         task, 2026-07-20. */
+      color: #94a3b8;
       padding: 4px 10px 8px;
     }
 
@@ -177,7 +179,9 @@
       text-align: left;
       border: none;
       background: transparent;
-      color: var(--text);
+      /* Light text for the dark sidebar (matches .topbar's #e2e8f0 —
+         base.css) — dark-sidebar task, 2026-07-20. */
+      color: #e2e8f0;
       font-size: var(--font-base);
       font-weight: 600;
       /* 6px top/bottom + 32px icon box = 44px row height, inside the
@@ -219,6 +223,12 @@
        18-20px glyph target so icons read clearly instead of feeling
        cramped inside their surface. Purely a size change; the box's
        centering/coloring rules below (active/hover state) are unchanged. */
+    /* Icon box recolored for the dark sidebar (dark-sidebar task,
+       2026-07-20) — a translucent white overlay + light-muted glyph
+       instead of the light theme's solid white box, matching the same
+       "translucent light-on-dark chip" treatment .topbar already uses
+       for its own controls (.app-sidebar-toggle/.topbar-search-pill in
+       base.css). */
     .app-nav-icon {
       display: flex;
       align-items: center;
@@ -227,9 +237,9 @@
       width: 32px;
       height: 32px;
       border-radius: 8px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .1);
+      color: #94a3b8;
     }
 
     .app-nav-icon svg {
@@ -238,9 +248,9 @@
     }
 
     .app-nav-btn.active .app-nav-icon {
-      background: var(--accent-light);
-      border-color: #bfdbfe;
-      color: var(--accent);
+      background: rgba(37, 99, 235, .25);
+      border-color: rgba(96, 165, 250, .5);
+      color: #7dd3fc;
     }
 
     .app-nav-btn-text {
@@ -258,12 +268,12 @@
     }
 
     .app-nav-btn:hover {
-      background: var(--surface-tint-3);
+      background: rgba(255, 255, 255, .06);
     }
 
     .app-nav-btn.active {
-      background: var(--accent-light);
-      color: var(--accent);
+      background: rgba(37, 99, 235, .18);
+      color: #7dd3fc;
     }
 
     .app-nav-btn:focus-visible {
@@ -274,11 +284,11 @@
     .app-nav-btn-sub {
       font-size: .68rem;
       font-weight: 500;
-      color: var(--muted);
+      color: #94a3b8;
     }
 
     .app-nav-btn.active .app-nav-btn-sub {
-      color: var(--accent);
+      color: #7dd3fc;
     }
 
     /* Scoped down from the shared .tab-badge size (professional-sidebar-
@@ -337,24 +347,26 @@
        replacing the previous single-chevron + rotate(180deg) approach —
        each state gets its own purpose-drawn icon instead of one glyph spun
        to face the other way. */
+    /* Same translucent light-on-dark chip treatment as .app-sidebar-toggle
+       (base.css, the mobile hamburger) — dark-sidebar task, 2026-07-20. */
     .app-sidebar-collapse-toggle {
       display: none;
       align-items: center;
       justify-content: center;
       width: 32px;
       height: 32px;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(255, 255, 255, .12);
       border-radius: var(--radius-sm);
-      background: var(--surface);
-      color: var(--muted);
+      background: rgba(255, 255, 255, .05);
+      color: #e2e8f0;
       cursor: pointer;
       flex-shrink: 0;
       transition: background .12s ease, color .12s ease;
     }
 
     .app-sidebar-collapse-toggle:hover {
-      background: var(--surface-tint-3);
-      color: var(--text);
+      background: rgba(255, 255, 255, .1);
+      color: #f1f5f9;
     }
 
     .app-sidebar-collapse-toggle:focus-visible {

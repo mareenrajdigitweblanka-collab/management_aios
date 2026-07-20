@@ -103,7 +103,14 @@
       --error-bg: var(--blocked-bg);
 
       --surface-elevated: #ffffff;
-      --sidebar-bg: var(--surface-tint-2);
+      /* Dark, matching .topbar's own gradient/palette (base.css) —
+         "make sidebar like the top bar" (2026-07-20 sidebar-color
+         task). Same two colors, oriented vertically (180deg) to suit a
+         tall column instead of the header's diagonal 135deg. Text/icon
+         colors for the sidebar are defined directly in navigation.css
+         (matching how .topbar's own text colors are hardcoded in
+         base.css, not tokenized) since they're only used there. */
+      --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
       --focus-ring: 0 0 0 3px rgba(37, 99, 235, .25);
       --radius-lg: 14px;
 

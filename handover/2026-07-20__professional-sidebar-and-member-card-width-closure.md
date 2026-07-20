@@ -18,10 +18,10 @@ Full detail and evidence: [validation/professional-sidebar-and-member-card-width
 | `web-view/index.html` | Arun icon SVG (3-line stack → two connected process nodes); collapse-toggle button markup (1 rotated SVG → 2 purpose-drawn SVGs, collapse-state and expand-state) |
 | `web-view/css/navigation.css` | `.app-nav-icon`/`.app-nav-icon svg` enlarged (24px→32px / 14px→18px); `.app-nav-btn` vertical padding 7px→6px; `.app-sidebar-collapse-toggle` enlarged 26px→32px, `rotate(180deg)` removed, new `.app-sidebar-collapse-icon*` show/hide rules added; `.app-nav-btn-badge` font-size/padding reduced (sidebar-scoped only) |
 | `web-view/css/components.css` | `.member-header-info` set to `flex:1 1 auto` (stretches to fill the card row); `.role-label`/`.member-header-lede`/`.member-header-note` ch-based `max-width` cap removed entirely — see "Revision" below |
+| `web-view/css/tokens.css` | `--sidebar-bg` changed from a near-white tint to a dark gradient matching `.topbar`'s own palette |
 
-No other file changed — confirmed via `git diff --stat` (backend/,
-database/, calendar JS/CSS, base.css, tokens.css, navigation.js, app.js
-all show zero diff).
+`web-view/js/navigation.js`/`app.js`/`base.css`/`calendar.css`/`backend/`/
+`database/` all still show zero diff.
 
 ## Ownership map
 
@@ -54,6 +54,15 @@ No member-specific selector or inline style was added anywhere. On
 narrow/mobile screens the text still naturally fills 100% of the card —
 unchanged behavior, since removing a cap doesn't affect widths already
 below it.
+
+## Sidebar color (added per direct request: "make like top bar")
+
+The sidebar's background/border/text/icon colors were changed from a
+light, near-page-color theme to a dark theme matching `.topbar` exactly
+(same gradient colors, `#0f172a`→`#1e293b`, oriented vertically). Full
+before/after table in validation §18b. Only `tokens.css` (the
+`--sidebar-bg` token) and `navigation.css` (text/icon/hover/active
+colors) changed — no markup or JS changes.
 
 ## Responsive boundaries (unchanged from before this task)
 
