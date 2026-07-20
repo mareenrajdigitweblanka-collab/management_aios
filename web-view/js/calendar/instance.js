@@ -380,10 +380,39 @@ function mountScheduleCalendarInstance(container) {
     document.removeEventListener('keydown', onCreateMenuKeydown, true);
   }
 
-  function openCreateMenu() {
+  /* Positions the (single, reused) create-menu near an arbitrary anchor
+     element — the sidebar Create button (original behavior) or any
+     calendar-origin click target (Month cell, Week/Day empty slot,
+     all-day area — Step 4/7, 2026-07-20 empty-slot-create task).
+     position:fixed (set here, not in CSS, since the sidebar-anchored
+     case still wants the menu visually docked under the button)
+     resolves against the viewport regardless of which ancestor's
+     overflow:hidden the anchor sits inside (.hr-table-card, the
+     calendar's outer card, clips position:absolute descendants that
+     visually extend past its own box) — a calendar-cell-anchored menu
+     would otherwise risk being clipped. Kept within the viewport
+     horizontally (responsive positioning, Step 7). */
+  function positionCreateMenu(anchorEl) {
+    var rect = anchorEl.getBoundingClientRect();
+    var menuWidth = createMenuEl.offsetWidth || 180;
+    var left = rect.left;
+    if (left + menuWidth > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - menuWidth - 8);
+    }
+    var top = rect.bottom + 6;
+    if (top + createMenuEl.offsetHeight > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - createMenuEl.offsetHeight - 6);
+    }
+    createMenuEl.style.position = 'fixed';
+    createMenuEl.style.top = top + 'px';
+    createMenuEl.style.left = left + 'px';
+  }
+
+  function openCreateMenu(anchorEl) {
     if (createMenuOpen) { return; }
     createMenuOpen = true;
     createMenuEl.hidden = false;
+    positionCreateMenu(anchorEl || sidebarCreateBtn);
     sidebarCreateBtn.setAttribute('aria-expanded', 'true');
     document.addEventListener('click', onDocClickForCreateMenu, true);
     document.addEventListener('keydown', onCreateMenuKeydown, true);
@@ -404,8 +433,42 @@ function mountScheduleCalendarInstance(container) {
 
   sidebarCreateBtn.addEventListener('click', function (e) {
     e.stopPropagation();
-    if (createMenuOpen) { closeCreateMenu(); } else { openCreateMenu(); }
+    if (createMenuOpen) { closeCreateMenu(); } else { openCreateMenu(sidebarCreateBtn); }
   });
+
+  /* ── Centralized calendar-origin creation entry point (Step 4,
+     2026-07-20 empty-slot-create-and-overlap-rules task) — the single
+     helper every empty-area click (Month blank cell, Week/Day empty
+     timed slot, Week/Day empty all-day area) funnels through. Updates
+     the existing selected-date source of truth (selectDate — the same
+     function the mini-picker/Today button/etc. already call),
+     prefills a clicked time into both the Task and Leave forms' start/
+     end time fields only when a timed slot was actually clicked, then
+     opens the existing create-menu chooser anchored near the click.
+     Scoped entirely to this calendar instance's own closure state — no
+     global mutable state, and reuses the one existing createMenuEl/
+     openCreateMenu rather than creating a second chooser. */
+  function openCreateChoiceFromCalendar(opts) {
+    var dateKey = opts.dateKey;
+    var allDay = !!opts.allDay;
+    var startTime = allDay ? null : (opts.startTime || null);
+    var endTime = allDay ? null : (opts.endTime || null);
+    var anchorElement = opts.anchorElement || sidebarCreateBtn;
+
+    selectDate(dateKey);
+    if (startTime) {
+      fieldStart.value = startTime;
+      fieldEnd.value = endTime || '';
+      leaveFieldStartTime.value = startTime;
+      leaveFieldEndTime.value = endTime || '';
+    } else {
+      fieldStart.value = '';
+      fieldEnd.value = '';
+      leaveFieldStartTime.value = '';
+      leaveFieldEndTime.value = '';
+    }
+    openCreateMenu(anchorElement);
+  }
 
   createMenuItems.forEach(function (item) {
     item.addEventListener('click', function () {
@@ -610,20 +673,24 @@ function mountScheduleCalendarInstance(container) {
       var isToday = c.dateStr === todayStr;
       var isSelected = c.dateStr === state.selectedDate;
       var dayItems = itemsForDate(c.dateStr);
-      var taskCount = dayItems.length;
-      var actionable = taskCount > 0;
 
-      var cls = 'msc-cal-cell' + (c.inMonth ? '' : ' other-month') + (isSelected ? ' selected' : '') +
-        (actionable ? ' msc-cal-cell--actionable' : '');
-      html += '<div class="' + cls + '" data-date="' + c.dateStr + '"';
-      /* Only task-bearing cells get button semantics (Step 17) — empty
-         and leave-only cells stay plain, non-focusable divs so they are
-         never presented as actionable. */
-      if (actionable) {
-        var cellLabel = c.date.getDate() + ' ' + MONTH_NAMES[c.date.getMonth()] + ' ' + c.date.getFullYear() +
-          ', ' + taskCount + ' task' + (taskCount === 1 ? '' : 's') + '. Open Schedule Item list.';
-        html += ' role="button" tabindex="0" aria-label="' + escapeHtml(cellLabel) + '"';
-      }
+      /* Every cell's own blank-background click/keyboard action is now
+         "open the Task/Leave create chooser" (calendar-empty-slot-
+         create-and-overlap-rules, 2026-07-20; confirmed requirement) —
+         including cells that already have tasks, which previously
+         navigated to the filtered Schedule Item list on a background
+         click. That list-navigation shortcut is intentionally replaced
+         for the cell background; it remains reachable exactly as
+         before by clicking an individual task chip or "+N more" (their
+         own handlers below, unchanged, still call
+         navigateToScheduleItemListForDate and still stopPropagation so
+         they never also trigger this cell-level handler). ── */
+      var cls = 'msc-cal-cell msc-cal-cell--actionable' + (c.inMonth ? '' : ' other-month') +
+        (isSelected ? ' selected' : '');
+      var cellLabel = c.date.getDate() + ' ' + MONTH_NAMES[c.date.getMonth()] + ' ' + c.date.getFullYear() +
+        '. Create a schedule item or leave request.';
+      html += '<div class="' + cls + '" data-date="' + c.dateStr + '" role="button" tabindex="0" ' +
+        'aria-label="' + escapeHtml(cellLabel) + '"';
       /* Selected date's accessible state (Step 26, 2026-07-20 redesign)
          — the existing .selected class already carries the visible
          highlight; aria-current="date" exposes the same state to
@@ -669,11 +736,19 @@ function mountScheduleCalendarInstance(container) {
     });
     calGrid.innerHTML = html;
 
-    /* Step 6: only actionable (task-bearing) cells get a listener at
-       all — empty and leave-only cells have none, so clicking them does
-       nothing (no selectDate, no scroll, no focus, no form change). */
+    /* Every cell gets the create-chooser listener (Step 5/6, 2026-07-20)
+       — chip/+more/leave-chip clicks below all call e.stopPropagation(),
+       so a click that lands on one of those never bubbles up to fire
+       this cell-level handler; only a genuine blank-background click or
+       keyboard activation reaches here. */
     calGrid.querySelectorAll('.msc-cal-cell--actionable').forEach(function (cell) {
-      var go = function () { navigateToScheduleItemListForDate(cell.getAttribute('data-date')); };
+      var go = function () {
+        openCreateChoiceFromCalendar({
+          dateKey: cell.getAttribute('data-date'),
+          allDay: true,
+          anchorElement: cell
+        });
+      };
       cell.addEventListener('click', go);
       cell.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(); } });
     });
@@ -723,7 +798,13 @@ function mountScheduleCalendarInstance(container) {
     days.forEach(function (d) {
       var dateStr = toDateStr(d);
       var alldayItems = itemsForDate(dateStr).filter(function (it) { return !it.start && !it.end; });
-      alldayHtml += '<div class="msc-tg-allday-col" data-date="' + dateStr + '">';
+      /* role/tabindex/aria-label on the column itself (Step 19 keyboard
+         accessibility) — the JS click/keydown handler below already
+         only fires for a genuine blank-area activation (e.target/
+         document.activeElement === colEl), same guard child chips'
+         own stopPropagation already relies on. */
+      alldayHtml += '<div class="msc-tg-allday-col" data-date="' + dateStr + '" role="button" tabindex="0" ' +
+        'aria-label="' + escapeHtml(formatAgendaDate(dateStr)) + ', all day. Create a schedule item or leave request.">';
       alldayItems.forEach(function (it) {
         var catClass = CATEGORY_CLASS[it.category] || 'task';
         alldayHtml += '<div class="msc-tg-allday-chip ' + catClass + '" data-id="' + it.id +
@@ -819,6 +900,20 @@ function mountScheduleCalendarInstance(container) {
      position changes — on failure nothing was mutated, so re-rendering
      from the unchanged `items` array is a correct "snap back", not a
      rollback of an optimistic write. */
+  /* Whole-hour start + 1-hour default duration (single click) or the
+     dragged hour span (drag) — the existing, only-ever-supported grid
+     increment (Step 7, 2026-07-20: "do not invent a new increment").
+     Shared by the click and drag-release paths below so the end-time
+     clamp (past 23:00 rounds to 23:59, matching a day's last valid
+     time) is computed in exactly one place. */
+  function timedSlotSpan(startHour, endHour) {
+    var clampedEnd = Math.min(endHour, 24);
+    return {
+      startTime: pad(startHour) + ':00',
+      endTime: clampedEnd >= 24 ? '23:59' : (pad(clampedEnd) + ':00')
+    };
+  }
+
   function wireEmptyCellCreate(colEl, dateStr) {
     var dragStartHour = null;
     var dragCurrentHour = null;
@@ -827,7 +922,13 @@ function mountScheduleCalendarInstance(container) {
     colEl.querySelectorAll('.msc-tg-hourcell').forEach(function (cell) {
       cell.addEventListener('click', function () {
         var hour = parseInt(cell.getAttribute('data-hour'), 10);
-        prefillCreateForm(dateStr, hour, hour + 1);
+        var span = timedSlotSpan(hour, hour + 1);
+        openCreateChoiceFromCalendar({
+          dateKey: dateStr,
+          startTime: span.startTime,
+          endTime: span.endTime,
+          anchorElement: cell
+        });
       });
       cell.addEventListener('pointerdown', function () {
         dragStartHour = parseInt(cell.getAttribute('data-hour'), 10);
@@ -839,7 +940,7 @@ function mountScheduleCalendarInstance(container) {
       });
     });
 
-    colEl.addEventListener('pointerup', function () {
+    colEl.addEventListener('pointerup', function (e) {
       if (!isDragging) return;
       isDragging = false;
       if (dragStartHour == null || dragCurrentHour == null) return;
@@ -848,23 +949,19 @@ function mountScheduleCalendarInstance(container) {
       // A genuine multi-cell drag (the plain 'click' listener above
       // already handles the single-cell case, so only act here when
       // the range actually spans more than one hour).
-      if (startHour !== lastHour) { prefillCreateForm(dateStr, startHour, lastHour + 1); }
+      if (startHour !== lastHour) {
+        var span = timedSlotSpan(startHour, lastHour + 1);
+        var anchorCell = (e.target && e.target.closest) ? e.target.closest('.msc-tg-hourcell') : null;
+        openCreateChoiceFromCalendar({
+          dateKey: dateStr,
+          startTime: span.startTime,
+          endTime: span.endTime,
+          anchorElement: anchorCell || colEl
+        });
+      }
       dragStartHour = null;
       dragCurrentHour = null;
     });
-  }
-
-  function prefillCreateForm(dateStr, startHour, endHour) {
-    selectDate(dateStr);
-    if (startHour == null) {
-      fieldStart.value = '';
-      fieldEnd.value = '';
-    } else {
-      fieldStart.value = pad(startHour) + ':00';
-      var clampedEnd = Math.min(endHour, 24);
-      fieldEnd.value = clampedEnd >= 24 ? '23:59' : (pad(clampedEnd) + ':00');
-    }
-    fieldTitle.focus();
   }
 
   function commitItemTimeChange(it, newDateStr, newStart, newEnd) {
@@ -962,8 +1059,20 @@ function mountScheduleCalendarInstance(container) {
     });
     gridRootEl.querySelectorAll('.msc-tg-allday-col').forEach(function (colEl) {
       var dateStr = colEl.getAttribute('data-date');
+      var go = function () {
+        openCreateChoiceFromCalendar({ dateKey: dateStr, allDay: true, anchorElement: colEl });
+      };
       colEl.addEventListener('click', function (e) {
-        if (e.target === colEl) { prefillCreateForm(dateStr, null, null); }
+        // Only the column's own blank background, never a click that
+        // bubbled up from a child chip (those stopPropagation below and
+        // in wireTimeGridInteractions' allday-chip handler already).
+        if (e.target === colEl) { go(); }
+      });
+      colEl.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') && e.target === colEl) {
+          e.preventDefault();
+          go();
+        }
       });
     });
     gridRootEl.querySelectorAll('.msc-tg-allday-chip').forEach(function (chipEl) {
@@ -979,6 +1088,15 @@ function mountScheduleCalendarInstance(container) {
       attachDragHandlers(eventEl, it);
       var handle = eventEl.querySelector('.msc-tg-resize-handle');
       if (handle) attachResizeHandler(handle, eventEl, it);
+    });
+    /* Short/Half-Day leave blocks intercept their own click (pointer-
+       events:auto, calendar.css) and do nothing with it beyond stopping
+       propagation — same click-is-inert convention Month's
+       .msc-cal-chip-leave already uses. Prevents a click landing on a
+       leave block from falling through to the empty hourcell beneath
+       and opening the create chooser (Step 7, 2026-07-20). */
+    gridRootEl.querySelectorAll('.msc-tg-leave-block').forEach(function (blockEl) {
+      blockEl.addEventListener('click', function (e) { e.stopPropagation(); });
     });
   }
 
@@ -1094,8 +1212,8 @@ function mountScheduleCalendarInstance(container) {
      ISO YYYY-MM-DD string — never locale-formatted or round-tripped
      through a Date/UTC conversion) into every date-dependent form
      field. Every date-selection path (Month cell click, mini-picker
-     click, Week/Day empty-slot click via prefillCreateForm, Today
-     button) calls selectDate(), which calls this — so there is
+     click, Week/Day empty-slot click via openCreateChoiceFromCalendar,
+     Today button) calls selectDate(), which calls this — so there is
      exactly one place that decides how forms react to a newly
      selected date, not one copy per view.
 

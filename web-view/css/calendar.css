@@ -480,6 +480,19 @@
       cursor: pointer;
     }
 
+    /* Keyboard focus ring (Step 19, 2026-07-20) — the all-day column is
+       now a single per-day tab stop (role=button/tabindex=0 in
+       instance.js) for the empty-area create action. Individual
+       .msc-tg-hourcell timed slots are deliberately NOT made separately
+       tabbable (24 per day column would be an unreasonable number of
+       tab stops — "keyboard accessible where practical", Step 19; the
+       Task/Leave popups opened from a mouse/touch click on a timed slot
+       remain fully keyboard-operable once open). */
+    .msc-tg-allday-col:focus-visible {
+      outline: none;
+      box-shadow: inset var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
+    }
+
     .msc-tg-allday-chip {
       font-size: .68rem;
       padding: 2px 6px;
@@ -1154,8 +1167,11 @@
     }
 
     /* ── "+ Create" dropdown (Google-style create workflow, 2026-07-20)
-       — compact menu anchored to the sidebar button. No Google assets;
-       icons are plain Unicode glyphs (set in instance.js markup). ── */
+       — a single reused menu, anchored to whichever element opened it
+       (the sidebar button, or — calendar-empty-slot-create-and-overlap-
+       rules, 2026-07-20 — a Month cell / Week/Day empty slot / all-day
+       area). No Google assets; icons are plain Unicode glyphs (set in
+       instance.js markup). ── */
     .msc-create-wrap {
       position: relative;
     }
@@ -1166,6 +1182,12 @@
       line-height: 1;
     }
 
+    /* top/left/position below are a static fallback only — instance.js's
+       positionCreateMenu() always sets position:fixed plus computed
+       top/left inline (viewport-clamped) every time the menu opens, for
+       both the sidebar-button and calendar-cell-click cases; inline
+       styles win regardless of specificity, so these values only matter
+       if that JS somehow never ran. */
     .msc-create-menu {
       position: absolute;
       top: calc(100% + 6px);
@@ -1285,11 +1307,6 @@
       .msc-modal-form {
         max-width: 100%;
         max-height: calc(100vh - 32px);
-      }
-
-      .msc-create-menu {
-        left: auto;
-        right: 0;
       }
     }
 
@@ -1433,7 +1450,18 @@
        grid — absolutely positioned like .msc-tg-event, but with no drag
        handle and no data-id wiring in wireTimeGridInteractions, so these
        are never draggable/resizable; editing/removal goes through the
-       leave form / Delete Leave action only. */
+       leave form / Delete Leave action only.
+
+       pointer-events changed none -> auto (2026-07-20,
+       calendar-empty-slot-create-and-overlap-rules task, Step 7 "Do not
+       trigger creation when the pointer originated on: ... Leave
+       block"): with pointer-events:none a click visually landing on
+       this block fell through to the empty .msc-tg-hourcell underneath
+       and incorrectly opened the create chooser. It now intercepts the
+       click itself (handler in instance.js just stops propagation, a
+       no-op — matching .msc-cal-chip-leave's Month-view convention),
+       and cursor:default (not pointer) so it doesn't visually suggest
+       an action it doesn't have. */
     .msc-tg-leave-block {
       position: absolute;
       z-index: 1;
@@ -1442,7 +1470,8 @@
       font-size: .68rem;
       color: var(--calendar-leave-text);
       overflow: hidden;
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: default;
       opacity: .92;
       border-left: 3px solid var(--calendar-leave-border);
       background: var(--calendar-leave-bg);
