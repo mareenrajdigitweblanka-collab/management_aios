@@ -151,6 +151,17 @@
          for the viewports this was checked against. */
       --cal-canvas-height: max(560px, calc(100vh - var(--header-height) - 300px));
 
+      /* "+N more" popup horizontal-resize bounds (calendar-popup-resize-
+         edit-cancel-and-hover-ux task, 2026-07-20) — user-adjustable via
+         the native CSS `resize: horizontal` handle (calendar.css), clamped
+         so it can never shrink below a usable width or grow past the
+         viewport. --more-popup-default-width keeps the popup's initial
+         open size identical to the prior fixed max-width (320px) — only
+         the ceiling and the ability to widen are new. */
+      --more-popup-min-width: 220px;
+      --more-popup-default-width: 320px;
+      --more-popup-max-width: min(560px, calc(100vw - 32px));
+
       /* ── Calendar semantic category colors (2026-07-20 create-menu +
          color-mapping task) — single source shared by Month chips,
          Week/Day timed blocks, all-day chips, and the category legend

@@ -737,7 +737,7 @@ function mountScheduleCalendarInstance(container) {
       var cellLabel = c.date.getDate() + ' ' + MONTH_NAMES[c.date.getMonth()] + ' ' + c.date.getFullYear() +
         '. Create a schedule item or leave request.';
       html += '<div class="' + cls + '" data-date="' + c.dateStr + '" role="button" tabindex="0" ' +
-        'aria-label="' + escapeHtml(cellLabel) + '"';
+        'title="Create Task or Leave" aria-label="' + escapeHtml(cellLabel) + '"';
       /* Selected date's accessible state (Step 26, 2026-07-20 redesign)
          — the existing .selected class already carries the visible
          highlight; aria-current="date" exposes the same state to
@@ -753,7 +753,8 @@ function mountScheduleCalendarInstance(container) {
         var catClass = CATEGORY_CLASS[it.category] || 'task';
         var label = (it.start ? it.start + ' ' : '') + it.title;
         html += '<span class="msc-cal-chip ' + catClass + '" data-date="' + c.dateStr + '" data-id="' + it.id + '" ' +
-          'role="button" tabindex="0" title="' + escapeHtml(label) + '">' +
+          'role="button" tabindex="0" title="' + escapeHtml(label) + '" ' +
+          'aria-label="View task details: ' + escapeHtml(label) + '">' +
           escapeHtml(label) + '</span>';
       });
       if (dayItems.length > MAX_CAL_CHIPS) {
@@ -763,7 +764,8 @@ function mountScheduleCalendarInstance(container) {
            always task-bearing whenever it is rendered at all. Opens the
            date-specific more-popup (openMorePopup() below), not the
            removed Schedule Item list. */
-        html += '<span class="msc-cal-chip-more" data-date="' + c.dateStr + '" role="button" tabindex="0">+' +
+        html += '<span class="msc-cal-chip-more" data-date="' + c.dateStr + '" role="button" tabindex="0" ' +
+          'aria-label="View all tasks for ' + escapeHtml(formatAgendaDate(c.dateStr)) + '">+' +
           (dayItems.length - MAX_CAL_CHIPS) + ' more</span>';
       }
       /* Leave chips (REQ-LEAVE-COPY-001) — visually distinct from
@@ -854,11 +856,13 @@ function mountScheduleCalendarInstance(container) {
          document.activeElement === colEl), same guard child chips'
          own stopPropagation already relies on. */
       alldayHtml += '<div class="msc-tg-allday-col" data-date="' + dateStr + '" role="button" tabindex="0" ' +
+        'title="Create Task or Leave" ' +
         'aria-label="' + escapeHtml(formatAgendaDate(dateStr)) + ', all day. Create a schedule item or leave request.">';
       alldayItems.forEach(function (it) {
         var catClass = CATEGORY_CLASS[it.category] || 'task';
         alldayHtml += '<div class="msc-tg-allday-chip ' + catClass + '" data-id="' + it.id +
-          '" tabindex="0" role="button" title="' + escapeHtml(it.title) + '">' + escapeHtml(it.title) + '</div>';
+          '" tabindex="0" role="button" title="' + escapeHtml(it.title) + '" ' +
+          'aria-label="View task details: ' + escapeHtml(it.title) + '">' + escapeHtml(it.title) + '</div>';
       });
       /* Full-Day / Multi-Day leave renders here (all-day style), not
          as a fake timed block — Short Leave / Half-Day render in the
@@ -887,7 +891,8 @@ function mountScheduleCalendarInstance(container) {
       var dateStr = toDateStr(d);
       bodyHtml += '<div class="msc-tg-daycol" data-date="' + dateStr + '">';
       for (var h2 = 0; h2 < TG_HOURS; h2++) {
-        bodyHtml += '<div class="msc-tg-hourcell" data-hour="' + h2 + '" style="height:' + TG_ROW_HEIGHT_PX + 'px;"></div>';
+        bodyHtml += '<div class="msc-tg-hourcell" data-hour="' + h2 + '" title="Create Task or Leave" ' +
+          'style="height:' + TG_ROW_HEIGHT_PX + 'px;"></div>';
       }
       var timedItems = itemsForDate(dateStr).filter(function (it) { return it.start; });
       layoutOverlappingItems(timedItems).forEach(function (entry) {
@@ -897,7 +902,9 @@ function mountScheduleCalendarInstance(container) {
         var widthPct = 100 / entry.totalCols;
         var leftPct = entry.col * widthPct;
         var catClass = CATEGORY_CLASS[it.category] || 'task';
+        var evLabel = escapeHtml(it.start) + (it.end ? '–' + escapeHtml(it.end) : '') + ' ' + escapeHtml(it.title);
         bodyHtml += '<div class="msc-tg-event ' + catClass + '" data-id="' + it.id + '" tabindex="0" role="button" ' +
+          'title="View task details: ' + evLabel + '" aria-label="View task details: ' + evLabel + '" ' +
           'style="top:' + top + 'px;height:' + height + 'px;left:' + leftPct + '%;width:' + widthPct + '%;">' +
           '<div class="msc-tg-event-title">' + escapeHtml(it.title) + '</div>' +
           '<div class="msc-tg-event-time">' + escapeHtml(it.start) + (it.end ? '–' + escapeHtml(it.end) : '') + '</div>' +
@@ -1482,7 +1489,25 @@ function mountScheduleCalendarInstance(container) {
     resetForm();
   }
 
-  cancelBtn.addEventListener('click', cancelEdit);
+  /* Cancel Edit (calendar-popup-resize-edit-cancel-and-hover-ux task,
+     2026-07-20) — when Edit was reached from the shared task-detail
+     popup (editOriginViewId, set by the Edit button handler below),
+     Cancel must discard the unsaved edit and return to that same detail
+     popup instead of leaving the Task popup open in its "Create Task"
+     state. cancelEdit() above still only resets the shared form/button
+     state, unchanged for its other callers (Task chooser menu item,
+     successful Update, delete-while-editing). */
+  function handleCancelEditClick() {
+    var returnId = editOriginViewId;
+    var returnTrigger = editOriginTriggerEl;
+    editOriginViewId = null;
+    editOriginTriggerEl = null;
+    cancelEdit();
+    closeTaskPopup();
+    if (returnId) { viewItem(returnId, returnTrigger); }
+  }
+
+  cancelBtn.addEventListener('click', handleCancelEditClick);
 
   addBtn.addEventListener('click', function () {
     if (!fieldDate.value) { window.alert('Choose a date on the calendar first.'); return; }
@@ -1571,8 +1596,8 @@ function mountScheduleCalendarInstance(container) {
   function deleteItem(id) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return Promise.resolve(false); }
-    var ok = window.confirm('Delete this sample schedule item ("' + it.title + '")? This only removes ' +
-      'testing data from the local API/database — it does not touch any real source or database.');
+    var ok = window.confirm('Delete "' + it.title + '"?\n\nThis will remove the schedule item from ' +
+      'Management AIOS. This action cannot be undone.');
     if (!ok) { return Promise.resolve(false); }
     showApiStatus('Deleting…', false);
     return apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
@@ -1602,6 +1627,14 @@ function mountScheduleCalendarInstance(container) {
      popups already use) rather than being pinned to a single control. */
   var lastFocusedTrigger = null;
   var currentViewItemId = null;
+  /* Set only by the Edit button handler below, and only consumed by
+     handleCancelEditClick() above — tracks "Edit was opened from the
+     detail popup for this id/trigger, so Cancel must reopen it". Left
+     null (a no-op for handleCancelEditClick) on every other path into
+     the Task popup (the "+Create > Task" menu item, a successful Add/
+     Update), so only the Cancel Edit flow is affected. */
+  var editOriginViewId = null;
+  var editOriginTriggerEl = null;
 
   function onViewModalKeydown(e) {
     if (e.key === 'Escape' || e.key === 'Esc') {
@@ -1657,6 +1690,8 @@ function mountScheduleCalendarInstance(container) {
   if (viewEditBtn) {
     viewEditBtn.addEventListener('click', function () {
       var id = currentViewItemId;
+      editOriginViewId = id;
+      editOriginTriggerEl = lastFocusedTrigger;
       closeViewModal();
       if (id) { editItem(id); }
     });
