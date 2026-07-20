@@ -447,13 +447,27 @@ function mountScheduleCalendarInstance(container) {
      opens the existing create-menu chooser anchored near the click.
      Scoped entirely to this calendar instance's own closure state — no
      global mutable state, and reuses the one existing createMenuEl/
-     openCreateMenu rather than creating a second chooser. */
+     openCreateMenu rather than creating a second chooser.
+
+     opts.resolveAnchor (2026-07-20 chooser-open fix), not opts.anchorElement:
+     selectDate() below re-renders the active view's grid (renderMonthView /
+     renderTimeGrid replace the whole pane's innerHTML — Step 2/3 trace),
+     which detaches the very cell/column node that was clicked. Opening the
+     menu against that stale node made positionCreateMenu()'s
+     getBoundingClientRect() read an all-zero rect (a detached element's
+     rect is always 0,0,0,0), silently pinning the chooser to the viewport's
+     top-left corner instead of near the click — indistinguishable from "the
+     chooser never opened" to a user looking at the cell they clicked. Callers
+     now pass a resolver that re-queries a fresh, currently-attached anchor
+     (by stable data-date/data-hour attributes against a render-stable
+     container reference) after the rerender has completed; falls back to
+     the sidebar Create button if the resolver is absent or finds nothing. */
   function openCreateChoiceFromCalendar(opts) {
     var dateKey = opts.dateKey;
     var allDay = !!opts.allDay;
     var startTime = allDay ? null : (opts.startTime || null);
     var endTime = allDay ? null : (opts.endTime || null);
-    var anchorElement = opts.anchorElement || sidebarCreateBtn;
+    var resolveAnchor = opts.resolveAnchor || null;
 
     selectDate(dateKey);
     if (startTime) {
@@ -467,6 +481,7 @@ function mountScheduleCalendarInstance(container) {
       leaveFieldStartTime.value = '';
       leaveFieldEndTime.value = '';
     }
+    var anchorElement = (resolveAnchor && resolveAnchor()) || sidebarCreateBtn;
     openCreateMenu(anchorElement);
   }
 
@@ -743,10 +758,13 @@ function mountScheduleCalendarInstance(container) {
        keyboard activation reaches here. */
     calGrid.querySelectorAll('.msc-cal-cell--actionable').forEach(function (cell) {
       var go = function () {
+        var dateKey = cell.getAttribute('data-date');
         openCreateChoiceFromCalendar({
-          dateKey: cell.getAttribute('data-date'),
+          dateKey: dateKey,
           allDay: true,
-          anchorElement: cell
+          resolveAnchor: function () {
+            return calGrid.querySelector('.msc-cal-cell--actionable[data-date="' + dateKey + '"]');
+          }
         });
       };
       cell.addEventListener('click', go);
@@ -914,10 +932,23 @@ function mountScheduleCalendarInstance(container) {
     };
   }
 
-  function wireEmptyCellCreate(colEl, dateStr) {
+  function wireEmptyCellCreate(colEl, dateStr, gridRootEl) {
     var dragStartHour = null;
     var dragCurrentHour = null;
     var isDragging = false;
+
+    /* gridRootEl (weekGridEl/dayGridEl) is the render-stable reference —
+       renderTimeGrid() only replaces its innerHTML, never the node itself
+       (unlike colEl/cell, recreated on every rerender) — so resolving the
+       anchor through it after selectDate()'s rerender (chooser-open fix,
+       2026-07-20) always finds the fresh, currently-attached hour cell. */
+    function resolveHourCell(hour) {
+      return function () {
+        return gridRootEl.querySelector(
+          '.msc-tg-daycol[data-date="' + dateStr + '"] .msc-tg-hourcell[data-hour="' + hour + '"]'
+        );
+      };
+    }
 
     colEl.querySelectorAll('.msc-tg-hourcell').forEach(function (cell) {
       cell.addEventListener('click', function () {
@@ -927,7 +958,7 @@ function mountScheduleCalendarInstance(container) {
           dateKey: dateStr,
           startTime: span.startTime,
           endTime: span.endTime,
-          anchorElement: cell
+          resolveAnchor: resolveHourCell(hour)
         });
       });
       cell.addEventListener('pointerdown', function () {
@@ -951,12 +982,12 @@ function mountScheduleCalendarInstance(container) {
       // the range actually spans more than one hour).
       if (startHour !== lastHour) {
         var span = timedSlotSpan(startHour, lastHour + 1);
-        var anchorCell = (e.target && e.target.closest) ? e.target.closest('.msc-tg-hourcell') : null;
+        var anchorHour = dragCurrentHour;
         openCreateChoiceFromCalendar({
           dateKey: dateStr,
           startTime: span.startTime,
           endTime: span.endTime,
-          anchorElement: anchorCell || colEl
+          resolveAnchor: resolveHourCell(anchorHour)
         });
       }
       dragStartHour = null;
@@ -1055,12 +1086,18 @@ function mountScheduleCalendarInstance(container) {
 
   function wireTimeGridInteractions(gridRootEl) {
     gridRootEl.querySelectorAll('.msc-tg-daycol').forEach(function (colEl) {
-      wireEmptyCellCreate(colEl, colEl.getAttribute('data-date'));
+      wireEmptyCellCreate(colEl, colEl.getAttribute('data-date'), gridRootEl);
     });
     gridRootEl.querySelectorAll('.msc-tg-allday-col').forEach(function (colEl) {
       var dateStr = colEl.getAttribute('data-date');
       var go = function () {
-        openCreateChoiceFromCalendar({ dateKey: dateStr, allDay: true, anchorElement: colEl });
+        openCreateChoiceFromCalendar({
+          dateKey: dateStr,
+          allDay: true,
+          resolveAnchor: function () {
+            return gridRootEl.querySelector('.msc-tg-allday-col[data-date="' + dateStr + '"]');
+          }
+        });
       };
       colEl.addEventListener('click', function (e) {
         // Only the column's own blank background, never a click that
