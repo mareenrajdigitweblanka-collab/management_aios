@@ -1,0 +1,265 @@
+/* ui.css — styles for the shared frontend UX modules (web-view/js/ui/*.js):
+   toast, the shared destructive-confirmation dialog, field-level form
+   errors, and busy/loading states. Loaded after tokens/base/navigation/
+   components.css (shared, app-wide styles) and before calendar.css/
+   staff-data.css (feature-specific styles) — see index.html.
+
+   Reuses existing tokens throughout (--surface, --border, --text, --error,
+   --warning, --success, --accent, --radius*, --shadow*, --space*) rather
+   than introducing a parallel design system. The confirmation dialog
+   deliberately reuses the existing .msc-modal-overlay/.msc-modal/
+   .msc-modal-close/.msc-btn* classes from calendar.css for its backdrop,
+   card, close button, and action buttons — those rules are NOT duplicated
+   here, only the small number of new classes layered on top of them
+   (.ui-dialog*) are defined below. Selector ownership: .msc-modal-overlay/
+   .msc-modal/.msc-modal-close/.msc-btn* remain owned by calendar.css and
+   are unchanged by this file; every .ui-* class below is owned here. */
+
+/* ── Toast notifications (ui/toast.js) ───────────────────────────────── */
+
+.ui-toast-region {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 900; /* above normal content, below .msc-modal-overlay (999) and .ui-dialog-overlay (1000) */
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.ui-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hover);
+  padding: 12px 14px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.ui-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ui-toast.ui-toast--leaving {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.ui-toast--success { border-left-color: var(--success); }
+.ui-toast--information { border-left-color: var(--accent); }
+.ui-toast--warning { border-left-color: var(--warning); }
+.ui-toast--error { border-left-color: var(--error); }
+
+.ui-toast-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+.ui-toast--success .ui-toast-icon { color: var(--success); }
+.ui-toast--information .ui-toast-icon { color: var(--accent); }
+.ui-toast--warning .ui-toast-icon { color: var(--warning); }
+.ui-toast--error .ui-toast-icon { color: var(--error); }
+
+.ui-toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ui-toast-title {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.ui-toast-message {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.ui-toast-dismiss {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: var(--radius-sm);
+}
+
+.ui-toast-dismiss:hover {
+  background: var(--surface-tint-3);
+  color: var(--text);
+}
+
+.ui-toast-dismiss:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 640px) {
+  .ui-toast-region {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-toast {
+    transition: opacity .01ms;
+    transform: none;
+  }
+}
+
+/* ── Shared destructive-confirmation dialog (ui/dialog.js) ───────────────
+   .ui-dialog-overlay/.ui-dialog extend .msc-modal-overlay/.msc-modal
+   (calendar.css) — see the file header note above. z-index is bumped one
+   step above .msc-modal-overlay (999) so this dialog can correctly layer
+   on top of an already-open Task/Leave detail popup (e.g. confirming a
+   delete triggered from within it). ── */
+
+.ui-dialog-overlay {
+  z-index: 1000;
+}
+
+.ui-dialog-message {
+  font-size: var(--font-base);
+  color: var(--text);
+  margin: 0 0 4px;
+  line-height: 1.5;
+}
+
+.ui-dialog-actions {
+  justify-content: flex-end;
+}
+
+/* ── Shared busy-button state (ui/loading.js setButtonBusy) ── */
+
+.ui-btn-busy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: progress;
+  opacity: .85;
+}
+
+.ui-btn-spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .45);
+  border-top-color: currentColor;
+  flex-shrink: 0;
+  animation: ui-spin .7s linear infinite;
+}
+
+/* Ghost/secondary buttons (e.g. the dialog's Cancel) are never the busy
+   one in this app, but keep the spinner legible if that ever changes —
+   currentColor already tracks the button's own text color either way. */
+.msc-btn-ghost .ui-btn-spinner,
+.msc-btn:not(.msc-btn-primary):not(.msc-btn-danger) .ui-btn-spinner {
+  border-color: rgba(30, 41, 59, .25);
+  border-top-color: currentColor;
+}
+
+@keyframes ui-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-btn-spinner {
+    animation-duration: 1.4s;
+  }
+}
+
+/* ── Shared inline loading (ui/loading.js showInlineLoading) ── */
+
+.ui-inline-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-xs);
+  color: var(--muted);
+}
+
+.ui-inline-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  flex-shrink: 0;
+  animation: ui-spin .7s linear infinite;
+}
+
+/* ── Shared skeleton placeholder rows (ui/loading.js renderSkeletonRows) —
+   same visual pattern the Staff Data table loading state already used
+   (staff-data.css .staff-table-skeleton-row), now generalized so any
+   region (e.g. a future Schedule Summary loading state) can reuse it. ── */
+
+.ui-skeleton-row {
+  height: 18px;
+  border-radius: 4px;
+  margin: 10px 0;
+  background: linear-gradient(90deg, var(--surface-tint-2) 25%, var(--surface-tint-3) 37%, var(--surface-tint-2) 63%);
+  background-size: 400% 100%;
+  animation: ui-skeleton-pulse 1.4s ease infinite;
+}
+
+@keyframes ui-skeleton-pulse {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton-row {
+    animation: none;
+    background: var(--surface-tint-3);
+  }
+}
+
+/* ── Shared region-busy state (ui/loading.js setRegionBusy) ── */
+
+.ui-region-busy {
+  opacity: .6;
+  pointer-events: none;
+}
+
+/* ── Shared field-level validation (ui/form-feedback.js) ──
+   !important is deliberate and scoped to this one state-override
+   declaration: .ui-field-invalid must visually win over an existing
+   field-border rule regardless of stylesheet load order (this file loads
+   before calendar.css) or selector specificity (e.g. ".msc-form-grid
+   input"), without ui.css needing to know about calendar-specific
+   selectors. ── */
+
+.ui-field-invalid {
+  border-color: var(--error) !important;
+  box-shadow: 0 0 0 1px var(--error) inset;
+}
+
+.ui-field-error {
+  display: block;
+  color: var(--error);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  margin-top: 4px;
+}
