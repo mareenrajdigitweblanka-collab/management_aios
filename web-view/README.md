@@ -155,8 +155,48 @@ throws it (mirroring the existing `leave_conflict`/`task_conflict`/
 `leave_overlap` special-casing), then read `mapApiError(err).code` at the
 call site to decide inline-vs-toast per the rule above.
 
+## Member page layout, calendar-based Leave, and collapsible sections (2026-07-22)
+
+See
+`validation/member-page-layout-leave-popup-collapse-and-ph-staff-check-2026-07-22.md`
+and
+`handover/2026-07-22__member-page-layout-leave-popup-collapse-and-ph-staff-closure.md`
+for the full record. Summary for future edits:
+
+- **Section order** (all 5 members, enforced in `index.html`): member
+  details bar → `.msc-instance` Calendar (which itself renders Schedule
+  Summary then Priority Preview) → remaining collapsed sections. Never put
+  a "remaining table" section before the Calendar mount.
+- **Leave is view/edit/delete-able by clicking a red Leave item** on the
+  Calendar (Month chip, Week/Day all-day chip, Week/Day timed block) — this
+  opens `viewLeaveItem()`'s shared `.msc-leave-view-modal` popup
+  (`calendar/instance.js`), mirroring the existing Task-detail popup. Edit
+  reuses the existing Leave create form/popup in an "edit mode" toggled by
+  `setLeavePopupMode(isEdit)`; Delete reuses the existing
+  `deleteLeaveRecord()`. There is no separate Leave Coordination list
+  anymore — do not re-add one; Leave Create still lives only in the
+  Calendar's "+ Create" menu.
+- **Shared collapsible-section pattern**: native `<details
+  class="…-card collapsible-section">` + `<summary class="collapsible-
+  summary"><span class="collapsible-summary-text">…</span></summary>`
+  (styled in `components.css`, reusing the pre-existing `details > summary`
+  rules). No JS toggle — do not add a per-table click handler. Every
+  "remaining table" section on every member tab uses this and starts
+  collapsed (no `open` attribute).
+- **Embedded PH Staff Data** (Arun, Paraparan): same
+  `initTeamScopedStaffPilot()` (`staff-data.js`) as before, just wrapped in
+  the collapsible pattern above with heading "PH Staff Data". Reuse this
+  exact pattern (see the handover doc's "How to reuse embedded Staff Data"
+  section) for any future member that needs the same view — never fork the
+  Staff Data fetch/render logic per member.
+
 ## Known minor leftovers (not fixed in this task — low risk, no user-facing effect)
 
+- `web-view/css/calendar.css`'s `.msc-item-title`/`.msc-item-meta`/
+  `.msc-item-actions` rules are no longer referenced by any generated
+  markup (they were shared between the already-removed Schedule Item list
+  and the Leave Coordination list removed in the 2026-07-22 task above) —
+  left in place rather than risk touching unrelated CSS.
 - `web-view/css/staff-data.css`'s `.staff-table-skeleton-row`/
   `@keyframes staff-skeleton-pulse` rules are no longer referenced by JS
   (superseded by `ui.css`'s `.ui-skeleton-row`/`@keyframes
