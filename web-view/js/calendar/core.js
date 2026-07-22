@@ -135,6 +135,101 @@ export function formatChange(change) {
   var label = change.direction === 'unchanged' ? 'no change' : change.direction;
   return arrow + change.percentage.toFixed(2) + '% ' + label;
 }
+
+/* MD-priority Schedule Summary dashboard (schedule-summary-md-percentage-
+   dashboard, 2026-07-22) — pure presentation-state helpers only. None of
+   these compute a percentage; they classify percentages the backend
+   already returned (scheduled_count_percentage / unscheduled_count_percentage
+   / scheduled_duration_percentage / unscheduled_duration_percentage) against
+   the MD-confirmed 60%/40% thresholds. Kept here (not instance.js) because
+   they are pure functions with no DOM dependency, so they can be imported
+   and unit-tested directly in Node — see core.summary-helpers.test.mjs. */
+
+/* Classifies one Scheduled/Unscheduled split (Count or Duration) against the
+   confirmed thresholds. Rules (approved 2026-07-22):
+     - neutral: either percentage is null/undefined (zero denominator).
+     - warning: unscheduledPercentage > 40.00 OR scheduledPercentage < 60.00.
+     - healthy: neither warning condition holds.
+   Both percentages are checked independently — this never assumes one from
+   the other, even though the backend derives unscheduled as (100 - scheduled)
+   and so in practice they always agree. Boundary values (exactly 60.00
+   Scheduled / exactly 40.00 Unscheduled) are NOT warnings (strict > / <).
+   When both conditions are true (the normal case, since the two percentages
+   are complementary), 'unscheduled-high' is reported as the reason — a
+   single concise explanation, per the approved "do not duplicate two warning
+   messages for the same imbalance" rule — never 'both'. */
+export function getSplitWarningState(scheduledPercentage, unscheduledPercentage) {
+  if (scheduledPercentage === null || scheduledPercentage === undefined ||
+      unscheduledPercentage === null || unscheduledPercentage === undefined) {
+    return { state: 'neutral', reason: 'no-data' };
+  }
+  var unscheduledHigh = unscheduledPercentage > 40;
+  var scheduledLow = scheduledPercentage < 60;
+  if (unscheduledHigh) return { state: 'warning', reason: 'unscheduled-high' };
+  if (scheduledLow) return { state: 'warning', reason: 'scheduled-low' };
+  return { state: 'healthy', reason: 'target-met' };
+}
+
+/* Plain-language headline + explanation for one metric block (Count or
+   Duration), driven only by the state/reason getSplitWarningState already
+   classified — no formula, no re-derivation. `kind` is 'count' or
+   'duration' (only changes the neutral/warning wording, per the approved
+   "By task count" / "By task duration" labeling). */
+export function getMetricStatusCopy(kind, result) {
+  if (!result || result.state === 'neutral') {
+    return {
+      headline: kind === 'duration' ? 'Not enough duration data' : 'No tasks in this period',
+      explanation: ''
+    };
+  }
+  if (result.state === 'healthy') {
+    return { headline: 'Scheduled-work target met', explanation: '' };
+  }
+  return {
+    headline: kind === 'duration' ? 'High unscheduled time share' : 'High unscheduled task share',
+    explanation: result.reason === 'scheduled-low'
+      ? 'Scheduled work is below the 60% target.'
+      : 'Unscheduled work is above the 40% limit.'
+  };
+}
+
+/* Period-level combined status from the independent Count and Duration
+   states (approved rule, 2026-07-22):
+     - either warning -> warning
+     - both neutral -> neutral
+     - one neutral + the other healthy -> healthy (neutral metric stays
+       marked N/A in its own block; this only affects the period badge)
+     - both healthy -> healthy */
+export function combineSummaryStatus(countState, durationState) {
+  if (countState === 'warning' || durationState === 'warning') return 'warning';
+  if (countState === 'neutral' && durationState === 'neutral') return 'neutral';
+  return 'healthy';
+}
+
+export function getPeriodStatusCopy(combinedState) {
+  if (combinedState === 'warning') return { label: 'Needs attention', tone: 'warning' };
+  if (combinedState === 'neutral') return { label: 'No task data', tone: 'neutral' };
+  return { label: 'Target met', tone: 'healthy' };
+}
+
+/* Bar-fill widths for the Count/Duration split visual. Returns null (render
+   an empty/neutral bar, no red/green fill) when either input is missing or
+   not a finite number — this is the one place that guards against a NaN
+   ever reaching a CSS width, matching the approved "invalid numeric input
+   does not produce NaN in UI" rule. Clamped to [0, 100] as a second
+   defensive layer; the backend's own two values already sum to exactly
+   100.00 by construction (core.js never re-derives one from the other). */
+export function getSplitBarSegments(scheduledPercentage, unscheduledPercentage) {
+  if (typeof scheduledPercentage !== 'number' || typeof unscheduledPercentage !== 'number' ||
+      isNaN(scheduledPercentage) || isNaN(unscheduledPercentage)) {
+    return null;
+  }
+  return {
+    scheduledWidth: Math.max(0, Math.min(100, scheduledPercentage)),
+    unscheduledWidth: Math.max(0, Math.min(100, unscheduledPercentage))
+  };
+}
+
 export function getWeekStart(d) {
   var copy = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   copy.setDate(copy.getDate() - copy.getDay());

@@ -1007,6 +1007,189 @@
       }
     }
 
+    /* ── MD-priority Schedule Summary card (schedule-summary-md-percentage-
+       dashboard, 2026-07-22) — the four MD-requested percentages (Scheduled/
+       Unscheduled Count %, Scheduled/Unscheduled Duration %) plus their
+       healthy/warning/neutral read. Sits above .msc-summary-details (the
+       collapsed-by-default disclosure holding every pre-existing detail
+       row, unchanged). Colors reuse existing semantic tokens (--success/
+       --warning/--error, tokens.css) rather than new hardcoded hex values. ── */
+    .msc-priority-badge {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      padding: 3px 10px;
+      border-radius: var(--pill-radius);
+      margin-bottom: 10px;
+    }
+
+    .msc-priority-badge-healthy {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .msc-priority-badge-warning {
+      background: var(--error-bg);
+      color: var(--error);
+    }
+
+    .msc-priority-badge-neutral {
+      background: var(--surface-tint-3);
+      color: var(--muted);
+    }
+
+    .msc-priority-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+
+    /* Subtle left accent only — never a full-block red/green fill, per the
+       approved "no red treatment for normal values, no full-page red
+       background" rule. Neutral/no-data gets a muted accent, not red. */
+    .msc-priority-metric {
+      border-left: 3px solid var(--muted-2);
+      padding-left: 10px;
+      min-width: 0;
+    }
+
+    .msc-priority-metric-healthy {
+      border-left-color: var(--success);
+    }
+
+    .msc-priority-metric-warning {
+      border-left-color: var(--error);
+    }
+
+    .msc-priority-metric-label {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted-2);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+    }
+
+    .msc-split-bar {
+      display: flex;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--surface-tint-3);
+      margin-bottom: 8px;
+    }
+
+    .msc-split-bar-empty {
+      background: var(--surface-tint-3);
+    }
+
+    /* Grows from 0 -> full width once on load/refresh via transform (never
+       a JS-timed width change) — the element's actual layout width is
+       already the final, correct percentage the instant it's inserted, so
+       an animation failure (or an engine that ignores @keyframes) simply
+       means it renders at full scale immediately with no lost information,
+       per the approved "animation failure must not hide information" rule. */
+    .msc-split-bar-segment {
+      height: 100%;
+      transform-origin: left center;
+      animation: msc-bar-grow .5s ease-out;
+    }
+
+    @keyframes msc-bar-grow {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .msc-split-bar-segment {
+        animation: none;
+      }
+    }
+
+    .msc-split-bar-scheduled {
+      background: var(--calendar-scheduled-border);
+    }
+
+    .msc-split-bar-unscheduled {
+      background: var(--calendar-unscheduled-border);
+    }
+
+    .msc-split-values {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .msc-split-value {
+      display: flex;
+      flex-direction: column;
+      min-width: 84px;
+    }
+
+    .msc-split-value-label {
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .msc-split-value strong {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.25;
+    }
+
+    .msc-split-value-sub {
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .msc-metric-status {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: .78rem;
+      margin-top: 8px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      overflow-wrap: break-word;
+    }
+
+    .msc-metric-status-healthy {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .msc-metric-status-warning {
+      background: var(--error-bg);
+      color: var(--error);
+      border: 1px solid var(--calendar-leave-border);
+    }
+
+    .msc-metric-status-neutral {
+      background: var(--surface-tint-3);
+      color: var(--muted);
+    }
+
+    /* .msc-summary-details reuses the global .collapsible-section pattern
+       (components.css) — borderless summary, chevron rotate, focus-visible
+       ring, and the existing prefers-reduced-motion override for the
+       chevron transition (ui.css) all apply automatically with no
+       duplicate rules needed here. Only spacing against the priority
+       metrics above it is scoped locally. */
+    .msc-summary-details {
+      margin-top: 6px;
+    }
+
+    .msc-summary-details-body {
+      padding: 10px 0 0;
+      background: none;
+      border: none;
+      gap: 4px;
+    }
+
     .msc-form-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(180px, 1fr));

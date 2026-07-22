@@ -8,7 +8,7 @@
 
 import { MEMBER_SCHEDULE_API_BASE, MEMBER_LEAVE_API_BASE } from '../config.js';
 import {
-  CATEGORY_CLASS, LEAVE_TYPE_DISPLAY_LABEL, formatLeaveCalendarLabel, expandWeekdaysClientSide, leaveDatesForItem, LEAVE_HALF_DAY_FIRST_DISPLAY, LEAVE_HALF_DAY_SECOND_DISPLAY, leaveDisplayTimeRange, PRIORITY_ORDER, PRIORITY_BADGE, MONTH_NAMES, DAY_HEADS, DAY_NAMES_FULL, TG_ROW_HEIGHT_PX, TG_HOURS, TG_DEFAULT_SCROLL_HOUR, pad, toDateStr, parseDateStr, timeToMinutes, minutesToTime, formatHourLabel, formatShortDate, formatDuration, formatPercentage, formatChange, getWeekStart, getReportWeekStart, getWeekDays, buildMonthGridCells, layoutOverlappingItems, escapeHtml, apiItemToFrontend, frontendToApiPayload
+  CATEGORY_CLASS, LEAVE_TYPE_DISPLAY_LABEL, formatLeaveCalendarLabel, expandWeekdaysClientSide, leaveDatesForItem, LEAVE_HALF_DAY_FIRST_DISPLAY, LEAVE_HALF_DAY_SECOND_DISPLAY, leaveDisplayTimeRange, PRIORITY_ORDER, PRIORITY_BADGE, MONTH_NAMES, DAY_HEADS, DAY_NAMES_FULL, TG_ROW_HEIGHT_PX, TG_HOURS, TG_DEFAULT_SCROLL_HOUR, pad, toDateStr, parseDateStr, timeToMinutes, minutesToTime, formatHourLabel, formatShortDate, formatDuration, formatPercentage, formatChange, getSplitWarningState, getMetricStatusCopy, combineSummaryStatus, getPeriodStatusCopy, getSplitBarSegments, getWeekStart, getReportWeekStart, getWeekDays, buildMonthGridCells, layoutOverlappingItems, escapeHtml, apiItemToFrontend, frontendToApiPayload
 } from './core.js';
 import { trapTab, returnFocus } from '../ui/popup.js';
 import { showToast } from '../ui/toast.js';
@@ -1569,6 +1569,56 @@ function mountScheduleCalendarInstance(container) {
      formatChange only format values the backend already returned.
      Shared across all five member instances via this one factory
      function; no member-specific logic. ── */
+  /* Builds one MD-priority metric block (Count or Duration) — the bar +
+     the two percentage values + the plain-language status line. All
+     three inputs (scheduledPercentage/unscheduledPercentage/state) come
+     from values the backend already computed and getSplitWarningState's
+     pure classification of them; this function only assembles markup,
+     it never computes a percentage or a threshold decision itself. The
+     bar is aria-hidden — the visible percentage/count text right below
+     it is the real accessible content, always present and never
+     hover-only, so no separate text alternative is needed. */
+  function buildPriorityMetricHtml(kind, label, scheduledPercentage, unscheduledPercentage, scheduledSub, unscheduledSub) {
+    var result = getSplitWarningState(scheduledPercentage, unscheduledPercentage);
+    var copy = getMetricStatusCopy(kind, result);
+    var segments = getSplitBarSegments(scheduledPercentage, unscheduledPercentage);
+    var barHtml = segments
+      ? '<div class="msc-split-bar" aria-hidden="true">' +
+        '<div class="msc-split-bar-segment msc-split-bar-scheduled" style="width:' + segments.scheduledWidth.toFixed(2) + '%"></div>' +
+        '<div class="msc-split-bar-segment msc-split-bar-unscheduled" style="width:' + segments.unscheduledWidth.toFixed(2) + '%"></div>' +
+        '</div>'
+      : '<div class="msc-split-bar msc-split-bar-empty" aria-hidden="true"></div>';
+    var statusIcon = result.state === 'warning' ? '&#9888;' : (result.state === 'healthy' ? '&#10003;' : '&#8226;');
+    return (
+      '<div class="msc-priority-metric msc-priority-metric-' + result.state + '">' +
+      '<div class="msc-priority-metric-label">' + label + '</div>' +
+      barHtml +
+      '<div class="msc-split-values">' +
+      '<div class="msc-split-value msc-split-value-scheduled"><span class="msc-split-value-label">Scheduled</span><strong>' + formatPercentage(scheduledPercentage) + '</strong><span class="msc-split-value-sub">' + scheduledSub + '</span></div>' +
+      '<div class="msc-split-value msc-split-value-unscheduled"><span class="msc-split-value-label">Unscheduled</span><strong>' + formatPercentage(unscheduledPercentage) + '</strong><span class="msc-split-value-sub">' + unscheduledSub + '</span></div>' +
+      '</div>' +
+      '<div class="msc-metric-status msc-metric-status-' + result.state + '">' +
+      '<span class="msc-metric-status-icon" aria-hidden="true">' + statusIcon + '</span>' +
+      '<span class="msc-metric-status-text"><strong>' + copy.headline + '</strong>' + (copy.explanation ? ' — ' + copy.explanation : '') + '</span>' +
+      '</div>' +
+      '</div>'
+    );
+  }
+
+  /* MD-priority Schedule Summary card (schedule-summary-md-percentage-
+     dashboard, 2026-07-22). The MD-requested primary output — Scheduled/
+     Unscheduled Count % and Scheduled/Unscheduled Duration %, each with a
+     plain-language healthy/warning/neutral read — is built first and is
+     always visible without expansion. Every value below is still read
+     straight off `report` (server-authoritative; nothing is computed in
+     this function beyond formatting and the shared threshold
+     classification in core.js) — the pre-existing detailed rows
+     (raw counts/durations, tasks used/ignored, previous-period
+     comparison, leave-coordination figures) are preserved verbatim,
+     unchanged in value or order, just moved into a collapsed-by-default
+     <details> disclosure (reusing the existing .collapsible-section
+     pattern from components.css — native semantics, no custom JS
+     toggle, resets to collapsed on every page load/re-render). */
   function renderSummaryStats(el, report) {
     /* Clears the aria-busy/loading state set by showInlineLoading() below
        before this replaces the element's content (Phase 1 professional-
@@ -1576,30 +1626,27 @@ function mountScheduleCalendarInstance(container) {
        inside its innerHTML, so it would otherwise persist after the
        content it described was replaced. */
     el.removeAttribute('aria-busy');
-    /* Grouped into .msc-summary-group sections (counts + split
-       percentages, coverage, comparison, leave) purely for visual
-       structure (2026-07-14 responsive layout). The four split-
-       percentage rows (2026-07-17) sit inside the counts group,
-       below Total and above the Tasks used group. */
+
+    var countState = getSplitWarningState(report.scheduled_count_percentage, report.unscheduled_count_percentage).state;
+    var durationState = getSplitWarningState(report.scheduled_duration_percentage, report.unscheduled_duration_percentage).state;
+    var combinedState = combineSummaryStatus(countState, durationState);
+    var periodCopy = getPeriodStatusCopy(combinedState);
+
     el.innerHTML =
+      '<div class="msc-priority-badge msc-priority-badge-' + combinedState + '">' + periodCopy.label + '</div>' +
+      '<div class="msc-priority-metrics">' +
+      buildPriorityMetricHtml('count', 'By task count', report.scheduled_count_percentage, report.unscheduled_count_percentage,
+        report.scheduled_count + ' task(s)', report.unscheduled_count + ' task(s)') +
+      buildPriorityMetricHtml('duration', 'By task duration', report.scheduled_duration_percentage, report.unscheduled_duration_percentage,
+        formatDuration(report.scheduled_duration_minutes), formatDuration(report.unscheduled_duration_minutes)) +
+      '</div>' +
+      '<details class="collapsible-section msc-summary-details">' +
+      '<summary class="collapsible-summary"><span class="collapsible-summary-text">View detailed metrics</span></summary>' +
+      '<div class="details-body msc-summary-details-body">' +
       '<div class="msc-summary-group">' +
       '<div class="msc-summary-row"><span>Scheduled</span><strong>' + report.scheduled_count + ' task(s) &middot; ' + formatDuration(report.scheduled_duration_minutes) + '</strong></div>' +
       '<div class="msc-summary-row"><span>Unscheduled</span><strong>' + report.unscheduled_count + ' task(s) &middot; ' + formatDuration(report.unscheduled_duration_minutes) + '</strong></div>' +
       '<div class="msc-summary-row"><span>Total</span><strong>' + report.total_count + ' task(s) &middot; ' + formatDuration(report.total_duration_minutes) + '</strong></div>' +
-      /* Count and duration split percentages (schedule-summary-count-
-         duration-percentage, 2026-07-17). Placed directly below Total
-         and before Tasks used. Every value is computed by the backend
-         (scheduled_count_percentage / unscheduled_count_percentage /
-         scheduled_duration_percentage / unscheduled_duration_percentage)
-         and only formatted here — null (zero denominator) -> N/A. These
-         describe only the Scheduled/Unscheduled split; no leave-
-         deduction / adjusted-reference figure is involved. Kept in the
-         same counts group as Scheduled/Unscheduled/Total (no extra
-         divider) to avoid an unnecessary blank gap. */
-      '<div class="msc-summary-row"><span>Scheduled Count %</span><strong>' + formatPercentage(report.scheduled_count_percentage) + '</strong></div>' +
-      '<div class="msc-summary-row"><span>Unscheduled Count %</span><strong>' + formatPercentage(report.unscheduled_count_percentage) + '</strong></div>' +
-      '<div class="msc-summary-row"><span>Scheduled Duration %</span><strong>' + formatPercentage(report.scheduled_duration_percentage) + '</strong></div>' +
-      '<div class="msc-summary-row"><span>Unscheduled Duration %</span><strong>' + formatPercentage(report.unscheduled_duration_percentage) + '</strong></div>' +
       '</div>' +
       '<div class="msc-summary-group">' +
       '<div class="msc-summary-row"><span>Tasks used</span><strong>' + report.total_duration_used_task_count + '</strong></div>' +
@@ -1623,7 +1670,9 @@ function mountScheduleCalendarInstance(container) {
       '<div class="msc-summary-row"><span>Leave deduction</span><strong>' + formatDuration(report.active_leave_minutes) + '</strong></div>' +
       '<div class="msc-summary-row"><span title="Reference basis minus active leave-deduction minutes — a coordination-copy figure, not verified productive working time.">Adjusted reference (after leave)</span><strong>' + formatDuration(report.adjusted_expected_work_minutes) + '</strong></div>' +
       '<div class="msc-summary-row"><span>Task coverage of adjusted reference</span><strong>' + (report.task_coverage_percentage === null || report.task_coverage_percentage === undefined ? 'N/A' : report.task_coverage_percentage.toFixed(2) + '%') + '</strong></div>' +
-      '</div>';
+      '</div>' +
+      '</div>' +
+      '</details>';
   }
 
   function loadDailySummary(dateStr) {
