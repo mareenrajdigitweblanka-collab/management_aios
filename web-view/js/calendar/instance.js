@@ -163,9 +163,8 @@ function mountScheduleCalendarInstance(container) {
        Preview list-card.) ── */
     '<div class="hr-table-card">' +
     '<div class="msc-list-card">' +
-    '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
-    '<p class="msc-note" style="margin:0 0 8px;">Ranks today\'s sample items High → Medium → Low, styled ' +
-    'after the Management Team Schedule demo. Sample/demo priority only — not a real priority assignment.</p>' +
+    '<div class="hr-table-title" style="margin-bottom:6px;">Today\'s Priorities</div>' +
+    '<p class="msc-note" style="margin:0 0 8px;">Today\'s scheduled items ranked by priority.</p>' +
     '<div class="msc-priority-list"></div>' +
     '</div>' +
     /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
@@ -1628,7 +1627,7 @@ function mountScheduleCalendarInstance(container) {
       return pa - pb;
     });
     if (!todays.length) {
-      priorityListEl.innerHTML = '<p class="msc-empty">No sample items for today yet.</p>';
+      priorityListEl.innerHTML = '<p class="msc-empty">No priority items for today yet.</p>';
       return;
     }
     var html = '';
@@ -1637,7 +1636,7 @@ function mountScheduleCalendarInstance(container) {
       var badgeClass = PRIORITY_BADGE[priority] || 'badge-amber';
       var catClass = CATEGORY_CLASS[it.category] || 'task';
       html += '<div class="msc-item">';
-      html += '<div><span class="badge ' + badgeClass + '" title="Sample/demo priority only">' +
+      html += '<div><span class="badge ' + badgeClass + '" title="Priority level">' +
         escapeHtml(priority) + '</span> <span class="msc-chip-cat ' + catClass + '">' + it.category +
         '</span>' + escapeHtml(it.title) + '</div>';
       html += '</div>';
