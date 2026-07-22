@@ -546,6 +546,11 @@ function mountScheduleCalendarInstance(container) {
 
   function openCreateMenu(anchorEl) {
     if (createMenuOpen) { return; }
+    /* Every "Create chooser opens" path (sidebar Create button, a Month
+       cell dblclick, keyboard Enter/Space on a cell, Week/Day empty-slot
+       clicks) funnels through here — single place to satisfy Step 3's
+       "clear pending timers when ... Create chooser opens". */
+    clearPendingCellClick();
     createMenuOpen = true;
     createMenuTriggerEl = anchorEl || sidebarCreateBtn;
     createMenuEl.hidden = false;
@@ -855,7 +860,71 @@ function mountScheduleCalendarInstance(container) {
     return e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar';
   }
 
+  /* ── Month blank-cell single/double-click coordinator (2026-07-22
+     month-cell-click-interaction task) ── A native 'click' fires twice
+     before a genuine 'dblclick' (click, click, dblclick), so a bare
+     click handler cannot by itself tell a single click from the first
+     half of a double click. CELL_CLICK_DELAY_MS is the short window
+     used to find out: a click schedules the single-click action (open
+     the Task list for a task-bearing date, or show the empty-day toast)
+     after this delay; a 'dblclick' arriving within that window cancels
+     the pending action and opens the Create chooser instead. 250ms
+     comfortably covers a real double-click (most OS thresholds default
+     to 300-500ms) while staying short enough that a genuine single
+     click does not feel delayed.
+
+     Only one timer is ever pending per calendar instance (matches
+     "store timer state inside the current member calendar instance" —
+     this whole file is one closure per member, so there is no
+     cross-member state to isolate); a second click before the first's
+     timer fires simply reschedules the same pending action rather than
+     stacking a second one. */
+  var CELL_CLICK_DELAY_MS = 250;
+  var pendingCellClick = null; // setTimeout id, or null when nothing is pending
+
+  function clearPendingCellClick() {
+    if (pendingCellClick !== null) {
+      clearTimeout(pendingCellClick);
+      pendingCellClick = null;
+    }
+  }
+
+  function showEmptyDayToast() {
+    showToast({
+      type: 'information',
+      title: 'No tasks scheduled for this day',
+      message: 'Double-click the day to create a Task or Leave.'
+    });
+  }
+
+  /* Task-presence rule (Step 4/Interpretation): itemsForDate returns
+     Task records only (leaveItemsForDate is a separate lookup never
+     consulted here), so a date with Leave but zero Tasks correctly
+     falls through to the empty-day toast. Reuses the existing
+     openMorePopup Task-list renderer/resolveMorePopupAnchor — no
+     second list implementation. */
+  function handleCellSingleClick(dateKey) {
+    var dayItems = itemsForDate(dateKey);
+    if (dayItems.length > 0) {
+      openMorePopup(dateKey, resolveMorePopupAnchor(dateKey));
+    } else {
+      showEmptyDayToast();
+    }
+  }
+
+  function scheduleCellSingleClick(dateKey) {
+    clearPendingCellClick();
+    pendingCellClick = setTimeout(function () {
+      pendingCellClick = null;
+      handleCellSingleClick(dateKey);
+    }, CELL_CLICK_DELAY_MS);
+  }
+
   function renderMonthView() {
+    /* Any pending single-click action was scheduled against the grid
+       this rerender is about to replace — invalidate it rather than
+       risk it firing against a stale dateKey after month navigation. */
+    clearPendingCellClick();
     var y = state.viewYear, m = state.viewMonth;
     var todayStr = toDateStr(new Date());
     var cells = buildMonthGridCells(y, m);
@@ -941,6 +1010,9 @@ function mountScheduleCalendarInstance(container) {
        this cell-level handler; only a genuine blank-background click or
        keyboard activation reaches here. */
     calGrid.querySelectorAll('.msc-cal-cell--actionable').forEach(function (cell) {
+      /* Opens the Create chooser directly — used by keyboard Enter/Space
+         (unchanged, Step 11: no keyboard equivalent of a double-click to
+         coordinate with) and by the genuine 'dblclick' handler below. */
       var go = function () {
         var dateKey = cell.getAttribute('data-date');
         openCreateChoiceFromCalendar({
@@ -951,32 +1023,57 @@ function mountScheduleCalendarInstance(container) {
           }
         });
       };
-      cell.addEventListener('click', go);
+      /* Single click no longer opens the Create chooser directly — it
+         schedules the Task-list-or-toast decision (handleCellSingleClick)
+         after CELL_CLICK_DELAY_MS, giving a following 'dblclick' a chance
+         to cancel it first. */
+      cell.addEventListener('click', function () {
+        scheduleCellSingleClick(cell.getAttribute('data-date'));
+      });
+      cell.addEventListener('dblclick', function () {
+        clearPendingCellClick();
+        go();
+      });
       cell.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(); } });
     });
     calGrid.querySelectorAll('.msc-cal-chip').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
+        /* Step 5: a Task-chip click cancels any pending blank-cell
+           single-click action from this same cell so Task Details never
+           has the Task list pop open behind/after it. */
+        clearPendingCellClick();
         viewItem(chip.getAttribute('data-id'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
+      /* Event-target safety (Step 9) — the 'click' listener above stops
+         the two 'click' events that precede a double click, but
+         'dblclick' is a distinct event type browsers still dispatch and
+         bubble regardless; without this, double-clicking a Task chip
+         would bubble a 'dblclick' up to the date cell's own handler and
+         incorrectly open the Create chooser. */
+      chip.addEventListener('dblclick', function (e) { e.stopPropagation(); });
     });
     calGrid.querySelectorAll('.msc-cal-chip-more').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
+        clearPendingCellClick();
         openMorePopup(chip.getAttribute('data-date'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
+      chip.addEventListener('dblclick', function (e) { e.stopPropagation(); });
     });
     calGrid.querySelectorAll('.msc-cal-chip-leave').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
+        clearPendingCellClick();
         viewLeaveItem(chip.getAttribute('data-leave-id'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
+      chip.addEventListener('dblclick', function (e) { e.stopPropagation(); });
     });
   }
 
@@ -1440,6 +1537,11 @@ function mountScheduleCalendarInstance(container) {
 
   viewSwitcherBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
+      /* Switching to Week/Day does not itself call renderMonthView()
+         (only its own top-of-function clearPendingCellClick() would
+         catch this), so a Month-view pending single click must be
+         invalidated here directly. */
+      clearPendingCellClick();
       state.currentView = btn.getAttribute('data-view');
       syncViewSwitcherButtons();
       renderActiveView();
@@ -2266,6 +2368,11 @@ function mountScheduleCalendarInstance(container) {
      "+N more" click (no opts) keeps the pre-existing behavior of
      starting scrolled to the top with the Close button focused. */
   function openMorePopup(dateStr, anchorEl, opts) {
+    /* Every "Task list opens" path (this new blank-cell single click,
+       the "+N more" chip, reopenTaskListOrigin) funnels through here —
+       single place to satisfy Step 3's "clear pending timers when ...
+       Task list opens through another route". */
+    clearPendingCellClick();
     opts = opts || {};
     var dayItems = itemsForDate(dateStr).slice().sort(function (a, b) {
       var at = a.start || '99:99', bt = b.start || '99:99';
