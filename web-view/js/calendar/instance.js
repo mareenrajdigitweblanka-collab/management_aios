@@ -250,8 +250,10 @@ function mountScheduleCalendarInstance(container) {
     /* ── Task creation popup (Google-style create workflow, 2026-07-20)
        — the one and only Schedule Item creation/edit form in the DOM,
        moved here verbatim (same field classes, same title-counter,
-       same category-locked-on-edit helper, same Add/Update/Cancel
-       buttons) from its former lower-page position. */
+       same Add/Update/Cancel buttons) from its former lower-page
+       position. The manual category selector that used to sit here was
+       removed 2026-07-22 — category is always backend-assigned; see
+       msc-field-category-note. */
     '<div class="msc-modal-overlay msc-task-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(taskPopupTitleId) + '">' +
     '<div class="msc-modal msc-modal-form">' +
     '<div class="msc-modal-form-head">' +
@@ -265,12 +267,8 @@ function mountScheduleCalendarInstance(container) {
     '<label>Date<input type="date" class="msc-field-date" required /></label>' +
     '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Prepare weekly report" maxlength="120" required />' +
     '<span class="msc-field-title-counter">0 / 120</span></label>' +
-    '<label>Category<select class="msc-field-category">' +
-    '<option value="Scheduled Task">Scheduled Task</option>' +
-    '<option value="Unscheduled Task">Unscheduled Task</option>' +
-    '</select>' +
-    '<span class="msc-field-category-helper" style="display:none;">Category is fixed after the task is created.</span>' +
-    '</label>' +
+    '<p class="msc-form-full msc-field-category-note">Task type is assigned automatically based on when ' +
+    'the task is created or changed.</p>' +
     '<label>Priority<select class="msc-field-priority">' +
     '<option value="High">High</option>' +
     '<option value="Medium" selected>Medium</option>' +
@@ -361,8 +359,6 @@ function mountScheduleCalendarInstance(container) {
     fieldTitle.addEventListener('input', updateTitleCounter);
     fieldTitle.addEventListener('input', function () { clearFieldError(fieldTitle); });
   }
-  var fieldCategory = container.querySelector('.msc-field-category');
-  var fieldCategoryHelper = container.querySelector('.msc-field-category-helper');
   var fieldPriority = container.querySelector('.msc-field-priority');
   var fieldStart = container.querySelector('.msc-field-start');
   var fieldEnd = container.querySelector('.msc-field-end');
@@ -1208,7 +1204,7 @@ function mountScheduleCalendarInstance(container) {
 
   function commitItemTimeChange(it, newDateStr, newStart, newEnd) {
     var payload = frontendToApiPayload({
-      date: newDateStr, title: it.title, category: it.category, priority: it.priority,
+      date: newDateStr, title: it.title, priority: it.priority,
       start: newStart, end: newEnd, notes: it.notes
     });
     return apiRequest('PUT', apiBase + '/' + encodeURIComponent(it.id), payload).then(function (apiItem) {
@@ -1727,9 +1723,6 @@ function mountScheduleCalendarInstance(container) {
   function resetForm() {
     fieldTitle.value = '';
     updateTitleCounter();
-    fieldCategory.value = 'Scheduled Task';
-    fieldCategory.disabled = false;
-    fieldCategoryHelper.style.display = 'none';
     fieldPriority.value = 'Medium';
     fieldStart.value = '';
     fieldEnd.value = '';
@@ -1821,7 +1814,6 @@ function mountScheduleCalendarInstance(container) {
     var payload = frontendToApiPayload({
       date: fieldDate.value,
       title: fieldTitle.value.trim(),
-      category: fieldCategory.value,
       priority: fieldPriority.value,
       start: fieldStart.value,
       end: fieldEnd.value,
@@ -1853,9 +1845,6 @@ function mountScheduleCalendarInstance(container) {
     fieldDate.value = it.date;
     fieldTitle.value = it.title;
     updateTitleCounter();
-    fieldCategory.value = it.category;
-    fieldCategory.disabled = true;
-    fieldCategoryHelper.style.display = '';
     fieldPriority.value = it.priority || 'Medium';
     fieldStart.value = it.start || '';
     fieldEnd.value = it.end || '';
@@ -1885,7 +1874,6 @@ function mountScheduleCalendarInstance(container) {
     var payload = frontendToApiPayload({
       date: fieldDate.value,
       title: fieldTitle.value.trim(),
-      category: fieldCategory.value,
       priority: fieldPriority.value,
       start: fieldStart.value,
       end: fieldEnd.value,
@@ -2087,8 +2075,10 @@ function mountScheduleCalendarInstance(container) {
 
   /* Edit (Step 6) — closes the detail popup and reuses the existing
      editItem() flow verbatim (same Task popup, same prefill, same
-     validation, same immutable-category-on-edit rule, same task/leave
-     conflict handling on save) — no new edit implementation. */
+     validation, same task/leave conflict handling on save) — no new
+     edit implementation. Category is no longer locked on edit
+     (2026-07-22): the backend re-evaluates and may change it on any
+     successful save. */
   if (viewEditBtn) {
     viewEditBtn.addEventListener('click', function () {
       var id = currentViewItemId;

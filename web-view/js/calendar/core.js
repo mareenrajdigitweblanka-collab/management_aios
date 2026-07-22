@@ -332,12 +332,14 @@ export function apiItemToFrontend(apiItem) {
 
 /* Converts the frontend form/item shape into the backend create/update payload.
    Empty start/end strings are sent as null — the backend Optional[time] field
-   rejects an empty string, and null is how "no time set" is represented server-side. */
+   rejects an empty string, and null is how "no time set" is represented server-side.
+   category is deliberately never included (2026-07-22) — the backend is the
+   only authority for category classification; the frontend has no category
+   field to send it from. */
 export function frontendToApiPayload(fields) {
   return {
     date: fields.date,
     title: fields.title,
-    category: fields.category,
     priority: fields.priority,
     start: fields.start ? fields.start : null,
     end: fields.end ? fields.end : null,
