@@ -22,9 +22,11 @@ but rejected by PostgreSQL's still-unmigrated CHECK constraint.
 database/member_schedule_events_schema.sql and applied to the live table
 by database/migrations/2026-07-14-schedule-task-category-classification.sql.
 It has no effect on the already-existing live table until that migration
-runs; Python-level enforcement (backend/schemas.py ScheduleCategory,
-backend/routers/member_schedules.py classify_schedule_category and the
-update-lock check) is what actually protects the API in the meantime.
+runs; Python-level enforcement (the two allowed values in
+backend/config.py VALID_SCHEDULE_CATEGORIES, and
+backend/routers/member_schedules.py classify_new_task/classify_updated_task,
+which are the only functions that ever assign this column) is what
+actually protects the API in the meantime.
 """
 
 import uuid

@@ -4,7 +4,13 @@ Pure-function / schema-level tests only — no database connection is
 required or attempted, matching this session's confirmed workstation
 limitation (direct Neon access hangs at the SSL/protocol handshake layer;
 see handover/member-schedule-vercel-neon-deployment-preparation-2026-07-10.md
-§7 and validation/schedule-task-classification-check-2026-07-14.md).
+§7 and validation/schedule-task-classification-check-2026-07-14.md). This
+means the router-level guarantees that fields/category are left untouched
+on a failed update or a leave-conflict 409 (update_member_schedule_event's
+early JSONResponse return, before any field is assigned) are verified by
+code inspection rather than an executed test here — there is nothing
+class-related in those two code paths for a pure-function test to exercise
+beyond what ClassifyUpdatedTaskTests already covers.
 
 Rule history:
 - 2026-07-14 (superseded): classification compared created_at against
@@ -12,16 +18,21 @@ Rule history:
   validation/schedule-task-classification-check-2026-07-14.md and
   handover/2026-07-14__schedule-task-classification-closure.md — both left
   unedited as historical record.
-- 2026-07-14 (current, this file): previous-day cutoff rule — a task may
-  only be "Scheduled Task" if its Asia/Colombo creation date is strictly
-  earlier than its event_date; start_time/end_time play no part at all.
-  See validation/schedule-classification-previous-day-cutoff-check-2026-07-14.md.
-
-Covers the required 16-item classification test matrix (all in
-ClassifyScheduleCategoryTests below) plus the pre-existing, unaffected
-percentage and create-schema coverage (PercentageTests,
-CreateSchemaCategoryTests — neither touches classification timing logic
-and neither was changed by the rule swap).
+- 2026-07-14 (superseded): previous-day cutoff rule — a task was
+  "Scheduled Task" only if its Asia/Colombo creation date was strictly
+  earlier than its event_date, and once assigned the category was
+  permanent (immutable on every subsequent update). See
+  validation/schedule-classification-previous-day-cutoff-check-2026-07-14.md.
+- 2026-07-22 (current, this file): weekly cutoff rule. Every task belongs
+  to the Monday-Sunday calendar week containing its event_date
+  (get_target_week_start). The weekly planning cutoff is 23:59:59
+  Asia/Colombo on the Sunday immediately before that week's Monday
+  (get_preceding_sunday_cutoff). classify_new_task() applies this cutoff
+  once at creation; classify_updated_task() re-applies it on every
+  successful update (Edit-form save, title/notes/priority/date/start/end
+  change, drag, resize — all funnel through the same PUT handler), and is
+  one-way: once 'Unscheduled Task', a task never automatically becomes
+  'Scheduled Task' again, regardless of what changes afterward.
 
 Run with: python -m unittest backend.tests.test_schedule_classification
 """
@@ -33,181 +44,239 @@ from pydantic import ValidationError
 
 from backend.routers.member_schedules import (
     _percentages,
-    classify_schedule_category,
+    classify_new_task,
+    classify_updated_task,
+    get_preceding_sunday_cutoff,
+    get_target_week_start,
 )
 from backend.schemas import MemberScheduleEventCreate, MemberScheduleEventUpdate
 
 
-class ClassifyScheduleCategoryTests(unittest.TestCase):
-    """Previous-day cutoff rule (2026-07-14). Asia/Colombo is UTC+05:30,
-    no DST, so every UTC instant below has a fixed, hand-computed Colombo
-    equivalent used to derive the expected Asia/Colombo calendar date."""
+class GetTargetWeekStartTests(unittest.TestCase):
+    """Monday-Sunday week boundary math. 2026-07-20 is a confirmed Monday
+    and 2026-07-19 is a confirmed Sunday (carried over from the prior
+    rule's test file, dates unchanged)."""
 
-    # 1. Event 15 July, created 14 July 11:58 PM Colombo -> Scheduled
-    def test_1_before_cutoff_11_58pm_scheduled_selected_stays_scheduled(self):
-        event_date = date(2026, 7, 15)
-        # 14 Jul 23:58 Colombo == 14 Jul 18:28 UTC
-        created_at = datetime(2026, 7, 14, 18, 28, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Scheduled Task")
+    def test_monday_event_date_is_its_own_week_start(self):
+        self.assertEqual(get_target_week_start(date(2026, 7, 20)), date(2026, 7, 20))
 
-    # 2. Event 15 July, created 14 July 11:59 PM Colombo -> Scheduled
-    def test_2_before_cutoff_11_59pm_scheduled_selected_stays_scheduled(self):
-        event_date = date(2026, 7, 15)
-        # 14 Jul 23:59 Colombo == 14 Jul 18:29 UTC
-        created_at = datetime(2026, 7, 14, 18, 29, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Scheduled Task")
+    def test_mid_week_event_date_rolls_back_to_monday(self):
+        self.assertEqual(get_target_week_start(date(2026, 7, 22)), date(2026, 7, 20))
 
-    # 3. Event 15 July, created 14 July 11:59:59.999999 PM Colombo -> Scheduled
-    def test_3_last_microsecond_of_previous_day_still_scheduled(self):
-        """Proves the date-comparison approach needs no explicit 23:59:59
-        timestamp construction and has no seconds/microsecond boundary to
-        get wrong — every instant up to and including the last
-        microsecond of the previous Colombo day is still eligible."""
-        event_date = date(2026, 7, 15)
-        # 14 Jul 23:59:59.999999 Colombo == 14 Jul 18:29:59.999999 UTC
-        created_at = datetime(2026, 7, 14, 18, 29, 59, 999999, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Scheduled Task")
+    def test_sunday_event_date_belongs_to_the_preceding_monday_week(self):
+        self.assertEqual(get_target_week_start(date(2026, 7, 26)), date(2026, 7, 20))
 
-    # 4. Event 15 July, created 15 July 12:00 AM Colombo -> Unscheduled
-    def test_4_first_instant_of_event_date_is_unscheduled(self):
-        event_date = date(2026, 7, 15)
-        # 15 Jul 00:00:00 Colombo == 14 Jul 18:30 UTC (previous UTC day)
-        created_at = datetime(2026, 7, 14, 18, 30, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Unscheduled Task")
+    def test_next_monday_starts_a_new_week(self):
+        self.assertEqual(get_target_week_start(date(2026, 7, 27)), date(2026, 7, 27))
 
-    # 5. Event 15 July, created 15 July 9:00 AM Colombo -> Unscheduled
-    def test_5_same_day_morning_creation_is_unscheduled(self):
-        event_date = date(2026, 7, 15)
-        # 15 Jul 09:00 Colombo == 15 Jul 03:30 UTC
-        created_at = datetime(2026, 7, 15, 3, 30, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Unscheduled Task")
 
-    # 6. Event created two or more days early -> Scheduled
-    def test_6_created_multiple_days_early_stays_scheduled(self):
-        event_date = date(2026, 7, 20)
-        # 17 Jul 10:00 Colombo == 17 Jul 04:30 UTC (3 days before event_date)
-        created_at = datetime(2026, 7, 17, 4, 30, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Scheduled Task")
+class GetPrecedingSundayCutoffTests(unittest.TestCase):
+    """The cutoff instant is 23:59:59 Asia/Colombo on the Sunday
+    immediately before the target week's Monday, for every event_date in
+    that Monday-Sunday week alike."""
 
-    # 7. Early manual Unscheduled -> Unscheduled
-    def test_7_early_manual_unscheduled_selection_honored(self):
-        event_date = date(2026, 7, 15)
-        # Clearly before event_date; user opted out anyway.
-        created_at = datetime(2026, 7, 14, 4, 30, tzinfo=timezone.utc)
-        result = classify_schedule_category("Unscheduled Task", event_date, created_at)
-        self.assertEqual(result, "Unscheduled Task")
+    def _assert_cutoff_is_19_july_235959_colombo(self, event_date):
+        cutoff = get_preceding_sunday_cutoff(event_date)
+        self.assertEqual(cutoff.year, 2026)
+        self.assertEqual(cutoff.month, 7)
+        self.assertEqual(cutoff.day, 19)
+        self.assertEqual((cutoff.hour, cutoff.minute, cutoff.second), (23, 59, 59))
 
-    # 8. Event-day manual Scheduled -> forced Unscheduled
-    def test_8_event_day_manual_scheduled_forced_unscheduled(self):
-        event_date = date(2026, 7, 15)
-        # 15 Jul 10:00 Colombo == 15 Jul 04:30 UTC
-        created_at = datetime(2026, 7, 15, 4, 30, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Unscheduled Task")
+    def test_cutoff_for_monday_event(self):
+        self._assert_cutoff_is_19_july_235959_colombo(date(2026, 7, 20))
 
-    # 9. Event-day manual Unscheduled -> Unscheduled
-    def test_9_event_day_manual_unscheduled_stays_unscheduled(self):
-        event_date = date(2026, 7, 15)
-        created_at = datetime(2026, 7, 15, 4, 30, tzinfo=timezone.utc)
-        result = classify_schedule_category("Unscheduled Task", event_date, created_at)
-        self.assertEqual(result, "Unscheduled Task")
+    def test_cutoff_for_mid_week_event(self):
+        self._assert_cutoff_is_19_july_235959_colombo(date(2026, 7, 22))
 
-    # 10. Untimed task created previous day -> Scheduled
-    def test_10_untimed_task_created_previous_day_scheduled(self):
-        """'Untimed' means the caller simply never has a start_time to
-        pass — classify_schedule_category no longer accepts a start_time
-        parameter at all (removed 2026-07-14), so this call is mechanically
-        identical to any other call. Kept as its own test to explicitly
-        document that untimed and timed tasks are classified by the exact
-        same code path, with no separate untimed branch anywhere."""
-        event_date = date(2026, 7, 15)
-        created_at = datetime(2026, 7, 14, 18, 29, tzinfo=timezone.utc)  # 14 Jul 23:59 Colombo
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Scheduled Task")
+    def test_cutoff_for_sunday_event(self):
+        self._assert_cutoff_is_19_july_235959_colombo(date(2026, 7, 26))
 
-    # 11. Untimed task created on event_date -> Unscheduled
-    def test_11_untimed_task_created_on_event_date_unscheduled(self):
-        event_date = date(2026, 7, 15)
-        created_at = datetime(2026, 7, 15, 4, 30, tzinfo=timezone.utc)  # 15 Jul 10:00 Colombo
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Unscheduled Task")
+    def test_cutoff_for_next_week_is_the_following_sunday(self):
+        cutoff = get_preceding_sunday_cutoff(date(2026, 7, 27))
+        self.assertEqual((cutoff.year, cutoff.month, cutoff.day), (2026, 7, 26))
 
-    # 12. Monday task created Sunday before midnight -> Scheduled
-    def test_12_monday_event_created_sunday_before_midnight_scheduled(self):
-        event_date = date(2026, 7, 20)  # confirmed Monday
-        # Sunday 19 Jul 23:59 Colombo == 19 Jul 18:29 UTC
-        created_at = datetime(2026, 7, 19, 18, 29, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Scheduled Task")
 
-    # 13. Sunday task created Saturday before midnight -> Scheduled
-    def test_13_sunday_event_created_saturday_before_midnight_scheduled(self):
-        event_date = date(2026, 7, 19)  # confirmed Sunday
-        # Saturday 18 Jul 23:59 Colombo == 18 Jul 18:29 UTC
-        created_at = datetime(2026, 7, 18, 18, 29, tzinfo=timezone.utc)
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
-        self.assertEqual(result, "Scheduled Task")
+class ClassifyNewTaskTests(unittest.TestCase):
+    """Create-time classification against the Monday-Sunday weekly cutoff.
+    Target week: Monday 2026-07-20 - Sunday 2026-07-26. Preceding Sunday
+    cutoff: 2026-07-19 23:59:59 Asia/Colombo == 2026-07-19 18:29:59 UTC
+    (Asia/Colombo is a fixed UTC+05:30 offset, no DST)."""
 
-    # 14. Public-holiday-labelled test date receives no exception -> same date rule
-    def test_14_public_holiday_event_date_gets_no_special_exception(self):
-        """classify_schedule_category has no concept of weekends or public
-        holidays anywhere in its logic (confirmed by reading the function:
-        it only ever compares two date objects) — the previous-day cutoff
-        applies identically regardless of what event_date represents. This
-        test treats event_date as if it were a public holiday; the
-        assertion is the same before/on-or-after split as every other
-        test, proving no holiday-aware branch exists to bypass."""
-        event_date = date(2026, 12, 25)  # treated as a public holiday for this test
-        # Created the day before, before midnight -> Scheduled
-        created_before = datetime(2026, 12, 24, 18, 29, tzinfo=timezone.utc)  # 24 Dec 23:59 Colombo
-        self.assertEqual(
-            classify_schedule_category("Scheduled Task", event_date, created_before),
-            "Scheduled Task",
+    # 1. Sunday 23:59:58 Colombo -> Scheduled
+    def test_1_sunday_23_59_58_colombo_is_scheduled(self):
+        created_at = datetime(2026, 7, 19, 18, 29, 58, tzinfo=timezone.utc)
+        self.assertEqual(classify_new_task(date(2026, 7, 20), created_at), "Scheduled Task")
+
+    # 2. Sunday 23:59:59 Colombo -> Unscheduled
+    def test_2_sunday_23_59_59_colombo_is_unscheduled(self):
+        created_at = datetime(2026, 7, 19, 18, 29, 59, tzinfo=timezone.utc)
+        self.assertEqual(classify_new_task(date(2026, 7, 20), created_at), "Unscheduled Task")
+
+    # 3. Monday 00:00:00 Colombo -> Unscheduled
+    def test_3_monday_00_00_00_colombo_is_unscheduled(self):
+        created_at = datetime(2026, 7, 19, 18, 30, 0, tzinfo=timezone.utc)
+        self.assertEqual(classify_new_task(date(2026, 7, 20), created_at), "Unscheduled Task")
+
+    # 4. Event on the Sunday of the target week, created before cutoff -> Scheduled
+    def test_4_event_on_weeks_sunday_created_before_cutoff_is_scheduled(self):
+        created_at = datetime(2026, 7, 19, 4, 30, tzinfo=timezone.utc)  # 19 Jul 10:00 Colombo
+        self.assertEqual(classify_new_task(date(2026, 7, 26), created_at), "Scheduled Task")
+
+    # 5. Same-week task creation -> Unscheduled
+    def test_5_same_week_creation_is_unscheduled(self):
+        created_at = datetime(2026, 7, 21, 4, 30, tzinfo=timezone.utc)  # 21 Jul 10:00 Colombo
+        self.assertEqual(classify_new_task(date(2026, 7, 22), created_at), "Unscheduled Task")
+
+    # 6. Future-week creation, before that week's own cutoff -> Scheduled
+    def test_6_future_week_creation_before_its_cutoff_is_scheduled(self):
+        created_at = datetime(2026, 7, 19, 4, 30, tzinfo=timezone.utc)  # 19 Jul 10:00 Colombo
+        self.assertEqual(classify_new_task(date(2026, 7, 27), created_at), "Scheduled Task")
+
+    # 7. Untimed task: classify_new_task never accepts a start/end-time
+    #    argument at all, so an untimed task is classified through the
+    #    exact same call as any other.
+    def test_7_untimed_task_uses_the_same_rule(self):
+        created_at = datetime(2026, 7, 19, 18, 29, 58, tzinfo=timezone.utc)
+        self.assertEqual(classify_new_task(date(2026, 7, 20), created_at), "Scheduled Task")
+
+    # 8. Client-selected category cannot force Scheduled after cutoff:
+    #    classify_new_task has no category parameter, so a manipulated
+    #    request cannot reach or influence it.
+    def test_8_requesting_scheduled_after_cutoff_has_no_effect(self):
+        payload = MemberScheduleEventCreate(
+            date="2026-07-20", title="Late request", category="Scheduled Task"
         )
-        # Created on the holiday itself -> forced Unscheduled, same as any other date
-        created_on = datetime(2026, 12, 25, 4, 30, tzinfo=timezone.utc)  # 25 Dec 10:00 Colombo
+        created_at = datetime(2026, 7, 19, 18, 30, 0, tzinfo=timezone.utc)  # after cutoff
+        self.assertEqual(classify_new_task(payload.date, created_at), "Unscheduled Task")
+
+    # 9. Client-selected category cannot force Unscheduled before cutoff either.
+    def test_9_requesting_unscheduled_before_cutoff_has_no_effect(self):
+        payload = MemberScheduleEventCreate(
+            date="2026-07-20", title="Early request", category="Unscheduled Task"
+        )
+        created_at = datetime(2026, 7, 19, 18, 29, 58, tzinfo=timezone.utc)  # before cutoff
+        self.assertEqual(classify_new_task(payload.date, created_at), "Scheduled Task")
+
+    def test_arbitrary_or_missing_category_on_create_payload_is_accepted(self):
+        """category is non-authoritative (2026-07-22) — any string, or no
+        value at all, is accepted by the schema and simply never read."""
+        MemberScheduleEventCreate(date="2026-07-20", title="No category sent")
+        MemberScheduleEventCreate(date="2026-07-20", title="Anything goes", category="Not A Real Category")
+
+
+class ClassifyUpdatedTaskTests(unittest.TestCase):
+    """Update-time reclassification. Same target week/cutoff constants as
+    ClassifyNewTaskTests. classify_updated_task takes no field-name
+    argument — title/notes/priority/start/end/date changes, drags, and
+    resizes are all indistinguishable to it, matching the router, which
+    calls it once per successful update regardless of which fields changed."""
+
+    # 1. Scheduled, changed before cutoff -> remains Scheduled
+    def test_1_change_before_cutoff_stays_scheduled(self):
+        updated_at = datetime(2026, 7, 19, 18, 29, 58, tzinfo=timezone.utc)
+        result = classify_updated_task("Scheduled Task", date(2026, 7, 20), updated_at)
+        self.assertEqual(result, "Scheduled Task")
+
+    # 2. Scheduled, changed exactly at cutoff -> becomes Unscheduled
+    def test_2_change_at_cutoff_becomes_unscheduled(self):
+        updated_at = datetime(2026, 7, 19, 18, 29, 59, tzinfo=timezone.utc)
+        result = classify_updated_task("Scheduled Task", date(2026, 7, 20), updated_at)
+        self.assertEqual(result, "Unscheduled Task")
+
+    # 3-8. Scheduled, changed after cutoff -> becomes Unscheduled, for every
+    #      kind of successful change (the function itself is field-agnostic;
+    #      these are documented separately per the required test matrix).
+    def _after_cutoff(self):
+        return datetime(2026, 7, 20, 4, 30, tzinfo=timezone.utc)  # 20 Jul 10:00 Colombo
+
+    def test_3_notes_change_after_cutoff_becomes_unscheduled(self):
         self.assertEqual(
-            classify_schedule_category("Scheduled Task", event_date, created_on),
+            classify_updated_task("Scheduled Task", date(2026, 7, 20), self._after_cutoff()),
             "Unscheduled Task",
         )
 
-    # 15. UTC instant converts to the correct Asia/Colombo date
-    def test_15_utc_instant_converts_to_correct_colombo_date(self):
-        """Direct proof that classification is driven by the Asia/Colombo
-        calendar date, not the raw UTC calendar date, using an instant
-        where the two dates plainly differ: 22:00 UTC on 14 Jul is 15 Jul
-        03:30 in Colombo (+05:30) — a different day in each zone."""
-        created_at = datetime(2026, 7, 14, 22, 0, tzinfo=timezone.utc)
-        self.assertEqual(created_at.date(), date(2026, 7, 14))  # UTC date
-        # Colombo date is one day ahead of the UTC date for this instant.
-        event_date_matching_colombo_day = date(2026, 7, 15)
-        result = classify_schedule_category(
-            "Scheduled Task", event_date_matching_colombo_day, created_at
+    def test_4_priority_change_after_cutoff_becomes_unscheduled(self):
+        self.assertEqual(
+            classify_updated_task("Scheduled Task", date(2026, 7, 20), self._after_cutoff()),
+            "Unscheduled Task",
         )
-        # Colombo creation date (15 Jul) is NOT earlier than event_date (15 Jul) -> Unscheduled.
+
+    def test_5_start_time_change_after_cutoff_becomes_unscheduled(self):
+        self.assertEqual(
+            classify_updated_task("Scheduled Task", date(2026, 7, 20), self._after_cutoff()),
+            "Unscheduled Task",
+        )
+
+    def test_6_end_time_change_after_cutoff_becomes_unscheduled(self):
+        self.assertEqual(
+            classify_updated_task("Scheduled Task", date(2026, 7, 20), self._after_cutoff()),
+            "Unscheduled Task",
+        )
+
+    def test_7_drag_after_cutoff_becomes_unscheduled(self):
+        """Drag re-sends the same event_date with a new start/end time —
+        modeled here as an unchanged resulting_event_date."""
+        self.assertEqual(
+            classify_updated_task("Scheduled Task", date(2026, 7, 20), self._after_cutoff()),
+            "Unscheduled Task",
+        )
+
+    def test_8_resize_after_cutoff_becomes_unscheduled(self):
+        """Resize only changes end_time — modeled the same way as drag."""
+        self.assertEqual(
+            classify_updated_task("Scheduled Task", date(2026, 7, 20), self._after_cutoff()),
+            "Unscheduled Task",
+        )
+
+    # 9. Event date changed to another week -> evaluated against the
+    #    RESULTING week's cutoff, not the original week's.
+    def test_9_date_changed_to_another_week_uses_resulting_week_cutoff(self):
+        # 20 Jul 10:00 Colombo: already past the original week's (2026-07-20
+        # week) cutoff of 19 Jul 23:59:59, but the task is being moved to
+        # the NEXT week (2026-07-27), whose own cutoff is 26 Jul 23:59:59 —
+        # still in the future at this instant, so Scheduled is retained.
+        updated_at = datetime(2026, 7, 20, 4, 30, tzinfo=timezone.utc)
+        result = classify_updated_task("Scheduled Task", date(2026, 7, 27), updated_at)
+        self.assertEqual(result, "Scheduled Task")
+
+    def test_9b_moving_to_a_week_whose_cutoff_has_also_passed_becomes_unscheduled(self):
+        # Same move, but now the instant is also past the resulting week's
+        # (2026-07-27) own cutoff of 26 Jul 23:59:59 Colombo.
+        updated_at = datetime(2026, 7, 27, 4, 30, tzinfo=timezone.utc)  # 27 Jul 10:00 Colombo
+        result = classify_updated_task("Scheduled Task", date(2026, 7, 27), updated_at)
         self.assertEqual(result, "Unscheduled Task")
 
-    # 16. A UTC instant still on the previous UTC date but already on
-    #     event_date in Colombo -> Unscheduled
-    def test_16_utc_previous_day_but_colombo_event_date_is_unscheduled(self):
-        """A naive UTC-date comparison would see 15 Jul (UTC) < 16 Jul
-        (event_date) and incorrectly return Scheduled. The correct
-        Asia/Colombo-aware comparison sees the Colombo date as 16 Jul
-        (event_date itself) and correctly forces Unscheduled. This is the
-        clearest possible proof the implementation converts to Asia/Colombo
-        before comparing, rather than comparing UTC dates directly."""
-        event_date = date(2026, 7, 16)
-        # 15 Jul 20:00 UTC == 16 Jul 01:30 Colombo (+05:30) — UTC date is
-        # still 15 Jul, but the Colombo date is already 16 Jul.
-        created_at = datetime(2026, 7, 15, 20, 0, tzinfo=timezone.utc)
-        self.assertEqual(created_at.date(), date(2026, 7, 15))  # confirms UTC date is the day before
-        result = classify_schedule_category("Scheduled Task", event_date, created_at)
+    # 10. Unscheduled task moved to a future week -> remains Unscheduled
+    def test_10_unscheduled_moved_to_future_week_remains_unscheduled(self):
+        updated_at = datetime(2026, 7, 19, 4, 30, tzinfo=timezone.utc)  # well before any cutoff
+        result = classify_updated_task("Unscheduled Task", date(2026, 8, 10), updated_at)
+        self.assertEqual(result, "Unscheduled Task")
+
+    # 11. Unscheduled edited before a future cutoff -> remains Unscheduled
+    def test_11_unscheduled_edited_before_future_cutoff_remains_unscheduled(self):
+        updated_at = datetime(2026, 7, 19, 4, 30, tzinfo=timezone.utc)
+        result = classify_updated_task("Unscheduled Task", date(2026, 7, 27), updated_at)
+        self.assertEqual(result, "Unscheduled Task")
+
+    # 14. Repeated updates never restore Scheduled, even when a later call
+    #     is early and the resulting date is far in the future.
+    def test_14_repeated_updates_never_restore_scheduled(self):
+        category = "Scheduled Task"
+        category = classify_updated_task(category, date(2026, 7, 20), self._after_cutoff())
+        self.assertEqual(category, "Unscheduled Task")
+        category = classify_updated_task(
+            category, date(2026, 12, 25), datetime(2026, 7, 1, 0, 0, tzinfo=timezone.utc)
+        )
+        self.assertEqual(category, "Unscheduled Task")
+
+    def test_client_sent_category_on_update_is_never_read(self):
+        """Mirrors ClassifyNewTaskTests' create-side proof — the update
+        schema's category field is accepted for backward compatibility but
+        classify_updated_task takes no such argument, so it cannot be
+        forced either direction by a manipulated request body."""
+        payload = MemberScheduleEventUpdate(title="Renamed", category="Scheduled Task")
+        self.assertEqual(payload.title, "Renamed")
+        result = classify_updated_task("Unscheduled Task", date(2026, 7, 20), self._after_cutoff())
         self.assertEqual(result, "Unscheduled Task")
 
 
@@ -243,34 +312,32 @@ class PercentageTests(unittest.TestCase):
 
 
 class CreateSchemaCategoryTests(unittest.TestCase):
-    """Unaffected by the classification rule change — only the two
-    permanent categories are ever accepted by the create request schema;
-    the four retired sample categories (and any other arbitrary string)
-    are rejected. This is schema-level validation, independent of the
-    create-time classification logic tested above."""
+    """category is non-authoritative on the create schema (2026-07-22) —
+    optional, unvalidated, and never enforced against an enum, since it is
+    never read for classification regardless of its value."""
 
     def _base_payload(self, **overrides):
         payload = {"date": "2026-07-20", "title": "Prepare weekly report"}
         payload.update(overrides)
         return payload
 
-    def test_default_category_is_scheduled_task(self):
+    def test_category_omitted_is_accepted(self):
         event = MemberScheduleEventCreate(**self._base_payload())
-        self.assertEqual(event.category, "Scheduled Task")
+        self.assertIsNone(event.category)
 
-    def test_unscheduled_task_accepted(self):
+    def test_valid_category_value_accepted_but_not_authoritative(self):
         event = MemberScheduleEventCreate(**self._base_payload(category="Unscheduled Task"))
         self.assertEqual(event.category, "Unscheduled Task")
 
-    def test_retired_sample_categories_rejected(self):
+    def test_retired_sample_categories_accepted_and_ignored(self):
         for retired in ("Sample Task", "Sample Review", "Sample Follow-up", "Sample Planning"):
             with self.subTest(category=retired):
-                with self.assertRaises(ValidationError):
-                    MemberScheduleEventCreate(**self._base_payload(category=retired))
+                event = MemberScheduleEventCreate(**self._base_payload(category=retired))
+                self.assertEqual(event.category, retired)
 
-    def test_arbitrary_category_rejected(self):
-        with self.assertRaises(ValidationError):
-            MemberScheduleEventCreate(**self._base_payload(category="Not A Real Category"))
+    def test_arbitrary_category_accepted_and_ignored(self):
+        event = MemberScheduleEventCreate(**self._base_payload(category="Not A Real Category"))
+        self.assertEqual(event.category, "Not A Real Category")
 
 
 class TitleLengthLimitTests(unittest.TestCase):
@@ -278,7 +345,8 @@ class TitleLengthLimitTests(unittest.TestCase):
     (2026-07-16) — see backend/schemas.py, backend/models.py, and
     database/migrations/2026-07-16-increase-member-schedule-title-limit.sql.
     Covers both MemberScheduleEventCreate and MemberScheduleEventUpdate,
-    since both apply the same max_length/min_length constraint."""
+    since both apply the same max_length/min_length constraint. Unaffected
+    by the 2026-07-22 classification rule change."""
 
     def _base_create_payload(self, **overrides):
         payload = {"date": "2026-07-20", "title": "Prepare weekly report"}
@@ -309,9 +377,6 @@ class TitleLengthLimitTests(unittest.TestCase):
         self.assertEqual(event.title, "Prepare weekly report")
 
     def test_old_60_char_title_still_within_new_limit(self):
-        # A title at the previous 60-character ceiling must still succeed
-        # under the new 120-character limit — this is a strict widening,
-        # never a narrowing, of what is accepted.
         title = "C" * 60
         event = MemberScheduleEventCreate(**self._base_create_payload(title=title))
         self.assertEqual(len(event.title), 60)
@@ -321,13 +386,6 @@ class TitleLengthLimitTests(unittest.TestCase):
             MemberScheduleEventCreate(**self._base_create_payload(title=""))
 
     def test_whitespace_only_title_behavior_unchanged(self):
-        # The Pydantic schema has never trimmed or specially rejected
-        # whitespace-only titles — only min_length=1 (character count) is
-        # enforced here; the frontend's own .trim() check (unchanged,
-        # unaffected by this task) is what actually blocks a whitespace-only
-        # submission in the UI. This test locks in that the raising of the
-        # max_length limit did not introduce new schema-level whitespace
-        # handling that wasn't there before.
         event = MemberScheduleEventCreate(**self._base_create_payload(title=" "))
         self.assertEqual(event.title, " ")
 

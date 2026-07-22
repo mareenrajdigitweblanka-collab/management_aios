@@ -10,18 +10,18 @@ Validation rules implemented here (per implementation requirements):
 - source_scope and is_official_truth are never accepted from create/update
   request bodies — they are server-controlled only.
 
-Category (2026-07-14): create requests accept only the two permanent
-values (VALID_SCHEDULE_CATEGORIES) — the requested value is a hint the
-router's classify_schedule_category() may still override to "Unscheduled
-Task" for a late-created task (see backend/routers/member_schedules.py).
-Update requests keep `category` as a loosely-typed optional field on
-purpose: the router compares any supplied value against the row's stored
-category and rejects a mismatch with 422 rather than silently applying it
-(see update_member_schedule_event) — the field is not validated against
-the enum here so that message is the one the client sees, not a generic
-Pydantic enum error. MemberScheduleEventOut.category stays a plain `str`
-(not the enum) so existing pre-migration rows with an old placeholder
-category value can still be read/serialized without breaking GET.
+Category (2026-07-22 — replaces the 2026-07-14 permanent-category rule):
+the backend is the only authority for category classification. `category`
+is accepted on both create and update requests only for backward
+compatibility with any existing caller that still sends it — it is never
+read for classification (see classify_new_task/classify_updated_task in
+backend/routers/member_schedules.py), so a client cannot select or
+override the assigned category by sending any value, valid or not. Kept
+as a loosely-typed Optional[str] (not an enum) on both schemas so an
+unexpected value is silently ignored rather than rejected.
+MemberScheduleEventOut.category stays a plain `str` so existing
+pre-migration rows with an old placeholder category value can still be
+read/serialized without breaking GET.
 """
 
 from datetime import date as date_type, datetime, time as time_type
@@ -31,7 +31,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from backend.config import (
-    DEFAULT_SCHEDULE_CATEGORY,
     LEAVE_COORDINATION_COPY_NOTICE,
     LEAVE_FULL_DAY_DEDUCTION_MINUTES,
     LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES,
@@ -41,13 +40,13 @@ from backend.config import (
     VALID_PRIORITIES,
 )
 
-ScheduleCategory = Literal["Scheduled Task", "Unscheduled Task"]
-
 
 class MemberScheduleEventCreate(BaseModel):
     date: date_type
     title: str = Field(..., max_length=120, min_length=1)
-    category: ScheduleCategory = DEFAULT_SCHEDULE_CATEGORY
+    # Non-authoritative — accepted only for backward compatibility, never
+    # read for classification. See module docstring above.
+    category: Optional[str] = None
     priority: str = Field(default="Medium")
     start: Optional[time_type] = None
     end: Optional[time_type] = None
@@ -73,10 +72,10 @@ class MemberScheduleEventUpdate(BaseModel):
     update endpoint, regardless of request body content.
 
     `category` is intentionally kept as a loosely-typed Optional[str], not
-    the ScheduleCategory enum — it exists only so the router can detect a
-    client attempting to change it and reject with a clear 422 message
-    (see update_member_schedule_event). It is never assigned to the ORM
-    row in this router regardless of value."""
+    an enum — accepted only for backward compatibility with any existing
+    caller that still sends it. The router discards it unread (see
+    update_member_schedule_event) and always assigns the server-computed
+    value from classify_updated_task() instead."""
 
     date: Optional[date_type] = None
     title: Optional[str] = Field(default=None, max_length=120, min_length=1)

@@ -9,10 +9,10 @@ report route responses) is verified separately against the deployed API —
 see validation/schedule-duration-reporting-check-2026-07-14.md.
 
 This file is deliberately separate from test_schedule_classification.py:
-that file's scope is the create-time category classification rule
-(classify_schedule_category) and is unaffected by duration reporting.
-Nothing here calls or re-tests classify_schedule_category, and nothing in
-test_schedule_classification.py is touched by this feature.
+that file's scope is the category classification rule (classify_new_task /
+classify_updated_task, 2026-07-22) and is unaffected by duration reporting.
+Nothing here calls or re-tests either classification function, and nothing
+in test_schedule_classification.py is touched by this feature.
 
 Run with: python -m unittest backend.tests.test_schedule_duration_reports
 """
@@ -391,8 +391,10 @@ class MonthlyBoundaryTests(unittest.TestCase):
 
 class MemberScopeAndClassifierIsolationTests(unittest.TestCase):
     """§ SCOPE 38-39 — static checks that reporting code never imports or
-    calls classify_schedule_category. Member isolation (36) and soft-delete
-    exclusion (37) require a live DB session and are covered in
+    calls classify_new_task/classify_updated_task (2026-07-22 — historical
+    coverage of the 2026-07-14 classify_schedule_category is superseded by
+    this rename). Member isolation (36) and soft-delete exclusion (37)
+    require a live DB session and are covered in
     validation/schedule-duration-reporting-check-2026-07-14.md."""
 
     def test_38_39_aggregate_helper_does_not_call_classifier(self):
@@ -404,10 +406,12 @@ class MemberScopeAndClassifierIsolationTests(unittest.TestCase):
         from backend.routers import member_schedules
 
         source = inspect.getsource(member_schedules._aggregate_schedule_period)
-        self.assertNotIn("classify_schedule_category(", source)
+        self.assertNotIn("classify_new_task(", source)
+        self.assertNotIn("classify_updated_task(", source)
 
         change_source = inspect.getsource(member_schedules._duration_change)
-        self.assertNotIn("classify_schedule_category(", change_source)
+        self.assertNotIn("classify_new_task(", change_source)
+        self.assertNotIn("classify_updated_task(", change_source)
 
 
 if __name__ == "__main__":

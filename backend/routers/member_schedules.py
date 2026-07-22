@@ -4,18 +4,32 @@ Preserves the testing/demo truth boundary at every write path:
 - POST always forces source_scope='dashboard_testing' and is_official_truth=False,
   regardless of any such fields present in the request body (they are not even
   accepted by MemberScheduleEventCreate).
-- PUT only ever touches editable fields (date/title/priority/start/end/notes) —
-  source_scope, is_official_truth, and category are never assigned on update.
+- PUT only ever touches editable fields (date/title/priority/start/end/notes)
+  plus the server-computed category — source_scope and is_official_truth are
+  never assigned on update.
 - clear-testing-data only soft-deletes rows where source_scope='dashboard_testing'
   AND is_official_truth=False; pilot/approved_live rows are left untouched.
 
-Category classification (2026-07-14): every task's category is decided once,
-at creation, by classify_schedule_category() below, and is permanent after
-that — see update_member_schedule_event for the immutability enforcement.
-Nothing in this router recalculates category on GET, PUT, drag/drop, or
-resize (drag/resize all funnel through the same PUT handler and simply
-re-send the row's existing category unchanged from the frontend, which this
-handler's lock also independently guarantees server-side).
+Category classification (2026-07-22 — replaces the 2026-07-14 previous-day-
+cutoff / permanent-category rule, see backend/tests/test_schedule_classification.py
+for the historical note): every task belongs to a Monday-Sunday calendar
+week based on its event_date, and its weekly planning cutoff is the
+preceding Sunday 23:59:59 Asia/Colombo (get_preceding_sunday_cutoff below).
+
+- On create, classify_new_task() compares the authoritative server-side
+  created_at against that cutoff. No manually-selected category is ever
+  honored — the request's `category` field (kept only for backward
+  compatibility) is never read for classification.
+- On every successful update — Edit-form save, title/notes/priority/date/
+  start/end change, drag, or resize, all of which funnel through the same
+  PUT handler — classify_updated_task() re-evaluates the task using the
+  authoritative server-side update timestamp and the resulting event date's
+  own week cutoff. Classification is one-way: once a task is 'Unscheduled
+  Task' it can never automatically become 'Scheduled Task' again.
+- GET/list, Schedule Summary aggregation, and report generation never call
+  either classification function — they only ever read the stored category
+  column, so existing historical rows are frozen until a specific task is
+  itself successfully edited.
 """
 
 import calendar
@@ -80,50 +94,74 @@ def _get_active_event_or_404(
     return event
 
 
-def classify_schedule_category(
-    requested_category: str,
-    event_date: date_type,
-    created_at: datetime,
+def get_target_week_start(event_date: date_type) -> date_type:
+    """Monday of the Monday-Sunday calendar week containing event_date.
+    Single source of truth shared with the weekly report boundary logic
+    (_monday_of_week below) — classification and reporting must never
+    define "the week" two different ways."""
+    return _monday_of_week(event_date)
+
+
+def get_preceding_sunday_cutoff(event_date: date_type) -> datetime:
+    """The weekly planning cutoff for event_date's Monday-Sunday week:
+    23:59:59 Asia/Colombo on the Sunday immediately before that week's
+    Monday. Returned as a timezone-aware datetime so it can be compared
+    directly against any UTC-aware timestamp (created_at/updated_at) —
+    Python compares aware datetimes correctly regardless of which zone
+    each one carries, so no manual UTC conversion is needed here."""
+    monday = get_target_week_start(event_date)
+    preceding_sunday = monday - timedelta(days=1)
+    return datetime(
+        preceding_sunday.year,
+        preceding_sunday.month,
+        preceding_sunday.day,
+        23, 59, 59,
+        tzinfo=_COLOMBO,
+    )
+
+
+def classify_new_task(event_date: date_type, created_at: datetime) -> str:
+    """Create-time classification (2026-07-22 weekly cutoff rule —
+    replaces the 2026-07-14 previous-day-cutoff rule; see
+    backend/tests/test_schedule_classification.py for the rule history).
+
+    Deliberately takes no requested/manual category argument: a task's
+    initial category is decided entirely by comparing the authoritative
+    server-side created_at against get_preceding_sunday_cutoff(event_date).
+    'Scheduled Task' for created_at strictly before the cutoff instant;
+    'Unscheduled Task' at or after it. start_time/end_time play no part —
+    identical rule for timed and untimed tasks."""
+    return "Scheduled Task" if created_at < get_preceding_sunday_cutoff(event_date) else "Unscheduled Task"
+
+
+def classify_updated_task(
+    current_category: str,
+    resulting_event_date: date_type,
+    updated_at: datetime,
 ) -> str:
-    """Create-time-only classification. Called exactly once, from
-    create_member_schedule_event, never from GET/PUT/drag/resize — the
-    stored value this returns becomes permanent (see the update-lock in
-    update_member_schedule_event). Later edits (event_date, title,
-    priority, notes, start_time, end_time) and drag/drop/resize never
-    call this function again, so nothing that happens after creation can
-    change a task's category.
+    """Update-time reclassification (2026-07-22) — called on every
+    successful Task update (Edit-form save, title/notes/priority/date/
+    start/end change, drag, resize; all funnel through the same PUT
+    handler in update_member_schedule_event). Classification is one-way:
 
-    The rule (previous-day cutoff, 2026-07-14 — replaces the earlier
-    planned-start-time rule):
-
-    - Requesting 'Unscheduled Task' always returns 'Unscheduled Task'. A
-      user may intentionally opt out early; nothing overrides that choice.
-    - Otherwise, take the creation instant (created_at, always a UTC-aware
-      datetime) and read off its calendar date in Asia/Colombo
-      (created_at.astimezone(_COLOMBO).date()). If that Asia/Colombo date
-      is strictly earlier than event_date, the requested category is
-      honored — so 'Scheduled Task' is allowed for any creation time up
-      to and including 11:59:59.999999 PM Asia/Colombo on the day before
-      event_date.
-    - If the Asia/Colombo creation date is event_date itself or later,
-      the category is always forced to 'Unscheduled Task', regardless of
-      what was requested — starting at exactly 12:00:00 AM Asia/Colombo
-      on event_date.
-    - start_time/end_time play no part in this decision — a task's
-      planned time of day no longer matters, only the calendar day it was
-      created on relative to the calendar day it is for. This applies
-      identically to timed and untimed (start_time IS NULL) tasks; there
-      is no separate untimed-task branch.
+    1. If current_category is already 'Unscheduled Task', it stays
+       'Unscheduled Task' unconditionally — dragging or editing an
+       Unscheduled task, even into a future week, never restores
+       'Scheduled Task'.
+    2. Otherwise (current_category is 'Scheduled Task'), the cutoff is
+       recalculated for resulting_event_date's own Monday-Sunday week
+       (the week after the edit, if the edit changed the event date).
+    3. If the authoritative server-side updated_at is at or after that
+       cutoff, the task becomes 'Unscheduled Task'.
+    4. Otherwise 'Scheduled Task' is retained.
     """
-    if requested_category == "Unscheduled Task":
+    if current_category == "Unscheduled Task":
         return "Unscheduled Task"
 
-    created_local_date = created_at.astimezone(_COLOMBO).date()
+    if updated_at >= get_preceding_sunday_cutoff(resulting_event_date):
+        return "Unscheduled Task"
 
-    if created_local_date < event_date:
-        return requested_category
-
-    return "Unscheduled Task"
+    return "Scheduled Task"
 
 
 def _percentages(scheduled: int, total: int) -> Tuple[int, int]:
@@ -222,8 +260,9 @@ def _aggregate_schedule_period(
     _task_duration_minutes is the only place that decides 'used' vs.
     'ignored', so duration_used + duration_ignored is guaranteed to equal
     the category count by construction. Grouping uses only the stored
-    category column — classify_schedule_category is never called here and
-    no row's category is ever recalculated or modified."""
+    category column — neither classify_new_task nor classify_updated_task
+    is ever called here, and no row's category is recalculated or
+    modified by this read path."""
     rows = (
         db.query(
             MemberScheduleEvent.category,
@@ -580,11 +619,10 @@ def create_member_schedule_event(
     # classification from a separately-generated updated_at/DB now().
     created_at = datetime.now(timezone.utc)
 
-    category = classify_schedule_category(
-        requested_category=payload.category,
-        event_date=payload.date,
-        created_at=created_at,
-    )
+    # payload.category (if the client sent one) is accepted only for
+    # backward compatibility and is never read here — non-authoritative,
+    # cannot bypass classification (see MemberScheduleEventCreate docstring).
+    category = classify_new_task(event_date=payload.date, created_at=created_at)
 
     conflicts = leave_logic.find_conflicting_active_leave(
         db, member_key, payload.date, payload.start, payload.end
@@ -627,17 +665,11 @@ def update_member_schedule_event(
 
     update_data = payload.model_dump(exclude_unset=True)
 
-    # Category is permanent after creation. A client may resend the
-    # existing value unchanged (drag/drop and resize both do this — see
-    # web-view/index.html commitItemTimeChange) without effect; any
-    # attempt to actually change it — Unscheduled -> Scheduled or
-    # Scheduled -> Unscheduled — is rejected before any other field on
-    # this row is touched.
-    if "category" in update_data and update_data["category"] != event.category:
-        raise HTTPException(
-            status_code=422,
-            detail="Task category is permanent after creation.",
-        )
+    # payload.category (if the client sent one, e.g. for backward
+    # compatibility) is never read here — non-authoritative, cannot bypass
+    # classification. The stored category is only ever set below, from
+    # classify_updated_task().
+    update_data.pop("category", None)
 
     effective_date = update_data.get("date", event.event_date)
     effective_start = update_data.get("start", event.start_time)
@@ -664,7 +696,20 @@ def update_member_schedule_event(
     if "notes" in update_data:
         event.notes = update_data["notes"]
 
-    event.updated_at = datetime.now(timezone.utc)
+    # Authoritative server-side update timestamp, generated once and used
+    # for both storage and reclassification — never trust browser time or
+    # a client-supplied timestamp. resulting_event_date is event.event_date
+    # as just assigned above (the new date if this update changed it,
+    # otherwise the task's existing date) — classify_updated_task always
+    # evaluates against the week the task now belongs to, never the week
+    # it belonged to before this update.
+    updated_at = datetime.now(timezone.utc)
+    event.category = classify_updated_task(
+        current_category=event.category,
+        resulting_event_date=event.event_date,
+        updated_at=updated_at,
+    )
+    event.updated_at = updated_at
 
     db.commit()
     db.refresh(event)

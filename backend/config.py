@@ -58,12 +58,15 @@ VALID_SOURCE_SCOPES = ("dashboard_testing", "pilot", "approved_live")
 
 DEFAULT_SOURCE_SCOPE = "dashboard_testing"
 
-# ── Schedule task classification (2026-07-14) ────────────────────────────
-# Permanent two-category system replacing the four "Sample ..." placeholder
-# categories. See backend/routers/member_schedules.py:classify_schedule_category
-# for the create-time enforcement rule and
-# database/migrations/2026-07-14-schedule-task-category-classification.sql
-# for the one-time data migration to this allowed set.
+# ── Schedule task classification ─────────────────────────────────────────
+# Two-category system (originally introduced 2026-07-14, replacing the four
+# "Sample ..." placeholder categories via
+# database/migrations/2026-07-14-schedule-task-category-classification.sql).
+# The classification RULE that assigns these values was replaced 2026-07-22
+# — see backend/routers/member_schedules.py:classify_new_task/
+# classify_updated_task for the current weekly-cutoff, backend-only,
+# never-user-selectable rule. This allowed-value list and default are
+# unaffected by that rule change.
 VALID_SCHEDULE_CATEGORIES = (
     "Scheduled Task",
     "Unscheduled Task",
