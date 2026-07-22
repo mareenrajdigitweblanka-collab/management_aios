@@ -86,17 +86,28 @@ horizontal overflow) at 1920×1080, 1600×900, 1440×900, 1366×768,
 
 ## Deployment
 
-**Not yet deployed.** This handover covers the local, verified
-change only. Deployment follows the existing Vercel process (auto-
-deploy on push to `origin/main`, per the repo's established pattern —
-no Vercel CLI or credentials were invoked from this environment).
-Once pushed, confirm at `https://management-aios.vercel.app/` that:
-the testing banner, Clear Testing Data, Technical details, and the
-internal footer are absent; all five member calendars still render;
-browser console is clean. This live-production confirmation could not
-be performed from this sandboxed environment (no outbound HTTPS to
-Vercel/GitHub confirmed available — see §Known limitations) and is the
-one next step (below).
+**Deployed and confirmed live.** Pushed to `origin/main`
+(`697e821..82ae52b`); Vercel's existing auto-deploy-on-push pipeline
+picked it up with no manual trigger needed. Confirmed via `curl`
+against `https://management-aios.vercel.app/` after the push:
+
+- Zero matches for "Testing Preview Only", "dashboard-footer", "Clear
+  Testing Data", or "Technical details" in the live HTML.
+- Zero matches for "Branch: individual-aios" or "build-first /
+  validate-later" (the internal footer wording).
+- "Mayurika Schedule Calendar" / "Paraparan Schedule Calendar" render
+  live with the " — Testing Preview" suffix gone.
+- Page loads real content ("Management AIOS" branding, `msc-instance`
+  calendar containers, "Schedule Calendar" headings for all 5
+  members) — not an error page or stale cache.
+
+Full interactive browser validation (clicking through each member tab
+live in production, checking the console) was not performed against
+the production URL itself — the headless-browser pass (§ validation
+doc §15) was run against the local static server, and the production
+`curl` check above confirms the same HTML shipped. Recommend a quick
+manual click-through of all 5 tabs on the live URL as a final human
+sanity check (see one next step, below).
 
 ## Rollback
 
@@ -144,8 +155,9 @@ is needed.
 
 ## One next step
 
-Push this change to `origin/main` (pending user confirmation per this
-task's STEP 19) and confirm the live result at
-`https://management-aios.vercel.app/` — banner/Clear-Data/Technical-
-details/footer absent, all five calendars render, console clean —
-since that live check could not be performed from this environment.
+Do a quick manual click-through of all 5 member tabs at
+`https://management-aios.vercel.app/` in a real browser (not just the
+`curl`-based HTML check already done) to visually confirm layout and
+check the browser console for errors under real network conditions —
+this closes the one verification gap this task's sandboxed environment
+couldn't cover end-to-end.
