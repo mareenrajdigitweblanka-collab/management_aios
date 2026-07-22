@@ -611,10 +611,21 @@
         </div>
       </div>
 
-      <!-- 3. HR Testing Tables — Sample Preview
+      <!-- 4. Schedule Calendar (moved directly under the member details bar,
+           2026-07-22 member-page-layout task — Calendar/Schedule Summary/
+           Priority Preview must immediately follow the details bar, before
+           the remaining collapsed tables below). -->
+      <h3 class="section-title" style="margin-top:32px;">Mayurika Schedule Calendar</h3>
+      <div class="msc-instance" data-member-key="mayurika" data-member-label="Mayurika — HR"
+        data-storage-key="management_aios_testing_schedule_mayurika_v1" data-rajiv-note="false" data-searchable
+        data-tags="mayurika schedule calendar testing preview interactive add edit view delete localstorage hr"></div>
+
+      <!-- 5. HR Testing Tables — Sample Preview
            Content sourced from HR's written Q1-Q8 answers (2026-07-08), not random.
-           Visible tables only — no details/click-to-view wrapper, per user instruction.
-           Polished 2026-07-09 — scoped .hr-testing-table-* / .hr-pill-* CSS, no meaning/content change. -->
+           Polished 2026-07-09 — scoped .hr-testing-table-* / .hr-pill-* CSS, no meaning/content change.
+           Wrapped in the shared collapsible-section pattern (native <details>/<summary>,
+           2026-07-22 member-page-layout task) — every table starts collapsed and expands/
+           collapses independently; no content, wording, or business rule changed. -->
       <h3 class="section-title" style="margin-top:32px;">HR Testing Tables — Sample Preview</h3>
       <div class="hr-testing-table-note" data-searchable data-tags="hr testing tables sample preview note">
         <span class="hr-pill hr-pill-sample">Testing Only</span>
@@ -622,12 +633,14 @@
           are not live HR records.</span>
       </div>
 
-      <div class="hr-testing-table-card" data-searchable data-tags="hr daily work categories table">
-        <div class="hr-testing-table-head">
-          <div class="hr-testing-table-title">Table 1 — HR Daily Work Categories</div>
-        </div>
-        <p class="hr-testing-table-sub">The four daily HR work areas and why keeping on top of each one
-          matters.</p>
+      <details class="hr-testing-table-card collapsible-section" data-searchable data-tags="hr daily work categories table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="hr-testing-table-title">Table 1 — HR Daily Work Categories</span>
+            <span class="hr-testing-table-sub">The four daily HR work areas and why keeping on top of each one
+              matters.</span>
+          </span>
+        </summary>
         <div class="hr-testing-table-scroll">
           <table class="hr-testing-table">
             <thead>
@@ -667,13 +680,15 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="hr-testing-table-card" data-searchable data-tags="hr priority guide critical amber green table">
-        <div class="hr-testing-table-head">
-          <div class="hr-testing-table-title">Table 2 — HR Priority Guide</div>
-        </div>
-        <p class="hr-testing-table-sub">How to read each priority level and what follow-up it calls for.</p>
+      <details class="hr-testing-table-card collapsible-section" data-searchable data-tags="hr priority guide critical amber green table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="hr-testing-table-title">Table 2 — HR Priority Guide</span>
+            <span class="hr-testing-table-sub">How to read each priority level and what follow-up it calls for.</span>
+          </span>
+        </summary>
         <div class="hr-testing-table-scroll">
           <table class="hr-testing-table">
             <thead>
@@ -709,13 +724,15 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="hr-testing-table-card" data-searchable data-tags="hr recurring work duration guide table">
-        <div class="hr-testing-table-head">
-          <div class="hr-testing-table-title">Table 3 — HR Recurring Work Duration Guide</div>
-        </div>
-        <p class="hr-testing-table-sub">Typical time each recurring HR block takes, for planning the day.</p>
+      <details class="hr-testing-table-card collapsible-section" data-searchable data-tags="hr recurring work duration guide table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="hr-testing-table-title">Table 3 — HR Recurring Work Duration Guide</span>
+            <span class="hr-testing-table-sub">Typical time each recurring HR block takes, for planning the day.</span>
+          </span>
+        </summary>
         <div class="hr-testing-table-scroll">
           <table class="hr-testing-table">
             <thead>
@@ -778,13 +795,15 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="hr-testing-table-card" data-searchable data-tags="hr schedule ownership rules table">
-        <div class="hr-testing-table-head">
-          <div class="hr-testing-table-title">Table 4 — HR Schedule Ownership Rules</div>
-        </div>
-        <p class="hr-testing-table-sub">Confirmed HR answers on what the schedule does and doesn't cover.</p>
+      <details class="hr-testing-table-card collapsible-section" data-searchable data-tags="hr schedule ownership rules table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="hr-testing-table-title">Table 4 — HR Schedule Ownership Rules</span>
+            <span class="hr-testing-table-sub">Confirmed HR answers on what the schedule does and doesn't cover.</span>
+          </span>
+        </summary>
         <div class="hr-testing-table-scroll">
           <table class="hr-testing-table">
             <thead>
@@ -819,13 +838,15 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="hr-testing-table-card" data-searchable data-tags="hr weekly monthly review tracker sample table">
-        <div class="hr-testing-table-head">
-          <div class="hr-testing-table-title">Table 5 — HR Weekly / Monthly Review Tracker — Sample</div>
-        </div>
-        <p class="hr-testing-table-sub">Sample tracker only — no real employee names or case data.</p>
+      <details class="hr-testing-table-card collapsible-section" data-searchable data-tags="hr weekly monthly review tracker sample table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="hr-testing-table-title">Table 5 — HR Weekly / Monthly Review Tracker — Sample</span>
+            <span class="hr-testing-table-sub">Sample tracker only — no real employee names or case data.</span>
+          </span>
+        </summary>
         <div class="hr-testing-table-scroll">
           <table class="hr-testing-table">
             <thead>
@@ -874,13 +895,7 @@
         </div>
         <p class="hr-testing-table-footnote">Sample preview only — no real employee names or case data.
           Statuses shown are placeholders for testing.</p>
-      </div>
-
-      <!-- 4. Schedule Calendar -->
-      <h3 class="section-title" style="margin-top:32px;">Mayurika Schedule Calendar</h3>
-      <div class="msc-instance" data-member-key="mayurika" data-member-label="Mayurika — HR"
-        data-storage-key="management_aios_testing_schedule_mayurika_v1" data-rajiv-note="false" data-searchable
-        data-tags="mayurika schedule calendar testing preview interactive add edit view delete localstorage hr"></div>
+      </details>
 
     </div><!-- /tab-mayurika-hr -->
 
@@ -909,10 +924,20 @@
         </div>
       </div>
 
-      <!-- 3. Suman Testing Tables — Sample Preview
+      <!-- 4. Schedule Calendar (moved directly under the member details bar,
+           2026-07-22 member-page-layout task). -->
+      <h3 class="section-title" style="margin-top:32px;">Suman Schedule Calendar</h3>
+      <div class="msc-instance" data-member-key="suman" data-member-label="Suman — Recruiting Officer"
+        data-storage-key="management_aios_testing_schedule_suman_v1" data-rajiv-note="false" data-searchable
+        data-tags="suman schedule calendar testing preview interactive add edit view delete localstorage recruitment officer">
+      </div>
+
+      <!-- 5. Suman Testing Tables — Sample Preview
            Content sourced from Suman's WORKBENCH.md and weekly-deliverables-checklist.md
            (recruitment pipeline, 8-point screening, review cadence, weekly deliverables, OLOS/BGCT checks).
-           Visible tables only — no details/click-to-view wrapper. No real candidate data. -->
+           No real candidate data. Wrapped in the shared collapsible-section pattern (native
+           <details>/<summary>, 2026-07-22 member-page-layout task) — every table starts collapsed
+           and expands/collapses independently; no content, wording, or business rule changed. -->
       <h3 class="section-title" style="margin-top:32px;">Suman Testing Tables — Sample Preview</h3>
       <div class="member-testing-table-note" data-searchable data-tags="suman testing tables sample preview note">
         <span class="member-pill member-pill-sample">Testing Only</span>
@@ -920,11 +945,13 @@
           UI/testing only and are not live candidate records.</span>
       </div>
 
-      <div class="member-testing-table-card" data-searchable data-tags="suman recruitment workflow overview table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 1 — Recruitment Workflow Overview</div>
-        </div>
-        <p class="member-testing-table-sub">The recruitment pipeline stages Suman moves each hire through.</p>
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="suman recruitment workflow overview table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 1 — Recruitment Workflow Overview</span>
+            <span class="member-testing-table-sub">The recruitment pipeline stages Suman moves each hire through.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -977,13 +1004,15 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="member-testing-table-card" data-searchable data-tags="suman intake readiness checklist table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 2 — Intake Readiness Checklist</div>
-        </div>
-        <p class="member-testing-table-sub">Process-level checks before a candidate or hire moves forward.</p>
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="suman intake readiness checklist table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 2 — Intake Readiness Checklist</span>
+            <span class="member-testing-table-sub">Process-level checks before a candidate or hire moves forward.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -1030,14 +1059,16 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="member-testing-table-card" data-searchable
+      <details class="member-testing-table-card collapsible-section" data-searchable
         data-tags="suman recruitment follow-up tracker sample table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 3 — Recruitment Follow-up Tracker — Sample</div>
-        </div>
-        <p class="member-testing-table-sub">Weekly follow-up items, process-level only.</p>
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 3 — Recruitment Follow-up Tracker — Sample</span>
+            <span class="member-testing-table-sub">Weekly follow-up items, process-level only.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -1082,13 +1113,15 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="member-testing-table-card" data-searchable data-tags="suman workbench usage guide table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 4 — Suman Workbench Usage Guide</div>
-        </div>
-        <p class="member-testing-table-sub">What each workbench file is for and how it's used day to day.</p>
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="suman workbench usage guide table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 4 — Suman Workbench Usage Guide</span>
+            <span class="member-testing-table-sub">What each workbench file is for and how it's used day to day.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -1123,14 +1156,7 @@
         </div>
         <p class="member-testing-table-footnote">Sample preview only — content reflects captured recruitment
           context, not real candidate data.</p>
-      </div>
-
-      <!-- 4. Schedule Calendar -->
-      <h3 class="section-title" style="margin-top:32px;">Suman Schedule Calendar</h3>
-      <div class="msc-instance" data-member-key="suman" data-member-label="Suman — Recruiting Officer"
-        data-storage-key="management_aios_testing_schedule_suman_v1" data-rajiv-note="false" data-searchable
-        data-tags="suman schedule calendar testing preview interactive add edit view delete localstorage recruitment officer">
-      </div>
+      </details>
 
     </div><!-- /tab-suman-recruitment -->
 
@@ -1159,10 +1185,20 @@
         </div>
       </div>
 
-      <!-- 3. Arun Testing Tables — Sample Preview
+      <!-- 4. Schedule Calendar (moved directly under the member details bar,
+           2026-07-22 member-page-layout task). -->
+      <h3 class="section-title" style="margin-top:32px;">Arun Schedule Calendar</h3>
+      <div class="msc-instance" data-member-key="arun" data-member-label="Arun — Implementation Officer"
+        data-storage-key="management_aios_testing_schedule_arun_v1" data-rajiv-note="false" data-searchable
+        data-tags="arun schedule calendar testing preview interactive add edit view delete localstorage implementation officer">
+      </div>
+
+      <!-- 5. Arun Testing Tables — Sample Preview
            Content sourced from Arun's WORKBENCH.md and the SRC-ARUN-PH-001 source map
-           (PH KPI review structure, data-source readiness, output sections). Visible tables only —
-           no details/click-to-view wrapper. No real KPI, sales, stock, or staff-performance data. -->
+           (PH KPI review structure, data-source readiness, output sections). No real KPI, sales,
+           stock, or staff-performance data. Wrapped in the shared collapsible-section pattern
+           (native <details>/<summary>, 2026-07-22 member-page-layout task) — every table starts
+           collapsed and expands/collapses independently; no content, wording, or business rule changed. -->
       <h3 class="section-title" style="margin-top:32px;">Arun Testing Tables — Sample Preview</h3>
       <div class="member-testing-table-note" data-searchable data-tags="arun testing tables sample preview note">
         <span class="member-pill member-pill-sample">Testing Only</span>
@@ -1170,12 +1206,14 @@
           UI/testing only and are not live KPI, sales, stock, or staff-performance records.</span>
       </div>
 
-      <div class="member-testing-table-card" data-searchable data-tags="arun ph review preparation sample table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 1 — PH Review Preparation — Sample</div>
-        </div>
-        <p class="member-testing-table-sub">What Arun checks is ready before starting a Portfolio Holder
-          monthly review.</p>
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="arun ph review preparation sample table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 1 — PH Review Preparation — Sample</span>
+            <span class="member-testing-table-sub">What Arun checks is ready before starting a Portfolio Holder
+              monthly review.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -1220,14 +1258,16 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="member-testing-table-card" data-searchable data-tags="arun kpi source readiness sample table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 2 — KPI Source Readiness — Sample</div>
-        </div>
-        <p class="member-testing-table-sub">Data areas that must be ready before a live KPI review can be
-          generated.</p>
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="arun kpi source readiness sample table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 2 — KPI Source Readiness — Sample</span>
+            <span class="member-testing-table-sub">Data areas that must be ready before a live KPI review can be
+              generated.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -1272,14 +1312,16 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="member-testing-table-card" data-searchable data-tags="arun ph review output checklist table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 3 — PH Review Output Checklist</div>
-        </div>
-        <p class="member-testing-table-sub">Example output sections from the PH review template and how
-          they're used.</p>
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="arun ph review output checklist table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 3 — PH Review Output Checklist</span>
+            <span class="member-testing-table-sub">Example output sections from the PH review template and how
+              they're used.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -1324,14 +1366,16 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
 
-      <div class="member-testing-table-card" data-searchable data-tags="arun workbench usage guide table">
-        <div class="member-testing-table-head">
-          <div class="member-testing-table-title">Table 4 — Arun Workbench Usage Guide</div>
-        </div>
-        <p class="member-testing-table-sub">What each workbench asset is for and how it's used day to
-          day.</p>
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="arun workbench usage guide table">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Table 4 — Arun Workbench Usage Guide</span>
+            <span class="member-testing-table-sub">What each workbench asset is for and how it's used day to
+              day.</span>
+          </span>
+        </summary>
         <div class="member-testing-table-scroll">
           <table class="member-testing-table">
             <thead>
@@ -1372,31 +1416,37 @@
         </div>
         <p class="member-testing-table-footnote">Sample preview only — content reflects captured
           implementation/PH context, not real KPI or performance data.</p>
-      </div>
+      </details>
 
-      <!-- 4. Schedule Calendar -->
-      <h3 class="section-title" style="margin-top:32px;">Arun Schedule Calendar</h3>
-      <div class="msc-instance" data-member-key="arun" data-member-label="Arun — Implementation Officer"
-        data-storage-key="management_aios_testing_schedule_arun_v1" data-rajiv-note="false" data-searchable
-        data-tags="arun schedule calendar testing preview interactive add edit view delete localstorage implementation officer">
-      </div>
-
-      <!-- 5. Staff Data — PH Team (real HR-sourced data via the Staff API; KPI panel below remains a synthetic pilot) -->
-      <h3 class="section-title" style="margin-top:32px;">Staff Data — PH Team</h3>
-      <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
-      <div class="member-testing-table-note" data-searchable data-tags="arun staff data ph team live api verify kpi">
-        <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
-        <span>Real HR-sourced staff records via the read-only Staff API (<code>management_aios.staff_dashboard_records</code>,
-          imported from the HR-provided source — HR remains the authoritative source, CLAUDE.md §9.1). Team scope is
-          locked to PH for this phase. The KPI panel below remains a separate, synthetic technical pilot — shared
-          with the Paraparan tab, same underlying data, not a separate copy — and is not affected by this staff data
-          change.</span>
-      </div>
-      <div class="staff-team-scoped-pilot" id="arun-staff-pilot" data-team-code="PH">
-        <div class="staff-filter-bar"></div>
-        <div class="staff-table-container"></div>
-        <div class="kpi-pilot-mount" data-kpi-team="PH" data-kpi-actor="arun"></div>
-      </div>
+      <!-- Embedded PH Staff Data (2026-07-22 member-page-layout task) — reuses the existing
+           team-scoped Staff Data pilot (staff-data.js initTeamScopedStaffPilot(), same
+           read-only Staff API, same PH filter, same field set/privacy rules as the shared
+           Staff Data sidebar page) inside a collapsed section on this member page. This is
+           the same #arun-staff-pilot mount as before; only its wrapper changed (plain
+           heading -> collapsible-section), so no JS/data behavior changed. -->
+      <details class="member-testing-table-card collapsible-section" data-searchable data-tags="arun staff data ph team live api verify kpi">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">PH Staff Data</span>
+            <span class="member-testing-table-sub">Real HR-sourced staff records for the PH Team, from the same
+              Staff Data source and PH filter used across the dashboard.</span>
+          </span>
+        </summary>
+        <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
+        <div class="member-testing-table-note" data-searchable data-tags="arun staff data ph team live api verify kpi">
+          <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
+          <span>Real HR-sourced staff records via the read-only Staff API (<code>management_aios.staff_dashboard_records</code>,
+            imported from the HR-provided source — HR remains the authoritative source, CLAUDE.md §9.1). Team scope is
+            locked to PH for this phase. The KPI panel below remains a separate, synthetic technical pilot — shared
+            with the Paraparan tab, same underlying data, not a separate copy — and is not affected by this staff data
+            change.</span>
+        </div>
+        <div class="staff-team-scoped-pilot" id="arun-staff-pilot" data-team-code="PH">
+          <div class="staff-filter-bar"></div>
+          <div class="staff-table-container"></div>
+          <div class="kpi-pilot-mount" data-kpi-team="PH" data-kpi-actor="arun"></div>
+        </div>
+      </details>
 
     </div><!-- /tab-arun-implementation -->
 
@@ -1423,67 +1473,75 @@
         </div>
       </div>
 
-      <!-- 3. Useful Efficiency Cards -->
-      <h3 class="section-title">Useful for Day-to-Day Work</h3>
-
-      <div class="cards" data-searchable
-        data-tags="rajiv admin responsibility map governance approved current draft pending confirmation axiom company policy manual arun">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Structure &amp; Approval Authority</div>
-              <div class="card-role">Approved / current — Version 1.0</div>
-            </div>
-            <span class="badge badge-amber">Active</span>
-          </div>
-          <div class="card-note">Organizational structure, department structure, reporting structure, and the
-            Approval Authority Matrix (v1.0) are confirmed current operational practice per SRC-ADMIN-001; may
-            evolve over time.</div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Escalation Matrix</div>
-              <div class="card-role">Approved / current operational governance</div>
-            </div>
-            <span class="badge badge-amber">Active</span>
-          </div>
-          <div class="card-note">Admin/staff-conduct escalation routing is confirmed current. This coexists
-            with — and does not replace — the AXIOM incident/SLA escalation framework (Arun's confirmed
-            authority, CLAUDE.md §7.7).</div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">ROI / AI / Core Operational Policies</div>
-              <div class="card-role">Approved / current — authority from Company Policy Manual</div>
-            </div>
-            <span class="badge badge-amber">Active</span>
-          </div>
-          <div class="card-note">Confirmed current, but authority derives from the Company Policy Manual
-            (SRC-POLICY-001), not from this document — no competing policy source is created here.</div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Governance Framework Sections</div>
-              <div class="card-role">Draft — pending MD approval</div>
-            </div>
-            <span class="badge badge-draft">Draft</span>
-          </div>
-          <div class="card-note">Governance Principles, KPI Governance System, Accountability Framework,
-            Governance Meetings, Management Drift Assessment, and Governance Improvement Roadmap remain draft
-            framework proposals pending MD approval. KPI Governance System additionally requires
-            Arun/Implementation Officer review before it can be treated as authoritative.</div>
-        </div>
-      </div>
-
-      <!-- 4. Schedule Calendar -->
+      <!-- 4. Schedule Calendar (moved directly under the member details bar,
+           2026-07-22 member-page-layout task). -->
       <h3 class="section-title" style="margin-top:32px;">Rajiv Schedule Calendar</h3>
       <div class="msc-instance" data-member-key="rajiv" data-member-label="Rajiv — Admin Manager"
         data-storage-key="management_aios_testing_schedule_rajiv_v1" data-rajiv-note="true" data-searchable
         data-tags="rajiv schedule calendar testing preview interactive add edit view delete localstorage admin manager authority">
       </div>
+
+      <!-- 5. Useful Efficiency Cards — wrapped in the shared collapsible-section pattern
+           (native <details>/<summary>, 2026-07-22 member-page-layout task); starts collapsed;
+           no content, wording, or business rule changed. -->
+      <details class="member-testing-table-card collapsible-section" data-searchable
+        data-tags="rajiv admin responsibility map governance approved current draft pending confirmation axiom company policy manual arun">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">Useful for Day-to-Day Work</span>
+          </span>
+        </summary>
+        <div class="cards">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Structure &amp; Approval Authority</div>
+                <div class="card-role">Approved / current — Version 1.0</div>
+              </div>
+              <span class="badge badge-amber">Active</span>
+            </div>
+            <div class="card-note">Organizational structure, department structure, reporting structure, and the
+              Approval Authority Matrix (v1.0) are confirmed current operational practice per SRC-ADMIN-001; may
+              evolve over time.</div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Escalation Matrix</div>
+                <div class="card-role">Approved / current operational governance</div>
+              </div>
+              <span class="badge badge-amber">Active</span>
+            </div>
+            <div class="card-note">Admin/staff-conduct escalation routing is confirmed current. This coexists
+              with — and does not replace — the AXIOM incident/SLA escalation framework (Arun's confirmed
+              authority, CLAUDE.md §7.7).</div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">ROI / AI / Core Operational Policies</div>
+                <div class="card-role">Approved / current — authority from Company Policy Manual</div>
+              </div>
+              <span class="badge badge-amber">Active</span>
+            </div>
+            <div class="card-note">Confirmed current, but authority derives from the Company Policy Manual
+              (SRC-POLICY-001), not from this document — no competing policy source is created here.</div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Governance Framework Sections</div>
+                <div class="card-role">Draft — pending MD approval</div>
+              </div>
+              <span class="badge badge-draft">Draft</span>
+            </div>
+            <div class="card-note">Governance Principles, KPI Governance System, Accountability Framework,
+              Governance Meetings, Management Drift Assessment, and Governance Improvement Roadmap remain draft
+              framework proposals pending MD approval. KPI Governance System additionally requires
+              Arun/Implementation Officer review before it can be treated as authoritative.</div>
+          </div>
+        </div>
+      </details>
 
     </div><!-- /tab-rajiv-blocked -->
 
@@ -1545,36 +1603,73 @@
   ══════════════════════════════════ -->
     <div class="tab-panel tab-panel--calendar" id="tab-paraparan" role="tabpanel">
 
-      <div class="member-header">
-        <h2>Paraparan</h2>
-        <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
+      <!-- 1. Introduction — normalized to the shared 4-part member-header
+           structure (h2/role-label/lede/note) used by Mayurika/Suman/Arun/
+           Rajiv (2026-07-22 member-page-layout task). Role displayed as
+           "Auditor" per the confirmed task requirement; the existing
+           [VERIFY] designation-dispute disclosure (External Auditor vs.
+           Accountant) is preserved verbatim in the note below — this
+           display label does not resolve that open source-register item. -->
+      <div class="member-header" data-searchable
+        data-tags="paraparan auditor technical pilot staff data ph team live api verify kpi shared accountant">
+        <div class="member-header-info">
+          <h2>Paraparan — Auditor</h2>
+          <div class="role-label">Technical Pilot Classification — Staff Data &amp; KPI Pilot (Shared with Arun)</div>
+          <p class="member-header-lede">
+            This tab uses the same read-only Staff API client, shared filter component, and shared KPI pilot
+            record set as the Arun tab — real HR-sourced staff data, not a separate copy. Team scope is locked
+            to PH for this phase.
+          </p>
+          <p class="member-header-note">
+            <span class="badge badge-verify">[VERIFY]</span> Paraparan's designation is currently unresolved
+            between sources — External Auditor (SRC-ARUN-CONF-001) vs. Accountant (HR-provided PDF) — see
+            <code>member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md</code>.
+          </p>
+        </div>
       </div>
 
-      <div class="member-testing-table-note" data-searchable
-        data-tags="paraparan staff data ph team live api verify kpi shared auditor accountant">
-        <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
-        <span>Paraparan's designation is currently unresolved between sources — External Auditor (SRC-ARUN-CONF-001)
-          vs. Accountant (HR-provided PDF) — see
-          <code>member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md</code>. This tab uses the
-          same read-only Staff API client, shared filter component, and shared KPI pilot record set as the Arun tab
-          — real HR-sourced staff data, not a separate copy. Team scope is locked to PH for this phase.</span>
-      </div>
-
-      <!-- Paraparan Schedule Calendar — reuses the existing centralized member
+      <!-- 2. Schedule Calendar — reuses the existing centralized member
            schedule system (same API base, same routes, same table, same
            frontend calendar component/modal/CRUD functions as Mayurika,
            Suman, Arun, and Rajiv). No separate calendar implementation. -->
-      <h3 class="section-title" style="margin-top:8px;">Paraparan Schedule Calendar</h3>
+      <h3 class="section-title" style="margin-top:32px;">Paraparan Schedule Calendar</h3>
       <div class="msc-instance" data-member-key="paraparan" data-member-label="Paraparan"
         data-storage-key="management_aios_testing_schedule_paraparan_v1" data-rajiv-note="false" data-searchable
         data-tags="paraparan schedule calendar testing preview interactive add edit view delete localstorage auditor accountant">
       </div>
 
-      <div class="staff-team-scoped-pilot" id="paraparan-staff-pilot" data-team-code="PH">
-        <div class="staff-filter-bar"></div>
-        <div class="staff-table-container"></div>
-        <div class="kpi-pilot-mount" data-kpi-team="PH" data-kpi-actor="paraparan"></div>
-      </div>
+      <!-- 3. Embedded PH Staff Data — same shared team-scoped Staff Data
+           pilot as Arun's tab (staff-data.js initTeamScopedStaffPilot(),
+           same read-only Staff API, same PH filter, same field set/privacy
+           rules as the shared Staff Data sidebar page), wrapped in a
+           collapsed section (2026-07-22 member-page-layout task). Same
+           #paraparan-staff-pilot mount as before; only its wrapper changed. -->
+      <details class="member-testing-table-card collapsible-section" data-searchable
+        data-tags="paraparan staff data ph team live api verify kpi shared auditor accountant">
+        <summary class="collapsible-summary">
+          <span class="collapsible-summary-text">
+            <span class="member-testing-table-title">PH Staff Data</span>
+            <span class="member-testing-table-sub">Real HR-sourced staff records for the PH Team, from the same
+              Staff Data source and PH filter used across the dashboard.</span>
+          </span>
+        </summary>
+        <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
+        <div class="member-testing-table-note" data-searchable
+          data-tags="paraparan staff data ph team live api verify kpi shared auditor accountant">
+          <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
+          <span>Paraparan's designation is currently unresolved between sources — External Auditor
+            (SRC-ARUN-CONF-001) vs. Accountant (HR-provided PDF) — see
+            <code>member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md</code>. This tab
+            uses the same read-only Staff API client, shared filter component, and shared KPI pilot record set
+            as the Arun tab — real HR-sourced staff data, not a separate copy. Team scope is locked to PH for
+            this phase.</span>
+        </div>
+        <div class="staff-team-scoped-pilot" id="paraparan-staff-pilot" data-team-code="PH">
+          <div class="staff-filter-bar"></div>
+          <div class="staff-table-container"></div>
+          <div class="kpi-pilot-mount" data-kpi-team="PH" data-kpi-actor="paraparan"></div>
+        </div>
+      </details>
 
     </div><!-- /tab-paraparan -->
 

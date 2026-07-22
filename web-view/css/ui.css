@@ -129,6 +129,14 @@
   }
 }
 
+/* Shared collapsible-section chevron (components.css details>summary::before)
+   — member-page-layout-leave-popup-collapse-and-ph-staff task, 2026-07-22. */
+@media (prefers-reduced-motion: reduce) {
+  details>summary::before {
+    transition: none;
+  }
+}
+
 /* ── Shared destructive-confirmation dialog (ui/dialog.js) ───────────────
    .ui-dialog-overlay/.ui-dialog extend .msc-modal-overlay/.msc-modal
    (calendar.css) — see the file header note above. z-index is bumped one
