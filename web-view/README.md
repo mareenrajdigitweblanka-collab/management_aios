@@ -210,6 +210,39 @@ for the full record. Summary for future edits:
   "view details" action — noted as a Phase 2 modularization/consistency
   candidate, not changed here.
 
+## Schedule Summary MD-priority percentage dashboard (2026-07-22)
+
+See `validation/schedule-summary-md-percentage-dashboard-check-2026-07-22.md` and
+`handover/2026-07-22__schedule-summary-md-percentage-dashboard-closure.md` for the full record.
+Summary for future edits:
+
+- **MD-priority helpers live in `calendar/core.js`, not `instance.js`** —
+  `getSplitWarningState`, `getMetricStatusCopy`, `combineSummaryStatus`, `getPeriodStatusCopy`,
+  `getSplitBarSegments`. They only classify percentages the backend already computed
+  (`scheduled_count_percentage`/`unscheduled_count_percentage`/`scheduled_duration_percentage`/
+  `unscheduled_duration_percentage`) against the MD-confirmed 60%/40% thresholds — none of them
+  calculate a percentage. Unit-tested in `calendar/summary-helpers.test.mjs` (run with
+  `node --test web-view/js/calendar/summary-helpers.test.mjs`); a scoped
+  `calendar/package.json` (`{"type":"module"}`) marks that folder as ES-module-resolvable for
+  Node only — it has no effect on the browser, which never reads `package.json`.
+- **`renderSummaryStats(el, report)`** (`calendar/instance.js`) now builds, in order: a period
+  status badge → two priority metric blocks ("By task count", "By task duration" — bar + two
+  percentage values + plain-language status) → a collapsed-by-default `<details
+  class="collapsible-section msc-summary-details">` holding every pre-existing detail row
+  unchanged (raw counts/durations, tasks used/ignored, previous-period comparison,
+  leave-coordination figures). To change which figures are "primary" vs. "secondary," edit this
+  function's assembly order — do not touch `_aggregate_schedule_period`/`_count_percentages`/
+  `_duration_percentages` in `backend/routers/member_schedules.py`; those are formula-owning and
+  are frozen by this task.
+- **To change only presentation** (colors, spacing, bar style, badge wording) without touching a
+  single formula: edit `calendar.css`'s `.msc-priority-*`/`.msc-split-*`/`.msc-metric-status-*`
+  rules, or `core.js`'s `getMetricStatusCopy`/`getPeriodStatusCopy` copy strings. Never move
+  threshold numbers (60/40) anywhere except `getSplitWarningState` — it is the one place they are
+  checked.
+- **Colors reuse existing semantic tokens** (`--success`/`--warning`/`--error`,
+  `--calendar-scheduled-border`/`--calendar-unscheduled-border`, `tokens.css`) — no new hardcoded
+  hex value was introduced.
+
 ## Larger frontend modularization (not done in this task)
 
 `web-view/js/calendar/instance.js` (~2,140 lines) and `web-view/js/
