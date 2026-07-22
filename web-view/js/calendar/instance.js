@@ -848,13 +848,18 @@ function mountScheduleCalendarInstance(container) {
      not a height calculation. */
   var MONTH_VISIBLE_TASK_CAP = 2;
 
-  /* ── Month-view click rules (2026-07-17 month-task-list-navigation task) ──
+  /* ── Month-view click rules (2026-07-17 month-task-list-navigation task,
+     extended 2026-07-22 for the full-day-leave-date edge case) ──
      Task-presence rule (Step 3): a Month date is task-bearing when
      itemsForDate(dateStr) — the same loaded `items` array every other
      Month/Week/Day renderer already reads, filtered with the same date
-     normalization — returns at least one item. Leave is never counted
-     (leaveItemsForDate is a separate, independent lookup). Month-view
-     only: renderTimeGrid() (Week/Day) is untouched by this section. */
+     normalization — returns at least one item; this alone decides
+     whether the Task list opens (leaveItemsForDate is a separate,
+     independent lookup, never consulted for that decision). Leave is
+     only consulted afterwards, for message selection on a Task-free
+     date — see hasFullDayBlockingLeave/handleCellSingleClick below.
+     Month-view only: renderTimeGrid() (Week/Day) is untouched by this
+     section. */
   function isKeyActivation(e) {
     return e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar';
   }
@@ -896,16 +901,50 @@ function mountScheduleCalendarInstance(container) {
     });
   }
 
+  /* Full-Day-leave-blocked toast (2026-07-22 full-day-leave-date edge
+     case). Full-Day and Multi-Day leave block Task creation for the
+     whole day (find_conflicting_active_leave, backend/routers/
+     leave_logic.py); Short Leave / Half-Day First / Half-Day Second
+     only block a timed Task that overlaps their own interval, so they
+     never reach this toast — see hasFullDayBlockingLeave below. */
+  function showFullDayLeaveToast() {
+    showToast({
+      type: 'information',
+      title: 'Full-day leave scheduled',
+      message: 'Tasks cannot be added on this day because it is covered by full-day leave.'
+    });
+  }
+
+  /* Same Full-Day/Multi-Day filter already used for the Week/Day
+     all-day row (see leaveItemsForDate(...).filter(...) above in
+     renderTimeGrid) — reused rather than re-expressed, so this stays
+     the one place that defines "which leave types block the whole
+     day". leaveItemsForDate is already member-scoped (this whole file
+     is one closure per member, REQ-LEAVE-COPY-001) and server-filtered
+     on deleted_at IS NULL, so deleted/inactive/other-member leave is
+     never in `leaveItems` to begin with. */
+  function hasFullDayBlockingLeave(dateKey) {
+    return leaveItemsForDate(dateKey).some(function (lv) {
+      return lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day';
+    });
+  }
+
   /* Task-presence rule (Step 4/Interpretation): itemsForDate returns
-     Task records only (leaveItemsForDate is a separate lookup never
-     consulted here), so a date with Leave but zero Tasks correctly
-     falls through to the empty-day toast. Reuses the existing
-     openMorePopup Task-list renderer/resolveMorePopupAnchor — no
-     second list implementation. */
+     Task records only (leaveItemsForDate is a separate lookup). Tasks
+     take priority — a task-bearing date always opens the Task list
+     even if it also carries a Full-Day/Multi-Day leave, so existing
+     Tasks are never hidden behind the leave message. Only when the
+     date has zero Tasks do we check for a full-day-blocking Leave
+     (2026-07-22 edge case) before falling back to the plain empty-day
+     toast. Reuses the existing openMorePopup Task-list renderer/
+     resolveMorePopupAnchor — no second list implementation, and no
+     new Task/Leave conflict rule (that stays server-side only). */
   function handleCellSingleClick(dateKey) {
     var dayItems = itemsForDate(dateKey);
     if (dayItems.length > 0) {
       openMorePopup(dateKey, resolveMorePopupAnchor(dateKey));
+    } else if (hasFullDayBlockingLeave(dateKey)) {
+      showFullDayLeaveToast();
     } else {
       showEmptyDayToast();
     }
