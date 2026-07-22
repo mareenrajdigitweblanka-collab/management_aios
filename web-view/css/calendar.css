@@ -1324,14 +1324,23 @@
        *rendered* width via offsetWidth rather than assuming a fixed
        value, so it works the same whether that width came from a user
        drag or (now) purely from CSS. */
+    /* Flex column (calendar-popup-close-time-validation-task-list-return
+       task, 2026-07-22) — the popup itself no longer scrolls; only
+       .msc-more-popup-body below does, so the header (date, count,
+       Close button) always stays visible while the list scrolls
+       underneath it (Step 5/6). No horizontal manual resizing is used
+       anywhere here — width remains purely the automatic, viewport-
+       derived value from the --more-popup-* tokens below (unchanged
+       from the 2026-07-20 auto-responsive-width task). */
     .msc-more-popup {
       position: fixed;
+      display: flex;
+      flex-direction: column;
       min-width: var(--more-popup-min-width);
       width: var(--more-popup-width);
       max-width: var(--more-popup-max-width);
-      max-height: min(360px, calc(100vh - 32px));
-      overflow-y: auto;
-      overflow-x: hidden;
+      max-height: min(420px, calc(100vh - 32px));
+      overflow: hidden;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -1358,12 +1367,20 @@
 
     .msc-more-popup-head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 10px;
+      flex-shrink: 0;
       margin-bottom: 6px;
       padding-bottom: 6px;
       border-bottom: 1px solid var(--border);
+    }
+
+    .msc-more-popup-head-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
     }
 
     .msc-more-popup-title {
@@ -1371,6 +1388,14 @@
       font-size: .84rem;
       font-weight: 700;
       color: var(--text);
+    }
+
+    /* Visible Task count (Step 5, e.g. "12 tasks") — supplements the
+       date title rather than replacing it. */
+    .msc-more-popup-count {
+      font-size: var(--font-2xs);
+      font-weight: 600;
+      color: var(--muted);
     }
 
     .msc-more-popup-head .msc-modal-close {
@@ -1387,9 +1412,36 @@
       flex-shrink: 0;
     }
 
+    /* The one scrolling element (Step 5/6) — overscroll-behavior:contain
+       is the primary scroll-containment mechanism (stops the background
+       calendar/page from receiving leftover wheel/touch scroll once this
+       reaches its own top/bottom edge, in every modern browser); the
+       instance.js onMorePopupBodyWheel() listener is a narrow JS backstop
+       for engines that don't fully honor it. tabindex="-1" (markup) makes
+       this a keyboard-focusable scroll container in its own right, so
+       Page Up/Down/Home/End/arrow keys already work natively once it (or
+       a row inside it) has focus — no custom key handling needed for
+       that part. */
+    .msc-more-popup-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+    }
+
+    .msc-more-popup-body:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--accent);
+      border-radius: var(--radius-sm);
+    }
+
     /* Font size raised .78rem -> the shared --calendar-more-list-font-
        size (~13.5px, Step 6/7 "MORE POPUP" target of 13-15px) — applies
-       to both the time and title spans below via inheritance. */
+       to both the time and title spans below via inheritance. Readable
+       row height (Step 5) comes from the existing 7px/8px padding plus
+       this font size — kept as-is, already comfortably above a 32px
+       total row height. */
     .msc-more-popup-item {
       display: flex;
       align-items: baseline;
@@ -1407,6 +1459,15 @@
       box-shadow: inset 0 0 0 1px var(--border);
     }
 
+    /* Pressed/active feedback (Step 5 "selected/pressed state where
+       applicable") — every row navigates away immediately on
+       activation, so there is no persistent multi-select state to show;
+       this is the pointer-down visual affordance instead. */
+    .msc-more-popup-item:active {
+      background: var(--surface-tint-4);
+      box-shadow: inset 0 0 0 1px var(--muted-2);
+    }
+
     .msc-more-popup-item:focus-visible {
       outline: none;
       box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
@@ -1420,10 +1481,16 @@
       border-left-color: var(--calendar-unscheduled-border);
     }
 
+    /* Stable time column (Step 5) — a shared min-width so every row's
+       title starts at the same horizontal position regardless of
+       whether that row shows "10:42–11:42" or the longer "No time set";
+       flex-shrink:0 (unchanged) still lets a longer string grow past
+       this minimum rather than wrapping/clipping. */
     .msc-more-popup-item-time {
       color: var(--muted);
       font-variant-numeric: tabular-nums;
       flex-shrink: 0;
+      min-width: 74px;
     }
 
     /* flex:1 so the title (not blank space) absorbs any width the popup
@@ -1492,6 +1559,20 @@
       z-index: 60;
     }
 
+    /* Header row (calendar-popup-close-time-validation-task-list-return
+       task, 2026-07-22) — adds a visible Close button next to the
+       "Create" heading; the border/spacing that used to live on the
+       heading alone now sits on this row instead. */
+    .msc-create-menu-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 10px 10px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
     /* Visible "Create" heading (Step 3) — the menu already carries
        aria-label="Create" for assistive tech (instance.js), so this
        heading is aria-hidden and purely the sighted-user-visible label
@@ -1500,9 +1581,23 @@
       font-size: .92rem;
       font-weight: 700;
       color: var(--text);
-      padding: 6px 10px 10px;
-      margin-bottom: 4px;
-      border-bottom: 1px solid var(--border);
+    }
+
+    /* Same 26px circular close-button treatment as the "+N more" popup's
+       head (.msc-more-popup-head .msc-modal-close below) — one shared
+       visual language for every popup's close control. */
+    .msc-create-menu-head .msc-modal-close {
+      margin-top: 0;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1rem;
+      line-height: 1;
+      flex-shrink: 0;
     }
 
     .msc-create-menu-item {

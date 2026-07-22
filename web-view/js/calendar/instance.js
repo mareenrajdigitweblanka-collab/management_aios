@@ -99,7 +99,10 @@ function mountScheduleCalendarInstance(container) {
        change: this menu now lives as a sidebar-independent sibling that
        is never touched by the collapse toggle. */
     '<div class="msc-create-menu" id="' + escapeHtml(createMenuId) + '" role="menu" aria-label="Create" hidden>' +
+    '<div class="msc-create-menu-head">' +
     '<div class="msc-create-menu-heading" aria-hidden="true">Create</div>' +
+    '<button type="button" class="msc-modal-close msc-create-menu-close" aria-label="Close create menu">&times;</button>' +
+    '</div>' +
     /* Visible labels shortened to "Task"/"Leave" (2026-07-20 chooser-label
        task) — the "Create" heading above already states the action once;
        repeating it on every item read as redundant. aria-label keeps the
@@ -200,10 +203,22 @@ function mountScheduleCalendarInstance(container) {
        the shared msc-view-modal above via the existing viewItem(). ── */
     '<div class="msc-more-popup" role="dialog" aria-labelledby="' + escapeHtml(morePopupTitleId) + '" hidden>' +
     '<div class="msc-more-popup-head">' +
+    '<div class="msc-more-popup-head-text">' +
     '<h4 class="msc-more-popup-title" id="' + escapeHtml(morePopupTitleId) + '"></h4>' +
+    '<span class="msc-more-popup-count"></span>' +
+    '</div>' +
     '<button type="button" class="msc-modal-close msc-more-popup-close" aria-label="Close">&times;</button>' +
     '</div>' +
+    /* Scrollable body (Step 5/6, calendar-popup-close-time-validation-
+       task-list-return task, 2026-07-22) — only this element scrolls;
+       .msc-more-popup-head above stays outside it and always visible.
+       tabindex="-1" + aria-label make it a keyboard-reachable, labelled
+       scroll container in its own right (Page Up/Down/Home/End/arrow
+       keys work natively on a focused scrollable element — no custom
+       key handling needed for that part). */
+    '<div class="msc-more-popup-body" tabindex="-1" aria-label="Tasks">' +
     '<div class="msc-more-popup-list"></div>' +
+    '</div>' +
     '</div>' +
     /* ── Task creation popup (Google-style create workflow, 2026-07-20)
        — the one and only Schedule Item creation/edit form in the DOM,
@@ -357,6 +372,7 @@ function mountScheduleCalendarInstance(container) {
      workflow, 2026-07-20) ── */
   var createWrapEl = container.querySelector('.msc-create-wrap');
   var createMenuEl = container.querySelector('.msc-create-menu');
+  var createMenuClose = container.querySelector('.msc-create-menu-close');
   var createMenuItems = container.querySelectorAll('.msc-create-menu-item');
   var taskPopupOverlay = container.querySelector('.msc-task-popup');
   var taskPopupClose = container.querySelector('.msc-task-popup-close');
@@ -368,6 +384,8 @@ function mountScheduleCalendarInstance(container) {
      calendar-task-detail-and-more-popup task, 2026-07-20) ── */
   var morePopupOverlay = container.querySelector('.msc-more-popup');
   var morePopupTitle = container.querySelector('.msc-more-popup-title');
+  var morePopupCount = container.querySelector('.msc-more-popup-count');
+  var morePopupBody = container.querySelector('.msc-more-popup-body');
   var morePopupList = container.querySelector('.msc-more-popup-list');
   var morePopupClose = container.querySelector('.msc-more-popup-close');
 
@@ -405,7 +423,29 @@ function mountScheduleCalendarInstance(container) {
     }
     sidebarEl.classList.toggle('collapsed', sidebarCollapsed);
     sidebarToggleBtn.setAttribute('aria-expanded', sidebarCollapsed ? 'false' : 'true');
+    /* Reposition the "+N more" Task list if it's open (Step 12,
+       calendar-popup-close-time-validation-task-list-return task,
+       2026-07-22) — collapsing/expanding this calendar's own sidebar can
+       shift where the anchor chip/cell sits. Immediate call handles an
+       instant layout change; the delayed one covers the CSS collapse
+       transition (.2s, calendar.css) finishing after that. */
+    repositionMorePopupIfOpen();
+    setTimeout(repositionMorePopupIfOpen, 220);
   });
+
+  /* Application-level sidebar collapse toggle (navigation.js, one global
+     #sidebarCollapseToggle button, outside this instance's own markup) —
+     each of the 5 mounted calendar instances adds its own guarded
+     listener here; repositionMorePopupIfOpen() is a no-op for every
+     instance whose own popup isn't currently open, so this stays safe
+     and cheap even with 5 listeners on the same button (Step 12). */
+  var appSidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
+  if (appSidebarCollapseToggle) {
+    appSidebarCollapseToggle.addEventListener('click', function () {
+      repositionMorePopupIfOpen();
+      setTimeout(repositionMorePopupIfOpen, 220);
+    });
+  }
 
   /* ── "+ Create" dropdown (Google-style create workflow, 2026-07-20)
      — replaces the former scroll-to-form shortcut. Only one dropdown
@@ -413,14 +453,28 @@ function mountScheduleCalendarInstance(container) {
      this mount); each of the 5 member calendars keeps independent
      state, same pattern as the sidebar-collapse toggle above. */
   var createMenuOpen = false;
+  /* Tracks whichever element actually opened the chooser (the sidebar
+     Create button, or a Month/Week/Day/all-day empty-area anchor via
+     openCreateChoiceFromCalendar below) — calendar-popup-close-time-
+     validation-task-list-return task, 2026-07-22. Previously Escape
+     always returned focus to sidebarCreateBtn regardless of the real
+     opener; the new Close button and Escape both use this instead. */
+  var createMenuTriggerEl = null;
 
-  function closeCreateMenu() {
+  /* focusTarget (optional) — only the explicit Close button and Escape
+     paths pass one (returning focus to whatever opened the chooser);
+     the outside-click path keeps calling this with no argument so
+     clicking elsewhere is never redirected back into the chooser,
+     matching the existing outside-click convention used by the "+N
+     more" popover (closeMorePopup) below. */
+  function closeCreateMenu(focusTarget) {
     if (!createMenuOpen) { return; }
     createMenuOpen = false;
     createMenuEl.hidden = true;
     sidebarCreateBtn.setAttribute('aria-expanded', 'false');
     document.removeEventListener('click', onDocClickForCreateMenu, true);
     document.removeEventListener('keydown', onCreateMenuKeydown, true);
+    if (focusTarget && typeof focusTarget.focus === 'function') { returnFocus(focusTarget); }
   }
 
   /* Positions the (single, reused) create-menu near an arbitrary anchor
@@ -454,6 +508,7 @@ function mountScheduleCalendarInstance(container) {
   function openCreateMenu(anchorEl) {
     if (createMenuOpen) { return; }
     createMenuOpen = true;
+    createMenuTriggerEl = anchorEl || sidebarCreateBtn;
     createMenuEl.hidden = false;
     positionCreateMenu(anchorEl || sidebarCreateBtn);
     sidebarCreateBtn.setAttribute('aria-expanded', 'true');
@@ -476,9 +531,20 @@ function mountScheduleCalendarInstance(container) {
   function onCreateMenuKeydown(e) {
     if (e.key === 'Escape' || e.key === 'Esc') {
       e.preventDefault();
-      closeCreateMenu();
-      sidebarCreateBtn.focus();
+      closeCreateMenu(createMenuTriggerEl);
     }
+  }
+
+  if (createMenuClose) {
+    createMenuClose.addEventListener('click', function (e) {
+      /* Stop propagation before the capture-phase onDocClickForCreateMenu
+         listener runs — otherwise it would treat this as an "outside"
+         click (harmless here since closeCreateMenu() below is already
+         idempotent once createMenuOpen is false, but stopping it keeps
+         this click from being double-handled). */
+      e.stopPropagation();
+      closeCreateMenu(createMenuTriggerEl);
+    });
   }
 
   sidebarCreateBtn.addEventListener('click', function (e) {
@@ -1574,14 +1640,55 @@ function mountScheduleCalendarInstance(container) {
   function handleCancelEditClick() {
     var returnId = editOriginViewId;
     var returnTrigger = editOriginTriggerEl;
+    var flowOrigin = editOriginFlowOrigin;
     editOriginViewId = null;
     editOriginTriggerEl = null;
+    editOriginFlowOrigin = null;
     cancelEdit();
     closeTaskPopup();
-    if (returnId) { viewItem(returnId, returnTrigger); }
+    /* Origin-aware return (Step 9, calendar-popup-close-time-validation-
+       task-list-return task, 2026-07-22) — Cancel Edit never changes
+       selectedDate/currentView (cancelEdit()/closeTaskPopup() above
+       already don't touch either). When the edit was entered from the
+       "+N more" list, reopen that same list instead of the detail
+       popup; every other case (direct-calendar, or no origin at all)
+       is unchanged from before this task. */
+    if (flowOrigin && flowOrigin.type === 'more-task-list') {
+      reopenTaskListOrigin(flowOrigin);
+    } else if (returnId) {
+      viewItem(returnId, returnTrigger);
+    }
   }
 
   cancelBtn.addEventListener('click', handleCancelEditClick);
+
+  /* Task time-order validation (calendar-popup-close-time-validation-
+     task-list-return task, 2026-07-22) — mirrors the backend's own
+     MemberScheduleEventCreate/Update.end_after_start rule (end must be
+     greater than start when both are provided, backend/schemas.py) so an
+     invalid range is caught before the request is sent, with a field-
+     specific message, instead of round-tripping to the server only to
+     show the generic "Check the highlighted fields" validation-error
+     text a 422 previously produced. Both times are parsed with
+     timeToMinutes() (core.js) — the same whole-minutes-since-midnight
+     normalization drag/resize already use — rather than a raw string
+     compare, so "10:42"/"11:42" (which happen to compare correctly as
+     strings) and any other same-day pair are both handled the same
+     unambiguous way. Only fires when BOTH times are present, exactly
+     like the backend rule — an untimed Task, or one with only a start
+     or only an end time, is unaffected (no new timing rule invented). */
+  function validateTaskTimeRange() {
+    if (!fieldStart.value || !fieldEnd.value) { return true; }
+    if (timeToMinutes(fieldEnd.value) > timeToMinutes(fieldStart.value)) { return true; }
+    setFieldError(fieldEnd, 'End time must be later than start time.');
+    showToast({
+      type: 'error', title: 'Check the end time',
+      message: 'Choose an end time later than the start time.'
+    });
+    return false;
+  }
+  if (fieldStart) { fieldStart.addEventListener('input', function () { clearFieldError(fieldEnd); }); }
+  if (fieldEnd) { fieldEnd.addEventListener('input', function () { clearFieldError(fieldEnd); }); }
 
   addBtn.addEventListener('click', function () {
     clearFormErrors(formEl);
@@ -1594,6 +1701,7 @@ function mountScheduleCalendarInstance(container) {
       setFieldError(fieldTitle, 'Enter a title (e.g. Prepare weekly report).');
       hasError = true;
     }
+    if (!validateTaskTimeRange()) { hasError = true; }
     if (hasError) { focusFirstInvalid(formEl); return; }
     var payload = frontendToApiPayload({
       date: fieldDate.value,
@@ -1652,11 +1760,13 @@ function mountScheduleCalendarInstance(container) {
     var it = items.filter(function (x) { return x.id === state.editingId; })[0];
     if (!it) { return; }
     clearFormErrors(formEl);
+    var hasUpdateError = false;
     if (!fieldTitle.value.trim()) {
       setFieldError(fieldTitle, 'Enter a title before updating.');
-      focusFirstInvalid(formEl);
-      return;
+      hasUpdateError = true;
     }
+    if (!validateTaskTimeRange()) { hasUpdateError = true; }
+    if (hasUpdateError) { focusFirstInvalid(formEl); return; }
     var payload = frontendToApiPayload({
       date: fieldDate.value,
       title: fieldTitle.value.trim(),
@@ -1673,9 +1783,24 @@ function mountScheduleCalendarInstance(container) {
       var updated = apiItemToFrontend(apiItem);
       var idx = items.indexOf(it);
       if (idx !== -1) { items[idx] = updated; }
+      /* Origin-aware return (Step 8, calendar-popup-close-time-
+         validation-task-list-return task, 2026-07-22) — captured before
+         cancelEdit()/closeTaskPopup() below (neither touches these
+         variables) and cleared here so a later, unrelated edit session
+         can't accidentally reuse a stale origin. selectDate(updated.date)
+         still runs first (existing "refresh calendar data" behavior,
+         unchanged) — the reopened list reads the already-updated
+         `items` array, so it reflects the save immediately. */
+      var flowOrigin = editOriginFlowOrigin;
+      editOriginViewId = null;
+      editOriginTriggerEl = null;
+      editOriginFlowOrigin = null;
       selectDate(updated.date);
       cancelEdit();
       closeTaskPopup();
+      if (flowOrigin && flowOrigin.type === 'more-task-list') {
+        reopenTaskListOrigin(flowOrigin);
+      }
       showToast({ type: 'success', title: 'Task updated', message: 'Your changes were saved.' });
     }).catch(function (err) {
       var mapped = mapApiError(err);
@@ -1747,6 +1872,28 @@ function mountScheduleCalendarInstance(container) {
   var editOriginViewId = null;
   var editOriginTriggerEl = null;
 
+  /* ── Origin-aware Task-detail navigation (calendar-popup-close-time-
+     validation-task-list-return task, 2026-07-22) ──
+     Frontend-only UI context, scoped to this one member instance's
+     closure (never sent to the API, never a global shared across
+     members) — remembers how the currently-open Task detail/edit flow
+     was reached, so Update/Cancel Edit can return to the right place:
+       - null (default): opened directly from a Month/Week/Day/all-day
+         Task item — the pre-existing behavior, entirely unchanged.
+       - { type: 'more-task-list', dateStr, anchorEl, scrollTop, taskId }:
+         opened from a row inside the "+N more" Task list — set by
+         openMorePopup()'s row handler below, just before it closes the
+         list and opens the detail popup. scrollTop is the list body's
+         scroll position at the moment the row was activated, so
+         reopening the list later can restore it. */
+  var taskFlowOrigin = null;
+  /* Snapshot of taskFlowOrigin taken at the moment Edit is clicked (see
+     viewEditBtn below) — editItem() is only ever entered through that
+     one path, so this always reflects "was the detail view just closed
+     for editing opened via the list, or directly". Read (and cleared)
+     by both handleCancelEditClick() and the Update success handler. */
+  var editOriginFlowOrigin = null;
+
   function onViewModalKeydown(e) {
     if (e.key === 'Escape' || e.key === 'Esc') {
       e.preventDefault();
@@ -1768,10 +1915,16 @@ function mountScheduleCalendarInstance(container) {
      more" (Step 5) — every call site above (Month chip, Week/Day timed
      block via attachDragHandlers, all-day chip, more-popup row) already
      calls this same function; nothing view-specific is duplicated here.
-     Fields are the existing Task fields only — no new field invented. */
-  function viewItem(id, triggerEl) {
+     Fields are the existing Task fields only — no new field invented.
+     `origin` (calendar-popup-close-time-validation-task-list-return
+     task, 2026-07-22) — optional third argument, only ever passed by
+     the "+N more" list's row handler below; every direct-calendar call
+     site is unchanged (2-arg calls), which correctly resets
+     taskFlowOrigin to null (direct-calendar) for them. */
+  function viewItem(id, triggerEl, origin) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return; }
+    taskFlowOrigin = origin || null;
     currentViewItemId = id;
     var catClass = CATEGORY_CLASS[it.category] || 'task';
     if (viewColorDot) { viewColorDot.className = 'msc-view-color-dot ' + catClass; }
@@ -1801,6 +1954,7 @@ function mountScheduleCalendarInstance(container) {
       var id = currentViewItemId;
       editOriginViewId = id;
       editOriginTriggerEl = lastFocusedTrigger;
+      editOriginFlowOrigin = taskFlowOrigin;
       closeViewModal();
       if (id) { editItem(id); }
     });
@@ -1831,6 +1985,14 @@ function mountScheduleCalendarInstance(container) {
      contains them. Each row opens the shared task-detail popup above. */
   var morePopupOpen = false;
 
+  /* Fixed application header height + margin (mirrors --header-height,
+     tokens.css) — the popup must never render underneath the sticky top
+     bar (Step 12, calendar-popup-close-time-validation-task-list-return
+     task, 2026-07-22). Only applied to the top clamp; left/right/bottom
+     keep the existing 8px viewport-edge margin, since nothing else is
+     fixed on those edges. */
+  var MORE_POPUP_TOP_CLAMP = 64;
+
   function positionMorePopup(anchorEl) {
     var rect = anchorEl.getBoundingClientRect();
     var popupWidth = morePopupOverlay.offsetWidth || 260;
@@ -1838,14 +2000,45 @@ function mountScheduleCalendarInstance(container) {
     if (left + popupWidth > window.innerWidth - 8) {
       left = Math.max(8, window.innerWidth - popupWidth - 8);
     }
+    left = Math.max(8, left);
     var top = rect.bottom + 6;
     var popupHeight = morePopupOverlay.offsetHeight || 200;
     if (top + popupHeight > window.innerHeight - 8) {
-      top = Math.max(8, rect.top - popupHeight - 6);
+      top = Math.max(MORE_POPUP_TOP_CLAMP, rect.top - popupHeight - 6);
     }
+    top = Math.max(MORE_POPUP_TOP_CLAMP, top);
     morePopupOverlay.style.position = 'fixed';
     morePopupOverlay.style.top = top + 'px';
     morePopupOverlay.style.left = left + 'px';
+  }
+
+  /* Reposition (never resize/reflow-thrash) whenever this instance's own
+     more-popup is open and something that can move it happens: a
+     viewport resize, this calendar's own sidebar collapsing/expanding,
+     or the application-level sidebar collapsing/expanding (Step 12). A
+     no-op whenever the popup isn't open, so it's safe to call from
+     listeners that fire regardless of which of the 5 member instances
+     (if any) currently has a popup open. */
+  function repositionMorePopupIfOpen() {
+    if (morePopupOpen && morePopupAnchorEl) { positionMorePopup(morePopupAnchorEl); }
+  }
+  window.addEventListener('resize', repositionMorePopupIfOpen);
+
+  /* Boundary-only wheel trap (Step 6) — CSS overscroll-behavior:contain
+     on .msc-more-popup-body (calendar.css) already stops scroll chaining
+     in every modern browser; this is the "narrowest event handling
+     necessary" backstop the requirement asks for in case that CSS
+     behavior isn't honored (older engines, some trackpad/OS gesture
+     paths). It only ever calls preventDefault when the scroller is
+     already at its top/bottom edge AND the wheel gesture would scroll
+     further past that edge — every other wheel event inside the list
+     passes through untouched, so normal scrolling is never affected. */
+  function onMorePopupBodyWheel(e) {
+    var atTop = morePopupBody.scrollTop <= 0;
+    var atBottom = morePopupBody.scrollTop + morePopupBody.clientHeight >= morePopupBody.scrollHeight;
+    if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+      e.preventDefault();
+    }
   }
 
   function closeMorePopup(focusTarget) {
@@ -1854,6 +2047,7 @@ function mountScheduleCalendarInstance(container) {
     morePopupOverlay.hidden = true;
     document.removeEventListener('click', onDocClickForMorePopup, true);
     document.removeEventListener('keydown', onMorePopupKeydown, true);
+    morePopupBody.removeEventListener('wheel', onMorePopupBodyWheel);
     if (focusTarget && focusTarget.focus) { focusTarget.focus(); }
   }
 
@@ -1876,13 +2070,38 @@ function mountScheduleCalendarInstance(container) {
 
   var morePopupAnchorEl = null;
 
-  function openMorePopup(dateStr, anchorEl) {
+  /* Resolves a real, currently-attached anchor to reposition the popup
+     against for a given date — prefers that date's own "+N more" chip
+     (present if the Month view still shows 3+ tasks for it), falls back
+     to the plain calendar cell for that date (present for any in-view
+     date, even one with 0-2 tasks and thus no "+more" chip), and finally
+     to the sidebar Create button if neither is currently rendered (e.g.
+     a different month is in view) — always returns *some* attached
+     element so positionMorePopup() never reads a detached node's
+     all-zero rect (same class of bug the create-chooser's own
+     resolveAnchor fix, referenced above, already guards against). */
+  function resolveMorePopupAnchor(dateStr) {
+    return calGrid.querySelector('.msc-cal-chip-more[data-date="' + dateStr + '"]') ||
+      calGrid.querySelector('.msc-cal-cell--actionable[data-date="' + dateStr + '"]') ||
+      sidebarCreateBtn;
+  }
+
+  /* opts (optional): { restoreScrollTop, focusTaskId } — only ever
+     passed by reopenTaskListOrigin() below, to restore the list exactly
+     as it was before a row was opened for editing (Step 8/9). A plain
+     "+N more" click (no opts) keeps the pre-existing behavior of
+     starting scrolled to the top with the Close button focused. */
+  function openMorePopup(dateStr, anchorEl, opts) {
+    opts = opts || {};
     var dayItems = itemsForDate(dateStr).slice().sort(function (a, b) {
       var at = a.start || '99:99', bt = b.start || '99:99';
       return at < bt ? -1 : (at > bt ? 1 : 0);
     });
     morePopupAnchorEl = anchorEl;
     morePopupTitle.textContent = formatAgendaDate(dateStr);
+    if (morePopupCount) {
+      morePopupCount.textContent = dayItems.length + ' task' + (dayItems.length === 1 ? '' : 's');
+    }
     var html = '';
     dayItems.forEach(function (it) {
       var catClass = CATEGORY_CLASS[it.category] || 'task';
@@ -1890,15 +2109,26 @@ function mountScheduleCalendarInstance(container) {
       html += '<div class="msc-more-popup-item ' + catClass + '" data-id="' + it.id + '" role="button" tabindex="0" ' +
         'aria-label="' + escapeHtml((it.start ? it.start + ' ' : '') + it.title) + '">' +
         '<span class="msc-more-popup-item-time">' + escapeHtml(timeStr) + '</span>' +
-        '<span class="msc-more-popup-item-title">' + escapeHtml(it.title) + '</span>' +
+        '<span class="msc-more-popup-item-title" title="' + escapeHtml(it.title) + '">' + escapeHtml(it.title) + '</span>' +
         '</div>';
     });
     morePopupList.innerHTML = html || '<p class="msc-empty">No tasks for this date.</p>';
     morePopupList.querySelectorAll('.msc-more-popup-item').forEach(function (row) {
       var go = function () {
         var id = row.getAttribute('data-id');
+        /* Records the list origin (Step 7) before closing — dateStr/
+           anchorEl/scrollTop/taskId are exactly what reopenTaskListOrigin()
+           needs to restore this same list later; entirely local to this
+           instance's closure, never sent to the API or shared globally. */
+        taskFlowOrigin = {
+          type: 'more-task-list',
+          dateStr: dateStr,
+          anchorEl: anchorEl,
+          scrollTop: morePopupBody.scrollTop,
+          taskId: id
+        };
         closeMorePopup();
-        viewItem(id, morePopupAnchorEl);
+        viewItem(id, morePopupAnchorEl, taskFlowOrigin);
       };
       row.addEventListener('click', go);
       row.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(); } });
@@ -1908,11 +2138,42 @@ function mountScheduleCalendarInstance(container) {
     positionMorePopup(anchorEl);
     document.addEventListener('click', onDocClickForMorePopup, true);
     document.addEventListener('keydown', onMorePopupKeydown, true);
-    if (morePopupClose && morePopupClose.focus) { morePopupClose.focus(); }
+    morePopupBody.addEventListener('wheel', onMorePopupBodyWheel, { passive: false });
+    morePopupBody.scrollTop = opts.restoreScrollTop || 0;
+    var focusRow = opts.focusTaskId
+      ? morePopupList.querySelector('.msc-more-popup-item[data-id="' + opts.focusTaskId + '"]')
+      : null;
+    if (focusRow && focusRow.focus) {
+      focusRow.focus();
+    } else if (opts.focusTaskId) {
+      /* The previously-open Task is no longer in this date's list
+         (e.g. its date was changed during editing) — focus the list
+         container itself rather than silently failing to move focus
+         at all (Step 8/9: "...or the list container if that Task is
+         no longer available"). */
+      morePopupBody.focus();
+    } else if (morePopupClose && morePopupClose.focus) {
+      morePopupClose.focus();
+    }
   }
 
   if (morePopupClose) {
     morePopupClose.addEventListener('click', function () { closeMorePopup(morePopupAnchorEl); });
+  }
+
+  /* Reopens the "+N more" list a Task-detail/edit flow originated from
+     (Step 8/9) — shared by the Update-success and Cancel-Edit paths
+     above. Resolves a fresh anchor via resolveMorePopupAnchor() rather
+     than trusting origin.anchorEl still being attached, since
+     selectDate()/renderActiveView() (already called by the Update path
+     before this runs) replace the Month grid's innerHTML wholesale. */
+  function reopenTaskListOrigin(origin) {
+    if (!origin || origin.type !== 'more-task-list') { return; }
+    var anchorEl = resolveMorePopupAnchor(origin.dateStr);
+    openMorePopup(origin.dateStr, anchorEl, {
+      restoreScrollTop: origin.scrollTop,
+      focusTaskId: origin.taskId
+    });
   }
 
   /* ── Leave coordination copy (REQ-LEAVE-COPY-001) ──────────────
