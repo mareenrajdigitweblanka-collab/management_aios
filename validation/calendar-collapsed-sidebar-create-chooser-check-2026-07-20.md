@@ -349,11 +349,23 @@ toggling, all four app-sidebar × calendar-sidebar combinations,
 keyboard activation and Escape, a member-tab switch, a mobile-width
 responsive check, and zero JavaScript console errors throughout.
 
+## Post-deployment production check
+
+After pushing (`94b9347..349c997`), the deployed bundle at
+`https://management-aios.vercel.app/js/calendar/instance.js` was
+confirmed to contain the fix (via `curl` matching the new fix
+comment), and a real-browser check (headless system Chrome via
+`playwright-core`) was run directly against
+`https://management-aios.vercel.app/`: the Mayurika calendar's blank
+Month cell opened the chooser correctly with the internal sidebar both
+expanded and collapsed (`260×139` rect, not nested inside
+`.msc-sidebar`), with zero JavaScript console errors.
+
 ## One next step
 
-Do a quick manual click-through against the live production URL
-(`https://management-aios.vercel.app/`) after deployment, specifically
-collapsing the calendar sidebar and clicking a blank cell, as a final
-human sanity check under real network conditions (this session's
-browser validation ran against a local static server with no backend
-started, by design for a frontend-only fix).
+Manually click through the Week/Day empty-slot cases and the four
+app-sidebar × calendar-sidebar combinations on
+`https://management-aios.vercel.app/` — the automated production check
+above confirmed the core regression case (Month view, expanded vs.
+collapsed) live, but did not re-drive the full local matrix against
+the production URL.

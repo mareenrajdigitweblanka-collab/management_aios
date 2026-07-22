@@ -86,11 +86,19 @@ escape.
 
 ## Deployment
 
-Not yet deployed as of this handover being written — see commit
-hashes below for what is staged/committed locally. Existing Vercel
-auto-deploy-on-push pipeline will pick up a push to `origin/main`
-with no manual trigger needed (same as every prior calendar task in
-this project).
+**Deployed and confirmed live.** Pushed to `origin/main`
+(`94b9347..349c997`); Vercel's existing auto-deploy-on-push pipeline
+picked it up with no manual trigger needed. Confirmed two ways:
+
+- `curl https://management-aios.vercel.app/js/calendar/instance.js`
+  contains the new "collapsed-sidebar-create-chooser fix" comment —
+  the deployed bundle is the fixed version, not a stale cache.
+- Real-browser check (headless system Chrome via `playwright-core`)
+  against `https://management-aios.vercel.app/` itself: clicked a
+  blank Month cell with the Mayurika calendar's internal sidebar both
+  expanded and collapsed — chooser opened correctly in both states
+  (`260×139`, not nested inside `.msc-sidebar`), zero JS console
+  errors.
 
 ## Rollback
 
@@ -123,14 +131,17 @@ is needed.
   `positionCreateMenu()` viewport-clamping was judged to govern all
   widths identically; not independently screenshotted at
   1920×1080/1600×900/1366×768/1024px/tablet in this pass.
-- Production URL click-through was not performed in this session (no
-  deployment has happened yet as of writing) — see one next step.
+- The production browser check covered only Month view (expanded and
+  collapsed) on the Mayurika calendar, not the full Week/Day/all-day/
+  app-sidebar-combination matrix that the local pass covered — that
+  full matrix was run locally (see validation doc) against the
+  identical committed code, not re-run against every case in
+  production.
 
 ## One next step
 
-After pushing and confirming the Vercel deploy, manually click through
-`https://management-aios.vercel.app/`: collapse the Mayurika
-calendar's internal sidebar and click a blank Month cell, to confirm
-the fix under real production network conditions (this closes the one
-verification gap this session's local-only browser pass could not
-cover).
+Do a quick manual click-through of Week/Day empty slots and the
+app-sidebar combinations on `https://management-aios.vercel.app/` as a
+final human sanity check — the automated pass confirmed the core
+regression case and Month view live, but did not re-drive every case
+from the local matrix against the production URL.
