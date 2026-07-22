@@ -87,6 +87,14 @@ Same static-site Vercel deployment as prior tasks
 (`https://management-aios.vercel.app`), auto-deploys on push to `main`.
 No new environment variables or configuration.
 
+**Confirmed live** (2026-07-22, after pushing `7f5b62f`): production
+`js/calendar/instance.js` returns HTTP 200 and its `closeViewModal()`
+definition is at the same line number as the local file, with the new
+`reopenTaskListOrigin(flowOrigin)` calls and the `remaining > 2`
+conditional both present. This confirms the Vercel auto-deploy picked up
+the latest commit — it does **not** replace the human click-through in
+"One next step" below.
+
 ## Rollback
 
 Revert the commit(s) listed below — no migration or configuration
