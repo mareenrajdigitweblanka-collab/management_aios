@@ -80,6 +80,17 @@ environment variables, build step, or Vercel configuration change is
 required for this task — it only adds static JS/CSS files already
 referenced from `index.html`.
 
+**Confirmed live** (2026-07-22, after pushing `de90f97`): every new
+`web-view/js/ui/*.js` file and `web-view/css/ui.css` returns HTTP 200 from
+`https://management-aios.vercel.app/`; `index.html` in production includes
+the `css/ui.css` `<link>` in the correct position; production
+`js/calendar/instance.js` contains `confirmDestructive` calls and zero
+live `window.alert(`/`window.confirm(` invocations; production
+`js/staff-data.js` contains zero `uvicorn` references. This confirms the
+Vercel auto-deploy picked up the latest commit — it does **not** replace
+the human spot-check in "One next step" below, which covers actual
+rendered/interactive behavior that an HTTP fetch cannot verify.
+
 ## Rollback
 
 Revert the commits listed below (or `git revert` the merge range) — no
