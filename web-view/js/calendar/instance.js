@@ -1903,12 +1903,37 @@ function mountScheduleCalendarInstance(container) {
     }
   }
 
+  /* Origin-aware Close (Step 4, calendar-task-detail-close-and-delete-
+     list-return task, 2026-07-22) — the visible Close button, Escape
+     (onViewModalKeydown above), and backdrop click all call this one
+     function, so branching here covers all three the same way. When
+     this detail view was opened from the "+N more" list
+     (taskFlowOrigin.type === 'more-task-list'), closing it reopens that
+     same list (fresh anchor, restored scroll position/row focus — see
+     reopenTaskListOrigin()) instead of just returning focus to the
+     anchor chip. taskFlowOrigin is consumed (cleared) here either way,
+     per Step 8's "Detail Close from list: consume the origin by
+     reopening the list." Direct-calendar-opened Tasks are unaffected —
+     taskFlowOrigin is null for them, so the pre-existing
+     returnFocus(trigger) path runs exactly as before (STRICTLY
+     PRESERVE). The Delete flow (viewDeleteBtn below) clears
+     taskFlowOrigin to null of its own accord *before* calling this
+     function, so a delete-triggered close never double-reopens the
+     list here — its own conditional (>2 remaining) reopen runs
+     afterward instead. */
   function closeViewModal() {
     viewModal.classList.remove('show');
     viewModal.removeEventListener('keydown', onViewModalKeydown);
     currentViewItemId = null;
-    returnFocus(lastFocusedTrigger);
+    var trigger = lastFocusedTrigger;
+    var flowOrigin = taskFlowOrigin;
     lastFocusedTrigger = null;
+    taskFlowOrigin = null;
+    if (flowOrigin && flowOrigin.type === 'more-task-list') {
+      reopenTaskListOrigin(flowOrigin);
+    } else {
+      returnFocus(trigger);
+    }
   }
 
   /* The ONE shared task-detail popup for Month/Week/Day/all-day/"+N
@@ -1955,6 +1980,14 @@ function mountScheduleCalendarInstance(container) {
       editOriginViewId = id;
       editOriginTriggerEl = lastFocusedTrigger;
       editOriginFlowOrigin = taskFlowOrigin;
+      /* Cleared before calling closeViewModal() (calendar-task-detail-
+         close-and-delete-list-return task, 2026-07-22) — Edit is about
+         to open the Task edit form, not return to the calendar/list, so
+         closeViewModal()'s new origin-aware reopen (Step 4) must not
+         fire here; the snapshot above already preserved the origin for
+         the later Cancel-Edit/Update-success reopen (unchanged from the
+         prior task). */
+      taskFlowOrigin = null;
       closeViewModal();
       if (id) { editItem(id); }
     });
@@ -1969,8 +2002,44 @@ function mountScheduleCalendarInstance(container) {
     viewDeleteBtn.addEventListener('click', function () {
       var id = currentViewItemId;
       if (!id) { return; }
+      /* Captured before deleteItem() runs (calendar-task-detail-close-
+         and-delete-list-return task, 2026-07-22) — deleteItem()'s
+         onConfirm callback mutates `items`, but this origin snapshot is
+         just "where did this Task's detail view come from", unaffected
+         by that mutation either way. */
+      var flowOrigin = taskFlowOrigin;
       deleteItem(id, viewDeleteBtn).then(function (deleted) {
-        if (deleted) { closeViewModal(); }
+        /* Delete failure (Step 5): deleteItem()'s own onConfirm already
+           showed the mapped error toast and left `items`/taskFlowOrigin
+           untouched — returning here without calling closeViewModal()
+           keeps Task Details open with its data intact and the origin
+           preserved, exactly as required. No stale list is opened. */
+        if (!deleted) { return; }
+        /* Authoritative remaining-count (Step 5/6) — computed from the
+           `items` array only after deleteItem()'s onConfirm has already
+           filtered out the deleted row on confirmed backend success
+           (never a manually-decremented pre-delete count), and only for
+           a list-origin Task (a direct-calendar delete never applies
+           this rule — Step 7). itemsForDate() only ever returns Task
+           records, so Leave is never counted. */
+        var remaining = (flowOrigin && flowOrigin.type === 'more-task-list')
+          ? itemsForDate(flowOrigin.dateStr).length
+          : 0;
+        /* Cleared before closeViewModal() (Step 8: "Successful Delete...
+           consume the old detail origin") so its own origin-aware Close
+           (Step 4) takes the plain path here — this handler applies its
+           own >2-remaining conditional below instead, using a fresh
+           list context (reopenTaskListOrigin), rather than letting
+           closeViewModal() reopen the list unconditionally. */
+        taskFlowOrigin = null;
+        closeViewModal();
+        if (flowOrigin && flowOrigin.type === 'more-task-list' && remaining > 2) {
+          reopenTaskListOrigin(flowOrigin);
+        }
+        /* remaining <= 2 (or a direct-calendar delete): leave the user
+           on the calendar — no task-list popup, no Create chooser, no
+           Task Details popup (Step 6) — the existing "Task deleted"
+           success toast (deleteItem(), unchanged) is the only feedback. */
       });
     });
   }
