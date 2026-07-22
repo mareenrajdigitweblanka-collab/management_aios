@@ -243,6 +243,50 @@ Summary for future edits:
   `--calendar-scheduled-border`/`--calendar-unscheduled-border`, `tokens.css`) — no new hardcoded
   hex value was introduced.
 
+## Month-cell single-click Task list / double-click Create (2026-07-22)
+
+See
+`validation/month-cell-single-click-task-list-double-click-create-check-2026-07-22.md`
+and
+`handover/2026-07-22__month-cell-click-interaction-closure.md`
+for the full record. Summary for future edits:
+
+- **Single click** on a Month date cell's blank area opens the existing
+  Task-list popup (`openMorePopup()`) if `itemsForDate(dateKey)` is
+  non-empty (Leave-only dates count as empty), or shows a friendly
+  `showToast({ type: 'information', ... })` if it is empty. **Double
+  click** opens the existing Create chooser (`openCreateMenu()` via
+  `openCreateChoiceFromCalendar()`) — unchanged from before this task.
+  Keyboard Enter/Space on a cell is unchanged (opens the Create chooser
+  directly, no delay).
+- **Coordinator**: `CELL_CLICK_DELAY_MS` (250ms) + `pendingCellClick`
+  (closure-scoped per member instance, one timer at a time) +
+  `clearPendingCellClick()`/`scheduleCellSingleClick()`/
+  `handleCellSingleClick()`, defined just above `renderMonthView()` in
+  `calendar/instance.js`. A `click` schedules the Task-list-or-toast
+  decision; a `dblclick` cancels it and opens the Create chooser
+  instead — this is what lets a real double click (`click, click,
+  dblclick`) resolve to "Create chooser only," never both.
+- **Timer cleanup is centralized**, not scattered: `openCreateMenu()`
+  and `openMorePopup()` each clear the pending timer at their own top
+  (every path that opens either one funnels through these two
+  functions), plus `renderMonthView()` (top), the view-switcher click
+  handler, and each chip's own click handler. Add a new "opens the
+  Create chooser" or "opens the Task list" call site through
+  `openCreateMenu`/`openMorePopup` rather than a new direct call, or
+  this cleanup won't apply to it.
+- **No new popup/list/toast implementation** — the single-click path
+  reuses `openMorePopup()`/`resolveMorePopupAnchor()` (the same "+N
+  more" Task-list popup) and `showToast()` exactly as they already
+  existed; the double-click path reuses the same `go()`/
+  `openCreateChoiceFromCalendar()` chain keyboard Enter already used.
+- **Chip `dblclick` guards**: `.msc-cal-chip`/`.msc-cal-chip-more`/
+  `.msc-cal-chip-leave` each got a no-op `dblclick` listener
+  (`e.stopPropagation()` only) — their existing `click` handlers
+  already stopped `click` from bubbling to the cell, but `dblclick` is
+  a separate event type that bubbles independently; without this guard,
+  double-clicking a chip would incorrectly open the Create chooser.
+
 ## Larger frontend modularization (not done in this task)
 
 `web-view/js/calendar/instance.js` (~2,140 lines) and `web-view/js/
