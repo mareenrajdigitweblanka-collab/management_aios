@@ -91,13 +91,13 @@ leaves them orphaned (nothing outside `web-view/js/calendar/instance.js`,
 
 ## Commits
 
-(Recorded once created — see the follow-up "Record actual commit hashes"
-entry below, matching this project's existing convention.)
-
-1. Add shared frontend feedback and focus utilities
-2. Replace native calendar dialogs and technical errors
-3. Add loading and form-feedback UX
-4. Document Phase 1 professional UX validation
+1. `4203b95` — Add shared frontend feedback and focus utilities
+2. `9cac7fd` — Replace native calendar dialogs and technical errors with
+   shared UX (loading/busy states and form-feedback wiring included in
+   this same commit — the two suggested steps were interleaved in the
+   same handler functions, so splitting them further would have required
+   artificial hunk-level surgery rather than a meaningful review boundary)
+3. `7db1830` — Document Phase 1 professional UX validation
 
 ## Known limitations
 
@@ -125,10 +125,10 @@ entry below, matching this project's existing convention.)
 
 `web-view/js/calendar/instance.js` (~2,207 lines after this task) and
 `web-view/js/staff-data.js` (~844 lines) both still mix several
-responsibilities (DOM template + Month/Week/Day rendering + drag/resize +
-Task CRUD + Leave CRUD + Schedule Summary, in the calendar file; API
-client + generic table + generic filter bar + generic drawer + CSV export
-+ one-off KPI logic, in the Staff Data file). Splitting either is a
+responsibilities: DOM template, Month/Week/Day rendering, drag/resize,
+Task CRUD, Leave CRUD, and Schedule Summary in the calendar file; API
+client, generic table, generic filter bar, generic drawer, CSV export,
+and one-off KPI logic in the Staff Data file. Splitting either is a
 separately approved, higher-risk future phase — the discovery report
 (referenced from this task's opening) has the full proposed module
 boundaries; this task deliberately extracted only the already-generic
