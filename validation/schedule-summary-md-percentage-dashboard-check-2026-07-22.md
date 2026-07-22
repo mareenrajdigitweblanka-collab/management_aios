@@ -296,22 +296,37 @@ is a baseline-health confirmation, not a regression fix).
 
 ---
 
-## 20. Live/browser verification — honest limitation statement
+## 20. Live/browser verification — result
 
-**This workstation cannot run a local browser or reach the live Neon Postgres database** —
+**This workstation cannot run a local browser or open a direct Postgres connection to Neon** —
 both `npx playwright` (network/SSL: `ERR_SSL_CIPHER_OPERATION_FAILED` fetching the npm registry)
 and direct Postgres access are blocked from this environment, the latter a pre-existing,
 already-documented limitation (`handover/member-schedule-vercel-neon-deployment-preparation-2026-07-10.md`
 §7), not something this task introduced. Per this repository's own established practice (see the
-2026-07-17 handover's Limitations section), live/browser verification for this feature is
-performed **after push, against the deployed production URLs**
-(`https://management-aios.vercel.app/`, `https://management-aios-api.vercel.app/`) using
-`WebFetch` to confirm the new markup/labels and live report data actually render — see the
-closure handover's "Deployment" section for that result, executed after this validation doc was
-first drafted.
+2026-07-17 handover's Limitations section), live verification was instead performed **after push,
+directly against the deployed production URLs** via `curl`/`WebFetch` — full detail and raw
+results in the closure handover's "Deployment" section. Summary:
 
-Before that, the following was verified statically/at the code level (not a substitute for
-live-browser confirmation, but the most this workstation can offer):
+- `https://management-aios.vercel.app/js/calendar/core.js`, `.../instance.js`,
+  `.../css/calendar.css` fetched directly — all three contain the new code, each with a
+  `Last-Modified` timestamp within a minute of the push, confirming the CDN served the new build.
+- `https://management-aios-api.vercel.app/api/member-schedules/mayurika/reports/daily?date=2026-07-22`
+  — live production data: `scheduled_count_percentage: 40.0`, `unscheduled_count_percentage: 60.0`,
+  `scheduled_duration_percentage: 35.29`, `unscheduled_duration_percentage: 64.71` — a real,
+  naturally-occurring **warning** case (both Count and Duration independently exceed the
+  threshold), through the unchanged backend formula path.
+- `https://management-aios-api.vercel.app/api/member-schedules/paraparan/reports/weekly?week_start=2026-07-20`
+  — live production data: `scheduled_count_percentage: 81.82`, `scheduled_duration_percentage: 79.01`
+  — a real, naturally-occurring **healthy** case, in the same dataset.
+- Both live responses retain every pre-existing field, confirming the backend genuinely was not
+  touched by this task.
+
+**Not yet observed**: actual rendered pixels, the collapse/expand interaction, keyboard
+navigation, 200% zoom, and the browser console — none of these are checkable via `curl`/`WebFetch`
+without a real browser. This remains the one open item for a maintainer with browser access (see
+the closure handover's "One next step").
+
+Before the live check above, the following was verified statically/at the code level:
 
 - Every markup string in `buildPriorityMetricHtml`/`renderSummaryStats` was read back line by
   line against the CSS class names defined in `calendar.css` — no class name mismatch.
@@ -360,7 +375,12 @@ backend/API/database untouched (confirmed by empty `git diff`), all pre-existing
 preserved verbatim, one shared renderer across all three periods and all five members (static
 confirmation), accessible native disclosure, CSS-only reduced-motion-safe animation.
 
-**Live-browser/production: AMBER** until the post-push WebFetch confirmation in the closure
-handover's Deployment section is read — this workstation cannot run a browser or reach the
-database directly (§20), so full end-to-end confirmation depends on that post-deploy step,
-consistent with how the 2026-07-17 predecessor feature was verified.
+**Production deployment: PASS.** New JS/CSS confirmed live on `management-aios.vercel.app`
+within a minute of push; the live API returned a real warning case (Mayurika, 2026-07-22) and a
+real healthy case (Paraparan, week of 2026-07-20) through the unchanged formula path (§20, and
+the closure handover's Deployment section).
+
+**Rendered-pixel/browser-interaction confirmation: AMBER.** No local browser is available on
+this workstation (§20), so actual colors, bar widths, collapse/expand interaction, keyboard
+navigation, 200% zoom, and the browser console were not observed directly — the one remaining
+item for a maintainer with browser access (see the closure handover's "One next step").

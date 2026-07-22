@@ -83,17 +83,34 @@ Vercel GitHub auto-deploy on push to `origin/main` (frontend `management-aios`, 
 was touched).
 
 - Commit hashes: **`860bdd9`** ("Prioritize Schedule Summary count and duration
-  percentages"), **PENDING_COMMIT_2** ("Document MD Schedule Summary validation").
-- Push result: **PENDING**.
-- Deployment / live result: **PENDING** — this workstation cannot run a local browser or reach
-  the live Neon database directly (pre-existing, documented limitation — see
-  `handover/member-schedule-vercel-neon-deployment-preparation-2026-07-10.md` §7, and §20 of the
-  validation doc). Following the same practice as the 2026-07-17 predecessor feature, live
-  confirmation will be performed via `WebFetch` against the deployed production URLs
-  (`https://management-aios.vercel.app/`, `https://management-aios-api.vercel.app/`)
-  immediately after push, and recorded here in a small follow-up commit
-  ("Confirm live production deployment in the MD-priority dashboard handover"), matching this
-  repository's established pattern for closure records.
+  percentages"), **`855ccc7`** ("Document MD Schedule Summary validation").
+- Push result: **pushed to `origin/main`** (`767f590..855ccc7`).
+- Deployment / live result: **LIVE, confirmed.** No local browser was available on this
+  workstation (§ Known limitations), so confirmation was done via direct `curl`/`WebFetch`
+  against the deployed production URLs immediately after push:
+  - `https://management-aios.vercel.app/js/calendar/core.js`,
+    `.../js/calendar/instance.js`, `.../css/calendar.css` — all three fetched directly and
+    confirmed to contain the new code (`getSplitWarningState`/`getSplitBarSegments`/
+    `combineSummaryStatus` in `core.js`; `buildPriorityMetricHtml`/`msc-priority-badge`/
+    `msc-summary-details` in `instance.js`; `msc-priority-badge`/`msc-split-bar`/`msc-bar-grow`
+    in `calendar.css`), each with `Last-Modified: Wed, 22 Jul 2026 08:52:4x GMT` — seconds after
+    the push, confirming the CDN served the new build, not a cached prior one.
+  - `https://management-aios.vercel.app/` (the static shell `index.html`) — confirmed
+    `Last-Modified: Wed, 22 Jul 2026 08:51:21 GMT` (fresh) and all 5 `data-member-key`/
+    `msc-instance` containers present. Note: the raw static HTML never contains
+    `msc-priority-badge`/`msc-summary-details` — that markup is only injected client-side by
+    `renderSummaryStats()` after a live report fetch, so checking the JS/CSS assets directly
+    (above) is the correct live-code check, not a `curl` of the HTML shell.
+  - `https://management-aios-api.vercel.app/api/member-schedules/mayurika/reports/daily?date=2026-07-22`
+    — live data, unchanged field set: `scheduled_count_percentage: 40.0`,
+    `unscheduled_count_percentage: 60.0`, `scheduled_duration_percentage: 35.29`,
+    `unscheduled_duration_percentage: 64.71` → a genuine real-world **warning** case (unscheduled
+    share over 40% by both count and duration).
+  - `https://management-aios-api.vercel.app/api/member-schedules/paraparan/reports/weekly?week_start=2026-07-20`
+    — `scheduled_count_percentage: 81.82`, `scheduled_duration_percentage: 79.01` → a genuine
+    real-world **healthy** case, in the same live dataset.
+  - Both API responses retain every pre-existing field (previous-period comparison,
+    leave-coordination figures, etc.) unchanged — confirms the backend truly was not touched.
 
 ---
 
@@ -108,15 +125,20 @@ to their pre-2026-07-22 state and delete `web-view/js/calendar/summary-helpers.t
 
 ## Known limitations
 
-- Live-browser rendering (colors, bar widths, collapse/expand interaction, keyboard navigation,
-  200% zoom, responsive breakpoints, browser console) was **not observed directly** from this
-  workstation — no local browser is available here (Playwright install failed:
-  `ERR_SSL_CIPHER_OPERATION_FAILED` reaching the npm registry) and this workstation cannot reach
-  the live Neon Postgres database (pre-existing limitation, not introduced by this task). Code-
-  level verification (markup/CSS pairing traced by hand for all 8 required states, 21 automated
-  tests, static checks) was performed instead — see validation doc §20-§22. A maintainer with
-  browser access should open a member page and eyeball the 17-item real-browser test matrix
-  (validation doc's parent task Step 20) at least once.
+- Live-browser **rendering** (actual pixels: colors, bar widths, collapse/expand interaction,
+  keyboard navigation, 200% zoom, responsive breakpoints, browser console) was **not observed
+  directly** from this workstation — no local browser is available here (Playwright install
+  failed: `ERR_SSL_CIPHER_OPERATION_FAILED` reaching the npm registry), and this workstation
+  cannot open a direct Postgres connection to Neon (pre-existing limitation, not introduced by
+  this task; see `handover/member-schedule-vercel-neon-deployment-preparation-2026-07-10.md` §7).
+  What *was* confirmed live (§ Deployment above): the deployed JS/CSS assets contain the new code
+  (fetched directly, fresh `Last-Modified`), and the deployed API returns real production data
+  producing both a genuine warning case and a genuine healthy case through the unchanged formula
+  path. Code-level verification (markup/CSS pairing traced by hand for all 8 required states, 21
+  automated tests, static checks) covers the rest — see validation doc §20-§22. A maintainer with
+  browser access should still open a member page once and eyeball the 17-item real-browser test
+  matrix (validation doc's parent task Step 20) to confirm actual pixel rendering, keyboard
+  behavior, and the browser console.
 - The whole-number `scheduled_percentage`/`unscheduled_percentage` fields (pre-2026-07-14) remain
   in the API, still unused by the UI — noted as a future cleanup candidate in the 2026-07-17
   handover, unchanged by this task.
@@ -125,12 +147,14 @@ to their pre-2026-07-22 state and delete `web-view/js/calendar/summary-helpers.t
 
 ## One next step
 
-Once a maintainer has browser access to `https://management-aios.vercel.app/`: open any member's
-Daily/Weekly/Monthly Schedule Summary and confirm (a) the four percentages read clearly at a
-glance without opening "View detailed metrics", (b) a real warning day (if one exists in current
-data) shows the red treatment without a full-page red background, and (c) the disclosure opens/
-closes with the keyboard. No code change is expected if the automated tests and static checks in
-this handover hold.
+Once a maintainer has browser access to `https://management-aios.vercel.app/`: open Mayurika's
+Schedule Calendar and select **2026-07-22** — the live Daily report already confirmed (§ Deployment)
+a real warning case (40.0% Scheduled / 60.0% Unscheduled by count, 35.29% / 64.71% by duration).
+Confirm (a) the four percentages read clearly at a glance without opening "View detailed
+metrics", (b) that day's card shows the red warning treatment without a full-page red background,
+(c) Paraparan's current week (a real healthy case, § Deployment) shows the green/healthy
+treatment instead, and (d) the disclosure opens/closes with the keyboard. No code change is
+expected if the automated tests and static checks in this handover hold.
 
 ---
 
@@ -138,5 +162,8 @@ this handover hold.
 
 Code-level (formulas frozen, thresholds/boundaries unit-tested, backend/API/DB untouched,
 collapsed-by-default detail preserved verbatim, accessible native disclosure): **PASS**.
-Live-browser/production confirmation: **PENDING** (§ Deployment above) — to be closed out in the
-immediate follow-up commit.
+Live deployment (new JS/CSS confirmed on production, live API confirmed serving both a real
+warning case and a real healthy case through the unchanged formula path): **PASS**. Actual
+rendered-pixel/keyboard/console browser confirmation: **AMBER** — not observable from this
+workstation (§ Known limitations); recommended as the one remaining next step for a maintainer
+with browser access.
