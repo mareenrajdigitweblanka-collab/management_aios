@@ -94,10 +94,8 @@ accompanies this change.
 
 ## Commits
 
-(Recorded once created.)
-
-1. Restore task list after task detail and deletion
-2. Document task-list return validation
+1. `c43748c` — Restore task list after task detail and deletion
+2. `8e309ca` — Document task-list return validation
 
 ## Known limitations
 
