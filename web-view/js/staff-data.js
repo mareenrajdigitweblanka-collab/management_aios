@@ -4,6 +4,10 @@
    own helpers). The former inline DOMContentLoaded bootstrap now lives in app.js.
    No logic changed. */
 
+import { trapTab, returnFocus } from './ui/popup.js';
+import { renderSkeletonRows } from './ui/loading.js';
+import { mapApiError, classifyHttpStatus } from './ui/error-mapper.js';
+
 // DEV/FALLBACK-ONLY synthetic sample dataset — generated verbatim from
 // member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv.
 // No real employee name, NIC, or employee number appears here.
@@ -122,12 +126,21 @@ var STAFF_API_BASE = (function () {
 function staffApiRequest(url, signal) {
   return fetch(url, signal ? { signal: signal } : undefined).then(function (res) {
     if (!res.ok) {
-      return res.json().catch(function () { return {}; }).then(function (errBody) {
-        var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) : (res.status + ' ' + res.statusText);
-        throw new Error(detail);
+      return res.json().catch(function () { return {}; }).then(function () {
+        /* Tagged with a stable .code (Phase 1 professional-UX-feedback
+           task, 2026-07-22) so ui/error-mapper.js maps it to a plain-
+           language message — never a raw HTTP status/JSON body shown to
+           the user (see showError() below). */
+        var err = new Error('Request failed.');
+        err.code = classifyHttpStatus(res.status);
+        err.status = res.status;
+        throw err;
       });
     }
     return res.json();
+  }).catch(function (err) {
+    if (!err.code) { err.code = 'network'; }
+    throw err;
   });
 }
 
@@ -262,20 +275,26 @@ function ensureStaffDrawer() {
   var bodyEl = overlay.querySelector('.staff-drawer-body');
   var lastTrigger = null;
 
+  var drawerEl = overlay.querySelector('.staff-drawer');
+
   function close() {
     overlay.classList.remove('show');
     document.removeEventListener('keydown', onKeydown);
-    if (lastTrigger && typeof lastTrigger.focus === 'function') lastTrigger.focus();
+    returnFocus(lastTrigger);
     lastTrigger = null;
   }
   function onKeydown(e) {
     if (e.key === 'Escape') { close(); return; }
     if (e.key === 'Tab') {
-      // Single focusable control in the drawer body today (the close
-      // button) — keep focus trapped there rather than escaping to
-      // the page behind the scrim.
-      e.preventDefault();
-      closeBtn.focus();
+      /* Shared trap (Phase 1 professional-UX-feedback task, 2026-07-22)
+         — replaces the drawer's own single-control-only Tab pin with the
+         same generic multi-control trap the calendar popups use. The
+         drawer body today only ever contains the close button as a
+         focusable element, so this cycles to the same place the old
+         implementation pinned to; it also now supports any additional
+         focusable field the drawer body might gain in the future
+         without another rewrite. */
+      trapTab(drawerEl, e);
     }
   }
   closeBtn.addEventListener('click', close);
@@ -467,16 +486,16 @@ function mountStaffTableView(containerEl, viewLabel) {
   }
 
   function showSkeleton() {
-    var rowsHtml = '';
-    for (var i = 0; i < 6; i++) rowsHtml += '<div class="staff-table-skeleton-row"></div>';
-    regionEl.innerHTML = '<div class="staff-table-loading">Loading staff records…</div>' + rowsHtml;
+    regionEl.innerHTML = '<div class="staff-table-loading">Loading staff records…</div>' +
+      '<div class="staff-table-skeleton-wrap"></div>';
+    renderSkeletonRows(regionEl.querySelector('.staff-table-skeleton-wrap'), 6);
     pageInfoEl.textContent = '';
   }
 
-  function showError(message) {
-    regionEl.innerHTML = '<div class="staff-table-error" role="alert">Could not load staff records from the ' +
-      'Staff API (' + escapeHtml(STAFF_API_BASE) + '). Is the backend running? Start it with ' +
-      '"uvicorn backend.main:app --port 8000" — see backend/README.md. Detail: ' + escapeHtml(message) +
+  function showError(err) {
+    var mapped = mapApiError(err);
+    regionEl.innerHTML = '<div class="staff-table-error" role="alert">' + escapeHtml(mapped.title) +
+      ' — ' + escapeHtml(mapped.message) +
       '<br /><button type="button" class="staff-table-retry-btn">Retry</button></div>';
     var retryBtn = regionEl.querySelector('.staff-table-retry-btn');
     if (retryBtn) retryBtn.addEventListener('click', function () { state.lastSignature = null; doFetch(); });
@@ -505,7 +524,7 @@ function mountStaffTableView(containerEl, viewLabel) {
       renderBody();
     }).catch(function (err) {
       if (err && err.name === 'AbortError') return;
-      showError(err.message);
+      showError(err);
     });
   }
 

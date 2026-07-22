@@ -8,6 +8,8 @@
    navigation code. Search + data-goto jump behaviour preserved verbatim.
    Wired exactly once by app.js after DOMContentLoaded. */
 
+import { returnFocus } from './ui/popup.js';
+
 export function initNavigation() {
   'use strict';
 
@@ -57,29 +59,36 @@ export function initNavigation() {
     if (sidebarToggle) { sidebarToggle.setAttribute('aria-expanded', 'true'); }
   }
 
-  function closeDrawer(returnFocus) {
+  /* Focus always returns to the toggle button once the drawer actually
+     closes (Phase 1 professional-UX-feedback task, 2026-07-22) —
+     previously only the Escape path did this; backdrop click and
+     selecting a nav item left focus wherever it happened to land,
+     dropping keyboard users into content that had just been hidden.
+     The early return above (drawer already closed) means this never
+     steals focus on a no-op call. */
+  function closeDrawer() {
     if (!document.body.classList.contains('sidebar-open')) { return; }
     document.body.classList.remove('sidebar-open');
     if (sidebarToggle) {
       sidebarToggle.setAttribute('aria-expanded', 'false');
-      if (returnFocus) { sidebarToggle.focus(); }
+      returnFocus(sidebarToggle);
     }
   }
 
   if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener('click', function () {
       var isOpen = document.body.classList.contains('sidebar-open');
-      if (isOpen) { closeDrawer(false); } else { openDrawer(); }
+      if (isOpen) { closeDrawer(); } else { openDrawer(); }
     });
   }
 
   if (backdrop) {
-    backdrop.addEventListener('click', function () { closeDrawer(false); });
+    backdrop.addEventListener('click', function () { closeDrawer(); });
   }
 
   document.addEventListener('keydown', function (evt) {
     if (evt.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
-      closeDrawer(true);
+      closeDrawer();
     }
   });
 

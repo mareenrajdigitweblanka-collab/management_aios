@@ -10,6 +10,12 @@ import { MEMBER_SCHEDULE_API_BASE, MEMBER_LEAVE_API_BASE } from '../config.js';
 import {
   CATEGORY_CLASS, LEAVE_TYPE_DISPLAY_LABEL, formatLeaveCalendarLabel, expandWeekdaysClientSide, leaveDatesForItem, LEAVE_HALF_DAY_FIRST_DISPLAY, LEAVE_HALF_DAY_SECOND_DISPLAY, leaveDisplayTimeRange, PRIORITY_ORDER, PRIORITY_BADGE, MONTH_NAMES, DAY_HEADS, DAY_NAMES_FULL, TG_ROW_HEIGHT_PX, TG_HOURS, TG_DEFAULT_SCROLL_HOUR, pad, toDateStr, parseDateStr, timeToMinutes, minutesToTime, formatHourLabel, formatShortDate, formatDuration, formatPercentage, formatChange, getWeekStart, getReportWeekStart, getWeekDays, buildMonthGridCells, layoutOverlappingItems, escapeHtml, apiItemToFrontend, frontendToApiPayload
 } from './core.js';
+import { trapTab, returnFocus } from '../ui/popup.js';
+import { showToast } from '../ui/toast.js';
+import { confirmDestructive } from '../ui/dialog.js';
+import { setButtonBusy, showInlineLoading } from '../ui/loading.js';
+import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from '../ui/form-feedback.js';
+import { mapApiError, classifyHttpStatus } from '../ui/error-mapper.js';
 
 /* Builds and wires ONE independent calendar instance inside `container`.
    All element lookups are scoped to `container` — no ids are used for any
@@ -292,6 +298,7 @@ function mountScheduleCalendarInstance(container) {
   var nextBtn = container.querySelector('.msc-next');
   var selectedDateLabel = container.querySelector('.msc-selected-date-label');
   var fieldDate = container.querySelector('.msc-field-date');
+  if (fieldDate) { fieldDate.addEventListener('input', function () { clearFieldError(fieldDate); }); }
   var fieldTitle = container.querySelector('.msc-field-title');
   var fieldTitleCounter = container.querySelector('.msc-field-title-counter');
   var TITLE_MAX_LENGTH = 120;
@@ -306,7 +313,10 @@ function mountScheduleCalendarInstance(container) {
       'msc-field-title-counter--near-limit', len >= TITLE_MAX_LENGTH - 10
     );
   }
-  if (fieldTitle) { fieldTitle.addEventListener('input', updateTitleCounter); }
+  if (fieldTitle) {
+    fieldTitle.addEventListener('input', updateTitleCounter);
+    fieldTitle.addEventListener('input', function () { clearFieldError(fieldTitle); });
+  }
   var fieldCategory = container.querySelector('.msc-field-category');
   var fieldCategoryHelper = container.querySelector('.msc-field-category-helper');
   var fieldPriority = container.querySelector('.msc-field-priority');
@@ -546,19 +556,12 @@ function mountScheduleCalendarInstance(container) {
      always returns to "+ Create" per the confirmed requirement,
      regardless of what originally triggered the open (dropdown item
      or an Edit click from the Schedule Items list). */
-  function getFocusableEls(root) {
-    return Array.prototype.slice.call(root.querySelectorAll(
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
-      'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )).filter(function (el) { return el.offsetParent !== null; });
-  }
-
+  /* Delegates to the shared ui/popup.js trap (Phase 1 professional-UX-
+     feedback task, 2026-07-22) — same overlayEl-then-".msc-modal"
+     resolution the former local implementation used, so every existing
+     call site (unchanged below) keeps its exact prior Tab behavior. */
   function trapPopupTab(overlayEl, e) {
-    var focusables = getFocusableEls(overlayEl.querySelector('.msc-modal'));
-    if (!focusables.length) { return; }
-    var first = focusables[0], last = focusables[focusables.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    trapTab(overlayEl.querySelector('.msc-modal'), e);
   }
 
   function onTaskPopupKeydown(e) {
@@ -653,36 +656,46 @@ function mountScheduleCalendarInstance(container) {
         return res.json().catch(function () { return {}; }).then(function (errBody) {
           /* REQ-LEAVE-COPY-001: a task save blocked by active leave
              returns a raw 409 body ({error:"leave_conflict", message,
-             conflicts:[...]}) with no "detail" wrapper — surfaced here
-             with a clear, human-readable message rather than falling
-             through to a bare "409 Conflict". No status field exists
-             on a conflict entry (2026-07-16 simplification amendment). */
+             conflicts:[...]}) with no "detail" wrapper. Tagged with a
+             stable .code (Phase 1 professional-UX-feedback task,
+             2026-07-22) so ui/error-mapper.js can map it to a plain-
+             language message rather than any caller building one from
+             raw response text. No status field exists on a conflict
+             entry (2026-07-16 simplification amendment). */
+          var err;
           if (errBody && errBody.error === 'leave_conflict') {
-            var conflictSummary = (errBody.conflicts || []).map(function (c) {
-              var range = c.start_date === c.end_date ? c.start_date : (c.start_date + ' – ' + c.end_date);
-              return c.leave_type + ' (' + range + ')';
-            }).join('; ');
-            throw new Error((errBody.message || 'This task conflicts with active leave.') +
-              (conflictSummary ? ' [' + conflictSummary + ']' : ''));
+            err = new Error(errBody.message || 'This task conflicts with active leave.');
+            err.code = 'leave_conflict';
+            err.conflicts = errBody.conflicts || [];
+          } else {
+            err = new Error('Request failed.');
+            err.code = classifyHttpStatus(res.status);
           }
-          var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) : (res.status + ' ' + res.statusText);
-          throw new Error(detail);
+          err.status = res.status;
+          throw err;
         });
       }
       if (res.status === 204) { return null; }
       return res.json();
+    }).catch(function (err) {
+      /* A rejection that reaches here without a .code was never one of
+         our own deliberately-thrown errors above — it is fetch() itself
+         failing (offline, DNS, CORS, etc.), tagged 'network' so the
+         mapper shows a plain connectivity message rather than a raw
+         browser exception. */
+      if (!err.code) { err.code = 'network'; }
+      throw err;
     });
   }
 
   function loadItems() {
-    showApiStatus('Loading schedule from local API…', false);
+    showApiStatus('Loading your calendar…', false);
     return apiRequest('GET', apiBase).then(function (rows) {
       showApiStatus('', false);
       return (rows || []).map(apiItemToFrontend);
     }).catch(function (err) {
-      showApiStatus('Could not reach the local schedule API (' + apiBase + '). Is the backend ' +
-        'running? Start it with "uvicorn backend.main:app --port 8000" — see backend/README.md. ' +
-        'Detail: ' + err.message, true);
+      var mapped = mapApiError(err);
+      showApiStatus(mapped.title + ' — ' + mapped.message, true);
       return [];
     });
   }
@@ -1113,7 +1126,11 @@ function mountScheduleCalendarInstance(container) {
         commitItemTimeChange(it, it.date, minutesToTime(newStartMin), minutesToTime(newEndMin))
           .then(function () { renderActiveView(); })
           .catch(function (err) {
-            showApiStatus('Could not move this schedule item — reverted. Detail: ' + err.message, true);
+            var mapped = mapApiError(err);
+            showToast({
+              type: mapped.type, title: 'Could not move this task',
+              message: mapped.message + ' It was returned to its original time.', persistent: false
+            });
             renderActiveView();
           });
       }
@@ -1152,7 +1169,11 @@ function mountScheduleCalendarInstance(container) {
         commitItemTimeChange(it, it.date, it.start, minutesToTime(newEndMin))
           .then(function () { renderActiveView(); })
           .catch(function (err) {
-            showApiStatus('Could not resize this schedule item — reverted. Detail: ' + err.message, true);
+            var mapped = mapApiError(err);
+            showToast({
+              type: mapped.type, title: 'Could not resize this task',
+              message: mapped.message + ' It was returned to its original length.', persistent: false
+            });
             renderActiveView();
           });
       }
@@ -1417,6 +1438,12 @@ function mountScheduleCalendarInstance(container) {
      Shared across all five member instances via this one factory
      function; no member-specific logic. ── */
   function renderSummaryStats(el, report) {
+    /* Clears the aria-busy/loading state set by showInlineLoading() below
+       before this replaces the element's content (Phase 1 professional-
+       UX-feedback task, 2026-07-22) — aria-busy lives on `el` itself, not
+       inside its innerHTML, so it would otherwise persist after the
+       content it described was replaced. */
+    el.removeAttribute('aria-busy');
     /* Grouped into .msc-summary-group sections (counts + split
        percentages, coverage, comparison, leave) purely for visual
        structure (2026-07-14 responsive layout). The four split-
@@ -1469,10 +1496,13 @@ function mountScheduleCalendarInstance(container) {
 
   function loadDailySummary(dateStr) {
     dailySummaryTitleEl.textContent = 'Daily — ' + dateStr;
+    showInlineLoading(dailySummaryEl, 'Loading daily summary…');
     apiRequest('GET', apiBase + '/reports/daily?date=' + encodeURIComponent(dateStr)).then(function (report) {
       renderSummaryStats(dailySummaryEl, report);
-    }).catch(function () {
-      dailySummaryEl.innerHTML = '<p class="msc-empty">Could not load daily summary.</p>';
+    }).catch(function (err) {
+      var mapped = mapApiError(err);
+      dailySummaryEl.removeAttribute('aria-busy');
+      dailySummaryEl.innerHTML = '<p class="msc-empty" role="alert">' + mapped.title + ' — ' + mapped.message + '</p>';
     });
   }
 
@@ -1483,10 +1513,13 @@ function mountScheduleCalendarInstance(container) {
     // and the request always agree with what the response reports.
     var weekStartStr = toDateStr(getReportWeekStart(parseDateStr(dateStr)));
     weeklySummaryTitleEl.textContent = 'Weekly — week of ' + weekStartStr;
+    showInlineLoading(weeklySummaryEl, 'Loading weekly summary…');
     apiRequest('GET', apiBase + '/reports/weekly?week_start=' + encodeURIComponent(weekStartStr)).then(function (report) {
       renderSummaryStats(weeklySummaryEl, report);
-    }).catch(function () {
-      weeklySummaryEl.innerHTML = '<p class="msc-empty">Could not load weekly summary.</p>';
+    }).catch(function (err) {
+      var mapped = mapApiError(err);
+      weeklySummaryEl.removeAttribute('aria-busy');
+      weeklySummaryEl.innerHTML = '<p class="msc-empty" role="alert">' + mapped.title + ' — ' + mapped.message + '</p>';
     });
   }
 
@@ -1494,10 +1527,13 @@ function mountScheduleCalendarInstance(container) {
     var d = parseDateStr(dateStr);
     var monthStr = d.getFullYear() + '-' + pad(d.getMonth() + 1);
     monthlySummaryTitleEl.textContent = 'Monthly — ' + monthStr;
+    showInlineLoading(monthlySummaryEl, 'Loading monthly summary…');
     apiRequest('GET', apiBase + '/reports/monthly?month=' + encodeURIComponent(monthStr)).then(function (report) {
       renderSummaryStats(monthlySummaryEl, report);
-    }).catch(function () {
-      monthlySummaryEl.innerHTML = '<p class="msc-empty">Could not load monthly summary.</p>';
+    }).catch(function (err) {
+      var mapped = mapApiError(err);
+      monthlySummaryEl.removeAttribute('aria-busy');
+      monthlySummaryEl.innerHTML = '<p class="msc-empty" role="alert">' + mapped.title + ' — ' + mapped.message + '</p>';
     });
   }
 
@@ -1548,8 +1584,17 @@ function mountScheduleCalendarInstance(container) {
   cancelBtn.addEventListener('click', handleCancelEditClick);
 
   addBtn.addEventListener('click', function () {
-    if (!fieldDate.value) { window.alert('Choose a date on the calendar first.'); return; }
-    if (!fieldTitle.value.trim()) { window.alert('Enter a title (e.g. Prepare weekly report) before adding.'); return; }
+    clearFormErrors(formEl);
+    var hasError = false;
+    if (!fieldDate.value) {
+      setFieldError(fieldDate, 'Choose a date on the calendar first.');
+      hasError = true;
+    }
+    if (!fieldTitle.value.trim()) {
+      setFieldError(fieldTitle, 'Enter a title (e.g. Prepare weekly report).');
+      hasError = true;
+    }
+    if (hasError) { focusFirstInvalid(formEl); return; }
     var payload = frontendToApiPayload({
       date: fieldDate.value,
       title: fieldTitle.value.trim(),
@@ -1560,17 +1605,22 @@ function mountScheduleCalendarInstance(container) {
       notes: fieldNotes.value.trim()
     });
     var addedDate = fieldDate.value;
-    addBtn.disabled = true;
-    showApiStatus('Saving…', false, taskPopupStatusEl);
+    setButtonBusy(addBtn, true, { busyLabel: 'Saving…' });
+    showApiStatus('', false, taskPopupStatusEl);
     apiRequest('POST', apiBase, payload).then(function (apiItem) {
       items.push(apiItemToFrontend(apiItem));
-      showApiStatus('', false, taskPopupStatusEl);
       selectDate(addedDate);
       resetForm();
       closeTaskPopup();
+      showToast({ type: 'success', title: 'Task created', message: 'Your task was added to the calendar.' });
     }).catch(function (err) {
-      showApiStatus('Could not save this schedule item — the local API may be unavailable. Detail: ' + err.message, true, taskPopupStatusEl);
-    }).then(function () { addBtn.disabled = false; });
+      var mapped = mapApiError(err);
+      if (err.code === 'leave_conflict') {
+        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
+      } else {
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+      }
+    }).then(function () { setButtonBusy(addBtn, false); });
   });
 
   function editItem(id) {
@@ -1601,7 +1651,12 @@ function mountScheduleCalendarInstance(container) {
     if (!state.editingId) { return; }
     var it = items.filter(function (x) { return x.id === state.editingId; })[0];
     if (!it) { return; }
-    if (!fieldTitle.value.trim()) { window.alert('Enter a title before updating.'); return; }
+    clearFormErrors(formEl);
+    if (!fieldTitle.value.trim()) {
+      setFieldError(fieldTitle, 'Enter a title before updating.');
+      focusFirstInvalid(formEl);
+      return;
+    }
     var payload = frontendToApiPayload({
       date: fieldDate.value,
       title: fieldTitle.value.trim(),
@@ -1612,43 +1667,61 @@ function mountScheduleCalendarInstance(container) {
       notes: fieldNotes.value.trim()
     });
     var editingId = state.editingId;
-    updateBtn.disabled = true;
-    showApiStatus('Saving…', false, taskPopupStatusEl);
+    setButtonBusy(updateBtn, true, { busyLabel: 'Saving…' });
+    showApiStatus('', false, taskPopupStatusEl);
     apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiItem) {
       var updated = apiItemToFrontend(apiItem);
       var idx = items.indexOf(it);
       if (idx !== -1) { items[idx] = updated; }
-      showApiStatus('', false, taskPopupStatusEl);
       selectDate(updated.date);
       cancelEdit();
       closeTaskPopup();
+      showToast({ type: 'success', title: 'Task updated', message: 'Your changes were saved.' });
     }).catch(function (err) {
-      showApiStatus('Could not update this schedule item — the local API may be unavailable. Detail: ' + err.message, true, taskPopupStatusEl);
-    }).then(function () { updateBtn.disabled = false; });
+      var mapped = mapApiError(err);
+      if (err.code === 'leave_conflict') {
+        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
+      } else {
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+      }
+    }).then(function () { setButtonBusy(updateBtn, false); });
   });
 
   /* Returns a Promise<boolean> (true only on a confirmed, successful
      delete) so the task-detail popup's Delete button (Step 6) can close
      the popup only after the delete actually succeeds — every other
-     existing caller of deleteItem() ignores the return value, unchanged. */
-  function deleteItem(id) {
+     existing caller of deleteItem() ignores the return value, unchanged.
+     The native window.confirm() (Phase 1 professional-UX-feedback task,
+     2026-07-22) is replaced by the shared confirmDestructive() dialog —
+     the actual DELETE request now runs inside its onConfirm callback, so
+     the dialog itself shows the busy/"Working…" state and only closes
+     once the delete has actually succeeded (STRICTLY PRESERVE: same
+     confirm-then-delete order, same "declined = no request sent"
+     behavior, same successful-delete side effects below). */
+  function deleteItem(id, triggerEl) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return Promise.resolve(false); }
-    var ok = window.confirm('Delete "' + it.title + '"?\n\nThis will remove the schedule item from ' +
-      'Management AIOS. This action cannot be undone.');
-    if (!ok) { return Promise.resolve(false); }
-    showApiStatus('Deleting…', false);
-    return apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
-      items = items.filter(function (x) { return x.id !== id; });
-      showApiStatus('', false);
-      if (state.editingId === id) { cancelEdit(); }
-      renderActiveView();
-      renderPriorityPreview();
-      if (state.selectedDate) { loadSummaries(state.selectedDate); }
-      return true;
-    }).catch(function (err) {
-      showApiStatus('Could not delete this schedule item — the local API may be unavailable. Detail: ' + err.message, true);
-      return false;
+    return confirmDestructive({
+      title: 'Delete task?',
+      message: '“' + it.title + '” will be permanently removed from Management AIOS.',
+      confirmLabel: 'Delete task',
+      cancelLabel: 'Cancel',
+      trigger: triggerEl,
+      onConfirm: function () {
+        return apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
+          items = items.filter(function (x) { return x.id !== id; });
+          if (state.editingId === id) { cancelEdit(); }
+          renderActiveView();
+          renderPriorityPreview();
+          if (state.selectedDate) { loadSummaries(state.selectedDate); }
+          showToast({ type: 'success', title: 'Task deleted', message: 'The task was removed.' });
+          return true;
+        }).catch(function (err) {
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+          return false;
+        });
+      }
     });
   }
 
@@ -1687,9 +1760,7 @@ function mountScheduleCalendarInstance(container) {
     viewModal.classList.remove('show');
     viewModal.removeEventListener('keydown', onViewModalKeydown);
     currentViewItemId = null;
-    if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function') {
-      lastFocusedTrigger.focus();
-    }
+    returnFocus(lastFocusedTrigger);
     lastFocusedTrigger = null;
   }
 
@@ -1744,7 +1815,7 @@ function mountScheduleCalendarInstance(container) {
     viewDeleteBtn.addEventListener('click', function () {
       var id = currentViewItemId;
       if (!id) { return; }
-      deleteItem(id).then(function (deleted) {
+      deleteItem(id, viewDeleteBtn).then(function (deleted) {
         if (deleted) { closeViewModal(); }
       });
     });
@@ -1860,31 +1931,40 @@ function mountScheduleCalendarInstance(container) {
     return fetch(url, opts).then(function (res) {
       if (!res.ok) {
         return res.json().catch(function () { return {}; }).then(function (errBody) {
-          /* member-leave-overlap-prevention (2026-07-17): a create/
-             edit blocked by another active leave record this member
-             already holds returns a raw 409 body
-             ({error:"leave_overlap", message, conflicts:[...]}) with
-             no "detail" wrapper — same shape convention as the
-             existing leave_conflict (task-vs-leave) contract in
-             apiRequest() above. Tagged on the thrown Error so the
-             leave-create click handler can show it inline near the
-             form instead of a generic alert. */
+          /* member-leave-overlap-prevention (2026-07-17): a create/edit
+             blocked by another active leave record this member already
+             holds returns a raw 409 body ({error:"leave_overlap",
+             message, conflicts:[...]}) with no "detail" wrapper — same
+             shape convention as the existing leave_conflict (task-vs-
+             leave) contract in apiRequest() above. A leave create/edit
+             blocked by an existing Task returns the same shape tagged
+             error:"task_conflict" instead (member_leave.py). Both are
+             tagged with a stable .code (Phase 1 professional-UX-
+             feedback task, 2026-07-22) so ui/error-mapper.js maps them
+             to a plain-language message rather than any caller building
+             one from raw response text. */
+          var err;
           if (errBody && errBody.error === 'leave_overlap') {
-            var overlapErr = new Error(
-              errBody.message ||
-              'This member already has leave that overlaps the selected date or time.'
-            );
-            overlapErr.isLeaveOverlap = true;
-            overlapErr.conflicts = errBody.conflicts || [];
-            throw overlapErr;
+            err = new Error(errBody.message || 'This member already has leave that overlaps the selected date or time.');
+            err.code = 'leave_overlap';
+            err.conflicts = errBody.conflicts || [];
+          } else if (errBody && errBody.error === 'task_conflict') {
+            err = new Error(errBody.message || 'This leave request conflicts with one or more active tasks.');
+            err.code = 'task_conflict';
+            err.conflicts = errBody.conflicts || [];
+          } else {
+            err = new Error('Request failed.');
+            err.code = classifyHttpStatus(res.status);
           }
-          var detail = errBody && errBody.detail ? JSON.stringify(errBody.detail) :
-            (errBody && errBody.message ? errBody.message : (res.status + ' ' + res.statusText));
-          throw new Error(detail);
+          err.status = res.status;
+          throw err;
         });
       }
       if (res.status === 204) { return null; }
       return res.json();
+    }).catch(function (err) {
+      if (!err.code) { err.code = 'network'; }
+      throw err;
     });
   }
 
@@ -1925,6 +2005,7 @@ function mountScheduleCalendarInstance(container) {
   leaveFieldType.addEventListener('change', function () {
     updateLeaveFormFieldVisibility();
     showLeaveFormStatus('', false);
+    clearFormErrors(leaveFormEl);
   });
   updateLeaveFormFieldVisibility();
 
@@ -1942,7 +2023,12 @@ function mountScheduleCalendarInstance(container) {
   leaveCreateBtn.addEventListener('click', function () {
     var leaveType = leaveFieldType.value;
     showLeaveFormStatus('', false);
-    if (!leaveFieldStartDate.value) { window.alert('Choose a start date for this leave request.'); return; }
+    clearFormErrors(leaveFormEl);
+    var hasError = false;
+    if (!leaveFieldStartDate.value) {
+      setFieldError(leaveFieldStartDate, 'Choose a start date for this leave request.');
+      hasError = true;
+    }
     var payload = {
       leave_type: leaveType,
       start_date: leaveFieldStartDate.value,
@@ -1950,17 +2036,29 @@ function mountScheduleCalendarInstance(container) {
       external_reference: leaveFieldExternalReference.value.trim() || null
     };
     if (leaveType === 'Multi-Day') {
-      if (!leaveFieldEndDate.value) { window.alert('Choose an end date for Multi-Day leave.'); return; }
-      payload.end_date = leaveFieldEndDate.value;
+      if (!leaveFieldEndDate.value) {
+        setFieldError(leaveFieldEndDate, 'Choose an end date for Multi-Day leave.');
+        hasError = true;
+      } else {
+        payload.end_date = leaveFieldEndDate.value;
+      }
     }
     if (leaveType === 'Short Leave') {
-      if (!leaveFieldStartTime.value || !leaveFieldEndTime.value) {
-        window.alert('Short Leave requires both a start time and an end time.'); return;
+      if (!leaveFieldStartTime.value) {
+        setFieldError(leaveFieldStartTime, 'Enter a start time.');
+        hasError = true;
       }
-      payload.start_time = leaveFieldStartTime.value;
-      payload.end_time = leaveFieldEndTime.value;
+      if (!leaveFieldEndTime.value) {
+        setFieldError(leaveFieldEndTime, 'Enter an end time.');
+        hasError = true;
+      }
+      if (!hasError) {
+        payload.start_time = leaveFieldStartTime.value;
+        payload.end_time = leaveFieldEndTime.value;
+      }
     }
-    leaveCreateBtn.disabled = true;
+    if (hasError) { focusFirstInvalid(leaveFormEl); return; }
+    setButtonBusy(leaveCreateBtn, true, { busyLabel: 'Saving…' });
     leaveApiRequest('POST', leaveApiBase, payload).then(function (record) {
       leaveItems.push(record);
       resetLeaveForm();
@@ -1974,23 +2072,29 @@ function mountScheduleCalendarInstance(container) {
          Summary logic changed. */
       if (state.selectedDate) { loadSummaries(state.selectedDate); }
       closeLeavePopup();
+      showToast({ type: 'success', title: 'Leave added', message: 'The leave entry was added to the calendar.' });
     }).catch(function (err) {
-      /* member-leave-overlap-prevention (2026-07-17): on a 409
-         leave_overlap rejection, the form is deliberately NOT reset
-         (entered fields stay exactly as the user left them) and no
-         chip/list entry is created (leaveItems.push above never
-         runs on this path) — the backend rejected the write, so
-         nothing was ever stored. The message is shown inline next
-         to the form rather than a blocking window.alert, and focus
-         moves to the start-date field so the user can see/adjust
-         the conflicting date. */
-      if (err.isLeaveOverlap) {
-        showLeaveFormStatus(err.message, true);
-        if (leaveFieldStartDate && leaveFieldStartDate.focus) { leaveFieldStartDate.focus(); }
+      /* member-leave-overlap-prevention (2026-07-17) / leave-vs-task
+         conflict: on a 409 leave_overlap or task_conflict rejection, the
+         form is deliberately NOT reset (entered fields stay exactly as
+         the user left them) and no chip/list entry is created
+         (leaveItems.push above never runs on this path) — the backend
+         rejected the write, so nothing was ever stored. Shown inline
+         next to the form (a conflict tied directly to this open form),
+         never as a toast, so the same message never appears in two
+         places at once (Step 12). Any other failure (network/server/
+         unexpected) is shown as a toast instead, since it isn't tied to
+         a specific field the user can fix on the spot. */
+      var mapped = mapApiError(err);
+      if (err.code === 'leave_overlap' || err.code === 'task_conflict') {
+        showLeaveFormStatus(mapped.title + ' — ' + mapped.message, true);
+        if (err.code === 'leave_overlap' && leaveFieldStartDate && leaveFieldStartDate.focus) {
+          leaveFieldStartDate.focus();
+        }
       } else {
-        window.alert('Could not create this leave request. Detail: ' + err.message);
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
       }
-    }).then(function () { leaveCreateBtn.disabled = false; });
+    }).then(function () { setButtonBusy(leaveCreateBtn, false); });
   });
 
   /* Soft-deletes an active leave record (2026-07-16 simplification
@@ -1998,18 +2102,27 @@ function mountScheduleCalendarInstance(container) {
      Cancelled/Rejected status). Confirms first, then refreshes the
      calendar, the leave list, and the leave-deduction reports. */
   function deleteLeaveRecord(leaveId, btn) {
-    if (!window.confirm('Delete this leave record? This cannot be undone from the calendar.')) {
-      return;
-    }
-    if (btn) { btn.disabled = true; }
-    leaveApiRequest('DELETE', leaveApiBase + '/' + encodeURIComponent(leaveId)).then(function () {
-      leaveItems = leaveItems.filter(function (lv) { return lv.id !== leaveId; });
-      renderActiveView();
-      renderLeaveList();
-      if (state.selectedDate) { loadSummaries(state.selectedDate); }
-    }).catch(function (err) {
-      window.alert('Could not delete this leave record. Detail: ' + err.message);
-    }).then(function () { if (btn) { btn.disabled = false; } });
+    return confirmDestructive({
+      title: 'Delete leave?',
+      message: 'This leave entry will be permanently removed from the calendar.',
+      confirmLabel: 'Delete leave',
+      cancelLabel: 'Cancel',
+      trigger: btn,
+      onConfirm: function () {
+        return leaveApiRequest('DELETE', leaveApiBase + '/' + encodeURIComponent(leaveId)).then(function () {
+          leaveItems = leaveItems.filter(function (lv) { return lv.id !== leaveId; });
+          renderActiveView();
+          renderLeaveList();
+          if (state.selectedDate) { loadSummaries(state.selectedDate); }
+          showToast({ type: 'success', title: 'Leave deleted', message: 'The leave entry was removed.' });
+          return true;
+        }).catch(function (err) {
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+          return false;
+        });
+      }
+    });
   }
 
   function renderLeaveList() {
