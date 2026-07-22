@@ -119,10 +119,8 @@ fully undoes it.
 
 ## Commits
 
-(Recorded once created.)
-
-1. Improve calendar popup and task-list navigation UX
-2. Document calendar popup and return-flow validation
+1. `c7435f7` — Improve calendar popup and task-list navigation UX
+2. `3d2f479` — Document calendar popup and return-flow validation
 
 ## Known limitations
 
