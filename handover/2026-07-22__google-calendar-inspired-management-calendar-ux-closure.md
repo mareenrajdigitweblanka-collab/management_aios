@@ -74,7 +74,7 @@ Revert the four modified `web-view/` files (`css/calendar.css`, `css/navigation.
 
 ## 13. Commits
 
-_Populated after commit — see git log for the exact hash(es) once created in this session._
+`e2d685c` — "Redesign Schedule Calendar toward a Google-Calendar-inspired layout" (7 files changed, main branch, parent `34958a9`).
 
 ## 14. Known limitations
 

@@ -260,11 +260,11 @@ Not run — no backend code changed (see AU).
 
 ## BB. Commit hashes
 
-See the handover document (populated after commit).
+`e2d685c` — "Redesign Schedule Calendar toward a Google-Calendar-inspired layout" (7 files changed, 600 insertions, 268 deletions; parent `34958a9`).
 
 ## BC. Push result
 
-See the handover document (populated after commit/push — push requires explicit confirmation before it is run).
+Not pushed yet as of this writing — pending explicit user confirmation (push to `origin/main` is a shared-state action requiring go-ahead per this session's operating rules).
 
 ## BD. Deployment result
 
@@ -277,6 +277,7 @@ Confirmed via `git status --short -- member-aios/mayurika-hr/staff-data/` at bot
 ## BF. Evidence paths
 
 Local-only verification artifacts (not part of the repository, not committed):
+
 - `chromium screenshots` — captured under a session-scratch `verify/screenshots/` directory (Month view, Create chooser, Task Details, blank-click-on-busy-date, Leave Details, "+N more" full list) and `verify/screenshots/responsive/` (1920×1080, 1366×768, 1024, 768, 390 viewports).
 - `verify/mock_api.py` — throwaway local mock of the FastAPI member-schedule/leave API (canned JSON matching the real `MemberScheduleEventOut`/`MemberLeaveRecordOut`/`*ScheduleReportOut` schemas), used only because no local PostgreSQL instance was available in this environment (see BH). Never part of the repository.
 - `verify/check.js`, `verify/members.js`, `verify/responsive.js` — puppeteer-core driver scripts used for the interaction/structural/responsive checks summarized in this document.
