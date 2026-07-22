@@ -39,6 +39,11 @@ function mountScheduleCalendarInstance(container) {
   var createMenuId = 'msc-create-menu-' + memberKey;
   var taskPopupTitleId = 'msc-task-popup-title-' + memberKey;
   var leavePopupTitleId = 'msc-leave-popup-title-' + memberKey;
+  /* Same per-instance-unique-id rule (calendar-based Leave detail popup,
+     2026-07-22 member-page-layout task) — the Leave-detail view popup's
+     aria-labelledby target, mirroring viewTitleId's role for the Task
+     detail popup above. */
+  var leaveViewTitleId = 'msc-leave-view-title-' + memberKey;
   /* Same per-instance-unique-id rule (task-detail "+N more" popup,
      2026-07-20 calendar-task-detail-and-more-popup task). */
   var morePopupTitleId = 'msc-more-popup-title-' + memberKey;
@@ -149,22 +154,13 @@ function mountScheduleCalendarInstance(container) {
        popup. The lower-page Schedule Item list was removed 2026-07-20
        (calendar-task-detail-and-more-popup task) — every Task click
        (Month chip, Week/Day block, all-day chip, "+N more" popup row)
-       now opens the shared msc-view-modal task-detail popup instead;
-       only the Leave Coordination list remains in its prior page
-       position, followed by the Priority Preview list-card.) ── */
-    '<div class="hr-table-card msc-leave-card">' +
-    '<div class="msc-leave-card-head">' +
-    '<h4 class="msc-leave-title"><span class="msc-leave-title-icon" aria-hidden="true">&#128197;</span>Leave Coordination ' +
-    '<span style="font-weight:600;color:var(--muted);">(Calendar Copy)</span></h4>' +
-    '<p class="msc-leave-subtitle">Track and coordinate leave for ' + escapeHtml(memberLabel) +
-    ' on this calendar. Use + Create &#8594; Leave to add a new request.</p>' +
-    '</div>' +
-    '<div class="msc-leave-section">' +
-    '<div class="msc-leave-section-title">Leave — ' +
-    '<span class="msc-leave-list-date-label">select a date</span></div>' +
-    '<div class="msc-leave-list"><p class="msc-leave-empty">Select a date on the calendar to see leave for that date.</p></div>' +
-    '</div>' +
-    '</div>' +
+       opens the shared msc-view-modal task-detail popup. The separate
+       Leave Coordination list card was removed 2026-07-22
+       (member-page-layout-leave-popup-collapse-and-ph-staff task) —
+       Leave is now viewed/edited/deleted by clicking a red Leave item
+       directly on the calendar (see msc-leave-view-modal below), so
+       Schedule Summary is followed immediately by the Priority
+       Preview list-card.) ── */
     '<div class="hr-table-card">' +
     '<div class="msc-list-card">' +
     '<div class="hr-table-title" style="margin-bottom:6px;">Priority Preview — Today (Sample/Demo)</div>' +
@@ -194,6 +190,37 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-view-actions">' +
     '<button type="button" class="msc-btn msc-btn-danger msc-view-delete-btn">Delete</button>' +
     '<button type="button" class="msc-btn msc-btn-primary msc-view-edit-btn">Edit</button>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
+    /* ── Shared Leave-detail popup (calendar-based Leave management,
+       2026-07-22 member-page-layout task) — the ONE Leave-detail popup
+       used by every calendar view (Month leave chip, Week/Day all-day
+       leave chip, Week/Day timed leave block). Mirrors the Task-detail
+       popup above (same .msc-modal-overlay/.msc-view-modal-inner/
+       .msc-view-actions structure) so Leave gets the same professional
+       treatment without a second popup framework. Fields are the
+       existing Leave fields only (type/date-range/time/purpose/
+       external reference/leave-deduction minutes where already
+       available) — no new field invented. Edit/Delete reuse the
+       existing Leave create form and deleteLeaveRecord()/leaveApiRequest()
+       functions; nothing new is added to the backend/API contract. */
+    '<div class="msc-modal-overlay msc-leave-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(leaveViewTitleId) + '">' +
+    '<div class="msc-modal msc-view-modal-inner">' +
+    '<div class="msc-view-modal-head">' +
+    '<span class="msc-view-color-dot leave" aria-hidden="true"></span>' +
+    '<h4 class="msc-view-title" id="' + escapeHtml(leaveViewTitleId) + '">Leave details</h4>' +
+    '<button type="button" class="msc-modal-close msc-leave-view-close" aria-label="Close">&times;</button>' +
+    '</div>' +
+    '<p class="msc-leave-view-type"></p>' +
+    '<p class="msc-leave-view-date"></p>' +
+    '<p class="msc-leave-view-time"></p>' +
+    '<p class="msc-leave-view-purpose"></p>' +
+    '<p class="msc-leave-view-reference"></p>' +
+    '<p class="msc-leave-view-deduction"></p>' +
+    '<div class="msc-view-actions">' +
+    '<button type="button" class="msc-btn msc-btn-danger msc-leave-view-delete-btn">Delete</button>' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-leave-view-edit-btn">Edit</button>' +
     '</div>' +
     '</div>' +
     '</div>' +
@@ -270,7 +297,7 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-modal-overlay msc-leave-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(leavePopupTitleId) + '">' +
     '<div class="msc-modal msc-modal-form">' +
     '<div class="msc-modal-form-head">' +
-    '<h4 id="' + escapeHtml(leavePopupTitleId) + '">Create Leave</h4>' +
+    '<h4 class="msc-leave-popup-heading" id="' + escapeHtml(leavePopupTitleId) + '">Create Leave</h4>' +
     '<button type="button" class="msc-modal-close msc-leave-popup-close" aria-label="Close">&times;</button>' +
     '</div>' +
     '<div class="msc-leave-notice"><span class="msc-leave-notice-icon" aria-hidden="true">&#8505;&#65039;</span>' +
@@ -298,6 +325,8 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-note msc-api-status msc-leave-form-status" style="display:none;"></p>' +
     '<div class="msc-form-actions">' +
     '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-leave-update-btn" style="display:none;">Update leave</button>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-leave-cancel-btn" style="display:none;">Cancel edit</button>' +
     '</div>' +
     '</div>' +
     '</div>' +
@@ -402,9 +431,23 @@ function mountScheduleCalendarInstance(container) {
   var leaveFieldPurpose = container.querySelector('.msc-leave-field-purpose');
   var leaveFieldExternalReference = container.querySelector('.msc-leave-field-external-reference');
   var leaveCreateBtn = container.querySelector('.msc-leave-create-btn');
-  var leaveListDateLabel = container.querySelector('.msc-leave-list-date-label');
-  var leaveListEl = container.querySelector('.msc-leave-list');
+  var leaveUpdateBtn = container.querySelector('.msc-leave-update-btn');
+  var leaveCancelBtn = container.querySelector('.msc-leave-cancel-btn');
+  var leavePopupHeading = container.querySelector('.msc-leave-popup-heading');
   var leaveFormStatusEl = container.querySelector('.msc-leave-form-status');
+
+  /* ── Leave-detail popup scoped refs (calendar-based Leave management,
+     2026-07-22 member-page-layout task) ── */
+  var leaveViewModal = container.querySelector('.msc-leave-view-modal');
+  var leaveViewClose = container.querySelector('.msc-leave-view-close');
+  var leaveViewType = container.querySelector('.msc-leave-view-type');
+  var leaveViewDate = container.querySelector('.msc-leave-view-date');
+  var leaveViewTime = container.querySelector('.msc-leave-view-time');
+  var leaveViewPurpose = container.querySelector('.msc-leave-view-purpose');
+  var leaveViewReference = container.querySelector('.msc-leave-view-reference');
+  var leaveViewDeduction = container.querySelector('.msc-leave-view-deduction');
+  var leaveViewEditBtn = container.querySelector('.msc-leave-view-edit-btn');
+  var leaveViewDeleteBtn = container.querySelector('.msc-leave-view-delete-btn');
 
   if (leaveFormEl) { leaveFormEl.addEventListener('submit', function (e) { e.preventDefault(); }); }
 
@@ -609,6 +652,7 @@ function mountScheduleCalendarInstance(container) {
         cancelEdit();
         openTaskPopup();
       } else if (kind === 'leave') {
+        cancelLeaveEdit(false);
         openLeavePopup();
       }
     });
@@ -881,13 +925,14 @@ function mountScheduleCalendarInstance(container) {
          the task chips above (own class, own colors), never using
          CATEGORY_CLASS. Deleted leave is never in `leaveItems`
          (server-filtered on deleted_at IS NULL), so it never renders
-         here. Step 9: leave chips never navigate to the Schedule Item
-         list — no role/tabindex added, and their own click handler
-         below only stops propagation (relevant on a mixed task+leave
-         cell, where the cell background itself is actionable). */
+         here. A click opens the shared Leave-detail popup
+         (viewLeaveItem(), calendar-based Leave management, 2026-07-22
+         member-page-layout task) — the same popup Week/Day leave
+         chips/blocks use below. */
       leaveItemsForDate(c.dateStr).forEach(function (lv) {
         var label = formatLeaveCalendarLabel(lv);
-        html += '<span class="msc-cal-chip-leave" title="' + escapeHtml(label) + '">' +
+        html += '<span class="msc-cal-chip-leave" data-leave-id="' + lv.id + '" role="button" tabindex="0" ' +
+          'title="' + escapeHtml(label) + '" aria-label="View leave details: ' + escapeHtml(label) + '">' +
           escapeHtml(label) + '</span>';
       });
       html += '</div>';
@@ -930,7 +975,12 @@ function mountScheduleCalendarInstance(container) {
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
     });
     calGrid.querySelectorAll('.msc-cal-chip-leave').forEach(function (chip) {
-      chip.addEventListener('click', function (e) { e.stopPropagation(); });
+      var go = function (e) {
+        e.stopPropagation();
+        viewLeaveItem(chip.getAttribute('data-leave-id'), chip);
+      };
+      chip.addEventListener('click', go);
+      chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
     });
   }
 
@@ -983,12 +1033,15 @@ function mountScheduleCalendarInstance(container) {
       });
       /* Full-Day / Multi-Day leave renders here (all-day style), not
          as a fake timed block — Short Leave / Half-Day render in the
-         timed area below instead. */
+         timed area below instead. A click opens the shared Leave-
+         detail popup (viewLeaveItem(), same popup the Month leave
+         chip uses). */
       leaveItemsForDate(dateStr).filter(function (lv) {
         return lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day';
       }).forEach(function (lv) {
         var label = formatLeaveCalendarLabel(lv);
-        alldayHtml += '<div class="msc-tg-allday-chip-leave" title="' + escapeHtml(label) + '">' +
+        alldayHtml += '<div class="msc-tg-allday-chip-leave" data-leave-id="' + lv.id + '" role="button" tabindex="0" ' +
+          'title="' + escapeHtml(label) + '" aria-label="View leave details: ' + escapeHtml(label) + '">' +
           escapeHtml(label) + '</div>';
       });
       alldayHtml += '</div>';
@@ -1028,11 +1081,13 @@ function mountScheduleCalendarInstance(container) {
           '<div class="msc-tg-resize-handle" aria-hidden="true"></div>' +
           '</div>';
       });
-      /* Short Leave / Half-Day leave blocks — non-interactive
-         (pointer-events:none via CSS, no data-id, never passed to
-         wireTimeGridInteractions), so they can never be dragged or
-         resized. Editing/removal goes through the leave form /
-         Delete Leave action only. */
+      /* Short Leave / Half-Day leave blocks — never dragged or resized
+         (no drag/resize handle, never passed to attachDragHandlers/
+         attachResizeHandler), but now click-to-view (calendar-based
+         Leave management, 2026-07-22 member-page-layout task): a click
+         opens the shared Leave-detail popup (viewLeaveItem()); Edit/
+         Delete from that popup remain the only way to change or remove
+         a leave record. */
       leaveItemsForDate(dateStr).forEach(function (lv) {
         var range = leaveDisplayTimeRange(lv);
         if (!range || !range.start || !range.end) { return; }
@@ -1041,9 +1096,9 @@ function mountScheduleCalendarInstance(container) {
         var leaveTop = leaveStart / 60 * TG_ROW_HEIGHT_PX;
         var leaveHeight = Math.max(18, (leaveEnd - leaveStart) / 60 * TG_ROW_HEIGHT_PX);
         var label = formatLeaveCalendarLabel(lv);
-        bodyHtml += '<div class="msc-tg-leave-block" ' +
+        bodyHtml += '<div class="msc-tg-leave-block" data-leave-id="' + lv.id + '" role="button" tabindex="0" ' +
           'style="top:' + leaveTop + 'px;height:' + leaveHeight + 'px;left:2%;width:96%;" ' +
-          'title="' + escapeHtml(label) + '">' +
+          'title="View leave details: ' + escapeHtml(label) + '" aria-label="View leave details: ' + escapeHtml(label) + '">' +
           escapeHtml(label) + '</div>';
       });
       if (dateStr === todayStr) {
@@ -1282,6 +1337,14 @@ function mountScheduleCalendarInstance(container) {
         viewItem(chipEl.getAttribute('data-id'), chipEl);
       });
     });
+    gridRootEl.querySelectorAll('.msc-tg-allday-chip-leave').forEach(function (chipEl) {
+      var go = function (e) {
+        e.stopPropagation();
+        viewLeaveItem(chipEl.getAttribute('data-leave-id'), chipEl);
+      };
+      chipEl.addEventListener('click', go);
+      chipEl.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
+    });
     gridRootEl.querySelectorAll('.msc-tg-event').forEach(function (eventEl) {
       var id = eventEl.getAttribute('data-id');
       var it = items.filter(function (x) { return x.id === id; })[0];
@@ -1291,13 +1354,18 @@ function mountScheduleCalendarInstance(container) {
       if (handle) attachResizeHandler(handle, eventEl, it);
     });
     /* Short/Half-Day leave blocks intercept their own click (pointer-
-       events:auto, calendar.css) and do nothing with it beyond stopping
-       propagation — same click-is-inert convention Month's
-       .msc-cal-chip-leave already uses. Prevents a click landing on a
+       events:auto, calendar.css) and open the shared Leave-detail popup
+       (calendar-based Leave management, 2026-07-22 member-page-layout
+       task) — e.stopPropagation() still prevents a click landing on a
        leave block from falling through to the empty hourcell beneath
        and opening the create chooser (Step 7, 2026-07-20). */
     gridRootEl.querySelectorAll('.msc-tg-leave-block').forEach(function (blockEl) {
-      blockEl.addEventListener('click', function (e) { e.stopPropagation(); });
+      var go = function (e) {
+        e.stopPropagation();
+        viewLeaveItem(blockEl.getAttribute('data-leave-id'), blockEl);
+      };
+      blockEl.addEventListener('click', go);
+      blockEl.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
     });
   }
 
@@ -1445,12 +1513,10 @@ function mountScheduleCalendarInstance(container) {
     state.viewYear = d.getFullYear();
     state.viewMonth = d.getMonth();
     selectedDateLabel.textContent = dateStr;
-    if (leaveListDateLabel) { leaveListDateLabel.textContent = dateStr; }
     syncSelectedDateToForms(dateStr);
     cancelEdit();
     renderActiveView();
     renderPriorityPreview();
-    renderLeaveList();
     loadSummaries(dateStr);
   }
 
@@ -2393,7 +2459,6 @@ function mountScheduleCalendarInstance(container) {
       leaveItems.push(record);
       resetLeaveForm();
       renderActiveView();
-      renderLeaveList();
       /* Refresh leave-deduction reporting on successful save (Step 13,
          2026-07-20 popup workflow) — same guarded call
          deleteLeaveRecord() below already uses; previously only
@@ -2427,10 +2492,136 @@ function mountScheduleCalendarInstance(container) {
     }).then(function () { setButtonBusy(leaveCreateBtn, false); });
   });
 
+  /* ── Leave popup create/edit mode toggle (calendar-based Leave
+     management, 2026-07-22 member-page-layout task) — mirrors the Task
+     popup's Add/Update/Cancel triple-button pattern above. editingLeaveId
+     is null in create mode (the pre-existing behavior, entirely
+     unchanged) and set only while editing an existing Leave record from
+     the Leave-detail popup's Edit button. ── */
+  var editingLeaveId = null;
+
+  function setLeavePopupMode(isEdit) {
+    if (leavePopupHeading) { leavePopupHeading.textContent = isEdit ? 'Edit leave' : 'Create Leave'; }
+    leaveCreateBtn.style.display = isEdit ? 'none' : '';
+    leaveUpdateBtn.style.display = isEdit ? '' : 'none';
+    leaveCancelBtn.style.display = isEdit ? '' : 'none';
+  }
+
+  /* Entered only from the Leave-detail popup's Edit button (see
+     viewLeaveEditBtn below) — prefills the existing Leave create form
+     with this record's existing values (same fields, same API contract)
+     and opens it in edit mode. */
+  function editLeaveItem(id) {
+    var lv = leaveItems.filter(function (x) { return x.id === id; })[0];
+    if (!lv) { return; }
+    editingLeaveId = id;
+    showLeaveFormStatus('', false);
+    clearFormErrors(leaveFormEl);
+    leaveFieldType.value = lv.leave_type;
+    leaveFieldStartDate.value = lv.start_date || '';
+    leaveFieldEndDate.value = lv.end_date || '';
+    leaveFieldStartTime.value = lv.start_time ? lv.start_time.slice(0, 5) : '';
+    leaveFieldEndTime.value = lv.end_time ? lv.end_time.slice(0, 5) : '';
+    leaveFieldPurpose.value = lv.purpose || '';
+    leaveFieldExternalReference.value = lv.external_reference || '';
+    updateLeaveFormFieldVisibility();
+    setLeavePopupMode(true);
+    openLeavePopup();
+  }
+
+  /* Cancel Edit (Step 7 "Cancel Edit returns to Leave details, not to a
+     blank Create Leave form") — closes the popup, resets it back to
+     create mode/blank fields, and reopens the Leave-detail popup for the
+     record that was being edited rather than leaving the user on a bare
+     calendar. Also used (with no reopen) by the "+Create > Leave" menu
+     item below, so a stale edit-in-progress never leaks into a fresh
+     Create Leave open. */
+  function cancelLeaveEdit(reopenDetailView) {
+    var id = editingLeaveId;
+    editingLeaveId = null;
+    resetLeaveForm();
+    setLeavePopupMode(false);
+    showLeaveFormStatus('', false);
+    clearFormErrors(leaveFormEl);
+    if (reopenDetailView && id) {
+      closeLeavePopup();
+      viewLeaveItem(id, lastFocusedLeaveTrigger);
+    }
+  }
+
+  leaveCancelBtn.addEventListener('click', function () { cancelLeaveEdit(true); });
+
+  leaveUpdateBtn.addEventListener('click', function () {
+    if (!editingLeaveId) { return; }
+    var leaveType = leaveFieldType.value;
+    showLeaveFormStatus('', false);
+    clearFormErrors(leaveFormEl);
+    var hasError = false;
+    if (!leaveFieldStartDate.value) {
+      setFieldError(leaveFieldStartDate, 'Choose a start date for this leave request.');
+      hasError = true;
+    }
+    var payload = {
+      leave_type: leaveType,
+      start_date: leaveFieldStartDate.value,
+      purpose: leaveFieldPurpose.value.trim() || null,
+      external_reference: leaveFieldExternalReference.value.trim() || null
+    };
+    if (leaveType === 'Multi-Day') {
+      if (!leaveFieldEndDate.value) {
+        setFieldError(leaveFieldEndDate, 'Choose an end date for Multi-Day leave.');
+        hasError = true;
+      } else {
+        payload.end_date = leaveFieldEndDate.value;
+      }
+    }
+    if (leaveType === 'Short Leave') {
+      if (!leaveFieldStartTime.value) {
+        setFieldError(leaveFieldStartTime, 'Enter a start time.');
+        hasError = true;
+      }
+      if (!leaveFieldEndTime.value) {
+        setFieldError(leaveFieldEndTime, 'Enter an end time.');
+        hasError = true;
+      }
+      if (!hasError) {
+        payload.start_time = leaveFieldStartTime.value;
+        payload.end_time = leaveFieldEndTime.value;
+      }
+    }
+    if (hasError) { focusFirstInvalid(leaveFormEl); return; }
+    var editedId = editingLeaveId;
+    setButtonBusy(leaveUpdateBtn, true, { busyLabel: 'Saving…' });
+    leaveApiRequest('PUT', leaveApiBase + '/' + encodeURIComponent(editedId), payload).then(function (record) {
+      var idx = -1;
+      for (var i = 0; i < leaveItems.length; i++) { if (leaveItems[i].id === editedId) { idx = i; break; } }
+      if (idx !== -1) { leaveItems[idx] = record; }
+      renderActiveView();
+      if (state.selectedDate) { loadSummaries(state.selectedDate); }
+      editingLeaveId = null;
+      resetLeaveForm();
+      setLeavePopupMode(false);
+      closeLeavePopup();
+      /* Reopen Leave details with the updated record where practical
+         (Step 7), same pattern as the Task Update flow's origin-aware
+         reopen above. */
+      viewLeaveItem(editedId, lastFocusedLeaveTrigger);
+      showToast({ type: 'success', title: 'Leave updated', message: 'Your changes were saved.' });
+    }).catch(function (err) {
+      var mapped = mapApiError(err);
+      if (err.code === 'leave_overlap' || err.code === 'task_conflict') {
+        showLeaveFormStatus(mapped.title + ' — ' + mapped.message, true);
+      } else {
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+      }
+    }).then(function () { setButtonBusy(leaveUpdateBtn, false); });
+  });
+
   /* Soft-deletes an active leave record (2026-07-16 simplification
      amendment — the only removal mechanism now that there is no
      Cancelled/Rejected status). Confirms first, then refreshes the
-     calendar, the leave list, and the leave-deduction reports. */
+     calendar and the leave-deduction reports. Reused unchanged by the
+     Leave-detail popup's Delete button below. */
   function deleteLeaveRecord(leaveId, btn) {
     return confirmDestructive({
       title: 'Delete leave?',
@@ -2442,7 +2633,6 @@ function mountScheduleCalendarInstance(container) {
         return leaveApiRequest('DELETE', leaveApiBase + '/' + encodeURIComponent(leaveId)).then(function () {
           leaveItems = leaveItems.filter(function (lv) { return lv.id !== leaveId; });
           renderActiveView();
-          renderLeaveList();
           if (state.selectedDate) { loadSummaries(state.selectedDate); }
           showToast({ type: 'success', title: 'Leave deleted', message: 'The leave entry was removed.' });
           return true;
@@ -2455,34 +2645,84 @@ function mountScheduleCalendarInstance(container) {
     });
   }
 
-  function renderLeaveList() {
-    if (!state.selectedDate) {
-      leaveListEl.innerHTML = '<p class="msc-leave-empty">Select a date on the calendar to see leave for that date.</p>';
-      return;
+  /* ── Shared Leave-detail popup (calendar-based Leave management,
+     2026-07-22 member-page-layout task) — mirrors the Task view-modal's
+     open/close/Edit/Delete wiring above (lastFocusedTrigger/
+     currentViewItemId/closeViewModal/viewItem), scoped to Leave's own
+     modal/fields/state so neither implementation touches the other. ── */
+  var lastFocusedLeaveTrigger = null;
+  var currentViewLeaveId = null;
+
+  function onLeaveViewModalKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeLeaveViewModal(); }
+    else if (e.key === 'Tab') { trapPopupTab(leaveViewModal, e); }
+  }
+
+  function closeLeaveViewModal() {
+    leaveViewModal.classList.remove('show');
+    leaveViewModal.removeEventListener('keydown', onLeaveViewModalKeydown);
+    currentViewLeaveId = null;
+    var trigger = lastFocusedLeaveTrigger;
+    lastFocusedLeaveTrigger = null;
+    returnFocus(trigger);
+  }
+
+  /* The ONE shared Leave-detail popup for Month/Week/Day/all-day (Step
+     5) — every call site (Month leave chip, Week/Day all-day leave
+     chip, Week/Day timed leave block) calls this same function. Fields
+     are the existing Leave fields only — no new field invented; the
+     leave-deduction minutes line is shown only when the backend already
+     returned effective_leave_minutes for this record (same value the
+     former Leave Coordination list already displayed). */
+  function viewLeaveItem(id, triggerEl) {
+    var lv = leaveItems.filter(function (x) { return x.id === id; })[0];
+    if (!lv) { return; }
+    currentViewLeaveId = id;
+    if (leaveViewType) { leaveViewType.textContent = 'Leave type: ' + formatLeaveCalendarLabel(lv); }
+    var dateRange = lv.start_date === lv.end_date ? lv.start_date : (lv.start_date + ' – ' + lv.end_date);
+    if (leaveViewDate) { leaveViewDate.textContent = 'Date: ' + dateRange; }
+    var range = leaveDisplayTimeRange(lv);
+    if (leaveViewTime) {
+      leaveViewTime.textContent = (range && range.start && range.end)
+        ? 'Time: ' + range.start + ' – ' + range.end
+        : 'Time: Not set';
     }
-    var dayLeave = leaveItemsForDate(state.selectedDate);
-    if (!dayLeave.length) {
-      leaveListEl.innerHTML = '<p class="msc-leave-empty">No leave for ' +
-        escapeHtml(memberLabel) + ' on ' + state.selectedDate + '.</p>';
-      return;
+    if (leaveViewPurpose) { leaveViewPurpose.textContent = 'Purpose: ' + (lv.purpose || '(none)'); }
+    if (leaveViewReference) { leaveViewReference.textContent = 'External reference: ' + (lv.external_reference || '(none)'); }
+    if (leaveViewDeduction) {
+      if (lv.effective_leave_minutes) {
+        leaveViewDeduction.textContent = 'Leave-deduction: ' + lv.effective_leave_minutes + ' minutes';
+        leaveViewDeduction.style.display = '';
+      } else {
+        leaveViewDeduction.style.display = 'none';
+      }
     }
-    var html = '';
-    dayLeave.forEach(function (lv) {
-      var dateRange = lv.start_date === lv.end_date ? lv.start_date : (lv.start_date + ' – ' + lv.end_date);
-      var timeStr = (lv.start_time && lv.end_time) ? (lv.start_time.slice(0, 5) + '–' + lv.end_time.slice(0, 5)) : '';
-      html += '<div class="msc-leave-item-card" data-leave-id="' + lv.id + '">';
-      html += '<div><div class="msc-item-title">' + escapeHtml(formatLeaveCalendarLabel(lv)) + '</div>';
-      html += '<div class="msc-item-meta">' + escapeHtml(dateRange) + (timeStr ? ' &middot; ' + escapeHtml(timeStr) : '') +
-        (lv.effective_leave_minutes ? ' &middot; ' + lv.effective_leave_minutes + ' leave-deduction min' : '') + '</div>';
-      if (lv.purpose) { html += '<div class="msc-item-meta">' + escapeHtml(lv.purpose) + '</div>'; }
-      html += '</div><div class="msc-item-actions">';
-      html += '<button type="button" data-leave-delete data-leave-id="' + lv.id + '">Delete Leave</button>';
-      html += '</div></div>';
+    lastFocusedLeaveTrigger = triggerEl || document.activeElement;
+    leaveViewModal.classList.add('show');
+    leaveViewModal.addEventListener('keydown', onLeaveViewModalKeydown);
+    leaveViewClose.focus();
+  }
+
+  leaveViewClose.addEventListener('click', closeLeaveViewModal);
+  leaveViewModal.addEventListener('click', function (e) {
+    if (e.target === leaveViewModal) { closeLeaveViewModal(); }
+  });
+
+  if (leaveViewEditBtn) {
+    leaveViewEditBtn.addEventListener('click', function () {
+      var id = currentViewLeaveId;
+      closeLeaveViewModal();
+      if (id) { editLeaveItem(id); }
     });
-    leaveListEl.innerHTML = html;
-    leaveListEl.querySelectorAll('button[data-leave-delete]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        deleteLeaveRecord(btn.getAttribute('data-leave-id'), btn);
+  }
+
+  if (leaveViewDeleteBtn) {
+    leaveViewDeleteBtn.addEventListener('click', function () {
+      var id = currentViewLeaveId;
+      if (!id) { return; }
+      deleteLeaveRecord(id, leaveViewDeleteBtn).then(function (deleted) {
+        if (!deleted) { return; }
+        closeLeaveViewModal();
       });
     });
   }

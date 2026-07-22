@@ -1298,6 +1298,13 @@
       background: var(--calendar-unscheduled-border);
     }
 
+    /* Leave-detail popup accent (calendar-based Leave management,
+       2026-07-22 member-page-layout task) — same --calendar-leave-border
+       token the Month/Week/Day Leave chips and blocks already use. */
+    .msc-view-color-dot.leave {
+      background: var(--calendar-leave-border);
+    }
+
     .msc-view-actions {
       display: flex;
       justify-content: flex-end;
@@ -1863,17 +1870,25 @@
       border-left: 3px solid var(--calendar-leave-border);
       background: var(--calendar-leave-bg);
       color: var(--calendar-leave-text);
+      cursor: pointer;
       transition: filter .1s ease, box-shadow .1s ease;
     }
 
-    /* Comparable clickability cue to Task chips (Step 8 "LEAVE CHIPS /
-       BLOCKS") without implying a click action leave chips don't have —
-       their own click handler only stops propagation (no popup opens,
-       by design; see the Month-view render comment above), so cursor
-       stays the inherited default rather than pointer. */
+    /* Click-to-view cue (calendar-based Leave management, 2026-07-22
+       member-page-layout task) — a click now opens the shared Leave-
+       detail popup (viewLeaveItem()), same as a Task chip's click opens
+       the Task-detail popup, so this reuses the same hover/focus
+       affordance language. */
     .msc-cal-chip-leave:hover {
       filter: brightness(.97);
       box-shadow: 0 1px 3px rgba(127, 29, 29, .25);
+    }
+
+    .msc-cal-chip-leave:focus-visible,
+    .msc-tg-allday-chip-leave:focus-visible,
+    .msc-tg-leave-block:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
     }
 
     .msc-tg-allday-chip-leave {
@@ -1885,6 +1900,7 @@
       border-left: 3px solid var(--calendar-leave-border);
       background: var(--calendar-leave-bg);
       color: var(--calendar-leave-text);
+      cursor: pointer;
       transition: filter .1s ease, box-shadow .1s ease;
     }
 
@@ -1895,20 +1911,19 @@
 
     /* Timed (Short Leave / Half-Day) leave blocks in the Week/Day time
        grid — absolutely positioned like .msc-tg-event, but with no drag
-       handle and no data-id wiring in wireTimeGridInteractions, so these
-       are never draggable/resizable; editing/removal goes through the
-       leave form / Delete Leave action only.
+       handle and no data-id wiring in attachDragHandlers/
+       attachResizeHandler, so these are never draggable/resizable;
+       editing/removal goes through the Leave-detail popup's Edit/Delete
+       actions only.
 
        pointer-events changed none -> auto (2026-07-20,
        calendar-empty-slot-create-and-overlap-rules task, Step 7 "Do not
        trigger creation when the pointer originated on: ... Leave
-       block"): with pointer-events:none a click visually landing on
-       this block fell through to the empty .msc-tg-hourcell underneath
-       and incorrectly opened the create chooser. It now intercepts the
-       click itself (handler in instance.js just stops propagation, a
-       no-op — matching .msc-cal-chip-leave's Month-view convention),
-       and cursor:default (not pointer) so it doesn't visually suggest
-       an action it doesn't have. */
+       block") so a click intercepts here instead of falling through to
+       the empty .msc-tg-hourcell underneath and opening the create
+       chooser. cursor:pointer (was cursor:default before the Leave-
+       detail popup existed, 2026-07-22 member-page-layout task) — the
+       block now opens that popup on click. */
     .msc-tg-leave-block {
       position: absolute;
       z-index: 1;
@@ -1918,7 +1933,7 @@
       color: var(--calendar-leave-text);
       overflow: hidden;
       pointer-events: auto;
-      cursor: default;
+      cursor: pointer;
       opacity: .92;
       border-left: 3px solid var(--calendar-leave-border);
       background: var(--calendar-leave-bg);
@@ -1930,42 +1945,17 @@
       box-shadow: 0 1px 3px rgba(127, 29, 29, .22);
     }
 
-    /* ── Leave Coordination section polish (UI-only, 2026-07-16) ──
+    /* ── Leave create/edit popup polish (UI-only, 2026-07-16) ──
        Same design tokens as the rest of this calendar page (--surface,
        --border, --radius, --status-info-*, .hr-table-title,
        .msc-form-grid, .msc-btn) — no new visual language, no business
-       logic. Purely presentational structure so the section reads as an
-       intentional card rather than raw text/form dropped on the page. ── */
-    .msc-leave-card {
-      padding: 18px 20px 20px;
-    }
-
-    .msc-leave-card-head {
-      margin-bottom: 14px;
-    }
-
-    .msc-leave-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text);
-      margin: 0 0 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .msc-leave-title-icon {
-      font-size: .95rem;
-      line-height: 1;
-    }
-
-    .msc-leave-subtitle {
-      font-size: .8rem;
-      color: var(--muted);
-      margin: 0;
-      line-height: 1.55;
-    }
-
+       logic. The former Leave Coordination list-card rules (msc-leave-
+       card/-card-head/-title/-subtitle/-section/-section-title/-list-
+       date-label/-item-card/-empty) were removed 2026-07-22
+       (member-page-layout-leave-popup-collapse-and-ph-staff task) along
+       with the DOM section they only ever styled — Leave is now viewed/
+       edited/deleted via the calendar-based Leave-detail popup below,
+       which reuses .msc-modal-overlay/.msc-view-modal-inner unchanged. */
     /* Informational, non-alarming notice — reuses the same
        status-info tokens already used by .msc-api-status--info
        elsewhere on this page, so it visually matches rather than
@@ -1991,33 +1981,6 @@
       line-height: 1.6;
     }
 
-    /* Subsections (create form / active list) — a light divider plus a
-       small uppercase label, the same grouping technique already used by
-       .msc-summary-group inside Schedule Summary, so the page's internal
-       rhythm stays consistent. */
-    .msc-leave-section + .msc-leave-section {
-      margin-top: 20px;
-      padding-top: 18px;
-      border-top: 1px solid var(--border);
-    }
-
-    .msc-leave-section-title {
-      font-size: .78rem;
-      font-weight: 700;
-      color: var(--muted-2);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      margin: 0 0 10px;
-    }
-
-    .msc-leave-section-title .msc-leave-list-date-label,
-    .msc-leave-section-title .msc-leave-list-count {
-      text-transform: none;
-      letter-spacing: normal;
-      font-weight: 600;
-      color: var(--text);
-    }
-
     .msc-leave-form-panel {
       background: var(--surface-tint-2);
       border: 1px solid var(--border);
@@ -2035,35 +1998,6 @@
       border-top: 1px solid var(--border);
     }
 
-    /* Clean empty state — centered, dashed boundary, calmer than a bare
-       line of muted text sitting directly on the card background. */
-    .msc-leave-empty {
-      text-align: center;
-      color: var(--muted);
-      font-size: .8rem;
-      padding: 18px 12px;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--surface-tint-2);
-    }
-
-    /* Individual leave entries as their own rounded cards rather than a
-       plain divided list — mirrors .msc-summary-block's card treatment. */
-    .msc-leave-item-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-    }
-
-    .msc-leave-item-card + .msc-leave-item-card {
-      margin-top: 8px;
-    }
-
     .msc-btn:focus-visible {
       outline: none;
       box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
@@ -2076,19 +2010,11 @@
     }
 
     @media (max-width: 560px) {
-      .msc-leave-card {
-        padding: 14px 14px 16px;
-      }
-
-      .msc-leave-item-card {
-        flex-direction: column;
-      }
-
-      .msc-leave-item-card .msc-item-actions {
+      .msc-item-actions {
         width: 100%;
       }
 
-      .msc-leave-item-card .msc-item-actions button {
+      .msc-item-actions button {
         flex: 1 1 auto;
       }
     }
