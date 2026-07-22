@@ -241,26 +241,32 @@
       --calendar-month-more-height: 17px;
 
       /* ── Month row minimum height (calendar-two-task-preview-and-cell-
-         height task, 2026-07-20) — guarantees every Month row has enough
-         real content height for the day number + 2 Task chips + one
-         complete "+N more" line, at every viewport height, replacing the
-         calendar-chooser-label-and-more-responsive task's viewport-height-
-         dependent JS capacity calculation (computeMonthChipCapacity(),
-         instance.js) — that fix could still fall back to a single visible
-         preview at common laptop viewport heights (~768-900px tall),
-         which is the exact bug this task fixes. Consumed by
-         .msc-cal-grid.active's grid-template-rows minmax floor
-         (calendar.css) — NOT by --cal-canvas-height (shared with Week/Day's
-         .msc-tg-scroll max-height), which stays untouched so Week/Day
-         geometry cannot be affected by this Month-only fix.
+         height task, 2026-07-20; enlarged google-calendar-inspired-
+         management-calendar-ux task, 2026-07-22) — guarantees every
+         Month row has enough real content height for the day number + 2
+         Task chips + one complete "+N more" line, at every viewport
+         height, replacing the calendar-chooser-label-and-more-responsive
+         task's viewport-height-dependent JS capacity calculation
+         (computeMonthChipCapacity(), instance.js) — that fix could still
+         fall back to a single visible preview at common laptop viewport
+         heights (~768-900px tall), which is the exact bug this task
+         fixes. Consumed by .msc-cal-grid.active's grid-template-rows
+         minmax floor (calendar.css) — NOT by --cal-canvas-height (shared
+         with Week/Day's .msc-tg-scroll max-height), which stays
+         untouched so Week/Day geometry cannot be affected by this
+         Month-only fix.
 
          Derivation (day-number block 30px [.msc-cal-daynum: 24px box + 2px
-         top + 4px bottom margin] + cell padding 10px [.msc-cal-cell: 4px
-         top + 6px bottom] + 2 × chip slot [(--calendar-month-chip-height
-         21px + --calendar-month-chip-gap 2px) = 23px each = 46px] +
-         --calendar-month-more-height 17px = 103px bare minimum, + ~9px
-         safe-spacing buffer above the next week row = 112px): */
-      --calendar-month-row-min-height: 112px;
+         top + 4px bottom margin] + cell padding 14px [.msc-cal-cell: 6px
+         top + 8px bottom, raised from 4px/6px 2026-07-22 for a less
+         cramped, more Google-Calendar-like box] + 2 × chip slot
+         [(--calendar-month-chip-height 21px + --calendar-month-chip-gap
+         2px) = 23px each = 46px] + --calendar-month-more-height 17px =
+         107px bare minimum, + 33px safe-spacing buffer above the next
+         week row (raised from 9px 2026-07-22 so the box visibly reads as
+         larger/more spacious, not just barely fitting its content) =
+         140px): */
+      --calendar-month-row-min-height: 140px;
     }
 
     html {

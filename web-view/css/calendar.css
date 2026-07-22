@@ -125,6 +125,16 @@
       border-color: var(--muted-2);
     }
 
+    /* Explicit focus-visible ring (google-calendar-inspired-management-
+       calendar-ux task, 2026-07-22, Step 5/17) — matches the box-shadow
+       focus-ring pattern already used elsewhere in the calendar
+       (.msc-cal-cell--actionable, .msc-btn, .msc-cal-chip) rather than
+       relying on the browser's inconsistent default outline. */
+    .msc-tool-btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
     /* Circular icon buttons for sidebar-toggle / previous / next — the
        glyphs are pure Unicode (&#9776; &#8249; &#8250;), no Google assets. */
     .msc-tool-btn--icon {
@@ -188,6 +198,14 @@
 
     .msc-view-btn:first-child {
       border-left: none;
+    }
+
+    /* Focus-visible ring (Step 5/17, 2026-07-22) — inset so it stays
+       readable inside the segmented control's own border/overflow:hidden
+       instead of being clipped. */
+    .msc-view-btn:focus-visible {
+      outline: none;
+      box-shadow: inset var(--focus-ring);
     }
 
     .msc-view-btn:hover {
@@ -800,7 +818,11 @@
     .msc-cal-cell {
       min-height: 0;
       overflow: hidden;
-      padding: 4px 6px 6px;
+      /* Raised 4px/6px/6px -> 6px/8px/8px (google-calendar-inspired-
+         management-calendar-ux task, 2026-07-22) alongside the row-
+         height token increase in tokens.css — a less cramped box,
+         matching Google Calendar's more generous Month cell padding. */
+      padding: 6px 8px 8px;
       border-right: 1px solid var(--hairline);
       border-bottom: 1px solid var(--hairline);
       vertical-align: top;
@@ -876,7 +898,12 @@
       }
 
       .msc-cal-cell {
-        min-height: 62px;
+        /* 62px -> 72px (google-calendar-inspired-management-calendar-ux
+           task, 2026-07-22) — a modest bump consistent with the desktop
+           row-height increase, kept well short of the desktop figure so
+           mobile Month rows stay compact rather than forcing excessive
+           scrolling on small screens. */
+        min-height: 72px;
         overflow: visible;
       }
     }
@@ -1937,6 +1964,17 @@
     .msc-chip-cat.planning {
       background: var(--accent-light);
       color: var(--accent);
+    }
+
+    /* Leave legend swatch (google-calendar-inspired-management-calendar-
+       ux task, 2026-07-22, Step 6) — the mini-sidebar legend previously
+       showed only the two Task categories; this reuses the same
+       --calendar-leave-* tokens the Month/Week/Day Leave chips already
+       use (.msc-cal-chip-leave etc. below), so the legend's red matches
+       every Leave item on the calendar exactly. */
+    .msc-chip-cat.leave {
+      background: var(--calendar-leave-bg);
+      color: var(--calendar-leave-text);
     }
 
     /* Demo-style visible task chips inside calendar date cells (aios_role_desk_views.html layout reference).

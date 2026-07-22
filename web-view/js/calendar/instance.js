@@ -86,9 +86,10 @@ function mountScheduleCalendarInstance(container) {
     '<span class="msc-create-btn-caret" aria-hidden="true">&#9662;</span></button>' +
     '</div>' +
     '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
-    '<div class="msc-category-legend" aria-label="Task category legend">' +
+    '<div class="msc-category-legend" aria-label="Task and Leave category legend">' +
     '<span class="msc-chip-cat task">Scheduled Task</span>' +
     '<span class="msc-chip-cat followup">Unscheduled Task</span>' +
+    '<span class="msc-chip-cat leave">Leave</span>' +
     '</div>' +
     '</div>' +
     /* Create chooser menu (2026-07-22 collapsed-sidebar-create-chooser
@@ -545,11 +546,6 @@ function mountScheduleCalendarInstance(container) {
 
   function openCreateMenu(anchorEl) {
     if (createMenuOpen) { return; }
-    /* Every "Create chooser opens" path (sidebar Create button, a Month
-       cell dblclick, keyboard Enter/Space on a cell, Week/Day empty-slot
-       clicks) funnels through here — single place to satisfy Step 3's
-       "clear pending timers when ... Create chooser opens". */
-    clearPendingCellClick();
     createMenuOpen = true;
     createMenuTriggerEl = anchorEl || sidebarCreateBtn;
     createMenuEl.hidden = false;
@@ -848,121 +844,20 @@ function mountScheduleCalendarInstance(container) {
      not a height calculation. */
   var MONTH_VISIBLE_TASK_CAP = 2;
 
-  /* ── Month-view click rules (2026-07-17 month-task-list-navigation task,
-     extended 2026-07-22 for the full-day-leave-date edge case) ──
-     Task-presence rule (Step 3): a Month date is task-bearing when
-     itemsForDate(dateStr) — the same loaded `items` array every other
-     Month/Week/Day renderer already reads, filtered with the same date
-     normalization — returns at least one item; this alone decides
-     whether the Task list opens (leaveItemsForDate is a separate,
-     independent lookup, never consulted for that decision). Leave is
-     only consulted afterwards, for message selection on a Task-free
-     date — see hasFullDayBlockingLeave/handleCellSingleClick below.
-     Month-view only: renderTimeGrid() (Week/Day) is untouched by this
-     section. */
+  /* ── Month-view click rules (google-calendar-inspired-management-
+     calendar-ux task, 2026-07-22) ── A blank-cell click/keyboard
+     activation always opens the Task/Leave Create chooser directly for
+     that date, regardless of whether the date already has Tasks or
+     Leave — no single/double-click distinction, no empty-day toast.
+     Individual Task chips, Leave chips, and "+N more" each stop
+     propagation (see their own click wiring below) so they never also
+     trigger this cell-level handler. Month-view only: renderTimeGrid()
+     (Week/Day) is untouched by this section. */
   function isKeyActivation(e) {
     return e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar';
   }
 
-  /* ── Month blank-cell single/double-click coordinator (2026-07-22
-     month-cell-click-interaction task) ── A native 'click' fires twice
-     before a genuine 'dblclick' (click, click, dblclick), so a bare
-     click handler cannot by itself tell a single click from the first
-     half of a double click. CELL_CLICK_DELAY_MS is the short window
-     used to find out: a click schedules the single-click action (open
-     the Task list for a task-bearing date, or show the empty-day toast)
-     after this delay; a 'dblclick' arriving within that window cancels
-     the pending action and opens the Create chooser instead. 250ms
-     comfortably covers a real double-click (most OS thresholds default
-     to 300-500ms) while staying short enough that a genuine single
-     click does not feel delayed.
-
-     Only one timer is ever pending per calendar instance (matches
-     "store timer state inside the current member calendar instance" —
-     this whole file is one closure per member, so there is no
-     cross-member state to isolate); a second click before the first's
-     timer fires simply reschedules the same pending action rather than
-     stacking a second one. */
-  var CELL_CLICK_DELAY_MS = 250;
-  var pendingCellClick = null; // setTimeout id, or null when nothing is pending
-
-  function clearPendingCellClick() {
-    if (pendingCellClick !== null) {
-      clearTimeout(pendingCellClick);
-      pendingCellClick = null;
-    }
-  }
-
-  function showEmptyDayToast() {
-    showToast({
-      type: 'information',
-      title: 'No tasks scheduled for this day',
-      message: 'Double-click the day to create a Task or Leave.'
-    });
-  }
-
-  /* Full-Day-leave-blocked toast (2026-07-22 full-day-leave-date edge
-     case). Full-Day and Multi-Day leave block Task creation for the
-     whole day (find_conflicting_active_leave, backend/routers/
-     leave_logic.py); Short Leave / Half-Day First / Half-Day Second
-     only block a timed Task that overlaps their own interval, so they
-     never reach this toast — see hasFullDayBlockingLeave below. */
-  function showFullDayLeaveToast() {
-    showToast({
-      type: 'information',
-      title: 'Full-day leave scheduled',
-      message: 'Tasks cannot be added on this day because it is covered by full-day leave.'
-    });
-  }
-
-  /* Same Full-Day/Multi-Day filter already used for the Week/Day
-     all-day row (see leaveItemsForDate(...).filter(...) above in
-     renderTimeGrid) — reused rather than re-expressed, so this stays
-     the one place that defines "which leave types block the whole
-     day". leaveItemsForDate is already member-scoped (this whole file
-     is one closure per member, REQ-LEAVE-COPY-001) and server-filtered
-     on deleted_at IS NULL, so deleted/inactive/other-member leave is
-     never in `leaveItems` to begin with. */
-  function hasFullDayBlockingLeave(dateKey) {
-    return leaveItemsForDate(dateKey).some(function (lv) {
-      return lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day';
-    });
-  }
-
-  /* Task-presence rule (Step 4/Interpretation): itemsForDate returns
-     Task records only (leaveItemsForDate is a separate lookup). Tasks
-     take priority — a task-bearing date always opens the Task list
-     even if it also carries a Full-Day/Multi-Day leave, so existing
-     Tasks are never hidden behind the leave message. Only when the
-     date has zero Tasks do we check for a full-day-blocking Leave
-     (2026-07-22 edge case) before falling back to the plain empty-day
-     toast. Reuses the existing openMorePopup Task-list renderer/
-     resolveMorePopupAnchor — no second list implementation, and no
-     new Task/Leave conflict rule (that stays server-side only). */
-  function handleCellSingleClick(dateKey) {
-    var dayItems = itemsForDate(dateKey);
-    if (dayItems.length > 0) {
-      openMorePopup(dateKey, resolveMorePopupAnchor(dateKey));
-    } else if (hasFullDayBlockingLeave(dateKey)) {
-      showFullDayLeaveToast();
-    } else {
-      showEmptyDayToast();
-    }
-  }
-
-  function scheduleCellSingleClick(dateKey) {
-    clearPendingCellClick();
-    pendingCellClick = setTimeout(function () {
-      pendingCellClick = null;
-      handleCellSingleClick(dateKey);
-    }, CELL_CLICK_DELAY_MS);
-  }
-
   function renderMonthView() {
-    /* Any pending single-click action was scheduled against the grid
-       this rerender is about to replace — invalidate it rather than
-       risk it firing against a stale dateKey after month navigation. */
-    clearPendingCellClick();
     var y = state.viewYear, m = state.viewMonth;
     var todayStr = toDateStr(new Date());
     var cells = buildMonthGridCells(y, m);
@@ -1061,57 +956,36 @@ function mountScheduleCalendarInstance(container) {
           }
         });
       };
-      /* Single click no longer opens the Create chooser directly — it
-         schedules the Task-list-or-toast decision (handleCellSingleClick)
-         after CELL_CLICK_DELAY_MS, giving a following 'dblclick' a chance
-         to cancel it first. */
-      cell.addEventListener('click', function () {
-        scheduleCellSingleClick(cell.getAttribute('data-date'));
-      });
-      cell.addEventListener('dblclick', function () {
-        clearPendingCellClick();
-        go();
-      });
+      /* A blank-cell click opens the Create chooser directly — no
+         double-click, no delay. Task chips, Leave chips, and "+N more"
+         each stop propagation in their own handlers below, so a click
+         landing on one of those never also reaches this handler. */
+      cell.addEventListener('click', go);
       cell.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(); } });
     });
     calGrid.querySelectorAll('.msc-cal-chip').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
-        /* Step 5: a Task-chip click cancels any pending blank-cell
-           single-click action from this same cell so Task Details never
-           has the Task list pop open behind/after it. */
-        clearPendingCellClick();
         viewItem(chip.getAttribute('data-id'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
-      /* Event-target safety (Step 9) — the 'click' listener above stops
-         the two 'click' events that precede a double click, but
-         'dblclick' is a distinct event type browsers still dispatch and
-         bubble regardless; without this, double-clicking a Task chip
-         would bubble a 'dblclick' up to the date cell's own handler and
-         incorrectly open the Create chooser. */
-      chip.addEventListener('dblclick', function (e) { e.stopPropagation(); });
     });
     calGrid.querySelectorAll('.msc-cal-chip-more').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
-        clearPendingCellClick();
         openMorePopup(chip.getAttribute('data-date'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
-      chip.addEventListener('dblclick', function (e) { e.stopPropagation(); });
     });
     calGrid.querySelectorAll('.msc-cal-chip-leave').forEach(function (chip) {
       var go = function (e) {
         e.stopPropagation();
-        clearPendingCellClick();
         viewLeaveItem(chip.getAttribute('data-leave-id'), chip);
       };
       chip.addEventListener('click', go);
       chip.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(e); } });
-      chip.addEventListener('dblclick', function (e) { e.stopPropagation(); });
     });
   }
 
@@ -1575,11 +1449,6 @@ function mountScheduleCalendarInstance(container) {
 
   viewSwitcherBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      /* Switching to Week/Day does not itself call renderMonthView()
-         (only its own top-of-function clearPendingCellClick() would
-         catch this), so a Month-view pending single click must be
-         invalidated here directly. */
-      clearPendingCellClick();
       state.currentView = btn.getAttribute('data-view');
       syncViewSwitcherButtons();
       renderActiveView();
@@ -2406,11 +2275,6 @@ function mountScheduleCalendarInstance(container) {
      "+N more" click (no opts) keeps the pre-existing behavior of
      starting scrolled to the top with the Close button focused. */
   function openMorePopup(dateStr, anchorEl, opts) {
-    /* Every "Task list opens" path (this new blank-cell single click,
-       the "+N more" chip, reopenTaskListOrigin) funnels through here —
-       single place to satisfy Step 3's "clear pending timers when ...
-       Task list opens through another route". */
-    clearPendingCellClick();
     opts = opts || {};
     var dayItems = itemsForDate(dateStr).slice().sort(function (a, b) {
       var at = a.start || '99:99', bt = b.start || '99:99';

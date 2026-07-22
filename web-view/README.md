@@ -243,65 +243,104 @@ Summary for future edits:
   `--calendar-scheduled-border`/`--calendar-unscheduled-border`, `tokens.css`) — no new hardcoded
   hex value was introduced.
 
-## Month-cell single-click Task list / double-click Create (2026-07-22)
+## Month-cell click model: direct blank-click Create, no double-click (2026-07-22)
 
-See
-`validation/month-cell-single-click-task-list-double-click-create-check-2026-07-22.md`
-and
-`handover/2026-07-22__month-cell-click-interaction-closure.md`
+**Supersedes** the "single-click Task list / double-click Create"
+section this replaced (originally added 2026-07-22 earlier the same
+day, see `validation/month-cell-single-click-task-list-double-click-create-check-2026-07-22.md`
+for that superseded design). The Google-Calendar-inspired redesign task
+(`validation/google-calendar-inspired-management-calendar-ux-check-2026-07-22.md`,
+`handover/2026-07-22__google-calendar-inspired-management-calendar-ux-closure.md`)
+replaced the single/double-click coordinator entirely with a single
+rule:
+
+- **Any click on a Month date cell's blank background** — whether the
+  date has zero, one, two, or more than two Tasks, Leave, or Full-Day/
+  Multi-Day Leave — opens the Create chooser directly
+  (`openCreateChoiceFromCalendar()` → `openCreateMenu()`), exactly like
+  keyboard Enter/Space already did. No double-click, no delay timer, no
+  toast.
+- **Individual Task chip / Leave chip / "+N more" clicks are unchanged**
+  and still take priority: each calls `e.stopPropagation()` in its own
+  `click` handler (`.msc-cal-chip` → `viewItem()`, `.msc-cal-chip-leave`
+  → `viewLeaveItem()`, `.msc-cal-chip-more` → `openMorePopup()`), so a
+  click landing on one of those never also reaches the cell-level
+  handler. Their `dblclick` no-op stopPropagation listeners (kept from
+  the superseded design solely as defense-in-depth) were removed along
+  with the cell's own `dblclick` listener — there is no more `dblclick`
+  handler anywhere in Month view to guard against.
+- **Removed entirely** (all previously defined just above
+  `renderMonthView()` in `calendar/instance.js`): the
+  `CELL_CLICK_DELAY_MS`/`pendingCellClick` timer coordinator,
+  `clearPendingCellClick()`, `scheduleCellSingleClick()`,
+  `handleCellSingleClick()`, `showEmptyDayToast()` (the old "No tasks
+  scheduled for this day" toast), `showFullDayLeaveToast()`, and
+  `hasFullDayBlockingLeave()`. None of their call sites survive —
+  `renderMonthView()`, `openCreateMenu()`, `openMorePopup()`, and the
+  view-switcher click handler no longer call a timer-clear function at
+  all, since there is no timer left to clear.
+- **Full-Day/Multi-Day Leave conflict handling is unchanged and still
+  backend-authoritative** — choosing "Task" from the Create chooser on
+  a Full-Day/Multi-Day Leave date is never blocked in the frontend;
+  submitting the Task still gets the existing `leave_conflict` 409
+  rejection and its existing inline error message (`apiRequest()`'s
+  `err.code === 'leave_conflict'` handling, unchanged, `calendar/
+  instance.js`). The frontend pre-emptive toast that used to fire on a
+  Task-free Full-Day-Leave date's blank click is gone along with the
+  rest of the click coordinator — there is no frontend-side Full-Day-
+  Leave special case left to maintain.
+- **To add a new "opens the Create chooser" call site** in Month view,
+  call `openCreateChoiceFromCalendar()` directly (same as the cell's own
+  `go()` closure) — there is no timer/coordinator layer to route
+  through anymore.
+
+## Google-Calendar-inspired wider layout and larger Month boxes (2026-07-22)
+
+See `validation/google-calendar-inspired-management-calendar-ux-check-2026-07-22.md`
+and `handover/2026-07-22__google-calendar-inspired-management-calendar-ux-closure.md`
 for the full record. Summary for future edits:
 
-- **Single click** on a Month date cell's blank area opens the existing
-  Task-list popup (`openMorePopup()`) if `itemsForDate(dateKey)` is
-  non-empty (Leave-only dates count as empty), or shows a friendly
-  `showToast({ type: 'information', ... })` if it is empty. **Double
-  click** opens the existing Create chooser (`openCreateMenu()` via
-  `openCreateChoiceFromCalendar()`) — unchanged from before this task.
-  Keyboard Enter/Space on a cell is unchanged (opens the Create chooser
-  directly, no delay).
-- **Coordinator**: `CELL_CLICK_DELAY_MS` (250ms) + `pendingCellClick`
-  (closure-scoped per member instance, one timer at a time) +
-  `clearPendingCellClick()`/`scheduleCellSingleClick()`/
-  `handleCellSingleClick()`, defined just above `renderMonthView()` in
-  `calendar/instance.js`. A `click` schedules the Task-list-or-toast
-  decision; a `dblclick` cancels it and opens the Create chooser
-  instead — this is what lets a real double click (`click, click,
-  dblclick`) resolve to "Create chooser only," never both.
-- **Timer cleanup is centralized**, not scattered: `openCreateMenu()`
-  and `openMorePopup()` each clear the pending timer at their own top
-  (every path that opens either one funnels through these two
-  functions), plus `renderMonthView()` (top), the view-switcher click
-  handler, and each chip's own click handler. Add a new "opens the
-  Create chooser" or "opens the Task list" call site through
-  `openCreateMenu`/`openMorePopup` rather than a new direct call, or
-  this cleanup won't apply to it.
-- **No new popup/list/toast implementation** — the single-click path
-  reuses `openMorePopup()`/`resolveMorePopupAnchor()` (the same "+N
-  more" Task-list popup) and `showToast()` exactly as they already
-  existed; the double-click path reuses the same `go()`/
-  `openCreateChoiceFromCalendar()` chain keyboard Enter already used.
-- **Chip `dblclick` guards**: `.msc-cal-chip`/`.msc-cal-chip-more`/
-  `.msc-cal-chip-leave` each got a no-op `dblclick` listener
-  (`e.stopPropagation()` only) — their existing `click` handlers
-  already stopped `click` from bubbling to the cell, but `dblclick` is
-  a separate event type that bubbles independently; without this guard,
-  double-clicking a chip would incorrectly open the Create chooser.
-- **Addendum (2026-07-22, same day) — Full-Day leave date edge case**:
-  `handleCellSingleClick()` now has a third branch. On a Task-free
-  date, before falling back to the empty-day toast, it checks
-  `hasFullDayBlockingLeave(dateKey)` — true if `leaveItemsForDate`
-  returns a `'Full-Day'` or `'Multi-Day'` record (the same filter
-  already used by the Week/Day all-day row). If true, it shows
-  `showFullDayLeaveToast()` ("Full-day leave scheduled" / "Tasks
-  cannot be added on this day because it is covered by full-day
-  leave.") instead of the generic empty-day toast. Short Leave/
-  Half-Day First/Half-Day Second are deliberately excluded from this
-  check — they only block a timed Task overlapping their own
-  interval, not the whole day. Task-presence is still checked first,
-  so an existing Task always opens the Task list even on a date that
-  also carries a Full-Day/Multi-Day leave. See
-  `validation/month-cell-single-click-task-list-double-click-create-check-2026-07-22.md`'s
-  Addendum section for the full scenario table.
+- **Calendar width**: `.tab-panel.tab-panel--calendar` (`css/
+  navigation.css`) is now `max-width: 100%` at every breakpoint —
+  simply fills `.tab-main` (viewport minus whichever application
+  sidebar width is in effect), replacing the previous `88vw` / `88% of
+  available width` figure from the 2026-07-20 calendar-create-chooser-
+  readability-and-width task (which produced a 100px+ gap on each side
+  at common desktop widths). The plain `.tab-panel` rule's own 16px
+  left/right padding is now the only gutter, on every desktop
+  breakpoint, expanded or collapsed application sidebar alike — no
+  separate `calc()`/vw formula or collapsed-sidebar override is needed
+  any more. A higher-specificity `body.sidebar-collapsed
+  .tab-panel.tab-panel--calendar` override is still required (and
+  present) to beat `body.sidebar-collapsed .tab-panel`'s own,
+  higher-specificity rule — see the comment at that rule.
+- **Month row height**: `--calendar-month-row-min-height` (`css/
+  tokens.css`) raised 112px → 140px, and `.msc-cal-cell` padding
+  raised `4px 6px 6px` → `6px 8px 8px` (`css/calendar.css`) — a less
+  cramped box, closer to Google Calendar's own Month-cell proportions.
+  The mobile (`max-width:640px`) `.msc-cal-cell` min-height was raised
+  62px → 72px, a smaller bump to keep mobile Month rows compact. The
+  visible-item cap (`MONTH_VISIBLE_TASK_CAP = 2`, `calendar/
+  instance.js`) and "+N more" counting logic are unchanged — only the
+  box's own size grew, not how many items it shows.
+- **Mini-sidebar legend**: now shows all three calendar categories —
+  `Scheduled Task` / `Unscheduled Task` / `Leave` (`.msc-category-legend`,
+  `calendar/instance.js`) — previously only the two Task categories.
+  The new `.msc-chip-cat.leave` CSS rule (`css/calendar.css`) reuses the
+  existing `--calendar-leave-bg`/`--calendar-leave-text` tokens the
+  Month/Week/Day Leave chips already use, so the legend swatch matches
+  every Leave item on the calendar exactly.
+- **Toolbar focus states**: `.msc-tool-btn`/`.msc-view-btn` gained
+  explicit `:focus-visible` box-shadow rings (`css/calendar.css`),
+  matching the ring pattern already used elsewhere in the calendar
+  (`.msc-cal-cell--actionable`, `.msc-btn`, `.msc-cal-chip`) instead of
+  relying on the browser's inconsistent default outline.
+- **No FullCalendar, no new library**: this calendar has always been a
+  hand-rolled Month/Week/Day grid (raw HTML strings + manual event
+  delegation, `calendar/instance.js`) — there is no `dateClick`/
+  `dayMaxEvents`/`eventClick` FullCalendar API anywhere in this
+  codebase to reconcile with. Every change in this section is plain
+  CSS/JS against that existing hand-rolled structure.
 
 ## Larger frontend modularization (not done in this task)
 
