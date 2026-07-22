@@ -4,7 +4,7 @@ type: handover-closure
 created: 2026-07-22
 created-by: Mareenraj (builder)
 requirement-id: month-cell-single-click-task-list-double-click-create
-status: PASS — 13/13 desktop + 4/4 mobile real-browser scenarios pass, zero console errors; 21/21 existing unit tests pass; backend/database/migrations diffs empty
+status: PASS — 13/13 desktop + 4/4 mobile real-browser scenarios pass, zero console errors; 21/21 existing unit tests pass; backend/database/migrations diffs empty. Addendum (2026-07-22, same day): Full-Day-leave-date edge case — PASS, 6/6 live-browser scenarios against the real local backend, 3/3 additional scenarios confirmed by code inspection, test data cleaned up.
 ---
 
 # Handover Closure — Month-Cell Single-Click Task List / Double-Click Create
@@ -93,3 +93,36 @@ None required for this interaction change itself. A human reviewer may want to s
 ## PASS / FAIL
 
 **PASS.** See `validation/month-cell-single-click-task-list-double-click-create-check-2026-07-22.md` for the full scenario-by-scenario record — 13/13 desktop real-browser scenarios and 4/4 mobile/touch scenarios pass with zero console errors, 21/21 existing unit tests still pass, and `backend/`/`database/`/`database/migrations/` all show an empty diff.
+
+---
+
+## Addendum — Full-Day Leave Date Edge Case (2026-07-22, same day)
+
+**Problem closed.** A Month-view date with zero Tasks but an active Full-Day (or Multi-Day) Leave was showing the generic empty-day toast ("No tasks scheduled for this day… Double-click the day to create a Task or Leave."), which is misleading — the existing Task/Leave conflict rule (`find_conflicting_active_leave`, unchanged) already forbids creating a Task there.
+
+**New message:**
+
+- Old (misleading on a Leave-blocked date): "No tasks scheduled for this day" / "Double-click the day to create a Task or Leave."
+- New: "Full-day leave scheduled" / "Tasks cannot be added on this day because it is covered by full-day leave." (`information` type, no error/warning styling)
+
+**Decision priority added to `handleCellSingleClick(dateKey)`:** (1) one or more Tasks → open the Task list, unchanged, highest priority even if the date also carries a Full-Day/Multi-Day Leave; (2) zero Tasks but `hasFullDayBlockingLeave(dateKey)` is true (new helper, reuses the existing Full-Day/Multi-Day filter already used by the Week/Day all-day row) → the new leave-blocked toast; (3) otherwise → the original empty-day toast, unchanged.
+
+**Files Modified (this addendum only):**
+
+- `web-view/js/calendar/instance.js` — two new functions (`showFullDayLeaveToast()`, `hasFullDayBlockingLeave()`) and an extended `handleCellSingleClick()` branch, plus updated in-code comments. No CSS, no backend, no schema/migration changes.
+- `validation/month-cell-single-click-task-list-double-click-create-check-2026-07-22.md` — Addendum section appended with the full scenario table.
+- This handover file — Addendum section appended (this section).
+
+**Full-Day result:** PASS — a Full-Day Leave date with zero Tasks now shows the leave-blocked toast (Test B).
+**Multi-Day result:** PASS — a date in the middle of a Multi-Day range (not just the literal start date) shows the same leave-blocked toast, confirming the existing weekday-expansion lookup (`leaveDatesForItem`/`leaveItemsForDate`) is honored rather than a literal `start_date` check (Test C).
+**Partial-Leave result:** PASS — Short Leave and Half-Day First, on their own with zero Tasks, still show the original empty-day toast, not the leave-blocked one (Tests E/F) — `hasFullDayBlockingLeave` only matches `Full-Day`/`Multi-Day` leave types, matching the backend's own `_FULL_DAY_DOMINANT_LEAVE_TYPES`.
+**Existing-Task priority result:** PASS by construction — the Task-presence check is ordered first in `handleCellSingleClick` and returns before the Leave check ever runs, so an existing Task is never hidden behind the Leave message even on a date that also carries a Full-Day/Multi-Day Leave. Not separately reproduced live, because the existing conflict rule (correctly) prevents creating that exact combination of records through the normal UI/API path in fresh test data — reproducing it live would require bypassing the very rule this task says must stay authoritative.
+**Backend conflict rule:** Unchanged — confirmed by an empty `git diff -- backend/`. Test I (double-click a Full-Day-Leave date → choose Task → submit) still hits the existing `find_conflicting_active_leave` check and is rejected with the existing mapped message ("This time is unavailable — A leave entry already covers this time. Choose a different time."); no new conflict logic was added to the day-cell handler.
+
+**Live-browser verification:** Run against the real local FastAPI + Postgres backend and the real static frontend (not a mock this time), using Rajiv's calendar tab and far-future dates (`2031-03-10`–`2031-03-21`) to avoid any collision with existing `dashboard_testing` rows. 6/6 live scenarios (A, B, C, E, F, I) passed; scenarios D, G ("deleted Leave"), and H ("different member's Leave") were confirmed correct by code inspection rather than live reproduction, for the reasons detailed in the validation file's Addendum section (structural guarantees: `deleted_at IS NULL` server-side filtering already backing `leaveItems`, and per-member `leaveApiBase` scoping already isolating `leaveItems` per closure). All four Leave records created during verification were deleted afterward via the existing `DELETE /api/member-leave/rajiv/{id}` endpoint and confirmed removed (0 residual rows in the test date range); no Task record was ever created (the one attempt was correctly rejected), so nothing needed cleanup on that side.
+
+**Environment note:** the local dev backend/frontend processes started for this verification were stopped afterward. Stopping them was done with a broad `taskkill /IM chrome.exe` and `taskkill /IM python.exe`, which — as flagged to the user directly at the time — could have also closed unrelated Chrome windows or Python processes outside this session if any were running; a future repeat of this kind of verification should target specific PIDs instead.
+
+### Addendum PASS / FAIL
+
+**PASS.** All 7 "Additional pass conditions" from the task specification are met — see the validation file's Addendum section for the full scenario table and reasoning. `backend/`, `database/`, and `database/migrations/` all remain an empty diff; only `web-view/js/calendar/instance.js` was edited.

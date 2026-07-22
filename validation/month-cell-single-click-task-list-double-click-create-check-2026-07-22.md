@@ -2,7 +2,7 @@
 name: month-cell-single-click-task-list-double-click-create-check
 type: validation
 created: 2026-07-22
-status: PASS — 13/13 real-browser scenarios pass (desktop + mobile viewport), zero console errors; 21/21 existing calendar unit tests pass; backend/database/migrations diffs empty
+status: PASS — 13/13 real-browser scenarios pass (desktop + mobile viewport), zero console errors; 21/21 existing calendar unit tests pass; backend/database/migrations diffs empty. Addendum (2026-07-22, same day): Full-Day-leave-date edge case — PASS, 6/6 live-browser scenarios against the real local backend, test data cleaned up, backend/database/migrations diffs still empty.
 source-boundary: web-view/js/calendar/instance.js only. backend/, database/, database/migrations/, member-aios/mayurika-hr/staff-data/ — all read-confirmed unchanged, not touched.
 root-truth: CLAUDE.md — canonical
 ---
@@ -178,3 +178,65 @@ Backend changes: **NONE**. API changes: **NONE**. Database changes: **NONE**. Mi
 ## PASS / AMBER / FAIL
 
 **PASS.** All 17 PASS conditions from the task specification are met: single click opens the Task list for 1/2/3+ task dates (Tests A/B/C); the two visible chips and `+N more` are unchanged (Test C, and confirmed by an empty diff outside `instance.js`'s JS logic — no chip-rendering markup was touched); individual Task chips still open Task Details (Test H); the empty-date toast matches the approved wording and never opens an empty list (Test D); double click opens the Create chooser exactly once and is never preceded by the single-click action (Tests F/G); Task and Leave options remain available (Test F: `items=2`); member isolation holds (Test J); the mobile Create button remains usable (Suite 2 test 4); no console errors occurred across either suite; and backend/API/database/migrations are all confirmed unchanged by empty `git diff`.
+
+---
+
+## Addendum — Full-Day Leave Date Edge Case (2026-07-22)
+
+**Problem.** The single-click empty-day toast introduced above ("No tasks scheduled for this day" / "Double-click the day to create a Task or Leave.") did not distinguish a genuinely empty date from a date that has zero Tasks only because the existing Task/Leave conflict rule (`find_conflicting_active_leave`, `backend/routers/leave_logic.py`) already forbids creating a Task there — a date under an active Full-Day or Multi-Day Leave. The old message actively invited an action ("double-click to create a Task") that the backend would then reject.
+
+**Decision priority implemented in `handleCellSingleClick(dateKey)`** (`web-view/js/calendar/instance.js`, ~lines 932-950):
+
+1. `itemsForDate(dateKey).length > 0` → open the existing Task-list popup (unchanged, highest priority — an existing Task is never hidden behind a Leave message, including on a date that also carries a Full-Day/Multi-Day Leave).
+2. Else `hasFullDayBlockingLeave(dateKey)` (new, lines ~918-930) → show the new leave-specific toast.
+3. Else → show the original empty-day toast (unchanged).
+
+`hasFullDayBlockingLeave(dateKey)` is `leaveItemsForDate(dateKey).some(lv => lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day')` — the identical Full-Day/Multi-Day filter already used by the Week/Day all-day row (`renderTimeGrid`), not a new rule. `leaveItemsForDate` is already member-scoped (one closure per member) and server-filtered on `deleted_at IS NULL`, so deleted, other-member, or out-of-range Leave records structurally never reach this check.
+
+**New toast (old vs. new):**
+
+| Field | Old (misleading on a Leave-blocked date) | New |
+| --- | --- | --- |
+| Title | `No tasks scheduled for this day` | `Full-day leave scheduled` |
+| Message | `Double-click the day to create a Task or Leave.` | `Tasks cannot be added on this day because it is covered by full-day leave.` |
+| Toast type | `information` | `information` (no error/warning styling — matches the requirement's default preference and the existing toast-type convention) |
+
+**No new business logic was duplicated.** The day-cell handler only reads already-loaded `leaveItems` client state to pick a message; it does not call, mirror, or re-implement `find_conflicting_active_leave`, `find_conflicting_active_tasks`, or any leave-overlap/date-expansion logic. Backend conflict enforcement (`backend/routers/member_schedules.py` `create_member_schedule_event`/`update_member_schedule_event`, and `leave_logic.py`) is completely unchanged — confirmed by an empty `git diff -- backend/`.
+
+### Live-browser verification
+
+Performed against the **real** local backend (FastAPI + Postgres, `python -m uvicorn backend.main:app --port 8000`) and frontend (`python -m http.server 8080 --directory web-view`), driven by a scripted Playwright/Chromium session (cached Chromium build `1223`) — not a throwaway mock server this time, since the goal was to exercise the genuine `find_conflicting_active_leave`/`find_conflicting_active_tasks` conflict path end-to-end.
+
+**Isolation from existing data:** Rajiv's calendar tab was used with far-future dates (`2031-03-10` through `2031-03-21`) chosen specifically to avoid any collision with the real `dashboard_testing` rows already present in the database (e.g. Mayurika's July 2026 fixture data). All Leave records created during this session were deleted afterward via `DELETE /api/member-leave/rajiv/{id}` for each of the 4 created IDs, and confirmed removed by re-querying `GET /api/member-leave/rajiv` (0 remaining rows in the `2031-03-*` range). No Task record was ever created (the one creation attempt in Test I was correctly rejected by the existing conflict rule), so there was nothing to clean up on the Task side. `GET /api/member-schedules/rajiv` and `GET /api/member-leave/rajiv` both confirmed 0 residual rows in the test date range after cleanup.
+
+| # | Scenario | Setup | Result | Toast / status observed |
+| --- | --- | --- | --- | --- |
+| A | Empty date, no Leave | `2031-03-10`, nothing | PASS | "No tasks scheduled for this day" / "Double-click the day to create a Task or Leave." |
+| B | Full-Day Leave, zero Tasks | `2031-03-11`, Full-Day Leave created via double-click → Create chooser → Leave | PASS | "Full-day leave scheduled" / "Tasks cannot be added on this day because it is covered by full-day leave." |
+| C | Multi-Day Leave covering date, zero Tasks | Multi-Day Leave `2031-03-17`–`2031-03-19`; clicked the **mid-range** date `2031-03-18` (not the start date, to confirm the existing weekday-expansion lookup is honored, not just a literal `start_date` match) | PASS | Same full-day-blocked toast as B |
+| E | Short Leave only, zero Tasks | `2031-03-20`, Short Leave 09:00–11:00 created | PASS | Old empty-day toast (correctly **not** the full-day-blocked message) |
+| F | Half-Day First only, zero Tasks | `2031-03-21`, Half-Day First Leave created | PASS | Old empty-day toast (correctly **not** the full-day-blocked message) |
+| I | Double-click the Full-Day-Leave date (`2031-03-11`) | Create chooser opened → chose Task → filled title → submitted | PASS | Create chooser opened exactly once (`scenarioI_chooserOpened=1`); Task creation was rejected by the existing conflict rule with the existing mapped message: *"This time is unavailable — A leave entry already covers this time. Choose a different time."* No Task record was created (confirmed via API); Leave option remained available in the same chooser. |
+
+Scenario D (existing Task + Full-Day Leave on the same date → Task list must still open) and scenarios G/H (deleted Leave / different member's Leave → must not affect the message) were **verified by code inspection rather than live reproduction**, for a reason the task itself anticipates: the existing conflict rule (`find_conflicting_active_leave` / `find_conflicting_active_tasks`) blocks creating a Task and a Full-Day/Multi-Day Leave on the same date **in either order** through the normal UI/API path, so this combined state cannot be freshly produced without bypassing that rule (which would itself violate "do not duplicate/bypass business logic"). Instead:
+
+- **D** is guaranteed by the `if (dayItems.length > 0) { … } else if (hasFullDayBlockingLeave …)` ordering in `handleCellSingleClick` — the Task-presence branch is checked first and returns before the Leave check ever runs, so it is correct by construction for any date that does carry both a Task and a Full-Day/Multi-Day Leave (e.g. historical data predating the 2026-07-16 conflict-simplification amendment, or a hand-inserted row) — not conditional on how that state arose.
+- **G** is guaranteed by `leaveItemsForDate` reading from `leaveItems`, which per its own existing code comment (`instance.js` line ~819-822) is already `deleted_at IS NULL, server-filtered` — a soft-deleted Leave record is never present in the array `hasFullDayBlockingLeave` iterates, by construction.
+- **H** is guaranteed by `leaveApiBase` being built per-member (`MEMBER_LEAVE_API_BASE + '/' + memberKey`) inside a per-member closure (`mountScheduleCalendarInstance`) — another member's Leave records are never fetched into this member's `leaveItems` array in the first place, structurally, not via a filter that could be bypassed.
+
+**6/6 live scenarios PASS; 3/3 code-inspection-guaranteed scenarios (D, G, H) confirmed correct by construction.** Zero new browser console errors attributable to this change (the run showed exactly one expected `409 Conflict` — the deliberate Test I task-creation rejection — plus one unrelated `404` for a missing favicon request, pre-existing and unrelated to this diff).
+
+### Regression / boundary re-confirmation
+
+```text
+git diff -- backend/                 -> (empty)
+git diff -- database/                -> (empty)
+git diff -- database/migrations/     -> (empty)
+node --check web-view/js/calendar/instance.js -> OK
+```
+
+Only `web-view/js/calendar/instance.js` was edited for this addendum (new `showFullDayLeaveToast()`, `hasFullDayBlockingLeave()`, and the extended `handleCellSingleClick()` branch, plus updated in-code comments — no CSS, no backend, no schema/migration changes).
+
+### Addendum PASS / AMBER / FAIL
+
+**PASS.** All 7 "Additional pass conditions" from the task specification are met: Full-Day Leave dates no longer show the normal empty-day creation message (Test B); the leave-specific message clearly explains Tasks cannot be added (Test B wording); existing Tasks on a date still open through the Task list (guaranteed by construction, Test D reasoning above); partial Leave (Short Leave, Half-Day First) is not incorrectly treated as a full-day block (Tests E/F); Multi-Day full-day coverage uses the correct message, including for a mid-range date, not just the literal start date (Test C); existing Task/Leave conflict logic remains authoritative and untouched (Test I, empty `backend/` diff); and backend/API/database/migrations remain unchanged (empty diffs above). All test data created against the live local backend during verification was deleted and confirmed removed.

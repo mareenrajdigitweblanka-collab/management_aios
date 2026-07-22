@@ -286,6 +286,22 @@ for the full record. Summary for future edits:
   already stopped `click` from bubbling to the cell, but `dblclick` is
   a separate event type that bubbles independently; without this guard,
   double-clicking a chip would incorrectly open the Create chooser.
+- **Addendum (2026-07-22, same day) — Full-Day leave date edge case**:
+  `handleCellSingleClick()` now has a third branch. On a Task-free
+  date, before falling back to the empty-day toast, it checks
+  `hasFullDayBlockingLeave(dateKey)` — true if `leaveItemsForDate`
+  returns a `'Full-Day'` or `'Multi-Day'` record (the same filter
+  already used by the Week/Day all-day row). If true, it shows
+  `showFullDayLeaveToast()` ("Full-day leave scheduled" / "Tasks
+  cannot be added on this day because it is covered by full-day
+  leave.") instead of the generic empty-day toast. Short Leave/
+  Half-Day First/Half-Day Second are deliberately excluded from this
+  check — they only block a timed Task overlapping their own
+  interval, not the whole day. Task-presence is still checked first,
+  so an existing Task always opens the Task list even on a date that
+  also carries a Full-Day/Multi-Day leave. See
+  `validation/month-cell-single-click-task-list-double-click-create-check-2026-07-22.md`'s
+  Addendum section for the full scenario table.
 
 ## Larger frontend modularization (not done in this task)
 
