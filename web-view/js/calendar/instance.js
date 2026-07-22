@@ -73,6 +73,25 @@ function mountScheduleCalendarInstance(container) {
     'aria-haspopup="true" aria-expanded="false" aria-controls="' + escapeHtml(createMenuId) + '">' +
     '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Create' +
     '<span class="msc-create-btn-caret" aria-hidden="true">&#9662;</span></button>' +
+    '</div>' +
+    '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
+    '<div class="msc-category-legend" aria-label="Task category legend">' +
+    '<span class="msc-chip-cat task">Scheduled Task</span>' +
+    '<span class="msc-chip-cat followup">Unscheduled Task</span>' +
+    '</div>' +
+    '</div>' +
+    /* Create chooser menu (2026-07-22 collapsed-sidebar-create-chooser
+       fix) — deliberately NOT nested inside .msc-sidebar above.
+       .msc-sidebar.collapsed sets display:none on its whole subtree
+       (calendar.css), which was also hiding this popup any time the
+       calendar's internal sidebar was collapsed, even though it opens
+       from a Month/Week/Day/all-day empty-cell click that has nothing
+       to do with the sidebar (openCreateChoiceFromCalendar below).
+       position:fixed (set by positionCreateMenu()) only escapes an
+       ancestor's overflow/stacking context, never an ancestor's
+       display:none, so the fix is DOM placement, not a CSS/z-index
+       change: this menu now lives as a sidebar-independent sibling that
+       is never touched by the collapse toggle. */
     '<div class="msc-create-menu" id="' + escapeHtml(createMenuId) + '" role="menu" aria-label="Create" hidden>' +
     '<div class="msc-create-menu-heading" aria-hidden="true">Create</div>' +
     /* Visible labels shortened to "Task"/"Leave" (2026-07-20 chooser-label
@@ -84,13 +103,6 @@ function mountScheduleCalendarInstance(container) {
     '<span class="msc-create-menu-icon" aria-hidden="true">&#128221;</span>Task</button>' +
     '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="leave" aria-label="Create Leave">' +
     '<span class="msc-create-menu-icon" aria-hidden="true">&#128197;</span>Leave</button>' +
-    '</div>' +
-    '</div>' +
-    '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
-    '<div class="msc-category-legend" aria-label="Task category legend">' +
-    '<span class="msc-chip-cat task">Scheduled Task</span>' +
-    '<span class="msc-chip-cat followup">Unscheduled Task</span>' +
-    '</div>' +
     '</div>' +
     '<div class="msc-calendar-content">' +
     '<div class="msc-cal-grid-wrap">' +
@@ -440,7 +452,14 @@ function mountScheduleCalendarInstance(container) {
   }
 
   function onDocClickForCreateMenu(e) {
+    /* Checked separately (2026-07-22 collapsed-sidebar-create-chooser fix)
+       — createMenuEl is no longer a DOM descendant of createWrapEl (see
+       the mount markup above), so a click on a Task/Leave menu item must
+       be tested against createMenuEl directly or this capture-phase
+       listener would treat it as an outside click and close the menu
+       before the item's own click handler runs. */
     if (createWrapEl && createWrapEl.contains(e.target)) { return; }
+    if (createMenuEl && createMenuEl.contains(e.target)) { return; }
     closeCreateMenu();
   }
 
