@@ -950,6 +950,22 @@ function mountScheduleCalendarInstance(container) {
     var startTime = allDay ? null : (opts.startTime || null);
     var endTime = allDay ? null : (opts.endTime || null);
 
+    /* Full-day-leave-blocks-create task (2026-07-23) — a blank-area click
+       on a date that is fully covered by Full-Day or Multi-Day leave must
+       not open the Create dialog at all (superseding the earlier "always
+       open, let the backend reject" rule). This only cancels the popup;
+       it never touches the backend conflict check that still governs any
+       Create dialog opened from elsewhere (e.g. the sidebar Create
+       button before a date is chosen). */
+    if (isDateFullyLeaveBlocked(dateKey)) {
+      showToast({
+        type: 'information',
+        title: 'Full-day leave scheduled',
+        message: 'No new Task or Leave can be added on this date.'
+      });
+      return;
+    }
+
     selectDate(dateKey);
     cancelLeaveEdit(false);
     if (startTime) {
@@ -1387,6 +1403,23 @@ function mountScheduleCalendarInstance(container) {
 
   function leaveItemsForDate(dateStr) {
     return leaveItems.filter(function (lv) { return leaveDatesForItem(lv).indexOf(dateStr) !== -1; });
+  }
+
+  /* Full-day-leave-blocks-create task (2026-07-23) — presentation-only
+     gate on whether the Create dialog may open for a given date. Reuses
+     leaveItemsForDate() above, so it inherits that helper's existing
+     active-only (deleted_at IS NULL) and current-member filtering rather
+     than re-deriving either — there is exactly one place that decides
+     which leave records apply to a date. Only 'Full-Day' and 'Multi-Day'
+     block: those are the only two leave_type values that represent
+     whole-day coverage. Short Leave / Half-Day First / Half-Day Second
+     are partial-day and must keep allowing Create on that date, since a
+     valid Task/Leave may still fit outside the partial period — the
+     backend remains the authority on any actual scheduling conflict. */
+  function isDateFullyLeaveBlocked(dateStr) {
+    return leaveItemsForDate(dateStr).some(function (lv) {
+      return lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day';
+    });
   }
 
   /* ── Month visible-task-preview cap (Step 3/4/6, calendar-two-task-

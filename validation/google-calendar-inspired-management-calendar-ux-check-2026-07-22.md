@@ -300,3 +300,37 @@ This document plus the updated `web-view/README.md` sections ("Month-cell click 
 ## BJ. One next step
 
 Run the full regression matrix (Task/Leave Create/Edit/Delete, "+N more" full-list Edit/Delete, Full-Day Leave conflict message, list-return, drag/resize) against a real local FastAPI + PostgreSQL instance (or the deployed staging backend) for all 5 members, and fold the results into this document before treating the task as fully closed.
+
+---
+
+## Addendum — 2026-07-23: Prevent Create dialog on full-day-leave-blocked dates (supersedes AC)
+
+**Screenshot-derived defect:** a screenshot showed that clicking blank space inside a Month-view date cell already covered by Full-Day Leave still opened the unified Create Task/Leave popup. This was confirmed incorrect — the user-approved rule is now that a fully leave-blocked date must not open the Create UI at all, not open-then-rely-on-backend-rejection.
+
+**Previous behavior (per AC above):** blank click always opened the Create chooser, including on a Full-Day/Multi-Day-Leave date; the backend's `leave_conflict`/`task_conflict` 409 was the only thing preventing an actual double-booking, after the dialog was already open and the user had to submit the form to discover the conflict.
+
+**Final behavior (this fix):** a blank-cell click (Month, and — since the check sits in the one shared entry point every empty-area click already funneled through — also Week/Day empty timed-slot and all-day-row clicks) on a date fully covered by Full-Day or Multi-Day leave is cancelled before the Create dialog opens, and an informational toast is shown instead:
+
+> **Full-day leave scheduled**
+> No new Task or Leave can be added on this date.
+
+Leave chip clicks, Task chip clicks, and "+N more" are unaffected — they stop propagation in their own handlers (confirmed unchanged, see AD) and never reach the blank-cell check.
+
+**Frontend blocking helper used:** a new `isDateFullyLeaveBlocked(dateStr)` in `web-view/js/calendar/instance.js`, added next to the existing `leaveItemsForDate(dateStr)` and built entirely on top of it (no second Leave-conflict engine) — it reuses that helper's existing active-only (`deleted_at IS NULL`, server-filtered) and current-member-scoped `leaveItems`, and only adds a `leave_type === 'Full-Day' || leave_type === 'Multi-Day'` test. The check is called once, at the top of `openCreateChoiceFromCalendar()` — the single centralized function every blank-area click (Month cell, Week/Day empty hour cell, Week/Day empty all-day column) already called before this fix.
+
+**Verification method:** real Chrome (system-installed, driven headlessly via Playwright — `chromium-cli` was unavailable in this environment and `playwright install`'s browser download failed on outbound SSL in this sandbox, so the already-installed system Chrome was used via `executablePath`), against the real local FastAPI backend (`uvicorn backend.main:app --port 8000`) and the project's actual configured Postgres `DATABASE_URL` — not a mock API. Test leave/task records were created via the real `POST /api/member-leave/*` and `POST /api/member-schedules/*` endpoints for realistic dates (2026-08-10 through 2026-08-14), exercised in the browser, then deleted via the real `DELETE` endpoints afterward; confirmed no residual test data remains for any member on those dates.
+
+- **Full-Day result:** Mayurika, 2026-08-10 (Full-Day Leave) — blank-cell click did not open the Create popup; toast fired with the exact approved title/message; a second and third rapid click did not stack a duplicate toast (existing `showToast()` same-key dedup restarted the timer instead, confirmed via DOM inspection: exactly one `.ui-toast` element present after 3 rapid clicks).
+- **Full-Day Leave chip result:** clicking the visible "Full-Day Leave" chip on the same date opened Leave Details (`.msc-leave-view-modal.show`); no toast shown; Create popup stayed closed.
+- **Multi-Day result:** Suman, 2026-08-10 to 2026-08-12 (Multi-Day Leave) — blank-cell click blocked with the same toast on all three covered dates.
+- **Partial-Leave result:** Rajiv Short Leave (2026-08-10, 09:00-10:00) and Arun Half-Day First (2026-08-11) / Half-Day Second (2026-08-12) — blank-cell click opened the Create popup normally on all three dates, confirming partial-day leave types are correctly excluded from the block.
+- **Deleted-Leave result:** Paraparan — a Full-Day Leave was created then soft-deleted (`DELETE /api/member-leave/paraparan/{id}`, confirmed 200) on 2026-08-13; blank-cell click on that date opened the Create popup normally, confirming a deleted leave record does not block (the reused `leaveItemsForDate()` only ever holds server-filtered active leave).
+- **Member-isolation result:** Mayurika's Full-Day Leave and Suman's Multi-Day Leave on 2026-08-10 did not block Rajiv's blank-cell click on the same calendar date (Rajiv's own leave on that date was Short Leave, non-blocking) — each member instance's `leaveItems` is independently scoped, confirmed live.
+- **Regression result:** on a date with 3 pre-existing tasks and no leave (Arun, 2026-08-14), blank-cell click still opened the Create popup, the "+N more" chip still opened the full task list, and a Task chip click still opened Task Details — all three unaffected by this change, as expected (they stop propagation before the cell handler runs).
+- **Console result:** clean across the whole pass except one pre-existing, unrelated `/favicon.ico` 404 (present before this change, confirmed via direct `curl` — not part of `web-view/`'s file set, not introduced by this fix).
+- **Backend/API/database/migrations:** confirmed unchanged (`git diff --stat -- backend/ database/ database/migrations/` returns no output) — this is a presentation-layer-only change; the backend's own `leave_conflict`/`task_conflict` enforcement is untouched and remains the authority for any Create dialog opened another way (e.g. the sidebar Create button, before a date is chosen).
+- **Protected folder:** `member-aios/mayurika-hr/staff-data/` confirmed untouched (still shows only as untracked, never staged or modified).
+
+**PASS.**
+
+**One next step:** none required for this specific interaction; the broader BH/BJ live-backend regression pass noted above (Task/Leave Edit/Delete round trips, list-return, drag/resize, Week/Day interaction depth) remains open for a future task.
