@@ -31,3 +31,9 @@ member-aios/staff-data/source/normalized/*.sql
 # committed. See scripts/update_staff_locations_from_hr_sources.py and
 # validation/staff-location-source-reconciliation-check-2026-07-13.md.
 evidence/staff-location-update-reconciliation-*.csv
+
+# Public-repo PII exposure fix, 2026-07-23 — real HR staff-data files that
+# were accidentally committed. Untracked; kept locally only. See CLAUDE.md
+# §6 and validation/staff-data-source-storage-discovery-check-2026-07-13.md.
+member-aios/mayurika-hr/staff-data/
+intelligence-inbox/raw-stakeholder-documents/staff-data/Digitweblanka Staffs Data - Overall Staffs.csv

@@ -541,7 +541,7 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-modal-overlay msc-create-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(createPopupId) + '">' +
     '<div class="msc-modal msc-modal-form">' +
     '<div class="msc-modal-form-head">' +
-    '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create Task</h4>' +
+    '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create</h4>' +
     '<button type="button" class="msc-modal-close msc-create-popup-close" aria-label="Close">&times;</button>' +
     '</div>' +
     '<div class="msc-create-tabs" role="tablist" aria-label="Task, Bulk Tasks, or Leave">' +
@@ -955,14 +955,15 @@ function mountScheduleCalendarInstance(container) {
       createTabLeaveBtn.setAttribute('aria-selected', isLeave ? 'true' : 'false');
     }
     if (createPopupHeading) {
-      /* Task heading has always been a static "Create Task" (no prior
-         "Edit Task" wording existed to preserve). Leave's dynamic
+      /* Task heading is a static "Create" (dialog-text-removal task,
+         2026-07-23 — the Task/Bulk Tasks/Leave tabs already disambiguate
+         the type, so the heading no longer repeats it). Leave's dynamic
          Create/Edit heading is set by setLeavePopupMode() below and is
          only ever meaningful while this tab is the active one. Bulk Tasks
          has no edit mode (Bulk Tasks only ever creates), so its heading
          is a static string matching the approved Step 16 form header. */
       createPopupHeading.textContent = isTask
-        ? 'Create Task'
+        ? 'Create'
         : (isBulk ? 'Create multiple tasks' : (editingLeaveId ? 'Edit leave' : 'Create Leave'));
     }
   }
