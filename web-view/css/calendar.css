@@ -2603,8 +2603,116 @@
     }
 
     .msc-create-task-fields,
-    .msc-create-leave-fields {
+    .msc-create-leave-fields,
+    .msc-create-bulk-fields {
       margin-bottom: 4px;
+    }
+
+    /* ── Same-day Bulk Tasks (2026-07-23) — third Create-dialog tab.
+       Internal scrolling and background-scroll containment are already
+       provided by the existing .msc-modal-form (max-height/overflow-y,
+       calendar.css above) and lockBodyScroll() (JS) — nothing new is
+       needed for either here, this only adds the row-list-specific
+       presentation. ── */
+    .msc-bulk-date-field {
+      max-width: 220px;
+      margin-bottom: 10px;
+    }
+
+    .msc-bulk-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .msc-bulk-row {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      background: var(--surface);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+
+    .msc-bulk-row-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .msc-bulk-row-number {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .msc-bulk-row-remove {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .msc-bulk-row-remove:hover:not(:disabled) {
+      background: var(--surface-tint-3);
+      color: var(--text);
+    }
+
+    .msc-bulk-row-remove:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .msc-bulk-row-fields {
+      gap: 8px 12px;
+    }
+
+    /* Hard-validation failure (Step 6/18, status validation_failed) —
+       same --error token .ui-field-invalid (ui.css) already uses, so a
+       failing row reads as one consistent error language across the
+       whole app. */
+    .msc-bulk-row-error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 1px var(--error);
+    }
+
+    /* Duplicate CONFIRMATION pending (Step 9/10/11, status
+       duplicate_confirmation_required) — --warning, deliberately distinct
+       from the --error state above: a duplicate is a warning the user
+       may still choose to confirm through, never a hard rejection. */
+    .msc-bulk-row-duplicate-warning {
+      border-color: var(--warning);
+      box-shadow: 0 0 0 1px var(--warning);
+    }
+
+    /* Early, non-blocking client-side hint only (Step 17) — a lighter
+       dashed treatment, distinct from the authoritative --warning state
+       above, so the two are never visually confused with each other. */
+    .msc-bulk-row-duplicate-hint {
+      border-style: dashed;
+      border-color: var(--warning);
+    }
+
+    .msc-bulk-add-row-btn {
+      align-self: flex-start;
+    }
+
+    .msc-bulk-add-row-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .msc-bulk-leave-blocked-note {
+      color: var(--error);
+      font-weight: 600;
     }
 
     @media (max-width: 900px) {

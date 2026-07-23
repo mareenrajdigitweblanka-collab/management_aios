@@ -510,8 +510,9 @@ function mountScheduleCalendarInstance(container) {
     '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create Task</h4>' +
     '<button type="button" class="msc-modal-close msc-create-popup-close" aria-label="Close">&times;</button>' +
     '</div>' +
-    '<div class="msc-create-tabs" role="tablist" aria-label="Task or Leave">' +
+    '<div class="msc-create-tabs" role="tablist" aria-label="Task, Bulk Tasks, or Leave">' +
     '<button type="button" class="msc-create-tab msc-create-tab-task active" role="tab" aria-selected="true">Task</button>' +
+    '<button type="button" class="msc-create-tab msc-create-tab-bulk" role="tab" aria-selected="false">Bulk Tasks</button>' +
     '<button type="button" class="msc-create-tab msc-create-tab-leave" role="tab" aria-selected="false">Leave</button>' +
     '</div>' +
     '<div class="msc-create-task-fields">' +
@@ -533,6 +534,29 @@ function mountScheduleCalendarInstance(container) {
     '<label>End time<input type="time" class="msc-field-end" /></label>' +
     '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
     'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
+    '</form>' +
+    '</div>' +
+    '</div>' +
+    /* ── Bulk Tasks tab (same-day-bulk-task-creation task, 2026-07-23) —
+       third tab in the unified Create dialog, additive alongside the
+       unchanged Task/Leave tabs above/below. One common Date field; the
+       row list itself is rendered/managed entirely in JS (renderBulkRows()
+       et al. below) rather than as static markup, since rows are added/
+       removed dynamically (start at 1-2 rows, grow to a max of
+       MAX_BULK_TASK_ROWS = 30, mirroring the backend's own cap). No
+       Scheduled/Unscheduled selector exists here, matching the single-Task
+       form's own msc-field-category-note convention. */
+    '<div class="msc-create-bulk-fields" hidden>' +
+    '<div class="msc-form-card">' +
+    '<div class="hr-table-title" style="margin-bottom:10px;">Create multiple tasks</div>' +
+    '<form class="msc-bulk-form" autocomplete="off">' +
+    '<label class="msc-bulk-date-field">Date<input type="date" class="msc-bulk-field-date" required /></label>' +
+    '<p class="msc-form-full msc-field-category-note">Task type is assigned automatically based on when ' +
+    'each task is created — every task in this batch shares the same submission moment.</p>' +
+    '<p class="msc-form-full msc-bulk-leave-blocked-note" hidden>No new Task can be added on this date — it is ' +
+    'covered by Full-Day or Multi-Day leave.</p>' +
+    '<div class="msc-bulk-rows"></div>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-bulk-add-row-btn">+ Add another task</button>' +
     '</form>' +
     '</div>' +
     '</div>' +
@@ -575,6 +599,13 @@ function mountScheduleCalendarInstance(container) {
     '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
     '<button type="button" class="msc-btn msc-btn-primary msc-leave-update-btn" style="display:none;">Update leave</button>' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-leave-cancel-btn" style="display:none;">Cancel edit</button>' +
+    '</div>' +
+    '</div>' +
+    '<div class="msc-create-bulk-footer" style="display:none;">' +
+    '<p class="msc-note msc-api-status msc-bulk-popup-status" style="display:none;"></p>' +
+    '<div class="msc-form-actions">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-bulk-create-btn">Create tasks</button>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-bulk-cancel-btn">Cancel</button>' +
     '</div>' +
     '</div>' +
     '</div>' +
@@ -716,15 +747,29 @@ function mountScheduleCalendarInstance(container) {
   var createTabsEl = container.querySelector('.msc-create-tabs');
   var createTabTaskBtn = container.querySelector('.msc-create-tab-task');
   var createTabLeaveBtn = container.querySelector('.msc-create-tab-leave');
+  var createTabBulkBtn = container.querySelector('.msc-create-tab-bulk');
   var createTaskFieldsEl = container.querySelector('.msc-create-task-fields');
   var createLeaveFieldsEl = container.querySelector('.msc-create-leave-fields');
+  var createBulkFieldsEl = container.querySelector('.msc-create-bulk-fields');
   var createTaskFooterEl = container.querySelector('.msc-create-task-footer');
   var createLeaveFooterEl = container.querySelector('.msc-create-leave-footer');
+  var createBulkFooterEl = container.querySelector('.msc-create-bulk-footer');
   var taskPopupOverlay = createPopupOverlay;
   var taskPopupClose = createPopupClose;
   var taskPopupStatusEl = container.querySelector('.msc-task-popup-status');
   var leavePopupOverlay = createPopupOverlay;
   var leavePopupClose = createPopupClose;
+
+  /* ── Same-day Bulk Tasks (2026-07-23) scoped refs ── */
+  var bulkFormEl = container.querySelector('.msc-bulk-form');
+  var bulkFieldDate = container.querySelector('.msc-bulk-field-date');
+  var bulkLeaveBlockedNote = container.querySelector('.msc-bulk-leave-blocked-note');
+  var bulkRowsEl = container.querySelector('.msc-bulk-rows');
+  var bulkAddRowBtn = container.querySelector('.msc-bulk-add-row-btn');
+  var bulkCreateBtn = container.querySelector('.msc-bulk-create-btn');
+  var bulkCancelBtn = container.querySelector('.msc-bulk-cancel-btn');
+  var bulkPopupStatusEl = container.querySelector('.msc-bulk-popup-status');
+  if (bulkFormEl) { bulkFormEl.addEventListener('submit', function (e) { e.preventDefault(); }); }
 
   /* ── Month "+N more" date-specific popup refs (Step 8/9,
      calendar-task-detail-and-more-popup task, 2026-07-20) ── */
@@ -851,43 +896,70 @@ function mountScheduleCalendarInstance(container) {
      whatever value it already had (each tab's fields are never cleared by
      a tab switch — only Create/blank-cell entry points reset them, via
      cancelEdit()/cancelLeaveEdit(), exactly as before). */
+  /* kind: 'task' | 'bulk' | 'leave' (same-day-bulk-task-creation task,
+     2026-07-23 added 'bulk' as a third state alongside the pre-existing
+     'task'/'leave' pair — every existing 'task'/'leave' branch below is
+     unchanged, only extended to also check for 'bulk'). */
   function setCreateDialogTab(kind) {
     var isTask = kind === 'task';
-    activeCreateTab = isTask ? 'task' : 'leave';
+    var isBulk = kind === 'bulk';
+    var isLeave = !isTask && !isBulk;
+    activeCreateTab = isTask ? 'task' : (isBulk ? 'bulk' : 'leave');
     if (createTaskFieldsEl) { createTaskFieldsEl.hidden = !isTask; }
-    if (createLeaveFieldsEl) { createLeaveFieldsEl.hidden = isTask; }
+    if (createBulkFieldsEl) { createBulkFieldsEl.hidden = !isBulk; }
+    if (createLeaveFieldsEl) { createLeaveFieldsEl.hidden = !isLeave; }
     if (createTaskFooterEl) { createTaskFooterEl.style.display = isTask ? '' : 'none'; }
-    if (createLeaveFooterEl) { createLeaveFooterEl.style.display = isTask ? 'none' : ''; }
+    if (createBulkFooterEl) { createBulkFooterEl.style.display = isBulk ? '' : 'none'; }
+    if (createLeaveFooterEl) { createLeaveFooterEl.style.display = isLeave ? '' : 'none'; }
     if (createTabTaskBtn) {
       createTabTaskBtn.classList.toggle('active', isTask);
       createTabTaskBtn.setAttribute('aria-selected', isTask ? 'true' : 'false');
     }
+    if (createTabBulkBtn) {
+      createTabBulkBtn.classList.toggle('active', isBulk);
+      createTabBulkBtn.setAttribute('aria-selected', isBulk ? 'true' : 'false');
+    }
     if (createTabLeaveBtn) {
-      createTabLeaveBtn.classList.toggle('active', !isTask);
-      createTabLeaveBtn.setAttribute('aria-selected', isTask ? 'false' : 'true');
+      createTabLeaveBtn.classList.toggle('active', isLeave);
+      createTabLeaveBtn.setAttribute('aria-selected', isLeave ? 'true' : 'false');
     }
     if (createPopupHeading) {
       /* Task heading has always been a static "Create Task" (no prior
          "Edit Task" wording existed to preserve). Leave's dynamic
          Create/Edit heading is set by setLeavePopupMode() below and is
-         only ever meaningful while this tab is the active one. */
-      createPopupHeading.textContent = isTask ? 'Create Task' : (editingLeaveId ? 'Edit leave' : 'Create Leave');
+         only ever meaningful while this tab is the active one. Bulk Tasks
+         has no edit mode (Bulk Tasks only ever creates), so its heading
+         is a static string matching the approved Step 16 form header. */
+      createPopupHeading.textContent = isTask
+        ? 'Create Task'
+        : (isBulk ? 'Create multiple tasks' : (editingLeaveId ? 'Edit leave' : 'Create Leave'));
     }
   }
 
   if (createTabTaskBtn) {
     createTabTaskBtn.addEventListener('click', function () {
       if (activeCreateTab === 'task') { return; }
-      var dateVal = leaveFieldStartDate.value;
+      var dateVal = activeCreateTab === 'bulk' ? bulkFieldDate.value : leaveFieldStartDate.value;
       setCreateDialogTab('task');
       if (dateVal && !fieldDate.value) { fieldDate.value = dateVal; }
       if (fieldTitle && fieldTitle.focus) { fieldTitle.focus(); }
     });
   }
+  if (createTabBulkBtn) {
+    createTabBulkBtn.addEventListener('click', function () {
+      if (activeCreateTab === 'bulk') { return; }
+      var dateVal = activeCreateTab === 'task' ? fieldDate.value : leaveFieldStartDate.value;
+      setCreateDialogTab('bulk');
+      if (dateVal && !bulkFieldDate.value) { bulkFieldDate.value = dateVal; }
+      ensureBulkMinimumRows();
+      applyBulkLeaveGate();
+      if (bulkFieldDate && bulkFieldDate.focus) { bulkFieldDate.focus(); }
+    });
+  }
   if (createTabLeaveBtn) {
     createTabLeaveBtn.addEventListener('click', function () {
       if (activeCreateTab === 'leave') { return; }
-      var dateVal = fieldDate.value;
+      var dateVal = activeCreateTab === 'bulk' ? bulkFieldDate.value : fieldDate.value;
       setCreateDialogTab('leave');
       if (dateVal && !leaveFieldStartDate.value) { leaveFieldStartDate.value = dateVal; }
       if (leaveFieldType && leaveFieldType.focus) { leaveFieldType.focus(); }
@@ -908,7 +980,10 @@ function mountScheduleCalendarInstance(container) {
      Leave record or vice versa). */
   function openCreatePopup(kind) {
     var alreadyOpen = createPopupOverlay.classList.contains('show');
-    var editing = kind === 'task' ? !!state.editingId : !!editingLeaveId;
+    /* Bulk Tasks never has an edit mode (it only ever creates), so
+       `editing` is always false for kind === 'bulk' — the tabs stay
+       visible exactly like a fresh Task/Leave create. */
+    var editing = kind === 'task' ? !!state.editingId : (kind === 'leave' && !!editingLeaveId);
     setCreateDialogTab(kind);
     if (createTabsEl) { createTabsEl.hidden = editing; }
     createPopupOverlay.classList.add('show');
@@ -916,13 +991,19 @@ function mountScheduleCalendarInstance(container) {
        containment task, 2026-07-23) — this is a true centered modal
        (full-screen overlay), so the background page must not scroll
        while it's open. Guarded by alreadyOpen so switching the Task/
-       Leave tab on an already-open dialog (which re-enters this
+       Bulk/Leave tab on an already-open dialog (which re-enters this
        function) never double-locks. */
     if (!alreadyOpen) { lockBodyScroll(); }
     createPopupOverlay.addEventListener('keydown', onCreatePopupKeydown);
-    var focusEl = kind === 'task' ? fieldTitle : leaveFieldType;
+    if (kind === 'bulk') {
+      ensureBulkMinimumRows();
+      applyBulkLeaveGate();
+    }
+    var focusEl = kind === 'task' ? fieldTitle : (kind === 'bulk' ? bulkFieldDate : leaveFieldType);
     if (focusEl && focusEl.focus) { focusEl.focus(); }
   }
+
+  function openBulkTasksPopup() { openCreatePopup('bulk'); }
 
   function closeCreatePopup() {
     var wasOpen = createPopupOverlay.classList.contains('show');
@@ -1378,6 +1459,21 @@ function mountScheduleCalendarInstance(container) {
             err = new Error(errBody.message || 'This task conflicts with active leave.');
             err.code = 'leave_conflict';
             err.conflicts = errBody.conflicts || [];
+          } else if (errBody && errBody.status === 'validation_failed') {
+            /* Same-day Bulk Tasks (2026-07-23) — zero-write hard-validation
+               contract (backend/schemas.py BulkTaskRowErrorOut). Tagged
+               distinctly from the generic 'validation' code below so the
+               Bulk Tasks submit handler can read the row-level errors
+               array directly rather than only a generic mapped message. */
+            err = new Error('Tasks were not created.');
+            err.code = 'bulk_validation_failed';
+            err.errors = errBody.errors || [];
+          } else if (errBody && errBody.status === 'duplicate_confirmation_required') {
+            /* Same-day Bulk Tasks (2026-07-23) — zero-write duplicate-
+               warning contract (backend/schemas.py BulkDuplicateWarningOut). */
+            err = new Error('Some tasks may already exist.');
+            err.code = 'bulk_duplicate_confirmation_required';
+            err.warnings = errBody.warnings || [];
           } else {
             err = new Error('Request failed.');
             err.code = classifyHttpStatus(res.status);
@@ -1441,6 +1537,438 @@ function mountScheduleCalendarInstance(container) {
   function isDateFullyLeaveBlocked(dateStr) {
     return leaveItemsForDate(dateStr).some(function (lv) {
       return lv.leave_type === 'Full-Day' || lv.leave_type === 'Multi-Day';
+    });
+  }
+
+  /* ── Same-day Bulk Tasks (2026-07-23) ──────────────────────────────────
+     One common Date field (msc-bulk-field-date) plus a dynamically
+     rendered, reorderable-by-remove list of task rows (msc-bulk-rows).
+     Reuses every existing rule this file/backend already enforces for a
+     single Task — no new business logic is invented here beyond routing
+     to POST {apiBase}/bulk with the approved request/response contract
+     (backend/schemas.py BulkTaskCreateRequest/BulkTaskRowIn). Duplicate
+     confirmation reuses the shared confirmDestructive() dialog (ui/
+     dialog.js) with confirmVariant:'primary' so "Create tasks anyway"
+     never wears the red delete-style button that dialog defaults to. */
+  var MAX_BULK_TASK_ROWS = 30; // mirrors backend/config.py MAX_BULK_TASK_ROWS
+  var bulkRowSeq = 0;
+  var bulkSubmitInFlight = false;
+
+  function bulkRowFieldElement(rowEl, field) {
+    if (!rowEl) { return null; }
+    if (field === 'title') { return rowEl.querySelector('.msc-bulk-row-title'); }
+    if (field === 'start') { return rowEl.querySelector('.msc-bulk-row-start'); }
+    if (field === 'end') { return rowEl.querySelector('.msc-bulk-row-end'); }
+    if (field === 'priority') { return rowEl.querySelector('.msc-bulk-row-priority'); }
+    if (field === 'notes') { return rowEl.querySelector('.msc-bulk-row-notes'); }
+    return null;
+  }
+
+  function getBulkRows() {
+    return bulkRowsEl ? Array.prototype.slice.call(bulkRowsEl.querySelectorAll('.msc-bulk-row')) : [];
+  }
+
+  function getBulkRowByNumber(rowNumber) {
+    return getBulkRows()[rowNumber - 1] || null;
+  }
+
+  function updateBulkAddButtonState() {
+    if (!bulkAddRowBtn) { return; }
+    var blockedByLeave = !!(bulkFieldDate && bulkFieldDate.value && isDateFullyLeaveBlocked(bulkFieldDate.value));
+    bulkAddRowBtn.disabled = blockedByLeave || getBulkRows().length >= MAX_BULK_TASK_ROWS;
+  }
+
+  function renderBulkRowNumbers() {
+    var rows = getBulkRows();
+    rows.forEach(function (rowEl, idx) {
+      var numEl = rowEl.querySelector('.msc-bulk-row-number');
+      if (numEl) { numEl.textContent = 'Task ' + (idx + 1); }
+      var removeBtn = rowEl.querySelector('.msc-bulk-row-remove');
+      if (removeBtn) { removeBtn.disabled = rows.length <= 1; }
+    });
+    updateBulkAddButtonState();
+  }
+
+  function bulkRowMarkup() {
+    bulkRowSeq += 1;
+    return (
+      '<div class="msc-bulk-row" data-bulk-row-seq="' + bulkRowSeq + '">' +
+      '<div class="msc-bulk-row-head">' +
+      '<span class="msc-bulk-row-number"></span>' +
+      '<button type="button" class="msc-bulk-row-remove" aria-label="Remove this task row">&times;</button>' +
+      '</div>' +
+      /* .msc-form-grid reused verbatim (same 2-col/1-col-at-560px
+         responsive behavior already defined for the Task/Leave forms) —
+         no second grid/breakpoint rule is defined for Bulk Tasks. */
+      '<div class="msc-bulk-row-fields msc-form-grid">' +
+      '<label>Task title<input type="text" class="msc-bulk-row-title" maxlength="120" placeholder="e.g. Prepare weekly report" /></label>' +
+      '<label>Start time<input type="time" class="msc-bulk-row-start" /></label>' +
+      '<label>End time<input type="time" class="msc-bulk-row-end" /></label>' +
+      '<label>Priority<select class="msc-bulk-row-priority">' +
+      '<option value="High">High</option>' +
+      '<option value="Medium" selected>Medium</option>' +
+      '<option value="Low">Low</option>' +
+      '</select></label>' +
+      '<label class="msc-form-full">Notes<textarea class="msc-bulk-row-notes" maxlength="240" ' +
+      'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
+      '</div>' +
+      '</div>'
+    );
+  }
+
+  function wireBulkRowEvents(rowEl) {
+    var removeBtn = rowEl.querySelector('.msc-bulk-row-remove');
+    if (removeBtn) { removeBtn.addEventListener('click', function () { removeBulkRow(rowEl); }); }
+    ['msc-bulk-row-title', 'msc-bulk-row-start', 'msc-bulk-row-end', 'msc-bulk-row-notes'].forEach(function (cls) {
+      var el = rowEl.querySelector('.' + cls);
+      if (!el) { return; }
+      el.addEventListener('input', function () {
+        clearFieldError(el);
+        rowEl.classList.remove('msc-bulk-row-error', 'msc-bulk-row-duplicate-warning');
+        refreshBulkDuplicateHints();
+      });
+    });
+    var priorityEl = rowEl.querySelector('.msc-bulk-row-priority');
+    if (priorityEl) { priorityEl.addEventListener('change', refreshBulkDuplicateHints); }
+  }
+
+  function addBulkRow() {
+    if (!bulkRowsEl || getBulkRows().length >= MAX_BULK_TASK_ROWS) { return null; }
+    bulkRowsEl.insertAdjacentHTML('beforeend', bulkRowMarkup());
+    var rows = getBulkRows();
+    var newRow = rows[rows.length - 1];
+    wireBulkRowEvents(newRow);
+    renderBulkRowNumbers();
+    return newRow;
+  }
+
+  function removeBulkRow(rowEl) {
+    if (!rowEl || !rowEl.parentNode || getBulkRows().length <= 1) { return; }
+    rowEl.parentNode.removeChild(rowEl);
+    renderBulkRowNumbers();
+    refreshBulkDuplicateHints();
+  }
+
+  /* Begins with 2 rows on first use, per Step 16 ("begin with a
+     reasonable number of rows, such as one or two... do not pre-create
+     all 30 rows") — only adds rows when the list is empty, so reopening
+     the dialog on an in-progress batch never discards what the user
+     already entered (resetBulkForm() below is the only path that empties
+     the list first). */
+  function ensureBulkMinimumRows() {
+    if (getBulkRows().length === 0) {
+      addBulkRow();
+      addBulkRow();
+    }
+  }
+
+  function clearBulkFormErrors() {
+    if (bulkFormEl) { clearFormErrors(bulkFormEl); }
+    getBulkRows().forEach(function (rowEl) {
+      rowEl.classList.remove('msc-bulk-row-error', 'msc-bulk-row-duplicate-warning');
+    });
+  }
+
+  function resetBulkForm() {
+    if (bulkRowsEl) { bulkRowsEl.innerHTML = ''; }
+    bulkRowSeq = 0;
+    if (bulkFieldDate) { bulkFieldDate.value = ''; }
+    clearBulkFormErrors();
+    showApiStatus('', false, bulkPopupStatusEl);
+    ensureBulkMinimumRows();
+    if (bulkLeaveBlockedNote) { bulkLeaveBlockedNote.hidden = true; }
+    if (bulkCreateBtn) { bulkCreateBtn.disabled = false; }
+  }
+
+  /* A row is blank only when title, start, end, and notes are ALL empty
+     (Step 5) — priority is deliberately excluded, matching the backend's
+     own _is_blank_bulk_row rule exactly (every row always carries a
+     default priority value from the select, which must never by itself
+     make an otherwise-blank row count as filled). */
+  function isBulkRowBlank(rowEl) {
+    var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
+    var start = bulkRowFieldElement(rowEl, 'start').value;
+    var end = bulkRowFieldElement(rowEl, 'end').value;
+    var notes = (bulkRowFieldElement(rowEl, 'notes').value || '').trim();
+    return !title && !start && !end && !notes;
+  }
+
+  /* Mirrors the backend's own _bulk_row_field_errors rules exactly (same
+     title/notes length limits, same end>start rule via timeToMinutes() —
+     the same helper validateTaskTimeRange() already uses for the single
+     Task form) — an early, non-authoritative check only; the backend
+     always re-validates every row from scratch regardless of what this
+     finds (Step 17: "does not replace backend validation"). */
+  function bulkRowFieldErrors(rowEl) {
+    var errors = [];
+    var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
+    if (!title) {
+      errors.push({ field: 'title', message: 'Enter a title for this task.' });
+    } else if (title.length > 120) {
+      errors.push({ field: 'title', message: 'Title must be 120 characters or fewer.' });
+    }
+    var notes = bulkRowFieldElement(rowEl, 'notes').value || '';
+    if (notes.length > 240) {
+      errors.push({ field: 'notes', message: 'Notes must be 240 characters or fewer.' });
+    }
+    var start = bulkRowFieldElement(rowEl, 'start').value;
+    var end = bulkRowFieldElement(rowEl, 'end').value;
+    if (start && end && timeToMinutes(end) <= timeToMinutes(start)) {
+      errors.push({ field: 'end', message: 'End time must be later than start time.' });
+    }
+    return errors;
+  }
+
+  function bulkDuplicateKey(rowEl) {
+    var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim().toLowerCase();
+    var start = bulkRowFieldElement(rowEl, 'start').value || '';
+    var end = bulkRowFieldElement(rowEl, 'end').value || '';
+    return title + '|' + start + '|' + end;
+  }
+
+  /* Early, non-blocking warning only (Step 17 "identify duplicates within
+     the current form for early warning") — mirrors the backend's own
+     duplicate definition (_bulk_duplicate_key: trim+casefold title, HH:MM
+     start/end) so this can never disagree with the authoritative check.
+     Never blocks submission by itself; the actual confirm/reject decision
+     always comes from the backend's duplicate_confirmation_required
+     response (Step 8/9/10). */
+  function refreshBulkDuplicateHints() {
+    var rows = getBulkRows();
+    var groups = {};
+    rows.forEach(function (rowEl) {
+      if (isBulkRowBlank(rowEl)) { return; }
+      var key = bulkDuplicateKey(rowEl);
+      if (!groups[key]) { groups[key] = []; }
+      groups[key].push(rowEl);
+    });
+    rows.forEach(function (rowEl) { rowEl.classList.remove('msc-bulk-row-duplicate-hint'); });
+    Object.keys(groups).forEach(function (key) {
+      if (groups[key].length > 1) {
+        groups[key].forEach(function (rowEl) { rowEl.classList.add('msc-bulk-row-duplicate-hint'); });
+      }
+    });
+  }
+
+  function rowElToPayloadRow(rowEl) {
+    var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
+    var start = bulkRowFieldElement(rowEl, 'start').value;
+    var end = bulkRowFieldElement(rowEl, 'end').value;
+    var notes = (bulkRowFieldElement(rowEl, 'notes').value || '').trim();
+    return {
+      title: title,
+      priority: bulkRowFieldElement(rowEl, 'priority').value,
+      start: start ? start : null,
+      end: end ? end : null,
+      notes: notes ? notes : null
+    };
+  }
+
+  /* Step 15 — main "+Create" entry only (the date-cell entry point's gate
+     is entirely handled by openCreateChoiceFromCalendar()'s existing
+     pre-open check above, which prevents the whole dialog from opening —
+     Bulk Tasks never even renders in that case). Here the dialog may
+     already be open with no date chosen; once a fully-leave-blocked date
+     is entered/selected, this disables submission and adding further rows
+     and shows the same approved blocked-date message, without closing the
+     dialog or discarding entered rows. The backend still authoritatively
+     rechecks every row regardless of this client-side gate. */
+  function applyBulkLeaveGate() {
+    if (!bulkFieldDate || !bulkLeaveBlockedNote) { return; }
+    var blocked = !!bulkFieldDate.value && isDateFullyLeaveBlocked(bulkFieldDate.value);
+    bulkLeaveBlockedNote.hidden = !blocked;
+    if (bulkCreateBtn) { bulkCreateBtn.disabled = blocked; }
+    updateBulkAddButtonState();
+  }
+
+  if (bulkFieldDate) {
+    bulkFieldDate.addEventListener('input', function () {
+      clearFieldError(bulkFieldDate);
+      applyBulkLeaveGate();
+    });
+  }
+  if (bulkAddRowBtn) {
+    bulkAddRowBtn.addEventListener('click', function () {
+      addBulkRow();
+      refreshBulkDuplicateHints();
+    });
+  }
+
+  /* Applies the backend's structured row/field errors (Step 6/18) —
+     status "validation_failed". Keeps the form open with every row and
+     value intact, marks each affected row, and focuses the first failing
+     field, exactly like the single Task form's own error handling. */
+  function applyBulkRowErrors(errorList) {
+    var firstFieldEl = null;
+    (errorList || []).forEach(function (e) {
+      if (e.row == null) {
+        showToast({ type: 'error', title: 'Tasks were not created', message: e.message });
+        return;
+      }
+      var rowEl = getBulkRowByNumber(e.row);
+      if (!rowEl) { return; }
+      rowEl.classList.add('msc-bulk-row-error');
+      var fieldEl = bulkRowFieldElement(rowEl, e.field) || bulkRowFieldElement(rowEl, 'title');
+      if (fieldEl) {
+        setFieldError(fieldEl, 'Row ' + e.row + ' — ' + e.message);
+        if (!firstFieldEl) { firstFieldEl = fieldEl; }
+      }
+    });
+    showApiStatus(
+      'Tasks were not created. Fix the highlighted rows and submit again. No tasks were saved.',
+      true, bulkPopupStatusEl
+    );
+    if (firstFieldEl && firstFieldEl.focus) { firstFieldEl.focus(); }
+  }
+
+  /* Applies the backend's duplicate warnings (Step 9/10/11) — status
+     "duplicate_confirmation_required". Reuses the shared confirmDestructive
+     dialog with confirmVariant:'primary' (Create tasks anyway creates
+     data, it never deletes anything). "Go back and review" resolves
+     false: nothing is submitted, every row/value is kept, and the first
+     warned row is focused. "Create tasks anyway" resubmits the identical
+     batch with confirm_duplicates=true — the backend revalidates
+     everything again inside its own transaction; this never trusts the
+     warnings shown here as still current. */
+  function showBulkDuplicateConfirmation(warnings) {
+    getBulkRows().forEach(function (rowEl) { rowEl.classList.remove('msc-bulk-row-duplicate-warning'); });
+    var firstRowEl = null;
+    (warnings || []).forEach(function (w) {
+      (w.rows || []).forEach(function (rowNumber) {
+        var rowEl = getBulkRowByNumber(rowNumber);
+        if (rowEl) {
+          rowEl.classList.add('msc-bulk-row-duplicate-warning');
+          if (!firstRowEl) { firstRowEl = rowEl; }
+        }
+      });
+    });
+    var detail = (warnings || []).map(function (w) { return w.message; }).join(' ');
+    confirmDestructive({
+      title: 'Possible duplicate tasks',
+      message: 'Some rows match another row in this batch or a Task already saved for this ' +
+        'member and date. Review the warnings before continuing. ' + detail,
+      confirmLabel: 'Create tasks anyway',
+      cancelLabel: 'Go back and review',
+      confirmVariant: 'primary',
+      trigger: bulkCreateBtn,
+      onConfirm: function () {
+        return performBulkSubmit(true).then(function () { return true; });
+      }
+    }).then(function (confirmed) {
+      if (!confirmed && firstRowEl) {
+        var titleEl = bulkRowFieldElement(firstRowEl, 'title');
+        if (titleEl && titleEl.focus) { titleEl.focus(); }
+      }
+    });
+  }
+
+  /* The one place that actually calls the bulk endpoint — used both by
+     the initial submit (confirmDuplicates=false) and the duplicate-
+     confirmation dialog's "Create tasks anyway" (confirmDuplicates=true).
+     Every row currently in the DOM is sent, in order, INCLUDING blank
+     ones — row numbers in every backend response are 1-indexed positions
+     in this same array, so they always match exactly what the user sees
+     as "Row N" regardless of which rows are blank (Step 5/18). */
+  function performBulkSubmit(confirmDuplicates) {
+    var dateVal = bulkFieldDate.value;
+    var tasks = getBulkRows().map(rowElToPayloadRow);
+    var payload = { date: dateVal, tasks: tasks, confirm_duplicates: !!confirmDuplicates };
+    return apiRequest('POST', apiBase + '/bulk', payload).then(function (result) {
+      (result.items || []).forEach(function (apiItem) { items.push(apiItemToFrontend(apiItem)); });
+      var count = result.created_count != null ? result.created_count : (result.items || []).length;
+      /* Single refresh (Step 19) — selectDate() is the same established
+         one-call refresh entry point the single-Task form already uses:
+         it re-renders the calendar grid, the Priority Queue preview, the
+         Tasks workspace (if active), and Schedule Summary, all exactly
+         once, regardless of how many tasks were just created. */
+      selectDate(dateVal);
+      resetBulkForm();
+      closeCreatePopup();
+      showToast({
+        type: 'success',
+        title: count === 1 ? '1 task created' : (count + ' tasks created'),
+        message: 'Your tasks were added to the calendar.'
+      });
+    }).catch(function (err) {
+      if (err.code === 'bulk_validation_failed') {
+        clearBulkFormErrors();
+        applyBulkRowErrors(err.errors);
+      } else if (err.code === 'bulk_duplicate_confirmation_required') {
+        showBulkDuplicateConfirmation(err.warnings);
+      } else {
+        var mapped = mapApiError(err);
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+      }
+    });
+  }
+
+  if (bulkCreateBtn) {
+    bulkCreateBtn.addEventListener('click', function () {
+      /* Double-submission protection (Step 20) — bulkSubmitInFlight is an
+         explicit re-entrancy guard on top of setButtonBusy()'s native
+         `disabled` attribute (the same two-layer protection the single
+         Task Add/Update buttons rely on via disabled alone; Bulk Tasks
+         adds the explicit flag since Step 20 calls out Enter/repeated
+         click specifically). */
+      if (bulkSubmitInFlight) { return; }
+      clearBulkFormErrors();
+      showApiStatus('', false, bulkPopupStatusEl);
+
+      if (!bulkFieldDate.value) {
+        setFieldError(bulkFieldDate, 'Choose a date first.');
+        focusFirstInvalid(bulkFormEl);
+        return;
+      }
+      if (isDateFullyLeaveBlocked(bulkFieldDate.value)) {
+        applyBulkLeaveGate();
+        showApiStatus(
+          'No new Task can be added on this date — it is covered by Full-Day or Multi-Day leave.',
+          true, bulkPopupStatusEl
+        );
+        return;
+      }
+
+      var rowEls = getBulkRows();
+      var nonblankEls = rowEls.filter(function (rowEl) { return !isBulkRowBlank(rowEl); });
+
+      if (nonblankEls.length === 0) {
+        showToast({ type: 'error', title: 'Add a task', message: 'Enter at least one task before submitting.' });
+        return;
+      }
+      if (nonblankEls.length > MAX_BULK_TASK_ROWS) {
+        showToast({
+          type: 'error', title: 'Too many tasks',
+          message: 'A maximum of ' + MAX_BULK_TASK_ROWS + ' tasks can be created in one submission.'
+        });
+        return;
+      }
+
+      var hasError = false;
+      nonblankEls.forEach(function (rowEl) {
+        bulkRowFieldErrors(rowEl).forEach(function (fieldErr) {
+          var fieldEl = bulkRowFieldElement(rowEl, fieldErr.field);
+          if (fieldEl) { setFieldError(fieldEl, fieldErr.message); }
+          rowEl.classList.add('msc-bulk-row-error');
+          hasError = true;
+        });
+      });
+      if (hasError) { focusFirstInvalid(bulkFormEl); return; }
+
+      bulkSubmitInFlight = true;
+      setButtonBusy(bulkCreateBtn, true, { busyLabel: 'Creating…' });
+      performBulkSubmit(false).then(function () {
+        bulkSubmitInFlight = false;
+        setButtonBusy(bulkCreateBtn, false);
+      });
+    });
+  }
+
+  if (bulkCancelBtn) {
+    bulkCancelBtn.addEventListener('click', function () {
+      /* Cancel is frontend-only (Step 22 item 17) — no request is ever
+         sent; resetBulkForm() only clears local form state. */
+      resetBulkForm();
+      closeCreatePopup();
     });
   }
 
@@ -2205,6 +2733,18 @@ function mountScheduleCalendarInstance(container) {
   function syncSelectedDateToForms(dateStr) {
     fieldDate.value = dateStr;
     if (leaveFieldStartDate) { leaveFieldStartDate.value = dateStr; }
+    /* Same-day Bulk Tasks (2026-07-23) — keeps the Bulk Tasks tab's
+       common Date field in sync with every other date-selection action
+       (calendar cell click, mini-picker, Today button, etc.), matching
+       the Task/Leave fields' own eager-sync convention above rather than
+       only updating lazily when the user switches to the Bulk tab.
+       applyBulkLeaveGate() re-checks the Full-Day/Multi-Day gate for
+       whatever date this just became, since bulkFieldDate itself may not
+       be the element that changed. */
+    if (bulkFieldDate) {
+      bulkFieldDate.value = dateStr;
+      applyBulkLeaveGate();
+    }
     /* Multi-Day is the only leave type with a visible/applicable End
        Date field (see updateLeaveFormFieldVisibility) — initialize it
        to the same selected date so a fresh Multi-Day request starts

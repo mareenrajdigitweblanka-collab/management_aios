@@ -112,6 +112,17 @@ function ensureDialog() {
         messageEl.textContent = options.message || '';
         cancelBtn.textContent = options.cancelLabel || 'Cancel';
         confirmBtn.textContent = options.confirmLabel || 'Confirm';
+        /* Same-day Bulk Tasks duplicate-confirmation flow (2026-07-23) is
+           the first non-destructive use of this shared dialog ("Create
+           tasks anyway" creates data, it does not delete anything) — the
+           default red msc-btn-danger confirm styling would misleadingly
+           suggest a destructive action for that case. options.confirmVariant
+           ('danger' | 'primary') lets a caller opt into the primary
+           (non-destructive) button style; every existing caller omits this
+           option and keeps the exact prior danger-red styling unchanged. */
+        var confirmVariant = options.confirmVariant === 'primary' ? 'primary' : 'danger';
+        confirmBtn.classList.toggle('msc-btn-danger', confirmVariant === 'danger');
+        confirmBtn.classList.toggle('msc-btn-primary', confirmVariant === 'primary');
         overlay.classList.add('show');
         lockBodyScroll();
         overlay.addEventListener('keydown', onKeydown);
