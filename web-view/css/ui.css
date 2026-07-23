@@ -271,3 +271,16 @@
   font-weight: 600;
   margin-top: 4px;
 }
+
+/* ── Shared modal background scroll lock (ui/scroll-lock.js) ──
+   lockBodyScroll()/unlockBodyScroll() apply/remove this class alongside
+   the position:fixed + top-offset technique (set as inline styles, since
+   the offset value is dynamic) — width:100% here is the one piece that
+   can't be inline-styled cleanly per-call, and is needed so the body
+   doesn't shrink to its content width once position:fixed removes it from
+   normal flow (which would otherwise reflow/narrow the sticky topbar and
+   any fixed-width children). ── */
+
+.msc-scroll-locked {
+  width: 100%;
+}

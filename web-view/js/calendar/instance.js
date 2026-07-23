@@ -16,6 +16,7 @@ import { confirmDestructive } from '../ui/dialog.js';
 import { setButtonBusy, showInlineLoading } from '../ui/loading.js';
 import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from '../ui/form-feedback.js';
 import { mapApiError, classifyHttpStatus } from '../ui/error-mapper.js';
+import { lockBodyScroll, unlockBodyScroll } from '../ui/scroll-lock.js';
 
 /* Builds and wires ONE independent calendar instance inside `container`.
    All element lookups are scoped to `container` — no ids are used for any
@@ -372,28 +373,40 @@ function mountScheduleCalendarInstance(container) {
     'user-editable.</p>' +
     '</div>' +
     '</div>' +
-    /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
-       and-more-popup task, 2026-07-20; icon actions relocated to the
-       header 2026-07-23 google-inspired-task-leave-popup-ui task, per
-       Image C's top icon-row layout) — the ONE task-detail popup used
-       by every calendar view (Month chip, Week/Day timed block, all-day
+    /* ── Shared Task-detail popup (popup-detail-close-and-scroll-
+       containment task, 2026-07-23) — the ONE task-detail popup used by
+       every calendar view (Month chip, Week/Day timed block, all-day
        chip, "+N more" popup row). Fields are the existing Task fields
-       only (title/date/time/category/priority/notes) — no new fields
-       invented. Edit/Delete/Close are the exact same buttons as before
-       (same classes, same click handlers further down this file) — only
-       their position and visual treatment (round icon buttons next to
-       Close, matching .msc-modal-close) changed; .msc-view-actions (the
-       former bottom button row) is gone. */
+       only (title/date/time/category/priority/notes) — no new field
+       invented. Three-part visual order per this task's spec: (A) a
+       top action row holding ONLY Edit/Delete/Close, right-aligned —
+       previously this row also held the category dot and title, which
+       pushed the title down to a cramped, easy-to-miss position; (B) an
+       identity row (category dot + prominent Task title, ~20-24px/600)
+       directly below; (C) the existing Date/Time/Category/Priority/
+       Notes fields. Edit/Delete/Close are the exact same buttons/
+       classes/click-handlers as before — only their icons (now inline
+       SVG, matching this session's icon system) and their position in
+       the markup changed. */
     '<div class="msc-modal-overlay msc-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(viewTitleId) + '">' +
     '<div class="msc-modal msc-view-modal-inner">' +
     '<div class="msc-view-modal-head">' +
-    '<span class="msc-view-color-dot" aria-hidden="true"></span>' +
-    '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '"></h4>' +
     '<div class="msc-view-modal-head-actions">' +
-    '<button type="button" class="msc-modal-close msc-view-edit-btn" aria-label="Edit task" title="Edit task">&#9998;</button>' +
-    '<button type="button" class="msc-modal-close msc-view-delete-btn" aria-label="Delete task" title="Delete task">&#128465;</button>' +
-    '<button type="button" class="msc-modal-close msc-view-close" aria-label="Close">&times;</button>' +
+    '<button type="button" class="msc-modal-close msc-view-edit-btn" aria-label="Edit task" title="Edit task">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M13.3 3.3a1.6 1.6 0 0 1 2.3 2.3L6.4 14.8l-3 .8.8-3z"/><path d="M11.8 4.8l2.3 2.3"/></svg></button>' +
+    '<button type="button" class="msc-modal-close msc-view-delete-btn" aria-label="Delete task" title="Delete task">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M4.5 6h11M8 6V4.6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6M8.3 9v4.5M11.7 9v4.5"/>' +
+    '<path d="M5.5 6l.7 8.4a1.4 1.4 0 0 0 1.4 1.3h4.8a1.4 1.4 0 0 0 1.4-1.3L14.5 6"/></svg></button>' +
+    '<button type="button" class="msc-modal-close msc-view-close" aria-label="Close task details" title="Close task details">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 5l10 10M15 5L5 15"/></svg></button>' +
     '</div>' +
+    '</div>' +
+    '<div class="msc-view-modal-identity">' +
+    '<span class="msc-view-color-dot" aria-hidden="true"></span>' +
+    '<h4 class="msc-view-title msc-view-modal-identity-title" id="' + escapeHtml(viewTitleId) + '"></h4>' +
     '</div>' +
     '<p class="msc-view-date"></p>' +
     '<p class="msc-view-time"></p>' +
@@ -402,30 +415,37 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-view-notes"></p>' +
     '</div>' +
     '</div>' +
-    /* ── Shared Leave-detail popup (calendar-based Leave management,
-       2026-07-22 member-page-layout task; icon actions relocated to the
-       header 2026-07-23, same rationale as the Task-detail popup above)
-       — the ONE Leave-detail popup used by every calendar view (Month
-       leave chip, Week/Day all-day leave chip, Week/Day timed leave
-       block). Mirrors the Task-detail popup above (same
-       .msc-modal-overlay/.msc-view-modal-inner/.msc-view-modal-head
-       structure) so Leave gets the same professional treatment without a
-       second popup framework. Fields are the existing Leave fields only
-       (type/date-range/time/purpose/external reference/leave-deduction
-       minutes where already available) — no new field invented.
-       Edit/Delete reuse the existing Leave create form and
+    /* ── Shared Leave-detail popup (popup-detail-close-and-scroll-
+       containment task, 2026-07-23) — the ONE Leave-detail popup used by
+       every calendar view (Month leave chip, Week/Day all-day leave
+       chip, Week/Day timed leave block). Mirrors the Task-detail popup
+       above: a top action row (Edit/Delete/Close only), then an
+       identity row (leave-color dot + "Leave details" heading), then
+       the existing Leave fields. Fields are the existing Leave fields
+       only (type/date-range/time/purpose/external reference/leave-
+       deduction minutes where already available) — no new field
+       invented. Edit/Delete reuse the existing Leave create form and
        deleteLeaveRecord()/leaveApiRequest() functions; nothing new is
        added to the backend/API contract. */
     '<div class="msc-modal-overlay msc-leave-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(leaveViewTitleId) + '">' +
     '<div class="msc-modal msc-view-modal-inner">' +
     '<div class="msc-view-modal-head">' +
-    '<span class="msc-view-color-dot leave" aria-hidden="true"></span>' +
-    '<h4 class="msc-view-title" id="' + escapeHtml(leaveViewTitleId) + '">Leave details</h4>' +
     '<div class="msc-view-modal-head-actions">' +
-    '<button type="button" class="msc-modal-close msc-leave-view-edit-btn" aria-label="Edit leave" title="Edit leave">&#9998;</button>' +
-    '<button type="button" class="msc-modal-close msc-leave-view-delete-btn" aria-label="Delete leave" title="Delete leave">&#128465;</button>' +
-    '<button type="button" class="msc-modal-close msc-leave-view-close" aria-label="Close">&times;</button>' +
+    '<button type="button" class="msc-modal-close msc-leave-view-edit-btn" aria-label="Edit leave" title="Edit leave">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M13.3 3.3a1.6 1.6 0 0 1 2.3 2.3L6.4 14.8l-3 .8.8-3z"/><path d="M11.8 4.8l2.3 2.3"/></svg></button>' +
+    '<button type="button" class="msc-modal-close msc-leave-view-delete-btn" aria-label="Delete leave" title="Delete leave">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M4.5 6h11M8 6V4.6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6M8.3 9v4.5M11.7 9v4.5"/>' +
+    '<path d="M5.5 6l.7 8.4a1.4 1.4 0 0 0 1.4 1.3h4.8a1.4 1.4 0 0 0 1.4-1.3L14.5 6"/></svg></button>' +
+    '<button type="button" class="msc-modal-close msc-leave-view-close" aria-label="Close leave details" title="Close leave details">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 5l10 10M15 5L5 15"/></svg></button>' +
     '</div>' +
+    '</div>' +
+    '<div class="msc-view-modal-identity">' +
+    '<span class="msc-view-color-dot leave" aria-hidden="true"></span>' +
+    '<h4 class="msc-view-title msc-view-modal-identity-title" id="' + escapeHtml(leaveViewTitleId) + '">Leave details</h4>' +
     '</div>' +
     '<p class="msc-leave-view-type"></p>' +
     '<p class="msc-leave-view-date"></p>' +
@@ -590,8 +610,22 @@ function mountScheduleCalendarInstance(container) {
   var monthlySummaryEl = container.querySelector('.msc-summary-monthly');
   var monthlySummaryTitleEl = container.querySelector('.msc-summary-monthly-title');
   var viewModal = container.querySelector('.msc-view-modal');
-  var viewColorDot = container.querySelector('.msc-view-color-dot');
-  var viewTitle = container.querySelector('.msc-view-title');
+  /* Scoped to viewModal for the same reason as viewTitle below — Leave
+     Detail also has a `.msc-view-color-dot` (with its own "leave"
+     modifier class), so an unscoped lookup would be one stray markup
+     reorder away from grabbing the wrong dot. */
+  var viewColorDot = viewModal.querySelector('.msc-view-color-dot');
+  /* Scoped to viewModal (not container) — the toolbar-alignment-and-
+     close-control task (2026-07-23) gave the Help/Settings popup
+     headers the same shared `.msc-view-title` class for their flex:1
+     layout treatment, and both of those popups sit earlier in the DOM
+     than this Task Detail modal. An unscoped container-wide
+     querySelector('.msc-view-title') therefore matched the Help
+     popup's static heading first, silently leaving this modal's own
+     title element (and therefore the visible Task title) empty on
+     every Task Detail open — root cause of the "Task Details does not
+     show the Task title" regression fixed by this task. */
+  var viewTitle = viewModal.querySelector('.msc-view-title');
   var viewDate = container.querySelector('.msc-view-date');
   var viewTime = container.querySelector('.msc-view-time');
   var viewCategory = container.querySelector('.msc-view-category');
@@ -851,17 +885,27 @@ function mountScheduleCalendarInstance(container) {
      pre-existing behavior (there was never a way to turn a Task into a
      Leave record or vice versa). */
   function openCreatePopup(kind) {
+    var alreadyOpen = createPopupOverlay.classList.contains('show');
     var editing = kind === 'task' ? !!state.editingId : !!editingLeaveId;
     setCreateDialogTab(kind);
     if (createTabsEl) { createTabsEl.hidden = editing; }
     createPopupOverlay.classList.add('show');
+    /* Modal background scroll lock (popup-detail-close-and-scroll-
+       containment task, 2026-07-23) — this is a true centered modal
+       (full-screen overlay), so the background page must not scroll
+       while it's open. Guarded by alreadyOpen so switching the Task/
+       Leave tab on an already-open dialog (which re-enters this
+       function) never double-locks. */
+    if (!alreadyOpen) { lockBodyScroll(); }
     createPopupOverlay.addEventListener('keydown', onCreatePopupKeydown);
     var focusEl = kind === 'task' ? fieldTitle : leaveFieldType;
     if (focusEl && focusEl.focus) { focusEl.focus(); }
   }
 
   function closeCreatePopup() {
+    var wasOpen = createPopupOverlay.classList.contains('show');
     createPopupOverlay.classList.remove('show');
+    if (wasOpen) { unlockBodyScroll(); }
     createPopupOverlay.removeEventListener('keydown', onCreatePopupKeydown);
     if (sidebarCreateBtn && sidebarCreateBtn.focus) { sidebarCreateBtn.focus(); }
   }
@@ -939,12 +983,17 @@ function mountScheduleCalendarInstance(container) {
     closeSettingsPopup();
     closeViewDropdown();
     helpPopupOverlay.classList.add('show');
+    /* True modal (full-screen backdrop) — locks the background page
+       (popup-detail-close-and-scroll-containment task, 2026-07-23). */
+    lockBodyScroll();
     helpPopupOverlay.addEventListener('keydown', onHelpPopupKeydown);
     if (helpPopupClose && helpPopupClose.focus) { helpPopupClose.focus(); }
   }
   function closeHelpPopup() {
     if (!helpPopupOverlay) { return; }
+    var wasOpen = helpPopupOverlay.classList.contains('show');
     helpPopupOverlay.classList.remove('show');
+    if (wasOpen) { unlockBodyScroll(); }
     helpPopupOverlay.removeEventListener('keydown', onHelpPopupKeydown);
     if (helpTriggerBtn && helpTriggerBtn.focus) { helpTriggerBtn.focus(); }
   }
@@ -971,12 +1020,16 @@ function mountScheduleCalendarInstance(container) {
     closeViewDropdown();
     if (settingsSidebarToggleInput) { settingsSidebarToggleInput.checked = !sidebarCollapsed; }
     settingsPopupOverlay.classList.add('show');
+    /* True modal — locks the background page (see openHelpPopup() above). */
+    lockBodyScroll();
     settingsPopupOverlay.addEventListener('keydown', onSettingsPopupKeydown);
     if (settingsSidebarToggleInput && settingsSidebarToggleInput.focus) { settingsSidebarToggleInput.focus(); }
   }
   function closeSettingsPopup() {
     if (!settingsPopupOverlay) { return; }
+    var wasOpen = settingsPopupOverlay.classList.contains('show');
     settingsPopupOverlay.classList.remove('show');
+    if (wasOpen) { unlockBodyScroll(); }
     settingsPopupOverlay.removeEventListener('keydown', onSettingsPopupKeydown);
     if (settingsTriggerBtn && settingsTriggerBtn.focus) { settingsTriggerBtn.focus(); }
   }
@@ -2639,7 +2692,17 @@ function mountScheduleCalendarInstance(container) {
      list here — its own conditional (>2 remaining) reopen runs
      afterward instead. */
   function closeViewModal() {
+    /* Modal background scroll lock (popup-detail-close-and-scroll-
+       containment task, 2026-07-23) — only the centered presentation
+       is a true modal; besideList is the anchored, non-blocking
+       presentation (transparent/click-through backdrop, see the
+       msc-view-modal--beside-list CSS below) and never locks the page,
+       so it must not unlock it here either. Captured before the class
+       is stripped just below. */
+    var wasOpen = viewModal.classList.contains('show');
+    var wasBesideList = viewModal.classList.contains('msc-view-modal--beside-list');
     viewModal.classList.remove('show');
+    if (wasOpen && !wasBesideList) { unlockBodyScroll(); }
     /* Strip the side-by-side positioning modifier (Image E, 2026-07-23
        google-inspired-task-leave-popup-ui task) unconditionally on every
        close — otherwise a later direct-calendar/narrow-viewport open
@@ -2724,15 +2787,33 @@ function mountScheduleCalendarInstance(container) {
     currentViewItemId = id;
     var catClass = CATEGORY_CLASS[it.category] || 'task';
     if (viewColorDot) { viewColorDot.className = 'msc-view-color-dot ' + catClass; }
-    viewTitle.textContent = it.title;
+    /* Display-only fallback (popup-detail-close-and-scroll-containment
+       task, 2026-07-23) — it.title is the same authoritative title
+       field Calendar chips, the full Task list, and the Create/Edit
+       form all already read/write; this never writes the fallback text
+       back to the record, it only covers the rendering case where the
+       stored value is unexpectedly empty. */
+    viewTitle.textContent = it.title || 'Untitled task';
     viewDate.textContent = 'Date: ' + it.date;
     viewTime.textContent = 'Time: ' + ((it.start || it.end) ? (it.start || '?') + ' – ' + (it.end || '?') : 'Not set');
     viewCategory.textContent = 'Category: ' + it.category;
     viewPriority.textContent = 'Priority: ' + (it.priority || 'Medium');
     viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
+    /* Modal background scroll lock (popup-detail-close-and-scroll-
+       containment task, 2026-07-23) — only the centered presentation
+       locks the page (see closeViewModal() for the matching unlock and
+       why besideList never locks). wasLocked guards against a double-
+       lock in the one path that can re-enter viewItem() without an
+       intervening closeViewModal(): clicking a different calendar chip
+       while Task Detail is already open beside the "+N more" list (that
+       list's transparent, click-through backdrop lets clicks reach the
+       calendar grid underneath) transitions besideList -> centered
+       directly. */
+    var wasLocked = viewModal.classList.contains('show') && !viewModal.classList.contains('msc-view-modal--beside-list');
     lastFocusedTrigger = triggerEl || document.activeElement;
     viewModal.classList.add('show');
     viewModal.classList.toggle('msc-view-modal--beside-list', !!besideList);
+    if (!besideList && !wasLocked) { lockBodyScroll(); }
     viewModal.addEventListener('keydown', onViewModalKeydown);
     if (besideList) {
       positionViewModalBesideList();
@@ -3397,7 +3478,9 @@ function mountScheduleCalendarInstance(container) {
   }
 
   function closeLeaveViewModal() {
+    var wasOpen = leaveViewModal.classList.contains('show');
     leaveViewModal.classList.remove('show');
+    if (wasOpen) { unlockBodyScroll(); }
     leaveViewModal.removeEventListener('keydown', onLeaveViewModalKeydown);
     currentViewLeaveId = null;
     var trigger = lastFocusedLeaveTrigger;
@@ -3435,8 +3518,12 @@ function mountScheduleCalendarInstance(container) {
         leaveViewDeduction.style.display = 'none';
       }
     }
+    var wasOpen = leaveViewModal.classList.contains('show');
     lastFocusedLeaveTrigger = triggerEl || document.activeElement;
     leaveViewModal.classList.add('show');
+    /* True centered modal — always locks the background page (there is
+       no anchored/beside-list presentation for Leave Detail). */
+    if (!wasOpen) { lockBodyScroll(); }
     leaveViewModal.addEventListener('keydown', onLeaveViewModalKeydown);
     leaveViewClose.focus();
   }

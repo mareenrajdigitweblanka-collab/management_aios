@@ -336,6 +336,7 @@
     .msc-cal-search-results {
       max-height: 280px;
       overflow-y: auto;
+      overscroll-behavior: contain;
       margin-top: 6px;
     }
 
@@ -1973,19 +1974,40 @@
       box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(37, 99, 235, .25);
     }
 
-    /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
-       and-more-popup task, 2026-07-20) — reuses .msc-modal-overlay/
-       .msc-modal (above) for the backdrop/card, adds a compact header
-       row (semantic-color dot + title + round × close, same visual
-       language as .msc-modal-form-head below) and a footer actions row
-       for Edit/Delete. No new fields, no Google branding/assets. ── */
+    /* ── Shared Task/Leave-detail popup — reuses .msc-modal-overlay/
+       .msc-modal (above) for the backdrop/card. max-height/overflow-y/
+       overscroll-behavior added (popup-detail-close-and-scroll-
+       containment task, 2026-07-23) so a long Notes value scrolls
+       inside the card instead of pushing it past the viewport, and so
+       scrolling the card's content never chains into the background
+       page. The action row is pinned to the top of this same scrolling
+       container (see .msc-view-modal-head below) so Close stays
+       visible throughout. ── */
     .msc-view-modal-inner {
       text-align: left;
+      max-height: calc(100vh - 64px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
+    .msc-view-modal-inner .msc-view-modal-head {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
+    }
+
+    /* Header layout (popup-detail-close-and-scroll-containment task,
+       2026-07-23) — shared by Help/Settings (title + Close) and Task/
+       Leave Detail (Edit/Delete/Close only, no title here anymore).
+       justify-content: flex-end pushes an actions-only row (Task/Leave
+       Detail) to the right; it has no effect on Help/Settings, whose
+       .msc-view-title already carries flex:1 and fills the remaining
+       space on its own. */
     .msc-view-modal-head {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
       gap: 8px;
       margin-bottom: 10px;
       padding-bottom: 10px;
@@ -2000,11 +2022,9 @@
       font-size: 1.05rem;
     }
 
-    /* Icon action row (Image C, 2026-07-23 google-inspired-task-leave-
-       popup-ui task) — Edit/Delete/Close now live here as a group of
-       round icon buttons instead of a bottom Edit/Delete button row
-       (.msc-view-actions, removed below); every button in this row
-       shares the existing 30px circular .msc-modal-close treatment. */
+    /* Action row (Edit/Delete/Close) — a group of round icon buttons;
+       every button in this row shares the existing circular
+       .msc-modal-close treatment. */
     .msc-view-modal-head-actions {
       display: flex;
       align-items: center;
@@ -2014,8 +2034,8 @@
 
     .msc-view-modal-head .msc-modal-close {
       margin-top: 0;
-      width: 30px;
-      height: 30px;
+      width: 38px;
+      height: 38px;
       padding: 0;
       display: inline-flex;
       align-items: center;
@@ -2026,21 +2046,42 @@
       flex-shrink: 0;
     }
 
-    /* Calendar help/settings Close (toolbar-alignment-and-close-control
-       task, 2026-07-23) — these two are each a panel's ONLY header
-       action (no Edit/Delete row alongside them like Task/Leave Detail
-       has), so they get a larger ~38px touch target per this task's
-       spec, plus sizing for their new inline-SVG X icon (replacing the
-       former "&times;" text glyph). Scoped to these two classes only —
-       the shared 30px .msc-view-modal-head .msc-modal-close size above
-       (used by Task/Leave Detail's Edit/Delete/Close icon row) is
-       unchanged. */
-    .msc-cal-help-close,
-    .msc-cal-settings-close {
-      width: 38px;
-      height: 38px;
+    .msc-view-modal-head .msc-modal-close svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
     }
 
+    /* Task/Leave identity row (popup-detail-close-and-scroll-
+       containment task, 2026-07-23) — category dot + prominent title,
+       now its own row directly below the action row instead of sharing
+       it (the prior layout put the title next to Edit/Delete/Close,
+       where it read as secondary and was easy to miss). */
+    .msc-view-modal-identity {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .msc-view-modal-identity .msc-view-color-dot {
+      margin-top: 8px;
+    }
+
+    .msc-view-modal-identity-title {
+      margin: 0;
+      padding: 0;
+      border: none;
+      font-size: var(--font-2xl);
+      font-weight: 600;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    /* Calendar help/settings Close icon sizing — the shared 38px touch
+       target now comes from .msc-view-modal-head .msc-modal-close
+       above (bumped to 38px for Task/Leave Detail's Edit/Delete/Close
+       row too), so only the SVG's own size needs setting here. */
     .msc-cal-help-close svg,
     .msc-cal-settings-close svg {
       width: 16px;
@@ -2048,9 +2089,13 @@
       flex-shrink: 0;
     }
 
-    /* Delete icon reads distinctly from Edit/Close on hover/focus (color
-       is a secondary cue only — the accessible name/tooltip, set in
-       instance.js markup, is never color-dependent). */
+    /* Delete stays visually neutral (same dark color as Edit) by
+       default — no permanent red background/icon color, per this task's
+       "do not make Delete more prominent than Edit" requirement. A
+       restrained destructive cue only appears on hover/focus (color is
+       a secondary cue only — the accessible name/tooltip, set in
+       instance.js markup, is never color-dependent, and the existing
+       destructive confirmation dialog is unchanged). */
     .msc-view-delete-btn:hover,
     .msc-leave-view-delete-btn:hover {
       background: var(--calendar-leave-bg);
@@ -2349,6 +2394,7 @@
       max-width: 640px;
       max-height: calc(100vh - 64px);
       overflow-y: auto;
+      overscroll-behavior: contain;
       text-align: left;
     }
 
@@ -2360,6 +2406,10 @@
       margin-bottom: 14px;
       padding-bottom: 10px;
       border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
     }
 
     .msc-modal-form-head h4 {

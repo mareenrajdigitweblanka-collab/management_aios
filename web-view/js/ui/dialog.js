@@ -13,6 +13,7 @@
 
 import { trapTab, returnFocus } from './popup.js';
 import { setButtonBusy } from './loading.js';
+import { lockBodyScroll, unlockBodyScroll } from './scroll-lock.js';
 
 var dialogApi = null;
 
@@ -58,6 +59,7 @@ function ensureDialog() {
     overlay.removeEventListener('keydown', onKeydown);
     setButtonBusy(confirmBtn, false);
     cancelBtn.disabled = false;
+    unlockBodyScroll();
     returnFocus(triggerEl);
     triggerEl = null;
     onConfirmHandler = null;
@@ -111,6 +113,7 @@ function ensureDialog() {
         cancelBtn.textContent = options.cancelLabel || 'Cancel';
         confirmBtn.textContent = options.confirmLabel || 'Confirm';
         overlay.classList.add('show');
+        lockBodyScroll();
         overlay.addEventListener('keydown', onKeydown);
         /* Initial focus on Cancel (the safer action) — repository
            evidence (calendar.css .msc-btn-danger styling, the existing
