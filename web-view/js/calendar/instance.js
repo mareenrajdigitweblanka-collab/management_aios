@@ -2848,8 +2848,8 @@ function mountScheduleCalendarInstance(container) {
        values (a never-edited Task) are both shown, never hidden. Single
        Task Details only — Leave Details, Create/Edit Task, chips, and the
        Task list are untouched. */
-    viewCreatedAt.textContent = 'Task Created at: ' + formatTaskTimestamp(it.created_at);
-    viewUpdatedAt.textContent = 'Task Updated at: ' + formatTaskTimestamp(it.updated_at);
+    viewCreatedAt.textContent = 'Created at: ' + formatTaskTimestamp(it.created_at);
+    viewUpdatedAt.textContent = 'Updated at: ' + formatTaskTimestamp(it.updated_at);
     /* Modal background scroll lock (popup-detail-close-and-scroll-
        containment task, 2026-07-23) — only the centered presentation
        locks the page (see closeViewModal() for the matching unlock and
