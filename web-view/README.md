@@ -533,6 +533,45 @@ section, not the "icon/order polish" bullet above, for the current state:
 - **Tokens** — `--cal-toolbar-height` raised 60px→66px (fits the larger
   identity title); new `--cal-toolbar-height-compact: 58px` for ≤900px.
 
+## Dynamic today-date Calendar icon and toolbar alignment (2026-07-23, later still)
+
+See `validation/dynamic-today-date-calendar-icon-and-toolbar-alignment-check-2026-07-23.md`
+and `handover/2026-07-23__dynamic-today-date-calendar-icon-and-toolbar-alignment-closure.md`
+for the full record. This supersedes the nav-group *position* described in the
+"Left cluster is identity-only" bullet two sections above (an intermediate
+state the README was not updated for at the time) — Today/Previous/Next/
+Month-Year had, by the time this task started, already moved into their own
+`.msc-cal-toolbar-center` zone, genuinely centered across the whole toolbar
+via CSS grid `justify-self: center` (added by a later, undocumented
+`toolbar-alignment-and-close-control` follow-up — see the code comment
+history in `calendar/instance.js`/`calendar.css`), which left a large empty
+gap between "Calendar" and "Today". This task fixes that:
+
+- **`.msc-cal-toolbar` is a flex row, not a grid, at every width** —
+  `.msc-cal-toolbar-left` (identity) and `.msc-cal-toolbar-center` (the
+  `.msc-cal-toolbar-btns` nav group) are adjacent flex children spaced by the
+  toolbar's own `column-gap: 28px`, instead of the nav group being centered
+  independently of the identity. `.msc-cal-toolbar-right` (utility group)
+  uses `margin-left: auto` to claim the remaining space and stay pinned to
+  the far right — replacing the grid's `justify-self: end`. The now-redundant
+  ≤1024px grid→flex override was removed; the ≤900px compact-height override
+  is unchanged.
+- **New dynamic Calendar-date icon** — `.msc-cal-identity`'s former inline
+  decorative SVG (a plain calendar-grid glyph) is replaced by
+  `.msc-cal-date-icon` (blue header strip + numeral body, built from plain
+  HTML/CSS, not SVG or a raster asset), showing **today's** Asia/Colombo
+  day-of-month — never the selected date, the viewed month/week/day, or any
+  Task/Leave data. Owned by the new shared module
+  `calendar/date-icon.js` (`registerDateIcon(el)`/`unregisterDateIcon(el)`):
+  one `Set` of registered icon elements, one shared midnight `setTimeout`
+  (recomputed from a live `Intl.DateTimeFormat` Asia/Colombo clock reading
+  after every paint), and one shared `document.visibilitychange` +
+  `window.focus` listener pair — attached once regardless of how many of the
+  five member calendars call `registerDateIcon()`. `.msc-cal-identity` is no
+  longer `aria-hidden` (the icon now carries live information); the icon
+  itself carries `role="img"` and an `aria-label` such as
+  `"Calendar — today is July 23, 2026"`, maintained by the same module.
+
 ## Larger frontend modularization (not done in this task)
 
 `web-view/js/calendar/instance.js` (~2,140 lines) and `web-view/js/

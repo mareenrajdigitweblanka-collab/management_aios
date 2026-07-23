@@ -80,36 +80,27 @@
       display: block;
     }
 
-    /* ── Calendar top toolbar (toolbar-alignment-and-close-control task,
-       2026-07-23) — a three-zone CSS grid: identity (left), Today/
-       Previous/Next/Month-Year (visually centred), and Search/Help/
-       Settings + the two segmented controls (right). Grid is used
-       instead of flex so the centre zone is genuinely centred within
-       the whole toolbar, not merely placed after the identity mark.
-       Collapses to a wrapping flex row below 1024px (see the ≤1024px
-       override), since a fixed 3-column grid can't gracefully reflow
-       onto multiple rows the way flex-wrap can. Height raised from 60px
-       to 66px to fit the larger identity title (Step 3) without
-       cramping. ── */
+    /* ── Calendar top toolbar (toolbar-alignment-and-date-icon task,
+       2026-07-23) — a single flex row: identity, then the Today/
+       Previous/Next/Month-Year nav group sit adjacent to each other on
+       the left (a "professional gap" via column-gap, not the whole-
+       toolbar centring the earlier grid layout used, which left a large
+       empty gap between "Calendar" and "Today"); the Search/Help/
+       Settings + segmented-control group is pushed to the far right via
+       margin-left:auto on .msc-cal-toolbar-right, absorbing whatever
+       space remains. flex-wrap lets narrow viewports drop the nav/
+       utility groups onto their own row(s) instead of overflowing.
+       Height raised from 60px to 66px to fit the larger identity title
+       (Step 3) without cramping. ── */
     .msc-cal-toolbar {
-      display: grid;
-      grid-template-columns: minmax(200px, 1fr) auto minmax(340px, 1fr);
+      display: flex;
       align-items: center;
+      flex-wrap: wrap;
       column-gap: 28px;
+      row-gap: 8px;
       min-height: var(--cal-toolbar-height);
       padding: 10px 18px;
       border-bottom: 1px solid var(--border);
-    }
-
-    @media (max-width: 1024px) {
-      .msc-cal-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: flex-start;
-        column-gap: 16px;
-        row-gap: 8px;
-      }
     }
 
     @media (max-width: 900px) {
@@ -123,16 +114,14 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
-      justify-self: start;
     }
 
-    /* Centre zone (Today/Previous/Next/Month-Year) — genuinely centred
-       via grid justify-self on desktop; on the ≤1024px flex fallback it
-       just flows as the second wrapping item (left-aligned on its own
-       row), which the task's "a different responsive grouping is
-       acceptable when clearer" explicitly allows. */
+    /* Today/Previous/Next/Month-Year nav group — flows immediately after
+       the identity group (see .msc-cal-toolbar column-gap above for the
+       spacing between them), not centred within the whole toolbar. */
     .msc-cal-toolbar-center {
-      justify-self: center;
+      display: flex;
+      align-items: center;
       min-width: 0;
     }
 
@@ -236,11 +225,52 @@
       color: var(--text);
     }
 
-    .msc-cal-identity-icon {
-      width: 22px;
-      height: 22px;
+    /* ── Dynamic Calendar-date icon (dynamic-today-date-calendar-icon
+       task, 2026-07-23) — replaces the former generic calendar-grid
+       glyph. Shows only today's Asia/Colombo day-of-month (painted by
+       calendar/date-icon.js); a compact calendar-page shape with a
+       small blue header strip and the number centred in a light body,
+       using the app's existing blue accent token rather than any
+       Google-style date-badge asset. ── */
+    .msc-cal-date-icon {
+      display: flex;
+      flex-direction: column;
+      width: 32px;
+      height: 32px;
       flex-shrink: 0;
-      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .msc-cal-date-icon-head {
+      height: 9px;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .msc-cal-date-icon-num {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    @media (max-width: 1024px) {
+      .msc-cal-date-icon {
+        width: 30px;
+        height: 30px;
+      }
+
+      .msc-cal-date-icon-num {
+        font-size: 15px;
+      }
     }
 
     .msc-cal-identity-label {
@@ -259,18 +289,18 @@
     /* ── Toolbar right zone — Search/Help/Settings, the Month/Week/Day
        dropdown, and the Calendar/Tasks segmented control, each its own
        sub-group (see .msc-cal-utility-group / .msc-view-dropdown /
-       .msc-cal-mode-switch below). Right-aligned within the toolbar
-       grid via justify-self: end (Today/Previous/Next/Month-Year moved
-       to their own centred zone — see .msc-cal-toolbar-center above).
-       18px gap so groups read as distinct clusters (Step 8's "smaller
-       gap within a group; larger gap between groups"); each group keeps
-       its own tighter internal gap. ── */
+       .msc-cal-mode-switch below). Pushed to the far right of the flex
+       toolbar via margin-left: auto, which absorbs the flexible
+       remaining space instead of the nav group being centred within it
+       (see .msc-cal-toolbar above). 18px gap so groups read as distinct
+       clusters (Step 8's "smaller gap within a group; larger gap between
+       groups"); each group keeps its own tighter internal gap. ── */
     .msc-cal-toolbar-right {
       display: flex;
       align-items: center;
       gap: 18px;
       flex-wrap: wrap;
-      justify-self: end;
+      margin-left: auto;
     }
 
     /* Search / Help / Settings — one tight utility cluster. */

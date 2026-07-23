@@ -17,6 +17,7 @@ import { setButtonBusy, showInlineLoading } from '../ui/loading.js';
 import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from '../ui/form-feedback.js';
 import { mapApiError, classifyHttpStatus } from '../ui/error-mapper.js';
 import { lockBodyScroll, unlockBodyScroll } from '../ui/scroll-lock.js';
+import { registerDateIcon } from './date-icon.js';
 
 /* Builds and wires ONE independent calendar instance inside `container`.
    All element lookups are scoped to `container` — no ids are used for any
@@ -80,26 +81,28 @@ function mountScheduleCalendarInstance(container) {
        identity mark. */
     '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-sidebar-toggle" aria-expanded="true" ' +
     'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar" title="Toggle sidebar">&#9776;</button>' +
-    /* Calendar identity — aria-hidden (purely presentational; the
-       toolbar's other controls already carry their own accessible
-       names, and the calendar's role/purpose is already announced by
-       the page heading above it). No Google date-badge/logo pattern --
-       a plain calendar-grid glyph, matching the existing inline-SVG
-       icon convention from index.html's app sidebar. Title enlarged to
+    /* Calendar identity — icon + "Calendar" label. Title enlarged to
        ~21px/semibold (2026-07-23 redesign, Step 3) from its former
-       13px/700 treatment so it reads as a real toolbar title. */
-    '<div class="msc-cal-identity" aria-hidden="true">' +
-    '<svg class="msc-cal-identity-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" ' +
-    'stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.3" width="14" height="12.7" rx="2.2"/>' +
-    '<path d="M3 8.3h14"/><path d="M7 2.3v3.4M13 2.3v3.4"/><circle cx="7.2" cy="11.6" r=".55" fill="currentColor" stroke="none"/>' +
-    '<circle cx="10" cy="11.6" r=".55" fill="currentColor" stroke="none"/><circle cx="7.2" cy="14.2" r=".55" fill="currentColor" stroke="none"/></svg>' +
+       13px/700 treatment so it reads as a real toolbar title. The former
+       generic calendar-grid glyph was replaced (dynamic-today-date-
+       calendar-icon task, 2026-07-23) with a dynamic Calendar-date icon
+       showing today's Asia/Colombo day-of-month (see date-icon.js) — it
+       is no longer purely decorative, so this wrapper is no longer
+       aria-hidden; the icon itself carries an accessible label with the
+       complete date (set by registerDateIcon() below) and the "Calendar"
+       text stays visible/announced beside it. */
+    '<div class="msc-cal-identity">' +
+    '<span class="msc-cal-date-icon" role="img">' +
+    '<span class="msc-cal-date-icon-head" aria-hidden="true"></span>' +
+    '<span class="msc-cal-date-icon-num" aria-hidden="true"></span>' +
+    '</span>' +
     '<span class="msc-cal-identity-label">Calendar</span>' +
     '</div>' +
     '</div>' +
-    /* Centre zone (toolbar-alignment-and-close-control task, 2026-07-23)
-       -- Today/Previous/Next/Month-Year, visually centred within the
-       whole toolbar (grid justify-self: center), not merely placed next
-       to the identity mark. */
+    /* Today/Previous/Next/Month-Year — sits directly beside the Calendar
+       identity (toolbar-alignment-and-date-icon task, 2026-07-23),
+       replacing the former true-centred placement that left a large
+       empty gap between "Calendar" and "Today". */
     '<div class="msc-cal-toolbar-center">' +
     '<div class="msc-cal-toolbar-btns" role="group" aria-label="Date navigation">' +
     '<button type="button" class="msc-tool-btn msc-tool-btn--today msc-today">Today</button>' +
@@ -576,6 +579,12 @@ function mountScheduleCalendarInstance(container) {
   var prevBtn = container.querySelector('.msc-prev');
   var todayBtn = container.querySelector('.msc-today');
   var nextBtn = container.querySelector('.msc-next');
+  /* Dynamic Calendar-date icon (dynamic-today-date-calendar-icon task,
+     2026-07-23) — registers with the one shared updater in date-icon.js
+     instead of starting a per-instance timer; represents today only, so
+     it is intentionally never fed this instance's selected/viewed date. */
+  var calDateIconEl = container.querySelector('.msc-cal-date-icon');
+  if (calDateIconEl) { registerDateIcon(calDateIconEl); }
   var selectedDateLabel = container.querySelector('.msc-selected-date-label');
   var fieldDate = container.querySelector('.msc-field-date');
   if (fieldDate) { fieldDate.addEventListener('input', function () { clearFieldError(fieldDate); }); }
