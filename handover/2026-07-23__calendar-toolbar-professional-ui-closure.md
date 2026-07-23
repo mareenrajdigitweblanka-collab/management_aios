@@ -46,7 +46,7 @@ All toolbar icons (identity, Previous, Next, Search, Help, Settings, Month/Week/
 
 ## 7. README update
 
-Updated `web-view/README.md`'s Calendar toolbar description (if present) — see the diff for the exact wording change; no other section of the README was touched.
+Added a new "Professional Calendar toolbar redesign (2026-07-23, later same day)" section to `web-view/README.md`, right after the existing "Calendar toolbar (identity/search/help/settings) and Tasks workspace" section — it explicitly supersedes that section's "Toolbar icon/order polish" bullet (the dropdown) and documents the new left/right cluster layout, the one-active-popover rule, the redrawn icons, arrow-key roving, and the two new/changed tokens. No other section of the README was touched.
 
 ## 8. Live verification method
 
@@ -54,7 +54,10 @@ No project-specific "run" skill exists yet for this app (checked `.claude/skills
 
 ## 9. Commit hashes
 
-Recorded after commit (see the follow-up commit-hash note in this repo's convention, or `git log --oneline -5` at close).
+Two commits (layout/icon/dropdown-removal changes landed together since they touch the same two files, `instance.js`/`calendar.css`, too tightly interleaved to split cleanly by hunk — same rationale as the 2026-07-23 Task/Leave popup redesign handover):
+
+1. `7fd998c` — Refine Calendar toolbar layout and professional iconography (includes the Month/Week/Day dropdown removal and the one-active-popover rule — both landed in the same commit as the layout/icon work for the reason above)
+2. `9748110` — Document Calendar toolbar validation
 
 ## 10. Push result
 
