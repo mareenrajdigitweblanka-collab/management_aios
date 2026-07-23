@@ -8,7 +8,40 @@
 
 import { MEMBER_SCHEDULE_API_BASE, MEMBER_LEAVE_API_BASE } from '../config.js';
 import {
-  CATEGORY_CLASS, LEAVE_TYPE_DISPLAY_LABEL, formatLeaveCalendarLabel, expandWeekdaysClientSide, leaveDatesForItem, LEAVE_HALF_DAY_FIRST_DISPLAY, LEAVE_HALF_DAY_SECOND_DISPLAY, leaveDisplayTimeRange, PRIORITY_ORDER, PRIORITY_BADGE, MONTH_NAMES, DAY_HEADS, DAY_NAMES_FULL, TG_ROW_HEIGHT_PX, TG_HOURS, TG_DEFAULT_SCROLL_HOUR, pad, toDateStr, parseDateStr, timeToMinutes, minutesToTime, formatHourLabel, formatShortDate, formatDuration, formatPercentage, formatChange, formatTaskTimestamp, getSplitWarningState, getMetricStatusCopy, combineSummaryStatus, getPeriodStatusCopy, getSplitBarSegments, getWeekStart, getReportWeekStart, getWeekDays, buildMonthGridCells, layoutOverlappingItems, escapeHtml, apiItemToFrontend, frontendToApiPayload
+  CATEGORY_CLASS
+, LEAVE_TYPE_DISPLAY_LABEL
+, formatLeaveCalendarLabel
+, expandWeekdaysClientSide
+, leaveDatesForItem
+, LEAVE_HALF_DAY_FIRST_DISPLAY
+, LEAVE_HALF_DAY_SECOND_DISPLAY
+, leaveDisplayTimeRange
+, PRIORITY_ORDER
+, PRIORITY_BADGE
+, MONTH_NAMES
+, DAY_HEADS
+, DAY_NAMES_FULL
+, TG_ROW_HEIGHT_PX
+, TG_HOURS
+, TG_DEFAULT_SCROLL_HOUR
+, pad
+, toDateStr
+, parseDateStr
+, timeToMinutes
+, minutesToTime
+, formatHourLabel
+, formatShortDate
+, formatDuration
+, formatPercentage
+, formatChange
+, formatTaskTimestamp, getSplitWarningState, getMetricStatusCopy, combineSummaryStatus, getPeriodStatusCopy, getSplitBarSegments, getWeekStart
+, getReportWeekStart
+, getWeekDays
+, buildMonthGridCells
+, layoutOverlappingItems
+, escapeHtml
+, apiItemToFrontend
+, frontendToApiPayload
 } from './core.js';
 import { trapTab, returnFocus } from '../ui/popup.js';
 import { showToast } from '../ui/toast.js';
@@ -508,7 +541,7 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-modal-overlay msc-create-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(createPopupId) + '">' +
     '<div class="msc-modal msc-modal-form">' +
     '<div class="msc-modal-form-head">' +
-    '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create Task</h4>' +
+    '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create</h4>' +
     '<button type="button" class="msc-modal-close msc-create-popup-close" aria-label="Close">&times;</button>' +
     '</div>' +
     '<div class="msc-create-tabs" role="tablist" aria-label="Task, Bulk Tasks, or Leave">' +
