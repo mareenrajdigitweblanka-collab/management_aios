@@ -256,10 +256,12 @@ rule:
 
 - **Any click on a Month date cell's blank background** — whether the
   date has zero, one, two, or more than two Tasks, Leave, or Full-Day/
-  Multi-Day Leave — opens the Create chooser directly
-  (`openCreateChoiceFromCalendar()` → `openCreateMenu()`), exactly like
-  keyboard Enter/Space already did. No double-click, no delay timer, no
-  toast.
+  Multi-Day Leave — opens the Create dialog directly
+  (`openCreateChoiceFromCalendar()` → `openCreatePopup('task')`; see
+  "Unified Google-Calendar-inspired Task/Leave Create dialog" below —
+  `openCreateMenu()`, referenced here originally, no longer exists),
+  exactly like keyboard Enter/Space already did. No double-click, no
+  delay timer, no toast.
 - **Individual Task chip / Leave chip / "+N more" clicks are unchanged**
   and still take priority: each calls `e.stopPropagation()` in its own
   `click` handler (`.msc-cal-chip` → `viewItem()`, `.msc-cal-chip-leave`
@@ -280,7 +282,7 @@ rule:
   view-switcher click handler no longer call a timer-clear function at
   all, since there is no timer left to clear.
 - **Full-Day/Multi-Day Leave conflict handling is unchanged and still
-  backend-authoritative** — choosing "Task" from the Create chooser on
+  backend-authoritative** — choosing the Task tab in the Create dialog on
   a Full-Day/Multi-Day Leave date is never blocked in the frontend;
   submitting the Task still gets the existing `leave_conflict` 409
   rejection and its existing inline error message (`apiRequest()`'s
@@ -289,10 +291,88 @@ rule:
   Task-free Full-Day-Leave date's blank click is gone along with the
   rest of the click coordinator — there is no frontend-side Full-Day-
   Leave special case left to maintain.
-- **To add a new "opens the Create chooser" call site** in Month view,
+- **To add a new "opens the Create dialog" call site** in Month view,
   call `openCreateChoiceFromCalendar()` directly (same as the cell's own
   `go()` closure) — there is no timer/coordinator layer to route
   through anymore.
+
+## Unified Google-Calendar-inspired Task/Leave Create dialog, Detail icon actions, and side-by-side List+Detail (2026-07-23)
+
+See `validation/google-inspired-task-leave-popup-ui-check-2026-07-23.md`
+and `handover/2026-07-23__google-inspired-task-leave-popup-ui-closure.md`
+for the full record. **Supersedes** every reference above to the
+"Create chooser menu" (`.msc-create-menu`/`openCreateMenu()`/
+`closeCreateMenu()`/`positionCreateMenu()`) — that intermediate Task/
+Leave picker no longer exists. Summary for future edits:
+
+- **One Create dialog, not a chooser + two popups**: `.msc-task-popup`
+  and `.msc-leave-popup` (each its own `.msc-modal-overlay`) and the
+  `.msc-create-menu` chooser were merged into one
+  `.msc-modal-overlay.msc-create-popup`, containing a header (dynamic
+  heading + round Close), a `.msc-create-tabs` Task/Leave tab pair, the
+  exact pre-existing Task fields (`.msc-create-task-fields` wrapping the
+  unchanged `.msc-form-card`) and Leave fields
+  (`.msc-create-leave-fields` wrapping the unchanged
+  `.msc-leave-form-panel`) toggled by the `hidden` attribute, and the
+  exact pre-existing footer button groups
+  (`.msc-create-task-footer`/`.msc-create-leave-footer`) toggled by
+  `display:none`. No Task or Leave field, id, class, validation rule, or
+  API payload changed — only the surrounding shell.
+- **New/changed functions** (`calendar/instance.js`):
+  `openCreatePopup(kind)`, `closeCreatePopup()`, `setCreateDialogTab(kind)`.
+  `openTaskPopup()`/`closeTaskPopup()`/`openLeavePopup()`/
+  `closeLeavePopup()` are now thin aliases of these, so `editItem()`,
+  `editLeaveItem()`, `cancelEdit()`-driven flows, and the Tasks-workspace
+  "Add a task" button needed no changes. `sidebarCreateBtn` and
+  `openCreateChoiceFromCalendar()` now call `openCreatePopup('task')` /
+  `openTaskPopup()` directly — no intermediate chooser step. Switching
+  tabs carries the selected date across (Task's `.msc-field-date` ⇄
+  Leave's `.msc-leave-field-start-date`) without submitting or clearing
+  the other tab's fields. Tabs are hidden whenever `state.editingId` or
+  `editingLeaveId` is set at open time (editing an existing record's
+  type was never switchable, before or after this task).
+- **Removed** (previously defined around the old "+ Create" dropdown):
+  `openCreateMenu()`, `closeCreateMenu()`, `positionCreateMenu()`,
+  `onDocClickForCreateMenu()`, `onCreateMenuKeydown()`, the
+  `createMenuItems.forEach(...)` wiring, and the `.msc-create-menu*` CSS
+  rules (`calendar.css`). None of their call sites survive.
+- **Task/Leave Detail popups** (`.msc-view-modal`/`.msc-leave-view-modal`,
+  still two separate popups — not merged, since Task alone carries "+N
+  more" list-origin tracking `taskFlowOrigin` that Leave has no
+  equivalent of): Edit/Delete moved from a bottom `.msc-view-actions`
+  button row into round icon buttons in the header
+  (`.msc-view-modal-head-actions`) next to Close, reusing the existing
+  `.msc-modal-close` circular-button CSS. Same click handlers
+  (`editItem`/`deleteItem`/`closeViewModal` and their Leave equivalents),
+  same fields — only the buttons' position and visual treatment changed.
+- **"+N more" list + side-by-side Detail** (Image D/E in the task's
+  reference screenshots): `openMorePopup()`'s row-click handler now
+  branches on `window.innerWidth >= 1024`. Below that width, behavior is
+  byte-for-byte the pre-existing flow (close the list, open Task Detail
+  as a centered modal, Close reopens the list). At or above it, the list
+  stays open, the clicked row gets a `.selected` class, and
+  `viewItem(id, anchor, origin, besideList=true)` adds a
+  `msc-view-modal--beside-list` modifier class and calls the new
+  `positionViewModalBesideList()` (same viewport-clamping technique as
+  the pre-existing `positionMorePopup()`) instead of centering the modal.
+  The modifier class removes the dimmed backdrop and sets
+  `pointer-events:none` on the overlay (with `pointer-events:auto` on the
+  `.msc-modal` card itself), so clicks pass through to the still-visible,
+  still-scrollable list. `onDocClickForMorePopup()` was updated to treat
+  clicks inside a beside-list `viewModal` as "not outside" so interacting
+  with the open Detail card never closes the list out from under it.
+  Closing Task Detail already called the pre-existing
+  `reopenTaskListOrigin()` rebuild whenever it was opened from the list
+  — that rebuild is idempotent, so it already restores scroll position
+  and refocuses the row whether or not the list was ever actually closed;
+  no new close-path logic was needed.
+- **Static-reference cleanup found during this task**: one leftover call
+  to the removed `closeCreateMenu()` inside `setMode()` (corrected to
+  `closeCreatePopup()`), and one fully duplicated dead
+  `openLeavePopup()`/`closeLeavePopup()`/`onLeavePopupKeydown()`
+  definition that predated this task's edits (removed) — both found by a
+  post-edit grep sweep for every removed identifier, documented in the
+  validation doc's AL section.
 
 ## Google-Calendar-inspired wider layout and larger Month boxes (2026-07-22)
 
