@@ -502,8 +502,9 @@ function mountScheduleCalendarInstance(container) {
        open/close orchestration changed, see openCreatePopup()/
        closeCreatePopup()/setCreateDialogTab() below). The manual
        category selector that used to sit in the Task fields was removed
-       2026-07-22 — category is always backend-assigned; see
-       msc-field-category-note. */
+       2026-07-22 — category is always backend-assigned (no visible
+       classification note is shown in these forms; UI-text-removal task,
+       2026-07-23). */
     '<div class="msc-modal-overlay msc-create-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(createPopupId) + '">' +
     '<div class="msc-modal msc-modal-form">' +
     '<div class="msc-modal-form-head">' +
@@ -523,8 +524,6 @@ function mountScheduleCalendarInstance(container) {
     '<label>Date<input type="date" class="msc-field-date" required /></label>' +
     '<label>Title<input type="text" class="msc-field-title" placeholder="e.g. Prepare weekly report" maxlength="120" required />' +
     '<span class="msc-field-title-counter">0 / 120</span></label>' +
-    '<p class="msc-form-full msc-field-category-note">Task type is assigned automatically based on when ' +
-    'the task is created or changed.</p>' +
     '<label>Priority<select class="msc-field-priority">' +
     '<option value="High">High</option>' +
     '<option value="Medium" selected>Medium</option>' +
@@ -545,14 +544,13 @@ function mountScheduleCalendarInstance(container) {
        removed dynamically (start at 1-2 rows, grow to a max of
        MAX_BULK_TASK_ROWS = 30, mirroring the backend's own cap). No
        Scheduled/Unscheduled selector exists here, matching the single-Task
-       form's own msc-field-category-note convention. */
+       form (no visible classification note is shown in either form;
+       UI-text-removal task, 2026-07-23). */
     '<div class="msc-create-bulk-fields" hidden>' +
     '<div class="msc-form-card">' +
     '<div class="hr-table-title" style="margin-bottom:10px;">Create multiple tasks</div>' +
     '<form class="msc-bulk-form" autocomplete="off">' +
     '<label class="msc-bulk-date-field">Date<input type="date" class="msc-bulk-field-date" required /></label>' +
-    '<p class="msc-form-full msc-field-category-note">Task type is assigned automatically based on when ' +
-    'each task is created — every task in this batch shares the same submission moment.</p>' +
     '<p class="msc-form-full msc-bulk-leave-blocked-note" hidden>No new Task can be added on this date — it is ' +
     'covered by Full-Day or Multi-Day leave.</p>' +
     '<div class="msc-bulk-rows"></div>' +
