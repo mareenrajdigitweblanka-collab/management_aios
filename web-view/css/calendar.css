@@ -80,9 +80,13 @@
       display: block;
     }
 
-    /* ── Calendar top toolbar (Google-Calendar-inspired polish, 2026-07-17)
-       — a left cluster (nav controls + active date-range title) and a right
-       segmented Month/Week/Day switcher, using only existing tokens. ── */
+    /* ── Calendar top toolbar (professional-calendar-toolbar-redesign
+       task, 2026-07-23) — a left identity cluster (sidebar toggle +
+       Calendar icon/title only) and a right cluster holding Today/
+       Previous/Next/Month-Year, Search/Help/Settings, the Month/Week/
+       Day segmented control, and the Calendar/Tasks segmented control,
+       in that order. Height raised from 60px to 66px to fit the larger
+       identity title (Step 3) without cramping. ── */
     .msc-cal-toolbar {
       display: flex;
       align-items: center;
@@ -94,14 +98,22 @@
       flex-wrap: wrap;
     }
 
+    @media (max-width: 900px) {
+      .msc-cal-toolbar {
+        min-height: var(--cal-toolbar-height-compact);
+      }
+    }
+
     .msc-cal-toolbar-left {
       display: flex;
       align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
+      gap: 10px;
       min-width: 0;
     }
 
+    /* Today/Previous/Next/Month-Year — one nav sub-cluster inside the
+       right side (Step 4). Class name kept from the prior toolbar
+       layout (only its position/role in the toolbar changed). */
     .msc-cal-toolbar-btns {
       display: flex;
       align-items: center;
@@ -135,8 +147,11 @@
       box-shadow: var(--focus-ring);
     }
 
-    /* Circular icon buttons for sidebar-toggle / previous / next — the
-       glyphs are pure Unicode (&#9776; &#8249; &#8250;), no Google assets. */
+    /* Circular icon buttons — sidebar-toggle stays Unicode (&#9776;,
+       decorative only); Previous/Next and the Search/Help/Settings
+       triggers are all inline SVG (professional-calendar-toolbar-
+       redesign task, 2026-07-23) — no text glyphs standing in for
+       icons. 40x40px per Step 5's icon-button sizing. */
     .msc-tool-btn--icon {
       width: var(--cal-toolbar-control-size);
       height: var(--cal-toolbar-control-size);
@@ -147,6 +162,12 @@
       font-size: 1.2rem;
       line-height: 1;
       border-radius: 50%;
+    }
+
+    .msc-tool-btn--icon svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
     }
 
     .msc-sidebar-toggle.msc-tool-btn--icon {
@@ -171,51 +192,66 @@
       color: var(--text);
       letter-spacing: -.01em;
       white-space: nowrap;
+      margin-left: 4px;
     }
 
-    /* ── Calendar identity (Step 5, google-calendar-inspired-toolbar-and-
-       tasks-workspace task, 2026-07-23) — a compact, decorative icon +
-       label, visually aligned with the rest of the toolbar. Hidden below
-       a narrow toolbar width (matches the same collapse-on-small-screens
-       requirement the rest of this toolbar already follows) so it never
-       crowds out the functional controls (Today/prev/next/heading) on a
-       cramped viewport. ── */
+    /* ── Calendar identity (professional-calendar-toolbar-redesign task,
+       2026-07-23, Step 3) — icon + title, always visible (the former
+       hide-below-900px rule no longer applies: Today/Previous/Next/
+       Month-Year moved out of this cluster into the right side, so
+       there is no longer any crowding pressure on this cluster at
+       tablet widths — see Step 13's "identity remains left" /
+       "identity readable" requirement at every breakpoint). Title
+       raised from ~13px/700 to ~21px/600 with a real line-height so it
+       reads as a toolbar title, not a small caption. ── */
     .msc-cal-identity {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       color: var(--text);
-      padding-right: 6px;
-      margin-right: 2px;
-      border-right: 1px solid var(--border);
     }
 
     .msc-cal-identity-icon {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       flex-shrink: 0;
       color: var(--accent);
     }
 
     .msc-cal-identity-label {
-      font-size: .84rem;
-      font-weight: 700;
+      font-size: var(--font-2xl);
+      font-weight: 600;
+      line-height: 1.2;
       white-space: nowrap;
     }
 
-    @media (max-width: 900px) {
-      .msc-cal-identity {
-        display: none;
+    @media (max-width: 1024px) {
+      .msc-cal-identity-label {
+        font-size: var(--font-xl);
       }
     }
 
-    /* ── Toolbar right cluster (search / help / settings / view switcher /
-       Calendar-Tasks mode switch) ── */
+    /* ── Toolbar right cluster (professional-calendar-toolbar-redesign
+       task, 2026-07-23) — Today/Previous/Next/Month-Year, Search/Help/
+       Settings, the Month/Week/Day segmented control, and the Calendar/
+       Tasks segmented control, each its own sub-group (see
+       .msc-cal-toolbar-btns / .msc-cal-utility-group / .msc-view-
+       switcher / .msc-cal-mode-switch below). Gap raised from 8px to
+       18px so groups read as distinct clusters (Step 8's "smaller gap
+       within a group; larger gap between groups"); each group keeps its
+       own tighter internal gap. ── */
     .msc-cal-toolbar-right {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 18px;
       flex-wrap: wrap;
+    }
+
+    /* Search / Help / Settings — one tight utility cluster. */
+    .msc-cal-utility-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
     }
 
     /* ── Calendar-scoped search (Step 6) ── anchored popover, same
@@ -366,18 +402,17 @@
     }
 
     /* ── Calendar/Tasks mode visibility (Step 7) ── .msc-calendar-main
-       and .msc-view-dropdown each already carry their own unconditional
-       `display` value below (Phase 1 layout shell / view-dropdown, added
-       2026-07-23) — a same-specificity `[hidden]` rule cannot reliably
-       beat either, so hiding them in Tasks mode uses this shared,
-       higher-specificity (2-class) selector instead (see setMode(),
-       calendar/instance.js). .msc-tasks-main is the inverse: display:none
-       by default, shown only once .msc-mode-active is added — mirrors
-       the existing .msc-view-pane/.active idiom used by the Month/Week/
-       Day panes rather than the native `hidden` attribute, for the same
-       specificity reason. ── */
+       and .msc-view-switcher each already carry their own unconditional
+       `display` value below — a same-specificity `[hidden]` rule cannot
+       reliably beat either, so hiding them in Tasks mode uses this
+       shared, higher-specificity (2-class) selector instead (see
+       setMode(), calendar/instance.js). .msc-tasks-main is the inverse:
+       display:none by default, shown only once .msc-mode-active is
+       added — mirrors the existing .msc-view-pane/.active idiom used by
+       the Month/Week/Day panes rather than the native `hidden`
+       attribute, for the same specificity reason. ── */
     .msc-calendar-main.msc-mode-hidden,
-    .msc-view-dropdown.msc-mode-hidden {
+    .msc-view-switcher.msc-mode-hidden {
       display: none;
     }
 
@@ -585,67 +620,50 @@
       margin-bottom: 12px;
     }
 
-    /* ── Calendar view dropdown (Google-Calendar-inspired UX upgrade,
-       2026-07-13; segmented-control polish 2026-07-17; replaced by a
-       "Month ⌄" dropdown 2026-07-23 icon/order polish, matching the
-       Google Calendar reference exactly — see .msc-view-dropdown-menu
-       below for the anchored-popover part, same technique the Create
-       chooser/search panel already use). ── */
-    .msc-view-dropdown {
-      position: relative;
-    }
-
-    .msc-view-dropdown-trigger {
+    /* ── Calendar view segmented control (professional-calendar-toolbar-
+       redesign task, 2026-07-23) — Month/Week/Day always visible as
+       three buttons, no popover. Height/border/border-radius match
+       .msc-cal-mode-switch below (Step 7's "matching height; matching
+       border radius") so the two segmented controls read as one
+       family; the active-state color differs (accent-light/accent here
+       vs solid accent/white for Calendar-Tasks) so the two remain
+       visually distinguishable as controlling different things. ── */
+    .msc-view-switcher {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      width: auto;
-      padding: 6px 10px;
-      border-radius: var(--radius-sm);
-    }
-
-    .msc-view-dropdown-trigger svg {
-      width: 13px;
-      height: 13px;
-      flex-shrink: 0;
-    }
-
-    .msc-view-dropdown-menu {
-      position: fixed;
-      z-index: 40;
-      min-width: 110px;
-      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      box-shadow: var(--shadow);
-      padding: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+      overflow: hidden;
+      background: var(--surface);
     }
 
     .msc-view-btn {
-      display: block;
-      width: 100%;
-      text-align: left;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border: none;
+      border-left: 1px solid var(--border);
       background: transparent;
-      color: var(--text);
-      padding: 7px 10px;
-      border-radius: var(--radius-sm);
-      font-size: .82rem;
+      color: var(--muted);
+      padding: 6px 14px;
+      font-size: .76rem;
       font-weight: 600;
       cursor: pointer;
       transition: background .12s ease, color .12s ease;
     }
 
+    .msc-view-btn:first-child {
+      border-left: none;
+    }
+
     .msc-view-btn:focus-visible {
       outline: none;
-      box-shadow: var(--focus-ring);
+      box-shadow: inset var(--focus-ring);
     }
 
     .msc-view-btn:hover {
       background: var(--surface-tint-3);
+      color: var(--text);
     }
 
     .msc-view-btn.active {
@@ -1189,11 +1207,11 @@
         align-self: stretch;
       }
 
-      /* The former full-width segmented-control mobile rule here no
-         longer applies — .msc-view-switcher was replaced by the compact
-         .msc-view-dropdown (2026-07-23 icon/order polish), which is
-         already narrow and anchored, needing no mobile-specific
-         override. */
+      /* No mobile-specific override needed for .msc-view-switcher —
+         each toolbar-right sub-group (nav / utility / view switcher /
+         mode switch) wraps onto its own line as a whole block (Step 13:
+         "no dropdown fallback"; segmented control stays visible at
+         every width). */
     }
 
     .msc-cal-grid {

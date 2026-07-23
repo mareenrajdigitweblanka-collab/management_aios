@@ -134,7 +134,12 @@
          web-view/css/calendar.css. These mirror existing semantic
          tokens above (--accent, --border, task/leave colors) rather
          than introducing a second color language. ── */
-      --cal-toolbar-height: 60px;
+      /* Raised from 60px to 66px (professional-calendar-toolbar-redesign
+         task, 2026-07-23, Step 8) to fit the enlarged Calendar identity
+         title (Step 3) without cramping; --cal-toolbar-height-compact
+         is the tablet/mobile value (Step 8's "56-68px" range). */
+      --cal-toolbar-height: 66px;
+      --cal-toolbar-height-compact: 58px;
       --cal-toolbar-control-size: 40px;
       --cal-sidebar-width: 248px;
       --cal-event-radius: 4px;
@@ -145,7 +150,7 @@
          margins" (Step 5 of the 2026-07-20 redesign task). Derivation:
          --header-height (56px, sticky, confirmed unchanged at every
          breakpoint — see the --scroll-target-offset comment above) +
-         --cal-toolbar-height (60px) + ~120px for the instructional
+         --cal-toolbar-height (66px) + ~120px for the instructional
          paragraph and API-status line that sit above the calendar
          card (.msc-note in calendar.css; the testing-preview banner
          formerly counted here was removed 2026-07-20, see

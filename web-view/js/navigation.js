@@ -26,6 +26,12 @@ export function initNavigation() {
     tabPanels.forEach(function (panel) {
       panel.classList.toggle('active', panel.id === 'tab-' + targetId);
     });
+    /* Every mounted calendar instance (calendar/instance.js) listens for
+       this and closes its own Search/Help/Settings popover — switching
+       member tab or app section must never leave a toolbar popover open
+       behind the newly shown panel (professional-calendar-toolbar-
+       redesign task, 2026-07-23, Step 12). */
+    document.dispatchEvent(new CustomEvent('msc:close-toolbar-popovers'));
   }
 
   sideNavBtns.forEach(function (btn) {
