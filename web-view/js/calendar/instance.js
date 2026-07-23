@@ -2788,12 +2788,15 @@ function mountScheduleCalendarInstance(container) {
     var catClass = CATEGORY_CLASS[it.category] || 'task';
     if (viewColorDot) { viewColorDot.className = 'msc-view-color-dot ' + catClass; }
     /* Display-only fallback (popup-detail-close-and-scroll-containment
-       task, 2026-07-23) — it.title is the same authoritative title
-       field Calendar chips, the full Task list, and the Create/Edit
-       form all already read/write; this never writes the fallback text
-       back to the record, it only covers the rendering case where the
-       stored value is unexpectedly empty. */
-    viewTitle.textContent = it.title || 'Untitled task';
+       task, 2026-07-23; hardened against a whitespace-only title
+       2026-07-23 popup-visual-cleanup task) — it.title is the same
+       authoritative title field Calendar chips, the full Task list, and
+       the Create/Edit form all already read/write; this never writes
+       the fallback text back to the record, it only covers the
+       rendering case where the stored value is empty or whitespace-
+       only (a plain `||` check alone treats a string of only spaces as
+       truthy, which would render as an invisible blank title). */
+    viewTitle.textContent = (it.title || '').trim() || 'Untitled task';
     viewDate.textContent = 'Date: ' + it.date;
     viewTime.textContent = 'Time: ' + ((it.start || it.end) ? (it.start || '?') + ' – ' + (it.end || '?') : 'Not set');
     viewCategory.textContent = 'Category: ' + it.category;
@@ -3043,10 +3046,21 @@ function mountScheduleCalendarInstance(container) {
     dayItems.forEach(function (it) {
       var catClass = CATEGORY_CLASS[it.category] || 'task';
       var timeStr = it.start ? (it.start + (it.end ? '–' + it.end : '')) : 'No time set';
+      /* Display-only fallback, same convention as viewItem() — never
+         written back to the record. */
+      var displayTitle = (it.title || '').trim() || 'Untitled task';
+      /* Small subtle dot (popup-visual-cleanup task, 2026-07-23) —
+         replaces the former 3px colored left-border strip on the whole
+         row ("ugly colored left indicator" per direct user feedback)
+         with the same compact .msc-chip-cat-dot treatment the Task
+         Detail identity row and the Tasks-workspace list already use,
+         so every place this app shows a category color uses one
+         consistent, subtle visual language. */
       html += '<div class="msc-more-popup-item ' + catClass + '" data-id="' + it.id + '" role="button" tabindex="0" ' +
-        'aria-label="' + escapeHtml((it.start ? it.start + ' ' : '') + it.title) + '">' +
+        'aria-label="' + escapeHtml((it.start ? it.start + ' ' : '') + displayTitle) + '">' +
+        '<span class="msc-chip-cat-dot ' + catClass + '" aria-hidden="true"></span>' +
         '<span class="msc-more-popup-item-time">' + escapeHtml(timeStr) + '</span>' +
-        '<span class="msc-more-popup-item-title" title="' + escapeHtml(it.title) + '">' + escapeHtml(it.title) + '</span>' +
+        '<span class="msc-more-popup-item-title" title="' + escapeHtml(displayTitle) + '">' + escapeHtml(displayTitle) + '</span>' +
         '</div>';
     });
     morePopupList.innerHTML = html || '<p class="msc-empty">No tasks for this date.</p>';
