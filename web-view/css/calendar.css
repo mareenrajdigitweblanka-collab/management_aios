@@ -403,38 +403,56 @@
       text-align: center;
     }
 
-    /* ── Calendar/Tasks mode switch (Step 7) ── */
+    /* ── Calendar/Tasks mode switch (Step 7; icon-only redesign,
+       calendar-tasks-icon-only-mode-switch task, 2026-07-23) — replaces
+       the earlier icon+text buttons with a compact icon-only segmented
+       control matching the reference Google Calendar switch the user
+       circled. Accessible name now comes from aria-label/title on each
+       button (instance.js) instead of visible text. `overflow: hidden`
+       was deliberately dropped from the container (it was previously
+       used to clip square buttons into the container's rounded corners)
+       — it would also clip the ::after tooltip below, which renders
+       outside the button's own box. Rounded corners are produced
+       instead by giving the first/last button their own matching
+       border-radius on the outer edge only. */
     .msc-cal-mode-switch {
       display: inline-flex;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
+      border-radius: 23px;
       background: var(--surface);
     }
 
     .msc-cal-mode-btn {
+      position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
       border: none;
       border-left: 1px solid var(--border);
       background: transparent;
       color: var(--muted);
-      padding: 6px 12px;
-      font-size: .76rem;
-      font-weight: 600;
+      padding: 0;
       cursor: pointer;
       transition: background .12s ease, color .12s ease;
     }
 
     .msc-cal-mode-btn svg {
-      width: 15px;
-      height: 15px;
+      width: 19px;
+      height: 19px;
       flex-shrink: 0;
     }
 
     .msc-cal-mode-btn:first-child {
       border-left: none;
+      border-top-left-radius: 22px;
+      border-bottom-left-radius: 22px;
+    }
+
+    .msc-cal-mode-btn:last-child {
+      border-top-right-radius: 22px;
+      border-bottom-right-radius: 22px;
     }
 
     .msc-cal-mode-btn:hover {
@@ -442,9 +460,14 @@
       color: var(--text);
     }
 
+    /* Soft-fill active state — same "tinted background + accent-color
+       foreground" pairing already used by .msc-view-btn.active and
+       .msc-tasks-nav-btn.active above, not solid-accent/white-text, so
+       active state doesn't rely on color alone (aria-pressed carries
+       the programmatic state; see instance.js setMode()). */
     .msc-cal-mode-btn.active {
-      background: var(--accent);
-      color: #fff;
+      background: var(--accent-light);
+      color: var(--accent);
     }
 
     .msc-cal-mode-btn:focus-visible {
@@ -452,10 +475,39 @@
       box-shadow: inset var(--focus-ring);
     }
 
-    @media (max-width: 640px) {
-      .msc-cal-mode-btn-label {
-        display: none;
-      }
+    /* CSS-only tooltip reading the button's own `title` attribute, so
+       there is one source of truth for the tooltip text rather than a
+       second hardcoded label string. Shown on :hover AND :focus-visible
+       — a native `title` attribute alone is not reliably shown on
+       keyboard focus in Chromium, which the spec for this control
+       requires. Generated content is not part of the accessible tree
+       and is positioned absolutely (out of flow), so it never affects
+       layout/spacing and never duplicates the aria-label for screen
+       readers. */
+    .msc-cal-mode-btn::after {
+      content: attr(title);
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-4px);
+      background: var(--text);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 600;
+      line-height: 1;
+      padding: 5px 9px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease, transform .12s ease;
+      z-index: 30;
+    }
+
+    .msc-cal-mode-btn:hover::after,
+    .msc-cal-mode-btn:focus-visible::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     /* ── Calendar/Tasks mode visibility (Step 7) ── .msc-calendar-main

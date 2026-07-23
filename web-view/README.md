@@ -572,6 +572,52 @@ gap between "Calendar" and "Today". This task fixes that:
   itself carries `role="img"` and an `aria-label` such as
   `"Calendar — today is July 23, 2026"`, maintained by the same module.
 
+## Calendar/Tasks icon-only mode switch (2026-07-23, later still)
+
+See `validation/calendar-tasks-icon-only-mode-switch-check-2026-07-23.md` and
+`handover/2026-07-23__calendar-tasks-icon-only-mode-switch-closure.md` for the full
+record. Direct user feedback against a Google Calendar reference screenshot asked
+for the `.msc-cal-mode-switch` (Calendar/Tasks toggle, unchanged since the
+"Professional Calendar toolbar redesign" section above) to lose its visible
+`[ Calendar ] [ Tasks ]` icon+text presentation in favor of a compact icon-only
+segmented control:
+
+- **Markup (`calendar/instance.js`)** — the `<span class="msc-cal-mode-btn-label">`
+  text nodes were removed from both buttons; `aria-label="Open Calendar"`/
+  `aria-label="Open Tasks"` and `title="Calendar"`/`title="Tasks"` were added so
+  the accessible name and tooltip no longer depend on visible text. The Calendar
+  (rect + header-line) and Tasks (circle + checkmark) SVG icons themselves are
+  unchanged — same paths as before this task, only rendered larger via CSS.
+- **Sizing/shape (`calendar.css`)** — buttons are now fixed 46×46px squares (was
+  variable-width icon+text with `6px 12px` padding); icon rendered size raised
+  15px→19px; container radius raised to 23px (pill). `overflow: hidden` was
+  removed from the container (it would have clipped the new tooltip below) —
+  the pill shape is now produced by `border-radius` directly on the first/last
+  button's outer corners instead.
+- **Active state** — changed from solid `var(--accent)` background with white
+  icon color to the same soft-fill pairing already used by `.msc-view-btn.active`
+  and `.msc-tasks-nav-btn.active` elsewhere in this file: `var(--accent-light)`
+  background + `var(--accent)` icon color. Still exposed programmatically via
+  `aria-pressed`, not color alone.
+- **Tooltip** — a new CSS-only `.msc-cal-mode-btn::after { content: attr(title); }`
+  rule, shown on `:hover` **and** `:focus-visible`. This codebase's existing
+  icon-button convention (native `title` + `aria-label`, e.g. Search/Help/
+  Settings) does not reliably show a tooltip on keyboard focus in Chromium —
+  this addition covers that gap for the mode switch specifically, reading the
+  same `title` value already on the button rather than a second hardcoded
+  string. Scoped to `.msc-cal-mode-btn` only; Search/Help/Settings/Prev/Next
+  tooltips are unchanged.
+- **Responsive** — the old `@media (max-width: 640px) { .msc-cal-mode-btn-label
+  { display: none; } }` rule (previously the only place icon-only was the
+  default) was removed as dead CSS — the label span it targeted no longer
+  exists anywhere in markup, so icon-only is now the presentation at every
+  width, not a narrow-viewport fallback.
+- **Unchanged** — `setMode()`'s logic, `wireSegmentedArrowKeys()` roving focus,
+  the left-side Calendar identity (dynamic today-date icon, "Calendar" title),
+  Today/Previous/Next/current-period, Search/Help/Settings, Month/Week/Day, all
+  five members' selected-state handling, and every backend/API/database call —
+  this task changed only the mode switch's own markup attributes and CSS.
+
 ## Larger frontend modularization (not done in this task)
 
 `web-view/js/calendar/instance.js` (~2,140 lines) and `web-view/js/

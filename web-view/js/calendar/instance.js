@@ -179,22 +179,31 @@ function mountScheduleCalendarInstance(container) {
     '<button type="button" class="msc-view-btn" data-view="day" role="option" aria-selected="false">Day</button>' +
     '</div>' +
     '</div>' +
-    /* Calendar/Tasks mode switch (Step 7) — swaps the main workspace
-       between the existing Month/Week/Day grid and the new member-
-       scoped Tasks workspace (Step 12+). Pure show/hide over sibling
-       panels already mounted in this same instance, the same pattern
-       web-view/js/navigation.js already uses for the app's own tab
-       switching (no routing/history in this app to match) — see
-       setMode() below. */
+    /* Calendar/Tasks mode switch (Step 7; icon-only redesign,
+       calendar-tasks-icon-only-mode-switch task, 2026-07-23) — swaps
+       the main workspace between the existing Month/Week/Day grid and
+       the member-scoped Tasks workspace (Step 12+). Pure show/hide
+       over sibling panels already mounted in this same instance, the
+       same pattern web-view/js/navigation.js already uses for the
+       app's own tab switching (no routing/history in this app to
+       match) — see setMode() below. Visible "Calendar"/"Tasks" text
+       labels were removed per direct user feedback against a Google
+       Calendar reference screenshot (icon-only segmented control);
+       the accessible name now comes from aria-label, and a visible
+       tooltip comes from title (see the CSS ::after rule reading
+       attr(title) in calendar.css, so it also shows on keyboard
+       focus, not just mouse hover). */
     '<div class="msc-cal-mode-switch" role="group" aria-label="Calendar or Tasks">' +
-    '<button type="button" class="msc-cal-mode-btn active" data-mode="calendar" aria-pressed="true">' +
+    '<button type="button" class="msc-cal-mode-btn active" data-mode="calendar" aria-pressed="true" ' +
+    'aria-label="Open Calendar" title="Calendar">' +
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14"/></svg>' +
-    '<span class="msc-cal-mode-btn-label">Calendar</span></button>' +
-    '<button type="button" class="msc-cal-mode-btn" data-mode="tasks" aria-pressed="false">' +
+    '</button>' +
+    '<button type="button" class="msc-cal-mode-btn" data-mode="tasks" aria-pressed="false" ' +
+    'aria-label="Open Tasks" title="Tasks">' +
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<circle cx="10" cy="10" r="7.3"/><path d="M6.5 10.3l2.3 2.3 4.2-4.6"/></svg>' +
-    '<span class="msc-cal-mode-btn-label">Tasks</span></button>' +
+    '</button>' +
     '</div>' +
     '</div>' +
     '</div>' +
