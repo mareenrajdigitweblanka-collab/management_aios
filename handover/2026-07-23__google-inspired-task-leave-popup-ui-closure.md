@@ -49,14 +49,14 @@ No project skill existed for launching this app, so a Playwright driver (system 
 
 ## 9. Commit hashes
 
-See `git log` after this handover's commits land; three commits were made per the requested sequence:
-1. Restyle Task and Leave creation with Google-inspired dialog UX
-2. Restyle Task/Leave details and date Task list
-3. Document Task and Leave popup validation
+Two commits (the three requested topics — Create dialog, Detail/list restyle — landed together since they touch the same two files, `instance.js`/`calendar.css`, too tightly interleaved to split cleanly by hunk):
+
+1. `7316a8c` — Redesign Task/Leave popups with a Google-Calendar-inspired UI
+2. `304f510` — Document Task/Leave popup redesign validation and handover
 
 ## 10. Push result
 
-Pushed to `origin/main` (no force-push).
+Pushed to `origin/main`: `bdca27b..304f510 main -> main` (no force-push).
 
 ## 11. Known limitations / next step
 
