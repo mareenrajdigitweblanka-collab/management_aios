@@ -72,11 +72,11 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-calendar-header">' +
     '<div class="msc-cal-toolbar" role="group" aria-label="Calendar toolbar">' +
     '<div class="msc-cal-toolbar-left">' +
-    /* Left cluster (toolbar-follow-up task, 2026-07-23) -- direct user
-       feedback against the deployed redesign asked for Today/Previous/
-       Next/Month-Year to sit back next to the identity mark on the
-       left, closer to the original pre-redesign layout, instead of on
-       the far right. */
+    /* Three-zone toolbar grid (toolbar-alignment-and-close-control task,
+       2026-07-23) -- left zone is identity-only; Today/Previous/Next/
+       Month-Year now live in their own visually-centred zone (see
+       .msc-cal-toolbar-center below) instead of sitting next to the
+       identity mark. */
     '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-sidebar-toggle" aria-expanded="true" ' +
     'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar" title="Toggle sidebar">&#9776;</button>' +
     /* Calendar identity — aria-hidden (purely presentational; the
@@ -94,7 +94,13 @@ function mountScheduleCalendarInstance(container) {
     '<circle cx="10" cy="11.6" r=".55" fill="currentColor" stroke="none"/><circle cx="7.2" cy="14.2" r=".55" fill="currentColor" stroke="none"/></svg>' +
     '<span class="msc-cal-identity-label">Calendar</span>' +
     '</div>' +
-    '<div class="msc-cal-toolbar-btns">' +
+    '</div>' +
+    /* Centre zone (toolbar-alignment-and-close-control task, 2026-07-23)
+       -- Today/Previous/Next/Month-Year, visually centred within the
+       whole toolbar (grid justify-self: center), not merely placed next
+       to the identity mark. */
+    '<div class="msc-cal-toolbar-center">' +
+    '<div class="msc-cal-toolbar-btns" role="group" aria-label="Date navigation">' +
     '<button type="button" class="msc-tool-btn msc-tool-btn--today msc-today">Today</button>' +
     '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-prev" aria-label="Previous day, week or month" title="Previous">' +
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -105,9 +111,9 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-cal-heading msc-heading">&nbsp;</div>' +
     '</div>' +
     '</div>' +
-    /* Right cluster (toolbar-follow-up task, 2026-07-23): Search/Help/
-       Settings, then the Month/Week/Day dropdown, then the Calendar/
-       Tasks segmented control. */
+    /* Right zone: Search/Help/Settings, then the Month/Week/Day
+       dropdown, then the Calendar/Tasks segmented control -- all
+       right-aligned (grid justify-self: end). */
     '<div class="msc-cal-toolbar-right">' +
     /* Calendar-scoped search (Step 6) — member-isolated (reads this
        instance's own `items`/`leaveItems` closures only), Task/Leave
@@ -314,9 +320,19 @@ function mountScheduleCalendarInstance(container) {
        exactly like the other popups. */
     '<div class="msc-modal-overlay msc-cal-help-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(helpPopupTitleId) + '">' +
     '<div class="msc-modal msc-cal-help-inner">' +
+    /* Header realigned to a true top-right Close (toolbar-alignment-and-
+       close-control task, 2026-07-23) — the bottom "Close" button (in
+       .msc-form-actions) was removed; the header Close icon is now the
+       one and only Close control, and .msc-view-title/space-between
+       layout push it to the far right instead of sitting immediately
+       beside the title text. Icon changed from a Unicode "&times;" text
+       glyph to an inline SVG X, matching the rest of the toolbar's
+       icon system. */
     '<div class="msc-view-modal-head">' +
-    '<h4 id="' + escapeHtml(helpPopupTitleId) + '">Calendar help</h4>' +
-    '<button type="button" class="msc-modal-close msc-cal-help-close" aria-label="Close">&times;</button>' +
+    '<h4 class="msc-view-title" id="' + escapeHtml(helpPopupTitleId) + '">Calendar help</h4>' +
+    '<button type="button" class="msc-modal-close msc-cal-help-close" aria-label="Close Calendar help">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 5l10 10M15 5L5 15"/></svg></button>' +
     '</div>' +
     '<ul class="msc-cal-help-list">' +
     '<li><span class="msc-chip-cat task" aria-hidden="true"></span>Green — Scheduled Task</li>' +
@@ -329,9 +345,6 @@ function mountScheduleCalendarInstance(container) {
     '<li>Tasks cannot be created on a date fully covered by Full-Day or Multi-Day Leave; saving shows a clear ' +
     'conflict message instead.</li>' +
     '</ul>' +
-    '<div class="msc-form-actions">' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-cal-help-close-btn">Close</button>' +
-    '</div>' +
     '</div>' +
     '</div>' +
     /* ── Calendar settings popup (Step 6) — presentation-only preferences
@@ -342,9 +355,13 @@ function mountScheduleCalendarInstance(container) {
        from any frontend surface. */
     '<div class="msc-modal-overlay msc-cal-settings-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(settingsPopupTitleId) + '">' +
     '<div class="msc-modal msc-cal-help-inner">' +
+    /* Header realigned to a true top-right Close, bottom Close button
+       removed — same treatment as the Help popup above. */
     '<div class="msc-view-modal-head">' +
-    '<h4 id="' + escapeHtml(settingsPopupTitleId) + '">Calendar settings</h4>' +
-    '<button type="button" class="msc-modal-close msc-cal-settings-close" aria-label="Close">&times;</button>' +
+    '<h4 class="msc-view-title" id="' + escapeHtml(settingsPopupTitleId) + '">Calendar settings</h4>' +
+    '<button type="button" class="msc-modal-close msc-cal-settings-close" aria-label="Close Calendar settings">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 5l10 10M15 5L5 15"/></svg></button>' +
     '</div>' +
     '<label class="msc-cal-settings-row">' +
     '<input type="checkbox" class="msc-cal-settings-sidebar-toggle" checked/>' +
@@ -353,9 +370,6 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-note">Only display preferences already supported by this calendar are shown here. Task/Leave ' +
     'business rules (classification, conflicts, Schedule Summary) are set by Management AIOS policy and are not ' +
     'user-editable.</p>' +
-    '<div class="msc-form-actions">' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-cal-settings-close-btn">Close</button>' +
-    '</div>' +
     '</div>' +
     '</div>' +
     /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
@@ -613,11 +627,9 @@ function mountScheduleCalendarInstance(container) {
   var helpTriggerBtn = container.querySelector('.msc-cal-help-trigger');
   var helpPopupOverlay = container.querySelector('.msc-cal-help-popup');
   var helpPopupClose = container.querySelector('.msc-cal-help-close');
-  var helpPopupCloseBtn = container.querySelector('.msc-cal-help-close-btn');
   var settingsTriggerBtn = container.querySelector('.msc-cal-settings-trigger');
   var settingsPopupOverlay = container.querySelector('.msc-cal-settings-popup');
   var settingsPopupClose = container.querySelector('.msc-cal-settings-close');
-  var settingsPopupCloseBtn = container.querySelector('.msc-cal-settings-close-btn');
   var settingsSidebarToggleInput = container.querySelector('.msc-cal-settings-sidebar-toggle');
   var modeSwitchBtns = container.querySelectorAll('.msc-cal-mode-btn');
   var calendarMainEl = container.querySelector('.msc-calendar-main');
@@ -938,7 +950,6 @@ function mountScheduleCalendarInstance(container) {
   }
   if (helpTriggerBtn) { helpTriggerBtn.addEventListener('click', openHelpPopup); }
   if (helpPopupClose) { helpPopupClose.addEventListener('click', closeHelpPopup); }
-  if (helpPopupCloseBtn) { helpPopupCloseBtn.addEventListener('click', closeHelpPopup); }
   if (helpPopupOverlay) {
     helpPopupOverlay.addEventListener('click', function (e) {
       if (e.target === helpPopupOverlay) { closeHelpPopup(); }
@@ -971,7 +982,6 @@ function mountScheduleCalendarInstance(container) {
   }
   if (settingsTriggerBtn) { settingsTriggerBtn.addEventListener('click', openSettingsPopup); }
   if (settingsPopupClose) { settingsPopupClose.addEventListener('click', closeSettingsPopup); }
-  if (settingsPopupCloseBtn) { settingsPopupCloseBtn.addEventListener('click', closeSettingsPopup); }
   if (settingsPopupOverlay) {
     settingsPopupOverlay.addEventListener('click', function (e) {
       if (e.target === settingsPopupOverlay) { closeSettingsPopup(); }
