@@ -541,7 +541,7 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-modal-overlay msc-create-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(createPopupId) + '">' +
     '<div class="msc-modal msc-modal-form">' +
     '<div class="msc-modal-form-head">' +
-    '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create</h4>' +
+    '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create Task</h4>' +
     '<button type="button" class="msc-modal-close msc-create-popup-close" aria-label="Close">&times;</button>' +
     '</div>' +
     '<div class="msc-create-tabs" role="tablist" aria-label="Task, Bulk Tasks, or Leave">' +
