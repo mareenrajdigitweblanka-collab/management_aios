@@ -53,6 +53,9 @@ function mountScheduleCalendarInstance(container) {
   var searchPanelId = 'msc-cal-search-panel-' + memberKey;
   var helpPopupTitleId = 'msc-cal-help-title-' + memberKey;
   var settingsPopupTitleId = 'msc-cal-settings-title-' + memberKey;
+  /* Month/Week/Day dropdown menu aria-controls target (icon/order
+     polish, 2026-07-23). */
+  var viewDropdownId = 'msc-view-dropdown-' + memberKey;
 
   var rajivNoteHtml = showRajivNote
     ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
@@ -67,6 +70,12 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-calendar-header">' +
     '<div class="msc-cal-toolbar">' +
     '<div class="msc-cal-toolbar-left">' +
+    /* Order matches the Google Calendar reference exactly (2026-07-23
+       icon/order polish): sidebar toggle first, THEN the identity mark,
+       THEN Today/prev/next/heading — previously the identity sat before
+       the sidebar toggle. */
+    '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-sidebar-toggle" aria-expanded="true" ' +
+    'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar" title="Toggle sidebar">&#9776;</button>' +
     /* Calendar identity (Step 5, google-calendar-inspired-toolbar-and-
        tasks-workspace task, 2026-07-23) — a compact, Management-AIOS-
        authored icon + "Calendar" label, aria-hidden (purely presentational;
@@ -77,14 +86,13 @@ function mountScheduleCalendarInstance(container) {
        date-badge/logo pattern — a plain calendar-grid glyph, matching the
        existing inline-SVG icon convention from index.html's app sidebar. */
     '<div class="msc-cal-identity" aria-hidden="true">' +
-    '<svg class="msc-cal-identity-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" ' +
-    'stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/>' +
-    '<path d="M3 8h14"/><path d="M7 2.5v3.5M13 2.5v3.5"/></svg>' +
+    '<svg class="msc-cal-identity-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.3" width="14" height="12.7" rx="2.2"/>' +
+    '<path d="M3 8.3h14"/><path d="M7 2.3v3.4M13 2.3v3.4"/><circle cx="7.2" cy="11.6" r=".55" fill="currentColor" stroke="none"/>' +
+    '<circle cx="10" cy="11.6" r=".55" fill="currentColor" stroke="none"/><circle cx="7.2" cy="14.2" r=".55" fill="currentColor" stroke="none"/></svg>' +
     '<span class="msc-cal-identity-label">Calendar</span>' +
     '</div>' +
     '<div class="msc-cal-toolbar-btns">' +
-    '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-sidebar-toggle" aria-expanded="true" ' +
-    'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar" title="Toggle sidebar">&#9776;</button>' +
     '<button type="button" class="msc-tool-btn msc-tool-btn--today msc-today">Today</button>' +
     '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-prev" aria-label="Previous day, week or month" title="Previous">&#8249;</button>' +
     '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-next" aria-label="Next day, week or month" title="Next">&#8250;</button>' +
@@ -117,15 +125,32 @@ function mountScheduleCalendarInstance(container) {
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
     '<circle cx="10" cy="10" r="7.3"/><path d="M7.6 7.7a2.4 2.4 0 1 1 3.3 2.2c-.8.4-1 .9-1 1.7"/>' +
     '<circle cx="9.95" cy="14.1" r=".2" fill="currentColor" stroke="none"/></svg></button>' +
+    /* Settings icon redesigned 2026-07-23 (icon-quality polish) — the
+       original 8-spoke "sunburst" gear read as unclear at toolbar size;
+       a hex-nut silhouette (hexagon + center hole) is a more widely
+       recognized "settings/configuration" glyph and stays crisp at 18px. */
     '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-cal-settings-trigger" aria-haspopup="dialog" ' +
     'aria-label="Calendar settings" title="Calendar settings">' +
-    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-    '<circle cx="10" cy="10" r="2.8"/><path d="M10 2.3v2.6M10 15.1v2.6M2.3 10h2.6M15.1 10h2.6' +
-    'M4.9 4.9l1.8 1.8M13.3 13.3l1.8 1.8M4.9 15.1l1.8-1.8M13.3 6.7l1.8-1.8"/></svg></button>' +
-    '<div class="msc-view-switcher" role="group" aria-label="Calendar view">' +
-    '<button type="button" class="msc-view-btn active" data-view="month" aria-pressed="true">Month</button>' +
-    '<button type="button" class="msc-view-btn" data-view="week" aria-pressed="false">Week</button>' +
-    '<button type="button" class="msc-view-btn" data-view="day" aria-pressed="false">Day</button>' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M10 2.3l6 3.4v8.6l-6 3.4-6-3.4V5.7z"/><circle cx="10" cy="10" r="3"/></svg></button>' +
+    /* Month/Week/Day dropdown (icon/order polish, 2026-07-23) — replaces
+       the former 3-button segmented control with a single "Month ⌄"
+       trigger + anchored option menu, matching the Google Calendar
+       reference exactly. Same underlying view-switch logic/elements
+       (.msc-view-btn, viewSwitcherBtns, syncViewSwitcherButtons() in
+       calendar/instance.js) — only the container markup changed, so no
+       Month/Week/Day rendering logic was touched. */
+    '<div class="msc-view-dropdown">' +
+    '<button type="button" class="msc-tool-btn msc-view-dropdown-trigger" aria-haspopup="listbox" ' +
+    'aria-expanded="false" aria-controls="' + escapeHtml(viewDropdownId) + '">' +
+    '<span class="msc-view-dropdown-label">Month</span>' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5.5 8l4.5 4.5L14.5 8"/></svg></button>' +
+    '<div class="msc-view-dropdown-menu" id="' + escapeHtml(viewDropdownId) + '" role="listbox" aria-label="Calendar view" hidden>' +
+    '<button type="button" class="msc-view-btn active" data-view="month" role="option" aria-selected="true">Month</button>' +
+    '<button type="button" class="msc-view-btn" data-view="week" role="option" aria-selected="false">Week</button>' +
+    '<button type="button" class="msc-view-btn" data-view="day" role="option" aria-selected="false">Day</button>' +
+    '</div>' +
     '</div>' +
     /* Calendar/Tasks mode switch (Step 7) — swaps the main workspace
        between the existing Month/Week/Day grid and the new member-
@@ -554,7 +579,13 @@ function mountScheduleCalendarInstance(container) {
   var viewDeleteBtn = container.querySelector('.msc-view-delete-btn');
   var apiStatusEl = container.querySelector('.msc-api-status');
   var viewSwitcherBtns = container.querySelectorAll('.msc-view-btn');
-  var viewSwitcherEl = container.querySelector('.msc-view-switcher');
+  /* .msc-view-switcher (segmented control) replaced by .msc-view-dropdown
+     (icon/order polish, 2026-07-23) — same role in setMode() below
+     (hidden in Tasks mode), new element. */
+  var viewSwitcherEl = container.querySelector('.msc-view-dropdown');
+  var viewDropdownTrigger = container.querySelector('.msc-view-dropdown-trigger');
+  var viewDropdownMenu = container.querySelector('.msc-view-dropdown-menu');
+  var viewDropdownLabel = container.querySelector('.msc-view-dropdown-label');
   var miniPickerEl = container.querySelector('.msc-mini-picker');
   var weekGridEl = container.querySelector('.msc-week-grid');
   var dayGridEl = container.querySelector('.msc-day-grid');
@@ -1899,11 +1930,66 @@ function mountScheduleCalendarInstance(container) {
     }
   }
 
+  var VIEW_LABEL = { month: 'Month', week: 'Week', day: 'Day' };
+
+  /* aria-selected/role="option" (not aria-pressed) since the segmented
+     control was replaced by a listbox-style dropdown (icon/order
+     polish, 2026-07-23) — the .msc-view-btn elements themselves are
+     unchanged, only their container and ARIA role changed. */
   function syncViewSwitcherButtons() {
     viewSwitcherBtns.forEach(function (b) {
       var active = b.getAttribute('data-view') === state.currentView;
       b.classList.toggle('active', active);
-      b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    if (viewDropdownLabel) { viewDropdownLabel.textContent = VIEW_LABEL[state.currentView] || 'Month'; }
+  }
+
+  /* ── Month/Week/Day dropdown open/close (icon/order polish,
+     2026-07-23) — same anchored-popover convention as the Create
+     chooser/search panel (position:fixed, capture-phase outside-click,
+     Escape). ── */
+  var viewDropdownOpen = false;
+  function positionViewDropdown() {
+    if (!viewDropdownTrigger || !viewDropdownMenu) { return; }
+    var rect = viewDropdownTrigger.getBoundingClientRect();
+    var menuWidth = viewDropdownMenu.offsetWidth || 120;
+    var left = rect.right - menuWidth;
+    if (left < 8) { left = 8; }
+    viewDropdownMenu.style.position = 'fixed';
+    viewDropdownMenu.style.top = (rect.bottom + 4) + 'px';
+    viewDropdownMenu.style.left = left + 'px';
+  }
+  function onDocClickForViewDropdown(e) {
+    if (viewDropdownTrigger && viewDropdownTrigger.contains(e.target)) { return; }
+    if (viewDropdownMenu && viewDropdownMenu.contains(e.target)) { return; }
+    closeViewDropdown();
+  }
+  function onViewDropdownKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeViewDropdown(viewDropdownTrigger); }
+  }
+  function openViewDropdown() {
+    if (viewDropdownOpen || !viewDropdownMenu) { return; }
+    viewDropdownOpen = true;
+    viewDropdownMenu.hidden = false;
+    positionViewDropdown();
+    viewDropdownTrigger.setAttribute('aria-expanded', 'true');
+    document.addEventListener('click', onDocClickForViewDropdown, true);
+    document.addEventListener('keydown', onViewDropdownKeydown, true);
+  }
+  function closeViewDropdown(focusTarget) {
+    if (!viewDropdownOpen || !viewDropdownMenu) { return; }
+    viewDropdownOpen = false;
+    viewDropdownMenu.hidden = true;
+    viewDropdownTrigger.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onDocClickForViewDropdown, true);
+    document.removeEventListener('keydown', onViewDropdownKeydown, true);
+    if (focusTarget && typeof focusTarget.focus === 'function') { returnFocus(focusTarget); }
+  }
+  if (viewDropdownTrigger) {
+    viewDropdownTrigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (viewDropdownOpen) { closeViewDropdown(); } else { openViewDropdown(); }
     });
   }
 
@@ -1935,6 +2021,7 @@ function mountScheduleCalendarInstance(container) {
       state.currentView = btn.getAttribute('data-view');
       syncViewSwitcherButtons();
       renderActiveView();
+      closeViewDropdown(viewDropdownTrigger);
     });
   });
 

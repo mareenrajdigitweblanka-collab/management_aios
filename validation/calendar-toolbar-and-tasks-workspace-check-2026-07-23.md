@@ -77,7 +77,15 @@ No Google branding, logo, or trademark. No account/profile avatar, apps launcher
 
 ## Toolbar result
 
-New right-hand cluster (`.msc-cal-toolbar-right`): search trigger, help trigger, settings trigger, the existing Month/Week/Day switcher (unchanged), and the new Calendar/Tasks mode switch. Left cluster gained the identity block ahead of the existing sidebar-toggle/Today/prev/next/heading (all unchanged). Confirmed live: all five new elements present and correctly ordered on all 5 members.
+New right-hand cluster (`.msc-cal-toolbar-right`): search trigger, help trigger, settings trigger, the Month/Week/Day switcher, and the new Calendar/Tasks mode switch. Left cluster gained the identity block ahead of the existing sidebar-toggle/Today/prev/next/heading. Confirmed live: all five new elements present on all 5 members.
+
+**Addendum (2026-07-23, same day) — icon/order polish from user feedback against the Google Calendar reference screenshot:**
+
+1. **Toolbar order corrected** — the identity block originally sat *before* the sidebar-toggle button; the reference screenshot shows the toggle first, then the identity mark. `.msc-cal-toolbar-left`'s children are now: sidebar-toggle → identity → Today/prev/next → heading. Confirmed live: `["msc-tool-btn msc-tool-btn--icon msc-sidebar-toggle","msc-cal-identity","msc-cal-toolbar-btns","msc-cal-heading msc-heading"]`.
+2. **Settings icon redrawn** — the original 8-spoke "sunburst" gear read as unclear at 18px toolbar size (user: "my icons are not good"). Replaced with a hex-nut silhouette (hexagon outline + center circle), a more widely recognized settings/configuration glyph that stays crisp at small sizes.
+3. **Month/Week/Day converted from segmented control to dropdown** — the reference shows a single "Month ⌄" trigger, not three separate buttons. Replaced `.msc-view-switcher` with `.msc-view-dropdown` (trigger button + anchored `.msc-view-dropdown-menu` listbox, same `position:fixed` anchored-popover technique as the Create chooser/search panel). The underlying `.msc-view-btn` elements, `viewSwitcherBtns` collection, and all Month/Week/Day render logic (`renderActiveView()`, `renderMonthView()`, `renderTimeGrid()`) are completely unchanged — only the container markup and ARIA role (`role="group"`/`aria-pressed` → `role="listbox"`/`role="option"`/`aria-selected`) changed. Confirmed live: dropdown opens (`dropdownOpen: true`), selecting "Week" updates the trigger label to "Week", closes the menu, and correctly activates the Week pane (`weekPaneActive: true`); dropdown correctly hides in Tasks mode (`tasksModeDropdownHidden: true`); the pre-existing "no double-click, no page reload" Month↔Week↔Day switching behavior is unchanged, only reachable through one extra click to open the dropdown first.
+
+Re-ran the full 5-member structural regression and the blank-cell-click Create-chooser smoke test after these three fixes — unchanged (`cellHeight: 140` and `identityPresent`/`modeSwitchPresent: true` on all 5 members; blank-click still opens the Create chooser). `node --check` and the CSS brace-balance check both re-confirmed clean. `git diff --stat -- backend/ database/` re-confirmed empty.
 
 ## Search result
 

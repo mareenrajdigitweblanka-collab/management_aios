@@ -358,8 +358,9 @@ record. Summary for future edits:
   `mountScheduleCalendarInstance()`'s template string in `calendar/instance.js`.
 - **Calendar/Tasks mode switch** — `setMode(mode)` in `calendar/instance.js` toggles
   `.msc-calendar-main` vs. `.msc-tasks-main`. Both `.msc-calendar-main` and
-  `.msc-view-switcher` already carry an unconditional `display` value in
-  `calendar.css`, which a same-specificity native `[hidden]` attribute cannot
+  `.msc-view-dropdown` (see the icon/order polish note below — this was
+  `.msc-view-switcher` until that follow-up) already carry an unconditional `display`
+  value in `calendar.css`, which a same-specificity native `[hidden]` attribute cannot
   reliably beat (author-cascade order lets the existing rule win) — visibility is
   driven by a dedicated `.msc-mode-hidden` class instead. `.msc-tasks-main` follows
   the existing `.msc-view-pane`/`.active` idiom (default `display:none`, shown via
@@ -388,6 +389,22 @@ record. Summary for future edits:
   completed/starred flag) — that would create a second, non-authoritative Task
   truth this file's own dependency-direction rules elsewhere explicitly warn
   against.
+- **Toolbar icon/order polish (same day, 2026-07-23)** — user feedback against the
+  Google Calendar reference screenshot led to three follow-up fixes, all in
+  `calendar/instance.js`'s toolbar template and `calendar.css`: (1) the sidebar
+  toggle now comes *before* the identity block in source order (`.msc-cal-toolbar-left`
+  children: toggle → identity → Today/prev/next → heading), matching the reference
+  exactly — it was identity-first originally; (2) the settings icon was redrawn as a
+  hex-nut silhouette (hexagon outline + center circle) — the original 8-spoke
+  "sunburst" read as unclear at 18px; (3) the 3-button Month/Week/Day segmented
+  control (`.msc-view-switcher`) was replaced by a single `.msc-view-dropdown`
+  trigger ("Month ⌄") opening an anchored `.msc-view-dropdown-menu` listbox — same
+  anchored-popover technique as the Create chooser/search panel, same underlying
+  `.msc-view-btn`/`viewSwitcherBtns`/`syncViewSwitcherButtons()` elements and
+  view-switch logic, only the container/ARIA role changed (`role="group"`/
+  `aria-pressed` → `role="listbox"`/`role="option"`/`aria-selected`).
+  `syncViewSwitcherButtons()` now also updates the trigger's visible label
+  (`VIEW_LABEL` lookup) to match `state.currentView`.
 
 ## Larger frontend modularization (not done in this task)
 

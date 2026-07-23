@@ -366,18 +366,18 @@
     }
 
     /* ── Calendar/Tasks mode visibility (Step 7) ── .msc-calendar-main
-       and .msc-view-switcher each already carry their own unconditional
-       `display` value below (Phase 1 layout shell / Google-Calendar-
-       inspired UX upgrade) — a same-specificity `[hidden]` rule cannot
-       reliably beat either, so hiding them in Tasks mode uses this
-       shared, higher-specificity (2-class) selector instead (see
-       setMode(), calendar/instance.js). .msc-tasks-main is the inverse:
-       display:none by default, shown only once .msc-mode-active is
-       added — mirrors the existing .msc-view-pane/.active idiom used
-       by the Month/Week/Day panes rather than the native `hidden`
-       attribute, for the same specificity reason. ── */
+       and .msc-view-dropdown each already carry their own unconditional
+       `display` value below (Phase 1 layout shell / view-dropdown, added
+       2026-07-23) — a same-specificity `[hidden]` rule cannot reliably
+       beat either, so hiding them in Tasks mode uses this shared,
+       higher-specificity (2-class) selector instead (see setMode(),
+       calendar/instance.js). .msc-tasks-main is the inverse: display:none
+       by default, shown only once .msc-mode-active is added — mirrors
+       the existing .msc-view-pane/.active idiom used by the Month/Week/
+       Day panes rather than the native `hidden` attribute, for the same
+       specificity reason. ── */
     .msc-calendar-main.msc-mode-hidden,
-    .msc-view-switcher.msc-mode-hidden {
+    .msc-view-dropdown.msc-mode-hidden {
       display: none;
     }
 
@@ -585,49 +585,72 @@
       margin-bottom: 12px;
     }
 
-    /* ── Calendar view switcher (Google-Calendar-inspired UX upgrade,
-       2026-07-13; segmented-control polish 2026-07-17) ── */
-    .msc-view-switcher {
+    /* ── Calendar view dropdown (Google-Calendar-inspired UX upgrade,
+       2026-07-13; segmented-control polish 2026-07-17; replaced by a
+       "Month ⌄" dropdown 2026-07-23 icon/order polish, matching the
+       Google Calendar reference exactly — see .msc-view-dropdown-menu
+       below for the anchored-popover part, same technique the Create
+       chooser/search panel already use). ── */
+    .msc-view-dropdown {
+      position: relative;
+    }
+
+    .msc-view-dropdown-trigger {
       display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: auto;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    .msc-view-dropdown-trigger svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+
+    .msc-view-dropdown-menu {
+      position: fixed;
+      z-index: 40;
+      min-width: 110px;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      overflow: hidden;
-      background: var(--surface);
+      box-shadow: var(--shadow);
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     .msc-view-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
       border: none;
-      border-left: 1px solid var(--border);
       background: transparent;
-      color: var(--muted);
-      padding: 6px 14px;
-      border-radius: 0;
-      font-size: .76rem;
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      font-size: .82rem;
       font-weight: 600;
       cursor: pointer;
       transition: background .12s ease, color .12s ease;
     }
 
-    .msc-view-btn:first-child {
-      border-left: none;
-    }
-
-    /* Focus-visible ring (Step 5/17, 2026-07-22) — inset so it stays
-       readable inside the segmented control's own border/overflow:hidden
-       instead of being clipped. */
     .msc-view-btn:focus-visible {
       outline: none;
-      box-shadow: inset var(--focus-ring);
+      box-shadow: var(--focus-ring);
     }
 
     .msc-view-btn:hover {
       background: var(--surface-tint-3);
-      color: var(--text);
     }
 
     .msc-view-btn.active {
-      background: var(--accent);
-      color: #fff;
+      background: var(--accent-light);
+      color: var(--accent);
     }
 
     /* ── Shared calendar layout shell (Phase 1, 2026-07-14) ── */
@@ -1166,14 +1189,11 @@
         align-self: stretch;
       }
 
-      .msc-view-switcher {
-        width: 100%;
-      }
-
-      .msc-view-btn {
-        flex: 1;
-        text-align: center;
-      }
+      /* The former full-width segmented-control mobile rule here no
+         longer applies — .msc-view-switcher was replaced by the compact
+         .msc-view-dropdown (2026-07-23 icon/order polish), which is
+         already narrow and anchored, needing no mobile-specific
+         override. */
     }
 
     .msc-cal-grid {
