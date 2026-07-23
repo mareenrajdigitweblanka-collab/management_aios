@@ -109,6 +109,7 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
+      flex-wrap: wrap;
     }
 
     /* Today/Previous/Next/Month-Year — one nav sub-cluster inside the
@@ -402,7 +403,7 @@
     }
 
     /* ── Calendar/Tasks mode visibility (Step 7) ── .msc-calendar-main
-       and .msc-view-switcher each already carry their own unconditional
+       and .msc-view-dropdown each already carry their own unconditional
        `display` value below — a same-specificity `[hidden]` rule cannot
        reliably beat either, so hiding them in Tasks mode uses this
        shared, higher-specificity (2-class) selector instead (see
@@ -412,7 +413,7 @@
        the Month/Week/Day panes rather than the native `hidden`
        attribute, for the same specificity reason. ── */
     .msc-calendar-main.msc-mode-hidden,
-    .msc-view-switcher.msc-mode-hidden {
+    .msc-view-dropdown.msc-mode-hidden {
       display: none;
     }
 
@@ -620,50 +621,87 @@
       margin-bottom: 12px;
     }
 
-    /* ── Calendar view segmented control (professional-calendar-toolbar-
-       redesign task, 2026-07-23) — Month/Week/Day always visible as
-       three buttons, no popover. Height/border/border-radius match
-       .msc-cal-mode-switch below (Step 7's "matching height; matching
-       border radius") so the two segmented controls read as one
-       family; the active-state color differs (accent-light/accent here
-       vs solid accent/white for Calendar-Tasks) so the two remain
-       visually distinguishable as controlling different things. ── */
-    .msc-view-switcher {
+    /* ── Calendar view dropdown (toolbar-follow-up task, 2026-07-23 —
+       direct user feedback re-requested the dropdown presentation).
+       Same anchored-popover technique the Create chooser/search panel
+       already use (position:fixed, capture-phase outside-click,
+       Escape) — see positionViewDropdown()/openViewDropdown() in
+       calendar/instance.js. This presentation now participates in the
+       one-active-popover system shared with Search/Help/Settings,
+       which is what makes it close reliably. ── */
+    .msc-view-dropdown {
+      position: relative;
+    }
+
+    .msc-view-dropdown-trigger {
       display: inline-flex;
       align-items: center;
+      gap: 6px;
+      width: auto;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    .msc-view-dropdown-trigger svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+
+    .msc-view-dropdown-menu {
+      position: fixed;
+      z-index: 40;
+      min-width: 110px;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      overflow: hidden;
-      background: var(--surface);
+      box-shadow: var(--shadow);
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* The unconditional `display: flex` above beats the browser's own
+       low-priority `[hidden] { display: none }` UA rule regardless of
+       source order (author-origin styles always win over user-agent-
+       origin styles in the cascade, independent of specificity) — the
+       same pitfall `.msc-mode-hidden` elsewhere in this file already
+       works around. This override was MISSING from every earlier
+       version of this dropdown (verified against the original
+       2026-07-13/07-17/07-23 commits) — without it, the menu rendered
+       open on every page load regardless of its `hidden` attribute or
+       JS open/close state, which is very likely the actual root cause
+       of the original "hard to close reliably" complaint (clicking
+       away or pressing Escape correctly ran the JS close logic, but the
+       menu stayed visually open because this CSS override never
+       existed). Caught during this task's live verification pass. */
+    .msc-view-dropdown-menu[hidden] {
+      display: none;
     }
 
     .msc-view-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: block;
+      width: 100%;
+      text-align: left;
       border: none;
-      border-left: 1px solid var(--border);
       background: transparent;
-      color: var(--muted);
-      padding: 6px 14px;
-      font-size: .76rem;
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      font-size: .82rem;
       font-weight: 600;
       cursor: pointer;
       transition: background .12s ease, color .12s ease;
     }
 
-    .msc-view-btn:first-child {
-      border-left: none;
-    }
-
     .msc-view-btn:focus-visible {
       outline: none;
-      box-shadow: inset var(--focus-ring);
+      box-shadow: var(--focus-ring);
     }
 
     .msc-view-btn:hover {
       background: var(--surface-tint-3);
-      color: var(--text);
     }
 
     .msc-view-btn.active {
@@ -1207,11 +1245,9 @@
         align-self: stretch;
       }
 
-      /* No mobile-specific override needed for .msc-view-switcher —
-         each toolbar-right sub-group (nav / utility / view switcher /
-         mode switch) wraps onto its own line as a whole block (Step 13:
-         "no dropdown fallback"; segmented control stays visible at
-         every width). */
+      /* No mobile-specific override needed for .msc-view-dropdown — it
+         is already compact and anchored (position:fixed), so it needs
+         no width override at any breakpoint. */
     }
 
     .msc-cal-grid {
