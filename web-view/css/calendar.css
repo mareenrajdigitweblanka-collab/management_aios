@@ -1905,6 +1905,18 @@
       font-size: 1.05rem;
     }
 
+    /* Icon action row (Image C, 2026-07-23 google-inspired-task-leave-
+       popup-ui task) — Edit/Delete/Close now live here as a group of
+       round icon buttons instead of a bottom Edit/Delete button row
+       (.msc-view-actions, removed below); every button in this row
+       shares the existing 30px circular .msc-modal-close treatment. */
+    .msc-view-modal-head-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
     .msc-view-modal-head .msc-modal-close {
       margin-top: 0;
       width: 30px;
@@ -1917,6 +1929,15 @@
       font-size: 1.1rem;
       line-height: 1;
       flex-shrink: 0;
+    }
+
+    /* Delete icon reads distinctly from Edit/Close on hover/focus (color
+       is a secondary cue only — the accessible name/tooltip, set in
+       instance.js markup, is never color-dependent). */
+    .msc-view-delete-btn:hover,
+    .msc-leave-view-delete-btn:hover {
+      background: var(--calendar-leave-bg);
+      color: var(--calendar-leave-text);
     }
 
     /* Semantic-color accent marker (Step 12 — color as a marker, never
@@ -1947,13 +1968,29 @@
       background: var(--calendar-leave-border);
     }
 
-    .msc-view-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+    /* .msc-view-actions (former bottom Edit/Delete button row) removed
+       2026-07-23 — actions now live in .msc-view-modal-head-actions
+       above (Image C). */
+
+    /* ── Side-by-side List + Detail (Image E, 2026-07-23 google-inspired-
+       task-leave-popup-ui task) — applied to .msc-view-modal only when
+       Task Detail is opened from the "+N more" list on a desktop-tier
+       viewport (viewItem()'s besideList argument, instance.js). Removes
+       the dimmed backdrop and disables pointer events on the overlay
+       itself so clicks pass through to the still-visible, still-
+       scrollable "+N more" list beneath it; the card
+       (positionViewModalBesideList(), instance.js) stays fully
+       interactive via its own explicit position:fixed left/top. Below
+       the 1024px breakpoint this class is never applied — Detail always
+       opens as the normal centered, dimmed modal there. */
+    .msc-modal-overlay.msc-view-modal--beside-list {
+      background: transparent;
+      pointer-events: none;
+    }
+
+    .msc-modal-overlay.msc-view-modal--beside-list .msc-modal {
+      pointer-events: auto;
+      max-width: 380px;
     }
 
     /* ── Month "+N more" date-specific popup (Step 8/9/10, same task) ──
@@ -2122,6 +2159,19 @@
       box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
     }
 
+    /* Selected-row state (Image D/E, 2026-07-23 google-inspired-task-
+       leave-popup-ui task) — only ever applied while the side-by-side
+       Detail card is open beside this list (desktop-tier viewport, see
+       openMorePopup()'s row handler in instance.js); a plain overlay-mode
+       open never sets this since the list closes immediately. Color is a
+       secondary cue only — the row remains scrolled-to and focused
+       (existing focus-visible ring above still applies on keyboard
+       navigation), so selection is never conveyed by color alone. */
+    .msc-more-popup-item.selected {
+      background: var(--accent-light);
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
     .msc-more-popup-item.task {
       border-left-color: var(--calendar-scheduled-border);
     }
@@ -2165,128 +2215,19 @@
       }
     }
 
-    /* ── "+ Create" dropdown (Google-style create workflow, 2026-07-20)
-       — a single reused menu, anchored to whichever element opened it
-       (the sidebar button, or — calendar-empty-slot-create-and-overlap-
-       rules, 2026-07-20 — a Month cell / Week/Day empty slot / all-day
-       area). No Google assets; icons are plain Unicode glyphs (set in
-       instance.js markup). ── */
+    /* ── "+ Create" button (unified Create dialog, 2026-07-23
+       google-inspired-task-leave-popup-ui task) — the former anchored
+       "+ Create" chooser dropdown (menu + caret) is gone; the button now
+       opens the one Google-inspired Create dialog directly (below). ── */
     .msc-create-wrap {
       position: relative;
     }
 
-    .msc-create-btn-caret {
-      font-size: .65rem;
-      margin-left: 2px;
-      line-height: 1;
-    }
-
-    /* top/left/position below are a static fallback only — instance.js's
-       positionCreateMenu() always sets position:fixed plus computed
-       top/left inline (viewport-clamped) every time the menu opens, for
-       both the sidebar-button and calendar-cell-click cases; inline
-       styles win regardless of specificity, so these values only matter
-       if that JS somehow never ran. */
-    /* Enlarged and made visually prominent (Step 4, calendar-create-
-       chooser-readability-and-width task, 2026-07-20) — was a compact
-       180px-wide menu with an 8px/6px.84rem item; now a wider, higher-
-       contrast panel with a visible "Create" heading (below) so an
-       empty-cell click reads unambiguously as a creation action, not a
-       generic small menu. Still an anchored popover, not a full-page
-       modal — position:fixed + viewport clamping remains entirely
-       JS-driven (positionCreateMenu(), unchanged). */
-    .msc-create-menu {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      min-width: 260px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-hover);
-      padding: 10px;
-      z-index: 60;
-    }
-
-    /* Header row (calendar-popup-close-time-validation-task-list-return
-       task, 2026-07-22) — adds a visible Close button next to the
-       "Create" heading; the border/spacing that used to live on the
-       heading alone now sits on this row instead. */
-    .msc-create-menu-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 6px 10px 10px;
-      margin-bottom: 4px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    /* Visible "Create" heading (Step 3) — the menu already carries
-       aria-label="Create" for assistive tech (instance.js), so this
-       heading is aria-hidden and purely the sighted-user-visible label
-       the confirmed requirement asks for. */
-    .msc-create-menu-heading {
-      font-size: .92rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    /* Same 26px circular close-button treatment as the "+N more" popup's
-       head (.msc-more-popup-head .msc-modal-close below) — one shared
-       visual language for every popup's close control. */
-    .msc-create-menu-head .msc-modal-close {
-      margin-top: 0;
-      width: 26px;
-      height: 26px;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-size: 1rem;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-
-    .msc-create-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      border: none;
-      background: transparent;
-      color: var(--text);
-      padding: 12px 14px;
-      border-radius: var(--radius-sm);
-      font-size: .92rem;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      transition: background .12s ease, box-shadow .12s ease;
-    }
-
-    .msc-create-menu-item:hover {
-      background: var(--surface-tint-3);
-      box-shadow: inset 0 0 0 1px var(--border);
-    }
-
-    .msc-create-menu-item:focus-visible {
-      outline: none;
-      background: var(--surface-tint-3);
-      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25)), inset 0 0 0 1px var(--accent);
-    }
-
-    .msc-create-menu-icon {
-      font-size: 1.1rem;
-      line-height: 1;
-    }
-
-    /* ── Task/Leave create popups (Google-style create workflow,
-       2026-07-20) — reuse the existing .msc-modal-overlay/.msc-modal
-       backdrop pattern (same show/hide, same backdrop) with a wider,
-       form-sized variant. Fits within the viewport and scrolls
-       internally rather than growing past it (Step 10). ── */
+    /* ── Unified Create dialog (Task/Leave tabs, 2026-07-23 task) —
+       reuses the existing .msc-modal-overlay/.msc-modal backdrop pattern
+       (same show/hide, same backdrop) with a wider, form-sized variant.
+       Fits within the viewport and scrolls internally rather than
+       growing past it (Step 10). ── */
     .msc-modal-form {
       max-width: 640px;
       max-height: calc(100vh - 64px);
@@ -2324,12 +2265,15 @@
       flex-shrink: 0;
     }
 
-    /* The moved form/leave-panel already carry their own card chrome
+    /* The form/leave-panel already carry their own card chrome
        (border/padding/background) from their former lower-page
        position — neutralized here so they don't render as a card
        nested inside the popup's own card. Field IDs/classes/structure
-       are otherwise untouched (Step 4 — one form, reused verbatim). */
-    .msc-task-popup .msc-form-card {
+       are otherwise untouched (Step 4 — one form, reused verbatim).
+       Selectors updated 2026-07-23 (google-inspired-task-leave-popup-ui
+       task) from .msc-task-popup/.msc-leave-popup (removed) to the one
+       shared .msc-create-popup shell. */
+    .msc-create-popup .msc-form-card {
       border: none;
       border-radius: 0;
       padding: 0;
@@ -2337,15 +2281,60 @@
       background: transparent;
     }
 
-    .msc-leave-popup .msc-leave-form-panel {
+    .msc-create-popup .msc-leave-form-panel {
       border: none;
       border-radius: 0;
       padding: 0;
       background: transparent;
     }
 
-    .msc-leave-popup .msc-leave-notice {
+    .msc-create-popup .msc-leave-notice {
       margin-bottom: 14px;
+    }
+
+    /* ── Task/Leave type tabs (Image A/B, 2026-07-23 task) — the only
+       "type selector" inside the unified Create dialog; styled as a
+       compact pill pair, same visual language as the Tasks workspace's
+       .msc-tasks-nav-btn.active treatment elsewhere in this file, so the
+       whole app reads as one consistent tab/segmented-control idiom. ── */
+    .msc-create-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msc-create-tab {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: .86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease, box-shadow .12s ease;
+    }
+
+    .msc-create-tab:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-create-tab.active {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .msc-create-tab:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, .25));
+    }
+
+    .msc-create-task-fields,
+    .msc-create-leave-fields {
+      margin-bottom: 4px;
     }
 
     @media (max-width: 900px) {

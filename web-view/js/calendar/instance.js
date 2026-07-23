@@ -33,12 +33,13 @@ function mountScheduleCalendarInstance(container) {
   /* Same per-instance-unique-id rule, used for the sidebar toggle's
      aria-controls target (Phase 1 layout shell, 2026-07-14). */
   var sidebarId = 'msc-sidebar-' + memberKey;
-  /* Same per-instance-unique-id rule (create-menu popup workflow,
-     2026-07-20) — the "+ Create" dropdown's aria-controls target and
-     the Task/Leave popups' aria-labelledby targets. */
-  var createMenuId = 'msc-create-menu-' + memberKey;
-  var taskPopupTitleId = 'msc-task-popup-title-' + memberKey;
-  var leavePopupTitleId = 'msc-leave-popup-title-' + memberKey;
+  /* Same per-instance-unique-id rule (unified Create dialog, 2026-07-23
+     google-inspired-task-leave-popup-ui task) — the "+ Create" button's
+     aria-controls target and the merged Task/Leave create dialog's
+     aria-labelledby target. Replaces the former separate
+     createMenuId/taskPopupTitleId/leavePopupTitleId — one dialog, one
+     heading, one id. */
+  var createPopupId = 'msc-create-popup-' + memberKey;
   /* Same per-instance-unique-id rule (calendar-based Leave detail popup,
      2026-07-22 member-page-layout task) — the Leave-detail view popup's
      aria-labelledby target, mirroring viewTitleId's role for the Task
@@ -176,9 +177,8 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-sidebar" id="' + escapeHtml(sidebarId) + '">' +
     '<div class="msc-create-wrap">' +
     '<button type="button" class="msc-btn msc-btn-primary msc-create-btn msc-sidebar-create" ' +
-    'aria-haspopup="true" aria-expanded="false" aria-controls="' + escapeHtml(createMenuId) + '">' +
-    '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Create' +
-    '<span class="msc-create-btn-caret" aria-hidden="true">&#9662;</span></button>' +
+    'aria-haspopup="dialog" aria-expanded="false" aria-controls="' + escapeHtml(createPopupId) + '">' +
+    '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Create</button>' +
     '</div>' +
     '<div class="msc-mini-picker" aria-label="Mini date picker"></div>' +
     '<div class="msc-category-legend" aria-label="Task and Leave category legend">' +
@@ -187,33 +187,14 @@ function mountScheduleCalendarInstance(container) {
     '<span class="msc-chip-cat leave">Leave</span>' +
     '</div>' +
     '</div>' +
-    /* Create chooser menu (2026-07-22 collapsed-sidebar-create-chooser
-       fix) — deliberately NOT nested inside .msc-sidebar above.
-       .msc-sidebar.collapsed sets display:none on its whole subtree
-       (calendar.css), which was also hiding this popup any time the
-       calendar's internal sidebar was collapsed, even though it opens
-       from a Month/Week/Day/all-day empty-cell click that has nothing
-       to do with the sidebar (openCreateChoiceFromCalendar below).
-       position:fixed (set by positionCreateMenu()) only escapes an
-       ancestor's overflow/stacking context, never an ancestor's
-       display:none, so the fix is DOM placement, not a CSS/z-index
-       change: this menu now lives as a sidebar-independent sibling that
-       is never touched by the collapse toggle. */
-    '<div class="msc-create-menu" id="' + escapeHtml(createMenuId) + '" role="menu" aria-label="Create" hidden>' +
-    '<div class="msc-create-menu-head">' +
-    '<div class="msc-create-menu-heading" aria-hidden="true">Create</div>' +
-    '<button type="button" class="msc-modal-close msc-create-menu-close" aria-label="Close create menu">&times;</button>' +
-    '</div>' +
-    /* Visible labels shortened to "Task"/"Leave" (2026-07-20 chooser-label
-       task) — the "Create" heading above already states the action once;
-       repeating it on every item read as redundant. aria-label keeps the
-       fuller "Create Task"/"Create Leave" accessible name for screen-reader
-       users even though the visible text is shorter (Step 3 requirement). */
-    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="task" aria-label="Create Task">' +
-    '<span class="msc-create-menu-icon" aria-hidden="true">&#128221;</span>Task</button>' +
-    '<button type="button" class="msc-create-menu-item" role="menuitem" data-create-kind="leave" aria-label="Create Leave">' +
-    '<span class="msc-create-menu-icon" aria-hidden="true">&#128197;</span>Leave</button>' +
-    '</div>' +
+    /* Create chooser menu removed (2026-07-23 google-inspired-task-leave-
+       popup-ui task) — replaced by the single Google-inspired
+       .msc-create-popup dialog below (Task/Leave tabs inside one
+       anchored dialog, per Image B: "replace the current small menu
+       presentation with the more polished anchored dialog experience").
+       sidebarCreateBtn and openCreateChoiceFromCalendar() now call
+       openCreatePopup('task') directly instead of opening this
+       intermediate chooser first. */
     '<div class="msc-calendar-content">' +
     '<div class="msc-cal-grid-wrap">' +
     '<div class="msc-cal-grid msc-grid msc-view-pane active" data-view-pane="month"></div>' +
@@ -362,48 +343,59 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '</div>' +
     /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
-       and-more-popup task, 2026-07-20) — the ONE task-detail popup used
+       and-more-popup task, 2026-07-20; icon actions relocated to the
+       header 2026-07-23 google-inspired-task-leave-popup-ui task, per
+       Image C's top icon-row layout) — the ONE task-detail popup used
        by every calendar view (Month chip, Week/Day timed block, all-day
        chip, "+N more" popup row). Fields are the existing Task fields
        only (title/date/time/category/priority/notes) — no new fields
-       invented. Edit/Delete reuse the existing editItem()/deleteItem()
-       functions; nothing new is added to backend/API contracts. */
+       invented. Edit/Delete/Close are the exact same buttons as before
+       (same classes, same click handlers further down this file) — only
+       their position and visual treatment (round icon buttons next to
+       Close, matching .msc-modal-close) changed; .msc-view-actions (the
+       former bottom button row) is gone. */
     '<div class="msc-modal-overlay msc-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(viewTitleId) + '">' +
     '<div class="msc-modal msc-view-modal-inner">' +
     '<div class="msc-view-modal-head">' +
     '<span class="msc-view-color-dot" aria-hidden="true"></span>' +
     '<h4 class="msc-view-title" id="' + escapeHtml(viewTitleId) + '"></h4>' +
+    '<div class="msc-view-modal-head-actions">' +
+    '<button type="button" class="msc-modal-close msc-view-edit-btn" aria-label="Edit task" title="Edit task">&#9998;</button>' +
+    '<button type="button" class="msc-modal-close msc-view-delete-btn" aria-label="Delete task" title="Delete task">&#128465;</button>' +
     '<button type="button" class="msc-modal-close msc-view-close" aria-label="Close">&times;</button>' +
+    '</div>' +
     '</div>' +
     '<p class="msc-view-date"></p>' +
     '<p class="msc-view-time"></p>' +
     '<p class="msc-view-category"></p>' +
     '<p class="msc-view-priority"></p>' +
     '<p class="msc-view-notes"></p>' +
-    '<div class="msc-view-actions">' +
-    '<button type="button" class="msc-btn msc-btn-danger msc-view-delete-btn">Delete</button>' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-view-edit-btn">Edit</button>' +
-    '</div>' +
     '</div>' +
     '</div>' +
     /* ── Shared Leave-detail popup (calendar-based Leave management,
-       2026-07-22 member-page-layout task) — the ONE Leave-detail popup
-       used by every calendar view (Month leave chip, Week/Day all-day
-       leave chip, Week/Day timed leave block). Mirrors the Task-detail
-       popup above (same .msc-modal-overlay/.msc-view-modal-inner/
-       .msc-view-actions structure) so Leave gets the same professional
-       treatment without a second popup framework. Fields are the
-       existing Leave fields only (type/date-range/time/purpose/
-       external reference/leave-deduction minutes where already
-       available) — no new field invented. Edit/Delete reuse the
-       existing Leave create form and deleteLeaveRecord()/leaveApiRequest()
-       functions; nothing new is added to the backend/API contract. */
+       2026-07-22 member-page-layout task; icon actions relocated to the
+       header 2026-07-23, same rationale as the Task-detail popup above)
+       — the ONE Leave-detail popup used by every calendar view (Month
+       leave chip, Week/Day all-day leave chip, Week/Day timed leave
+       block). Mirrors the Task-detail popup above (same
+       .msc-modal-overlay/.msc-view-modal-inner/.msc-view-modal-head
+       structure) so Leave gets the same professional treatment without a
+       second popup framework. Fields are the existing Leave fields only
+       (type/date-range/time/purpose/external reference/leave-deduction
+       minutes where already available) — no new field invented.
+       Edit/Delete reuse the existing Leave create form and
+       deleteLeaveRecord()/leaveApiRequest() functions; nothing new is
+       added to the backend/API contract. */
     '<div class="msc-modal-overlay msc-leave-view-modal" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(leaveViewTitleId) + '">' +
     '<div class="msc-modal msc-view-modal-inner">' +
     '<div class="msc-view-modal-head">' +
     '<span class="msc-view-color-dot leave" aria-hidden="true"></span>' +
     '<h4 class="msc-view-title" id="' + escapeHtml(leaveViewTitleId) + '">Leave details</h4>' +
+    '<div class="msc-view-modal-head-actions">' +
+    '<button type="button" class="msc-modal-close msc-leave-view-edit-btn" aria-label="Edit leave" title="Edit leave">&#9998;</button>' +
+    '<button type="button" class="msc-modal-close msc-leave-view-delete-btn" aria-label="Delete leave" title="Delete leave">&#128465;</button>' +
     '<button type="button" class="msc-modal-close msc-leave-view-close" aria-label="Close">&times;</button>' +
+    '</div>' +
     '</div>' +
     '<p class="msc-leave-view-type"></p>' +
     '<p class="msc-leave-view-date"></p>' +
@@ -411,10 +403,6 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-leave-view-purpose"></p>' +
     '<p class="msc-leave-view-reference"></p>' +
     '<p class="msc-leave-view-deduction"></p>' +
-    '<div class="msc-view-actions">' +
-    '<button type="button" class="msc-btn msc-btn-danger msc-leave-view-delete-btn">Delete</button>' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-leave-view-edit-btn">Edit</button>' +
-    '</div>' +
     '</div>' +
     '</div>' +
     /* ── Month "+N more" date-specific popup (Step 8/9, same task) —
@@ -440,19 +428,29 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-more-popup-list"></div>' +
     '</div>' +
     '</div>' +
-    /* ── Task creation popup (Google-style create workflow, 2026-07-20)
-       — the one and only Schedule Item creation/edit form in the DOM,
-       moved here verbatim (same field classes, same title-counter,
-       same Add/Update/Cancel buttons) from its former lower-page
-       position. The manual category selector that used to sit here was
-       removed 2026-07-22 — category is always backend-assigned; see
+    /* ── Unified Create dialog (Task/Leave tabs, 2026-07-23
+       google-inspired-task-leave-popup-ui task) — replaces the former
+       separate .msc-task-popup / .msc-leave-popup overlays (and the
+       .msc-create-menu chooser removed above) with ONE Google-Calendar-
+       inspired dialog: a title, a Task/Leave tab pair, and the exact
+       same Task and Leave fields/buttons as before (unchanged classes,
+       ids, validation, and API wiring — only the surrounding shell and
+       open/close orchestration changed, see openCreatePopup()/
+       closeCreatePopup()/setCreateDialogTab() below). The manual
+       category selector that used to sit in the Task fields was removed
+       2026-07-22 — category is always backend-assigned; see
        msc-field-category-note. */
-    '<div class="msc-modal-overlay msc-task-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(taskPopupTitleId) + '">' +
+    '<div class="msc-modal-overlay msc-create-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(createPopupId) + '">' +
     '<div class="msc-modal msc-modal-form">' +
     '<div class="msc-modal-form-head">' +
-    '<h4 id="' + escapeHtml(taskPopupTitleId) + '">Create Task</h4>' +
-    '<button type="button" class="msc-modal-close msc-task-popup-close" aria-label="Close">&times;</button>' +
+    '<h4 class="msc-create-popup-heading" id="' + escapeHtml(createPopupId) + '">Create Task</h4>' +
+    '<button type="button" class="msc-modal-close msc-create-popup-close" aria-label="Close">&times;</button>' +
     '</div>' +
+    '<div class="msc-create-tabs" role="tablist" aria-label="Task or Leave">' +
+    '<button type="button" class="msc-create-tab msc-create-tab-task active" role="tab" aria-selected="true">Task</button>' +
+    '<button type="button" class="msc-create-tab msc-create-tab-leave" role="tab" aria-selected="false">Leave</button>' +
+    '</div>' +
+    '<div class="msc-create-task-fields">' +
     '<div class="msc-form-card">' +
     '<div class="hr-table-title" style="margin-bottom:10px;">Schedule Item — ' +
     '<span class="msc-selected-date-label">select a date</span></div>' +
@@ -472,25 +470,9 @@ function mountScheduleCalendarInstance(container) {
     '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
     'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
     '</form>' +
-    '<p class="msc-note msc-api-status msc-task-popup-status" style="display:none;"></p>' +
-    '<div class="msc-form-actions">' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
-    '<button type="button" class="msc-btn msc-btn-primary msc-update-btn" style="display:none;">Update schedule</button>' +
-    '<button type="button" class="msc-btn msc-btn-ghost msc-cancel-btn" style="display:none;">Cancel edit</button>' +
     '</div>' +
     '</div>' +
-    '</div>' +
-    '</div>' +
-    /* ── Leave creation popup — the one and only Leave creation form in
-       the DOM (moved verbatim, including its truth notice and its own
-       dedicated status line), moved here from its former lower-page
-       position. */
-    '<div class="msc-modal-overlay msc-leave-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(leavePopupTitleId) + '">' +
-    '<div class="msc-modal msc-modal-form">' +
-    '<div class="msc-modal-form-head">' +
-    '<h4 class="msc-leave-popup-heading" id="' + escapeHtml(leavePopupTitleId) + '">Create Leave</h4>' +
-    '<button type="button" class="msc-modal-close msc-leave-popup-close" aria-label="Close">&times;</button>' +
-    '</div>' +
+    '<div class="msc-create-leave-fields" hidden>' +
     '<div class="msc-leave-notice"><span class="msc-leave-notice-icon" aria-hidden="true">&#8505;&#65039;</span>' +
     '<span>Calendar coordination copy only. The separate HR leave system remains ' +
     'official. This is not an official leave balance, payroll/no-pay calculation, disciplinary decision, ' +
@@ -513,6 +495,17 @@ function mountScheduleCalendarInstance(container) {
     '<label class="msc-form-full">External reference (optional)<input type="text" class="msc-leave-field-external-reference" ' +
     'maxlength="120" placeholder="e.g. official HR leave system reference id" /></label>' +
     '</form>' +
+    '</div>' +
+    '</div>' +
+    '<div class="msc-create-task-footer">' +
+    '<p class="msc-note msc-api-status msc-task-popup-status" style="display:none;"></p>' +
+    '<div class="msc-form-actions">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-add-btn">Add schedule</button>' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-update-btn" style="display:none;">Update schedule</button>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-cancel-btn" style="display:none;">Cancel edit</button>' +
+    '</div>' +
+    '</div>' +
+    '<div class="msc-create-leave-footer" style="display:none;">' +
     '<p class="msc-note msc-api-status msc-leave-form-status" style="display:none;"></p>' +
     '<div class="msc-form-actions">' +
     '<button type="button" class="msc-btn msc-btn-primary msc-leave-create-btn">Create leave</button>' +
@@ -622,17 +615,32 @@ function mountScheduleCalendarInstance(container) {
   var summarySectionEl = container.querySelector('.msc-summary-section');
   var priorityCardEl = container.querySelector('.msc-list-card');
 
-  /* ── Create dropdown + Task/Leave popups (Google-style create
-     workflow, 2026-07-20) ── */
+  /* ── Unified Create dialog (Task/Leave tabs, 2026-07-23
+     google-inspired-task-leave-popup-ui task) — one shared overlay for
+     both Task and Leave create/edit forms, replacing the former
+     separate .msc-task-popup/.msc-leave-popup overlays and the
+     .msc-create-menu chooser. taskPopupOverlay/leavePopupOverlay and
+     taskPopupClose/leavePopupClose are kept as aliases of the one
+     overlay/close button below so every existing call site further down
+     this file (openTaskPopup/closeTaskPopup/openLeavePopup/
+     closeLeavePopup, trapPopupTab(taskPopupOverlay, ...), etc.) keeps
+     working unchanged. ── */
   var createWrapEl = container.querySelector('.msc-create-wrap');
-  var createMenuEl = container.querySelector('.msc-create-menu');
-  var createMenuClose = container.querySelector('.msc-create-menu-close');
-  var createMenuItems = container.querySelectorAll('.msc-create-menu-item');
-  var taskPopupOverlay = container.querySelector('.msc-task-popup');
-  var taskPopupClose = container.querySelector('.msc-task-popup-close');
+  var createPopupOverlay = container.querySelector('.msc-create-popup');
+  var createPopupClose = container.querySelector('.msc-create-popup-close');
+  var createPopupHeading = container.querySelector('.msc-create-popup-heading');
+  var createTabsEl = container.querySelector('.msc-create-tabs');
+  var createTabTaskBtn = container.querySelector('.msc-create-tab-task');
+  var createTabLeaveBtn = container.querySelector('.msc-create-tab-leave');
+  var createTaskFieldsEl = container.querySelector('.msc-create-task-fields');
+  var createLeaveFieldsEl = container.querySelector('.msc-create-leave-fields');
+  var createTaskFooterEl = container.querySelector('.msc-create-task-footer');
+  var createLeaveFooterEl = container.querySelector('.msc-create-leave-footer');
+  var taskPopupOverlay = createPopupOverlay;
+  var taskPopupClose = createPopupClose;
   var taskPopupStatusEl = container.querySelector('.msc-task-popup-status');
-  var leavePopupOverlay = container.querySelector('.msc-leave-popup');
-  var leavePopupClose = container.querySelector('.msc-leave-popup-close');
+  var leavePopupOverlay = createPopupOverlay;
+  var leavePopupClose = createPopupClose;
 
   /* ── Month "+N more" date-specific popup refs (Step 8/9,
      calendar-task-detail-and-more-popup task, 2026-07-20) ── */
@@ -658,7 +666,12 @@ function mountScheduleCalendarInstance(container) {
   var leaveCreateBtn = container.querySelector('.msc-leave-create-btn');
   var leaveUpdateBtn = container.querySelector('.msc-leave-update-btn');
   var leaveCancelBtn = container.querySelector('.msc-leave-cancel-btn');
-  var leavePopupHeading = container.querySelector('.msc-leave-popup-heading');
+  /* Points at the one shared .msc-create-popup-heading (unified Create
+     dialog, 2026-07-23 task) — setLeavePopupMode() below still writes
+     'Edit leave'/'Create Leave' into it exactly as before; that text is
+     only visible while the Leave tab is active (setCreateDialogTab()
+     overwrites it with 'Create Task' when the Task tab is selected). */
+  var leavePopupHeading = createPopupHeading;
   var leaveFormStatusEl = container.querySelector('.msc-leave-form-status');
 
   /* ── Leave-detail popup scoped refs (calendar-based Leave management,
@@ -725,145 +738,148 @@ function mountScheduleCalendarInstance(container) {
     });
   }
 
-  /* ── "+ Create" dropdown (Google-style create workflow, 2026-07-20)
-     — replaces the former scroll-to-form shortcut. Only one dropdown
-     can be open per instance (createMenuOpen is closure-scoped to
-     this mount); each of the 5 member calendars keeps independent
-     state, same pattern as the sidebar-collapse toggle above. */
-  var createMenuOpen = false;
-  /* Tracks whichever element actually opened the chooser (the sidebar
-     Create button, or a Month/Week/Day/all-day empty-area anchor via
-     openCreateChoiceFromCalendar below) — calendar-popup-close-time-
-     validation-task-list-return task, 2026-07-22. Previously Escape
-     always returned focus to sidebarCreateBtn regardless of the real
-     opener; the new Close button and Escape both use this instead. */
-  var createMenuTriggerEl = null;
+  /* ── Unified Create dialog (Task/Leave tabs, 2026-07-23
+     google-inspired-task-leave-popup-ui task) — replaces the former
+     "+ Create" chooser dropdown (openCreateMenu/closeCreateMenu) and the
+     two separate Task/Leave popups with ONE Google-Calendar-inspired
+     dialog. sidebarCreateBtn, openCreateChoiceFromCalendar() (blank-cell
+     clicks), and the Tasks-workspace "Add a task" button now open this
+     dialog directly — no intermediate chooser step — per Image B
+     ("replace the current small menu presentation with the more
+     polished anchored dialog experience"). Every existing Task/Leave
+     field, validation rule, and API call is untouched; only the DOM
+     shell and open/close orchestration changed. */
+  var activeCreateTab = 'task';
 
-  /* focusTarget (optional) — only the explicit Close button and Escape
-     paths pass one (returning focus to whatever opened the chooser);
-     the outside-click path keeps calling this with no argument so
-     clicking elsewhere is never redirected back into the chooser,
-     matching the existing outside-click convention used by the "+N
-     more" popover (closeMorePopup) below. */
-  function closeCreateMenu(focusTarget) {
-    if (!createMenuOpen) { return; }
-    createMenuOpen = false;
-    createMenuEl.hidden = true;
-    sidebarCreateBtn.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('click', onDocClickForCreateMenu, true);
-    document.removeEventListener('keydown', onCreateMenuKeydown, true);
-    if (focusTarget && typeof focusTarget.focus === 'function') { returnFocus(focusTarget); }
+  /* Delegates to the shared ui/popup.js trap (Phase 1 professional-UX-
+     feedback task, 2026-07-22) — same overlayEl-then-".msc-modal"
+     resolution the former local implementation used, so every existing
+     call site (unchanged below) keeps its exact prior Tab behavior. */
+  function trapPopupTab(overlayEl, e) {
+    trapTab(overlayEl.querySelector('.msc-modal'), e);
   }
 
-  /* Positions the (single, reused) create-menu near an arbitrary anchor
-     element — the sidebar Create button (original behavior) or any
-     calendar-origin click target (Month cell, Week/Day empty slot,
-     all-day area — Step 4/7, 2026-07-20 empty-slot-create task).
-     position:fixed (set here, not in CSS, since the sidebar-anchored
-     case still wants the menu visually docked under the button)
-     resolves against the viewport regardless of which ancestor's
-     overflow:hidden the anchor sits inside (.hr-table-card, the
-     calendar's outer card, clips position:absolute descendants that
-     visually extend past its own box) — a calendar-cell-anchored menu
-     would otherwise risk being clipped. Kept within the viewport
-     horizontally (responsive positioning, Step 7). */
-  function positionCreateMenu(anchorEl) {
-    var rect = anchorEl.getBoundingClientRect();
-    var menuWidth = createMenuEl.offsetWidth || 260;
-    var left = rect.left;
-    if (left + menuWidth > window.innerWidth - 8) {
-      left = Math.max(8, window.innerWidth - menuWidth - 8);
+  /* Switches which field-set/footer is visible inside the one shared
+     dialog — never submits anything, never touches state.editingId/
+     editingLeaveId. The clicked date is carried across so choosing the
+     other tab doesn't lose what the user already picked (brief: "Switching
+     type must preserve the selected date"); every other field keeps
+     whatever value it already had (each tab's fields are never cleared by
+     a tab switch — only Create/blank-cell entry points reset them, via
+     cancelEdit()/cancelLeaveEdit(), exactly as before). */
+  function setCreateDialogTab(kind) {
+    var isTask = kind === 'task';
+    activeCreateTab = isTask ? 'task' : 'leave';
+    if (createTaskFieldsEl) { createTaskFieldsEl.hidden = !isTask; }
+    if (createLeaveFieldsEl) { createLeaveFieldsEl.hidden = isTask; }
+    if (createTaskFooterEl) { createTaskFooterEl.style.display = isTask ? '' : 'none'; }
+    if (createLeaveFooterEl) { createLeaveFooterEl.style.display = isTask ? 'none' : ''; }
+    if (createTabTaskBtn) {
+      createTabTaskBtn.classList.toggle('active', isTask);
+      createTabTaskBtn.setAttribute('aria-selected', isTask ? 'true' : 'false');
     }
-    var top = rect.bottom + 6;
-    if (top + createMenuEl.offsetHeight > window.innerHeight - 8) {
-      top = Math.max(8, rect.top - createMenuEl.offsetHeight - 6);
+    if (createTabLeaveBtn) {
+      createTabLeaveBtn.classList.toggle('active', !isTask);
+      createTabLeaveBtn.setAttribute('aria-selected', isTask ? 'false' : 'true');
     }
-    createMenuEl.style.position = 'fixed';
-    createMenuEl.style.top = top + 'px';
-    createMenuEl.style.left = left + 'px';
-  }
-
-  function openCreateMenu(anchorEl) {
-    if (createMenuOpen) { return; }
-    createMenuOpen = true;
-    createMenuTriggerEl = anchorEl || sidebarCreateBtn;
-    createMenuEl.hidden = false;
-    positionCreateMenu(anchorEl || sidebarCreateBtn);
-    sidebarCreateBtn.setAttribute('aria-expanded', 'true');
-    document.addEventListener('click', onDocClickForCreateMenu, true);
-    document.addEventListener('keydown', onCreateMenuKeydown, true);
-  }
-
-  function onDocClickForCreateMenu(e) {
-    /* Checked separately (2026-07-22 collapsed-sidebar-create-chooser fix)
-       — createMenuEl is no longer a DOM descendant of createWrapEl (see
-       the mount markup above), so a click on a Task/Leave menu item must
-       be tested against createMenuEl directly or this capture-phase
-       listener would treat it as an outside click and close the menu
-       before the item's own click handler runs. */
-    if (createWrapEl && createWrapEl.contains(e.target)) { return; }
-    if (createMenuEl && createMenuEl.contains(e.target)) { return; }
-    closeCreateMenu();
-  }
-
-  function onCreateMenuKeydown(e) {
-    if (e.key === 'Escape' || e.key === 'Esc') {
-      e.preventDefault();
-      closeCreateMenu(createMenuTriggerEl);
+    if (createPopupHeading) {
+      /* Task heading has always been a static "Create Task" (no prior
+         "Edit Task" wording existed to preserve). Leave's dynamic
+         Create/Edit heading is set by setLeavePopupMode() below and is
+         only ever meaningful while this tab is the active one. */
+      createPopupHeading.textContent = isTask ? 'Create Task' : (editingLeaveId ? 'Edit leave' : 'Create Leave');
     }
   }
 
-  if (createMenuClose) {
-    createMenuClose.addEventListener('click', function (e) {
-      /* Stop propagation before the capture-phase onDocClickForCreateMenu
-         listener runs — otherwise it would treat this as an "outside"
-         click (harmless here since closeCreateMenu() below is already
-         idempotent once createMenuOpen is false, but stopping it keeps
-         this click from being double-handled). */
-      e.stopPropagation();
-      closeCreateMenu(createMenuTriggerEl);
+  if (createTabTaskBtn) {
+    createTabTaskBtn.addEventListener('click', function () {
+      if (activeCreateTab === 'task') { return; }
+      var dateVal = leaveFieldStartDate.value;
+      setCreateDialogTab('task');
+      if (dateVal && !fieldDate.value) { fieldDate.value = dateVal; }
+      if (fieldTitle && fieldTitle.focus) { fieldTitle.focus(); }
+    });
+  }
+  if (createTabLeaveBtn) {
+    createTabLeaveBtn.addEventListener('click', function () {
+      if (activeCreateTab === 'leave') { return; }
+      var dateVal = fieldDate.value;
+      setCreateDialogTab('leave');
+      if (dateVal && !leaveFieldStartDate.value) { leaveFieldStartDate.value = dateVal; }
+      if (leaveFieldType && leaveFieldType.focus) { leaveFieldType.focus(); }
     });
   }
 
+  function onCreatePopupKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeCreatePopup(); }
+    else if (e.key === 'Tab') { trapPopupTab(createPopupOverlay, e); }
+  }
+
+  /* kind: 'task' | 'leave'. Tabs are hidden while editing an existing
+     record (state.editingId for Task, editingLeaveId for Leave — both
+     are already set by editItem()/editLeaveItem() before they call
+     openTaskPopup()/openLeavePopup(), which alias to this) since an
+     existing item's fundamental type isn't switchable — matches the
+     pre-existing behavior (there was never a way to turn a Task into a
+     Leave record or vice versa). */
+  function openCreatePopup(kind) {
+    var editing = kind === 'task' ? !!state.editingId : !!editingLeaveId;
+    setCreateDialogTab(kind);
+    if (createTabsEl) { createTabsEl.hidden = editing; }
+    createPopupOverlay.classList.add('show');
+    createPopupOverlay.addEventListener('keydown', onCreatePopupKeydown);
+    var focusEl = kind === 'task' ? fieldTitle : leaveFieldType;
+    if (focusEl && focusEl.focus) { focusEl.focus(); }
+  }
+
+  function closeCreatePopup() {
+    createPopupOverlay.classList.remove('show');
+    createPopupOverlay.removeEventListener('keydown', onCreatePopupKeydown);
+    if (sidebarCreateBtn && sidebarCreateBtn.focus) { sidebarCreateBtn.focus(); }
+  }
+
+  /* Thin aliases (unchanged names/call sites) — see the refs comment
+     above for why these exist rather than rewriting every call site. */
+  function openTaskPopup() { openCreatePopup('task'); }
+  function closeTaskPopup() { closeCreatePopup(); }
+  function openLeavePopup() { openCreatePopup('leave'); }
+  function closeLeavePopup() { closeCreatePopup(); }
+
+  if (createPopupClose) { createPopupClose.addEventListener('click', closeCreatePopup); }
+  createPopupOverlay.addEventListener('click', function (e) {
+    if (e.target === createPopupOverlay) { closeCreatePopup(); }
+  });
+
   sidebarCreateBtn.addEventListener('click', function (e) {
     e.stopPropagation();
-    if (createMenuOpen) { closeCreateMenu(); } else { openCreateMenu(sidebarCreateBtn); }
+    if (createPopupOverlay.classList.contains('show')) { closeCreatePopup(); return; }
+    cancelEdit();
+    cancelLeaveEdit(false);
+    openCreatePopup('task');
   });
 
   /* ── Centralized calendar-origin creation entry point (Step 4,
-     2026-07-20 empty-slot-create-and-overlap-rules task) — the single
-     helper every empty-area click (Month blank cell, Week/Day empty
-     timed slot, Week/Day empty all-day area) funnels through. Updates
-     the existing selected-date source of truth (selectDate — the same
-     function the mini-picker/Today button/etc. already call),
-     prefills a clicked time into both the Task and Leave forms' start/
-     end time fields only when a timed slot was actually clicked, then
-     opens the existing create-menu chooser anchored near the click.
-     Scoped entirely to this calendar instance's own closure state — no
-     global mutable state, and reuses the one existing createMenuEl/
-     openCreateMenu rather than creating a second chooser.
-
-     opts.resolveAnchor (2026-07-20 chooser-open fix), not opts.anchorElement:
-     selectDate() below re-renders the active view's grid (renderMonthView /
-     renderTimeGrid replace the whole pane's innerHTML — Step 2/3 trace),
-     which detaches the very cell/column node that was clicked. Opening the
-     menu against that stale node made positionCreateMenu()'s
-     getBoundingClientRect() read an all-zero rect (a detached element's
-     rect is always 0,0,0,0), silently pinning the chooser to the viewport's
-     top-left corner instead of near the click — indistinguishable from "the
-     chooser never opened" to a user looking at the cell they clicked. Callers
-     now pass a resolver that re-queries a fresh, currently-attached anchor
-     (by stable data-date/data-hour attributes against a render-stable
-     container reference) after the rerender has completed; falls back to
-     the sidebar Create button if the resolver is absent or finds nothing. */
+     2026-07-20 empty-slot-create-and-overlap-rules task; simplified
+     2026-07-23 to open the unified Create dialog directly instead of an
+     intermediate chooser) — the single helper every empty-area click
+     (Month blank cell, Week/Day empty timed slot, Week/Day empty all-day
+     area) funnels through. Updates the existing selected-date source of
+     truth (selectDate — the same function the mini-picker/Today
+     button/etc. already call), prefills a clicked time into both the
+     Task and Leave forms' start/end time fields only when a timed slot
+     was actually clicked, then opens the Create dialog on the Task tab
+     (brief: "Default selected type: Task ... Selected date must be
+     prefilled"). opts.resolveAnchor is accepted for call-site
+     compatibility but no longer used — the dialog is a centered modal,
+     not an anchored popover, so it has nothing to position against. */
   function openCreateChoiceFromCalendar(opts) {
     var dateKey = opts.dateKey;
     var allDay = !!opts.allDay;
     var startTime = allDay ? null : (opts.startTime || null);
     var endTime = allDay ? null : (opts.endTime || null);
-    var resolveAnchor = opts.resolveAnchor || null;
 
     selectDate(dateKey);
+    cancelLeaveEdit(false);
     if (startTime) {
       fieldStart.value = startTime;
       fieldEnd.value = endTime || '';
@@ -875,61 +891,8 @@ function mountScheduleCalendarInstance(container) {
       leaveFieldStartTime.value = '';
       leaveFieldEndTime.value = '';
     }
-    var anchorElement = (resolveAnchor && resolveAnchor()) || sidebarCreateBtn;
-    openCreateMenu(anchorElement);
+    openCreatePopup('task');
   }
-
-  createMenuItems.forEach(function (item) {
-    item.addEventListener('click', function () {
-      var kind = item.getAttribute('data-create-kind');
-      closeCreateMenu();
-      if (kind === 'task') {
-        cancelEdit();
-        openTaskPopup();
-      } else if (kind === 'leave') {
-        cancelLeaveEdit(false);
-        openLeavePopup();
-      }
-    });
-  });
-
-  /* ── Task/Leave popup focus trap + open/close (Google-style create
-     workflow, 2026-07-20) — Tab/Shift+Tab cycle within the popup's
-     own focusable elements (a real trap, unlike the single-control
-     view-modal's Tab-pinned pattern above, since these popups host a
-     full multi-field form). Escape and backdrop-click close; focus
-     always returns to "+ Create" per the confirmed requirement,
-     regardless of what originally triggered the open (dropdown item
-     or an Edit click from the Schedule Items list). */
-  /* Delegates to the shared ui/popup.js trap (Phase 1 professional-UX-
-     feedback task, 2026-07-22) — same overlayEl-then-".msc-modal"
-     resolution the former local implementation used, so every existing
-     call site (unchanged below) keeps its exact prior Tab behavior. */
-  function trapPopupTab(overlayEl, e) {
-    trapTab(overlayEl.querySelector('.msc-modal'), e);
-  }
-
-  function onTaskPopupKeydown(e) {
-    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeTaskPopup(); }
-    else if (e.key === 'Tab') { trapPopupTab(taskPopupOverlay, e); }
-  }
-
-  function openTaskPopup() {
-    taskPopupOverlay.classList.add('show');
-    taskPopupOverlay.addEventListener('keydown', onTaskPopupKeydown);
-    if (fieldTitle && fieldTitle.focus) { fieldTitle.focus(); }
-  }
-
-  function closeTaskPopup() {
-    taskPopupOverlay.classList.remove('show');
-    taskPopupOverlay.removeEventListener('keydown', onTaskPopupKeydown);
-    if (sidebarCreateBtn && sidebarCreateBtn.focus) { sidebarCreateBtn.focus(); }
-  }
-
-  taskPopupClose.addEventListener('click', closeTaskPopup);
-  taskPopupOverlay.addEventListener('click', function (e) {
-    if (e.target === taskPopupOverlay) { closeTaskPopup(); }
-  });
 
   /* ── Calendar help popup (Step 6, google-calendar-inspired-toolbar-
      and-tasks-workspace task, 2026-07-23) — same centered-modal open/
@@ -996,7 +959,7 @@ function mountScheduleCalendarInstance(container) {
 
   /* ── Calendar-scoped search (Step 6) — anchored popover, same
      position:fixed + viewport-clamp + capture-phase outside-click
-     technique as positionCreateMenu()/openCreateMenu() above. Filters
+     technique as positionMorePopup()/openMorePopup() below. Filters
      this instance's own already-loaded `items`/`leaveItems` closures
      only (member-isolated by construction — there is no cross-instance
      state to leak) — no extra request, no database write. */
@@ -1197,35 +1160,13 @@ function mountScheduleCalendarInstance(container) {
     if (summarySectionEl) { summarySectionEl.hidden = mode !== 'calendar'; }
     if (priorityCardEl) { priorityCardEl.hidden = mode !== 'calendar'; }
     if (mode === 'tasks') {
-      closeCreateMenu();
+      closeCreatePopup();
       closeSearchPanel();
       renderTasksWorkspace();
     }
   }
   modeSwitchBtns.forEach(function (btn) {
     btn.addEventListener('click', function () { setMode(btn.getAttribute('data-mode')); });
-  });
-
-  function onLeavePopupKeydown(e) {
-    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeLeavePopup(); }
-    else if (e.key === 'Tab') { trapPopupTab(leavePopupOverlay, e); }
-  }
-
-  function openLeavePopup() {
-    leavePopupOverlay.classList.add('show');
-    leavePopupOverlay.addEventListener('keydown', onLeavePopupKeydown);
-    if (leaveFieldType && leaveFieldType.focus) { leaveFieldType.focus(); }
-  }
-
-  function closeLeavePopup() {
-    leavePopupOverlay.classList.remove('show');
-    leavePopupOverlay.removeEventListener('keydown', onLeavePopupKeydown);
-    if (sidebarCreateBtn && sidebarCreateBtn.focus) { sidebarCreateBtn.focus(); }
-  }
-
-  leavePopupClose.addEventListener('click', closeLeavePopup);
-  leavePopupOverlay.addEventListener('click', function (e) {
-    if (e.target === leavePopupOverlay) { closeLeavePopup(); }
   });
 
   var state = {
@@ -2612,6 +2553,14 @@ function mountScheduleCalendarInstance(container) {
      afterward instead. */
   function closeViewModal() {
     viewModal.classList.remove('show');
+    /* Strip the side-by-side positioning modifier (Image E, 2026-07-23
+       google-inspired-task-leave-popup-ui task) unconditionally on every
+       close — otherwise a later direct-calendar/narrow-viewport open
+       (which never sets it) could inherit a stale fixed position and
+       transparent backdrop from a previous beside-list open. */
+    viewModal.classList.remove('msc-view-modal--beside-list');
+    viewModal.style.left = '';
+    viewModal.style.top = '';
     viewModal.removeEventListener('keydown', onViewModalKeydown);
     currentViewItemId = null;
     var trigger = lastFocusedTrigger;
@@ -2619,11 +2568,52 @@ function mountScheduleCalendarInstance(container) {
     lastFocusedTrigger = null;
     taskFlowOrigin = null;
     if (flowOrigin && flowOrigin.type === 'more-task-list') {
+      /* Reopening the list here (Step 8/9's existing rebuild) already
+         satisfies "Close returns focus to the selected row" whether or
+         not the list was ever actually closed by openMorePopup()'s
+         side-by-side path below — the rebuild is idempotent (same date/
+         scroll position/focused row) so re-running it is safe even when
+         morePopupOpen is still true. */
       reopenTaskListOrigin(flowOrigin);
     } else {
       returnFocus(trigger);
     }
   }
+
+  /* Anchors the Task-detail popup beside the still-open "+N more" list
+     (Image E, 2026-07-23 google-inspired-task-leave-popup-ui task) —
+     same viewport-clamping technique as positionMorePopup() above.
+     Prefers the space to the right of the list; falls right-to-left
+     against the viewport edge when there isn't room, same as
+     positionMorePopup()'s own left-clamp. Only ever called when
+     morePopupOverlay is actually open and visible. */
+  function positionViewModalBesideList() {
+    var modalEl = viewModal.querySelector('.msc-modal');
+    if (!modalEl || !morePopupOverlay) { return; }
+    var listRect = morePopupOverlay.getBoundingClientRect();
+    var modalWidth = modalEl.offsetWidth || 360;
+    var left = listRect.right + 12;
+    if (left + modalWidth > window.innerWidth - 8) {
+      left = Math.max(8, listRect.left - modalWidth - 12);
+    }
+    if (left < 8) { left = Math.max(8, window.innerWidth - modalWidth - 8); }
+    var top = listRect.top;
+    var modalHeight = modalEl.offsetHeight || 260;
+    if (top + modalHeight > window.innerHeight - 8) {
+      top = Math.max(MORE_POPUP_TOP_CLAMP, window.innerHeight - modalHeight - 8);
+    }
+    top = Math.max(MORE_POPUP_TOP_CLAMP, top);
+    modalEl.style.position = 'fixed';
+    modalEl.style.left = left + 'px';
+    modalEl.style.top = top + 'px';
+  }
+
+  function repositionViewModalBesideListIfOpen() {
+    if (viewModal.classList.contains('show') && viewModal.classList.contains('msc-view-modal--beside-list')) {
+      positionViewModalBesideList();
+    }
+  }
+  window.addEventListener('resize', repositionViewModalBesideListIfOpen);
 
   /* The ONE shared task-detail popup for Month/Week/Day/all-day/"+N
      more" (Step 5) — every call site above (Month chip, Week/Day timed
@@ -2634,8 +2624,13 @@ function mountScheduleCalendarInstance(container) {
      task, 2026-07-22) — optional third argument, only ever passed by
      the "+N more" list's row handler below; every direct-calendar call
      site is unchanged (2-arg calls), which correctly resets
-     taskFlowOrigin to null (direct-calendar) for them. */
-  function viewItem(id, triggerEl, origin) {
+     taskFlowOrigin to null (direct-calendar) for them.
+     `besideList` (Image E, 2026-07-23) — optional fourth argument, true
+     only when openMorePopup()'s row handler decided (desktop viewport,
+     list still open) to keep the "+N more" list visible instead of
+     closing it first; every other call site is unchanged (still passes
+     at most 3 args), so this only ever affects that one path. */
+  function viewItem(id, triggerEl, origin, besideList) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return; }
     taskFlowOrigin = origin || null;
@@ -2650,7 +2645,15 @@ function mountScheduleCalendarInstance(container) {
     viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
     lastFocusedTrigger = triggerEl || document.activeElement;
     viewModal.classList.add('show');
+    viewModal.classList.toggle('msc-view-modal--beside-list', !!besideList);
     viewModal.addEventListener('keydown', onViewModalKeydown);
+    if (besideList) {
+      positionViewModalBesideList();
+    } else {
+      viewModal.querySelector('.msc-modal').style.position = '';
+      viewModal.querySelector('.msc-modal').style.left = '';
+      viewModal.querySelector('.msc-modal').style.top = '';
+    }
     viewClose.focus();
   }
 
@@ -2813,14 +2816,20 @@ function mountScheduleCalendarInstance(container) {
 
   function onDocClickForMorePopup(e) {
     if (morePopupOverlay.contains(e.target)) { return; }
+    /* Side-by-side companion (Image E, 2026-07-23 task) — while Task
+       Detail is open beside this list (viewItem()'s besideList mode), a
+       click anywhere inside it (Edit, Delete, a field, the card itself)
+       must not be treated as an "outside" click that closes the list out
+       from under it; the list is only ever dismissed via its own Close/
+       Escape/backdrop-click, or Task Detail's own Close (which reopens
+       the list via reopenTaskListOrigin(), also unaffected here). */
+    if (viewModal.classList.contains('msc-view-modal--beside-list') && viewModal.contains(e.target)) { return; }
     closeMorePopup();
   }
 
-  /* Escape-only (same pattern as the existing "+ Create" dropdown's
-     onCreateMenuKeydown above) — this is an anchored popover, not a
-     centered .msc-modal overlay, so it has no .msc-modal child for
-     trapPopupTab() to cycle within; Tab is left to flow naturally,
-     same as the create-menu. */
+  /* Escape-only — this is an anchored popover, not a centered .msc-modal
+     overlay, so it has no .msc-modal child for trapPopupTab() to cycle
+     within; Tab is left to flow naturally. */
   function onMorePopupKeydown(e) {
     if (e.key === 'Escape' || e.key === 'Esc') {
       e.preventDefault();
@@ -2887,8 +2896,25 @@ function mountScheduleCalendarInstance(container) {
           scrollTop: morePopupBody.scrollTop,
           taskId: id
         };
-        closeMorePopup();
-        viewItem(id, morePopupAnchorEl, taskFlowOrigin);
+        /* Side-by-side List + Detail (Image E, 2026-07-23 google-inspired-
+           task-leave-popup-ui task) — only on desktop-tier viewports
+           (>=1024px, matching the brief's own Desktop responsive tier).
+           The list stays open and visible; Task Detail opens beside it
+           instead of replacing it (positionViewModalBesideList() in
+           viewItem()). Below that width the list has no room to share the
+           screen with a second card, so the pre-existing behavior (close
+           the list, open Detail as a normal centered modal, reopen the
+           list on Close) is kept exactly as before. */
+        var sideBySide = window.innerWidth >= 1024;
+        if (sideBySide) {
+          morePopupList.querySelectorAll('.msc-more-popup-item.selected').forEach(function (el) {
+            el.classList.remove('selected');
+          });
+          row.classList.add('selected');
+        } else {
+          closeMorePopup();
+        }
+        viewItem(id, morePopupAnchorEl, taskFlowOrigin, sideBySide);
       };
       row.addEventListener('click', go);
       row.addEventListener('keydown', function (e) { if (isKeyActivation(e)) { e.preventDefault(); go(); } });
