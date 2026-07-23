@@ -70,7 +70,7 @@ Revert `web-view/css/calendar.css` and `web-view/js/calendar/instance.js` to the
 
 ## 14. Commits
 
-_Populated after commit — see git log for the exact hash(es) once created in this session._
+`233c79c` — "Add Calendar toolbar identity/search/help/settings and a Tasks workspace" (5 files changed, main branch, parent `80c973a`).
 
 ## 15. One next step
 
