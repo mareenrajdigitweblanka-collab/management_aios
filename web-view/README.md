@@ -486,6 +486,53 @@ record. Summary for future edits:
   `syncViewSwitcherButtons()` now also updates the trigger's visible label
   (`VIEW_LABEL` lookup) to match `state.currentView`.
 
+## Professional Calendar toolbar redesign (2026-07-23, later same day)
+
+See `validation/calendar-toolbar-professional-ui-check-2026-07-23.md` and
+`handover/2026-07-23__calendar-toolbar-professional-ui-closure.md` for the full
+record. This follow-up reverses one part of the icon/order polish above (the
+Month/Week/Day dropdown) and restructures toolbar layout/typography — read this
+section, not the "icon/order polish" bullet above, for the current state:
+
+- **Left cluster is identity-only** — Today/Previous/Next/Month-Year moved out
+  of `.msc-cal-toolbar-left` into the right cluster's `.msc-cal-toolbar-btns`
+  nav group (first sub-group in `.msc-cal-toolbar-right`, ahead of the new
+  `.msc-cal-utility-group` wrapping Search/Help/Settings, ahead of
+  `.msc-view-switcher`, ahead of the unchanged `.msc-cal-mode-switch`).
+  `.msc-cal-identity-label` raised from `.84rem`/700 to `var(--font-2xl)`/600
+  (≈20px at ≤1024px) and is now always visible (the former hide-below-900px
+  rule was removed — there is no more crowding pressure on this cluster once
+  Today/prev/next/heading moved out).
+- **Month/Week/Day is a segmented control again** — `.msc-view-dropdown` (see
+  above) is gone entirely: no trigger, no anchored menu, no `viewDropdownId`/
+  `viewDropdownTrigger`/`viewDropdownMenu`/`viewDropdownLabel` refs, no
+  `openViewDropdown`/`closeViewDropdown`/`positionViewDropdown` functions. Back
+  to three plain `.msc-view-btn` buttons in `.msc-view-switcher`
+  (`role="group"`, `aria-pressed`) — same `viewSwitcherBtns`/
+  `syncViewSwitcherButtons()`/`renderActiveView()` logic as always, only the
+  container changed back. Reason: the dropdown had no coordination with
+  Search/Help/Settings, making "only one toolbar popover open at a time"
+  unenforceable and reported as hard to close reliably.
+- **One-active-popover rule, added for the first time** —
+  `openSearchPanel()`/`openHelpPopup()`/`openSettingsPopup()` each now close
+  the other two first; `closeAllOwnPopovers()` (closes all three) runs on
+  every Month/Week/Day and Calendar/Tasks change, and on a new
+  `document`-level `msc:close-toolbar-popovers` event that `navigation.js`
+  dispatches on every member-tab/app-section switch (each of the 5 mounted
+  calendar instances listens independently, so switching member/tab can never
+  leave a popover open behind the newly shown panel).
+- **Icon system** — Settings redrawn from a hex-nut silhouette (see the
+  icon/order polish bullet above — now superseded) to a conventional gear
+  (ring + 8 radial teeth + center hole); Previous/Next changed from Unicode
+  `&#8249;`/`&#8250;` to inline SVG chevrons, matching the stroke
+  weight/style of every other toolbar icon (`.msc-tool-btn--icon svg`, 20px).
+  Search/Help icons unchanged (already matched the required style).
+- **Arrow-key roving** — `wireSegmentedArrowKeys()` (new, shared helper) gives
+  both `.msc-view-switcher` and `.msc-cal-mode-switch` Left/Right (and
+  Up/Down) roving focus between their buttons.
+- **Tokens** — `--cal-toolbar-height` raised 60px→66px (fits the larger
+  identity title); new `--cal-toolbar-height-compact: 58px` for ≤900px.
+
 ## Larger frontend modularization (not done in this task)
 
 `web-view/js/calendar/instance.js` (~2,140 lines) and `web-view/js/
