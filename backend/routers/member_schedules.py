@@ -46,14 +46,19 @@ from sqlalchemy.orm import Session
 from backend.config import (
     DEFAULT_SOURCE_SCOPE,
     LEAVE_FULL_DAY_DEDUCTION_MINUTES,
+    MAX_BULK_TASK_ROWS,
     MEMBER_LABELS,
     SCHEDULE_TIMEZONE,
     VALID_MEMBER_KEYS,
+    VALID_PRIORITIES,
 )
 from backend.database import get_db
 from backend.models import MemberScheduleEvent
 from backend.routers import leave_logic
 from backend.schemas import (
+    BulkTaskCreateRequest,
+    BulkTaskCreateSuccessOut,
+    BulkTaskRowIn,
     DailyScheduleReportOut,
     DurationChangeOut,
     MemberScheduleEventCreate,
@@ -162,6 +167,267 @@ def classify_updated_task(
         return "Unscheduled Task"
 
     return "Scheduled Task"
+
+
+# ── Same-day Bulk Tasks (2026-07-23) ─────────────────────────────────────
+#
+# Additive feature: POST /{member_key}/bulk below. Reuses every existing
+# rule unmodified — classify_new_task/classify_updated_task above,
+# leave_logic.find_conflicting_active_leave (no second Leave-conflict
+# formula), VALID_PRIORITIES, and the same title/notes length limits as
+# MemberScheduleEventCreate. The helpers below are pure functions (no `db`
+# parameter except where a query against MemberScheduleEvent is
+# unavoidable — _find_existing_task_duplicate_warnings) so they can be
+# unit-tested the same DB-free way this codebase already tests
+# find_conflicting_active_leave/find_conflicting_active_tasks — see
+# backend/tests/test_bulk_task_creation.py.
+
+
+def _is_blank_bulk_row(row: BulkTaskRowIn) -> bool:
+    """A row is blank only when title, start, end, and notes are ALL
+    empty (Step 5 business rule) — priority is deliberately excluded from
+    this check. Every row the frontend form submits always carries some
+    priority value (the form defaults the select to 'Medium'), so
+    priority alone must never make an otherwise-blank row count as
+    filled, and an otherwise-filled row must never be treated as blank
+    just because priority was left at its default."""
+    title_empty = not (row.title or "").strip()
+    notes_empty = not (row.notes or "").strip()
+    return title_empty and row.start is None and row.end is None and notes_empty
+
+
+def _bulk_row_effective_priority(row: BulkTaskRowIn) -> str:
+    """Same default ('Medium') MemberScheduleEventCreate.priority uses —
+    applied identically at validation time and at row-construction time so
+    the two can never disagree on what priority a row with no explicit
+    value actually gets."""
+    return row.priority if row.priority else "Medium"
+
+
+def _bulk_row_field_errors(row: BulkTaskRowIn) -> List[dict]:
+    """Hard-validation errors for one NONBLANK row, reusing the exact
+    rules MemberScheduleEventCreate enforces (title required/≤120 chars,
+    notes ≤240 chars, priority in VALID_PRIORITIES, end > start when both
+    given). Returns every applicable error for this row (not just the
+    first) — the caller collects these across every row before deciding
+    whether to reject the batch, per Step 6 ("do not stop after reporting
+    only the first invalid row"). `field`/`code` values are returned
+    without a `row` key; the caller (create_member_schedule_events_bulk)
+    attaches the row number."""
+    errors: List[dict] = []
+
+    title = (row.title or "").strip()
+    if not title:
+        errors.append({
+            "field": "title", "code": "title_required",
+            "message": "Enter a title for this task.",
+        })
+    elif len(title) > 120:
+        errors.append({
+            "field": "title", "code": "title_too_long",
+            "message": "Title must be 120 characters or fewer.",
+        })
+
+    if row.notes is not None and len(row.notes) > 240:
+        errors.append({
+            "field": "notes", "code": "notes_too_long",
+            "message": "Notes must be 240 characters or fewer.",
+        })
+
+    priority = _bulk_row_effective_priority(row)
+    if priority not in VALID_PRIORITIES:
+        errors.append({
+            "field": "priority", "code": "invalid_priority",
+            "message": "Choose a valid priority (" + ", ".join(VALID_PRIORITIES) + ").",
+        })
+
+    if row.start is not None and row.end is not None and row.end <= row.start:
+        errors.append({
+            "field": "end", "code": "invalid_time_range",
+            "message": "End time must be later than start time.",
+        })
+
+    return errors
+
+
+def _bulk_leave_conflict_errors(
+    db: Session,
+    member_key: str,
+    event_date: date_type,
+    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+) -> List[dict]:
+    """Authoritative Leave re-check for every nonblank row (Step 7) — calls
+    the SAME leave_logic.find_conflicting_active_leave() function the
+    single-create/update endpoints already call; no second Leave-conflict
+    formula is implemented here. A conflict is folded into the same
+    validation_failed error contract as field errors (Step 6/18 both
+    surface Leave conflicts as ordinary row messages, e.g. "Row 7 — This
+    date is covered by Full-Day Leave.") rather than a separate 409 —
+    Bulk Tasks has only three response outcomes (validation_failed /
+    duplicate_confirmation_required / created), so there is no fourth
+    "leave_conflict" shape to preserve here."""
+    errors: List[dict] = []
+    for row_number, row in nonblank_rows:
+        conflicts = leave_logic.find_conflicting_active_leave(
+            db, member_key, event_date, row.start, row.end
+        )
+        if not conflicts:
+            continue
+        full_day = next(
+            (c for c in conflicts if c.leave_type in ("Full-Day", "Multi-Day")), None
+        )
+        anchor_field = "start" if (row.start is not None or row.end is not None) else "title"
+        if full_day is not None:
+            label = full_day.leave_type
+            message = "This date is covered by " + label + " Leave."
+        else:
+            message = "This task's time conflicts with an active leave record."
+        errors.append({
+            "row": row_number, "field": anchor_field,
+            "code": "leave_conflict", "message": message,
+        })
+    return errors
+
+
+def _normalize_title_for_duplicate(title: Optional[str]) -> str:
+    """Trim + case-fold only — used purely to compare titles for the
+    duplicate-warning definition (Step 8); the stored/displayed Task title
+    is always the as-submitted, validation-trimmed value, never this
+    normalized form."""
+    return (title or "").strip().casefold()
+
+
+def _normalize_time_for_duplicate(value: Optional[time_type]) -> Optional[str]:
+    """HH:MM representation for duplicate comparison only (Step 8) —
+    seconds are never part of a Task's start/end time in this API, so
+    truncation loses no information."""
+    return value.strftime("%H:%M") if value is not None else None
+
+
+def _bulk_duplicate_key(
+    title: Optional[str], start: Optional[time_type], end: Optional[time_type]
+) -> Tuple[str, Optional[str], Optional[str]]:
+    """The duplicate-identity tuple (Step 8): normalized title + normalized
+    start + normalized end. Untimed rows/tasks naturally compare on
+    (title, None, None) — two untimed tasks with the same title are a
+    duplicate; an untimed and a timed task sharing a title are not (their
+    keys differ), matching "do not treat title-only similarity as a
+    duplicate when time combinations differ.\""""
+    return (
+        _normalize_title_for_duplicate(title),
+        _normalize_time_for_duplicate(start),
+        _normalize_time_for_duplicate(end),
+    )
+
+
+def _format_row_list(rows: List[int]) -> str:
+    ordered = sorted(rows)
+    if len(ordered) == 1:
+        return "Row " + str(ordered[0])
+    if len(ordered) == 2:
+        return "Rows " + str(ordered[0]) + " and " + str(ordered[1])
+    return "Rows " + ", ".join(str(r) for r in ordered[:-1]) + ", and " + str(ordered[-1])
+
+
+def _format_time_range_for_message(
+    start: Optional[time_type], end: Optional[time_type]
+) -> str:
+    if start is None and end is None:
+        return "no set time"
+    return (start.strftime("%H:%M") if start else "?") + "–" + (end.strftime("%H:%M") if end else "?")
+
+
+def _find_batch_duplicate_warnings(
+    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+) -> List[dict]:
+    """Duplicates among rows inside the current submission only (Step 9).
+    Groups nonblank rows by the Step 8 duplicate key; any group with 2+
+    rows produces one warning naming every matching row number. Does not
+    compare against existing saved Tasks — that is
+    _find_existing_task_duplicate_warnings below."""
+    groups: dict = {}
+    for row_number, row in nonblank_rows:
+        key = _bulk_duplicate_key(row.title, row.start, row.end)
+        if key not in groups:
+            groups[key] = {
+                "rows": [], "title": (row.title or "").strip(),
+                "start": row.start, "end": row.end,
+            }
+        groups[key]["rows"].append(row_number)
+
+    warnings: List[dict] = []
+    for group in groups.values():
+        if len(group["rows"]) < 2:
+            continue
+        message = (
+            _format_row_list(group["rows"]) + " match: \"" + group["title"] + "\", "
+            + _format_time_range_for_message(group["start"], group["end"]) + "."
+        )
+        warnings.append({
+            "source": "current_batch",
+            "rows": sorted(group["rows"]),
+            "title": group["title"],
+            "start": group["start"].isoformat() if group["start"] else None,
+            "end": group["end"].isoformat() if group["end"] else None,
+            "existing_task_id": None,
+            "message": message,
+        })
+    return warnings
+
+
+def _find_existing_task_duplicate_warnings(
+    db: Session,
+    member_key: str,
+    event_date: date_type,
+    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+) -> List[dict]:
+    """Duplicates against Tasks already saved for this member and the
+    common date (Step 10). Only active rows (deleted_at IS NULL)
+    participate — a soft-deleted Task never triggers a warning. Only
+    MemberScheduleEvent is queried; Leave records never participate in
+    Task duplicate detection (Step 10 explicit rule). `existing_task_id`
+    is carried in the structured warning for internal correlation only —
+    never interpolated into the user-facing `message` (Step 10: "do not
+    expose unnecessary internal IDs in visible frontend text")."""
+    existing_tasks = (
+        db.query(MemberScheduleEvent)
+        .filter(
+            MemberScheduleEvent.member_key == member_key,
+            MemberScheduleEvent.event_date == event_date,
+            MemberScheduleEvent.deleted_at.is_(None),
+        )
+        .all()
+    )
+    if not existing_tasks:
+        return []
+
+    existing_by_key: dict = {}
+    for task in existing_tasks:
+        key = _bulk_duplicate_key(task.title, task.start_time, task.end_time)
+        existing_by_key.setdefault(key, []).append(task)
+
+    warnings: List[dict] = []
+    for row_number, row in nonblank_rows:
+        key = _bulk_duplicate_key(row.title, row.start, row.end)
+        matches = existing_by_key.get(key)
+        if not matches:
+            continue
+        for task in matches:
+            message = (
+                "Row " + str(row_number) + " matches a task already saved for this date: \""
+                + task.title + "\", "
+                + _format_time_range_for_message(task.start_time, task.end_time) + "."
+            )
+            warnings.append({
+                "source": "existing_task",
+                "rows": [row_number],
+                "title": task.title,
+                "start": task.start_time.isoformat() if task.start_time else None,
+                "end": task.end_time.isoformat() if task.end_time else None,
+                "existing_task_id": str(task.id),
+                "message": message,
+            })
+    return warnings
 
 
 def _percentages(scheduled: int, total: int) -> Tuple[int, int]:
@@ -651,6 +917,153 @@ def create_member_schedule_event(
     db.commit()
     db.refresh(event)
     return event
+
+
+@router.post("/{member_key}/bulk", response_model=BulkTaskCreateSuccessOut, status_code=201)
+def create_member_schedule_events_bulk(
+    member_key: str,
+    payload: BulkTaskCreateRequest,
+    db: Session = Depends(get_db),
+):
+    """Same-day Bulk Tasks (2026-07-23) — additive endpoint; the single-
+    create route above (POST /{member_key}) is completely unchanged.
+
+    Every call to this endpoint independently revalidates everything from
+    scratch — hard field rules, the authoritative Leave-conflict check,
+    and both duplicate checks — against current database state. Nothing
+    from an earlier response (e.g. a prior duplicate_confirmation_required
+    reply) is ever trusted as still true; confirm_duplicates=True only
+    skips the "stop and ask" step, it does not skip re-validation.
+
+    Three possible outcomes, matching the approved contract exactly:
+    - validation_failed (422): zero rows inserted, one error per problem.
+    - duplicate_confirmation_required (409): zero rows inserted, one
+      warning per current-batch or existing-Task duplicate match.
+    - created (201, response_model=BulkTaskCreateSuccessOut): every
+      nonblank row inserted in one all-or-nothing transaction, sharing one
+      authoritative created_at/updated_at/category.
+    """
+    _validate_member_key(member_key)
+
+    nonblank_rows = [
+        (index + 1, row) for index, row in enumerate(payload.tasks)
+        if not _is_blank_bulk_row(row)
+    ]
+
+    if not nonblank_rows:
+        return JSONResponse(status_code=422, content={
+            "status": "validation_failed",
+            "created_count": 0,
+            "errors": [{
+                "row": None, "field": "tasks", "code": "no_tasks_submitted",
+                "message": "Add at least one task before submitting.",
+            }],
+        })
+
+    if len(nonblank_rows) > MAX_BULK_TASK_ROWS:
+        return JSONResponse(status_code=422, content={
+            "status": "validation_failed",
+            "created_count": 0,
+            "errors": [{
+                "row": None, "field": "tasks", "code": "too_many_rows",
+                "message": (
+                    "A maximum of " + str(MAX_BULK_TASK_ROWS)
+                    + " tasks can be created in one submission."
+                ),
+            }],
+        })
+
+    # Hard field validation first (Step 6), collected across every
+    # nonblank row — never stops at the first invalid row.
+    errors: List[dict] = []
+    for row_number, row in nonblank_rows:
+        for field_error in _bulk_row_field_errors(row):
+            errors.append({"row": row_number, **field_error})
+
+    # Authoritative Leave re-check (Step 7) only runs once field-level
+    # rules already pass for every row — no point flagging a Leave
+    # conflict on a row whose title/time is itself invalid.
+    if not errors:
+        errors.extend(
+            _bulk_leave_conflict_errors(db, member_key, payload.date, nonblank_rows)
+        )
+
+    if errors:
+        return JSONResponse(status_code=422, content={
+            "status": "validation_failed",
+            "created_count": 0,
+            "errors": errors,
+        })
+
+    # Duplicate detection (Step 8/9/10) — warnings, not hard errors. Both
+    # sources are always computed (even when confirm_duplicates=True) so
+    # the check is never skipped, only the "stop and ask" short-circuit is.
+    warnings: List[dict] = _find_batch_duplicate_warnings(nonblank_rows)
+    warnings.extend(
+        _find_existing_task_duplicate_warnings(db, member_key, payload.date, nonblank_rows)
+    )
+
+    if warnings and not payload.confirm_duplicates:
+        return JSONResponse(status_code=409, content={
+            "status": "duplicate_confirmation_required",
+            "created_count": 0,
+            "warnings": warnings,
+        })
+
+    # ── Atomic transaction (Step 12/13) ──────────────────────────────────
+    # One authoritative UTC instant shared by every row's created_at,
+    # updated_at, and classify_new_task() call — this is what prevents
+    # mixed Scheduled/Unscheduled classification inside one successfully
+    # committed batch at the Sunday cutoff. category depends only on
+    # (event_date, created_at), both identical for every row in this
+    # batch, so it is computed once, not per row.
+    created_at = datetime.now(timezone.utc)
+    category = classify_new_task(event_date=payload.date, created_at=created_at)
+
+    events = [
+        MemberScheduleEvent(
+            member_key=member_key,
+            member_label=MEMBER_LABELS[member_key],
+            event_date=payload.date,
+            title=(row.title or "").strip(),
+            category=category,
+            priority=_bulk_row_effective_priority(row),
+            start_time=row.start,
+            end_time=row.end,
+            notes=((row.notes or "").strip() or None),
+            source_scope=DEFAULT_SOURCE_SCOPE,
+            is_official_truth=False,
+            created_at=created_at,
+            updated_at=created_at,
+        )
+        for _, row in nonblank_rows
+    ]
+
+    try:
+        for event in events:
+            db.add(event)
+        db.flush()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Tasks could not be created due to a server error. Please try again.",
+        )
+
+    for event in events:
+        db.refresh(event)
+
+    # Plain dict, not BulkTaskCreateSuccessOut(...) — matches the existing
+    # single-create route's convention of returning raw ORM objects and
+    # letting FastAPI's response_model do the MemberScheduleEventOut
+    # conversion only at the HTTP layer. Constructing the pydantic model
+    # eagerly here would force-validate every event's `id` before this
+    # function returns; id is only guaranteed populated after a REAL
+    # SQLAlchemy flush/refresh against a live connection, not by this
+    # function's own logic, so eager construction is the wrong layer for
+    # that validation to happen at.
+    return {"status": "created", "created_count": len(events), "items": events}
 
 
 @router.put("/{member_key}/{event_id}", response_model=MemberScheduleEventOut)

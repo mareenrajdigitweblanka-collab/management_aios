@@ -25,7 +25,7 @@ read/serialized without breaking GET.
 """
 
 from datetime import date as date_type, datetime, time as time_type
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -116,6 +116,97 @@ class MemberScheduleEventOut(BaseModel):
     updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True, "populate_by_name": True}
+
+
+class BulkTaskRowIn(BaseModel):
+    """One row of a same-day Bulk Tasks submission (POST
+    /api/member-schedules/{member_key}/bulk). Deliberately loosely typed
+    for title/priority/notes (plain Optional[str], no length/enum
+    constraint at this layer) so a blank or partially-filled row can never
+    fail Pydantic-level validation before the router's own blank-row
+    detection and hard-validation pass run — every real rule (title
+    required/≤120 chars, notes ≤240 chars, priority in VALID_PRIORITIES,
+    end > start) is enforced in
+    backend/routers/member_schedules.py:_bulk_row_field_errors, which
+    returns structured {row, field, code, message} errors instead of
+    FastAPI's generic 422 body. start/end use the same field names as
+    MemberScheduleEventCreate (not start_time/end_time) to match this
+    API's existing single-Task-create convention. No `date` and no
+    `category` field exists here by design — date is common to the whole
+    batch (BulkTaskCreateRequest.date) and category is always
+    backend-assigned, identically to the single-create endpoint."""
+
+    title: Optional[str] = None
+    priority: Optional[str] = None
+    start: Optional[time_type] = None
+    end: Optional[time_type] = None
+    notes: Optional[str] = None
+
+
+class BulkTaskCreateRequest(BaseModel):
+    """Request body for same-day Bulk Tasks creation. One common `date`
+    shared by every row (confirmed business decision #2) — there is no
+    per-row date field. `confirm_duplicates` defaults False: the first
+    submission of a batch containing duplicate title/time combinations
+    (within the batch or against existing active Tasks for this member/
+    date) is rejected with status="duplicate_confirmation_required" and
+    creates nothing; the frontend resubmits the identical batch with
+    confirm_duplicates=True only after the user explicitly confirms. The
+    backend never trusts the earlier response as current truth — every
+    call to this endpoint independently revalidates hard rules, Leave
+    conflicts, and duplicates from scratch."""
+
+    date: date_type
+    tasks: List[BulkTaskRowIn] = Field(default_factory=list)
+    confirm_duplicates: bool = False
+
+
+class BulkTaskRowErrorOut(BaseModel):
+    """One hard-validation failure. `row` is the 1-indexed position of the
+    row in the ORIGINAL submitted `tasks` array (including any blank rows
+    that were skipped) — this matches what the user sees as "Row N" on
+    their own form, so a reported row number is never shifted by earlier
+    rows being blank. `row` is null for request-level errors that are not
+    tied to one specific row (no nonblank rows submitted; nonblank row
+    count exceeds MAX_BULK_TASK_ROWS)."""
+
+    row: Optional[int] = None
+    field: str
+    code: str
+    message: str
+
+
+class BulkDuplicateWarningOut(BaseModel):
+    """One duplicate-title/time warning (confirmed business decision #7).
+    `source` is 'current_batch' (two or more submitted rows share the same
+    normalized title/time — `rows` lists every matching row number) or
+    'existing_task' (one submitted row matches a Task already saved for
+    this member and the common date — `rows` is that single row number,
+    and `existing_task_id` carries the stored Task's id for internal
+    correlation only). `existing_task_id` is deliberately never
+    interpolated into `message` — Step 10's "do not expose unnecessary
+    internal IDs in visible frontend text" rule."""
+
+    source: Literal["current_batch", "existing_task"]
+    rows: List[int]
+    title: str
+    start: Optional[time_type] = None
+    end: Optional[time_type] = None
+    existing_task_id: Optional[str] = None
+    message: str
+
+
+class BulkTaskCreateSuccessOut(BaseModel):
+    """Success response — every nonblank, validated row was inserted in
+    one atomic transaction sharing one authoritative created_at/updated_at
+    and therefore one classification decision (Step 13). `items` reuses
+    the exact same MemberScheduleEventOut shape the single-create endpoint
+    already returns, so the frontend's existing apiItemToFrontend()
+    conversion needs no bulk-specific variant."""
+
+    status: Literal["created"] = "created"
+    created_count: int
+    items: List[MemberScheduleEventOut]
 
 
 class HealthResponse(BaseModel):

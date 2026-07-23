@@ -91,6 +91,7 @@ disabled (`allow_credentials=False`) in both cases. No `allow_origins=["*"]` wil
 | GET | `/health` | Service health check |
 | GET | `/api/member-schedules/{member_key}` | List active events for a member (optional `start_date`/`end_date` query filters) |
 | POST | `/api/member-schedules/{member_key}` | Create one event (always `source_scope=dashboard_testing`, `is_official_truth=false`) |
+| POST | `/api/member-schedules/{member_key}/bulk` | Same-day Bulk Tasks (2026-07-23) — additive; create up to `MAX_BULK_TASK_ROWS` (30) nonblank Tasks for one common date in one atomic transaction, sharing one `created_at`/classification decision. Returns `validation_failed` (422) / `duplicate_confirmation_required` (409) / `created` (201) — see `validation/same-day-bulk-task-creation-check-2026-07-23.md` for the full contract |
 | PUT | `/api/member-schedules/{member_key}/{event_id}` | Update editable fields only (date/title/category/priority/start/end/notes) |
 | DELETE | `/api/member-schedules/{member_key}/{event_id}` | Soft-delete one event (`deleted_at` set) |
 | DELETE | `/api/member-schedules/{member_key}/clear-testing-data` | Soft-delete all `dashboard_testing`, non-official rows for a member; never touches `pilot`/`approved_live` rows |

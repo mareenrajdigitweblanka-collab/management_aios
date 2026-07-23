@@ -74,6 +74,14 @@ VALID_SCHEDULE_CATEGORIES = (
 
 DEFAULT_SCHEDULE_CATEGORY = "Scheduled Task"
 
+# Same-day Bulk Tasks (2026-07-23) — the maximum number of NONBLANK rows
+# accepted by POST /api/member-schedules/{member_key}/bulk in a single
+# submission, counted after blank rows are discarded (see the blank-row
+# rule in backend/routers/member_schedules.py). Confirmed business decision
+# (business decision #4) — this is the only row-count limit that exists;
+# there is no separate raw-payload-size cap.
+MAX_BULK_TASK_ROWS = 30
+
 # Named IANA zone (not a fixed +05:30 offset) so classification stays
 # self-documenting even though Sri Lanka has used a fixed UTC+05:30 offset
 # with no DST since 2006.
