@@ -342,6 +342,53 @@ for the full record. Summary for future edits:
   codebase to reconcile with. Every change in this section is plain
   CSS/JS against that existing hand-rolled structure.
 
+## Calendar toolbar (identity/search/help/settings) and Tasks workspace (2026-07-23)
+
+See `validation/calendar-toolbar-and-tasks-workspace-check-2026-07-23.md` and
+`handover/2026-07-23__calendar-toolbar-and-tasks-workspace-closure.md` for the full
+record. Summary for future edits:
+
+- **Toolbar additions** — `.msc-cal-identity` (decorative icon + "Calendar" label,
+  hidden below 900px), `.msc-cal-search-wrap`/`.msc-cal-search-panel` (anchored
+  popover, same `position:fixed` technique as the Create chooser — filters this
+  instance's own `items`/`leaveItems` closures client-side, no new request), and the
+  `.msc-cal-help-trigger`/`.msc-cal-settings-trigger` buttons opening the new
+  `.msc-cal-help-popup`/`.msc-cal-settings-popup` (same `.msc-modal-overlay`/`.msc-modal`
+  centered-popup convention as the Task/Leave detail popups). All markup lives inside
+  `mountScheduleCalendarInstance()`'s template string in `calendar/instance.js`.
+- **Calendar/Tasks mode switch** — `setMode(mode)` in `calendar/instance.js` toggles
+  `.msc-calendar-main` vs. `.msc-tasks-main`. Both `.msc-calendar-main` and
+  `.msc-view-switcher` already carry an unconditional `display` value in
+  `calendar.css`, which a same-specificity native `[hidden]` attribute cannot
+  reliably beat (author-cascade order lets the existing rule win) — visibility is
+  driven by a dedicated `.msc-mode-hidden` class instead. `.msc-tasks-main` follows
+  the existing `.msc-view-pane`/`.active` idiom (default `display:none`, shown via
+  `.msc-mode-active`). `.msc-summary-section`/`.msc-list-card` (Schedule Summary,
+  Today's Priorities — both date-scoped, hidden in Tasks mode) safely use the native
+  `hidden` attribute since neither carries its own conflicting `display` rule.
+- **Tasks workspace** — `renderTasksWorkspace()` reads the SAME `items` array
+  Month/Week/Day already read (no second fetch, no second Task truth), sorted by
+  date/time. Rows are native `<button>`s wired to the existing `viewItem()` (Task
+  Details/Edit/Delete — unchanged). "+ Add a task" opens the existing
+  `openTaskPopup()` with the Date field cleared (not prefilled from whatever the
+  Calendar side last had selected) so the user must explicitly choose a date, per
+  the "no silent stale-date default" requirement. `renderTasksWorkspace()` is called
+  from the same post-mutation hooks (`selectDate()`, `deleteItem()`) that already
+  refresh the Month/Week/Day view and Today's Priorities after a successful
+  Create/Update/Delete, guarded by `if (currentMode === 'tasks')` so it's a no-op
+  while Tasks mode is off-screen.
+- **Completion, Starred, and Lists are NOT implemented** — confirmed via
+  `backend/models.py`/`backend/schemas.py` that no `completed`/`completed_at`,
+  `starred`, or list/group column or table exists anywhere in the schema. Adding any
+  of them requires a migration and, for Completion specifically, an explicit
+  business decision on how a completed Task should count in Schedule Summary — both
+  outside this task's scope. Starred/Lists are omitted from the Tasks-workspace UI
+  entirely (not shown disabled); a short note in the workspace's own left nav
+  explains why. **Do not fake these client-side** (e.g. a browser-only
+  completed/starred flag) — that would create a second, non-authoritative Task
+  truth this file's own dependency-direction rules elsewhere explicitly warn
+  against.
+
 ## Larger frontend modularization (not done in this task)
 
 `web-view/js/calendar/instance.js` (~2,140 lines) and `web-view/js/

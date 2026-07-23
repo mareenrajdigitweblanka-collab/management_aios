@@ -173,6 +173,418 @@
       white-space: nowrap;
     }
 
+    /* ── Calendar identity (Step 5, google-calendar-inspired-toolbar-and-
+       tasks-workspace task, 2026-07-23) — a compact, decorative icon +
+       label, visually aligned with the rest of the toolbar. Hidden below
+       a narrow toolbar width (matches the same collapse-on-small-screens
+       requirement the rest of this toolbar already follows) so it never
+       crowds out the functional controls (Today/prev/next/heading) on a
+       cramped viewport. ── */
+    .msc-cal-identity {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      padding-right: 6px;
+      margin-right: 2px;
+      border-right: 1px solid var(--border);
+    }
+
+    .msc-cal-identity-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+
+    .msc-cal-identity-label {
+      font-size: .84rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      .msc-cal-identity {
+        display: none;
+      }
+    }
+
+    /* ── Toolbar right cluster (search / help / settings / view switcher /
+       Calendar-Tasks mode switch) ── */
+    .msc-cal-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Calendar-scoped search (Step 6) ── anchored popover, same
+       position:fixed + viewport-clamp technique the Create chooser and
+       "+N more" popup already use (positionCreateMenu/positionMorePopup,
+       calendar/instance.js) — see positionSearchPanel() there. */
+    .msc-cal-search-wrap {
+      position: relative;
+    }
+
+    .msc-cal-search-panel {
+      position: fixed;
+      z-index: 40;
+      width: min(340px, calc(100vw - 24px));
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 10px;
+    }
+
+    .msc-cal-search-field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      background: var(--surface-tint-2);
+    }
+
+    .msc-cal-search-input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: .82rem;
+      outline: none;
+    }
+
+    .msc-cal-search-clear {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 4px;
+    }
+
+    .msc-cal-search-clear:hover {
+      color: var(--text);
+    }
+
+    .msc-cal-search-results {
+      max-height: 280px;
+      overflow-y: auto;
+      margin-top: 6px;
+    }
+
+    .msc-cal-search-result {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: .8rem;
+    }
+
+    .msc-cal-search-result:hover,
+    .msc-cal-search-result:focus-visible {
+      background: var(--surface-tint-3);
+      outline: none;
+    }
+
+    .msc-cal-search-result-meta {
+      font-size: .68rem;
+      color: var(--muted);
+    }
+
+    .msc-cal-search-empty {
+      padding: 10px 6px;
+      font-size: .78rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ── Calendar/Tasks mode switch (Step 7) ── */
+    .msc-cal-mode-switch {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .msc-cal-mode-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: none;
+      border-left: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 12px;
+      font-size: .76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+    }
+
+    .msc-cal-mode-btn svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    .msc-cal-mode-btn:first-child {
+      border-left: none;
+    }
+
+    .msc-cal-mode-btn:hover {
+      background: var(--surface-tint-3);
+      color: var(--text);
+    }
+
+    .msc-cal-mode-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .msc-cal-mode-btn:focus-visible {
+      outline: none;
+      box-shadow: inset var(--focus-ring);
+    }
+
+    @media (max-width: 640px) {
+      .msc-cal-mode-btn-label {
+        display: none;
+      }
+    }
+
+    /* ── Calendar/Tasks mode visibility (Step 7) ── .msc-calendar-main
+       and .msc-view-switcher each already carry their own unconditional
+       `display` value below (Phase 1 layout shell / Google-Calendar-
+       inspired UX upgrade) — a same-specificity `[hidden]` rule cannot
+       reliably beat either, so hiding them in Tasks mode uses this
+       shared, higher-specificity (2-class) selector instead (see
+       setMode(), calendar/instance.js). .msc-tasks-main is the inverse:
+       display:none by default, shown only once .msc-mode-active is
+       added — mirrors the existing .msc-view-pane/.active idiom used
+       by the Month/Week/Day panes rather than the native `hidden`
+       attribute, for the same specificity reason. ── */
+    .msc-calendar-main.msc-mode-hidden,
+    .msc-view-switcher.msc-mode-hidden {
+      display: none;
+    }
+
+    .msc-tasks-main {
+      display: none;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 10px 14px 14px;
+    }
+
+    .msc-tasks-main.msc-mode-active {
+      display: flex;
+    }
+
+    .msc-tasks-sidebar {
+      flex: 0 0 var(--cal-sidebar-width);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      background: var(--surface);
+    }
+
+    .msc-tasks-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .msc-tasks-nav-btn {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: .84rem;
+      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .msc-tasks-nav-btn:hover {
+      background: var(--surface-tint-3);
+    }
+
+    .msc-tasks-nav-btn.active {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .msc-tasks-nav-btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .msc-tasks-nav-note {
+      font-size: .7rem;
+      margin: 0;
+    }
+
+    .msc-tasks-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .msc-tasks-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .msc-tasks-title {
+      font-size: var(--font-xl);
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .msc-tasks-count {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    .msc-tasks-list-wrap {
+      min-height: 120px;
+    }
+
+    .msc-tasks-empty {
+      text-align: center;
+      padding: 40px 12px;
+    }
+
+    .msc-tasks-empty-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 4px;
+    }
+
+    .msc-tasks-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-bottom: 1px solid var(--hairline);
+      background: transparent;
+      padding: 10px 6px;
+      cursor: pointer;
+    }
+
+    .msc-tasks-row:hover,
+    .msc-tasks-row:focus-visible {
+      background: var(--surface-tint-3);
+      outline: none;
+    }
+
+    .msc-tasks-row .msc-chip-cat {
+      margin-right: 0;
+      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .msc-tasks-row-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .msc-tasks-row-title {
+      font-size: .86rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .msc-tasks-row-meta {
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 640px) {
+      .msc-tasks-main {
+        flex-direction: column;
+      }
+
+      .msc-tasks-sidebar {
+        width: 100%;
+      }
+    }
+
+    /* ── Calendar help / settings popups (Step 6) — reuse the existing
+       .msc-modal-overlay/.msc-modal centered-popup convention (same as
+       the Task/Leave detail popups); only the inner content differs. ── */
+    .msc-cal-help-inner {
+      max-width: 420px;
+    }
+
+    .msc-cal-help-list {
+      list-style: none;
+      margin: 0 0 14px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msc-cal-help-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: .84rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .msc-cal-help-list .msc-chip-cat {
+      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      padding: 0;
+      border-radius: 50%;
+      margin-top: 4px;
+    }
+
+    .msc-cal-settings-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .86rem;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
     /* ── Calendar view switcher (Google-Calendar-inspired UX upgrade,
        2026-07-13; segmented-control polish 2026-07-17) ── */
     .msc-view-switcher {

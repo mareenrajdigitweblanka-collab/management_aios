@@ -47,6 +47,12 @@ function mountScheduleCalendarInstance(container) {
   /* Same per-instance-unique-id rule (task-detail "+N more" popup,
      2026-07-20 calendar-task-detail-and-more-popup task). */
   var morePopupTitleId = 'msc-more-popup-title-' + memberKey;
+  /* Same per-instance-unique-id rule (google-calendar-inspired-toolbar-
+     and-tasks-workspace task, 2026-07-23) — Calendar search panel,
+     Help popup, and Settings popup aria targets. */
+  var searchPanelId = 'msc-cal-search-panel-' + memberKey;
+  var helpPopupTitleId = 'msc-cal-help-title-' + memberKey;
+  var settingsPopupTitleId = 'msc-cal-settings-title-' + memberKey;
 
   var rajivNoteHtml = showRajivNote
     ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
@@ -61,6 +67,21 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-calendar-header">' +
     '<div class="msc-cal-toolbar">' +
     '<div class="msc-cal-toolbar-left">' +
+    /* Calendar identity (Step 5, google-calendar-inspired-toolbar-and-
+       tasks-workspace task, 2026-07-23) — a compact, Management-AIOS-
+       authored icon + "Calendar" label, aria-hidden (purely presentational;
+       the toolbar's other controls already carry their own accessible
+       names, and the calendar's role/purpose is already announced by the
+       page heading above it — this is a visual identity mark only, same
+       treatment as the app sidebar's own decorative nav icons). No Google
+       date-badge/logo pattern — a plain calendar-grid glyph, matching the
+       existing inline-SVG icon convention from index.html's app sidebar. */
+    '<div class="msc-cal-identity" aria-hidden="true">' +
+    '<svg class="msc-cal-identity-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/>' +
+    '<path d="M3 8h14"/><path d="M7 2.5v3.5M13 2.5v3.5"/></svg>' +
+    '<span class="msc-cal-identity-label">Calendar</span>' +
+    '</div>' +
     '<div class="msc-cal-toolbar-btns">' +
     '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-sidebar-toggle" aria-expanded="true" ' +
     'aria-controls="' + escapeHtml(sidebarId) + '" aria-label="Toggle sidebar" title="Toggle sidebar">&#9776;</button>' +
@@ -70,10 +91,59 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '<div class="msc-cal-heading msc-heading">&nbsp;</div>' +
     '</div>' +
+    '<div class="msc-cal-toolbar-right">' +
+    /* Calendar-scoped search (Step 6) — member-isolated (reads this
+       instance's own `items`/`leaveItems` closures only), Task/Leave
+       title search over already-loaded data, no extra request, no
+       database write. Deliberately distinct from the global topbar
+       search (web-view/index.html, js/navigation.js), which only
+       show/hides static page sections and never sees calendar data. */
+    '<div class="msc-cal-search-wrap">' +
+    '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-cal-search-trigger" aria-haspopup="true" ' +
+    'aria-expanded="false" aria-controls="' + escapeHtml(searchPanelId) + '" aria-label="Search this calendar" title="Search this calendar">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg></button>' +
+    '<div class="msc-cal-search-panel" id="' + escapeHtml(searchPanelId) + '" role="search" aria-label="Search Tasks and Leave" hidden>' +
+    '<div class="msc-cal-search-field">' +
+    '<input type="text" class="msc-cal-search-input" placeholder="Search Tasks and Leave" ' +
+    'aria-label="Search Tasks and Leave for ' + escapeHtml(memberLabel) + '" autocomplete="off"/>' +
+    '<button type="button" class="msc-cal-search-clear" aria-label="Clear search" hidden>&times;</button>' +
+    '</div>' +
+    '<div class="msc-cal-search-results" role="listbox" aria-label="Search results"></div>' +
+    '</div>' +
+    '</div>' +
+    '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-cal-help-trigger" aria-haspopup="dialog" ' +
+    'aria-label="Calendar help" title="Calendar help">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="10" cy="10" r="7.3"/><path d="M7.6 7.7a2.4 2.4 0 1 1 3.3 2.2c-.8.4-1 .9-1 1.7"/>' +
+    '<circle cx="9.95" cy="14.1" r=".2" fill="currentColor" stroke="none"/></svg></button>' +
+    '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-cal-settings-trigger" aria-haspopup="dialog" ' +
+    'aria-label="Calendar settings" title="Calendar settings">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="10" cy="10" r="2.8"/><path d="M10 2.3v2.6M10 15.1v2.6M2.3 10h2.6M15.1 10h2.6' +
+    'M4.9 4.9l1.8 1.8M13.3 13.3l1.8 1.8M4.9 15.1l1.8-1.8M13.3 6.7l1.8-1.8"/></svg></button>' +
     '<div class="msc-view-switcher" role="group" aria-label="Calendar view">' +
     '<button type="button" class="msc-view-btn active" data-view="month" aria-pressed="true">Month</button>' +
     '<button type="button" class="msc-view-btn" data-view="week" aria-pressed="false">Week</button>' +
     '<button type="button" class="msc-view-btn" data-view="day" aria-pressed="false">Day</button>' +
+    '</div>' +
+    /* Calendar/Tasks mode switch (Step 7) — swaps the main workspace
+       between the existing Month/Week/Day grid and the new member-
+       scoped Tasks workspace (Step 12+). Pure show/hide over sibling
+       panels already mounted in this same instance, the same pattern
+       web-view/js/navigation.js already uses for the app's own tab
+       switching (no routing/history in this app to match) — see
+       setMode() below. */
+    '<div class="msc-cal-mode-switch" role="group" aria-label="Calendar or Tasks">' +
+    '<button type="button" class="msc-cal-mode-btn active" data-mode="calendar" aria-pressed="true">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14"/></svg>' +
+    '<span class="msc-cal-mode-btn-label">Calendar</span></button>' +
+    '<button type="button" class="msc-cal-mode-btn" data-mode="tasks" aria-pressed="false">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<circle cx="10" cy="10" r="7.3"/><path d="M6.5 10.3l2.3 2.3 4.2-4.6"/></svg>' +
+    '<span class="msc-cal-mode-btn-label">Tasks</span></button>' +
+    '</div>' +
     '</div>' +
     '</div>' +
     '</div>' +
@@ -127,6 +197,50 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '</div>' +
     '</div>' +
+    /* ── Tasks workspace (Step 12, google-calendar-inspired-toolbar-and-
+       tasks-workspace task, 2026-07-23) — a sibling of .msc-calendar-main
+       inside the same card, shown/hidden by setMode() alongside it (see
+       toolbar mode-switch above). Reuses the SAME Task data (`items`,
+       the array .msc-calendar-content's own Month/Week/Day views already
+       read) and the SAME Task Details/Edit/Delete/Create-Task popups
+       defined further below — no second Task truth, no new API call.
+       Scope is intentionally "All tasks" only: Starred and Lists are
+       NOT implemented (Steps 4/17/18's data gate — no starred/list
+       field exists anywhere in the Task schema, backend or frontend;
+       adding them would require an unapproved migration) and Completion
+       is NOT implemented (Step 16 — no completed/completed_at field
+       exists, and how a "completed" Task should affect Schedule Summary
+       is not defined by any approved source, so this task stops short
+       of inventing that business rule). Both blockers are documented in
+       validation/handover, not silently omitted. */
+    '<div class="msc-tasks-main" data-mode-pane="tasks">' +
+    '<div class="msc-tasks-sidebar">' +
+    '<div class="msc-create-wrap">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-create-btn msc-tasks-add-btn">' +
+    '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Add a task</button>' +
+    '</div>' +
+    '<nav class="msc-tasks-nav" aria-label="Tasks views">' +
+    '<button type="button" class="msc-tasks-nav-btn active" data-tasks-view="all" aria-current="true">All tasks</button>' +
+    '</nav>' +
+    '<p class="msc-note msc-tasks-nav-note">Starred and custom Lists need additional data fields that are not ' +
+    'yet approved for this AIOS, so they are not shown here.</p>' +
+    '</div>' +
+    '<div class="msc-tasks-content">' +
+    '<div class="msc-tasks-header">' +
+    '<h3 class="msc-tasks-title">All tasks</h3>' +
+    '<span class="msc-tasks-count"></span>' +
+    '</div>' +
+    '<div class="msc-tasks-list-wrap">' +
+    '<div class="msc-tasks-loading" hidden><p class="msc-note">Loading tasks…</p></div>' +
+    '<div class="msc-tasks-error" hidden></div>' +
+    '<div class="msc-tasks-empty" hidden>' +
+    '<p class="msc-tasks-empty-title">All tasks complete</p>' +
+    '<p class="msc-note">There are no active tasks for this member.</p>' +
+    '</div>' +
+    '<div class="msc-tasks-list" role="list"></div>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
     '</div>' +
     '<div class="msc-summary-section">' +
     '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Summary</div>' +
@@ -167,6 +281,60 @@ function mountScheduleCalendarInstance(container) {
     '<div class="hr-table-title" style="margin-bottom:6px;">Today\'s Priorities</div>' +
     '<p class="msc-note" style="margin:0 0 8px;">Today\'s scheduled items ranked by priority.</p>' +
     '<div class="msc-priority-list"></div>' +
+    '</div>' +
+    /* ── Calendar help popup (Step 6, google-calendar-inspired-toolbar-
+       and-tasks-workspace task, 2026-07-23) — static, plain-language
+       explanation of the calendar's own semantic colors and interaction
+       rules. No technical/database wording, no formulas — matches the
+       requirement that this stay a user-facing help card, not developer
+       documentation. Same .msc-modal-overlay/.msc-modal convention every
+       other calendar popup already uses; trapTab/returnFocus wired below
+       exactly like the other popups. */
+    '<div class="msc-modal-overlay msc-cal-help-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(helpPopupTitleId) + '">' +
+    '<div class="msc-modal msc-cal-help-inner">' +
+    '<div class="msc-view-modal-head">' +
+    '<h4 id="' + escapeHtml(helpPopupTitleId) + '">Calendar help</h4>' +
+    '<button type="button" class="msc-modal-close msc-cal-help-close" aria-label="Close">&times;</button>' +
+    '</div>' +
+    '<ul class="msc-cal-help-list">' +
+    '<li><span class="msc-chip-cat task" aria-hidden="true"></span>Green — Scheduled Task</li>' +
+    '<li><span class="msc-chip-cat followup" aria-hidden="true"></span>Yellow — Unscheduled Task</li>' +
+    '<li><span class="msc-chip-cat leave" aria-hidden="true"></span>Red — Leave</li>' +
+    '<li>Tasks are marked Scheduled or Unscheduled automatically, based on when they are created or last ' +
+    'changed relative to the current planning week. This is never a manual choice.</li>' +
+    '<li>"+N more" on a date opens the complete list of that date’s Tasks.</li>' +
+    '<li>Clicking blank space in a date opens a Task/Leave chooser for that date — no double-click needed.</li>' +
+    '<li>Tasks cannot be created on a date fully covered by Full-Day or Multi-Day Leave; saving shows a clear ' +
+    'conflict message instead.</li>' +
+    '</ul>' +
+    '<div class="msc-form-actions">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-cal-help-close-btn">Close</button>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
+    /* ── Calendar settings popup (Step 6) — presentation-only preferences
+       already supported by this calendar (sidebar expanded/collapsed).
+       Deliberately does not expose any business-rule setting (weekly
+       classification cutoff, Leave rules, Schedule Summary formulas,
+       member access) — those remain backend-owned and are not editable
+       from any frontend surface. */
+    '<div class="msc-modal-overlay msc-cal-settings-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(settingsPopupTitleId) + '">' +
+    '<div class="msc-modal msc-cal-help-inner">' +
+    '<div class="msc-view-modal-head">' +
+    '<h4 id="' + escapeHtml(settingsPopupTitleId) + '">Calendar settings</h4>' +
+    '<button type="button" class="msc-modal-close msc-cal-settings-close" aria-label="Close">&times;</button>' +
+    '</div>' +
+    '<label class="msc-cal-settings-row">' +
+    '<input type="checkbox" class="msc-cal-settings-sidebar-toggle" checked/>' +
+    '<span>Show the Calendar sidebar (Create, mini calendar, legend) by default</span>' +
+    '</label>' +
+    '<p class="msc-note">Only display preferences already supported by this calendar are shown here. Task/Leave ' +
+    'business rules (classification, conflicts, Schedule Summary) are set by Management AIOS policy and are not ' +
+    'user-editable.</p>' +
+    '<div class="msc-form-actions">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-cal-settings-close-btn">Close</button>' +
+    '</div>' +
+    '</div>' +
     '</div>' +
     /* ── Shared Task-detail popup (Google-style, calendar-task-detail-
        and-more-popup task, 2026-07-20) — the ONE task-detail popup used
@@ -386,12 +554,42 @@ function mountScheduleCalendarInstance(container) {
   var viewDeleteBtn = container.querySelector('.msc-view-delete-btn');
   var apiStatusEl = container.querySelector('.msc-api-status');
   var viewSwitcherBtns = container.querySelectorAll('.msc-view-btn');
+  var viewSwitcherEl = container.querySelector('.msc-view-switcher');
   var miniPickerEl = container.querySelector('.msc-mini-picker');
   var weekGridEl = container.querySelector('.msc-week-grid');
   var dayGridEl = container.querySelector('.msc-day-grid');
   var sidebarEl = container.querySelector('.msc-sidebar');
   var sidebarToggleBtn = container.querySelector('.msc-sidebar-toggle');
   var sidebarCreateBtn = container.querySelector('.msc-sidebar-create');
+
+  /* ── Toolbar identity/search/help/settings/mode-switch refs
+     (google-calendar-inspired-toolbar-and-tasks-workspace task,
+     2026-07-23) ── */
+  var searchTriggerBtn = container.querySelector('.msc-cal-search-trigger');
+  var searchPanelEl = container.querySelector('.msc-cal-search-panel');
+  var searchInputEl = container.querySelector('.msc-cal-search-input');
+  var searchClearBtn = container.querySelector('.msc-cal-search-clear');
+  var searchResultsEl = container.querySelector('.msc-cal-search-results');
+  var helpTriggerBtn = container.querySelector('.msc-cal-help-trigger');
+  var helpPopupOverlay = container.querySelector('.msc-cal-help-popup');
+  var helpPopupClose = container.querySelector('.msc-cal-help-close');
+  var helpPopupCloseBtn = container.querySelector('.msc-cal-help-close-btn');
+  var settingsTriggerBtn = container.querySelector('.msc-cal-settings-trigger');
+  var settingsPopupOverlay = container.querySelector('.msc-cal-settings-popup');
+  var settingsPopupClose = container.querySelector('.msc-cal-settings-close');
+  var settingsPopupCloseBtn = container.querySelector('.msc-cal-settings-close-btn');
+  var settingsSidebarToggleInput = container.querySelector('.msc-cal-settings-sidebar-toggle');
+  var modeSwitchBtns = container.querySelectorAll('.msc-cal-mode-btn');
+  var calendarMainEl = container.querySelector('.msc-calendar-main');
+  var tasksMainEl = container.querySelector('.msc-tasks-main');
+  var tasksAddBtn = container.querySelector('.msc-tasks-add-btn');
+  var tasksListEl = container.querySelector('.msc-tasks-list');
+  var tasksEmptyEl = container.querySelector('.msc-tasks-empty');
+  var tasksLoadingEl = container.querySelector('.msc-tasks-loading');
+  var tasksErrorEl = container.querySelector('.msc-tasks-error');
+  var tasksCountEl = container.querySelector('.msc-tasks-count');
+  var summarySectionEl = container.querySelector('.msc-summary-section');
+  var priorityCardEl = container.querySelector('.msc-list-card');
 
   /* ── Create dropdown + Task/Leave popups (Google-style create
      workflow, 2026-07-20) ── */
@@ -455,13 +653,19 @@ function mountScheduleCalendarInstance(container) {
      only this instance's own sidebar; each of the 5 mounted calendars
      keeps an independent collapsed/expanded state. ── */
   var sidebarCollapsed = false;
-  sidebarToggleBtn.addEventListener('click', function () {
-    sidebarCollapsed = !sidebarCollapsed;
+
+  /* Shared by the toolbar toggle button below and the Settings popup's
+     "Show sidebar by default" checkbox (Step 6, google-calendar-
+     inspired-toolbar-and-tasks-workspace task, 2026-07-23) — one place
+     applies the collapsed/expanded state so both controls always agree. */
+  function applySidebarCollapsed(collapsed) {
+    sidebarCollapsed = collapsed;
     if (sidebarCollapsed && sidebarEl.contains(document.activeElement)) {
       sidebarToggleBtn.focus();
     }
     sidebarEl.classList.toggle('collapsed', sidebarCollapsed);
     sidebarToggleBtn.setAttribute('aria-expanded', sidebarCollapsed ? 'false' : 'true');
+    if (settingsSidebarToggleInput) { settingsSidebarToggleInput.checked = !sidebarCollapsed; }
     /* Reposition the "+N more" Task list if it's open (Step 12,
        calendar-popup-close-time-validation-task-list-return task,
        2026-07-22) — collapsing/expanding this calendar's own sidebar can
@@ -470,6 +674,10 @@ function mountScheduleCalendarInstance(container) {
        transition (.2s, calendar.css) finishing after that. */
     repositionMorePopupIfOpen();
     setTimeout(repositionMorePopupIfOpen, 220);
+  }
+
+  sidebarToggleBtn.addEventListener('click', function () {
+    applySidebarCollapsed(!sidebarCollapsed);
   });
 
   /* Application-level sidebar collapse toggle (navigation.js, one global
@@ -690,6 +898,281 @@ function mountScheduleCalendarInstance(container) {
   taskPopupClose.addEventListener('click', closeTaskPopup);
   taskPopupOverlay.addEventListener('click', function (e) {
     if (e.target === taskPopupOverlay) { closeTaskPopup(); }
+  });
+
+  /* ── Calendar help popup (Step 6, google-calendar-inspired-toolbar-
+     and-tasks-workspace task, 2026-07-23) — same centered-modal open/
+     close/focus-trap convention as the Task popup above (classList
+     'show', trapPopupTab, Escape, backdrop click, focus return). */
+  function onHelpPopupKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeHelpPopup(); }
+    else if (e.key === 'Tab') { trapPopupTab(helpPopupOverlay, e); }
+  }
+  function openHelpPopup() {
+    if (!helpPopupOverlay) { return; }
+    helpPopupOverlay.classList.add('show');
+    helpPopupOverlay.addEventListener('keydown', onHelpPopupKeydown);
+    if (helpPopupClose && helpPopupClose.focus) { helpPopupClose.focus(); }
+  }
+  function closeHelpPopup() {
+    if (!helpPopupOverlay) { return; }
+    helpPopupOverlay.classList.remove('show');
+    helpPopupOverlay.removeEventListener('keydown', onHelpPopupKeydown);
+    if (helpTriggerBtn && helpTriggerBtn.focus) { helpTriggerBtn.focus(); }
+  }
+  if (helpTriggerBtn) { helpTriggerBtn.addEventListener('click', openHelpPopup); }
+  if (helpPopupClose) { helpPopupClose.addEventListener('click', closeHelpPopup); }
+  if (helpPopupCloseBtn) { helpPopupCloseBtn.addEventListener('click', closeHelpPopup); }
+  if (helpPopupOverlay) {
+    helpPopupOverlay.addEventListener('click', function (e) {
+      if (e.target === helpPopupOverlay) { closeHelpPopup(); }
+    });
+  }
+
+  /* ── Calendar settings popup (Step 6) — presentation-only. The single
+     control (sidebar default) mirrors applySidebarCollapsed() above, so
+     the toolbar toggle button and this checkbox can never disagree. */
+  function onSettingsPopupKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeSettingsPopup(); }
+    else if (e.key === 'Tab') { trapPopupTab(settingsPopupOverlay, e); }
+  }
+  function openSettingsPopup() {
+    if (!settingsPopupOverlay) { return; }
+    if (settingsSidebarToggleInput) { settingsSidebarToggleInput.checked = !sidebarCollapsed; }
+    settingsPopupOverlay.classList.add('show');
+    settingsPopupOverlay.addEventListener('keydown', onSettingsPopupKeydown);
+    if (settingsSidebarToggleInput && settingsSidebarToggleInput.focus) { settingsSidebarToggleInput.focus(); }
+  }
+  function closeSettingsPopup() {
+    if (!settingsPopupOverlay) { return; }
+    settingsPopupOverlay.classList.remove('show');
+    settingsPopupOverlay.removeEventListener('keydown', onSettingsPopupKeydown);
+    if (settingsTriggerBtn && settingsTriggerBtn.focus) { settingsTriggerBtn.focus(); }
+  }
+  if (settingsTriggerBtn) { settingsTriggerBtn.addEventListener('click', openSettingsPopup); }
+  if (settingsPopupClose) { settingsPopupClose.addEventListener('click', closeSettingsPopup); }
+  if (settingsPopupCloseBtn) { settingsPopupCloseBtn.addEventListener('click', closeSettingsPopup); }
+  if (settingsPopupOverlay) {
+    settingsPopupOverlay.addEventListener('click', function (e) {
+      if (e.target === settingsPopupOverlay) { closeSettingsPopup(); }
+    });
+  }
+  if (settingsSidebarToggleInput) {
+    settingsSidebarToggleInput.addEventListener('change', function () {
+      applySidebarCollapsed(!settingsSidebarToggleInput.checked);
+    });
+  }
+
+  /* ── Calendar-scoped search (Step 6) — anchored popover, same
+     position:fixed + viewport-clamp + capture-phase outside-click
+     technique as positionCreateMenu()/openCreateMenu() above. Filters
+     this instance's own already-loaded `items`/`leaveItems` closures
+     only (member-isolated by construction — there is no cross-instance
+     state to leak) — no extra request, no database write. */
+  var searchOpen = false;
+  function positionSearchPanel() {
+    if (!searchTriggerBtn || !searchPanelEl) { return; }
+    var rect = searchTriggerBtn.getBoundingClientRect();
+    var panelWidth = searchPanelEl.offsetWidth || 340;
+    var left = rect.right - panelWidth;
+    if (left < 8) { left = 8; }
+    if (left + panelWidth > window.innerWidth - 8) { left = Math.max(8, window.innerWidth - panelWidth - 8); }
+    var top = rect.bottom + 6;
+    searchPanelEl.style.position = 'fixed';
+    searchPanelEl.style.top = top + 'px';
+    searchPanelEl.style.left = left + 'px';
+  }
+  function renderSearchResults(query) {
+    var q = query.trim().toLowerCase();
+    if (!q) {
+      searchResultsEl.innerHTML = '<p class="msc-cal-search-empty">Start typing to search this calendar’s Tasks and Leave.</p>';
+      return;
+    }
+    var taskMatches = items.filter(function (it) {
+      return it.title && it.title.toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 12);
+    var leaveMatches = leaveItems.filter(function (lv) {
+      var label = formatLeaveCalendarLabel(lv);
+      return label && label.toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 8);
+    if (!taskMatches.length && !leaveMatches.length) {
+      searchResultsEl.innerHTML = '<p class="msc-cal-search-empty">No Tasks or Leave match &ldquo;' +
+        escapeHtml(query.trim()) + '&rdquo;.</p>';
+      return;
+    }
+    var html = '';
+    taskMatches.forEach(function (it) {
+      html += '<button type="button" class="msc-cal-search-result" role="option" data-kind="task" data-id="' + it.id + '">' +
+        '<span>' + escapeHtml(it.title) + '</span>' +
+        '<span class="msc-cal-search-result-meta">' + escapeHtml(it.category) + ' — ' + escapeHtml(it.date) +
+        (it.start ? ' ' + escapeHtml(it.start) : '') + '</span></button>';
+    });
+    leaveMatches.forEach(function (lv) {
+      html += '<button type="button" class="msc-cal-search-result" role="option" data-kind="leave" data-id="' + lv.id + '">' +
+        '<span>' + escapeHtml(formatLeaveCalendarLabel(lv)) + '</span>' +
+        '<span class="msc-cal-search-result-meta">Leave — ' + escapeHtml(lv.start_date) + '</span></button>';
+    });
+    searchResultsEl.innerHTML = html;
+    searchResultsEl.querySelectorAll('.msc-cal-search-result').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var kind = btn.getAttribute('data-kind');
+        var id = btn.getAttribute('data-id');
+        closeSearchPanel();
+        if (kind === 'task') { viewItem(id, searchTriggerBtn); } else { viewLeaveItem(id, searchTriggerBtn); }
+      });
+    });
+  }
+  function onDocClickForSearch(e) {
+    if (searchTriggerBtn && searchTriggerBtn.contains(e.target)) { return; }
+    if (searchPanelEl && searchPanelEl.contains(e.target)) { return; }
+    closeSearchPanel();
+  }
+  function onSearchKeydown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeSearchPanel(searchTriggerBtn); }
+  }
+  function openSearchPanel() {
+    if (searchOpen || !searchPanelEl) { return; }
+    searchOpen = true;
+    searchPanelEl.hidden = false;
+    positionSearchPanel();
+    searchTriggerBtn.setAttribute('aria-expanded', 'true');
+    renderSearchResults(searchInputEl.value || '');
+    document.addEventListener('click', onDocClickForSearch, true);
+    document.addEventListener('keydown', onSearchKeydown, true);
+    if (searchInputEl && searchInputEl.focus) { searchInputEl.focus(); }
+  }
+  function closeSearchPanel(focusTarget) {
+    if (!searchOpen || !searchPanelEl) { return; }
+    searchOpen = false;
+    searchPanelEl.hidden = true;
+    searchTriggerBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onDocClickForSearch, true);
+    document.removeEventListener('keydown', onSearchKeydown, true);
+    if (focusTarget && typeof focusTarget.focus === 'function') { returnFocus(focusTarget); }
+  }
+  if (searchTriggerBtn) {
+    searchTriggerBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (searchOpen) { closeSearchPanel(); } else { openSearchPanel(); }
+    });
+  }
+  if (searchInputEl) {
+    searchInputEl.addEventListener('input', function () {
+      if (searchClearBtn) { searchClearBtn.hidden = !searchInputEl.value; }
+      renderSearchResults(searchInputEl.value);
+    });
+  }
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener('click', function () {
+      searchInputEl.value = '';
+      searchClearBtn.hidden = true;
+      renderSearchResults('');
+      searchInputEl.focus();
+    });
+  }
+
+  /* ── Tasks workspace (Step 12-19) — "All tasks" only (see the markup
+     comment above for why Starred/Lists/Completion are omitted). Reads
+     the SAME `items` closure Month/Week/Day already read; never a
+     second Task truth, never a separate fetch. */
+  function renderTasksWorkspace() {
+    if (!tasksListEl) { return; }
+    var sorted = items.slice().sort(function (a, b) {
+      if (a.date !== b.date) { return a.date < b.date ? -1 : 1; }
+      var at = a.start || '99:99', bt = b.start || '99:99';
+      return at < bt ? -1 : (at > bt ? 1 : 0);
+    });
+    if (tasksCountEl) {
+      tasksCountEl.textContent = sorted.length ? (sorted.length + (sorted.length === 1 ? ' task' : ' tasks')) : '';
+    }
+    if (tasksLoadingEl) { tasksLoadingEl.hidden = true; }
+    if (tasksErrorEl) { tasksErrorEl.hidden = true; }
+    if (!sorted.length) {
+      if (tasksEmptyEl) { tasksEmptyEl.hidden = false; }
+      tasksListEl.innerHTML = '';
+      return;
+    }
+    if (tasksEmptyEl) { tasksEmptyEl.hidden = true; }
+    var html = '';
+    sorted.forEach(function (it) {
+      var catClass = CATEGORY_CLASS[it.category] || 'task';
+      var timeLabel = it.start ? (it.start + (it.end ? '–' + it.end : '')) : 'No time set';
+      html += '<button type="button" class="msc-tasks-row" role="listitem" data-id="' + it.id + '" ' +
+        'aria-label="View task details: ' + escapeHtml(it.title) + '">' +
+        '<span class="msc-chip-cat ' + catClass + '" aria-hidden="true"></span>' +
+        '<span class="msc-tasks-row-main">' +
+        '<span class="msc-tasks-row-title">' + escapeHtml(it.title) + '</span>' +
+        '<span class="msc-tasks-row-meta">' + escapeHtml(formatAgendaDate(it.date)) + ' · ' + escapeHtml(timeLabel) +
+        ' · ' + escapeHtml(it.category) + ' · ' + escapeHtml(it.priority || 'Medium') + '</span></span></button>';
+    });
+    tasksListEl.innerHTML = html;
+    tasksListEl.querySelectorAll('.msc-tasks-row').forEach(function (row) {
+      row.addEventListener('click', function () { viewItem(row.getAttribute('data-id'), row); });
+    });
+  }
+
+  if (tasksAddBtn) {
+    tasksAddBtn.addEventListener('click', function () {
+      /* Step 15: the Tasks workspace has no per-date context (it is not
+         scoped to a selected date the way the Calendar side is) — leave
+         the Date field genuinely empty instead of silently reusing
+         whatever date the Calendar side last had selected, so the user
+         must explicitly choose one. The field is already `required`
+         (unchanged), so the form cannot be submitted without a date. */
+      cancelEdit();
+      resetForm();
+      fieldDate.value = '';
+      selectedDateLabel.textContent = 'select a date';
+      openTaskPopup();
+    });
+  }
+
+  /* ── Calendar/Tasks mode switch (Step 7) — pure show/hide over sibling
+     panels, same class-driven-visibility idiom the existing Month/Week/
+     Day panes already use (.msc-view-pane/.active), not the native
+     `hidden` attribute — .msc-calendar-main already carries its own
+     unconditional `display:flex` (calendar.css), which a same-
+     specificity `[hidden]` rule cannot reliably override, so visibility
+     here is driven by dedicated classes with the specificity to win. */
+  var currentMode = 'calendar';
+  function setMode(mode) {
+    if (mode !== 'calendar' && mode !== 'tasks') { return; }
+    if (mode === currentMode) { return; }
+    currentMode = mode;
+    modeSwitchBtns.forEach(function (btn) {
+      var isActive = btn.getAttribute('data-mode') === mode;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+    if (calendarMainEl) { calendarMainEl.classList.toggle('msc-mode-hidden', mode !== 'calendar'); }
+    if (tasksMainEl) { tasksMainEl.classList.toggle('msc-mode-active', mode === 'tasks'); }
+    /* Month/Week/Day only applies to the Calendar-mode grid — hidden in
+       Tasks mode rather than left visible-but-inert (matches the Google
+       Tasks reference, where the equivalent period selector disappears
+       once Tasks is the active workspace). .msc-view-switcher already
+       carries its own unconditional `display:inline-flex`
+       (calendar.css) — same specificity pitfall as calendar-main above,
+       so this uses the same dedicated higher-specificity class rather
+       than the native `hidden` attribute. */
+    if (viewSwitcherEl) { viewSwitcherEl.classList.toggle('msc-mode-hidden', mode !== 'calendar'); }
+    /* Schedule Summary and Today's Priorities are both date-scoped
+       (Step 20 — "refresh Schedule Summary only through existing
+       authoritative behavior"); the Tasks workspace has no selected-
+       date concept, so both stay hidden in Tasks mode rather than
+       showing a stale or misleading date-scoped figure there. Neither
+       element carries its own explicit `display` CSS rule, so the
+       native `hidden` attribute is safe here (unlike calendar-main/
+       tasks-main above). */
+    if (summarySectionEl) { summarySectionEl.hidden = mode !== 'calendar'; }
+    if (priorityCardEl) { priorityCardEl.hidden = mode !== 'calendar'; }
+    if (mode === 'tasks') {
+      closeCreateMenu();
+      closeSearchPanel();
+      renderTasksWorkspace();
+    }
+  }
+  modeSwitchBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () { setMode(btn.getAttribute('data-mode')); });
   });
 
   function onLeavePopupKeydown(e) {
@@ -1522,6 +2005,12 @@ function mountScheduleCalendarInstance(container) {
     cancelEdit();
     renderActiveView();
     renderPriorityPreview();
+    /* Step 20 (google-calendar-inspired-toolbar-and-tasks-workspace
+       task, 2026-07-23) — keeps the Tasks workspace in sync with every
+       Task create/update (both funnel through selectDate() already,
+       see the comments at those call sites) without re-rendering it
+       while it's off-screen in Calendar mode. */
+    if (currentMode === 'tasks') { renderTasksWorkspace(); }
     loadSummaries(dateStr);
   }
 
@@ -1950,6 +2439,7 @@ function mountScheduleCalendarInstance(container) {
           if (state.editingId === id) { cancelEdit(); }
           renderActiveView();
           renderPriorityPreview();
+          if (currentMode === 'tasks') { renderTasksWorkspace(); }
           if (state.selectedDate) { loadSummaries(state.selectedDate); }
           showToast({ type: 'success', title: 'Task deleted', message: 'The task was removed.' });
           return true;
