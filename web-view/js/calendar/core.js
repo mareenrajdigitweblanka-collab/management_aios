@@ -104,6 +104,32 @@ export function formatHourLabel(h) {
 }
 export function formatShortDate(d) { return MONTH_NAMES[d.getMonth()].slice(0, 3) + ' ' + d.getDate(); }
 
+/* Task Created/Updated at display formatter (2026-07-23). Takes the raw
+   UTC-aware ISO-8601 string straight from created_at/updated_at (see
+   apiItemToFrontend above) and renders it in the fixed business timezone
+   Asia/Colombo as "YYYY-MM-DD HH:mm" (24-hour, no seconds) — never the
+   browser's local timezone, and never a locale-dependent string (which
+   would vary field order/separators between browsers). Built from
+   Intl.DateTimeFormat's formatToParts() rather than its formatted string
+   output for that reason. Returns the literal 'Not available' for a
+   null/undefined/empty/unparsable value — never a substituted or
+   generated timestamp. */
+export function formatTaskTimestamp(isoString) {
+  if (!isoString) { return 'Not available'; }
+  var d = new Date(isoString);
+  if (isNaN(d.getTime())) { return 'Not available'; }
+  var parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Colombo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(d);
+  var map = {};
+  parts.forEach(function (p) { map[p.type] = p.value; });
+  // Some engines render midnight as hour "24" under hour12:false; normalise to "00".
+  var hour = map.hour === '24' ? '00' : map.hour;
+  return map.year + '-' + map.month + '-' + map.day + ' ' + hour + ':' + map.minute;
+}
+
 /* Display-only duration/percentage/comparison formatters
    (2026-07-14 duration reporting). These only format values the
    backend already computed — no duration, percentage, or change is
@@ -326,7 +352,15 @@ export function apiItemToFrontend(apiItem) {
     priority: apiItem.priority,
     start: trimTime(apiItem.start),
     end: trimTime(apiItem.end),
-    notes: apiItem.notes || ''
+    notes: apiItem.notes || '',
+    /* Task Created/Updated at (2026-07-23) — passed through verbatim from
+       the API's created_at/updated_at (backend/schemas.py
+       MemberScheduleEventOut), same field names, no renaming or
+       recalculation. Read-only display data only — never included in
+       frontendToApiPayload() below, so it can never be sent back on
+       Create/Update. */
+    created_at: apiItem.created_at || null,
+    updated_at: apiItem.updated_at || null
   };
 }
 

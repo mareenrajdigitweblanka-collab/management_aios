@@ -277,3 +277,79 @@ The *earlier same-day* toolbar-alignment-and-close-control follow-up gave the He
 ### One next step (this follow-up)
 
 Stand up the real FastAPI + Neon backend (or generate a project "run" skill) and re-run scenario B (Task Detail from the "+N more" list, side-by-side) and the full Delete confirm→success-toast chain against live data.
+
+---
+
+## Follow-up — Task Created/Updated at timestamps (2026-07-23, later same day)
+
+**Requirement:** Add two read-only rows — "Task Created at:" / "Task Updated at:" — to the single Task Details popup only (not Create/Edit Task, chips, Task-list rows, Leave Details, Schedule Summary, Tasks workspace, or Staff Data). Discovery-first: no backend/API/database change unless proven necessary. Discovery report and user-confirmed decisions preceded this implementation pass (display timezone Asia/Colombo, format `YYYY-MM-DD HH:mm`, 24-hour, no seconds, equal values both shown, missing value shows `Not available`).
+
+### A. Authoritative fields
+
+Model: `MemberScheduleEvent.created_at` / `.updated_at` (`backend/models.py`) — `DateTime(timezone=True)`, `nullable=False`, `server_default=now()`. API: `MemberScheduleEventOut.created_at` / `.updated_at` (`backend/schemas.py`), same names, already returned by every `GET`/`POST`/`PUT` response on `/api/member-schedules/{member_key}[/...]`. Storage is timezone-aware UTC — both create (`backend/routers/member_schedules.py` line ~620) and update (line ~706) use `datetime.now(timezone.utc)` explicitly. These fields already existed and required no backend, schema, API, or migration change.
+
+### B. Mapper ownership
+
+`apiItemToFrontend()` in `web-view/js/calendar/core.js` now passes `created_at`/`updated_at` through verbatim (same names, `|| null` only) onto the frontend Task object. Previously this mapper silently dropped both fields even though the API already returned them. `frontendToApiPayload()` (same file) was **not** changed — it still sends only `date/title/priority/start/end/notes`, so these fields can never be written back on Create or Update.
+
+### C. Formatter ownership
+
+New `formatTaskTimestamp(isoString)` in `web-view/js/calendar/core.js`, exported alongside the other pure formatters (`formatShortDate`, `formatDuration`, etc.). Converts a UTC ISO-8601 string to the fixed business timezone `Asia/Colombo` and returns `YYYY-MM-DD HH:mm` (24-hour, no seconds) via `Intl.DateTimeFormat(...).formatToParts()` — parts are read individually and reassembled manually (not the formatter's own string output) specifically so the result never depends on browser/locale field-ordering. Returns the literal string `Not available` for null/undefined/empty/unparsable input — never a generated, inferred, or substituted timestamp. Verified against the two required examples: `2026-07-23T08:35:00+00:00` → `2026-07-23 14:05`; `2026-07-23T11:12:00+00:00` → `2026-07-23 16:42`. Also verified: `null`/`undefined`/`''`/`'not-a-date'` → `Not available`; a UTC time that rolls into the next Colombo calendar day formats correctly with no `24:xx` artifact.
+
+### D. Task Details renderer ownership
+
+`viewItem()` in `web-view/js/calendar/instance.js` (the one shared Task Details popup used by Month/Week/Day/all-day chips and the "+N more" list — see the main record above) gained two new lines immediately after the existing Notes line: `viewCreatedAt.textContent = 'Task Created at: ' + formatTaskTimestamp(it.created_at)` and the Updated equivalent. Two new `<p class="msc-view-created-at">`/`<p class="msc-view-updated-at">` elements were added to the existing Task Details markup (immediately after `.msc-view-notes`), styled identically to the existing Date/Time/Category/Priority/Notes rows (no dedicated CSS rule exists for any of these — all inherit from the shared `.msc-view-modal-inner` container, so no CSS change was needed). Read-only plain text only — no input, no form control, not sent in any Create/Update payload. Leave Details, Create Task, Edit Task, calendar chips, the Task-list, Schedule Summary, and Staff Data were not touched.
+
+### E. Equal-value result — PASS
+
+A never-edited Task has `created_at === updated_at` at the database level (both set once from the same `created_at` variable in the create route). Both rows render independently and unconditionally — the Updated row is never hidden or suppressed when equal. Live-verified via a disposable `paraparan` record: `POST` returned `created_at`/`updated_at` both `2026-07-23T09:12:50.642565Z`.
+
+### F. Missing-value result — PASS
+
+Both DB columns are `nullable=False` with a server default, so a real row can never actually be null in practice; `formatTaskTimestamp` nonetheless returns `Not available` for a null/undefined/empty/invalid input as a defensive guard (per the Pydantic schema's own defensive `Optional[datetime] = None` typing) — never a substituted timestamp of any kind.
+
+### G. Title-edit / drag / resize result — PASS
+
+All Task edits (title, notes, priority, date/time form edits, drag, and resize) route through the single existing `PUT /api/member-schedules/{member_key}/{event_id}` handler, which unconditionally sets `event.updated_at = datetime.now(timezone.utc)` — confirmed by reading `commitItemTimeChange()` (used by both drag and resize) and the Edit-Task submit handler, both of which call this same endpoint. Live-verified end-to-end against the real backend/Neon DB using a disposable `paraparan` record (`2099-12-29`, `source_scope: dashboard_testing`, soft-deleted immediately after):
+
+| Step | `created_at` | `updated_at` |
+| --- | --- | --- |
+| Create | `...:12:50.642565Z` | `...:12:50.642565Z` (equal) |
+| Title edit | `...:12:50.642565Z` (unchanged) | `...:13:06.447345Z` |
+| Drag (start/end set) | `...:12:50.642565Z` (unchanged) | `...:13:09.029593Z` |
+| Resize (end extended) | `...:12:50.642565Z` (unchanged) | `...:13:11.601040Z` |
+
+`created_at` never changed across any edit; `updated_at` changed on every edit.
+
+### H. All-five-member result — PASS
+
+`GET /api/member-schedules/{member_key}` confirmed real `created_at`/`updated_at` values present for all five members (`mayurika`, `suman`, `arun`, `rajiv`, `paraparan`), including a naturally-occurring unequal pair (`suman`, `created_at` 2026-07-13 / `updated_at` 2026-07-14). `mountScheduleCalendarInstance()` mounts the identical template and `viewItem()` logic once per member (confirmed via `initAllScheduleCalendars()`) — no per-member branching exists anywhere in this change.
+
+### I. Backend/API/database/migrations — NONE
+
+`git diff --stat -- backend/ database/ database/migrations/` empty for this entire pass. No schema, route, or business-rule change. Confirmed both fields were already present in the API response before this task — this was a frontend-only fix (mapper passthrough + display), consistent with the pre-implementation discovery report.
+
+### J. Static-test result — PASS
+
+`node --check` clean on both modified files (`core.js`, `instance.js`). Every name in `instance.js`'s `./core.js` import list (41 identifiers, including the new `formatTaskTimestamp`) resolves to a matching `export` in `core.js` — no missing/broken import. The two new DOM-hook classes (`msc-view-created-at`, `msc-view-updated-at`) each appear exactly twice (once in the markup template, once as the matching `querySelector`) — no duplicates, no orphaned hooks. Local static server (`python -m http.server`, `web-view/` as document root): `index.html`, `css/calendar.css`, `css/components.css`, `js/calendar/core.js`, `js/calendar/instance.js`, `js/config.js`, `js/app.js` all returned **HTTP 200**.
+
+### K. Backend test suite — not run (pytest unavailable)
+
+`backend/tests/` exists but `pytest` is not installed in this environment and is not listed in `backend/requirements.txt`/`requirements.txt` — installing new tooling was judged out of scope for a task with a zero-line backend diff. Since `backend/` has no changes in this pass (§I), there is no backend regression surface for this task to have introduced; the live disposable-record checks in §G exercise the real create/update path end-to-end against the real database as a substitute for the missing unit-test run.
+
+### L. Diff scope
+
+Exactly `web-view/js/calendar/core.js` (+36/−0) and `web-view/js/calendar/instance.js` (+17/−2, entirely additive besides the single-word import-list insertion) plus this validation doc and its paired handover doc. No other file touched.
+
+### M. Known limitations
+
+- No browser-driven (Playwright/CDP) click-through of the popup was performed this pass — verification instead combined (1) a full live backend/database round-trip proving the exact data values and their lifecycle (§G), (2) a Node-run unit check of the formatter against the required examples and edge cases, and (3) static code-path tracing confirming the renderer wires `it.created_at`/`it.updated_at` through `formatTaskTimestamp()` into the two new DOM nodes. A future pass could add a literal browser screenshot of the two new rows if a reviewer wants pixel-level confirmation.
+- pytest is not available in this environment (see §K); this is a pre-existing repository condition, not introduced by this task.
+
+### N. PASS / AMBER / FAIL
+
+**PASS.** Both timestamp fields exist in the API and required no backend/schema/database/migration change; the frontend mapper and a new deterministic Asia/Colombo formatter were added; the single Task Details popup shows both rows in the required order with the required exact format; equal values both display; missing values would show `Not available` (defensive-only, since the columns are non-nullable); `created_at` is proven immutable and `updated_at` is proven to change across title-edit/drag/resize against the real backend and database; all five members share the one renderer; Create Task, Edit Task, calendar chips, the Task list, Leave Details, and Schedule Summary are untouched.
+
+### O. One next step
+
+If a reviewer wants pixel-level confirmation, drive the popup with Playwright/CDP against the real backend to screenshot the two new rows directly (same technique used earlier this day for the Task/Leave popup redesign pass).

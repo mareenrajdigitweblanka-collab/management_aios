@@ -8,7 +8,7 @@
 
 import { MEMBER_SCHEDULE_API_BASE, MEMBER_LEAVE_API_BASE } from '../config.js';
 import {
-  CATEGORY_CLASS, LEAVE_TYPE_DISPLAY_LABEL, formatLeaveCalendarLabel, expandWeekdaysClientSide, leaveDatesForItem, LEAVE_HALF_DAY_FIRST_DISPLAY, LEAVE_HALF_DAY_SECOND_DISPLAY, leaveDisplayTimeRange, PRIORITY_ORDER, PRIORITY_BADGE, MONTH_NAMES, DAY_HEADS, DAY_NAMES_FULL, TG_ROW_HEIGHT_PX, TG_HOURS, TG_DEFAULT_SCROLL_HOUR, pad, toDateStr, parseDateStr, timeToMinutes, minutesToTime, formatHourLabel, formatShortDate, formatDuration, formatPercentage, formatChange, getSplitWarningState, getMetricStatusCopy, combineSummaryStatus, getPeriodStatusCopy, getSplitBarSegments, getWeekStart, getReportWeekStart, getWeekDays, buildMonthGridCells, layoutOverlappingItems, escapeHtml, apiItemToFrontend, frontendToApiPayload
+  CATEGORY_CLASS, LEAVE_TYPE_DISPLAY_LABEL, formatLeaveCalendarLabel, expandWeekdaysClientSide, leaveDatesForItem, LEAVE_HALF_DAY_FIRST_DISPLAY, LEAVE_HALF_DAY_SECOND_DISPLAY, leaveDisplayTimeRange, PRIORITY_ORDER, PRIORITY_BADGE, MONTH_NAMES, DAY_HEADS, DAY_NAMES_FULL, TG_ROW_HEIGHT_PX, TG_HOURS, TG_DEFAULT_SCROLL_HOUR, pad, toDateStr, parseDateStr, timeToMinutes, minutesToTime, formatHourLabel, formatShortDate, formatDuration, formatPercentage, formatChange, formatTaskTimestamp, getSplitWarningState, getMetricStatusCopy, combineSummaryStatus, getPeriodStatusCopy, getSplitBarSegments, getWeekStart, getReportWeekStart, getWeekDays, buildMonthGridCells, layoutOverlappingItems, escapeHtml, apiItemToFrontend, frontendToApiPayload
 } from './core.js';
 import { trapTab, returnFocus } from '../ui/popup.js';
 import { showToast } from '../ui/toast.js';
@@ -413,6 +413,8 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-view-category"></p>' +
     '<p class="msc-view-priority"></p>' +
     '<p class="msc-view-notes"></p>' +
+    '<p class="msc-view-created-at"></p>' +
+    '<p class="msc-view-updated-at"></p>' +
     '</div>' +
     '</div>' +
     /* ── Shared Leave-detail popup (popup-detail-close-and-scroll-
@@ -631,6 +633,8 @@ function mountScheduleCalendarInstance(container) {
   var viewCategory = container.querySelector('.msc-view-category');
   var viewPriority = container.querySelector('.msc-view-priority');
   var viewNotes = container.querySelector('.msc-view-notes');
+  var viewCreatedAt = container.querySelector('.msc-view-created-at');
+  var viewUpdatedAt = container.querySelector('.msc-view-updated-at');
   var viewClose = container.querySelector('.msc-view-close');
   var viewEditBtn = container.querySelector('.msc-view-edit-btn');
   var viewDeleteBtn = container.querySelector('.msc-view-delete-btn');
@@ -2835,6 +2839,17 @@ function mountScheduleCalendarInstance(container) {
     viewCategory.textContent = 'Category: ' + it.category;
     viewPriority.textContent = 'Priority: ' + (it.priority || 'Medium');
     viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
+    /* Task Created/Updated at (2026-07-23) — read-only, plain-text display
+       of the authoritative it.created_at/it.updated_at values already
+       carried on the current Task object (apiItemToFrontend(), core.js).
+       formatTaskTimestamp() converts the stored UTC value to Asia/Colombo
+       and returns 'Not available' verbatim for a missing/unparsable value
+       — never a generated or substituted timestamp. Equal Created/Updated
+       values (a never-edited Task) are both shown, never hidden. Single
+       Task Details only — Leave Details, Create/Edit Task, chips, and the
+       Task list are untouched. */
+    viewCreatedAt.textContent = 'Task Created at: ' + formatTaskTimestamp(it.created_at);
+    viewUpdatedAt.textContent = 'Task Updated at: ' + formatTaskTimestamp(it.updated_at);
     /* Modal background scroll lock (popup-detail-close-and-scroll-
        containment task, 2026-07-23) — only the centered presentation
        locks the page (see closeViewModal() for the matching unlock and
