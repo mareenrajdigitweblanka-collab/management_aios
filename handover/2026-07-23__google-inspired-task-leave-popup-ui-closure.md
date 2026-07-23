@@ -61,3 +61,23 @@ Pushed to `origin/main`: `bdca27b..304f510 main -> main` (no force-push).
 ## 11. Known limitations / next step
 
 Tablet/mobile breakpoints and the other four member tabs were not independently re-screenshotted this pass (shared template/CSS, no per-member or per-breakpoint branching touched) — see the validation doc's AX/AZ sections for the recommended follow-up spot check.
+
+## 12. Follow-up — Task/Leave Detail header restructure, icon system, scroll containment (2026-07-23, later same day)
+
+Full record: the "Follow-up" section appended to `validation/google-inspired-task-leave-popup-ui-check-2026-07-23.md`.
+
+**What prompted this:** a live regression (Task Details showed no visible title) plus new direct feedback on header/icon/scroll behavior.
+
+**Root cause found and fixed:** an *earlier same-day* toolbar follow-up gave the Help/Settings popups the same `.msc-view-title` class Task Detail's title element already used, for an unrelated layout reason. `viewTitle` was looked up via an unscoped `container.querySelector('.msc-view-title')`, which — since Help sits earlier in the DOM — silently grabbed Help's heading instead of Task Detail's own. Fixed by scoping both `viewTitle` and `viewColorDot` to `viewModal.querySelector(...)`.
+
+**Files modified further this pass:**
+
+- `web-view/js/calendar/instance.js` — Task/Leave Detail markup reordered into action row (Edit/Delete/Close, now inline SVG, 38px targets, `aria-label`s "Edit task"/"Delete task"/"Close task details" and the Leave equivalents) → identity row (`.msc-view-modal-identity`, category dot + `.msc-view-modal-identity-title`) → existing fields; `viewTitle.textContent` gained an `'Untitled task'` display-only fallback; `viewItem()`/`closeViewModal()`/`viewLeaveItem()`/`closeLeaveViewModal()`/`openCreatePopup()`/`closeCreatePopup()`/`openHelpPopup()`/`closeHelpPopup()`/`openSettingsPopup()`/`closeSettingsPopup()` all gained paired `lockBodyScroll()`/`unlockBodyScroll()` calls (Task Detail only locks in its centered presentation, never in `besideList` mode).
+- `web-view/js/ui/scroll-lock.js` — **new** shared, reference-counted body-scroll lock (`lockBodyScroll()`/`unlockBodyScroll()`), a page-wide singleton module used by every true-modal popup across all 5 mounted calendar instances plus the confirmation dialog.
+- `web-view/js/ui/dialog.js` — `confirmDestructive()`'s `open()`/`settle()` now call `lockBodyScroll()`/`unlockBodyScroll()`, so a Delete confirmation opened on top of an already-locked Task/Leave Detail correctly keeps the page locked until *both* close (reference-counted, not boolean).
+- `web-view/css/calendar.css` — `.msc-view-modal-head` gained `justify-content: flex-end` (safe for Help/Settings, whose title already fills the row via `flex:1`); new `.msc-view-modal-identity`/`.msc-view-modal-identity-title` rules; `.msc-view-modal-head .msc-modal-close` bumped 30px→38px with new SVG sizing; Delete's default styling confirmed neutral (no rule sets a default red — only `:hover` reads distinctly); `.msc-view-modal-inner` gained `max-height`/`overflow-y`/`overscroll-behavior: contain` plus a sticky `.msc-view-modal-head`; `.msc-cal-search-results`/`.msc-modal-form` gained `overscroll-behavior: contain`; `.msc-modal-form-head` gained sticky positioning.
+- `web-view/css/ui.css` — new `.msc-scroll-locked` (width:100%, pairs with `scroll-lock.js`'s inline `position:fixed` styles).
+
+**Live verification (headless Chrome, hand-written CDP driver, no backend running):** title-rendering fixed (128-char synthetic title rendered, wrapped, no overlap); action-row-above-identity-above-fields confirmed via `getBoundingClientRect()`; Edit/Delete default colors identical (`rgb(0,0,0)`/`rgb(0,0,0)`, no red background); Close touch target 38×38px; Help/Settings/Create-dialog scroll-lock proven end-to-end (scroll to 400px → open → `position:fixed`/`top:-400px` → attempted scroll blocked at `window.scrollY===0` → close → restored to exactly 400px); Search confirmed NOT locked and its results container confirmed `overscroll-behavior-y: contain`; Task Detail's sticky header confirmed to stay in-viewport while its own content scrolls (forced real overflow at a short viewport); zero console errors throughout. Not re-tested live this pass (no backend): Task Detail opened from the "+N more" list (side-by-side), and the full Delete confirm→API→success-toast chain — both were verified by code trace instead (see validation doc §Y/§Known-limitations).
+
+**Commit:** landed together with the toolbar-alignment follow-up work in this session — see the repo's commit log for the exact hash at push time.

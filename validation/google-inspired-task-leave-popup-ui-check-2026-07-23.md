@@ -185,3 +185,95 @@ This document plus the handover doc are LLM-queryable per §11.1 of CLAUDE.md; a
 ## AZ. One next step
 
 Re-run the responsive/zoom/per-member spot checks (AF–AI, AA–AE) in a follow-up pass if the relevant Management Team reviewer wants pixel-level confirmation beyond the shared-template reasoning above.
+
+---
+
+## Follow-up — Task/Leave Detail header restructure, icon system, and scroll containment (2026-07-23, later same day)
+
+**Requirement:** Fix a live regression where Task Details showed no visible title; reorder Task/Leave Detail into action row (Edit/Delete/Close) → identity (dot + prominent title) → fields; convert Delete from a colorful default to a neutral dark icon matching Edit; give every relevant popup exactly one top-right Close control; add a reference-counted body-scroll lock for true modal dialogs and `overscroll-behavior: contain` scroll containment for anchored popovers; exclude toasts from any lock. No backend/API/database/migration change.
+
+### A. Missing Task-title root cause
+
+The *earlier same-day* toolbar-alignment-and-close-control follow-up gave the Help and Settings popup headers the class `.msc-view-title` (for a shared `flex:1` header layout). `viewTitle` in `calendar/instance.js` was looked up via an **unscoped** `container.querySelector('.msc-view-title')`. Since Help's popup sits earlier in the DOM than the Task Detail modal, that lookup silently grabbed Help's static heading instead of Task Detail's own (empty-by-default) title element — so `viewItem()` was writing every Task's title into a hidden, unrelated node, and Task Detail's own title node was never written to at all. `viewColorDot` had the identical unscoped-lookup bug (correct by DOM-order coincidence, not by design). Both are now scoped to `viewModal.querySelector(...)` instead of `container.querySelector(...)`.
+
+### B. Existing authoritative title field
+
+`it.title` — the same field `core.js`'s `apiItemToFrontend()`/`frontendToApiPayload()` map straight to/from the backend's `title` column, and the same field Calendar chips, the full Task list, and the Create/Edit form's `msc-field-title` input already read and write. No new field was added; `'Untitled task'` is a **display-only** fallback (`it.title || 'Untitled task'`) — never written back to the record.
+
+### C–E. Task-detail hierarchy result
+
+**PASS.** New DOM order inside `.msc-view-modal-inner`: (A) `.msc-view-modal-head` — Edit/Delete/Close only, right-aligned; (B) `.msc-view-modal-identity` — category dot + `.msc-view-modal-identity-title` (`var(--font-2xl)` ≈ 21.6px, weight 600, `overflow-wrap: anywhere` so long titles wrap safely without ever reaching the action row above); (C) the unchanged Date/Time/Category/Priority/Notes `<p>` fields. Live-verified (synthetic DOM injection + screenshot, `chrome-headless`): action row's `getBoundingClientRect().top` is above the identity row's, which is above the Date field's. A 129-character title rendered fully, wrapped, with zero overlap. Leave Detail mirrors the same structure (`.msc-view-modal-identity` + static "Leave details" heading).
+
+### F. Edit position result / G. Delete position result / H. Delete neutral styling result
+
+**PASS all three.** Edit, Delete, Close now live together in `.msc-view-modal-head-actions`, right-aligned via `.msc-view-modal-head { justify-content: flex-end }`. All three are inline SVG (stroke=`currentColor`) at a 38×38px touch target (bumped from the shared 30px). Live-measured default colors: Edit `rgb(0,0,0)`, Delete `rgb(0,0,0)` (identical), Delete background `rgb(255,255,255)` (no red). A restrained hover-only destructive tint (`--calendar-leave-bg`/`--calendar-leave-text`) is unchanged from before. Accessible names verified live: "Edit task", "Delete task", "Close task details" (Leave: "Edit leave", "Delete leave", "Close leave details") — exact matches to spec. The existing `confirmDestructive()` dialog and its wording are untouched.
+
+### I. Close top-right result
+
+**PASS.** Verified for Help, Settings, Task Detail, Leave Detail, and the Task/Leave Create dialog — each has exactly one visible Close, top-right, no duplicate bottom "Close" button remaining (Help/Settings' bottom Close buttons were removed in the earlier same-day follow-up; Task/Leave Detail never had one — their Edit/Delete/Close were already header-only). The Create/Edit dialog's bottom **Add schedule / Cancel** row is an approved distinct form action, not a duplicate Close, and was left untouched per the explicit "do not remove form Cancel actions" instruction.
+
+### J. Leave-detail result
+
+**PASS** — see C–E and F–H above; Leave Detail received the identical header restructure, icon conversion, and `aria-label` corrections.
+
+### K. Help Close result / L. Settings Close result / M. Search Close result
+
+**PASS.** Help and Settings: single top-right SVG-X Close, confirmed live. Search: anchored, non-dialog-header popover (input + Clear only) — no Close button applies per the task's own "when it uses a dialog-style header" condition; unchanged.
+
+### N. Modal body-lock result
+
+**PASS.** New shared module `web-view/js/ui/scroll-lock.js` (`lockBodyScroll()`/`unlockBodyScroll()`), a page-wide singleton (ES modules are singletons even though `calendar/instance.js` mounts 5 separate member instances) using a reference count plus a saved-scroll-position `position:fixed` technique. Wired into: Task/Leave Create-Edit dialog, Help, Settings, Task Detail (centered presentation only), Leave Detail, and the shared `confirmDestructive()` dialog (`ui/dialog.js`). Live-verified: scrolled the page to 400px → opened Help → `document.body.style.position` = `"fixed"`, `top` = `"-400px"` → attempted `window.scrollTo(0, 900)` while locked → `window.scrollY` stayed `0` (page provably could not scroll) → closed Help → lock class removed → `window.scrollY` restored to exactly `400`. Same pass for Settings. The Create/Edit dialog locks on open and unlocks on close (verified live). Nested-dialog case (Delete confirmation opened from an already-open Task Detail) verified by code trace: `confirmDestructive()`'s own lock/unlock is paired independently, so the counter only reaches 0 (unlocks) once **both** close — satisfies "do not unlock while another modal is still open."
+
+### O. Anchored-popup containment result
+
+**PASS.** Task Detail's `besideList` presentation (opened next to the "+N more" list) intentionally never calls `lockBodyScroll()` — traced and confirmed via a `wasLocked`/`besideList` guard in both `viewItem()` and `closeViewModal()`. The "+N more" list body (`.msc-more-popup-body`) already had `overscroll-behavior: contain` plus a boundary-only wheel trap from an earlier task (unchanged). Newly added this pass: `overscroll-behavior: contain` on `.msc-cal-search-results` (live-confirmed via `getComputedStyle(...).overscrollBehaviorY === 'contain'`) and on `.msc-view-modal-inner`/`.msc-modal-form`.
+
+### P. Task-list scroll result / Q. Task-detail scroll result
+
+**PASS.** Both containers (`.msc-more-popup-body`, `.msc-view-modal-inner`) have independent `overflow-y: auto` + `overscroll-behavior: contain`; scrolling one never affects the other (separate elements, separate scroll contexts — no shared scroll parent). Task Detail's action row is `position: sticky; top: 0` inside its own scrolling container: live-verified by injecting long Notes content at a constrained viewport height, forcing real overflow (`scrollHeight` 480 vs `clientHeight` 356), programmatically scrolling the container, and confirming via screenshot and a `getBoundingClientRect()` check that Close remained fully within the viewport throughout.
+
+### R. Background-scroll result
+
+**PASS** — see N above; conclusively proven for Help/Settings/Create-Edit via the real open/close functions. Task/Leave Detail call the identical `lockBodyScroll()`/`unlockBodyScroll()` functions (verified by direct code reading, not a duplicated implementation), so the same mechanism applies there.
+
+### S. Toast non-locking result
+
+**PASS.** `web-view/js/ui/toast.js` has zero `import` statements — structurally incapable of calling `lockBodyScroll()`. Confirmed by direct inspection rather than a live trigger (no backend running this pass to produce a real save/delete toast — see Known limitations).
+
+### T. Nested-modal cleanup result
+
+**PASS** by code trace (see N). No per-instance teardown was needed: this app never destroys/remounts a calendar instance during its lifetime (all 5 members mount once at startup), and the lock module itself is the one place holding page-level state, so there is nothing instance-scoped to clean up.
+
+### U. Focus-return result
+
+**PASS — unchanged.** Neither `closeViewModal()`'s existing `reopenTaskListOrigin()`/`returnFocus()` branching nor `closeLeaveViewModal()`'s `returnFocus()` call was touched by this pass; only the scroll-lock call and the `wasOpen`/`wasBesideList` capture were added around the existing logic.
+
+### V. Mobile result
+
+**PASS.** At 390×700 (and 390×420 to force real overflow), the Task Detail card fit the viewport, Close stayed reachable, a 150+ character title wrapped safely with no overlap, and there was no horizontal page overflow (`document.documentElement.scrollWidth <= window.innerWidth`).
+
+### W. 200% zoom result
+
+**PASS (approximated)** — same technique as the earlier same-day toolbar pass: a reduced-viewport-height check (390×420) rather than a literal OS zoom setting, which is behaviorally equivalent for this max-height/overflow-based layout.
+
+### X. Console result
+
+**PASS.** Zero console errors/exceptions across every step of this pass's live verification (title injection, header-order checks, scroll-lock open/close cycles for Help/Settings/Create dialog, mobile/short-viewport checks).
+
+### Y. Backend/API/database proof
+
+**NONE changed.** `git diff --stat -- backend/ database/` is empty. No `fetch`/API-base call was added, removed, or altered; `deleteItem()`/`deleteLeaveRecord()`/`confirmDestructive()`'s business logic is byte-identical — only scroll-lock calls were added around their existing open/close points.
+
+### Z. PASS / AMBER / FAIL
+
+**PASS.** Task title now visible and prominent (root cause fixed, not papered over); authoritative field reused; Edit/Delete/Close in the top-right action area on both Task and Leave Detail; Delete neutral by default and still confirmation-protected; every checked popup has exactly one top-right Close; modal background scroll fully locked and correctly restored; anchored popovers contain their own scroll without locking the page; toasts structurally cannot lock; List and Detail scroll independently; mobile and reduced-viewport-zoom pass; backend/API/database/migrations unchanged.
+
+### Known limitations (this follow-up)
+
+- No live backend was running this pass (consistent with the earlier same-day toolbar-redesign validation's same limitation) — Task/Leave Detail's visual restructure and scroll-lock wiring were verified via direct DOM injection plus full code-path tracing rather than a real Task/Leave record end-to-end. Scenario **B** ("Task Details from full list") and the full **H** ("Delete") interaction chain (real confirm → real API delete → real success toast) were not re-run against live data this pass.
+- 200% zoom was approximated via a reduced viewport height, not a literal browser zoom setting.
+- The static regex-based HTML tag-balance script used elsewhere this session produced a false-positive "div mismatch" here because several newly-added code comments contain straight-apostrophe contractions (e.g. "doesn't") that the script's naive quote-matching can't distinguish from JS string boundaries; the actual markup was verified balanced by manual trace of both restructured popup blocks and by the browser rendering both popups correctly with zero console errors.
+
+### One next step (this follow-up)
+
+Stand up the real FastAPI + Neon backend (or generate a project "run" skill) and re-run scenario B (Task Detail from the "+N more" list, side-by-side) and the full Delete confirm→success-toast chain against live data.
