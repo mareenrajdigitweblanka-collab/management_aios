@@ -41,9 +41,17 @@ No file under `member-aios/mayurika-hr/staff-data/` was read, inspected, staged,
 ## 4. Exact visible copy
 
 - **Title**: `Next-week planning deadline`
-- **Message**: `Assign all next-week tasks before Sunday 11:59:59 PM. Tasks created at or after the cutoff are classified as Unscheduled.`
+- **Message**: `Assign all next-week tasks before Sunday 11:59:59 PM. Tasks created/edited at or after the cutoff are classified as Unscheduled.`
 
-Matches the task brief verbatim. Cross-checked against CLAUDE.md's authoritative classification wording (Scheduled/Unscheduled) and the backend's own `derive_task_outcome`/classification naming — no wording conflict; the banner never asserts a threshold value itself, it only names the day (Sunday) and the two classification outcomes (Scheduled/Unscheduled) that already exist in the backend.
+Revised 2026-07-24 (live-deployment follow-up): the message now reads "created/edited" rather than just "created", per direct user correction after reviewing the live banner — an edited-then-resubmitted task at/after the cutoff is also subject to the classification rule, not only a newly-created one. Still cross-checked against CLAUDE.md's authoritative classification wording (Scheduled/Unscheduled) and the backend's own `derive_task_outcome`/classification naming — no wording conflict; the banner never asserts a threshold value itself, it only names the day (Sunday) and the two classification outcomes (Scheduled/Unscheduled) that already exist in the backend.
+
+### 4.1 Visual follow-up (same day, after live-deployment review)
+
+Live deployment review (screenshot of `management-aios.vercel.app`) found the banner rendering correctly but visually small, with unused dark header space still visible to its right, and asked for: (a) the banner to grow and fill that trailing gap rather than size to its own content, (b) larger type, (c) a hover "grow" animation. Applied:
+
+- `.topbar-planning-warning` changed from a fixed `max-width: 400px` content-sized chip to `flex: 1 1 auto; max-width: 640px` — it now competes for the header's free space on equal footing with `.topbar-search` (also `flex: 1`), so it expands to cover the trailing gap instead of leaving it empty. Padding increased (`6px 12px` → `9px 18px`).
+- Title font size `.72rem` → `.92rem`; message `.68rem` → `.82rem`; icon `15px` → `19px`. Rechecked against the fixed 56px `--header-height` at the project's actual 15px root font-size (`html { font-size: 15px }`, `tokens.css`): two text lines + padding ≈ 54px — still fits without vertically overflowing the header bar.
+- Hover-grow effect: `transform: scale(1.08)` with a soft shadow, `transition: transform .2s cubic-bezier(.34,1.56,.64,1)` (a slight overshoot easing for a "good" rather than purely linear feel), `transform-origin: right center` (grows away from the header's right edge, not off past it). Gated behind `@media (hover: hover) and (pointer: fine)` so touch devices — which have no way to "un-hover" — never get stuck in the enlarged state; this is a deliberate, explicit deviation from this task's original "no animation that distracts users" instruction, made at the requesting user's direct, explicit request after seeing the live banner (documented here rather than silently reversing the original guidance).
 
 ## 5. Window boundary — unit test evidence (`node web-view/js/calendar/planning-warning-window.test.mjs`)
 

@@ -218,55 +218,69 @@
     }
 
     /* ── Next-week planning deadline warning (2026-07-24 weekend-planning-
-       warning task) ── Third .topbar flex child, after search. Hidden by
-       default (display:none, toggled to flex only via the --visible
-       modifier planning-warning.js applies) — informational only, this
-       never affects Task classification. margin-left:auto pushes it into
-       the header's empty trailing space (the same space .topbar-search's
-       own max-width already leaves free on wide screens) without
-       disturbing .topbar-left or .topbar-search. No transition/animation
-       by design (Step 3 "no animation that distracts users"). */
+       warning task; enlarged/hover-grow revision 2026-07-24) ── Third
+       .topbar flex child, after search. Hidden by default (display:none,
+       toggled to flex only via the --visible modifier planning-warning.js
+       applies) — informational only, this never affects Task
+       classification. margin-left:auto + flex:1 lets it grow to fill all
+       of the header's empty trailing space (rather than sizing to its own
+       content), so it visually covers that area instead of leaving a gap
+       between it and the header's right edge; topbar-search's own
+       flex:1/max-width still gets first claim on shared space since both
+       are flex:1 siblings. The hover/focus grow effect is gated to
+       pointer:fine devices (real mice) — on touch it would just be a
+       "stuck" enlarged state with no way to un-hover, so it's skipped
+       there entirely rather than degraded. */
     .topbar-planning-warning {
       display: none;
-      align-items: flex-start;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
       margin-left: auto;
-      flex-shrink: 0;
-      max-width: 400px;
-      padding: 6px 12px;
+      flex: 1 1 auto;
+      max-width: 640px;
+      padding: 9px 18px;
       border-radius: var(--radius-sm);
       background: var(--amber-bg);
       border: 1px solid rgba(180, 83, 9, .35);
+      cursor: default;
+      transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease;
+      transform-origin: right center;
     }
 
     .topbar-planning-warning--visible {
       display: flex;
     }
 
+    @media (hover: hover) and (pointer: fine) {
+      .topbar-planning-warning--visible:hover {
+        transform: scale(1.08);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .3);
+      }
+    }
+
     .topbar-planning-warning-icon {
-      width: 15px;
-      height: 15px;
+      width: 19px;
+      height: 19px;
       flex-shrink: 0;
-      margin-top: 2px;
       color: var(--amber);
     }
 
     .topbar-planning-warning-text {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 2px;
       min-width: 0;
     }
 
     .topbar-planning-warning-title {
-      font-size: .72rem;
+      font-size: .92rem;
       font-weight: 700;
       color: var(--amber);
       line-height: 1.25;
     }
 
     .topbar-planning-warning-msg {
-      font-size: .68rem;
+      font-size: .82rem;
       font-weight: 500;
       color: #92400e;
       line-height: 1.35;
