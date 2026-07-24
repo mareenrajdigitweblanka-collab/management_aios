@@ -136,3 +136,63 @@ Frontend (headless Chrome via a one-off CDP driver script, since no Playwright/c
 ## 22. PASS / AMBER / FAIL
 
 **PASS.** All 21 PASS conditions from the task instructions are met: both entry points expose Bulk Tasks, one common date, 30-row cap, blank-row handling, independent per-row values, all-or-nothing hard-error behavior with exact row/field identification, both duplicate sources warned, confirmation flow correct, Full-Day/Multi-Day opening gate correct, backend Leave revalidation confirmed, one shared authoritative timestamp/category, single Calendar/Summary refresh, existing single-Task creation unchanged (full regression suite green), zero database/migration changes, all five members verified, protected folder untouched, and evidence/handover are complete.
+
+> **Superseded note (2026-07-24):** §1 item 2 ("one common date"), §3's request contract (top-level `date`), §8/§9/§10's "common date" duplicate-identity wording, and §12's `applyBulkLeaveGate()` reference were superseded by the CONFIRMED ADD-ROW DATE RULE task (2026-07-24) — every row now carries its own independently editable date (`BulkTaskRowIn.date`; frontend `.msc-bulk-row-date`), seeded from the entry-point date on the first row / from the previous row's own current value on "+ Add another task", with per-row leave-gating and per-row-date duplicate-key scoping. This section is left as a historical record of the 2026-07-23 build and is not re-written here; see that task's own commit (`Add per-row Date field to Bulk Tasks (CONFIRMED ADD-ROW DATE RULE)`) for the full contract change. Section §23 below is unrelated to that change — it covers a pure modal-scroll/heading UI fix on top of the current (per-row-date) contract.
+
+## 23. Modal scroll, sticky-header overlap, and duplicate-heading fix (2026-07-24)
+
+### 23.1 Screenshot-derived defect
+
+User-supplied screenshot of the Bulk Tasks tab (opened from the main `+ Create` entry point) showed: modal title "Create multiple tasks" and the Close button visible; the Task/Bulk Tasks/Leave tabs and the top portion of TASK 1 (including its Date label) clipped/hidden; TASK 2 rendering normally further down. No assumption was made about the cause per the task's explicit instruction — the DOM, CSS, and open/tab-switch JS were inspected first (below) before any change was made.
+
+### 23.2 Verified root cause
+
+`.msc-modal-form` (the dialog card) is the single `overflow-y:auto` scrolling element, and `.msc-modal-form-head` (title + Close button) is `position: sticky; top: 0` **inside that same scrolling element** (`web-view/css/calendar.css`). Nothing in `web-view/js/calendar/instance.js` ever reset that element's `scrollTop` back to `0` on dialog open or on Task/Bulk Tasks/Leave tab switch (`openCreatePopup()` / `setCreateDialogTab()`). A scroll position left over from a previous tab or a previous open (e.g. having scrolled down while a longer tab's content was active) was carried forward unchanged. At a nonzero `scrollTop`, the sticky header pins itself over whatever content now happens to occupy that same visual offset in the freshly-shown tab — which is exactly the tabs + top-of-TASK-1 clipping in the screenshot. This matches the two specific causes flagged for verification in the task brief ("modal scrollTop is retained when reopened"; "tab switching does not reset scrollTop") — both confirmed true; every other listed candidate cause (negative margins on TASK 1, a second scroll container, a modal-body height miscalculation) was checked and ruled out — TASK 1 uses the exact same `bulkRowMarkup()`/card CSS as every later row, with no special-cased offset.
+
+A second, independent defect was found and confirmed while tracing this: the Bulk Tasks tab's own content (`.msc-create-bulk-fields`) rendered a static `<div class="hr-table-title">Create multiple tasks</div>` heading — an exact textual duplicate of the sticky dialog header's `<h4>`, which is also set to "Create multiple tasks" whenever the Bulk tab is active (`setCreateDialogTab()`). The Task tab's equivalent `.hr-table-title` shows different text ("Schedule Item — `<date>`"), so it is not a duplicate and was left untouched; only the Bulk tab's redundant copy was removed.
+
+### 23.3 Fixes applied
+
+1. **Modal scroll-container ownership** (`web-view/js/calendar/instance.js`): added `resetCreatePopupScroll()`, which sets the one scrolling element's (`.msc-modal.msc-modal-form`, referenced via new `createPopupCard`) `scrollTop = 0`. Called from inside `setCreateDialogTab()` (so every open *and* every tab switch — both of which already funnel through this one function — reset scroll from a single place), plus a belt-and-braces re-assertion in `openCreatePopup()` immediately after `.show` is added (covers browsers that don't reliably retain a `scrollTop` write made while the element was still `display:none`). No field values are touched by this — only the scroll position.
+2. **Duplicate heading removed** (`web-view/js/calendar/instance.js`): the Bulk Tasks tab's static `.hr-table-title` "Create multiple tasks" div was removed; the sticky dialog header remains the single source of that heading.
+3. **Sticky-header-aware focus scrolling** (`web-view/css/calendar.css`): added `scroll-padding-top: 44px` to `.msc-modal-form`, sized to the sticky header's own rendered box (30px Close button + 10px padding-bottom + 1px border, rounded up), so the browser's native scroll-into-view (used implicitly by `Element.focus()`, i.e. `focusFirstInvalid()` on a validation error) always stops with the target fully below the sticky header instead of tucked underneath it. This covers scrolling that happens for a genuine reason (e.g. jumping to a validation error on a row scrolled out of view) — the reopen/tab-switch case itself is handled by fix 1, not by this.
+
+No backend, API, or database file was touched. `MAX_BULK_TASK_ROWS`, per-row Date/copy-on-add behavior, blank-row ignoring, all-or-nothing creation, duplicate warnings, row-level errors, Leave validation, automatic classification, the shared authoritative batch timestamp, and the Task/Leave tabs are all unmodified.
+
+### 23.4 Verification performed
+
+Static: `node --check web-view/js/calendar/instance.js` (pass); CSS brace-balance check (375 open / 375 close, balanced); grep confirmed exactly one runtime occurrence of the string `'Create multiple tasks'` (the sticky-header assignment) and zero remaining `.hr-table-title` duplicates inside `.msc-create-bulk-fields`; `git diff -- backend/ database/ database/migrations/` all empty.
+
+Live (headless Chrome via Playwright, driven against `python -m uvicorn backend.main:app --port 8000` + `python -m http.server 8081 --directory web-view`, the real configured Neon database, no project browser-automation skill existed so one was installed for this session only — see §23.6):
+
+- **Forced-stale-scroll reproduction, then Bulk tab switch:** `.msc-modal-form.scrollTop` set to `400` before switching Task → Bulk Tasks; after the switch, `scrollTop === 0`, exactly one `<h4>` heading ("Create multiple tasks"), zero `.hr-table-title` duplicates inside the Bulk fields, TASK 1's bounding box (`y≈322`) entirely below both the header (`y 200–250`) and the tabs (`y 264–306`) — no overlap. Screenshot-confirmed.
+- **Bulk → Task → Bulk tab cycling:** `scrollTop === 0` after the second switch back into Bulk Tasks. Screenshot-confirmed.
+- **Close, forced scroll to `500`, reopen directly onto Bulk Tasks:** `scrollTop === 0` on reopen. Screenshot-confirmed.
+- **Main `+ Create` entry:** opens at the top with title, Close button, tabs, and the complete TASK 1 card (including its Date field, prefilled) all visible.
+- **Calendar date-cell entry:** clicking the 2026-07-28 cell then switching to Bulk Tasks produced a first row with `Date = 2026-07-28` — the clicked date correctly seeded the row.
+- **Validation-focus below sticky header:** 6 rows added, row 1 given a valid title, row 5 given an invalid time range (end before start); after clicking "Create tasks", the focused/erroring field (row 5's End time input, `ui-field-invalid`) had `top ≈ 282px` — well below the header's bottom edge (`≈102px`) — not hidden underneath it. Screenshot-confirmed.
+- **Duplicate-warning return:** two rows given the same title; after "Create tasks" → "Possible duplicate tasks" confirmation → "Go back and review", the warned TASK 1 (dashed/warning-bordered) was fully visible at the top of the scrolled-to-top form, not hidden under the header. Screenshot-confirmed.
+- **TASK 1 / later-row consistency:** confirmed structurally (both rendered by the same `bulkRowMarkup()`/`addBulkRow()` — no TASK-1-specific markup exists) and visually identical border/padding/label layout across TASK 1, TASK 2, TASK 5, TASK 6 in every screenshot above.
+- **Responsive:** 1600×900, 1366×768, 1024×900 desktop/tablet widths — no horizontal overflow (`document.documentElement.scrollWidth` equal to the viewport width at every size), TASK 1 fully visible, two-column field layout intact. 390×844 mobile — fields stacked, no horizontal overflow, title/tabs/Close button/footer all visible, TASK 1 fully visible. 200%-zoom-equivalent (an 800×450 CSS layout viewport at `deviceScaleFactor: 2`, which is what a real browser's 200% zoom actually produces) — header, Close button, and TASK 1 all fully visible and reachable.
+- **Console:** the only browser console message across every run was `Failed to load resource: 404` for `/favicon.ico` — a pre-existing, unrelated dev-server artifact (no favicon file is served by `web-view/`), not a regression from this fix.
+- **No data written:** exactly one `POST .../bulk` call occurred during the entire verification session (the duplicate-warning test), and it returned `409 Conflict` (`duplicate_confirmation_required`) — zero rows were ever created; no cleanup was required.
+
+### 23.5 Backend / API / database proof
+
+```text
+git diff -- backend/                → (empty)
+git diff -- database/               → (empty)
+git diff -- database/migrations/    → (empty)
+```
+
+Files changed by this fix: `web-view/js/calendar/instance.js`, `web-view/css/calendar.css` only.
+
+### 23.6 Known limitations
+
+- No project-level browser-automation skill existed for this app (same limitation noted in §21 for the original 2026-07-23 build). Playwright (`playwright-core` + the machine's existing installed Chrome, since the Playwright-bundled Chromium download was unreachable from this environment) was installed into a scratch/temp directory for this session only — not added to the repository. Recommend `/run-skill-generator` if repeat frontend verification is expected.
+- One zoom-emulation approach (`document.documentElement.style.zoom = '2'`) initially produced a misleading clipped-title screenshot; this was a known limitation of that specific CSS-`zoom` technique in headless Chromium (it does not reliably recompute `vh`-relative sizing the way real OS/browser zoom does), not a real product defect — re-verified with the standards-correct viewport+`deviceScaleFactor` zoom emulation, which passed cleanly. Flagged here rather than silently discarded.
+- The `scroll-padding-top: 44px` value is derived from the sticky header's own current CSS box (30px Close button + 10px padding-bottom + 1px border, rounded up for safety) — if that header's own height is changed in a future task, this value should be revisited alongside it.
+
+### 23.7 PASS / AMBER / FAIL
+
+**PASS.** All 11 PASS conditions from this task's instructions are met: Bulk Tasks always opens at the top; title/Close button/tabs are fully visible; TASK 1 is never clipped beneath the header; TASK 1 and later cards use consistent spacing (same markup, unmodified); tab switching no longer retains a harmful scroll offset; validation focus scrolls the target below the fixed header; footer actions remain reachable (unmodified, already in normal flow); responsive widths and 200%-zoom-equivalent pass; Bulk Task behavior (per-row dates, copy-on-add, 30-row cap, blank-row ignoring, all-or-nothing creation, duplicate warnings, row-level errors, Leave validation, automatic classification, shared batch timestamp, Task/Leave tabs) is unchanged; backend/API/database/migrations are unchanged (confirmed empty diffs).

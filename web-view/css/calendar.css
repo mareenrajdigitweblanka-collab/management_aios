@@ -2499,6 +2499,22 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       text-align: left;
+      /* .msc-modal-form-head below is the sticky header living INSIDE
+         this exact scrolling element — its own rendered box is ~41px
+         (30px Close button + 10px padding-bottom + 1px border), rounded
+         up to 44px here. scroll-padding-top tells the browser's native
+         scroll-into-view (used implicitly by Element.focus(), e.g.
+         focusFirstInvalid() on a validation error) to treat that many
+         pixels as already "occupied" by the sticky header, so a focused
+         field always lands fully BELOW it instead of tucked underneath
+         (bulk-tasks-modal-scroll-and-first-row-alignment task,
+         2026-07-24). JS additionally resets scrollTop to 0 on every
+         open/tab-switch (resetCreatePopupScroll() in instance.js) — that
+         is the fix for the reported defect itself (a stale scroll
+         position was being carried across tab switches/reopens); this
+         property only covers scrolling that happens for a genuine reason
+         afterward (e.g. jumping to a validation error). */
+      scroll-padding-top: 44px;
     }
 
     .msc-modal-form-head {

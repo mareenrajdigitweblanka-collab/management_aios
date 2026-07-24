@@ -584,7 +584,14 @@ function mountScheduleCalendarInstance(container) {
        UI-text-removal task, 2026-07-23). */
     '<div class="msc-create-bulk-fields" hidden>' +
     '<div class="msc-form-card">' +
-    '<div class="hr-table-title" style="margin-bottom:10px;">Create multiple tasks</div>' +
+    /* No inner "Create multiple tasks" heading here (bulk-tasks-modal-
+       scroll-and-first-row-alignment task, 2026-07-24 — this exact string
+       is already the sticky dialog heading whenever this tab is active,
+       set by setCreateDialogTab() above; keeping both rendered a visible
+       duplicate heading and pushed TASK 1 further down for no reason).
+       The Task tab's equivalent .hr-table-title deliberately shows
+       different text ("Schedule Item — <date>"), so it is not a
+       duplicate and is left exactly as-is. */
     '<form class="msc-bulk-form" autocomplete="off">' +
     '<div class="msc-bulk-rows"></div>' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-bulk-add-row-btn">+ Add another task</button>' +
@@ -773,6 +780,14 @@ function mountScheduleCalendarInstance(container) {
      working unchanged. ── */
   var createWrapEl = container.querySelector('.msc-create-wrap');
   var createPopupOverlay = container.querySelector('.msc-create-popup');
+  /* The actual scrolling element (.msc-modal-form, overflow-y:auto —
+     calendar.css) — .msc-modal-form-head (title/Close button) is
+     position:sticky/top:0 WITHIN this same element, so its scrollTop is
+     what determines whether the sticky header ends up overlapping tabs/
+     TASK 1 or sitting cleanly above them (bulk-tasks-modal-scroll-and-
+     first-row-alignment task, 2026-07-24). Reset via
+     resetCreatePopupScroll() below on every open/tab-switch. */
+  var createPopupCard = createPopupOverlay.querySelector('.msc-modal');
   var createPopupClose = container.querySelector('.msc-create-popup-close');
   var createPopupHeading = container.querySelector('.msc-create-popup-heading');
   var createTabsEl = container.querySelector('.msc-create-tabs');
@@ -929,6 +944,23 @@ function mountScheduleCalendarInstance(container) {
      whatever value it already had (each tab's fields are never cleared by
      a tab switch — only Create/blank-cell entry points reset them, via
      cancelEdit()/cancelLeaveEdit(), exactly as before). */
+  /* Screenshot-derived defect fix (bulk-tasks-modal-scroll-and-first-row-
+     alignment task, 2026-07-24) — root cause was that nothing ever reset
+     .msc-modal-form's own scrollTop back to 0 on open or on tab-switch.
+     .msc-modal-form-head is position:sticky/top:0 INSIDE that same
+     scrolling element (calendar.css), so a stale scrollTop left over from
+     a previous tab/session (e.g. scrolled down while the longer Task tab
+     was active, or a prior Bulk Tasks session) meant the sticky header
+     visually pinned itself over whatever content NOW happened to sit at
+     that same offset in the freshly-shown tab — clipping the tabs and the
+     top of TASK 1 behind the header, exactly as in the reported
+     screenshot, even though nothing was actually wrong with TASK 1's own
+     markup/CSS. This does not touch entered field values — only the
+     scroll position of the modal card itself. */
+  function resetCreatePopupScroll() {
+    if (createPopupCard) { createPopupCard.scrollTop = 0; }
+  }
+
   /* kind: 'task' | 'bulk' | 'leave' (same-day-bulk-task-creation task,
      2026-07-23 added 'bulk' as a third state alongside the pre-existing
      'task'/'leave' pair — every existing 'task'/'leave' branch below is
@@ -968,6 +1000,11 @@ function mountScheduleCalendarInstance(container) {
         ? 'Create'
         : (isBulk ? 'Create multiple tasks' : (editingLeaveId ? 'Edit leave' : 'Create Leave'));
     }
+    /* Every open (openCreatePopup calls this first) and every tab switch
+       funnels through here — one single place resets scroll position, so
+       there is no separate "reset on open" vs. "reset on tab switch" path
+       to keep in sync. */
+    resetCreatePopupScroll();
   }
 
   if (createTabTaskBtn) {
@@ -1028,6 +1065,14 @@ function mountScheduleCalendarInstance(container) {
     setCreateDialogTab(kind);
     if (createTabsEl) { createTabsEl.hidden = editing; }
     createPopupOverlay.classList.add('show');
+    /* Belt-and-braces alongside the reset already inside
+       setCreateDialogTab() above — that call runs while the overlay is
+       still display:none (before .show is added here), and some browsers
+       are inconsistent about whether a scrollTop assignment on a hidden
+       element is retained once it becomes visible. Re-asserting it here,
+       now that the card actually has layout, guarantees the dialog always
+       opens at the top regardless of that. */
+    resetCreatePopupScroll();
     /* Modal background scroll lock (popup-detail-close-and-scroll-
        containment task, 2026-07-23) — this is a true centered modal
        (full-screen overlay), so the background page must not scroll
