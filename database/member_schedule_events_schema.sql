@@ -35,6 +35,29 @@
 -- reflects the target state for a fresh install. For an existing deployment,
 -- apply database/migrations/2026-07-16-increase-member-schedule-title-limit.sql
 -- instead, which safely widens the live column via ALTER COLUMN ... TYPE.
+--
+-- 2026-07-24: outcome column + CHECK constraint added (CONFIRMED
+-- UNTOUCHED-TASK OUTCOME task) — a nullable Completed/Uncompleted value the
+-- user explicitly sets; NULL means no outcome recorded yet. The
+-- Pending/No response display states are never stored, only derived at
+-- read time from outcome + event_date (see backend/time_utils.py). Because
+-- this script uses CREATE TABLE IF NOT EXISTS, re-running it against an
+-- already-existing table does NOT add this column — this file only
+-- reflects the target state for a fresh install. For an existing
+-- deployment, apply
+-- database/migrations/2026-07-24-add-task-outcome-column.sql instead.
+--
+-- 2026-07-24 (same day, FINAL CONFIRMED REASON-TRANSITION RULE): three more
+-- columns added — outcome_reason (required, trimmed, nonblank, <=250 chars
+-- exactly when outcome='Uncompleted'; NULL otherwise, enforced by the
+-- pairing CHECK constraint below), outcome_updated_at, and
+-- outcome_updated_by (the authoritative server-side UTC instant and
+-- canonical member_key of the last outcome write — deliberately separate
+-- from the pre-existing updated_at/updated_by columns, which stay reserved
+-- for title/date/priority/time/notes content edits). Same CREATE TABLE IF
+-- NOT EXISTS caveat as above — apply
+-- database/migrations/2026-07-24-add-task-outcome-column.sql to an existing
+-- deployment instead.
 
 -- gen_random_uuid() is built into PostgreSQL core since PG 13; pgcrypto is
 -- only needed on older servers. Guarded so it is a no-op (and does not fail)
@@ -57,6 +80,10 @@ CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events (
     start_time TIME NULL,
     end_time TIME NULL,
     notes VARCHAR(240) NULL,
+    outcome TEXT NULL,
+    outcome_reason VARCHAR(250) NULL,
+    outcome_updated_at TIMESTAMPTZ NULL,
+    outcome_updated_by TEXT NULL,
 
     source_scope TEXT NOT NULL DEFAULT 'dashboard_testing',
     is_official_truth BOOLEAN NOT NULL DEFAULT FALSE,
@@ -75,6 +102,18 @@ CREATE TABLE IF NOT EXISTS management_aios.member_schedule_events (
 
     CONSTRAINT member_schedule_events_category_check
     CHECK (category IN ('Scheduled Task', 'Unscheduled Task')),
+
+    CONSTRAINT member_schedule_events_outcome_check
+    CHECK (outcome IS NULL OR outcome IN ('Completed', 'Uncompleted')),
+
+    CONSTRAINT member_schedule_events_outcome_reason_pairing_check
+    CHECK (
+        (outcome = 'Uncompleted' AND outcome_reason IS NOT NULL
+            AND trim(outcome_reason) <> ''
+            AND length(trim(outcome_reason)) <= 250)
+        OR (outcome = 'Completed' AND outcome_reason IS NULL)
+        OR (outcome IS NULL AND outcome_reason IS NULL)
+    ),
 
     CONSTRAINT member_schedule_events_source_scope_check
     CHECK (source_scope IN ('dashboard_testing', 'pilot', 'approved_live')),

@@ -39,6 +39,7 @@ from backend.config import (
     SHORT_LEAVE_MONTHLY_CAP_MINUTES,
     VALID_PRIORITIES,
 )
+from backend.time_utils import derive_task_outcome
 
 
 class MemberScheduleEventCreate(BaseModel):
@@ -115,7 +116,93 @@ class MemberScheduleEventOut(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
+    # ── Task outcome (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24) ──────
+    # `outcome` is the only client-settable value here (via PUT
+    # /{member_key}/{event_id}/outcome — TaskOutcomeUpdate below) and stays
+    # None until a user explicitly marks a task Completed or Uncompleted.
+    # `outcome_status` and `outcome_locked` are never stored — both are
+    # derived fresh on every response by the validator below (never in
+    # JavaScript), from `date`/`outcome` and Asia/Colombo "now", so a task
+    # automatically reads as "No response" once its deadline passes
+    # without any write ever happening (no scheduled/midnight job exists
+    # in this codebase, and none is introduced by this feature). See
+    # backend/time_utils.py derive_task_outcome() for the full rationale.
+    outcome: Optional[Literal["Completed", "Uncompleted"]] = None
+    outcome_status: str = "Pending"
+    outcome_locked: bool = False
+
+    # FINAL CONFIRMED REASON-TRANSITION RULE (2026-07-24). outcome_reason,
+    # outcome_updated_at, and outcome_updated_by are plain passthrough
+    # fields — stored as-is, never derived here (unlike outcome_status/
+    # outcome_locked above). outcome_reason is NULL whenever outcome is
+    # NULL or 'Completed' (enforced at write time by TaskOutcomeUpdate and
+    # by the DB pairing CHECK constraint — see backend/models.py), so a
+    # cleared reason is never returned by this API once a task has been
+    # marked Completed; there is no separate "hide the old reason" step
+    # here because there is nothing left to hide.
+    outcome_reason: Optional[str] = None
+    outcome_updated_at: Optional[datetime] = None
+    outcome_updated_by: Optional[str] = None
+
     model_config = {"from_attributes": True, "populate_by_name": True}
+
+    @model_validator(mode="after")
+    def compute_outcome_fields(self) -> "MemberScheduleEventOut":
+        self.outcome_status, self.outcome_locked = derive_task_outcome(self.date, self.outcome)
+        return self
+
+
+class TaskOutcomeUpdate(BaseModel):
+    """Request body for PUT /api/member-schedules/{member_key}/{event_id}/outcome
+    (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24; reason/timestamp/actor
+    behavior added same-day by the FINAL CONFIRMED REASON-TRANSITION RULE)
+    — the only write path for MemberScheduleEvent.outcome/outcome_reason.
+    'Pending' and 'No response' are never accepted here: they are derived,
+    read-only display states (MemberScheduleEventOut.outcome_status), never
+    persisted values. The endpoint itself
+    (backend/routers/member_schedules.py update_member_schedule_event_outcome)
+    rejects the request once the task's own deadline has passed, regardless
+    of whether an outcome was already recorded.
+
+    Reason contract (CONFIRMED):
+    - outcome='Uncompleted' requires `reason` to be present and, once
+      trimmed, nonblank and <=250 characters — otherwise this raises a
+      ValidationError (422). The stored value is always the trimmed string,
+      never the raw one (so leading/trailing whitespace never counts
+      against the 250-character limit and is never persisted).
+    - outcome='Completed' requires `reason` to be omitted, null, or an
+      empty/whitespace-only string — normalized to None either way. A
+      nonblank `reason` alongside outcome='Completed' is rejected with a
+      ValidationError (422): this endpoint deliberately REJECTS rather than
+      silently discards a client-supplied Completed reason, so a caller
+      that thinks it is saving a reason against a Completed task finds out
+      immediately rather than losing that text silently. The documented,
+      deterministic Completed request shape is therefore always
+      {"outcome": "Completed", "reason": null}.
+    - Whatever value survives validation is exactly what the router writes
+      to outcome_reason — see update_member_schedule_event_outcome, which
+      never re-derives or re-trims it."""
+
+    outcome: Literal["Completed", "Uncompleted"]
+    reason: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_reason_for_outcome(self) -> "TaskOutcomeUpdate":
+        if self.outcome == "Uncompleted":
+            trimmed = (self.reason or "").strip()
+            if not trimmed:
+                raise ValueError("A reason is required when marking a task Uncompleted.")
+            if len(trimmed) > 250:
+                raise ValueError("Reason must be 250 characters or fewer.")
+            self.reason = trimmed
+        else:  # Completed
+            if self.reason is not None and self.reason.strip():
+                raise ValueError(
+                    "A reason cannot be provided when marking a task Completed — "
+                    "the previous Uncompleted reason (if any) is cleared automatically."
+                )
+            self.reason = None
+        return self
 
 
 class BulkTaskRowIn(BaseModel):

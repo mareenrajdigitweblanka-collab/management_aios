@@ -30,6 +30,26 @@ preceding Sunday 23:59:59 Asia/Colombo (get_preceding_sunday_cutoff below).
   either classification function — they only ever read the stored category
   column, so existing historical rows are frozen until a specific task is
   itself successfully edited.
+
+Task outcome (2026-07-24, CONFIRMED UNTOUCHED-TASK OUTCOME — see
+backend/time_utils.py): a fully separate concept from category/
+classification above. PUT /{member_key}/{event_id}/outcome is the only
+write path for the outcome column; it never touches category, never calls
+classify_updated_task, and never affects Schedule Summary aggregation.
+'Pending'/'No response' are display states derived at read time from
+outcome + event_date — never persisted, never produced by a scheduled/
+midnight job (no such job exists anywhere in this codebase).
+
+Reason/timestamp/actor (2026-07-24, same day, FINAL CONFIRMED
+REASON-TRANSITION RULE): the same PUT /{member_key}/{event_id}/outcome
+endpoint also owns outcome_reason/outcome_updated_at/outcome_updated_by.
+outcome_reason is required (trimmed, nonblank, <=250 chars) exactly when
+outcome='Uncompleted' and forced to NULL otherwise (validated in
+backend/schemas.py TaskOutcomeUpdate, enforced again by a DB pairing CHECK
+constraint) — a Completed transition always clears a prior reason to NULL
+in the same atomic write, so it is never retained or returned once
+cleared. outcome_updated_at/outcome_updated_by are a dedicated audit pair,
+separate from the pre-existing updated_at/updated_by columns.
 """
 
 import calendar
@@ -65,8 +85,10 @@ from backend.schemas import (
     MemberScheduleEventOut,
     MemberScheduleEventUpdate,
     MonthlyScheduleReportOut,
+    TaskOutcomeUpdate,
     WeeklyScheduleReportOut,
 )
+from backend.time_utils import colombo_today, derive_task_outcome
 
 router = APIRouter(prefix="/api/member-schedules", tags=["member-schedules"])
 
@@ -1122,6 +1144,31 @@ def update_member_schedule_event(
     # classify_updated_task().
     update_data.pop("category", None)
 
+    # FINAL BUSINESS RULES (2026-07-24) — Rule 8: once an outcome is
+    # recorded, the task's event_date can never change again. Drag and
+    # resize funnel through this same handler (see the module docstring),
+    # so this one check also blocks a cross-day drag — a same-day resize
+    # (start/end time only) is unaffected since it never sends a changed
+    # `date`. Title/notes/priority/start/end-time editing remain allowed
+    # even with a recorded outcome (explicit carve-out from Rule 8) — only
+    # an actual date change is blocked, checked before the leave-conflict
+    # check below so a doomed request never runs that query for nothing.
+    if (
+        event.outcome is not None
+        and "date" in update_data
+        and update_data["date"] != event.event_date
+    ):
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": "outcome_recorded_immutable",
+                "message": (
+                    "This task's date can't be changed — an outcome has "
+                    "already been recorded for it."
+                ),
+            },
+        )
+
     effective_date = update_data.get("date", event.event_date)
     effective_start = update_data.get("start", event.start_time)
     effective_end = update_data.get("end", event.end_time)
@@ -1167,6 +1214,112 @@ def update_member_schedule_event(
     return event
 
 
+@router.put("/{member_key}/{event_id}/outcome", response_model=MemberScheduleEventOut)
+def update_member_schedule_event_outcome(
+    member_key: str,
+    event_id: UUID,
+    payload: TaskOutcomeUpdate,
+    db: Session = Depends(get_db),
+):
+    """CONFIRMED UNTOUCHED-TASK OUTCOME (2026-07-24) — the only write path
+    for MemberScheduleEvent.outcome/outcome_reason/outcome_updated_at/
+    outcome_updated_by. Deliberately a separate endpoint from the general
+    PUT /{member_key}/{event_id} above: outcome is orthogonal to
+    date/title/priority/time/notes editing and must never touch
+    classify_updated_task() or the stored category, and must never affect
+    Schedule Summary's _aggregate_schedule_period (both read the category
+    column only — this endpoint never assigns it).
+
+    FINAL BUSINESS RULES (2026-07-24, this revision — narrows the window):
+    actions are permitted ONLY on the task's own Asia/Colombo calendar date
+    (today == event_date) — a future task (today < event_date) is rejected
+    with 409 outcome_not_available_yet, and a past task (today >
+    event_date) is rejected with 409 outcome_locked, whether or not an
+    outcome was already recorded either way. Reuses derive_task_outcome()
+    (backend/time_utils.py) for this check so the lock decision and the
+    outcome_locked field returned in every response can never disagree. On
+    either 409, NONE of outcome/outcome_reason/outcome_updated_at/
+    outcome_updated_by are touched — the function returns before any
+    assignment to `event` runs.
+
+    FINAL CONFIRMED REASON-TRANSITION RULE (2026-07-24, same day): payload
+    (TaskOutcomeUpdate) has already normalized `reason` by the time this
+    body runs — trimmed and required for 'Uncompleted', forced to None for
+    'Completed' (a nonblank reason alongside 'Completed' is rejected by the
+    schema layer before this function is ever called). So this handler only
+    needs to assign, never re-validate:
+      - event.outcome = payload.outcome
+      - event.outcome_reason = payload.reason (None for Completed, the
+        trimmed text for Uncompleted — this is what "clear the previous
+        Uncompleted reason" and "do not retain it as hidden text" mean in
+        practice: the previous value is simply overwritten with None in
+        the same UPDATE, never preserved in any column, log, or shadow
+        field, so a subsequent GET can never surface it again)
+      - event.outcome_updated_at = now (one instant, generated once below,
+        the same "authoritative server clock, generated once, never
+        client-supplied" convention create_member_schedule_event/
+        update_member_schedule_event already use for created_at/updated_at)
+      - event.outcome_updated_by = member_key (the URL path's own
+        member_key, already validated by _validate_member_key above — this
+        app has no separate authenticated-actor concept, so the calendar
+        instance's own member context IS the canonical actor)
+
+    Atomicity: every assignment above happens on the same in-memory `event`
+    ORM object; nothing is flushed to the database until the single
+    db.commit() call below. If that commit fails for any reason (e.g. a
+    CHECK-constraint violation that somehow reached this point despite the
+    schema-layer validation above), SQLAlchemy/Postgres roll back the
+    entire UPDATE as one unit — outcome, outcome_reason,
+    outcome_updated_at, and outcome_updated_by are guaranteed to either all
+    change together or none of them change at all. This is the existing
+    session lifecycle (backend/database.py get_db(): a single Session, one
+    commit, close() in a finally block) — no new transaction-management
+    code was introduced for this guarantee.
+
+    updated_at/updated_by (the general, pre-existing columns) are
+    deliberately left untouched by this endpoint — they remain the audit
+    trail for actual title/date/priority/time/notes content edits (see the
+    general PUT handler above and formatTaskTimestamp() in the frontend).
+    outcome_updated_at/outcome_updated_by are a dedicated, separate audit
+    pair that exists specifically so an outcome action is never confused
+    with a content edit, and so it is never left unaudited either."""
+    _validate_member_key(member_key)
+    event = _get_active_event_or_404(db, member_key, event_id)
+
+    today = colombo_today()
+    _, locked = derive_task_outcome(event.event_date, event.outcome, today=today)
+    if locked:
+        if today < event.event_date:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": "outcome_not_available_yet",
+                    "message": (
+                        "Outcome actions are available on the task's own date "
+                        "(Asia/Colombo). This task is not there yet."
+                    ),
+                },
+            )
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": "outcome_locked",
+                "message": (
+                    "This task's outcome can no longer be changed — its "
+                    "date (Asia/Colombo) has passed."
+                ),
+            },
+        )
+
+    event.outcome = payload.outcome
+    event.outcome_reason = payload.reason
+    event.outcome_updated_at = datetime.now(timezone.utc)
+    event.outcome_updated_by = member_key
+    db.commit()
+    db.refresh(event)
+    return event
+
+
 @router.delete("/{member_key}/clear-testing-data", status_code=200)
 def clear_testing_data(member_key: str, db: Session = Depends(get_db)):
     _validate_member_key(member_key)
@@ -1190,8 +1343,25 @@ def clear_testing_data(member_key: str, db: Session = Depends(get_db)):
 def delete_member_schedule_event(
     member_key: str, event_id: UUID, db: Session = Depends(get_db)
 ):
+    """FINAL BUSINESS RULES (2026-07-24) — Rule 8: once an outcome is
+    recorded, the task is permanently preserved as read-only evidence and
+    can never be deleted (no rule in this codebase ever clears outcome
+    back to NULL, so this is a one-way, permanent protection once an
+    outcome is first recorded)."""
     _validate_member_key(member_key)
     event = _get_active_event_or_404(db, member_key, event_id)
+
+    if event.outcome is not None:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": "outcome_recorded_immutable",
+                "message": (
+                    "This task can't be deleted — an outcome has already "
+                    "been recorded for it."
+                ),
+            },
+        )
 
     event.deleted_at = datetime.now(timezone.utc)
     db.commit()
