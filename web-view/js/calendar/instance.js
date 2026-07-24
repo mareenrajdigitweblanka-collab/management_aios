@@ -476,6 +476,8 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-view-category"></p>' +
     '<p class="msc-view-priority"></p>' +
     '<p class="msc-view-notes"></p>' +
+    '<p class="msc-view-created-at"></p>' +
+    '<p class="msc-view-updated-at"></p>' +
     /* Task outcome (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24) — a
        status line plus Mark Completed/Uncompleted controls. Both buttons
        are disabled once outcome_locked is true (viewItem() below), which
@@ -516,8 +518,6 @@ function mountScheduleCalendarInstance(container) {
     '<button type="button" class="msc-btn msc-btn-ghost msc-view-outcome-reason-cancel-btn">Cancel</button>' +
     '</div>' +
     '</div>' +
-    '<p class="msc-view-created-at"></p>' +
-    '<p class="msc-view-updated-at"></p>' +
     '</div>' +
     '</div>' +
     /* ── Shared Leave-detail popup (popup-detail-close-and-scroll-
@@ -4058,8 +4058,9 @@ function mountScheduleCalendarInstance(container) {
     viewCategory.textContent = 'Category: ' + it.category;
     viewPriority.textContent = 'Priority: ' + (it.priority || 'Medium');
     viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
-    renderOutcome(it);
-    /* Task Created/Updated at (2026-07-23) — read-only, plain-text display
+    /* Task Created/Updated at (2026-07-23; moved to directly below Notes
+       2026-07-24 per live layout feedback — was previously last in the
+       popup, below the outcome section) — read-only, plain-text display
        of the authoritative it.created_at/it.updated_at values already
        carried on the current Task object (apiItemToFrontend(), core.js).
        formatTaskTimestamp() converts the stored UTC value to Asia/Colombo
@@ -4070,6 +4071,7 @@ function mountScheduleCalendarInstance(container) {
        Task list are untouched. */
     viewCreatedAt.textContent = 'Created at: ' + formatTaskTimestamp(it.created_at);
     viewUpdatedAt.textContent = 'Updated at: ' + formatTaskTimestamp(it.updated_at);
+    renderOutcome(it);
     /* FINAL BUSINESS RULES (2026-07-24, closure review pass — Rule 8):
        once any outcome is recorded, the task is permanently preserved as
        read-only evidence and can never be deleted — backend-enforced
