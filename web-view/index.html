@@ -55,6 +55,26 @@
       <span id="searchHint" class="visually-hidden">Search by person, topic, task, or status. Examples: verify,
         blocked, arun, draft.</span>
     </div>
+    <!-- Next-week planning deadline warning (2026-07-24 weekend-planning-
+         warning task) — informational only, never classifies or persists
+         Task category. Shown only on the five member schedule pages
+         (js/planning-warning.js checks .tab-panel--calendar) during the
+         Asia/Colombo Friday 07:00:00-through-Sunday 23:59:59 window; the
+         aria-hidden default keeps it out of the accessibility tree until
+         that script confirms both conditions. -->
+    <div class="topbar-planning-warning" id="topbarPlanningWarning" role="status" aria-live="polite"
+      aria-hidden="true">
+      <svg class="topbar-planning-warning-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="10" cy="10" r="7.2" />
+        <path d="M10 6.2v4.3l2.6 1.6" />
+      </svg>
+      <span class="topbar-planning-warning-text">
+        <strong class="topbar-planning-warning-title">Next-week planning deadline</strong>
+        <span class="topbar-planning-warning-msg">Assign all next-week tasks before Sunday 11:59:59 PM. Tasks
+          created at or after the cutoff are classified as Unscheduled.</span>
+      </span>
+    </div>
   </header>
 
   <!-- ═══════════════════════════════════

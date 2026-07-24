@@ -10,6 +10,7 @@
 import { initNavigation } from './navigation.js';
 import { initAllScheduleCalendars } from './calendar/instance.js';
 import { initStaffDataPilot } from './staff-data.js';
+import { initPlanningWarning } from './planning-warning.js';
 
 function boot() {
   /* Each subsystem is idempotent to a single call and mounts its listeners /
@@ -17,6 +18,7 @@ function boot() {
   initNavigation();
   initAllScheduleCalendars();
   initStaffDataPilot();
+  initPlanningWarning();
 }
 
 if (document.readyState === 'loading') {

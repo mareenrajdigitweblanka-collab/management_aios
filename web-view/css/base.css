@@ -217,6 +217,61 @@
       flex-shrink: 0;
     }
 
+    /* ── Next-week planning deadline warning (2026-07-24 weekend-planning-
+       warning task) ── Third .topbar flex child, after search. Hidden by
+       default (display:none, toggled to flex only via the --visible
+       modifier planning-warning.js applies) — informational only, this
+       never affects Task classification. margin-left:auto pushes it into
+       the header's empty trailing space (the same space .topbar-search's
+       own max-width already leaves free on wide screens) without
+       disturbing .topbar-left or .topbar-search. No transition/animation
+       by design (Step 3 "no animation that distracts users"). */
+    .topbar-planning-warning {
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
+      margin-left: auto;
+      flex-shrink: 0;
+      max-width: 400px;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--amber-bg);
+      border: 1px solid rgba(180, 83, 9, .35);
+    }
+
+    .topbar-planning-warning--visible {
+      display: flex;
+    }
+
+    .topbar-planning-warning-icon {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: var(--amber);
+    }
+
+    .topbar-planning-warning-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .topbar-planning-warning-title {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--amber);
+      line-height: 1.25;
+    }
+
+    .topbar-planning-warning-msg {
+      font-size: .68rem;
+      font-weight: 500;
+      color: #92400e;
+      line-height: 1.35;
+    }
+
     /* Narrow header: drop the least-essential elements first, but the
        product identity and search are never hidden. */
     @media (max-width: 900px) {
@@ -226,6 +281,30 @@
 
       .topbar-search {
         max-width: 320px;
+      }
+
+      /* Tablet/mobile: the planning warning drops to its own full-width
+         row below identity+search (Step 9 "compact second header row" /
+         "full-width compact notice beneath the primary header row")
+         instead of squeezing into the same row as the logo and search.
+         .topbar's height is fixed (var(--header-height), 56px) the rest
+         of the time — deliberately relaxed to auto/min-height ONLY while
+         body.planning-warning-visible is set (planning-warning.js, in
+         lockstep with the banner's own --visible class), so the header
+         stays exactly 56px everywhere else (scroll-margin-top offset,
+         calendar canvas-height formula in tokens.css both assume that). */
+      body.planning-warning-visible .topbar {
+        flex-wrap: wrap;
+        row-gap: 6px;
+        height: auto;
+        min-height: var(--header-height);
+      }
+
+      .topbar-planning-warning {
+        order: 3;
+        flex: 1 1 100%;
+        margin-left: 0;
+        max-width: none;
       }
     }
 

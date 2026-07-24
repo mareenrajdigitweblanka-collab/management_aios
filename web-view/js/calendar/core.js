@@ -98,6 +98,39 @@ export function parseDateStr(dateStr) { return new Date(dateStr + 'T00:00:00'); 
 var COLOMBO_TODAY_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' });
 export function getColomboTodayStr() { return COLOMBO_TODAY_FMT.format(new Date()); }
 
+/* Asia/Colombo weekday + time-of-day, expressed as whole seconds since
+   Monday 00:00:00 (0..604799) — also consumed by the shared header's
+   next-week-planning warning (js/planning-warning.js) to evaluate its
+   Friday 07:00:00-through-Sunday 23:59:59 visibility window. Colombo has
+   a fixed UTC+5:30 offset (no DST), so this is deterministic regardless
+   of the viewer's local timezone or clock. Takes an optional epoch-ms
+   timestamp so callers (and tests) can evaluate a specific instant
+   instead of "now". */
+var COLOMBO_WEEK_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Colombo', weekday: 'short',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+});
+var COLOMBO_WEEKDAY_INDEX = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+export function getColomboWeekSeconds(epochMs) {
+  var d = typeof epochMs === 'number' ? new Date(epochMs) : new Date();
+  var map = {};
+  COLOMBO_WEEK_FMT.formatToParts(d).forEach(function (p) { map[p.type] = p.value; });
+  var hour = map.hour === '24' ? 0 : parseInt(map.hour, 10);
+  var dayIndex = COLOMBO_WEEKDAY_INDEX[map.weekday];
+  return dayIndex * 86400 + hour * 3600 + parseInt(map.minute, 10) * 60 + parseInt(map.second, 10);
+}
+
+/* Pure Friday 07:00:00 - Sunday 23:59:59 (Colombo) window check for the
+   header planning warning. Sunday's end is the end of Sunday (seconds-of-
+   week < the following Monday 00:00:00), never Sunday 23:59:59 read as
+   "Monday 23:59:59". Kept separate from getColomboWeekSeconds so the
+   window boundary itself is unit-testable without touching Intl/Date. */
+var PLANNING_WARNING_WINDOW_START = 4 * 86400 + 7 * 3600; // Friday 07:00:00
+var PLANNING_WARNING_WINDOW_END = 7 * 86400; // Monday 00:00:00 (exclusive)
+export function isWithinPlanningWarningWindow(weekSeconds) {
+  return weekSeconds >= PLANNING_WARNING_WINDOW_START && weekSeconds < PLANNING_WARNING_WINDOW_END;
+}
+
 export function isValidDateStr(s) {
   if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) { return false; }
   var d = parseDateStr(s);

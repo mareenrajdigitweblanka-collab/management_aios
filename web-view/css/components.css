@@ -812,7 +812,8 @@
     @media print {
       .app-sidebar,
       .app-sidebar-toggle,
-      .topbar-search {
+      .topbar-search,
+      .topbar-planning-warning {
         display: none;
       }
 
