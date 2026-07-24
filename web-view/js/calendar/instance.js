@@ -569,12 +569,15 @@ function mountScheduleCalendarInstance(container) {
     '</form>' +
     '</div>' +
     '</div>' +
-    /* ── Bulk Tasks tab (same-day-bulk-task-creation task, 2026-07-23) —
+    /* ── Bulk Tasks tab (same-day-bulk-task-creation task, 2026-07-23;
+       per-row Date field, confirmed-add-row-date-rule task, 2026-07-24) —
        third tab in the unified Create dialog, additive alongside the
-       unchanged Task/Leave tabs above/below. One common Date field; the
-       row list itself is rendered/managed entirely in JS (renderBulkRows()
-       et al. below) rather than as static markup, since rows are added/
-       removed dynamically (start at 1-2 rows, grow to a max of
+       unchanged Task/Leave tabs above/below. Each row carries its own
+       independently editable Date field (no common batch-wide Date field
+       any more — see bulkRowMarkup() below); the row list itself is
+       rendered/managed entirely in JS (renderBulkRows() et al. below)
+       rather than as static markup, since rows are added/removed
+       dynamically (start at 1 row, grow to a max of
        MAX_BULK_TASK_ROWS = 30, mirroring the backend's own cap). No
        Scheduled/Unscheduled selector exists here, matching the single-Task
        form (no visible classification note is shown in either form;
@@ -583,9 +586,6 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-form-card">' +
     '<div class="hr-table-title" style="margin-bottom:10px;">Create multiple tasks</div>' +
     '<form class="msc-bulk-form" autocomplete="off">' +
-    '<label class="msc-bulk-date-field">Date<input type="date" class="msc-bulk-field-date" required /></label>' +
-    '<p class="msc-form-full msc-bulk-leave-blocked-note" hidden>No new Task can be added on this date — it is ' +
-    'covered by Full-Day or Multi-Day leave.</p>' +
     '<div class="msc-bulk-rows"></div>' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-bulk-add-row-btn">+ Add another task</button>' +
     '</form>' +
@@ -791,10 +791,12 @@ function mountScheduleCalendarInstance(container) {
   var leavePopupOverlay = createPopupOverlay;
   var leavePopupClose = createPopupClose;
 
-  /* ── Same-day Bulk Tasks (2026-07-23) scoped refs ── */
+  /* ── Same-day Bulk Tasks (2026-07-23) scoped refs — bulkFieldDate/
+     bulkLeaveBlockedNote (the former single common Date field/note) were
+     removed by the confirmed-add-row-date-rule task, 2026-07-24; each row
+     now owns its own Date input and leave-blocked note (see
+     bulkRowMarkup() below). ── */
   var bulkFormEl = container.querySelector('.msc-bulk-form');
-  var bulkFieldDate = container.querySelector('.msc-bulk-field-date');
-  var bulkLeaveBlockedNote = container.querySelector('.msc-bulk-leave-blocked-note');
   var bulkRowsEl = container.querySelector('.msc-bulk-rows');
   var bulkAddRowBtn = container.querySelector('.msc-bulk-add-row-btn');
   var bulkCreateBtn = container.querySelector('.msc-bulk-create-btn');
@@ -971,7 +973,7 @@ function mountScheduleCalendarInstance(container) {
   if (createTabTaskBtn) {
     createTabTaskBtn.addEventListener('click', function () {
       if (activeCreateTab === 'task') { return; }
-      var dateVal = activeCreateTab === 'bulk' ? bulkFieldDate.value : leaveFieldStartDate.value;
+      var dateVal = activeCreateTab === 'bulk' ? firstBulkRowDate() : leaveFieldStartDate.value;
       setCreateDialogTab('task');
       if (dateVal && !fieldDate.value) { fieldDate.value = dateVal; }
       if (fieldTitle && fieldTitle.focus) { fieldTitle.focus(); }
@@ -980,18 +982,25 @@ function mountScheduleCalendarInstance(container) {
   if (createTabBulkBtn) {
     createTabBulkBtn.addEventListener('click', function () {
       if (activeCreateTab === 'bulk') { return; }
+      /* CONFIRMED ADD-ROW DATE RULE (2026-07-24) rules 1/2 — the entry-
+         point default date (whatever the Task/Leave tab's date field
+         already held — the clicked Calendar date, or the preserved
+         main-entry default) only ever seeds a BRAND NEW row list. Once
+         rows already exist (the user already switched to this tab once
+         this dialog session), their own dates are left exactly as the
+         user set them — this must never overwrite an in-progress batch. */
       var dateVal = activeCreateTab === 'task' ? fieldDate.value : leaveFieldStartDate.value;
       setCreateDialogTab('bulk');
-      if (dateVal && !bulkFieldDate.value) { bulkFieldDate.value = dateVal; }
-      ensureBulkMinimumRows();
-      applyBulkLeaveGate();
-      if (bulkFieldDate && bulkFieldDate.focus) { bulkFieldDate.focus(); }
+      ensureBulkMinimumRows(dateVal);
+      updateBulkCreateButtonGate();
+      var firstDateEl = firstBulkRowDateEl();
+      if (firstDateEl && firstDateEl.focus) { firstDateEl.focus(); }
     });
   }
   if (createTabLeaveBtn) {
     createTabLeaveBtn.addEventListener('click', function () {
       if (activeCreateTab === 'leave') { return; }
-      var dateVal = activeCreateTab === 'bulk' ? bulkFieldDate.value : fieldDate.value;
+      var dateVal = activeCreateTab === 'bulk' ? firstBulkRowDate() : fieldDate.value;
       setCreateDialogTab('leave');
       if (dateVal && !leaveFieldStartDate.value) { leaveFieldStartDate.value = dateVal; }
       if (leaveFieldType && leaveFieldType.focus) { leaveFieldType.focus(); }
@@ -1028,10 +1037,10 @@ function mountScheduleCalendarInstance(container) {
     if (!alreadyOpen) { lockBodyScroll(); }
     createPopupOverlay.addEventListener('keydown', onCreatePopupKeydown);
     if (kind === 'bulk') {
-      ensureBulkMinimumRows();
-      applyBulkLeaveGate();
+      ensureBulkMinimumRows(fieldDate.value);
+      updateBulkCreateButtonGate();
     }
-    var focusEl = kind === 'task' ? fieldTitle : (kind === 'bulk' ? bulkFieldDate : leaveFieldType);
+    var focusEl = kind === 'task' ? fieldTitle : (kind === 'bulk' ? firstBulkRowDateEl() : leaveFieldType);
     if (focusEl && focusEl.focus) { focusEl.focus(); }
   }
 
@@ -1572,22 +1581,45 @@ function mountScheduleCalendarInstance(container) {
     });
   }
 
-  /* ── Same-day Bulk Tasks (2026-07-23) ──────────────────────────────────
-     One common Date field (msc-bulk-field-date) plus a dynamically
-     rendered, reorderable-by-remove list of task rows (msc-bulk-rows).
-     Reuses every existing rule this file/backend already enforces for a
-     single Task — no new business logic is invented here beyond routing
-     to POST {apiBase}/bulk with the approved request/response contract
+  /* ── Same-day Bulk Tasks (2026-07-23; per-row Date field added by the
+     CONFIRMED ADD-ROW DATE RULE task, 2026-07-24) ─────────────────────────
+     Each row is fully self-contained, including its own Date field — there
+     is no common batch-wide Date any more (superseded business decision;
+     see backend/schemas.py BulkTaskRowIn.date). Rows are a dynamically
+     rendered, reorderable-by-remove list (msc-bulk-rows). Reuses every
+     existing rule this file/backend already enforces for a single Task —
+     no new business logic is invented here beyond routing to POST
+     {apiBase}/bulk with the approved request/response contract
      (backend/schemas.py BulkTaskCreateRequest/BulkTaskRowIn). Duplicate
      confirmation reuses the shared confirmDestructive() dialog (ui/
      dialog.js) with confirmVariant:'primary' so "Create tasks anyway"
-     never wears the red delete-style button that dialog defaults to. */
+     never wears the red delete-style button that dialog defaults to.
+
+     Row-date defaulting rules (CONFIRMED ADD-ROW DATE RULE, 2026-07-24):
+     1. Opening from a clicked Calendar date seeds the initial row(s) with
+        that date (see ensureBulkMinimumRows() callers above).
+     2. Opening from the main Create button preserves whatever date was
+        already established as the entry-point default (same mechanism).
+     3. "+ Add another task" copies the immediately previous row's CURRENT
+        Date value (see the bulkAddRowBtn click handler below) — never the
+        original clicked Calendar date, never today, never one shared
+        batch-wide value.
+     4/5. The copied date is independently editable from that moment on —
+        copy-on-create only; editing an earlier row's Date afterward never
+        touches a row that already copied it (no live/linked date state
+        anywhere in this section).
+     6. A blank previous-row Date is copied as-is (never invented) — the
+        new row is simply left without a Date, which the existing
+        title-required-style validation below (bulkRowFieldErrors) and the
+        backend's own per-row date_required check both catch at submit
+        time. */
   var MAX_BULK_TASK_ROWS = 30; // mirrors backend/config.py MAX_BULK_TASK_ROWS
   var bulkRowSeq = 0;
   var bulkSubmitInFlight = false;
 
   function bulkRowFieldElement(rowEl, field) {
     if (!rowEl) { return null; }
+    if (field === 'date') { return rowEl.querySelector('.msc-bulk-row-date'); }
     if (field === 'title') { return rowEl.querySelector('.msc-bulk-row-title'); }
     if (field === 'start') { return rowEl.querySelector('.msc-bulk-row-start'); }
     if (field === 'end') { return rowEl.querySelector('.msc-bulk-row-end'); }
@@ -1604,10 +1636,25 @@ function mountScheduleCalendarInstance(container) {
     return getBulkRows()[rowNumber - 1] || null;
   }
 
+  /* First row's Date value/element — used only as the representative
+     "bulk date" when the user switches AWAY from the Bulk tab to Task or
+     Leave (carrying a value across tabs, same convention those tabs
+     already use for each other), and to focus the first row's Date field
+     when the Bulk tab becomes active. Never used to seed or overwrite any
+     row's own value once rows already exist. */
+  function firstBulkRowDate() {
+    var el = firstBulkRowDateEl();
+    return el ? el.value : '';
+  }
+
+  function firstBulkRowDateEl() {
+    var rows = getBulkRows();
+    return rows.length ? bulkRowFieldElement(rows[0], 'date') : null;
+  }
+
   function updateBulkAddButtonState() {
     if (!bulkAddRowBtn) { return; }
-    var blockedByLeave = !!(bulkFieldDate && bulkFieldDate.value && isDateFullyLeaveBlocked(bulkFieldDate.value));
-    bulkAddRowBtn.disabled = blockedByLeave || getBulkRows().length >= MAX_BULK_TASK_ROWS;
+    bulkAddRowBtn.disabled = getBulkRows().length >= MAX_BULK_TASK_ROWS;
   }
 
   function renderBulkRowNumbers() {
@@ -1621,8 +1668,9 @@ function mountScheduleCalendarInstance(container) {
     updateBulkAddButtonState();
   }
 
-  function bulkRowMarkup() {
+  function bulkRowMarkup(dateValue) {
     bulkRowSeq += 1;
+    var dateAttr = dateValue ? ' value="' + escapeHtml(dateValue) + '"' : '';
     return (
       '<div class="msc-bulk-row" data-bulk-row-seq="' + bulkRowSeq + '">' +
       '<div class="msc-bulk-row-head">' +
@@ -1633,6 +1681,7 @@ function mountScheduleCalendarInstance(container) {
          responsive behavior already defined for the Task/Leave forms) —
          no second grid/breakpoint rule is defined for Bulk Tasks. */
       '<div class="msc-bulk-row-fields msc-form-grid">' +
+      '<label>Date<input type="date" class="msc-bulk-row-date"' + dateAttr + ' required /></label>' +
       '<label>Task title<input type="text" class="msc-bulk-row-title" maxlength="120" placeholder="e.g. Prepare weekly report" /></label>' +
       '<label>Start time<input type="time" class="msc-bulk-row-start" /></label>' +
       '<label>End time<input type="time" class="msc-bulk-row-end" /></label>' +
@@ -1644,6 +1693,8 @@ function mountScheduleCalendarInstance(container) {
       '<label class="msc-form-full">Notes<textarea class="msc-bulk-row-notes" maxlength="240" ' +
       'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
       '</div>' +
+      '<p class="msc-form-full msc-bulk-leave-blocked-note" hidden>No new Task can be added on this date — it is ' +
+      'covered by Full-Day or Multi-Day leave.</p>' +
       '</div>'
     );
   }
@@ -1651,6 +1702,15 @@ function mountScheduleCalendarInstance(container) {
   function wireBulkRowEvents(rowEl) {
     var removeBtn = rowEl.querySelector('.msc-bulk-row-remove');
     if (removeBtn) { removeBtn.addEventListener('click', function () { removeBulkRow(rowEl); }); }
+    var dateEl = rowEl.querySelector('.msc-bulk-row-date');
+    if (dateEl) {
+      dateEl.addEventListener('input', function () {
+        clearFieldError(dateEl);
+        rowEl.classList.remove('msc-bulk-row-error', 'msc-bulk-row-duplicate-warning');
+        refreshBulkDuplicateHints();
+        updateBulkCreateButtonGate();
+      });
+    }
     ['msc-bulk-row-title', 'msc-bulk-row-start', 'msc-bulk-row-end', 'msc-bulk-row-notes'].forEach(function (cls) {
       var el = rowEl.querySelector('.' + cls);
       if (!el) { return; }
@@ -1664,13 +1724,17 @@ function mountScheduleCalendarInstance(container) {
     if (priorityEl) { priorityEl.addEventListener('change', refreshBulkDuplicateHints); }
   }
 
-  function addBulkRow() {
+  /* dateValue seeds the new row's Date field only at creation — every
+     caller decides what that seed should be (see the rules documented at
+     the top of this section); this function itself never invents one. */
+  function addBulkRow(dateValue) {
     if (!bulkRowsEl || getBulkRows().length >= MAX_BULK_TASK_ROWS) { return null; }
-    bulkRowsEl.insertAdjacentHTML('beforeend', bulkRowMarkup());
+    bulkRowsEl.insertAdjacentHTML('beforeend', bulkRowMarkup(dateValue));
     var rows = getBulkRows();
     var newRow = rows[rows.length - 1];
     wireBulkRowEvents(newRow);
     renderBulkRowNumbers();
+    applyRowLeaveGate(newRow);
     return newRow;
   }
 
@@ -1679,19 +1743,50 @@ function mountScheduleCalendarInstance(container) {
     rowEl.parentNode.removeChild(rowEl);
     renderBulkRowNumbers();
     refreshBulkDuplicateHints();
+    updateBulkCreateButtonGate();
   }
 
-  /* Begins with 2 rows on first use, per Step 16 ("begin with a
+  /* Begins with exactly 1 row on first use, per Step 16 ("begin with a
      reasonable number of rows, such as one or two... do not pre-create
-     all 30 rows") — only adds rows when the list is empty, so reopening
-     the dialog on an in-progress batch never discards what the user
-     already entered (resetBulkForm() below is the only path that empties
-     the list first). */
-  function ensureBulkMinimumRows() {
+     all 30 rows") — narrowed from the earlier 2-row start to exactly 1
+     by the CONFIRMED ADD-ROW DATE RULE task (2026-07-24: required test A
+     names it "the first row", and tests B/C only make sense if the row
+     "+ Add another task" creates next is Row 2, then Row 3 — i.e. the
+     form starts at Row 1, not Row 1+2). Only adds a row when the list is
+     empty, so reopening the dialog on an in-progress batch never
+     discards what the user already entered (resetBulkForm() below is the
+     only path that empties the list first). entryDateStr seeds this one
+     initial row (CONFIRMED ADD-ROW DATE RULE rules 1/2) — it is only
+     ever consulted here, at first-creation time; every row added
+     afterward via "+ Add another task" copies the previous row's own
+     current value instead (see the bulkAddRowBtn click handler below),
+     never this entry date again. */
+  function ensureBulkMinimumRows(entryDateStr) {
     if (getBulkRows().length === 0) {
-      addBulkRow();
-      addBulkRow();
+      addBulkRow(entryDateStr);
     }
+  }
+
+  /* Per-row Full-Day/Multi-Day leave gate (full-day-leave-blocks-create
+     task, 2026-07-23) — now evaluated per row instead of once for a
+     single common date, since each row can carry a different date.
+     Toggles that row's own inline note and returns whether it is
+     currently blocked; updateBulkCreateButtonGate() below aggregates
+     across every row to decide whether submission is allowed at all. */
+  function applyRowLeaveGate(rowEl) {
+    var dateEl = bulkRowFieldElement(rowEl, 'date');
+    var noteEl = rowEl.querySelector('.msc-bulk-leave-blocked-note');
+    var blocked = !!(dateEl && dateEl.value && isDateFullyLeaveBlocked(dateEl.value));
+    if (noteEl) { noteEl.hidden = !blocked; }
+    rowEl.classList.toggle('msc-bulk-row-leave-blocked', blocked);
+    return blocked;
+  }
+
+  function updateBulkCreateButtonGate() {
+    var anyBlocked = getBulkRows().reduce(function (blocked, rowEl) {
+      return applyRowLeaveGate(rowEl) || blocked;
+    }, false);
+    if (bulkCreateBtn) { bulkCreateBtn.disabled = anyBlocked; }
   }
 
   function clearBulkFormErrors() {
@@ -1704,11 +1799,13 @@ function mountScheduleCalendarInstance(container) {
   function resetBulkForm() {
     if (bulkRowsEl) { bulkRowsEl.innerHTML = ''; }
     bulkRowSeq = 0;
-    if (bulkFieldDate) { bulkFieldDate.value = ''; }
     clearBulkFormErrors();
     showApiStatus('', false, bulkPopupStatusEl);
+    /* No entry date is carried over here — a full reset (post-submit or
+       Cancel) starts a genuinely fresh batch, same as before this task;
+       the next ensureBulkMinimumRows(dateVal) call from a tab-switch/open
+       path is what seeds the new first row(s). */
     ensureBulkMinimumRows();
-    if (bulkLeaveBlockedNote) { bulkLeaveBlockedNote.hidden = true; }
     if (bulkCreateBtn) { bulkCreateBtn.disabled = false; }
   }
 
@@ -1733,6 +1830,14 @@ function mountScheduleCalendarInstance(container) {
      finds (Step 17: "does not replace backend validation"). */
   function bulkRowFieldErrors(rowEl) {
     var errors = [];
+    var dateVal = bulkRowFieldElement(rowEl, 'date').value;
+    if (!dateVal) {
+      /* CONFIRMED ADD-ROW DATE RULE rule 6 — never invented; a row that
+         reaches submit with no Date (its own, or copied blank from the
+         row before it) is a plain required-field error, exactly like a
+         missing title. */
+      errors.push({ field: 'date', message: 'Choose a date for this task.' });
+    }
     var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
     if (!title) {
       errors.push({ field: 'title', message: 'Enter a title for this task.' });
@@ -1752,10 +1857,15 @@ function mountScheduleCalendarInstance(container) {
   }
 
   function bulkDuplicateKey(rowEl) {
+    var date = bulkRowFieldElement(rowEl, 'date').value || '';
     var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim().toLowerCase();
     var start = bulkRowFieldElement(rowEl, 'start').value || '';
     var end = bulkRowFieldElement(rowEl, 'end').value || '';
-    return title + '|' + start + '|' + end;
+    /* date is now part of the duplicate identity (mirrors the backend's
+       own per-row-date key) — two rows sharing a title/time on DIFFERENT
+       dates are no longer a duplicate, since each row can carry its own
+       date. */
+    return date + '|' + title + '|' + start + '|' + end;
   }
 
   /* Early, non-blocking warning only (Step 17 "identify duplicates within
@@ -1783,11 +1893,13 @@ function mountScheduleCalendarInstance(container) {
   }
 
   function rowElToPayloadRow(rowEl) {
+    var date = bulkRowFieldElement(rowEl, 'date').value;
     var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
     var start = bulkRowFieldElement(rowEl, 'start').value;
     var end = bulkRowFieldElement(rowEl, 'end').value;
     var notes = (bulkRowFieldElement(rowEl, 'notes').value || '').trim();
     return {
+      date: date ? date : null,
       title: title,
       priority: bulkRowFieldElement(rowEl, 'priority').value,
       start: start ? start : null,
@@ -1796,33 +1908,33 @@ function mountScheduleCalendarInstance(container) {
     };
   }
 
-  /* Step 15 — main "+Create" entry only (the date-cell entry point's gate
-     is entirely handled by openCreateChoiceFromCalendar()'s existing
-     pre-open check above, which prevents the whole dialog from opening —
-     Bulk Tasks never even renders in that case). Here the dialog may
-     already be open with no date chosen; once a fully-leave-blocked date
-     is entered/selected, this disables submission and adding further rows
-     and shows the same approved blocked-date message, without closing the
-     dialog or discarding entered rows. The backend still authoritatively
-     rechecks every row regardless of this client-side gate. */
-  function applyBulkLeaveGate() {
-    if (!bulkFieldDate || !bulkLeaveBlockedNote) { return; }
-    var blocked = !!bulkFieldDate.value && isDateFullyLeaveBlocked(bulkFieldDate.value);
-    bulkLeaveBlockedNote.hidden = !blocked;
-    if (bulkCreateBtn) { bulkCreateBtn.disabled = blocked; }
-    updateBulkAddButtonState();
-  }
-
-  if (bulkFieldDate) {
-    bulkFieldDate.addEventListener('input', function () {
-      clearFieldError(bulkFieldDate);
-      applyBulkLeaveGate();
-    });
-  }
+  /* Step 15 (full-day-leave-blocks-create task, 2026-07-23; per-row gating
+     added by the CONFIRMED ADD-ROW DATE RULE task, 2026-07-24) — the
+     date-cell entry point's gate is entirely handled by
+     openCreateChoiceFromCalendar()'s existing pre-open check above, which
+     prevents the whole dialog from opening — Bulk Tasks never even
+     renders in that case. Here the dialog may already be open with rows
+     whose dates are still being chosen; each row's own Date field is
+     gated independently by applyRowLeaveGate() (wired in
+     wireBulkRowEvents() above), and updateBulkCreateButtonGate() disables
+     submission as a whole whenever ANY nonblank row is currently blocked,
+     without closing the dialog or discarding any entered row. The backend
+     still authoritatively rechecks every row's own date regardless of
+     this client-side gate. */
   if (bulkAddRowBtn) {
     bulkAddRowBtn.addEventListener('click', function () {
-      addBulkRow();
+      /* CONFIRMED ADD-ROW DATE RULE rule 3 — the new row copies the
+         IMMEDIATELY PREVIOUS row's current Date value at the moment of
+         this click (never the original clicked Calendar date, never
+         today, never one shared batch-wide value). Rule 6 — if that
+         previous row's Date is itself blank, the blank is copied as-is;
+         nothing here invents a date. */
+      var rows = getBulkRows();
+      var prevRow = rows.length ? rows[rows.length - 1] : null;
+      var prevDateEl = prevRow ? bulkRowFieldElement(prevRow, 'date') : null;
+      addBulkRow(prevDateEl ? prevDateEl.value : '');
       refreshBulkDuplicateHints();
+      updateBulkCreateButtonGate();
     });
   }
 
@@ -1902,9 +2014,12 @@ function mountScheduleCalendarInstance(container) {
      in this same array, so they always match exactly what the user sees
      as "Row N" regardless of which rows are blank (Step 5/18). */
   function performBulkSubmit(confirmDuplicates) {
-    var dateVal = bulkFieldDate.value;
     var tasks = getBulkRows().map(rowElToPayloadRow);
-    var payload = { date: dateVal, tasks: tasks, confirm_duplicates: !!confirmDuplicates };
+    /* No top-level common `date` any more — every row carries its own
+       (CONFIRMED ADD-ROW DATE RULE, 2026-07-24); the backend validates
+       and stores each row against its own date (backend/schemas.py
+       BulkTaskRowIn.date). */
+    var payload = { tasks: tasks, confirm_duplicates: !!confirmDuplicates };
     return apiRequest('POST', apiBase + '/bulk', payload).then(function (result) {
       (result.items || []).forEach(function (apiItem) { items.push(apiItemToFrontend(apiItem)); });
       var count = result.created_count != null ? result.created_count : (result.items || []).length;
@@ -1912,8 +2027,12 @@ function mountScheduleCalendarInstance(container) {
          one-call refresh entry point the single-Task form already uses:
          it re-renders the calendar grid, the Priority Queue preview, the
          Tasks workspace (if active), and Schedule Summary, all exactly
-         once, regardless of how many tasks were just created. */
-      selectDate(dateVal);
+         once, regardless of how many tasks were just created. Rows can
+         now span different dates, so this refreshes around the first
+         submitted row's date — a representative anchor, not a claim that
+         every task shares one date. */
+      var firstTaskWithDate = tasks.filter(function (t) { return !!t.date; })[0];
+      selectDate(firstTaskWithDate ? firstTaskWithDate.date : state.selectedDate);
       resetBulkForm();
       closeCreatePopup();
       showToast({
@@ -1946,20 +2065,6 @@ function mountScheduleCalendarInstance(container) {
       clearBulkFormErrors();
       showApiStatus('', false, bulkPopupStatusEl);
 
-      if (!bulkFieldDate.value) {
-        setFieldError(bulkFieldDate, 'Choose a date first.');
-        focusFirstInvalid(bulkFormEl);
-        return;
-      }
-      if (isDateFullyLeaveBlocked(bulkFieldDate.value)) {
-        applyBulkLeaveGate();
-        showApiStatus(
-          'No new Task can be added on this date — it is covered by Full-Day or Multi-Day leave.',
-          true, bulkPopupStatusEl
-        );
-        return;
-      }
-
       var rowEls = getBulkRows();
       var nonblankEls = rowEls.filter(function (rowEl) { return !isBulkRowBlank(rowEl); });
 
@@ -1975,6 +2080,12 @@ function mountScheduleCalendarInstance(container) {
         return;
       }
 
+      /* Every row's own date is validated here (CONFIRMED ADD-ROW DATE
+         RULE rule F/test F) — there is no top-level common date left to
+         check once, up front, the way the old single msc-bulk-field-date
+         gate did. A leave-blocked date is folded into the same row-level
+         error styling/messaging as every other field error, anchored on
+         that row's own Date field. */
       var hasError = false;
       nonblankEls.forEach(function (rowEl) {
         bulkRowFieldErrors(rowEl).forEach(function (fieldErr) {
@@ -1983,6 +2094,14 @@ function mountScheduleCalendarInstance(container) {
           rowEl.classList.add('msc-bulk-row-error');
           hasError = true;
         });
+        if (applyRowLeaveGate(rowEl)) {
+          var dateEl = bulkRowFieldElement(rowEl, 'date');
+          if (dateEl) {
+            setFieldError(dateEl, 'No new Task can be added on this date — it is covered by Full-Day or Multi-Day leave.');
+          }
+          rowEl.classList.add('msc-bulk-row-error');
+          hasError = true;
+        }
       });
       if (hasError) { focusFirstInvalid(bulkFormEl); return; }
 
@@ -2765,18 +2884,15 @@ function mountScheduleCalendarInstance(container) {
   function syncSelectedDateToForms(dateStr) {
     fieldDate.value = dateStr;
     if (leaveFieldStartDate) { leaveFieldStartDate.value = dateStr; }
-    /* Same-day Bulk Tasks (2026-07-23) — keeps the Bulk Tasks tab's
-       common Date field in sync with every other date-selection action
-       (calendar cell click, mini-picker, Today button, etc.), matching
-       the Task/Leave fields' own eager-sync convention above rather than
-       only updating lazily when the user switches to the Bulk tab.
-       applyBulkLeaveGate() re-checks the Full-Day/Multi-Day gate for
-       whatever date this just became, since bulkFieldDate itself may not
-       be the element that changed. */
-    if (bulkFieldDate) {
-      bulkFieldDate.value = dateStr;
-      applyBulkLeaveGate();
-    }
+    /* Bulk Tasks has no common Date field to sync any more (CONFIRMED
+       ADD-ROW DATE RULE, 2026-07-24) — each row owns its own Date, only
+       ever seeded at row-creation time via ensureBulkMinimumRows()/
+       addBulkRow() (see the createTabBulkBtn click handler and
+       openCreatePopup() above). A calendar-wide date-selection action
+       (mini-picker, Today button, etc.) must never reach into an
+       already-open Bulk Tasks row list and silently rewrite a row's date
+       out from under the user — that would violate rule 5 (no live/
+       linked date state). */
     /* Multi-Day is the only leave type with a visible/applicable End
        Date field (see updateLeaveFormFieldVisibility) — initialize it
        to the same selected date so a fresh Multi-Day request starts

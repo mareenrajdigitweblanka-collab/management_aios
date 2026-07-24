@@ -169,16 +169,22 @@ def classify_updated_task(
     return "Scheduled Task"
 
 
-# ── Same-day Bulk Tasks (2026-07-23) ─────────────────────────────────────
+# ── Bulk Tasks (2026-07-23; per-row Date field — CONFIRMED ADD-ROW DATE
+#    RULE task, 2026-07-24) ────────────────────────────────────────────────
 #
 # Additive feature: POST /{member_key}/bulk below. Reuses every existing
 # rule unmodified — classify_new_task/classify_updated_task above,
 # leave_logic.find_conflicting_active_leave (no second Leave-conflict
 # formula), VALID_PRIORITIES, and the same title/notes length limits as
-# MemberScheduleEventCreate. The helpers below are pure functions (no `db`
-# parameter except where a query against MemberScheduleEvent is
-# unavoidable — _find_existing_task_duplicate_warnings) so they can be
-# unit-tested the same DB-free way this codebase already tests
+# MemberScheduleEventCreate. Originally a single common `date` shared by
+# every row in the batch ("same-day Bulk Tasks"); the CONFIRMED ADD-ROW
+# DATE RULE task (2026-07-24) superseded that decision — every row now
+# carries and is validated against its own `date` (BulkTaskRowIn.date), so
+# one submission may legitimately span several different dates. The
+# helpers below are pure functions (no `db` parameter except where a query
+# against MemberScheduleEvent is unavoidable —
+# _find_existing_task_duplicate_warnings) so they can be unit-tested the
+# same DB-free way this codebase already tests
 # find_conflicting_active_leave/find_conflicting_active_tasks — see
 # backend/tests/test_bulk_task_creation.py.
 
@@ -208,13 +214,21 @@ def _bulk_row_field_errors(row: BulkTaskRowIn) -> List[dict]:
     """Hard-validation errors for one NONBLANK row, reusing the exact
     rules MemberScheduleEventCreate enforces (title required/≤120 chars,
     notes ≤240 chars, priority in VALID_PRIORITIES, end > start when both
-    given). Returns every applicable error for this row (not just the
-    first) — the caller collects these across every row before deciding
-    whether to reject the batch, per Step 6 ("do not stop after reporting
-    only the first invalid row"). `field`/`code` values are returned
-    without a `row` key; the caller (create_member_schedule_events_bulk)
-    attaches the row number."""
+    given), plus the per-row date_required check added by the CONFIRMED
+    ADD-ROW DATE RULE task (2026-07-24) — there is no top-level common
+    date any more, so every nonblank row must carry its own. Returns every
+    applicable error for this row (not just the first) — the caller
+    collects these across every row before deciding whether to reject the
+    batch, per Step 6 ("do not stop after reporting only the first invalid
+    row"). `field`/`code` values are returned without a `row` key; the
+    caller (create_member_schedule_events_bulk) attaches the row number."""
     errors: List[dict] = []
+
+    if row.date is None:
+        errors.append({
+            "field": "date", "code": "date_required",
+            "message": "Choose a date for this task.",
+        })
 
     title = (row.title or "").strip()
     if not title:
@@ -253,23 +267,27 @@ def _bulk_row_field_errors(row: BulkTaskRowIn) -> List[dict]:
 def _bulk_leave_conflict_errors(
     db: Session,
     member_key: str,
-    event_date: date_type,
     nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
 ) -> List[dict]:
     """Authoritative Leave re-check for every nonblank row (Step 7) — calls
     the SAME leave_logic.find_conflicting_active_leave() function the
     single-create/update endpoints already call; no second Leave-conflict
-    formula is implemented here. A conflict is folded into the same
-    validation_failed error contract as field errors (Step 6/18 both
-    surface Leave conflicts as ordinary row messages, e.g. "Row 7 — This
-    date is covered by Full-Day Leave.") rather than a separate 409 —
-    Bulk Tasks has only three response outcomes (validation_failed /
-    duplicate_confirmation_required / created), so there is no fourth
-    "leave_conflict" shape to preserve here."""
+    formula is implemented here. Checked against each row's OWN date
+    (CONFIRMED ADD-ROW DATE RULE, 2026-07-24 — there is no common batch
+    date any more) rather than one shared date for the whole batch. A
+    conflict is folded into the same validation_failed error contract as
+    field errors (Step 6/18 both surface Leave conflicts as ordinary row
+    messages, e.g. "Row 7 — This date is covered by Full-Day Leave.")
+    rather than a separate 409 — Bulk Tasks has only three response
+    outcomes (validation_failed / duplicate_confirmation_required /
+    created), so there is no fourth "leave_conflict" shape to preserve
+    here. Only called once every nonblank row already has a date (the
+    caller runs field-level validation, including date_required, first),
+    so row.date is never None here."""
     errors: List[dict] = []
     for row_number, row in nonblank_rows:
         conflicts = leave_logic.find_conflicting_active_leave(
-            db, member_key, event_date, row.start, row.end
+            db, member_key, row.date, row.start, row.end
         )
         if not conflicts:
             continue
@@ -312,7 +330,12 @@ def _bulk_duplicate_key(
     (title, None, None) — two untimed tasks with the same title are a
     duplicate; an untimed and a timed task sharing a title are not (their
     keys differ), matching "do not treat title-only similarity as a
-    duplicate when time combinations differ.\""""
+    duplicate when time combinations differ.\" Date is deliberately NOT
+    part of this tuple — callers that need date-scoped identity (every
+    caller, since the CONFIRMED ADD-ROW DATE RULE task, 2026-07-24, made
+    date per-row) prepend the row's own date themselves, so this stays the
+    one shared title/time comparison used both within-batch and against
+    an already date-filtered set of existing tasks."""
     return (
         _normalize_title_for_duplicate(title),
         _normalize_time_for_duplicate(start),
@@ -341,17 +364,20 @@ def _find_batch_duplicate_warnings(
     nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
 ) -> List[dict]:
     """Duplicates among rows inside the current submission only (Step 9).
-    Groups nonblank rows by the Step 8 duplicate key; any group with 2+
-    rows produces one warning naming every matching row number. Does not
-    compare against existing saved Tasks — that is
+    Groups nonblank rows by (date, Step 8 duplicate key) — date is
+    prepended to the grouping key (CONFIRMED ADD-ROW DATE RULE, 2026-07-24)
+    so two rows sharing a title/time on DIFFERENT dates are never treated
+    as duplicates of each other, now that every row carries its own date.
+    Any group with 2+ rows produces one warning naming every matching row
+    number. Does not compare against existing saved Tasks — that is
     _find_existing_task_duplicate_warnings below."""
     groups: dict = {}
     for row_number, row in nonblank_rows:
-        key = _bulk_duplicate_key(row.title, row.start, row.end)
+        key = (row.date,) + _bulk_duplicate_key(row.title, row.start, row.end)
         if key not in groups:
             groups[key] = {
                 "rows": [], "title": (row.title or "").strip(),
-                "start": row.start, "end": row.end,
+                "start": row.start, "end": row.end, "date": row.date,
             }
         groups[key]["rows"].append(row_number)
 
@@ -361,7 +387,8 @@ def _find_batch_duplicate_warnings(
             continue
         message = (
             _format_row_list(group["rows"]) + " match: \"" + group["title"] + "\", "
-            + _format_time_range_for_message(group["start"], group["end"]) + "."
+            + _format_time_range_for_message(group["start"], group["end"])
+            + (", on " + group["date"].isoformat() if group["date"] else "") + "."
         )
         warnings.append({
             "source": "current_batch",
@@ -378,22 +405,27 @@ def _find_batch_duplicate_warnings(
 def _find_existing_task_duplicate_warnings(
     db: Session,
     member_key: str,
-    event_date: date_type,
     nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
 ) -> List[dict]:
-    """Duplicates against Tasks already saved for this member and the
-    common date (Step 10). Only active rows (deleted_at IS NULL)
+    """Duplicates against Tasks already saved for this member, scoped to
+    each row's OWN date (Step 10; per-row date scoping added by the
+    CONFIRMED ADD-ROW DATE RULE task, 2026-07-24 — there is no common
+    batch date any more). Only active rows (deleted_at IS NULL)
     participate — a soft-deleted Task never triggers a warning. Only
     MemberScheduleEvent is queried; Leave records never participate in
     Task duplicate detection (Step 10 explicit rule). `existing_task_id`
     is carried in the structured warning for internal correlation only —
     never interpolated into the user-facing `message` (Step 10: "do not
-    expose unnecessary internal IDs in visible frontend text")."""
+    expose unnecessary internal IDs in visible frontend text"). Only
+    called once every nonblank row already has a date (see
+    _bulk_leave_conflict_errors' docstring), so row.date is never None
+    here."""
+    distinct_dates = sorted({row.date for _, row in nonblank_rows})
     existing_tasks = (
         db.query(MemberScheduleEvent)
         .filter(
             MemberScheduleEvent.member_key == member_key,
-            MemberScheduleEvent.event_date == event_date,
+            MemberScheduleEvent.event_date.in_(distinct_dates),
             MemberScheduleEvent.deleted_at.is_(None),
         )
         .all()
@@ -403,19 +435,19 @@ def _find_existing_task_duplicate_warnings(
 
     existing_by_key: dict = {}
     for task in existing_tasks:
-        key = _bulk_duplicate_key(task.title, task.start_time, task.end_time)
+        key = (task.event_date,) + _bulk_duplicate_key(task.title, task.start_time, task.end_time)
         existing_by_key.setdefault(key, []).append(task)
 
     warnings: List[dict] = []
     for row_number, row in nonblank_rows:
-        key = _bulk_duplicate_key(row.title, row.start, row.end)
+        key = (row.date,) + _bulk_duplicate_key(row.title, row.start, row.end)
         matches = existing_by_key.get(key)
         if not matches:
             continue
         for task in matches:
             message = (
-                "Row " + str(row_number) + " matches a task already saved for this date: \""
-                + task.title + "\", "
+                "Row " + str(row_number) + " matches a task already saved for "
+                + row.date.isoformat() + ": \"" + task.title + "\", "
                 + _format_time_range_for_message(task.start_time, task.end_time) + "."
             )
             warnings.append({
@@ -925,8 +957,11 @@ def create_member_schedule_events_bulk(
     payload: BulkTaskCreateRequest,
     db: Session = Depends(get_db),
 ):
-    """Same-day Bulk Tasks (2026-07-23) — additive endpoint; the single-
-    create route above (POST /{member_key}) is completely unchanged.
+    """Bulk Tasks (2026-07-23; per-row Date field — CONFIRMED ADD-ROW DATE
+    RULE task, 2026-07-24) — additive endpoint; the single-create route
+    above (POST /{member_key}) is completely unchanged. Each row in
+    payload.tasks carries its own `date` — a batch is no longer required
+    to be same-day.
 
     Every call to this endpoint independently revalidates everything from
     scratch — hard field rules, the authoritative Leave-conflict check,
@@ -985,7 +1020,7 @@ def create_member_schedule_events_bulk(
     # conflict on a row whose title/time is itself invalid.
     if not errors:
         errors.extend(
-            _bulk_leave_conflict_errors(db, member_key, payload.date, nonblank_rows)
+            _bulk_leave_conflict_errors(db, member_key, nonblank_rows)
         )
 
     if errors:
@@ -1000,7 +1035,7 @@ def create_member_schedule_events_bulk(
     # the check is never skipped, only the "stop and ask" short-circuit is.
     warnings: List[dict] = _find_batch_duplicate_warnings(nonblank_rows)
     warnings.extend(
-        _find_existing_task_duplicate_warnings(db, member_key, payload.date, nonblank_rows)
+        _find_existing_task_duplicate_warnings(db, member_key, nonblank_rows)
     )
 
     if warnings and not payload.confirm_duplicates:
@@ -1011,22 +1046,25 @@ def create_member_schedule_events_bulk(
         })
 
     # ── Atomic transaction (Step 12/13) ──────────────────────────────────
-    # One authoritative UTC instant shared by every row's created_at,
-    # updated_at, and classify_new_task() call — this is what prevents
-    # mixed Scheduled/Unscheduled classification inside one successfully
-    # committed batch at the Sunday cutoff. category depends only on
-    # (event_date, created_at), both identical for every row in this
-    # batch, so it is computed once, not per row.
+    # One authoritative UTC instant shared by every row's created_at and
+    # updated_at — this is what prevents rows created in the same batch
+    # from ever disagreeing on "when this batch happened". category,
+    # however, is now computed PER ROW (CONFIRMED ADD-ROW DATE RULE,
+    # 2026-07-24) since it depends on (event_date, created_at) and rows no
+    # longer necessarily share one event_date — two rows in the same batch
+    # can therefore land in different Scheduled/Unscheduled categories if
+    # their own dates fall on opposite sides of that date's own weekly
+    # cutoff, which is correct: classification has always been a
+    # per-event_date decision, never a per-batch one.
     created_at = datetime.now(timezone.utc)
-    category = classify_new_task(event_date=payload.date, created_at=created_at)
 
     events = [
         MemberScheduleEvent(
             member_key=member_key,
             member_label=MEMBER_LABELS[member_key],
-            event_date=payload.date,
+            event_date=row.date,
             title=(row.title or "").strip(),
-            category=category,
+            category=classify_new_task(event_date=row.date, created_at=created_at),
             priority=_bulk_row_effective_priority(row),
             start_time=row.start,
             end_time=row.end,

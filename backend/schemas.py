@@ -124,18 +124,26 @@ class BulkTaskRowIn(BaseModel):
     for title/priority/notes (plain Optional[str], no length/enum
     constraint at this layer) so a blank or partially-filled row can never
     fail Pydantic-level validation before the router's own blank-row
-    detection and hard-validation pass run — every real rule (title
-    required/≤120 chars, notes ≤240 chars, priority in VALID_PRIORITIES,
-    end > start) is enforced in
+    detection and hard-validation pass run — every real rule (date
+    required, title required/≤120 chars, notes ≤240 chars, priority in
+    VALID_PRIORITIES, end > start) is enforced in
     backend/routers/member_schedules.py:_bulk_row_field_errors, which
     returns structured {row, field, code, message} errors instead of
     FastAPI's generic 422 body. start/end use the same field names as
     MemberScheduleEventCreate (not start_time/end_time) to match this
-    API's existing single-Task-create convention. No `date` and no
-    `category` field exists here by design — date is common to the whole
-    batch (BulkTaskCreateRequest.date) and category is always
-    backend-assigned, identically to the single-create endpoint."""
+    API's existing single-Task-create convention. No `category` field
+    exists here by design — category is always backend-assigned,
+    identically to the single-create endpoint.
 
+    `date` (CONFIRMED ADD-ROW DATE RULE, 2026-07-24 — supersedes the
+    former "one common date shared by every row" business decision):
+    every row now carries its own date. It is Optional here, like
+    start/end, so a blank row (no date chosen yet) can never fail
+    Pydantic-level validation before the router's own blank-row check
+    runs; a NONBLANK row with no date is a hard `date_required` error from
+    _bulk_row_field_errors, exactly like a missing title."""
+
+    date: Optional[date_type] = None
     title: Optional[str] = None
     priority: Optional[str] = None
     start: Optional[time_type] = None
@@ -144,11 +152,14 @@ class BulkTaskRowIn(BaseModel):
 
 
 class BulkTaskCreateRequest(BaseModel):
-    """Request body for same-day Bulk Tasks creation. One common `date`
-    shared by every row (confirmed business decision #2) — there is no
-    per-row date field. `confirm_duplicates` defaults False: the first
-    submission of a batch containing duplicate title/time combinations
-    (within the batch or against existing active Tasks for this member/
+    """Request body for same-day Bulk Tasks creation. There is no
+    top-level common `date` any more (CONFIRMED ADD-ROW DATE RULE,
+    2026-07-24 — supersedes the former confirmed business decision #2 of
+    one date shared by every row) — each row carries its own date via
+    BulkTaskRowIn.date, independently editable and independently
+    validated. `confirm_duplicates` defaults False: the first submission
+    of a batch containing duplicate title/date/time combinations (within
+    the batch or against existing active Tasks for a row's own member/
     date) is rejected with status="duplicate_confirmation_required" and
     creates nothing; the frontend resubmits the identical batch with
     confirm_duplicates=True only after the user explicitly confirms. The
@@ -156,7 +167,6 @@ class BulkTaskCreateRequest(BaseModel):
     call to this endpoint independently revalidates hard rules, Leave
     conflicts, and duplicates from scratch."""
 
-    date: date_type
     tasks: List[BulkTaskRowIn] = Field(default_factory=list)
     confirm_duplicates: bool = False
 

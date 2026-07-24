@@ -1,4 +1,5 @@
-"""Automated tests for same-day Bulk Tasks creation (2026-07-23):
+"""Automated tests for Bulk Tasks creation (2026-07-23; per-row Date field
+added by the CONFIRMED ADD-ROW DATE RULE task, 2026-07-24):
 POST /api/member-schedules/{member_key}/bulk
 (backend/routers/member_schedules.py:create_member_schedule_events_bulk).
 
@@ -34,6 +35,12 @@ from backend.routers.member_schedules import (
 )
 from backend.schemas import BulkTaskCreateRequest, BulkTaskRowIn, MemberScheduleEventCreate
 
+# Shared default row date — matches the previous default `event_date` this
+# suite always used unless a test explicitly overrode it, so most tests
+# below need no change at all now that date moved from the request onto
+# each row.
+DEFAULT_ROW_DATE = date(2099, 1, 5)
+
 
 @dataclass
 class FakeLeaveRecord:
@@ -57,11 +64,16 @@ class FakeLeaveRecord:
 class FakeExistingTask:
     """Minimal duck-typed stand-in for an active MemberScheduleEvent row —
     only the attributes _find_existing_task_duplicate_warnings actually
-    reads (id, title, start_time, end_time)."""
+    reads (id, title, start_time, end_time, and — since the CONFIRMED
+    ADD-ROW DATE RULE task, 2026-07-24, scoped this check per row date —
+    event_date). event_date defaults to DEFAULT_ROW_DATE so every existing
+    call site that never mentioned a date keeps matching the rows built by
+    _row()'s own default."""
 
     title: str
     start_time: Optional[time] = None
     end_time: Optional[time] = None
+    event_date: date = DEFAULT_ROW_DATE
     id: object = None
 
     def __post_init__(self):
@@ -126,12 +138,14 @@ class _FakeSession:
         self.refreshed.append(obj)
 
 
-def _row(title="Task", priority=None, start=None, end=None, notes=None):
-    return BulkTaskRowIn(title=title, priority=priority, start=start, end=end, notes=notes)
+def _row(title="Task", priority=None, start=None, end=None, notes=None, date=DEFAULT_ROW_DATE):
+    return BulkTaskRowIn(date=date, title=title, priority=priority, start=start, end=end, notes=notes)
 
 
-def _request(rows, event_date=date(2099, 1, 5), confirm_duplicates=False):
-    return BulkTaskCreateRequest(date=event_date, tasks=rows, confirm_duplicates=confirm_duplicates)
+def _request(rows, confirm_duplicates=False):
+    # No top-level common `date` any more (CONFIRMED ADD-ROW DATE RULE,
+    # 2026-07-24) — every row already carries its own via _row() above.
+    return BulkTaskCreateRequest(tasks=rows, confirm_duplicates=confirm_duplicates)
 
 
 class OneAndThirtyRowTests(unittest.TestCase):
@@ -188,6 +202,17 @@ class BlankRowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertEqual(len(db.added), 0)
 
+    def test_date_only_row_is_still_blank(self):
+        # A row with only a Date set (title/start/end/notes all empty) is
+        # still blank — date is deliberately excluded from the blank check,
+        # matching priority's own exclusion (Step 5 rule, unchanged by the
+        # CONFIRMED ADD-ROW DATE RULE task).
+        rows = [_row("Real task"), _row(title=None, date=date(2099, 2, 1))]
+        db = _FakeSession()
+        result = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
+        self.assertEqual(result["status"], "created")
+        self.assertEqual(result["created_count"], 1)
+
 
 class HardValidationTests(unittest.TestCase):
     """Step 22 items 6-7."""
@@ -207,6 +232,87 @@ class HardValidationTests(unittest.TestCase):
         self.assertEqual(len(db.added), 0)
 
 
+class PerRowDateTests(unittest.TestCase):
+    """CONFIRMED ADD-ROW DATE RULE task (2026-07-24) — every row carries
+    and is validated against its own `date`; there is no top-level common
+    date any more."""
+
+    def test_nonblank_row_with_no_date_is_a_hard_error(self):
+        rows = [_row("Valid"), _row("No date", date=None)]
+        db = _FakeSession()
+        response = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
+        self.assertIsInstance(response, JSONResponse)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(len(db.added), 0)
+        import json
+        body = json.loads(response.body)
+        date_errors = [e for e in body["errors"] if e["field"] == "date"]
+        self.assertEqual(len(date_errors), 1)
+        self.assertEqual(date_errors[0]["row"], 2)
+
+    def test_rows_persist_their_own_distinct_dates(self):
+        rows = [
+            _row("Task A", date=date(2099, 1, 5)),
+            _row("Task B", date=date(2099, 1, 6)),
+        ]
+        db = _FakeSession()
+        result = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
+        self.assertEqual(result["status"], "created")
+        dates = sorted(item.event_date for item in result["items"])
+        self.assertEqual(dates, [date(2099, 1, 5), date(2099, 1, 6)])
+
+    def test_same_title_and_time_on_different_dates_is_not_a_duplicate(self):
+        rows = [
+            _row("Standup", start=time(9, 0), end=time(9, 15), date=date(2099, 1, 5)),
+            _row("Standup", start=time(9, 0), end=time(9, 15), date=date(2099, 1, 6)),
+        ]
+        db = _FakeSession()
+        result = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
+        self.assertEqual(result["status"], "created")
+        self.assertEqual(result["created_count"], 2)
+
+    def test_leave_conflict_checked_against_each_rows_own_date(self):
+        # A Full-Day leave record on blocked_day must conflict with a row
+        # dated blocked_day but NOT with a row dated open_day, even though
+        # the fake session's filter() is a no-op and returns this same
+        # canned leave row for every query (matching this repo's other
+        # fake-session tests) — find_conflicting_active_leave's own
+        # per-record _leave_record_day_interval(record, task_date) check
+        # is what actually narrows this to the row's own date, exactly as
+        # it would from the real SQL WHERE clause in production.
+        blocked_day = date(2099, 1, 5)
+        open_day = date(2099, 1, 6)
+        leave = FakeLeaveRecord("Full-Day", blocked_day, blocked_day)
+        db = _FakeSession(leave_rows=[leave])
+        rows = [
+            _row("Blocked", date=blocked_day),
+            _row("Open", date=open_day),
+        ]
+        response = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
+        self.assertIsInstance(response, JSONResponse)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(len(db.added), 0)
+        import json
+        body = json.loads(response.body)
+        leave_errors = [e for e in body["errors"] if e["code"] == "leave_conflict"]
+        self.assertEqual(len(leave_errors), 1)
+        self.assertEqual(leave_errors[0]["row"], 1)
+
+    def test_category_is_computed_per_row_from_its_own_date(self):
+        # One far-future row (always Scheduled) and one far-past row
+        # (always Unscheduled) in the SAME batch — category must reflect
+        # each row's own date, not one shared batch-wide classification.
+        rows = [
+            _row("Future task", date=date(2099, 1, 5)),
+            _row("Past task", date=date(2000, 1, 3)),
+        ]
+        db = _FakeSession()
+        result = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
+        categories = {item.title: item.category for item in result["items"]}
+        self.assertEqual(categories["Future task"], "Scheduled Task")
+        self.assertEqual(categories["Past task"], "Unscheduled Task")
+
+
 class LeaveConflictTests(unittest.TestCase):
     """Step 22 items 8-11. Authoritative recheck via
     leave_logic.find_conflicting_active_leave — no second formula."""
@@ -216,7 +322,7 @@ class LeaveConflictTests(unittest.TestCase):
         leave = FakeLeaveRecord("Full-Day", d, d)
         db = _FakeSession(leave_rows=[leave])
         response = create_member_schedule_events_bulk(
-            "mayurika", _request([_row("Any task")], event_date=d), db=db
+            "mayurika", _request([_row("Any task", date=d)]), db=db
         )
         self.assertEqual(response.status_code, 422)
         self.assertEqual(len(db.added), 0)
@@ -226,7 +332,7 @@ class LeaveConflictTests(unittest.TestCase):
         leave = FakeLeaveRecord("Multi-Day", friday, date(2099, 1, 5))
         db = _FakeSession(leave_rows=[leave])
         response = create_member_schedule_events_bulk(
-            "mayurika", _request([_row("Untimed task")], event_date=friday), db=db
+            "mayurika", _request([_row("Untimed task", date=friday)]), db=db
         )
         self.assertEqual(response.status_code, 422)
         self.assertEqual(len(db.added), 0)
@@ -236,7 +342,9 @@ class LeaveConflictTests(unittest.TestCase):
         leave = FakeLeaveRecord("Short Leave", d, d, time(9, 0), time(10, 0))
         db = _FakeSession(leave_rows=[leave])
         response = create_member_schedule_events_bulk(
-            "mayurika", _request([_row("Overlaps leave", start=time(9, 30), end=time(9, 45))], event_date=d), db=db
+            "mayurika",
+            _request([_row("Overlaps leave", start=time(9, 30), end=time(9, 45), date=d)]),
+            db=db,
         )
         self.assertEqual(response.status_code, 422)
         self.assertEqual(len(db.added), 0)
@@ -246,7 +354,9 @@ class LeaveConflictTests(unittest.TestCase):
         leave = FakeLeaveRecord("Short Leave", d, d, time(9, 0), time(10, 0))
         db = _FakeSession(leave_rows=[leave])
         result = create_member_schedule_events_bulk(
-            "mayurika", _request([_row("Before leave", start=time(7, 0), end=time(8, 0))], event_date=d), db=db
+            "mayurika",
+            _request([_row("Before leave", start=time(7, 0), end=time(8, 0), date=d)]),
+            db=db,
         )
         self.assertEqual(result["status"], "created")
         self.assertEqual(result["created_count"], 1)
@@ -257,7 +367,7 @@ class LeaveConflictTests(unittest.TestCase):
         d = date(2099, 1, 5)
         leave = FakeLeaveRecord("Short Leave", d, d, time(9, 0), time(10, 0))
         db = _FakeSession(leave_rows=[leave])
-        result = create_member_schedule_events_bulk("mayurika", _request([_row("Untimed")], event_date=d), db=db)
+        result = create_member_schedule_events_bulk("mayurika", _request([_row("Untimed", date=d)]), db=db)
         self.assertEqual(result["status"], "created")
 
 
@@ -285,10 +395,10 @@ class DuplicateWarningTests(unittest.TestCase):
 
     def test_existing_task_duplicate_returns_warning_and_zero_inserts(self):
         d = date(2099, 1, 5)
-        existing = FakeExistingTask("Standup", time(9, 0), time(9, 15))
+        existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=d)
         db = _FakeSession(existing_task_rows=[existing])
-        rows = [_row("Standup", start=time(9, 0), end=time(9, 15))]
-        response = create_member_schedule_events_bulk("mayurika", _request(rows, event_date=d), db=db)
+        rows = [_row("Standup", start=time(9, 0), end=time(9, 15), date=d)]
+        response = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
         self.assertEqual(response.status_code, 409)
         self.assertEqual(len(db.added), 0)
         import json
@@ -298,16 +408,28 @@ class DuplicateWarningTests(unittest.TestCase):
         self.assertEqual(existing_warnings[0]["rows"], [1])
         self.assertNotIn(str(existing.id), existing_warnings[0]["message"])
 
+    def test_existing_task_on_a_different_date_is_not_a_duplicate(self):
+        # CONFIRMED ADD-ROW DATE RULE (2026-07-24) — the existing-Task
+        # duplicate check is now scoped per row date; an existing Task on
+        # one date must never warn against a submitted row for a
+        # different date, even with an identical title/time.
+        existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=date(2099, 1, 5))
+        db = _FakeSession(existing_task_rows=[existing])
+        rows = [_row("Standup", start=time(9, 0), end=time(9, 15), date=date(2099, 1, 6))]
+        result = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
+        self.assertEqual(result["status"], "created")
+        self.assertEqual(result["created_count"], 1)
+
     def test_both_duplicate_sources_return_all_warnings(self):
         d = date(2099, 1, 5)
-        existing = FakeExistingTask("Standup", time(9, 0), time(9, 15))
+        existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=d)
         db = _FakeSession(existing_task_rows=[existing])
         rows = [
-            _row("Standup", start=time(9, 0), end=time(9, 15)),
-            _row("Review reports", start=time(10, 0), end=time(11, 0)),
-            _row("Review reports", start=time(10, 0), end=time(11, 0)),
+            _row("Standup", start=time(9, 0), end=time(9, 15), date=d),
+            _row("Review reports", start=time(10, 0), end=time(11, 0), date=d),
+            _row("Review reports", start=time(10, 0), end=time(11, 0), date=d),
         ]
-        response = create_member_schedule_events_bulk("mayurika", _request(rows, event_date=d), db=db)
+        response = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
         self.assertEqual(response.status_code, 409)
         import json
         body = json.loads(response.body)
@@ -368,18 +490,18 @@ class ClassificationTests(unittest.TestCase):
     def test_all_rows_receive_the_correct_scheduled_category(self):
         # Far-future date: real "now" at test-run time is always before
         # this date's own weekly cutoff, regardless of when the test runs.
-        rows = [_row("A"), _row("B")]
+        rows = [_row("A", date=date(2099, 1, 5)), _row("B", date=date(2099, 1, 5))]
         db = _FakeSession()
-        result = create_member_schedule_events_bulk("mayurika", _request(rows, event_date=date(2099, 1, 5)), db=db)
+        result = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
         categories = set(item.category for item in result["items"])
         self.assertEqual(categories, {"Scheduled Task"})
 
     def test_all_rows_receive_the_correct_unscheduled_category(self):
         # Far-past date: real "now" at test-run time is always after this
         # date's own weekly cutoff, regardless of when the test runs.
-        rows = [_row("A"), _row("B")]
+        rows = [_row("A", date=date(2000, 1, 3)), _row("B", date=date(2000, 1, 3))]
         db = _FakeSession()
-        result = create_member_schedule_events_bulk("mayurika", _request(rows, event_date=date(2000, 1, 3)), db=db)
+        result = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
         categories = set(item.category for item in result["items"])
         self.assertEqual(categories, {"Unscheduled Task"})
 
@@ -388,12 +510,10 @@ class ClassificationTests(unittest.TestCase):
         # key in the raw request is silently dropped by Pydantic's default
         # extra="ignore" behaviour, so the server-computed category is the
         # only one that can ever reach storage.
-        row = BulkTaskRowIn(**{"title": "A", "category": "Unscheduled Task"})
+        row = BulkTaskRowIn(**{"date": date(2099, 1, 5), "title": "A", "category": "Unscheduled Task"})
         self.assertFalse(hasattr(row, "category"))
         db = _FakeSession()
-        result = create_member_schedule_events_bulk(
-            "mayurika", _request([row], event_date=date(2099, 1, 5)), db=db
-        )
+        result = create_member_schedule_events_bulk("mayurika", _request([row]), db=db)
         self.assertEqual(result["items"][0].category, "Scheduled Task")
 
 
@@ -426,10 +546,10 @@ class MemberIsolationTests(unittest.TestCase):
         # member_key through to the query unconditionally for every
         # member, so the real SQL filter is always applied.
         d = date(2099, 1, 5)
-        existing = FakeExistingTask("Standup", time(9, 0), time(9, 15))
+        existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=d)
         db = _FakeSession(existing_task_rows=[existing])
         response = create_member_schedule_events_bulk(
-            "suman", _request([_row("Standup", start=time(9, 0), end=time(9, 15))], event_date=d), db=db
+            "suman", _request([_row("Standup", start=time(9, 0), end=time(9, 15), date=d)]), db=db
         )
         self.assertEqual(response.status_code, 409)
 

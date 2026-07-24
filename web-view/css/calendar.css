@@ -2613,12 +2613,11 @@
        provided by the existing .msc-modal-form (max-height/overflow-y,
        calendar.css above) and lockBodyScroll() (JS) — nothing new is
        needed for either here, this only adds the row-list-specific
-       presentation. ── */
-    .msc-bulk-date-field {
-      max-width: 220px;
-      margin-bottom: 10px;
-    }
-
+       presentation. Per-row Date field added (CONFIRMED ADD-ROW DATE RULE
+       task, 2026-07-24) — the former single common-Date-field rule
+       (.msc-bulk-date-field) was removed along with that field; each
+       row's own Date input is laid out by the existing .msc-bulk-row-
+       fields/.msc-form-grid rules below like any other row field. ── */
     .msc-bulk-rows {
       display: flex;
       flex-direction: column;
@@ -2710,9 +2709,14 @@
       cursor: not-allowed;
     }
 
+    /* Now rendered once per row (CONFIRMED ADD-ROW DATE RULE task,
+       2026-07-24 — each row can carry a different date, so the leave-
+       blocked gate is evaluated per row instead of once for the whole
+       form) — sits directly under that row's own fields grid. */
     .msc-bulk-leave-blocked-note {
       color: var(--error);
       font-weight: 600;
+      margin-top: 8px;
     }
 
     @media (max-width: 900px) {
