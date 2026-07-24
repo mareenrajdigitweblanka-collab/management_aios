@@ -786,6 +786,7 @@ function mountScheduleCalendarInstance(container) {
   var viewOutcomeReasonDisplay = container.querySelector('.msc-view-outcome-reason');
   var viewOutcomeUpdatedAt = container.querySelector('.msc-view-outcome-updated-at');
   var viewOutcomeUpdatedBy = container.querySelector('.msc-view-outcome-updated-by');
+  var viewOutcomeActions = container.querySelector('.msc-view-outcome-actions');
   var viewOutcomeCompletedBtn = container.querySelector('.msc-view-outcome-completed-btn');
   var viewOutcomeUncompletedBtn = container.querySelector('.msc-view-outcome-uncompleted-btn');
   /* Reason-entry form (FINAL CONFIRMED REASON-TRANSITION RULE, 2026-07-24)
@@ -3821,6 +3822,15 @@ function mountScheduleCalendarInstance(container) {
   function hideOutcomeReasonForm() {
     if (!viewOutcomeReasonForm) { return; }
     viewOutcomeReasonForm.hidden = true;
+    /* Live-feedback fix (2026-07-24, post-deploy): restore the Mark
+       Completed/Mark Uncompleted toggle row once the reason form closes —
+       see showOutcomeReasonForm() below for why it was hidden. Guarded
+       against outcome_locked so a locked task's buttons never reappear
+       enabled mid-flow; renderOutcome() (the only other caller of this
+       function) always re-applies the correct disabled state right after
+       anyway, but this keeps hideOutcomeReasonForm() correct on its own
+       too, e.g. when Cancel is clicked directly. */
+    if (viewOutcomeActions) { viewOutcomeActions.hidden = false; }
     if (viewOutcomeReasonInput) {
       viewOutcomeReasonInput.value = '';
       clearFieldError(viewOutcomeReasonInput);
@@ -3831,6 +3841,14 @@ function mountScheduleCalendarInstance(container) {
   function showOutcomeReasonForm(prefill) {
     if (!viewOutcomeReasonForm || !viewOutcomeReasonInput) { return; }
     viewOutcomeReasonForm.hidden = false;
+    /* Live-feedback fix (2026-07-24, post-deploy): hide the Mark
+       Completed/Mark Uncompleted toggle row while the reason form is
+       open — leaving it visible produced two differently-styled buttons
+       both labelled "Mark Uncompleted" on screen at once (the ghost
+       toggle above, the primary submit button inside the form below),
+       reported as confusing during live browser testing. Only one
+       outcome control surface is shown at a time now. */
+    if (viewOutcomeActions) { viewOutcomeActions.hidden = true; }
     viewOutcomeReasonInput.value = prefill || '';
     clearFieldError(viewOutcomeReasonInput);
     updateOutcomeReasonCounter();
