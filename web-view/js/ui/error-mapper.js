@@ -36,14 +36,14 @@ var KNOWN_ERRORS = {
   },
   outcome_locked: {
     type: 'error',
-    title: 'Outcome can no longer be changed',
-    message: 'This task’s date (Asia/Colombo) has passed — outcome actions are only available on the task’s own date.',
+    title: 'Outcome update closed',
+    message: 'The deadline for updating this task has passed.',
     persistent: true
   },
   outcome_not_available_yet: {
     type: 'error',
-    title: 'Not available yet',
-    message: 'Outcome actions are available on the task’s own date (Asia/Colombo). This task isn’t there yet.',
+    title: 'Outcome not available yet',
+    message: 'You can update this task only on its scheduled date.',
     persistent: true
   },
   outcome_recorded_immutable: {

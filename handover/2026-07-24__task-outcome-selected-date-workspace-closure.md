@@ -131,3 +131,11 @@ Committed as three scoped commits and pushed to `origin/main` (`8252175..eb249b9
 ## 12. Reviewer routing
 
 Per CLAUDE.md §18: calendar/Task tooling, not an HR/KPI/recruitment/admin-authority domain change — no specific Management Team reviewer is mandated. Standard code review applies; recommend the repository owner (Mareen) do the outstanding browser pass before considering this fully closed.
+
+## 13. Screenshot-derived toast-feedback correction (fifth pass, 2026-07-24)
+
+A production screenshot showed a future-dated Task's Mark Completed/Mark Uncompleted buttons appearing active with no explanation when clicked — root cause was `.msc-btn` having no `:disabled` CSS treatment at all, combined with the native `disabled` attribute silently swallowing every click/keyboard event. Fixed by switching the outcome buttons from native `disabled` to `aria-disabled` + a dimmed `.msc-btn-unavailable` class (buttons stay reachable), with a fresh `getOutcomeAvailability(it)` check (future/current/past, from `it.date` vs `getColomboTodayStr()`) gating both click handlers and showing an explanatory toast before any request is sent. Also aligned `error-mapper.js`'s outcome-code copy, added toasts for blank/over-limit Uncompleted reasons (additive to the pre-existing inline field error), distinguished the success-toast wording for Completed/new-Uncompleted/reason-edited, and added a focus/visibilitychange re-check for a Task Details popup left open across the Colombo midnight boundary. Full detail: validation doc §16.
+
+Files touched this pass: `web-view/js/calendar/instance.js`, `web-view/js/ui/error-mapper.js`, `web-view/css/calendar.css` only — confirmed via `git diff -- backend/` / `git diff -- database/` (both empty) that zero backend/API/database/migration changes were made. Protected path (`member-aios/mayurika-hr/staff-data/`) confirmed untouched.
+
+**Status: AMBER**, same standing reason as the rest of this document — no browser automation tool available in this session, so the fix is source-traced and diff-verified but not yet clicked through in a real browser. Not committed/pushed/deployed as part of this pass (pending repository-owner review of the diff, consistent with this project's "only commit when explicitly asked" practice).

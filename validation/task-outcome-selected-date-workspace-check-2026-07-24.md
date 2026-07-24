@@ -208,3 +208,42 @@ Push: `8252175..eb249b9  main -> main`, no force-push, no unrelated files, prote
 **Browser/frontend interactive behavior: AMBER, not PASS.** The implementation is now live and reachable at `https://management-aios.vercel.app`, and every prerequisite this session can check without a browser (API fields, deployed bundle content, deployed CSS classes) is confirmed present. What's missing is a browser automation tool to actually execute the 32-item click-through/console/network checklist — that gap is unchanged from every prior pass in this engagement, now on the live production site rather than on undeployed code.
 
 **Overall status for this document: AMBER** — everything within this session's tooling reach is done and passing; the one remaining gap (real browser execution) requires either a session with browser tooling or the repository owner's own manual click-through against `https://management-aios.vercel.app`.
+
+## 16. Screenshot-derived toast-feedback correction (fifth pass, 2026-07-24)
+
+### 16.1 Defect
+
+A live screenshot showed a Task dated 2026-07-25 (one day after the then-current 2026-07-24), outcome "Pending", with Mark Completed and Mark Uncompleted both appearing active — no explanation was given when a future Task's outcome actions were attempted. Root cause: `renderOutcome()` (`web-view/js/calendar/instance.js`) set the native `disabled` IDL property from `it.outcome_locked`, and `.msc-btn` (`web-view/css/calendar.css`) carried no `:disabled` styling at all (no opacity/color change, `cursor: pointer` asserted unconditionally) — so a locked button was functionally inert (native `disabled` silently swallows all click/keyboard events) but visually identical to an active one, and gave zero feedback when clicked. `outcome_locked` alone also cannot distinguish a future task from a past one, which the required toast copy needs to.
+
+### 16.2 Fix (frontend presentation/error-mapping only — confirmed no backend/API/database/migration change)
+
+- `getOutcomeAvailability(it)` (new, `instance.js`) classifies a task as `future`/`current`/`past` by comparing `it.date` against `getColomboTodayStr()` — the same YYYY-MM-DD string-comparison technique `renderTasksWorkspace()`'s `dateRelation` already uses — recomputed fresh on every render and, separately, fresh again inside each click handler (never a cached render-time value), per the long-open-popup requirement.
+- `renderOutcome()` no longer sets the native `disabled` attribute on either outcome button — it sets `aria-disabled` + a new `.msc-btn-unavailable` class (dimmed via `opacity: .55` only — no color/size change, no hidden buttons) plus a `title` tooltip (`Available on the Task date` / `Outcome update window closed`), reusing the existing CSS-only `::after`-reads-`title` tooltip pattern already used by `.msc-cal-mode-btn`. Buttons stay mouse- and keyboard-reachable.
+- Both click handlers (`viewOutcomeCompletedBtn`, `viewOutcomeUncompletedBtn`) now check `getOutcomeAvailability(it)` first; if not `current`, `showOutcomeUnavailableToast(it, availability)` fires and the handler returns before the confirmation dialog/reason form opens or any request is sent.
+- Toast copy (both persistent, `type: 'error'`):
+  - Future: "Outcome not available yet" / "You can update this task on its scheduled date: `<Month D, YYYY>`."
+  - Past: "Outcome update closed" / "This task could only be updated before 11:59:59 PM on `<Month D, YYYY>`."
+- `ui/error-mapper.js`'s `outcome_locked`/`outcome_not_available_yet` `KNOWN_ERRORS` copy updated to the same generic wording (no date interpolation — this is the backend-fallback path, used only when the client-side date check and the backend's independent re-validation disagree, e.g. a popup left open across the Colombo midnight boundary) — scoped edit; these two codes are thrown exclusively by the outcome-update flow (confirmed by grep), so no other flow's error copy is affected.
+- `setTaskOutcome()`'s `.catch` now shows "Outcome update failed" / "The task was not changed. Please try again." for any non-outcome-specific failure (network/server/validation/unknown), overridden locally inside this one function — the shared `KNOWN_ERRORS.unknown`/`.server`/`.validation` entries other flows (Leave, Task create/update, Bulk Tasks) rely on were not touched.
+- Success-toast copy aligned to "Task marked as completed." / "Task marked as uncompleted." / "Uncompleted reason updated." (previously "Task marked Completed."/"Task marked Uncompleted." for both new-Uncompleted and reason-edit cases indistinguishably).
+- Blank-reason and >250-char-reason submissions now show a toast ("Reason required" / "Reason too long") in addition to the pre-existing inline field error (`setFieldError`) — the inline error is preserved unchanged for its accessibility linkage to the field; the toast is additive, not a replacement.
+- `refreshOpenOutcomeAvailability()` (new) re-runs `renderOutcome()` on `window` `focus` and `document` `visibilitychange` (not polling) while a Task Details popup is open, so the button presentation catches up if the Colombo date rolls over while the popup is left open — skipped while the Uncompleted reason-entry form is open, since `renderOutcome()` unconditionally clears that form's in-progress text and this would otherwise silently discard a reason the user is mid-typing (the backend still independently re-validates on submit regardless).
+
+### 16.3 Verification performed this pass
+
+- `node --check` clean on all three touched files (`instance.js`, `error-mapper.js`; `core.js` untouched but re-checked for safety).
+- CSS brace-balance check: 396 open / 396 close, balanced.
+- `git diff -- backend/` and `git diff -- database/` both empty — zero backend/API/database/migration changes, confirmed by diff, not merely by intent.
+- `git status --short -- member-aios/mayurika-hr/staff-data/` empty — protected path untouched.
+- Full manual code-path trace of every click handler, the availability helper, the focus/visibility listeners, and the CSS specificity/cascade for `.msc-btn-unavailable` against `.msc-btn`/`.msc-btn-primary`/`.msc-btn-ghost` (one issue found and fixed during this trace — see §16.4).
+- Not performed: live browser click-through (no browser automation tool available in this session, same limitation as every prior pass — see §9.4/§13); `python -m unittest discover -s backend/tests` full regression run (no `pytest`/backend dependencies installed in this environment and backend has zero diff this pass, so this is a lower-risk gap than in prior passes but is still an unexecuted check, not a executed-and-passing one).
+
+### 16.4 Self-caught issue during this pass
+
+An initial draft added `.msc-btn-unavailable:hover { background: transparent; }` to keep the dimmed hover state "restrained." Because `.msc-btn-primary:hover` and `.msc-btn-unavailable:hover` share identical specificity (one class + one pseudo-class) and the new rule was declared later in the file, it would have won and stripped the background from an already-Completed-but-now-locked task's Mark Completed button on hover — leaving its white `color: #fff` text (set unconditionally by `.msc-btn-primary`, not hover-scoped) invisible against the resulting transparent/white background. Caught during the specificity trace above and removed before commit; the persistent `opacity: .55` on `.msc-btn-unavailable` already dims background and text together at every state, so no replacement rule was needed.
+
+### 16.5 PASS / AMBER / FAIL
+
+**Code-level correction: PASS.** Narrow, traced, diff-verified change; backend/API/database/migration confirmed unchanged by `git diff`; protected path confirmed untouched; syntax and CSS structure both clean; the one self-found specificity bug was fixed before commit.
+
+**Overall status for this addendum: AMBER** — same standing limitation as the rest of this document: no browser automation tool is available in this session, so the STEP 11 test matrix (future/past button behavior, toast appearance/copy, no-network-request proof, rapid-click dedup, all-five-member/both-surface consistency, responsive/zoom/screen-reader behavior) is traced against source, not executed against a running browser. Recommend the repository owner perform a manual click-through against a locally-run instance (or the deployed site, once this change is deployed) before treating this as fully closed.

@@ -490,10 +490,14 @@ function mountScheduleCalendarInstance(container) {
        .msc-view-meta-secondary (smaller/muted), same treatment as
        Created/Updated at above — both are audit trail, not primary
        content. CONFIRMED UNTOUCHED-TASK OUTCOME (2026-07-24): a status
-       line plus Mark Completed/Uncompleted controls. Both buttons are
-       disabled once outcome_locked is true (viewItem() below), which
-       makes them read-only after the task date's deadline regardless of
-       whether an outcome was already recorded. Reuses the existing
+       line plus Mark Completed/Uncompleted controls. Both buttons become
+       visually unavailable (aria-disabled + .msc-btn-unavailable, never
+       the native `disabled` attribute) once the task's date is not
+       Colombo "today" — see getOutcomeAvailability()/renderOutcome()
+       below — which makes them read-only-looking outside the task's own
+       date regardless of whether an outcome was already recorded, while
+       staying mouse/keyboard reachable so a click still explains why
+       (screenshot-derived defect fix, 2026-07-24). Reuses the existing
        .msc-btn/.msc-btn-ghost/.msc-form-actions classes — no new button
        visual language introduced.
 
@@ -3945,18 +3949,81 @@ function mountScheduleCalendarInstance(container) {
         ? 'Outcome updated by: ' + (it.outcome_updated_by || 'Not available') : '';
     }
 
-    var locked = !!it.outcome_locked;
+    /* Outcome availability toast fix (screenshot-derived defect,
+       2026-07-24): the buttons are deliberately never given the native
+       `disabled` attribute — that suppressed every click/keyboard event
+       silently, so an unavailable (future/past) task's buttons looked
+       identical to an active one and clicking them explained nothing.
+       aria-disabled + .msc-btn-unavailable keep them mouse/keyboard
+       reachable so the click handlers below can show the explanatory
+       toast; getOutcomeAvailability() (below) recomputes future/current/
+       past from it.date vs the live Colombo "today" on every render, the
+       same comparison renderTasksWorkspace()'s dateRelation already uses,
+       rather than only the coarser backend it.outcome_locked boolean
+       (which cannot distinguish future from past). */
+    var availability = getOutcomeAvailability(it);
+    var outcomeUnavailable = availability !== 'current';
+    var outcomeUnavailableTitle = availability === 'future' ? 'Available on the Task date'
+      : (availability === 'past' ? 'Outcome update window closed' : '');
     if (viewOutcomeCompletedBtn) {
-      viewOutcomeCompletedBtn.disabled = locked;
+      viewOutcomeCompletedBtn.setAttribute('aria-disabled', outcomeUnavailable ? 'true' : 'false');
+      viewOutcomeCompletedBtn.classList.toggle('msc-btn-unavailable', outcomeUnavailable);
+      viewOutcomeCompletedBtn.title = outcomeUnavailableTitle;
       viewOutcomeCompletedBtn.classList.toggle('msc-btn-primary', it.outcome === 'Completed');
       viewOutcomeCompletedBtn.classList.toggle('msc-btn-ghost', it.outcome !== 'Completed');
     }
     if (viewOutcomeUncompletedBtn) {
-      viewOutcomeUncompletedBtn.disabled = locked;
+      viewOutcomeUncompletedBtn.setAttribute('aria-disabled', outcomeUnavailable ? 'true' : 'false');
+      viewOutcomeUncompletedBtn.classList.toggle('msc-btn-unavailable', outcomeUnavailable);
+      viewOutcomeUncompletedBtn.title = outcomeUnavailableTitle;
       viewOutcomeUncompletedBtn.classList.toggle('msc-btn-primary', it.outcome === 'Uncompleted');
       viewOutcomeUncompletedBtn.classList.toggle('msc-btn-ghost', it.outcome !== 'Uncompleted');
     }
     hideOutcomeReasonForm();
+  }
+
+  /* Future/current/past classification for outcome-action availability
+     (screenshot-derived defect, 2026-07-24) — string comparison of two
+     YYYY-MM-DD values is safe (lexicographic order matches calendar
+     order), same technique renderTasksWorkspace()'s dateRelation already
+     uses. Always reads getColomboTodayStr() fresh at call time rather
+     than a cached value, so a popup left open across the Colombo
+     midnight boundary (STEP 9, long-open popup) is re-evaluated correctly
+     on its next render or action — never only the state captured when
+     the popup opened. */
+  function getOutcomeAvailability(it) {
+    var todayStr = getColomboTodayStr();
+    if (it.date > todayStr) { return 'future'; }
+    if (it.date < todayStr) { return 'past'; }
+    return 'current';
+  }
+
+  function formatTaskDateForToast(dateStr) {
+    var d = parseDateStr(dateStr);
+    return MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+
+  /* Shown instead of sending any request when a Mark Completed/Uncompleted
+     click/Enter/Space is caught by the availability gate in the two click
+     handlers below. persistent: true — the user must notice and act
+     differently (open the task on its own date), never auto-dismissed. */
+  function showOutcomeUnavailableToast(it, availability) {
+    var formattedDate = formatTaskDateForToast(it.date);
+    if (availability === 'future') {
+      showToast({
+        type: 'error',
+        title: 'Outcome not available yet',
+        message: 'You can update this task on its scheduled date: ' + formattedDate + '.',
+        persistent: true
+      });
+    } else {
+      showToast({
+        type: 'error',
+        title: 'Outcome update closed',
+        message: 'This task could only be updated before 11:59:59 PM on ' + formattedDate + '.',
+        persistent: true
+      });
+    }
   }
 
   /* Sets/changes a task's outcome via the dedicated PUT .../outcome
@@ -3965,9 +4032,10 @@ function mountScheduleCalendarInstance(container) {
      touch category/classification, per backend/routers/member_schedules.py
      update_member_schedule_event_outcome's docstring). The backend
      independently re-enforces the deadline lock (409 outcome_locked) even
-     though the buttons are already disabled client-side once locked —
-     this call path exists for the narrow case where the popup was left
-     open across the Colombo midnight boundary. reason is sent verbatim
+     though the click handlers below already gate on the same date check
+     client-side (getOutcomeAvailability()) — this call path exists for
+     the narrow case where the popup was left open across the Colombo
+     midnight boundary. reason is sent verbatim
      (null for Completed, the trimmed text for Uncompleted — both already
      validated/normalized by the callers below before this is invoked).
      Returns a Promise<boolean> (true only on a confirmed, successful
@@ -3979,13 +4047,23 @@ function mountScheduleCalendarInstance(container) {
   function setTaskOutcome(id, outcome, reason, triggerBtn) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return Promise.resolve(false); }
+    var wasOutcome = it.outcome;
     setButtonBusy(triggerBtn, true, { busyLabel: 'Saving…' });
     return apiRequest('PUT', apiBase + '/' + encodeURIComponent(id) + '/outcome', { outcome: outcome, reason: reason || null })
       .then(function (apiItem) {
         var updated = apiItemToFrontend(apiItem);
         var idx = items.indexOf(it);
         if (idx !== -1) { items[idx] = updated; }
-        showToast({ type: 'success', title: 'Outcome updated', message: 'Task marked ' + outcome + '.' });
+        /* Success copy (screenshot-derived defect follow-through,
+           2026-07-24) — a reason resubmit while already Uncompleted reads
+           as an edit ("reason updated"), never as if the task had just
+           newly transitioned to Uncompleted; wasOutcome is read above
+           before the PUT, since `it` (and outcome) below reflect the
+           already-updated state. */
+        var successMessage = outcome === 'Completed'
+          ? 'Task marked as completed.'
+          : (wasOutcome === 'Uncompleted' ? 'Uncompleted reason updated.' : 'Task marked as uncompleted.');
+        showToast({ type: 'success', title: 'Outcome updated', message: successMessage });
         /* Live feedback (2026-07-24, post-deploy): close Task Details on
            any successful outcome write (Completed, Uncompleted-with-
            reason, or a reason resubmit) and refresh the Tasks workspace
@@ -4006,7 +4084,22 @@ function mountScheduleCalendarInstance(container) {
       })
       .catch(function (err) {
         var mapped = mapApiError(err);
-        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        /* Generic-failure copy (STEP 4, screenshot-derived defect,
+           2026-07-24) — the three outcome-specific codes (err.code, set
+           by apiRequest() above) already carry accurate, specific
+           KNOWN_ERRORS copy (ui/error-mapper.js); anything else (network/
+           server/validation/unknown) is overridden here, scoped to only
+           this outcome-update flow, so the shared generic KNOWN_ERRORS
+           entries other flows (Leave, Task create/update, Bulk Tasks)
+           still rely on are never changed. */
+        var isOutcomeSpecific = !!(err && (
+          err.code === 'outcome_locked' ||
+          err.code === 'outcome_not_available_yet' ||
+          err.code === 'outcome_recorded_immutable'
+        ));
+        var title = isOutcomeSpecific ? mapped.title : 'Outcome update failed';
+        var message = isOutcomeSpecific ? mapped.message : 'The task was not changed. Please try again.';
+        showToast({ type: mapped.type, title: title, message: message, persistent: mapped.persistent });
         return false;
       })
       .then(function (ok) { setButtonBusy(triggerBtn, false); return ok; });
@@ -4030,6 +4123,15 @@ function mountScheduleCalendarInstance(container) {
       if (!id) { return; }
       var it = items.filter(function (x) { return x.id === id; })[0];
       if (!it) { return; }
+      /* Availability gate (screenshot-derived defect, 2026-07-24) —
+         recomputed fresh here (never a value cached from renderOutcome()'s
+         last call) so a popup left open across the Colombo midnight
+         boundary is judged correctly (STEP 9). A blocked click shows the
+         explanatory toast and stops before the confirmation dialog opens
+         or any request is sent; the backend still independently rejects
+         a stale request either way (unchanged). */
+      var availability = getOutcomeAvailability(it);
+      if (availability !== 'current') { showOutcomeUnavailableToast(it, availability); return; }
       var clearsReason = it.outcome === 'Uncompleted';
       confirmDestructive({
         title: 'Mark task Completed?',
@@ -4056,6 +4158,11 @@ function mountScheduleCalendarInstance(container) {
       if (!id) { return; }
       var it = items.filter(function (x) { return x.id === id; })[0];
       if (!it) { return; }
+      /* Availability gate — same reasoning as the Mark Completed handler
+         above; blocked here means the reason-entry form never opens and
+         no request is sent. */
+      var availability = getOutcomeAvailability(it);
+      if (availability !== 'current') { showOutcomeUnavailableToast(it, availability); return; }
       showOutcomeReasonForm(it.outcome === 'Uncompleted' ? it.outcome_reason : '');
     });
   }
@@ -4071,11 +4178,19 @@ function mountScheduleCalendarInstance(container) {
       var trimmed = viewOutcomeReasonInput.value.trim();
       if (!trimmed) {
         setFieldError(viewOutcomeReasonInput, 'Enter a reason for marking this task Uncompleted.');
+        showToast({
+          type: 'error', title: 'Reason required',
+          message: 'Enter a reason before marking this task as uncompleted.', persistent: true
+        });
         viewOutcomeReasonInput.focus();
         return;
       }
       if (trimmed.length > 250) {
         setFieldError(viewOutcomeReasonInput, 'Reason must be 250 characters or fewer.');
+        showToast({
+          type: 'error', title: 'Reason too long',
+          message: 'The reason must be 250 characters or fewer.', persistent: true
+        });
         viewOutcomeReasonInput.focus();
         return;
       }
@@ -4083,6 +4198,31 @@ function mountScheduleCalendarInstance(container) {
       setTaskOutcome(id, 'Uncompleted', trimmed, viewOutcomeReasonSubmitBtn);
     });
   }
+
+  /* Long-open-popup boundary (STEP 9, screenshot-derived defect,
+     2026-07-24) — a Task Details popup may stay open across the Colombo
+     midnight boundary; re-evaluate (not poll) outcome availability when
+     the window regains focus or the tab becomes visible again, so the
+     button presentation catches up rather than only being corrected on
+     the next full popup open. Skipped while the reason-entry form is
+     open — renderOutcome() unconditionally clears that form's in-progress
+     text (hideOutcomeReasonForm()), which would otherwise silently wipe
+     a reason the user is mid-typing; the backend still independently
+     re-validates on submit either way (see setTaskOutcome() above), so
+     skipping this narrow case loses no protection, only a slightly later
+     visual update. */
+  function refreshOpenOutcomeAvailability() {
+    if (!currentViewItemId) { return; }
+    if (!viewModal.classList.contains('show')) { return; }
+    if (viewOutcomeReasonForm && !viewOutcomeReasonForm.hidden) { return; }
+    var it = items.filter(function (x) { return x.id === currentViewItemId; })[0];
+    if (!it) { return; }
+    renderOutcome(it);
+  }
+  window.addEventListener('focus', refreshOpenOutcomeAvailability);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { refreshOpenOutcomeAvailability(); }
+  });
 
   function viewItem(id, triggerEl, origin, besideList) {
     var it = items.filter(function (x) { return x.id === id; })[0];

@@ -2074,6 +2074,49 @@
       background: transparent;
     }
 
+    /* Outcome availability presentation (screenshot-derived defect fix,
+       2026-07-24) — a future/past Task's Mark Completed/Uncompleted
+       buttons never get the native `disabled` attribute (instance.js
+       renderOutcome()), so they stay mouse/keyboard reachable and a
+       click/Enter/Space can still show the explanatory toast; this rule
+       only dims them (restrained, non-destructive styling — no red/
+       danger color, no size change, no hidden buttons) so they read as
+       inactive. Tooltip reuses the same CSS-only title-attribute pattern
+       as .msc-cal-mode-btn::after above — one source of truth for the
+       tooltip text, shown above the button since the reason-entry form
+       sits directly below this row. */
+    .msc-btn-unavailable {
+      position: relative;
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .msc-btn-unavailable::after {
+      content: attr(title);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: var(--text);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 600;
+      line-height: 1;
+      padding: 5px 9px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease, transform .12s ease;
+      z-index: 30;
+    }
+
+    .msc-btn-unavailable:hover::after,
+    .msc-btn-unavailable:focus-visible::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* Prominent sidebar "Create" — a familiar rounded, elevated primary
        action; its "+" glyph is plain text, not a Google asset. */
     .msc-create-btn {
