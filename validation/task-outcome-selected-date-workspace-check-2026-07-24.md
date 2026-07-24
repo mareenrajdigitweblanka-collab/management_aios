@@ -3,7 +3,7 @@ name: task-outcome-selected-date-workspace-check
 type: validation
 scope: management_aios calendar — Task Outcome (Completed/Uncompleted/reason/audit) + "My Tasks" selected-date workspace
 created: 2026-07-24
-status: BLOCKED (browser validation) — implementation + real-Postgres endpoint evidence complete; migration applied to production; browser validation blocked because the deployed frontend/backend do not contain this implementation and deploying was out of scope for this task
+status: AMBER — committed, pushed, and deployed to production (both frontend and backend confirmed live with the full implementation); AMBER only because no browser automation tool is available in this session to execute the actual click-through/console/visual checklist
 reviewer: pending
 ---
 
@@ -177,10 +177,34 @@ A dedicated manual-browser-validation pass was requested. Two independent blocke
 
 Per this task's own explicit instruction ("If the deployed frontend/backend are older than the current implementation, mark browser validation BLOCKED rather than deploying"), STEPs 3–13 of the browser-validation procedure were not attempted against the live site — doing so would only demonstrate the absence of the feature, not validate it, and deploying to fix that was explicitly out of scope. No code, database, or deployment change was made to work around this.
 
-## 14. PASS / AMBER / FAIL
+## 14. Commit, push, and deployment (fourth pass, later same day)
 
-**Backend/database: PASS.** Migration applied and confirmed live on production. All 20 endpoint scenarios (17 required + rollback + companions) pass against real Postgres, not just SQLite. Zero regression across 276 pre-existing/updated tests. Protected path untouched throughout.
+After user review and explicit step-by-step authorization, the working tree was committed as three scoped commits and pushed to `origin/main`:
 
-**Browser/frontend: BLOCKED, not AMBER, not PASS.** Two independent hard blockers (no browser tool available; deployed frontend/backend are the pre-implementation version) prevent any live browser evidence from being gathered without either adding new tooling or deploying — both out of scope for this validation pass. Frontend correctness remains verified only by source inspection, as in the two prior passes.
+| Commit | Hash | Contents |
+|---|---|---|
+| 1 | `7c613dc` | Backend/database contract — models, router, schemas, time_utils, both test files, schema.sql, migration file |
+| 2 | `1cecba8` | Frontend — calendar.css, core.js, instance.js, error-mapper.js |
+| 3 | `eb249b9` | Evidence — this validation doc + the handover doc (pre-deployment state) |
 
-**Overall status for this document: BLOCKED**, pending either (a) a session with browser automation tooling plus an explicit decision to deploy this implementation first, or (b) the repository owner performing their own manual click-through against a deployed instance.
+Push: `8252175..eb249b9  main -> main`, no force-push, no unrelated files, protected path never touched (confirmed via `git status`/`git diff` before and after every commit).
+
+**Deployment topology discovery**: both Vercel projects (`management-aios` frontend, `management-aios-api` backend) are connected to this same GitHub repository and **auto-deploy concurrently on every push to `main`** — confirmed via GitHub's commit-status API immediately after the push: both posted `state: success` / `Deployment has completed` within 21 seconds of each other (08:34:00Z and 08:34:21Z). There was no way to sequence "backend first, then verify, then frontend" as separate controlled actions — Vercel's own GitHub integration deploys both the instant `main` updates, and no deployment-configuration change (e.g., pausing one project's auto-deploy) was made to force a different order, since altering deployment configuration was explicitly out of scope.
+
+**Post-deploy verification (read-only, real production)**:
+- `GET https://management-aios-api.vercel.app/health` → 200.
+- `GET https://management-aios-api.vercel.app/api/member-schedules/paraparan` → every Task object now includes `outcome`, `outcome_reason`, `outcome_status`, `outcome_locked`, `outcome_updated_at`, `outcome_updated_by`. The 3 residue rows correctly show their previously-set outcome values through the new API.
+- Deployed `https://management-aios.vercel.app/js/calendar/instance.js` is now 4909 lines (was 4506), matching the working tree exactly, and contains `"My Tasks"` (3×), `msc-tasks-date-input`, `setTasksDate`, `msc-view-outcome-reason-form`, `outcome_recorded_immutable`, and 4 unconditional `confirmDestructive({` calls for Mark Completed — verified via specific behavior-relevant strings, not line count alone. No `'All tasks'` literal remains.
+- Deployed `core.js`, `error-mapper.js`, and `calendar.css` all confirmed to contain their respective new markers (`outcome_reason`/`outcome_updated_by` fields, `outcome_not_available_yet`/`outcome_recorded_immutable` error codes, `msc-tasks-date-input`/`msc-view-outcome-reason-form`/`msc-tasks-row-outcome` classes).
+
+**What remains unverified: actual browser behavior.** No browser automation tool is available in this session (checked repeatedly across every pass in this engagement). The deployed code now genuinely contains the implementation — the gap is purely "does it visually render and behave correctly when a real browser executes it," which cannot be confirmed by HTTP/API inspection alone. Per this task's explicit instruction not to claim browser PASS without executing browser validation, the 32-item live browser checklist (STEP 12) was not attempted and is not claimed as passing.
+
+## 15. PASS / AMBER / FAIL
+
+**Backend/database: PASS.** Migration applied and confirmed live on production. All 20 endpoint scenarios (17 required + rollback + companions) pass against real Postgres. Zero regression across 276 tests. Protected path untouched throughout every pass.
+
+**Commit/push/deploy: PASS.** Three scoped commits, clean push, both Vercel projects deployed and independently confirmed live via read-only checks — backend API fields and frontend bundle content both verified present in production.
+
+**Browser/frontend interactive behavior: AMBER, not PASS.** The implementation is now live and reachable at `https://management-aios.vercel.app`, and every prerequisite this session can check without a browser (API fields, deployed bundle content, deployed CSS classes) is confirmed present. What's missing is a browser automation tool to actually execute the 32-item click-through/console/network checklist — that gap is unchanged from every prior pass in this engagement, now on the live production site rather than on undeployed code.
+
+**Overall status for this document: AMBER** — everything within this session's tooling reach is done and passing; the one remaining gap (real browser execution) requires either a session with browser tooling or the repository owner's own manual click-through against `https://management-aios.vercel.app`.

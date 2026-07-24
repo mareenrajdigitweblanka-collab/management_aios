@@ -3,8 +3,8 @@ name: task-outcome-selected-date-workspace-handover
 type: handover
 scope: management_aios calendar — Task Outcome (Completed/Uncompleted/reason/audit/date-lock/delete-lock) + "My Tasks" selected-date workspace
 created: 2026-07-24
-status: BLOCKED (browser validation only) — implementation + real-Postgres endpoint evidence complete; migration applied to production; browser validation blocked because the deployed frontend/backend predate this implementation and no browser tool is available this session
-owner: builder, per this task's "closure review and narrow completion pass" instructions, extended by two follow-up validation passes the same day
+status: AMBER — committed (7c613dc, 1cecba8, eb249b9), pushed, and deployed to production on both Vercel projects; AMBER only because no browser automation tool is available this session to execute live click-through validation
+owner: builder, per this task's "closure review and narrow completion pass" instructions, extended by three follow-up validation/deployment passes the same day
 reviewer: pending
 ---
 
@@ -90,15 +90,7 @@ Per that task's own instruction, browser validation was marked **BLOCKED** rathe
 - SQLite endpoint tests prove logic/atomicity; the real-Postgres re-run (§5.1) additionally proves the live CHECK constraint and real audit-timestamp behavior — but still not native `TIMESTAMPTZ` wire-format edge cases or true concurrent-connection semantics.
 - 3 disposable test Tasks are now permanent production residue (§10) — by design, not a bug, but worth knowing about before anyone audits `paraparan`'s Task list.
 
-## 8. Outstanding before this is "done"
-
-1. User review of the diff (12 files) before commit.
-2. Commit and push this implementation so the deployed backend/frontend actually contain it — currently blocking any further browser or production-application verification.
-3. A real browser pass (desktop + mobile, all five members) once deployed, ideally with Playwright or similar tooling set up first.
-4. Correct remaining deploy order from here: backend deploy → frontend deploy (migration is already live).
-5. Optional, separate approval: whether to manually SQL-delete the 3 `ZZZ-BROWSER-VALIDATION-DELETE-ME` residue rows on `paraparan` (§10) — the app's own API will never do this, by design.
-
-## 10. Production test-row residue
+## 9. Production test-row residue
 
 Three disposable Tasks remain in production, permanently, by design (Rule 8 — any Task with a recorded outcome can never be deleted via the API):
 
@@ -108,8 +100,34 @@ Three disposable Tasks remain in production, permanently, by design (Rule 8 — 
 | `3cce627b-2257-41fc-8408-bc2b1d608ee6` | 2026-07-24 | ZZZ-BROWSER-VALIDATION-DELETE-ME (reason-clear-test) | Completed | — (cleared from Uncompleted, confirmed NULL) |
 | `fdbd8a0e-0b64-473e-b5cc-af58d0e80c87` | 2026-07-24 | ZZZ-BROWSER-VALIDATION-DELETE-ME (250-char-test) | Uncompleted | 250 `x` characters (boundary test) |
 
-All: member `paraparan`, `source_scope=dashboard_testing`, `is_official_truth=false`. Never classified as official business records. Not deleted by this session (the API correctly refuses; direct SQL deletion was not performed as it wasn't requested and would be an unreviewed manual production write). Recommend the repository owner decide separately whether to SQL-delete these.
+All: member `paraparan`, `source_scope=dashboard_testing`, `is_official_truth=false`. Never classified as official business records. Confirmed still present and rendering correctly through the newly-deployed backend API (§10). Not deleted by this or any prior session (the API correctly refuses; direct SQL deletion was not performed as it wasn't requested and would be an unreviewed manual production write). Recommend the repository owner decide separately whether to SQL-delete these.
 
-## 9. Reviewer routing
+## 10. Commit, push, and deployment
 
-Per CLAUDE.md §18: calendar/Task tooling, not an HR/KPI/recruitment/admin-authority domain change — no specific Management Team reviewer is mandated. Standard code review applies; recommend the repository owner (Mareen) review before commit, given the scope of this pass.
+Committed as three scoped commits and pushed to `origin/main` (`8252175..eb249b9`):
+
+| Commit | Hash | Scope |
+|---|---|---|
+| 1 | `7c613dc` | Backend/database contract |
+| 2 | `1cecba8` | Frontend Tasks workspace |
+| 3 | `eb249b9` | Validation/handover evidence (pre-deployment snapshot) |
+
+**Both Vercel projects auto-deployed concurrently from this one push** — `management-aios` (frontend) and `management-aios-api` (backend) are both connected to this same GitHub repository and both deploy on every push to `main`, confirmed via GitHub's commit-status API (both `state: success`, ~21 seconds apart). There was no way to control a backend-first deploy order as a separate action; this is a structural property of the existing two-project Vercel setup, not something this session changed.
+
+**Post-deploy verification, read-only, real production:**
+- Backend health: 200. Live API now returns all 6 outcome fields for every Task, confirmed against `paraparan`'s real data including the 3 residue rows.
+- Frontend bundle (`instance.js`) now 4909 lines (was 4506), containing `"My Tasks"`, `msc-tasks-date-input`, `setTasksDate`, `msc-view-outcome-reason-form`, `outcome_recorded_immutable`, and unconditional `confirmDestructive({` calls for Mark Completed — verified via specific strings, not line count alone. `core.js`, `error-mapper.js`, `calendar.css` all confirmed to contain their respective new markers too.
+
+**Follow-up evidence commit**: after this deployment verification, both evidence files were updated again and pushed in a fourth, evidence-only commit (see repository log for the hash — created after this document's own content, so it cannot self-reference its own hash).
+
+## 11. Outstanding before this is fully "done"
+
+1. ~~User review of the diff before commit~~ — done; commits created as reviewed and approved.
+2. ~~Commit and push~~ — done (`7c613dc`, `1cecba8`, `eb249b9`).
+3. ~~Deploy backend and frontend~~ — done, both live and verified via read-only API/bundle checks.
+4. **A real browser pass is still outstanding** — no browser automation tool has been available in any pass of this engagement. Recommend Playwright (or similar) in a future session, or the repository owner's own manual click-through against `https://management-aios.vercel.app`, covering at minimum: My Tasks heading + today default + manual date selection, Completed confirmation + Cancel, Uncompleted reason dialog + counter + validation, reason clearing, date/delete locks, all five members, responsive layout, and console/network cleanliness.
+5. Optional, separate approval: whether to manually SQL-delete the 3 `ZZZ-BROWSER-VALIDATION-DELETE-ME` residue rows on `paraparan` (§9) — the app's own API will never do this, by design.
+
+## 12. Reviewer routing
+
+Per CLAUDE.md §18: calendar/Task tooling, not an HR/KPI/recruitment/admin-authority domain change — no specific Management Team reviewer is mandated. Standard code review applies; recommend the repository owner (Mareen) do the outstanding browser pass before considering this fully closed.
