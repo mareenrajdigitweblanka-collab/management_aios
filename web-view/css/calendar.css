@@ -2180,6 +2180,25 @@
       margin-bottom: 4px;
     }
 
+    /* Task Details outcome section (live UI/UX feedback, 2026-07-24) — a
+       top divider visually separates "task facts" (Date/Time/Category/
+       Priority/Notes/Created/Updated at) from the outcome/status group
+       below it, rather than the two blending into one flat list. */
+    .msc-view-outcome-section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--hairline);
+    }
+
+    /* De-emphasized audit-trail lines (Created/Updated at,
+       Outcome updated at/by) — smaller and more muted than primary
+       content (Notes, Outcome, Reason), which stays at .msc-modal p's
+       default size/color. */
+    .msc-view-meta-secondary {
+      font-size: .72rem;
+      color: var(--muted-2);
+    }
+
     .msc-modal-close {
       margin-top: 14px;
       border: 1px solid var(--border);

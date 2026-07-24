@@ -476,11 +476,22 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-view-category"></p>' +
     '<p class="msc-view-priority"></p>' +
     '<p class="msc-view-notes"></p>' +
-    '<p class="msc-view-created-at"></p>' +
-    '<p class="msc-view-updated-at"></p>' +
-    /* Task outcome (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24) — a
-       status line plus Mark Completed/Uncompleted controls. Both buttons
-       are disabled once outcome_locked is true (viewItem() below), which
+    '<p class="msc-view-created-at msc-view-meta-secondary"></p>' +
+    '<p class="msc-view-updated-at msc-view-meta-secondary"></p>' +
+    /* Outcome section (live UI/UX feedback, 2026-07-24) — visually
+       separated from the Date/Time/Category/Priority/Notes block above
+       via .msc-view-outcome-section's top divider, so "this is the
+       task's status" reads as its own group rather than blending into
+       the plain-text field list. .msc-view-outcome itself now renders a
+       colored status badge (outcomeStatusBadgeClass()) matching the
+       Tasks workspace row badges exactly, instead of plain
+       "Outcome: Uncompleted" text — same status, same visual language,
+       wherever it appears. Outcome updated at/by are de-emphasized via
+       .msc-view-meta-secondary (smaller/muted), same treatment as
+       Created/Updated at above — both are audit trail, not primary
+       content. CONFIRMED UNTOUCHED-TASK OUTCOME (2026-07-24): a status
+       line plus Mark Completed/Uncompleted controls. Both buttons are
+       disabled once outcome_locked is true (viewItem() below), which
        makes them read-only after the task date's deadline regardless of
        whether an outcome was already recorded. Reuses the existing
        .msc-btn/.msc-btn-ghost/.msc-form-actions classes — no new button
@@ -493,6 +504,7 @@ function mountScheduleCalendarInstance(container) {
        the current outcome is 'Uncompleted', goes through the shared
        confirmDestructive() dialog first (it is about to clear that
        recorded reason) — see the Mark Completed click handler below. */
+    '<div class="msc-view-outcome-section">' +
     '<p class="msc-view-outcome"></p>' +
     /* Separate lines for Reason/Outcome-updated-at/Outcome-updated-by
        (FINAL BUSINESS RULES closure review, 2026-07-24, Step 5) — each is
@@ -503,8 +515,8 @@ function mountScheduleCalendarInstance(container) {
        backend already nulls out on a Completed transition — nothing here
        generates or retains text independently). */
     '<p class="msc-view-outcome-reason" hidden></p>' +
-    '<p class="msc-view-outcome-updated-at" hidden></p>' +
-    '<p class="msc-view-outcome-updated-by" hidden></p>' +
+    '<p class="msc-view-outcome-updated-at msc-view-meta-secondary" hidden></p>' +
+    '<p class="msc-view-outcome-updated-by msc-view-meta-secondary" hidden></p>' +
     '<div class="msc-form-actions msc-view-outcome-actions">' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-view-outcome-completed-btn">Mark Completed</button>' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-view-outcome-uncompleted-btn">Mark Uncompleted</button>' +
@@ -516,6 +528,7 @@ function mountScheduleCalendarInstance(container) {
     '<div class="msc-form-actions">' +
     '<button type="button" class="msc-btn msc-btn-primary msc-view-outcome-reason-submit-btn">Mark Uncompleted</button>' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-view-outcome-reason-cancel-btn">Cancel</button>' +
+    '</div>' +
     '</div>' +
     '</div>' +
     '</div>' +
@@ -1460,6 +1473,20 @@ function mountScheduleCalendarInstance(container) {
   }
   document.addEventListener('msc:close-toolbar-popovers', closeAllOwnPopovers);
 
+  /* Shared outcome-status -> badge-class mapping (live UI/UX feedback,
+     2026-07-24) — the single source both renderTasksWorkspace() (row
+     badges) and renderOutcome() (Task Details badge) read, so the same
+     status always gets the same color wherever it's shown. Reuses the
+     existing generic .badge/.badge-* system (components.css) — no new
+     badge visual language. Pure/stateless; classifies an already-derived
+     status string, never decides Pending/No response itself. */
+  function outcomeStatusBadgeClass(status) {
+    if (status === 'Completed') { return 'badge-pass'; }
+    if (status === 'Uncompleted') { return 'badge-amber'; }
+    if (status === 'No response') { return 'badge-viewonly'; }
+    return 'badge-pending';
+  }
+
   /* ── Tasks workspace ("My Tasks", FINAL BUSINESS RULES closure review,
      2026-07-24) — scoped to exactly one date at a time (state.tasksDate),
      never the full `items` history. Reads the SAME `items` closure
@@ -1519,9 +1546,7 @@ function mountScheduleCalendarInstance(container) {
       } else {
         var status = it.outcome_status || 'Pending';
         outcomeLabel = status;
-        outcomeBadgeClass = status === 'Completed' ? 'badge-pass' :
-          (status === 'Uncompleted' ? 'badge-amber' :
-          (status === 'No response' ? 'badge-viewonly' : 'badge-pending'));
+        outcomeBadgeClass = outcomeStatusBadgeClass(status);
       }
 
       var detailParts = [];
@@ -3893,7 +3918,15 @@ function mountScheduleCalendarInstance(container) {
   function renderOutcome(it) {
     if (!viewOutcome) { return; }
     var status = it.outcome_status || 'Pending';
-    viewOutcome.textContent = 'Outcome: ' + status;
+    /* Colored status badge (live UI/UX feedback, 2026-07-24) — same
+       outcomeStatusBadgeClass() mapping and .badge/.badge-* classes the
+       Tasks workspace rows use, so "Outcome: Completed" reads the same
+       way (green pill) wherever it's shown, instead of Task Details
+       using plain, uncolored text while the list uses a colored badge
+       for the identical status. escapeHtml() guards the interpolated
+       status text since this is now innerHTML, not textContent. */
+    viewOutcome.innerHTML = 'Outcome: <span class="badge ' + outcomeStatusBadgeClass(status) + '">' +
+      escapeHtml(status) + '</span>';
 
     if (viewOutcomeReasonDisplay) {
       var hasReason = status === 'Uncompleted' && !!it.outcome_reason;
