@@ -3952,8 +3952,23 @@ function mountScheduleCalendarInstance(container) {
         var updated = apiItemToFrontend(apiItem);
         var idx = items.indexOf(it);
         if (idx !== -1) { items[idx] = updated; }
-        if (currentViewItemId === id) { renderOutcome(updated); }
         showToast({ type: 'success', title: 'Outcome updated', message: 'Task marked ' + outcome + '.' });
+        /* Live feedback (2026-07-24, post-deploy): close Task Details on
+           any successful outcome write (Completed, Uncompleted-with-
+           reason, or a reason resubmit) and refresh the Tasks workspace
+           list immediately, rather than leaving the popup open showing
+           the just-updated state — mirrors the existing deleteItem()
+           success path (closeViewModal() + conditional
+           renderTasksWorkspace()), the only other place in this file a
+           Task mutation returns the user to the list. Calendar Month/
+           Week/Day chips and Today's Priorities never render outcome
+           data (badges/reason/timestamp/actor are Tasks-workspace- and
+           Task-Details-only, per the confirmed display-surface scope),
+           so renderActiveView()/renderPriorityPreview()/refreshSummary()
+           are deliberately not called here — nothing in them would
+           change. */
+        closeViewModal();
+        if (currentMode === 'tasks') { renderTasksWorkspace(); }
         return true;
       })
       .catch(function (err) {
