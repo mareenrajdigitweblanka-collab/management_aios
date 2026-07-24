@@ -1983,6 +1983,26 @@
       margin: 4px 0 12px;
     }
 
+    /* Live-feedback fix (2026-07-24, post-deploy): the native `hidden`
+       attribute's implicit display:none loses to ANY same-or-higher-
+       specificity author rule that sets `display` — including
+       .msc-view-outcome-reason-form's own display:flex directly above,
+       and .msc-form-actions's display:flex (calendar.css, shared by many
+       other button rows) on .msc-view-outcome-actions below. Both
+       instance.js:hideOutcomeReasonForm()/showOutcomeReasonForm() toggle
+       the `hidden` IDL property expecting it to actually hide the
+       element; without this override it silently never did, for either
+       element, since the day the reason form was first built — this is
+       the true root cause of the "reason form/duplicate buttons visible
+       when they shouldn't be" reports. [hidden] here is one attribute
+       selector added to the existing class selector, giving it strictly
+       higher specificity (2 simple selectors vs. 1) than either
+       display:flex rule, regardless of source order. */
+    .msc-view-outcome-reason-form[hidden],
+    .msc-view-outcome-actions[hidden] {
+      display: none;
+    }
+
     .msc-view-outcome-reason-label {
       font-size: .77rem;
       font-weight: 600;
