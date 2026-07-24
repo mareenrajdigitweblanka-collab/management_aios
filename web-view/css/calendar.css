@@ -594,8 +594,9 @@
 
     .msc-tasks-header {
       display: flex;
-      align-items: baseline;
-      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
       margin-bottom: 12px;
     }
 
@@ -606,9 +607,47 @@
       margin: 0;
     }
 
+    /* My Tasks date control (FINAL BUSINESS RULES closure review,
+       2026-07-24 — replaces the former "All tasks" nav/heading) — mirrors
+       .msc-summary-date-label/.msc-summary-date-input above so the two
+       date controls read as the same design language; deliberately its
+       own state (state.tasksDate, instance.js) so choosing a Task date
+       never moves the Calendar selection or the Schedule Summary date. */
+    .msc-tasks-date-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .77rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .msc-tasks-date-input {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .88rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      min-height: 32px;
+    }
+
     .msc-tasks-count {
       font-size: .78rem;
       color: var(--muted);
+      margin-left: auto;
+    }
+
+    @media (max-width: 480px) {
+      .msc-tasks-date-label {
+        white-space: normal;
+      }
+
+      .msc-tasks-count {
+        margin-left: 0;
+      }
     }
 
     .msc-tasks-list-wrap {
@@ -674,6 +713,21 @@
     .msc-tasks-row-meta {
       font-size: .72rem;
       color: var(--muted);
+    }
+
+    /* Outcome state + detail lines (FINAL BUSINESS RULES closure review,
+       2026-07-24) — reuses the existing generic .badge/.badge-* system
+       (web-view/css/components.css) rather than inventing a second badge
+       language: Completed=.badge-pass, Uncompleted=.badge-amber,
+       Pending=.badge-pending, No response/Available on the Task
+       date=.badge-viewonly. */
+    .msc-tasks-row-outcome {
+      margin-top: 2px;
+    }
+
+    .msc-tasks-row-outcome-detail {
+      font-size: .68rem;
+      color: var(--muted-2);
     }
 
     @media (max-width: 640px) {
@@ -1914,6 +1968,37 @@
     .msc-form-grid textarea {
       resize: vertical;
       min-height: 50px;
+    }
+
+    /* Task Details Mark-Uncompleted reason form (FINAL CONFIRMED
+       REASON-TRANSITION RULE, 2026-07-24) — lives inside .msc-view-modal-
+       inner, not a .msc-form-grid, so it needs its own minimal label/
+       textarea styling. Reuses the exact same input/textarea visual
+       tokens as .msc-form-grid above (border/radius/padding/font/
+       background) rather than inventing a second style. */
+    .msc-view-outcome-reason-form {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 4px 0 12px;
+    }
+
+    .msc-view-outcome-reason-label {
+      font-size: .77rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .msc-view-outcome-reason-input {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .88rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      resize: vertical;
+      min-height: 60px;
     }
 
     .msc-form-full {

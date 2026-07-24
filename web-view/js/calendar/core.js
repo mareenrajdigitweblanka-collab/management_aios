@@ -375,7 +375,30 @@ export function apiItemToFrontend(apiItem) {
        frontendToApiPayload() below, so it can never be sent back on
        Create/Update. */
     created_at: apiItem.created_at || null,
-    updated_at: apiItem.updated_at || null
+    updated_at: apiItem.updated_at || null,
+    /* Task outcome (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24) —
+       passed through verbatim from the API's outcome/outcome_status/
+       outcome_locked (backend/schemas.py MemberScheduleEventOut).
+       outcome_status ('Pending'/'Completed'/'Uncompleted'/'No response')
+       and outcome_locked are backend-derived on every response; never
+       recomputed here. Not included in frontendToApiPayload() below —
+       outcome is set via its own dedicated endpoint (PUT .../outcome),
+       never through Create/Update. */
+    outcome: apiItem.outcome || null,
+    outcome_status: apiItem.outcome_status || 'Pending',
+    outcome_locked: !!apiItem.outcome_locked,
+    /* FINAL CONFIRMED REASON-TRANSITION RULE (2026-07-24) — passed through
+       verbatim, same as outcome above. outcome_reason is always null once
+       outcome is null/'Completed' (backend-enforced — see
+       backend/schemas.py TaskOutcomeUpdate and the DB pairing CHECK
+       constraint), so there is nothing here that "hides" a cleared reason;
+       it reads as absent because the backend already cleared it.
+       outcome_updated_at/outcome_updated_by are carried through for
+       completeness (parity with created_at/updated_at above) but are not
+       yet rendered anywhere in the UI. */
+    outcome_reason: apiItem.outcome_reason || null,
+    outcome_updated_at: apiItem.outcome_updated_at || null,
+    outcome_updated_by: apiItem.outcome_updated_by || null
   };
 }
 

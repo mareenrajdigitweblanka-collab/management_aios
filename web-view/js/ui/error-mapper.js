@@ -34,6 +34,24 @@ var KNOWN_ERRORS = {
     message: 'Choose a different date or time.',
     persistent: true
   },
+  outcome_locked: {
+    type: 'error',
+    title: 'Outcome can no longer be changed',
+    message: 'This task’s date (Asia/Colombo) has passed — outcome actions are only available on the task’s own date.',
+    persistent: true
+  },
+  outcome_not_available_yet: {
+    type: 'error',
+    title: 'Not available yet',
+    message: 'Outcome actions are available on the task’s own date (Asia/Colombo). This task isn’t there yet.',
+    persistent: true
+  },
+  outcome_recorded_immutable: {
+    type: 'error',
+    title: 'This task can’t be changed',
+    message: 'An outcome has already been recorded for this task, so its date can’t be changed and it can’t be deleted.',
+    persistent: true
+  },
   validation: {
     type: 'error',
     title: 'Check the highlighted fields',

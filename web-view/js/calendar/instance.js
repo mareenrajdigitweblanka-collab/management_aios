@@ -67,6 +67,7 @@ function mountScheduleCalendarInstance(container) {
      same rule the rest of this factory already follows) so the view
      modal's aria-labelledby target is valid for every member tab. */
   var viewTitleId = 'msc-view-title-' + memberKey;
+  var viewOutcomeReasonInputId = 'msc-view-outcome-reason-' + memberKey;
   /* Same per-instance-unique-id rule, used for the sidebar toggle's
      aria-controls target (Phase 1 layout shell, 2026-07-14). */
   var sidebarId = 'msc-sidebar-' + memberKey;
@@ -99,6 +100,7 @@ function mountScheduleCalendarInstance(container) {
      task, 2026-07-24) — the manual Summary date <input>'s id/label
      association. */
   var summaryDateInputId = 'msc-summary-date-' + memberKey;
+  var tasksDateInputId = 'msc-tasks-date-' + memberKey;
 
   var rajivNoteHtml = showRajivNote
     ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
@@ -277,45 +279,44 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '</div>' +
     '</div>' +
-    /* ── Tasks workspace (Step 12, google-calendar-inspired-toolbar-and-
-       tasks-workspace task, 2026-07-23) — a sibling of .msc-calendar-main
-       inside the same card, shown/hidden by setMode() alongside it (see
-       toolbar mode-switch above). Reuses the SAME Task data (`items`,
-       the array .msc-calendar-content's own Month/Week/Day views already
-       read) and the SAME Task Details/Edit/Delete/Create-Task popups
-       defined further below — no second Task truth, no new API call.
-       Scope is intentionally "All tasks" only: Starred and Lists are
-       NOT implemented (Steps 4/17/18's data gate — no starred/list
-       field exists anywhere in the Task schema, backend or frontend;
-       adding them would require an unapproved migration) and Completion
-       is NOT implemented (Step 16 — no completed/completed_at field
-       exists, and how a "completed" Task should affect Schedule Summary
-       is not defined by any approved source, so this task stops short
-       of inventing that business rule). Both blockers are documented in
-       validation/handover, not silently omitted. */
+    /* ── Tasks workspace ("My Tasks", FINAL BUSINESS RULES closure review,
+       2026-07-24 — replaces the former full-history "All tasks" default;
+       see the read-only gap review that preceded this revision) — a
+       sibling of .msc-calendar-main inside the same card, shown/hidden by
+       setMode() alongside it (see toolbar mode-switch above). Reuses the
+       SAME Task data (`items`, the array .msc-calendar-content's own
+       Month/Week/Day views already read) and the SAME Task Details/Edit/
+       Delete/Create-Task popups defined further below — no second Task
+       truth, no new API call; filtering to the selected date happens
+       entirely client-side via itemsForDate() (core.js), the same helper
+       Month/Week/Day cell rendering already uses. Starred and Lists
+       remain NOT implemented (no starred/list field exists anywhere in
+       the Task schema, backend or frontend; adding them would require an
+       unapproved migration). */
     '<div class="msc-tasks-main" data-mode-pane="tasks">' +
     '<div class="msc-tasks-sidebar">' +
     '<div class="msc-create-wrap">' +
     '<button type="button" class="msc-btn msc-btn-primary msc-create-btn msc-tasks-add-btn">' +
     '<span class="msc-create-btn-plus" aria-hidden="true">+</span>Add a task</button>' +
     '</div>' +
-    '<nav class="msc-tasks-nav" aria-label="Tasks views">' +
-    '<button type="button" class="msc-tasks-nav-btn active" data-tasks-view="all" aria-current="true">All tasks</button>' +
-    '</nav>' +
     '<p class="msc-note msc-tasks-nav-note">Starred and custom Lists need additional data fields that are not ' +
     'yet approved for this AIOS, so they are not shown here.</p>' +
     '</div>' +
     '<div class="msc-tasks-content">' +
     '<div class="msc-tasks-header">' +
-    '<h3 class="msc-tasks-title">All tasks</h3>' +
+    '<h3 class="msc-tasks-title">My Tasks</h3>' +
+    '<label class="msc-tasks-date-label" for="' + escapeHtml(tasksDateInputId) + '">' +
+    '<span class="msc-tasks-date-label-text">Task date:</span>' +
+    '<input type="date" class="msc-tasks-date-input" id="' + escapeHtml(tasksDateInputId) + '" />' +
+    '</label>' +
     '<span class="msc-tasks-count"></span>' +
     '</div>' +
     '<div class="msc-tasks-list-wrap">' +
     '<div class="msc-tasks-loading" hidden><p class="msc-note">Loading tasks…</p></div>' +
     '<div class="msc-tasks-error" hidden></div>' +
     '<div class="msc-tasks-empty" hidden>' +
-    '<p class="msc-tasks-empty-title">All tasks complete</p>' +
-    '<p class="msc-note">There are no active tasks for this member.</p>' +
+    '<p class="msc-tasks-empty-title">No tasks for this date</p>' +
+    '<p class="msc-note">Choose another date, or add a task for this one.</p>' +
     '</div>' +
     '<div class="msc-tasks-list" role="list"></div>' +
     '</div>' +
@@ -475,6 +476,46 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-view-category"></p>' +
     '<p class="msc-view-priority"></p>' +
     '<p class="msc-view-notes"></p>' +
+    /* Task outcome (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24) — a
+       status line plus Mark Completed/Uncompleted controls. Both buttons
+       are disabled once outcome_locked is true (viewItem() below), which
+       makes them read-only after the task date's deadline regardless of
+       whether an outcome was already recorded. Reuses the existing
+       .msc-btn/.msc-btn-ghost/.msc-form-actions classes — no new button
+       visual language introduced.
+
+       FINAL CONFIRMED REASON-TRANSITION RULE (2026-07-24, same day) — Mark
+       Uncompleted no longer submits directly: it reveals
+       .msc-view-outcome-reason-form (hidden by default), which collects a
+       required, <=250-char reason before submitting. Mark Completed, when
+       the current outcome is 'Uncompleted', goes through the shared
+       confirmDestructive() dialog first (it is about to clear that
+       recorded reason) — see the Mark Completed click handler below. */
+    '<p class="msc-view-outcome"></p>' +
+    /* Separate lines for Reason/Outcome-updated-at/Outcome-updated-by
+       (FINAL BUSINESS RULES closure review, 2026-07-24, Step 5) — each is
+       its own <p>, hidden via renderOutcome() rather than merged into the
+       status line, so "do not display a stale Uncompleted reason when
+       outcome is Completed" is enforced by simply hiding the element
+       (its text is only ever set from it.outcome_reason, which the
+       backend already nulls out on a Completed transition — nothing here
+       generates or retains text independently). */
+    '<p class="msc-view-outcome-reason" hidden></p>' +
+    '<p class="msc-view-outcome-updated-at" hidden></p>' +
+    '<p class="msc-view-outcome-updated-by" hidden></p>' +
+    '<div class="msc-form-actions msc-view-outcome-actions">' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-view-outcome-completed-btn">Mark Completed</button>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-view-outcome-uncompleted-btn">Mark Uncompleted</button>' +
+    '</div>' +
+    '<div class="msc-view-outcome-reason-form" hidden>' +
+    '<label class="msc-view-outcome-reason-label" for="' + escapeHtml(viewOutcomeReasonInputId) + '">Reason for Uncompleted</label>' +
+    '<textarea class="msc-view-outcome-reason-input" id="' + escapeHtml(viewOutcomeReasonInputId) + '" maxlength="250" rows="3"></textarea>' +
+    '<span class="msc-view-outcome-reason-counter">0 / 250</span>' +
+    '<div class="msc-form-actions">' +
+    '<button type="button" class="msc-btn msc-btn-primary msc-view-outcome-reason-submit-btn">Mark Uncompleted</button>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-view-outcome-reason-cancel-btn">Cancel</button>' +
+    '</div>' +
+    '</div>' +
     '<p class="msc-view-created-at"></p>' +
     '<p class="msc-view-updated-at"></p>' +
     '</div>' +
@@ -738,6 +779,23 @@ function mountScheduleCalendarInstance(container) {
   var viewCategory = container.querySelector('.msc-view-category');
   var viewPriority = container.querySelector('.msc-view-priority');
   var viewNotes = container.querySelector('.msc-view-notes');
+  /* Task outcome row (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24) —
+     Task Detail popup only (confirmed display surface); Leave Detail has
+     no equivalent element. */
+  var viewOutcome = container.querySelector('.msc-view-outcome');
+  var viewOutcomeReasonDisplay = container.querySelector('.msc-view-outcome-reason');
+  var viewOutcomeUpdatedAt = container.querySelector('.msc-view-outcome-updated-at');
+  var viewOutcomeUpdatedBy = container.querySelector('.msc-view-outcome-updated-by');
+  var viewOutcomeCompletedBtn = container.querySelector('.msc-view-outcome-completed-btn');
+  var viewOutcomeUncompletedBtn = container.querySelector('.msc-view-outcome-uncompleted-btn');
+  /* Reason-entry form (FINAL CONFIRMED REASON-TRANSITION RULE, 2026-07-24)
+     — revealed only when Mark Uncompleted is clicked; see renderOutcome()/
+     the click handlers below. */
+  var viewOutcomeReasonForm = container.querySelector('.msc-view-outcome-reason-form');
+  var viewOutcomeReasonInput = container.querySelector('.msc-view-outcome-reason-input');
+  var viewOutcomeReasonCounter = container.querySelector('.msc-view-outcome-reason-counter');
+  var viewOutcomeReasonSubmitBtn = container.querySelector('.msc-view-outcome-reason-submit-btn');
+  var viewOutcomeReasonCancelBtn = container.querySelector('.msc-view-outcome-reason-cancel-btn');
   var viewCreatedAt = container.querySelector('.msc-view-created-at');
   var viewUpdatedAt = container.querySelector('.msc-view-updated-at');
   var viewClose = container.querySelector('.msc-view-close');
@@ -783,6 +841,7 @@ function mountScheduleCalendarInstance(container) {
   var tasksLoadingEl = container.querySelector('.msc-tasks-loading');
   var tasksErrorEl = container.querySelector('.msc-tasks-error');
   var tasksCountEl = container.querySelector('.msc-tasks-count');
+  var tasksDateInput = container.querySelector('.msc-tasks-date-input');
   var summarySectionEl = container.querySelector('.msc-summary-section');
   var priorityCardEl = container.querySelector('.msc-list-card');
 
@@ -1400,14 +1459,39 @@ function mountScheduleCalendarInstance(container) {
   }
   document.addEventListener('msc:close-toolbar-popovers', closeAllOwnPopovers);
 
-  /* ── Tasks workspace (Step 12-19) — "All tasks" only (see the markup
-     comment above for why Starred/Lists/Completion are omitted). Reads
-     the SAME `items` closure Month/Week/Day already read; never a
-     second Task truth, never a separate fetch. */
+  /* ── Tasks workspace ("My Tasks", FINAL BUSINESS RULES closure review,
+     2026-07-24) — scoped to exactly one date at a time (state.tasksDate),
+     never the full `items` history. Reads the SAME `items` closure
+     Month/Week/Day already read (never a second Task truth, never a
+     separate fetch) and filters with itemsForDate() — the same date-
+     filter helper the Calendar's own day cells already use, so "only the
+     exact selected date" can never drift from how Calendar itself decides
+     which Tasks belong to a given day.
+
+     dateRelation is computed once per render (every row in this list
+     shares state.tasksDate, so "is this date in the future/past/today"
+     is a property of the WHOLE render, not of any individual row):
+       - 'future': Rule 3 — no outcome exists yet or can be set; every
+         row's outcome cell reads "Available on the Task date" rather than
+         the technically-true-but-misleading 'Pending' label.
+       - 'past': Rule 4 — an unset outcome reads 'No response'
+         (it.outcome_status already derives this server-side); a
+         previously recorded Completed/Uncompleted value is still shown,
+         read-only (no action affordance lives in this row — that's Task
+         Details, which independently disables its own buttons via
+         outcome_locked).
+       - 'today': the task's own actionable date — real-time
+         Pending/Completed/Uncompleted status.
+     Timestamp/actor/reason detail lines use only already-computed
+     backend-authoritative fields (it.outcome_updated_at via the existing
+     formatTaskTimestamp() Asia/Colombo converter, it.outcome_updated_by,
+     it.outcome_reason) — nothing here generates a timestamp or actor. */
   function renderTasksWorkspace() {
     if (!tasksListEl) { return; }
-    var sorted = items.slice().sort(function (a, b) {
-      if (a.date !== b.date) { return a.date < b.date ? -1 : 1; }
+    var dateStr = state.tasksDate || getColomboTodayStr();
+    var todayStr = getColomboTodayStr();
+    var dateRelation = dateStr < todayStr ? 'past' : (dateStr > todayStr ? 'future' : 'today');
+    var sorted = itemsForDate(dateStr).slice().sort(function (a, b) {
       var at = a.start || '99:99', bt = b.start || '99:99';
       return at < bt ? -1 : (at > bt ? 1 : 0);
     });
@@ -1426,18 +1510,60 @@ function mountScheduleCalendarInstance(container) {
     sorted.forEach(function (it) {
       var catClass = CATEGORY_CLASS[it.category] || 'task';
       var timeLabel = it.start ? (it.start + (it.end ? '–' + it.end : '')) : 'No time set';
+
+      var outcomeLabel, outcomeBadgeClass;
+      if (dateRelation === 'future') {
+        outcomeLabel = 'Available on the Task date';
+        outcomeBadgeClass = 'badge-viewonly';
+      } else {
+        var status = it.outcome_status || 'Pending';
+        outcomeLabel = status;
+        outcomeBadgeClass = status === 'Completed' ? 'badge-pass' :
+          (status === 'Uncompleted' ? 'badge-amber' :
+          (status === 'No response' ? 'badge-viewonly' : 'badge-pending'));
+      }
+
+      var detailParts = [];
+      if (dateRelation !== 'future' && (it.outcome === 'Completed' || it.outcome === 'Uncompleted')) {
+        detailParts.push(formatTaskTimestamp(it.outcome_updated_at));
+        if (it.outcome_updated_by) { detailParts.push(it.outcome_updated_by); }
+      }
+      if (dateRelation !== 'future' && it.outcome === 'Uncompleted' && it.outcome_reason) {
+        detailParts.push('Reason: ' + it.outcome_reason);
+      }
+
       html += '<button type="button" class="msc-tasks-row" role="listitem" data-id="' + it.id + '" ' +
         'aria-label="View task details: ' + escapeHtml(it.title) + '">' +
         '<span class="msc-chip-cat ' + catClass + '" aria-hidden="true"></span>' +
         '<span class="msc-tasks-row-main">' +
         '<span class="msc-tasks-row-title">' + escapeHtml(it.title) + '</span>' +
-        '<span class="msc-tasks-row-meta">' + escapeHtml(formatAgendaDate(it.date)) + ' · ' + escapeHtml(timeLabel) +
-        ' · ' + escapeHtml(it.category) + ' · ' + escapeHtml(it.priority || 'Medium') + '</span></span></button>';
+        '<span class="msc-tasks-row-meta">' + escapeHtml(timeLabel) +
+        ' · ' + escapeHtml(it.category) + ' · ' + escapeHtml(it.priority || 'Medium') + '</span>' +
+        '<span class="msc-tasks-row-outcome"><span class="badge ' + outcomeBadgeClass + '">' +
+        escapeHtml(outcomeLabel) + '</span></span>' +
+        (detailParts.length ? '<span class="msc-tasks-row-outcome-detail">' + escapeHtml(detailParts.join(' · ')) + '</span>' : '') +
+        '</span></button>';
     });
     tasksListEl.innerHTML = html;
     tasksListEl.querySelectorAll('.msc-tasks-row').forEach(function (row) {
       row.addEventListener('click', function () { viewItem(row.getAttribute('data-id'), row); });
     });
+  }
+
+  /* Manual Tasks date selector entry point — mirrors setSummaryDate()'s
+     existing pattern exactly (state write + input sync + re-render), kept
+     fully independent of state.summaryDate/state.selectedDate per Q6
+     (Tasks date, Calendar selection, and Schedule Summary date are three
+     separate concerns; changing one must never move another). */
+  function setTasksDate(dateStr) {
+    if (!isValidDateStr(dateStr)) { return; }
+    state.tasksDate = dateStr;
+    if (tasksDateInput) { tasksDateInput.value = dateStr; }
+    renderTasksWorkspace();
+  }
+
+  if (tasksDateInput) {
+    tasksDateInput.addEventListener('change', function () { setTasksDate(tasksDateInput.value); });
   }
 
   if (tasksAddBtn) {
@@ -1584,6 +1710,24 @@ function mountScheduleCalendarInstance(container) {
             err = new Error('Some tasks may already exist.');
             err.code = 'bulk_duplicate_confirmation_required';
             err.warnings = errBody.warnings || [];
+          } else if (errBody && (
+            errBody.error === 'outcome_locked' ||
+            errBody.error === 'outcome_not_available_yet' ||
+            errBody.error === 'outcome_recorded_immutable'
+          )) {
+            /* FINAL BUSINESS RULES (2026-07-24) — the three 409s a Task
+               outcome/date-change/delete request can get once outside the
+               task's own actionable date, or once an outcome is already
+               recorded (backend/routers/member_schedules.py
+               update_member_schedule_event_outcome/
+               update_member_schedule_event/delete_member_schedule_event).
+               Same raw-body-with-no-"detail"-wrapper shape as
+               leave_conflict above; err.code is set to the exact backend
+               error string so ui/error-mapper.js's KNOWN_ERRORS entry of
+               the same name supplies the mapped title/message — no
+               duplicate branch needed per code. */
+            err = new Error(errBody.message || 'This request could not be completed.');
+            err.code = errBody.error;
           } else {
             err = new Error('Request failed.');
             err.code = classifyHttpStatus(res.status);
@@ -3251,6 +3395,12 @@ function mountScheduleCalendarInstance(container) {
     fieldStart.value = '';
     fieldEnd.value = '';
     fieldNotes.value = '';
+    /* FINAL BUSINESS RULES (2026-07-24, closure review pass — Rule 8) —
+       re-enable unconditionally so the disabled state editItem() applies
+       below never leaks into a later Add-task flow, which always reuses
+       this same shared form. */
+    fieldDate.disabled = false;
+    fieldDate.title = '';
   }
 
   function cancelEdit() {
@@ -3368,6 +3518,17 @@ function mountScheduleCalendarInstance(container) {
     if (!it) { return; }
     state.editingId = id;
     fieldDate.value = it.date;
+    /* FINAL BUSINESS RULES (2026-07-24, closure review pass — Rule 8):
+       once any outcome is recorded, the task's date can never change
+       again — backend-enforced (update_member_schedule_event's 409
+       outcome_recorded_immutable) regardless of this client-side disable;
+       this is the frontend "clearly locked" presentation the rule also
+       asks for. Title/priority/time/notes stay fully editable either way
+       (the explicit carve-out from Rule 8). */
+    fieldDate.disabled = !!it.outcome;
+    fieldDate.title = it.outcome
+      ? 'This task’s date can’t be changed — an outcome has already been recorded for it.'
+      : '';
     fieldTitle.value = it.title;
     updateTitleCounter();
     fieldPriority.value = it.priority || 'Medium';
@@ -3640,6 +3801,223 @@ function mountScheduleCalendarInstance(container) {
      list still open) to keep the "+N more" list visible instead of
      closing it first; every other call site is unchanged (still passes
      at most 3 args), so this only ever affects that one path. */
+  /* Reason-entry form show/hide (FINAL CONFIRMED REASON-TRANSITION RULE,
+     2026-07-24). Declared before renderOutcome() below since renderOutcome
+     always resets to the hidden state on every (re)render — the single
+     place the form can become visible is the Mark Uncompleted click
+     handler further down. */
+  var OUTCOME_REASON_MAX_LENGTH = 250;
+
+  /* Visible character counter (STEP 7) — purely informational, mirrors
+     the existing Title counter (updateTitleCounter() above) exactly;
+     maxlength="250" on the textarea itself is what actually enforces the
+     limit client-side (the backend enforces it authoritatively either
+     way — see TaskOutcomeUpdate, backend/schemas.py). */
+  function updateOutcomeReasonCounter() {
+    if (!viewOutcomeReasonCounter || !viewOutcomeReasonInput) { return; }
+    viewOutcomeReasonCounter.textContent = viewOutcomeReasonInput.value.length + ' / ' + OUTCOME_REASON_MAX_LENGTH;
+  }
+
+  function hideOutcomeReasonForm() {
+    if (!viewOutcomeReasonForm) { return; }
+    viewOutcomeReasonForm.hidden = true;
+    if (viewOutcomeReasonInput) {
+      viewOutcomeReasonInput.value = '';
+      clearFieldError(viewOutcomeReasonInput);
+      updateOutcomeReasonCounter();
+    }
+  }
+
+  function showOutcomeReasonForm(prefill) {
+    if (!viewOutcomeReasonForm || !viewOutcomeReasonInput) { return; }
+    viewOutcomeReasonForm.hidden = false;
+    viewOutcomeReasonInput.value = prefill || '';
+    clearFieldError(viewOutcomeReasonInput);
+    updateOutcomeReasonCounter();
+    viewOutcomeReasonInput.focus();
+  }
+
+  if (viewOutcomeReasonInput) {
+    viewOutcomeReasonInput.addEventListener('input', function () {
+      clearFieldError(viewOutcomeReasonInput);
+      updateOutcomeReasonCounter();
+    });
+  }
+
+  /* Task outcome display (CONFIRMED UNTOUCHED-TASK OUTCOME, 2026-07-24).
+     it.outcome_status/it.outcome_locked are always backend-derived (see
+     apiItemToFrontend, core.js) — this only renders values already
+     computed server-side, it never decides Pending/No response itself.
+     Shared by viewItem() (initial open) and setTaskOutcome()'s success
+     handler (in-place refresh after Mark Completed/Uncompleted) so the
+     two can never disagree on how outcome state is displayed.
+
+     FINAL BUSINESS RULES (2026-07-24, closure review pass — STEP 5): the
+     reason, outcome-updated-at, and outcome-updated-by now each render as
+     their own line (viewOutcomeReasonDisplay/viewOutcomeUpdatedAt/
+     viewOutcomeUpdatedBy) rather than appended to the status line —
+     hidden entirely when there is nothing to show. it.outcome_reason is
+     always null once outcome is null/'Completed' (backend-enforced), so
+     "do not display a stale Uncompleted reason when outcome is Completed"
+     holds simply because there is nothing left to display; this function
+     never retains or reuses a previously-shown reason string. Every
+     (re)render also resets the reason-entry form to hidden — it only
+     becomes visible via an explicit Mark Uncompleted click (below), never
+     as a side effect of opening/reopening Task Details.
+
+     outcome_updated_at is converted to Asia/Colombo via the existing
+     formatTaskTimestamp() (core.js) — the same converter Created/Updated
+     at already use — never a browser-local or newly-generated time.
+     outcome_updated_by is rendered exactly as the API returned it (the
+     canonical member_key) — never inferred from this calendar instance's
+     own memberKey, even though the two are the same in every case this
+     app's single-actor model can currently produce. */
+  function renderOutcome(it) {
+    if (!viewOutcome) { return; }
+    var status = it.outcome_status || 'Pending';
+    viewOutcome.textContent = 'Outcome: ' + status;
+
+    if (viewOutcomeReasonDisplay) {
+      var hasReason = status === 'Uncompleted' && !!it.outcome_reason;
+      viewOutcomeReasonDisplay.hidden = !hasReason;
+      viewOutcomeReasonDisplay.textContent = hasReason ? 'Reason: ' + it.outcome_reason : '';
+    }
+    var hasAuditTrail = it.outcome === 'Completed' || it.outcome === 'Uncompleted';
+    if (viewOutcomeUpdatedAt) {
+      viewOutcomeUpdatedAt.hidden = !hasAuditTrail;
+      viewOutcomeUpdatedAt.textContent = hasAuditTrail
+        ? 'Outcome updated at: ' + formatTaskTimestamp(it.outcome_updated_at) : '';
+    }
+    if (viewOutcomeUpdatedBy) {
+      viewOutcomeUpdatedBy.hidden = !hasAuditTrail;
+      viewOutcomeUpdatedBy.textContent = hasAuditTrail
+        ? 'Outcome updated by: ' + (it.outcome_updated_by || 'Not available') : '';
+    }
+
+    var locked = !!it.outcome_locked;
+    if (viewOutcomeCompletedBtn) {
+      viewOutcomeCompletedBtn.disabled = locked;
+      viewOutcomeCompletedBtn.classList.toggle('msc-btn-primary', it.outcome === 'Completed');
+      viewOutcomeCompletedBtn.classList.toggle('msc-btn-ghost', it.outcome !== 'Completed');
+    }
+    if (viewOutcomeUncompletedBtn) {
+      viewOutcomeUncompletedBtn.disabled = locked;
+      viewOutcomeUncompletedBtn.classList.toggle('msc-btn-primary', it.outcome === 'Uncompleted');
+      viewOutcomeUncompletedBtn.classList.toggle('msc-btn-ghost', it.outcome !== 'Uncompleted');
+    }
+    hideOutcomeReasonForm();
+  }
+
+  /* Sets/changes a task's outcome via the dedicated PUT .../outcome
+     endpoint (never the general Task update endpoint — outcome is
+     orthogonal to date/title/priority/time/notes editing and must never
+     touch category/classification, per backend/routers/member_schedules.py
+     update_member_schedule_event_outcome's docstring). The backend
+     independently re-enforces the deadline lock (409 outcome_locked) even
+     though the buttons are already disabled client-side once locked —
+     this call path exists for the narrow case where the popup was left
+     open across the Colombo midnight boundary. reason is sent verbatim
+     (null for Completed, the trimmed text for Uncompleted — both already
+     validated/normalized by the callers below before this is invoked).
+     Returns a Promise<boolean> (true only on a confirmed, successful
+     write) so the Mark-Completed-from-Uncompleted confirmation dialog
+     (below) can use it directly as its onConfirm handler, matching
+     deleteItem()'s existing "onConfirm returns a boolean" convention —
+     a failed write leaves the confirmation dialog open with its busy
+     state reset, exactly like a failed delete. */
+  function setTaskOutcome(id, outcome, reason, triggerBtn) {
+    var it = items.filter(function (x) { return x.id === id; })[0];
+    if (!it) { return Promise.resolve(false); }
+    setButtonBusy(triggerBtn, true, { busyLabel: 'Saving…' });
+    return apiRequest('PUT', apiBase + '/' + encodeURIComponent(id) + '/outcome', { outcome: outcome, reason: reason || null })
+      .then(function (apiItem) {
+        var updated = apiItemToFrontend(apiItem);
+        var idx = items.indexOf(it);
+        if (idx !== -1) { items[idx] = updated; }
+        if (currentViewItemId === id) { renderOutcome(updated); }
+        showToast({ type: 'success', title: 'Outcome updated', message: 'Task marked ' + outcome + '.' });
+        return true;
+      })
+      .catch(function (err) {
+        var mapped = mapApiError(err);
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        return false;
+      })
+      .then(function (ok) { setButtonBusy(triggerBtn, false); return ok; });
+  }
+
+  /* Mark Completed (FINAL BUSINESS RULES, 2026-07-24, closure review pass
+     — Rule 7): EVERY Mark Completed click opens the shared
+     confirmDestructive() dialog first, regardless of the task's current
+     outcome (Pending, already Completed, or Uncompleted) — Cancel sends
+     no request at all and changes no local state (outcome, reason,
+     outcome_updated_at, and outcome_updated_by all stay exactly as they
+     were); Confirm sends the authoritative PUT .../outcome request, which
+     the backend independently re-validates (date window, then persists).
+     The message/button variant differ only cosmetically depending on
+     whether a recorded Uncompleted reason is actually about to be
+     cleared — that distinction never skips the dialog, it only changes
+     its wording and whether the danger-red confirm styling applies. */
+  if (viewOutcomeCompletedBtn) {
+    viewOutcomeCompletedBtn.addEventListener('click', function () {
+      var id = currentViewItemId;
+      if (!id) { return; }
+      var it = items.filter(function (x) { return x.id === id; })[0];
+      if (!it) { return; }
+      var clearsReason = it.outcome === 'Uncompleted';
+      confirmDestructive({
+        title: 'Mark task Completed?',
+        message: clearsReason
+          ? 'This clears the previously recorded Uncompleted reason. This cannot be undone.'
+          : 'Confirm this task is Completed.',
+        confirmLabel: 'Mark Completed',
+        cancelLabel: 'Cancel',
+        confirmVariant: clearsReason ? 'danger' : 'primary',
+        trigger: viewOutcomeCompletedBtn,
+        onConfirm: function () { return setTaskOutcome(id, 'Completed', null, viewOutcomeCompletedBtn); }
+      });
+    });
+  }
+
+  /* Mark Uncompleted always opens the reason-entry form first — it never
+     submits directly, since a reason is mandatory for this transition.
+     Resubmitting while already Uncompleted pre-fills the existing reason
+     so it can be reviewed/edited, matching the "same status resubmission"
+     allowance noted in the read-only gap review. */
+  if (viewOutcomeUncompletedBtn) {
+    viewOutcomeUncompletedBtn.addEventListener('click', function () {
+      var id = currentViewItemId;
+      if (!id) { return; }
+      var it = items.filter(function (x) { return x.id === id; })[0];
+      if (!it) { return; }
+      showOutcomeReasonForm(it.outcome === 'Uncompleted' ? it.outcome_reason : '');
+    });
+  }
+
+  if (viewOutcomeReasonCancelBtn) {
+    viewOutcomeReasonCancelBtn.addEventListener('click', function () { hideOutcomeReasonForm(); });
+  }
+
+  if (viewOutcomeReasonSubmitBtn) {
+    viewOutcomeReasonSubmitBtn.addEventListener('click', function () {
+      var id = currentViewItemId;
+      if (!id || !viewOutcomeReasonInput) { return; }
+      var trimmed = viewOutcomeReasonInput.value.trim();
+      if (!trimmed) {
+        setFieldError(viewOutcomeReasonInput, 'Enter a reason for marking this task Uncompleted.');
+        viewOutcomeReasonInput.focus();
+        return;
+      }
+      if (trimmed.length > 250) {
+        setFieldError(viewOutcomeReasonInput, 'Reason must be 250 characters or fewer.');
+        viewOutcomeReasonInput.focus();
+        return;
+      }
+      clearFieldError(viewOutcomeReasonInput);
+      setTaskOutcome(id, 'Uncompleted', trimmed, viewOutcomeReasonSubmitBtn);
+    });
+  }
+
   function viewItem(id, triggerEl, origin, besideList) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return; }
@@ -3662,6 +4040,7 @@ function mountScheduleCalendarInstance(container) {
     viewCategory.textContent = 'Category: ' + it.category;
     viewPriority.textContent = 'Priority: ' + (it.priority || 'Medium');
     viewNotes.textContent = 'Notes: ' + (it.notes || '(none)');
+    renderOutcome(it);
     /* Task Created/Updated at (2026-07-23) — read-only, plain-text display
        of the authoritative it.created_at/it.updated_at values already
        carried on the current Task object (apiItemToFrontend(), core.js).
@@ -3673,6 +4052,21 @@ function mountScheduleCalendarInstance(container) {
        Task list are untouched. */
     viewCreatedAt.textContent = 'Created at: ' + formatTaskTimestamp(it.created_at);
     viewUpdatedAt.textContent = 'Updated at: ' + formatTaskTimestamp(it.updated_at);
+    /* FINAL BUSINESS RULES (2026-07-24, closure review pass — Rule 8):
+       once any outcome is recorded, the task is permanently preserved as
+       read-only evidence and can never be deleted — backend-enforced
+       (delete_member_schedule_event's 409 outcome_recorded_immutable)
+       regardless of this client-side disable; this is only the frontend
+       "clearly locked" presentation the rule also asks for. Edit stays
+       enabled either way — title/priority/time/notes remain editable
+       (Rule 8's explicit carve-out); only the Date field inside that form
+       is separately disabled (see editItem()). */
+    if (viewDeleteBtn) {
+      viewDeleteBtn.disabled = !!it.outcome;
+      viewDeleteBtn.title = it.outcome
+        ? 'This task can’t be deleted — an outcome has already been recorded for it.'
+        : 'Delete task';
+    }
     /* Modal background scroll lock (popup-detail-close-and-scroll-
        containment task, 2026-07-23) — only the centered presentation
        locks the page (see closeViewModal() for the matching unlock and
@@ -4474,6 +4868,15 @@ function mountScheduleCalendarInstance(container) {
      `items`/`leaveItems` arrays, so this runs immediately rather than
      waiting on the loadItems()/loadLeaveItems() chain below. */
   setSummaryDate(getColomboTodayStr());
+
+  /* Tasks workspace default (FINAL BUSINESS RULES closure review,
+     2026-07-24) — Asia/Colombo "today", same reasoning as the Schedule
+     Summary default immediately above: independent of t0 (browser-local,
+     drives only Calendar's own view/anchor), and safe to set before
+     items finish loading since renderTasksWorkspace() itself is only
+     ever invoked once Tasks mode is actually opened (setMode()), by
+     which point loadItems() below has almost always already resolved. */
+  setTasksDate(getColomboTodayStr());
 
   // Current-time indicator refresh — cheap full re-render is fine at
   // this scale (a handful of items per member); only matters visually
