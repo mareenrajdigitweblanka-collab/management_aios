@@ -1007,6 +1007,49 @@
       }
     }
 
+    /* Schedule Summary header + manual date selector (Schedule Summary
+       date-ownership task, 2026-07-24) — independent of the Calendar's
+       own selected-date UI (.msc-selected-date-label et al.). Wraps
+       below the title on narrow screens instead of overlapping it
+       (STEP 15); input styling mirrors .msc-form-grid input above so it
+       reads as the same design language without introducing a new
+       shared input component. */
+    .msc-summary-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 16px;
+      margin-bottom: 8px;
+    }
+
+    .msc-summary-date-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .77rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .msc-summary-date-input {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .88rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      min-height: 32px;
+    }
+
+    @media (max-width: 480px) {
+      .msc-summary-date-label {
+        white-space: normal;
+      }
+    }
+
     /* View panes — one dispatcher shows the active view, others stay in the
        DOM (display:none) so switching views never re-fetches data. */
     .msc-view-pane {

@@ -88,6 +88,21 @@ export var TG_DEFAULT_SCROLL_HOUR = 7;
 export function pad(n) { return n < 10 ? '0' + n : '' + n; }
 export function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 export function parseDateStr(dateStr) { return new Date(dateStr + 'T00:00:00'); }
+
+/* Asia/Colombo-aware "today" as YYYY-MM-DD (Schedule Summary date-ownership
+   task, 2026-07-24) — deterministic regardless of the browser's local
+   timezone. Distinct from toDateStr(new Date()) above, which is
+   browser-local and stays unchanged for existing Calendar "today" behavior
+   (Today button, initial Calendar view/anchor date); only the Schedule
+   Summary default date uses this. en-CA formats as YYYY-MM-DD directly. */
+var COLOMBO_TODAY_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' });
+export function getColomboTodayStr() { return COLOMBO_TODAY_FMT.format(new Date()); }
+
+export function isValidDateStr(s) {
+  if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) { return false; }
+  var d = parseDateStr(s);
+  return !isNaN(d.getTime());
+}
 export function timeToMinutes(t) {
   if (!t) return 0;
   var parts = String(t).split(':');

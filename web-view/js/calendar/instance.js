@@ -27,6 +27,8 @@ import {
 , pad
 , toDateStr
 , parseDateStr
+, getColomboTodayStr
+, isValidDateStr
 , timeToMinutes
 , minutesToTime
 , formatHourLabel
@@ -93,6 +95,10 @@ function mountScheduleCalendarInstance(container) {
      task, 2026-07-23 — direct user feedback re-requested the dropdown
      presentation over the segmented control). */
   var viewDropdownId = 'msc-view-dropdown-' + memberKey;
+  /* Same per-instance-unique-id rule (Schedule Summary date-ownership
+     task, 2026-07-24) — the manual Summary date <input>'s id/label
+     association. */
+  var summaryDateInputId = 'msc-summary-date-' + memberKey;
 
   var rajivNoteHtml = showRajivNote
     ? '<div class="msc-rajiv-note show">This testing calendar does not confirm Admin Manager approval, escalation, or authority rules.</div>'
@@ -317,7 +323,18 @@ function mountScheduleCalendarInstance(container) {
     '</div>' +
     '</div>' +
     '<div class="msc-summary-section">' +
-    '<div class="hr-table-title" style="margin-bottom:8px;">Schedule Summary</div>' +
+    /* Independent Summary date selector (Schedule Summary date-ownership
+       task, 2026-07-24) — deliberately separate from the Calendar's own
+       selected date (state.selectedDate). Native <input type="date"> per
+       the confirmed requirement; label reads "Summary date", never
+       "Calendar date", to keep the two concepts visibly distinct. */
+    '<div class="msc-summary-header">' +
+    '<div class="hr-table-title" style="margin:0;">Schedule Summary</div>' +
+    '<label class="msc-summary-date-label" for="' + escapeHtml(summaryDateInputId) + '">' +
+    '<span class="msc-summary-date-label-text">Summary date</span>' +
+    '<input type="date" class="msc-summary-date-input" id="' + escapeHtml(summaryDateInputId) + '" />' +
+    '</label>' +
+    '</div>' +
     '<p class="msc-note" style="margin:0 0 8px;">Counts and duration totals are calculated by the server. ' +
     'Tasks missing a start or end time remain in counts but are excluded from duration totals.</p>' +
     '<div class="msc-summary-grid">' +
@@ -698,6 +715,7 @@ function mountScheduleCalendarInstance(container) {
   var weeklySummaryTitleEl = container.querySelector('.msc-summary-weekly-title');
   var monthlySummaryEl = container.querySelector('.msc-summary-monthly');
   var monthlySummaryTitleEl = container.querySelector('.msc-summary-monthly-title');
+  var summaryDateInput = container.querySelector('.msc-summary-date-input');
   var viewModal = container.querySelector('.msc-view-modal');
   /* Scoped to viewModal for the same reason as viewTitle below — Leave
      Detail also has a `.msc-view-color-dot` (with its own "leave"
@@ -1488,7 +1506,13 @@ function mountScheduleCalendarInstance(container) {
 
   var state = {
     viewYear: null, viewMonth: null, selectedDate: null, editingId: null,
-    currentView: 'month', anchorDate: null
+    currentView: 'month', anchorDate: null,
+    /* Independent Schedule Summary reference date (Schedule Summary
+       date-ownership task, 2026-07-24) — deliberately never reused as/from
+       selectedDate. summaryReqToken guards against a stale summary
+       response overwriting a newer one when the user changes the Summary
+       date faster than the in-flight requests resolve. */
+    summaryDate: null, summaryReqToken: 0
   };
 
   /* Presentation-only status line (Phase 1 polish, 2026-07-10): same
@@ -2070,14 +2094,18 @@ function mountScheduleCalendarInstance(container) {
       var count = result.created_count != null ? result.created_count : (result.items || []).length;
       /* Single refresh (Step 19) — selectDate() is the same established
          one-call refresh entry point the single-Task form already uses:
-         it re-renders the calendar grid, the Priority Queue preview, the
-         Tasks workspace (if active), and Schedule Summary, all exactly
-         once, regardless of how many tasks were just created. Rows can
-         now span different dates, so this refreshes around the first
-         submitted row's date — a representative anchor, not a claim that
-         every task shares one date. */
+         it re-renders the calendar grid, the Priority Queue preview, and
+         the Tasks workspace (if active), exactly once, regardless of how
+         many tasks were just created. Rows can now span different dates,
+         so this refreshes around the first submitted row's date — a
+         representative anchor, not a claim that every task shares one
+         date. Schedule Summary no longer follows selectDate() (2026-07-24
+         date-ownership task) — refreshSummary() below refreshes it
+         separately, still anchored to the independent summaryDate, not to
+         any of the just-created tasks' dates. */
       var firstTaskWithDate = tasks.filter(function (t) { return !!t.date; })[0];
       selectDate(firstTaskWithDate ? firstTaskWithDate.date : state.selectedDate);
+      refreshSummary();
       resetBulkForm();
       closeCreatePopup();
       showToast({
@@ -2596,7 +2624,7 @@ function mountScheduleCalendarInstance(container) {
         var newEndMin = newStartMin + durationMin;
         eventEl.classList.add('msc-tg-event--pending');
         commitItemTimeChange(it, it.date, minutesToTime(newStartMin), minutesToTime(newEndMin))
-          .then(function () { renderActiveView(); })
+          .then(function () { renderActiveView(); refreshSummary(); })
           .catch(function (err) {
             var mapped = mapApiError(err);
             showToast({
@@ -2639,7 +2667,7 @@ function mountScheduleCalendarInstance(container) {
         var newEndMin = Math.min(24 * 60, startMin + newDurationMin);
         eventEl.classList.add('msc-tg-event--pending');
         commitItemTimeChange(it, it.date, it.start, minutesToTime(newEndMin))
-          .then(function () { renderActiveView(); })
+          .then(function () { renderActiveView(); refreshSummary(); })
           .catch(function (err) {
             var mapped = mapApiError(err);
             showToast({
@@ -2967,7 +2995,14 @@ function mountScheduleCalendarInstance(container) {
        see the comments at those call sites) without re-rendering it
        while it's off-screen in Calendar mode. */
     if (currentMode === 'tasks') { renderTasksWorkspace(); }
-    loadSummaries(dateStr);
+    /* Schedule Summary date-ownership task (2026-07-24) — selectDate()
+       used to end with loadSummaries(dateStr) here, which meant every
+       Calendar-cell click, mini-calendar click, and Today click reran
+       Schedule Summary for whatever date the Calendar selected. Summary
+       now owns its own reference date (state.summaryDate, see
+       setSummaryDate/refreshSummary) and is refreshed only at its own
+       explicit trigger points — never as a side effect of Calendar
+       selection changing. */
   }
 
   /* Demo-style "Priority Queue" preview (aios_role_desk_views.html layout reference) — ranks
@@ -3125,19 +3160,28 @@ function mountScheduleCalendarInstance(container) {
       '</details>';
   }
 
-  function loadDailySummary(dateStr) {
+  /* token (Schedule Summary date-ownership task, 2026-07-24) — captured by
+     loadSummaries() below at call time and re-checked once each request
+     resolves; a response for a since-superseded summaryDate is dropped
+     instead of overwriting a newer selection (STEP 13.J / stale-response
+     protection). Title/loading-state updates happen synchronously so the
+     visible header always matches the most recent call, even while an
+     older request is still in flight. */
+  function loadDailySummary(dateStr, token) {
     dailySummaryTitleEl.textContent = 'Daily — ' + dateStr;
     showInlineLoading(dailySummaryEl, 'Loading daily summary…');
     apiRequest('GET', apiBase + '/reports/daily?date=' + encodeURIComponent(dateStr)).then(function (report) {
+      if (token !== state.summaryReqToken) { return; }
       renderSummaryStats(dailySummaryEl, report);
     }).catch(function (err) {
+      if (token !== state.summaryReqToken) { return; }
       var mapped = mapApiError(err);
       dailySummaryEl.removeAttribute('aria-busy');
       dailySummaryEl.innerHTML = '<p class="msc-empty" role="alert">' + mapped.title + ' — ' + mapped.message + '</p>';
     });
   }
 
-  function loadWeeklySummary(dateStr) {
+  function loadWeeklySummary(dateStr, token) {
     // Monday-Sunday convention (2026-07-14) — see getReportWeekStart.
     // The backend independently normalizes to the same Monday
     // regardless, but computing it correctly here means the title
@@ -3146,22 +3190,26 @@ function mountScheduleCalendarInstance(container) {
     weeklySummaryTitleEl.textContent = 'Weekly — week of ' + weekStartStr;
     showInlineLoading(weeklySummaryEl, 'Loading weekly summary…');
     apiRequest('GET', apiBase + '/reports/weekly?week_start=' + encodeURIComponent(weekStartStr)).then(function (report) {
+      if (token !== state.summaryReqToken) { return; }
       renderSummaryStats(weeklySummaryEl, report);
     }).catch(function (err) {
+      if (token !== state.summaryReqToken) { return; }
       var mapped = mapApiError(err);
       weeklySummaryEl.removeAttribute('aria-busy');
       weeklySummaryEl.innerHTML = '<p class="msc-empty" role="alert">' + mapped.title + ' — ' + mapped.message + '</p>';
     });
   }
 
-  function loadMonthlySummary(dateStr) {
+  function loadMonthlySummary(dateStr, token) {
     var d = parseDateStr(dateStr);
     var monthStr = d.getFullYear() + '-' + pad(d.getMonth() + 1);
     monthlySummaryTitleEl.textContent = 'Monthly — ' + monthStr;
     showInlineLoading(monthlySummaryEl, 'Loading monthly summary…');
     apiRequest('GET', apiBase + '/reports/monthly?month=' + encodeURIComponent(monthStr)).then(function (report) {
+      if (token !== state.summaryReqToken) { return; }
       renderSummaryStats(monthlySummaryEl, report);
     }).catch(function (err) {
+      if (token !== state.summaryReqToken) { return; }
       var mapped = mapApiError(err);
       monthlySummaryEl.removeAttribute('aria-busy');
       monthlySummaryEl.innerHTML = '<p class="msc-empty" role="alert">' + mapped.title + ' — ' + mapped.message + '</p>';
@@ -3169,9 +3217,31 @@ function mountScheduleCalendarInstance(container) {
   }
 
   function loadSummaries(dateStr) {
-    loadDailySummary(dateStr);
-    loadWeeklySummary(dateStr);
-    loadMonthlySummary(dateStr);
+    state.summaryReqToken += 1;
+    var token = state.summaryReqToken;
+    loadDailySummary(dateStr, token);
+    loadWeeklySummary(dateStr, token);
+    loadMonthlySummary(dateStr, token);
+  }
+
+  /* Data-change refresh (STEP 9) — reloads Daily/Weekly/Monthly Summary
+     using the current independent state.summaryDate. Never reads
+     state.selectedDate or any Task/Leave-record date, so a Task or Leave
+     change on a different day never moves what Summary is reporting on. */
+  function refreshSummary() {
+    if (state.summaryDate) { loadSummaries(state.summaryDate); }
+  }
+
+  /* Manual Summary date selector entry point (STEP 5/6) — the only two
+     other writers of state.summaryDate are the initial-load default
+     (Asia/Colombo today) and the member-mount default; Calendar-cell
+     clicks, mini-calendar clicks, Today, Prev/Next, and view-switching
+     never call this. */
+  function setSummaryDate(dateStr) {
+    if (!isValidDateStr(dateStr)) { return; }
+    state.summaryDate = dateStr;
+    if (summaryDateInput) { summaryDateInput.value = dateStr; }
+    loadSummaries(dateStr);
   }
 
   function resetForm() {
@@ -3279,6 +3349,7 @@ function mountScheduleCalendarInstance(container) {
     apiRequest('POST', apiBase, payload).then(function (apiItem) {
       items.push(apiItemToFrontend(apiItem));
       selectDate(addedDate);
+      refreshSummary();
       resetForm();
       closeTaskPopup();
       showToast({ type: 'success', title: 'Task created', message: 'Your task was added to the calendar.' });
@@ -3353,6 +3424,7 @@ function mountScheduleCalendarInstance(container) {
       editOriginTriggerEl = null;
       editOriginFlowOrigin = null;
       selectDate(updated.date);
+      refreshSummary();
       cancelEdit();
       closeTaskPopup();
       if (flowOrigin && flowOrigin.type === 'more-task-list') {
@@ -3396,7 +3468,7 @@ function mountScheduleCalendarInstance(container) {
           renderActiveView();
           renderPriorityPreview();
           if (currentMode === 'tasks') { renderTasksWorkspace(); }
-          if (state.selectedDate) { loadSummaries(state.selectedDate); }
+          refreshSummary();
           showToast({ type: 'success', title: 'Task deleted', message: 'The task was removed.' });
           return true;
         }).catch(function (err) {
@@ -4092,12 +4164,12 @@ function mountScheduleCalendarInstance(container) {
       resetLeaveForm();
       renderActiveView();
       /* Refresh leave-deduction reporting on successful save (Step 13,
-         2026-07-20 popup workflow) — same guarded call
-         deleteLeaveRecord() below already uses; previously only
-         delete refreshed summaries, not create. Calls the existing,
-         unmodified loadSummaries()/report endpoints — no Schedule
-         Summary logic changed. */
-      if (state.selectedDate) { loadSummaries(state.selectedDate); }
+         2026-07-20 popup workflow; repointed to the independent
+         summaryDate by the 2026-07-24 date-ownership task) — same
+         refresh deleteLeaveRecord() below already uses. Calls the
+         existing, unmodified loadSummaries()/report endpoints — no
+         Schedule Summary logic changed. */
+      refreshSummary();
       closeLeavePopup();
       showToast({ type: 'success', title: 'Leave added', message: 'The leave entry was added to the calendar.' });
     }).catch(function (err) {
@@ -4229,7 +4301,7 @@ function mountScheduleCalendarInstance(container) {
       for (var i = 0; i < leaveItems.length; i++) { if (leaveItems[i].id === editedId) { idx = i; break; } }
       if (idx !== -1) { leaveItems[idx] = record; }
       renderActiveView();
-      if (state.selectedDate) { loadSummaries(state.selectedDate); }
+      refreshSummary();
       editingLeaveId = null;
       resetLeaveForm();
       setLeavePopupMode(false);
@@ -4265,7 +4337,7 @@ function mountScheduleCalendarInstance(container) {
         return leaveApiRequest('DELETE', leaveApiBase + '/' + encodeURIComponent(leaveId)).then(function () {
           leaveItems = leaveItems.filter(function (lv) { return lv.id !== leaveId; });
           renderActiveView();
-          if (state.selectedDate) { loadSummaries(state.selectedDate); }
+          refreshSummary();
           showToast({ type: 'success', title: 'Leave deleted', message: 'The leave entry was removed.' });
           return true;
         }).catch(function (err) {
@@ -4365,6 +4437,18 @@ function mountScheduleCalendarInstance(container) {
     });
   }
 
+  /* ── Schedule Summary date selector wiring (Schedule Summary
+     date-ownership task, 2026-07-24) — the only UI control allowed to
+     call setSummaryDate() directly; every Calendar-side control
+     (Calendar cells, mini-calendar, Today, Prev/Next, view switches)
+     continues to only call selectDate(), which no longer touches
+     Summary at all. */
+  if (summaryDateInput) {
+    summaryDateInput.addEventListener('change', function () {
+      setSummaryDate(summaryDateInput.value);
+    });
+  }
+
   /* ── Init this instance ──
      Items are loaded from the API before the first render. No seed/sample
      data is created automatically — the list stays empty (and the calendar
@@ -4383,6 +4467,13 @@ function mountScheduleCalendarInstance(container) {
   }
   syncViewSwitcherButtons();
   renderActiveView();
+
+  /* Schedule Summary default (STEP 4) — Asia/Colombo "today", deliberately
+     independent of t0 above (which drives Calendar's own view/anchor and
+     stays browser-local, unchanged). Summary reports don't depend on the
+     `items`/`leaveItems` arrays, so this runs immediately rather than
+     waiting on the loadItems()/loadLeaveItems() chain below. */
+  setSummaryDate(getColomboTodayStr());
 
   // Current-time indicator refresh — cheap full re-render is fine at
   // this scale (a handful of items per member); only matters visually
