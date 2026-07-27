@@ -60,6 +60,24 @@ import { mapApiError, classifyHttpStatus } from '../ui/error-mapper.js';
 import { lockBodyScroll, unlockBodyScroll } from '../ui/scroll-lock.js';
 import { registerDateIcon } from './date-icon.js';
 
+/* Calendar help guide — one small builder for each expandable topic in the
+   redesigned "Calendar help" popup (calendar-help-user-guide-popup task,
+   2026-07-27), used instead of repeating the same <details>/<summary>/
+   .details-body markup twelve times. Reuses the app's existing native
+   <details>/<summary> disclosure convention (web-view/css/components.css,
+   already used throughout web-view/index.html and this file's own
+   Schedule Summary "View detailed metrics" section) — no new JS toggle
+   behavior and no new accessibility pattern is introduced. `title`/`hint`/
+   `bodyHtml` are always developer-authored static strings (never member
+   or API data), so they are written directly, matching every other static
+   string in this popup. */
+function calendarHelpSection(title, hint, bodyHtml, open) {
+  return '<details class="msc-cal-help-section"' + (open ? ' open' : '') + '>' +
+    '<summary><span class="collapsible-summary-text"><strong>' + title + '</strong> — ' + hint + '</span></summary>' +
+    '<div class="details-body msc-cal-help-section-body">' + bodyHtml + '</div>' +
+    '</details>';
+}
+
 /* Builds and wires ONE independent calendar instance inside `container`.
    All element lookups are scoped to `container` — no ids are used for any
    repeated element, so mounting several instances on one page (one per
@@ -97,6 +115,11 @@ function mountScheduleCalendarInstance(container) {
      Help popup, and Settings popup aria targets. */
   var searchPanelId = 'msc-cal-search-panel-' + memberKey;
   var helpPopupTitleId = 'msc-cal-help-title-' + memberKey;
+  /* Accessible description target for the redesigned Help popup's
+     subtitle (calendar-help-user-guide-popup task, 2026-07-27) — the
+     dialog's aria-describedby points here so screen readers announce
+     "How to use the Management AIOS Calendar" right after the title. */
+  var helpPopupSubtitleId = 'msc-cal-help-subtitle-' + memberKey;
   var settingsPopupTitleId = 'msc-cal-settings-title-' + memberKey;
   /* Month/Week/Day dropdown menu aria-controls target (toolbar-follow-up
      task, 2026-07-23 — direct user feedback re-requested the dropdown
@@ -393,16 +416,25 @@ function mountScheduleCalendarInstance(container) {
     '<p class="msc-note" style="margin:0 0 8px;">Today\'s scheduled items ranked by priority.</p>' +
     '<div class="msc-priority-list"></div>' +
     '</div>' +
-    /* ── Calendar help popup (Step 6, google-calendar-inspired-toolbar-
-       and-tasks-workspace task, 2026-07-23) — static, plain-language
-       explanation of the calendar's own semantic colors and interaction
-       rules. No technical/database wording, no formulas — matches the
-       requirement that this stay a user-facing help card, not developer
-       documentation. Same .msc-modal-overlay/.msc-modal convention every
-       other calendar popup already uses; trapTab/returnFocus wired below
-       exactly like the other popups. */
-    '<div class="msc-modal-overlay msc-cal-help-popup" role="dialog" aria-modal="true" aria-labelledby="' + escapeHtml(helpPopupTitleId) + '">' +
-    '<div class="msc-modal msc-cal-help-inner">' +
+    /* ── Calendar help popup (redesigned calendar-help-user-guide-popup
+       task, 2026-07-27 — see validation/calendar-help-user-guide-popup-
+       check-2026-07-27.md) — replaces the former short color-legend/
+       Scheduled-Unscheduled/+N-more/Leave-conflict card with a full,
+       plain-language "how to use this Calendar" guide for non-technical
+       members. Twelve expandable topics (calendarHelpSection() above),
+       Quick start kept open by default per the approved structure. No
+       technical/database wording, no formulas. Same .msc-modal-overlay/
+       .msc-modal convention every other calendar popup already uses;
+       trapTab/returnFocus wired below exactly like the other popups —
+       only this popup's inner markup/CSS changed, not its open/close
+       logic. Every fact restated here (labels, message copy, leave
+       types, lunch window, planning-warning window, XLSX tab names) was
+       read directly from the current production source (core.js,
+       instance.js, error-mapper.js, xlsx_export.py, index.html) rather
+       than invented — see the validation file's source map. */
+    '<div class="msc-modal-overlay msc-cal-help-popup" role="dialog" aria-modal="true" ' +
+    'aria-labelledby="' + escapeHtml(helpPopupTitleId) + '" aria-describedby="' + escapeHtml(helpPopupSubtitleId) + '">' +
+    '<div class="msc-modal msc-cal-help-inner msc-cal-help-guide">' +
     /* Header realigned to a true top-right Close (toolbar-alignment-and-
        close-control task, 2026-07-23) — the bottom "Close" button (in
        .msc-form-actions) was removed; the header Close icon is now the
@@ -410,24 +442,239 @@ function mountScheduleCalendarInstance(container) {
        layout push it to the far right instead of sitting immediately
        beside the title text. Icon changed from a Unicode "&times;" text
        glyph to an inline SVG X, matching the rest of the toolbar's
-       icon system. */
-    '<div class="msc-view-modal-head">' +
+       icon system. The title now sits above a one-line subtitle (2026-
+       07-27) inside .msc-cal-help-head-text, which carries the flex:1
+       the bare <h4> used to carry directly — .msc-view-modal-head
+       .msc-view-title's own flex:1 rule (calendar.css) is a no-op here
+       since the h4 is no longer a direct flex child, so nothing else
+       needed to change. */
+    '<div class="msc-view-modal-head msc-cal-help-head">' +
+    '<div class="msc-cal-help-head-text">' +
     '<h4 class="msc-view-title" id="' + escapeHtml(helpPopupTitleId) + '">Calendar help</h4>' +
+    '<p class="msc-cal-help-subtitle" id="' + escapeHtml(helpPopupSubtitleId) + '">How to use the Management AIOS Calendar</p>' +
+    '</div>' +
     '<button type="button" class="msc-modal-close msc-cal-help-close" aria-label="Close Calendar help">' +
     '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M5 5l10 10M15 5L5 15"/></svg></button>' +
     '</div>' +
-    '<ul class="msc-cal-help-list">' +
-    '<li><span class="msc-chip-cat task" aria-hidden="true"></span>Green — Scheduled Task</li>' +
-    '<li><span class="msc-chip-cat followup" aria-hidden="true"></span>Yellow — Unscheduled Task</li>' +
-    '<li><span class="msc-chip-cat leave" aria-hidden="true"></span>Red — Leave</li>' +
-    '<li>Tasks are marked Scheduled or Unscheduled automatically, based on when they are created or last ' +
-    'changed relative to the current planning week. This is never a manual choice.</li>' +
-    '<li>"+N more" on a date opens the complete list of that date’s Tasks.</li>' +
-    '<li>Clicking blank space in a date opens a Task/Leave chooser for that date — no double-click needed.</li>' +
-    '<li>Tasks cannot be created on a date fully covered by Full-Day or Multi-Day Leave; saving shows a clear ' +
-    'conflict message instead.</li>' +
-    '</ul>' +
+    '<div class="msc-cal-help-body">' +
+    calendarHelpSection(
+      'Quick start',
+      'The fastest way to add a Task, Bulk Tasks, or Leave',
+      '<ol class="msc-cal-help-steps">' +
+      '<li>Select your name from the left side of the screen.</li>' +
+      '<li>Select the date you want to work with.</li>' +
+      '<li>Choose + Create.</li>' +
+      '<li>Select Task, Bulk Tasks, or Leave.</li>' +
+      '<li>Enter the details and save.</li>' +
+      '</ol>' +
+      '<p class="msc-cal-help-note">Before saving, check that the correct member name and date are selected.</p>',
+      true
+    ) +
+    calendarHelpSection(
+      'Move around the Calendar',
+      'Today, Previous/Next, Month/Week/Day, and the mini calendar',
+      '<ul class="msc-cal-help-bullets">' +
+      '<li><strong>Today</strong> returns to the current date.</li>' +
+      '<li>Use the left and right arrows to move to another period.</li>' +
+      '<li>Use <strong>Month</strong>, <strong>Week</strong>, or <strong>Day</strong> to change the Calendar view.</li>' +
+      '<li>Use the small calendar on the left side of the screen to select a date quickly.</li>' +
+      '<li>Select a date cell to create or review items for that date.</li>' +
+      '<li>Select <strong>+N more</strong> on a date to see the complete list when it has many Tasks.</li>' +
+      '</ul>' +
+      '<p>The small date icon beside the word "Calendar" always shows today’s date — it does not change when ' +
+      'you select a different date.</p>' +
+      '<p class="msc-cal-help-note">These are five different things — do not mix them up: <strong>today</strong> ' +
+      '(the real current date), the <strong>date you selected</strong> on the Calendar, the <strong>month, week, ' +
+      'or day you are viewing</strong>, the <strong>date chosen in My Tasks</strong>, and the <strong>date chosen ' +
+      'for Schedule Summary</strong>. Changing one does not change the others.</p>'
+    ) +
+    calendarHelpSection(
+      'Create a Task',
+      'Add one Task, with a priority, an optional time, and a note',
+      '<ol class="msc-cal-help-steps">' +
+      '<li>Select a date.</li>' +
+      '<li>Choose + Create.</li>' +
+      '<li>Keep the <strong>Task</strong> tab selected.</li>' +
+      '<li>Enter the Task title.</li>' +
+      '<li>Choose the priority.</li>' +
+      '<li>Enter the start and end times when the Task has a specific time.</li>' +
+      '<li>Add a short note only when needed.</li>' +
+      '<li>Choose <strong>Add schedule</strong>.</li>' +
+      '</ol>' +
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>The end time must be later than the start time.</li>' +
+      '<li>Do not write private employee or customer information in Notes.</li>' +
+      '<li>The system decides automatically whether a Task is Scheduled or Unscheduled — this is never a manual ' +
+      'choice.</li>' +
+      '<li>A warning may appear when a Task is during lunch or overlaps another, different Task.</li>' +
+      '<li>Read the message, then choose <strong>Go back</strong>, or the "add/save anyway" option shown.</li>' +
+      '</ul>' +
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Choose <strong>+ Add another time</strong> to enter another separate time for the same Task.</li>' +
+      '<li>Each time frame is saved as its own, separate Calendar Task.</li>' +
+      '<li>Time frames cannot overlap. A time frame may start exactly when the previous one ends.</li>' +
+      '<li>The most you can add is 30 Task occurrences in one submission.</li>' +
+      '</ul>'
+    ) +
+    calendarHelpSection(
+      'Create several Tasks with Bulk Tasks',
+      'Enter more than one Task at once, one row per Task',
+      '<ol class="msc-cal-help-steps">' +
+      '<li>Select + Create.</li>' +
+      '<li>Select <strong>Bulk Tasks</strong>.</li>' +
+      '<li>Enter each Task on its own row.</li>' +
+      '<li>Check the date and time for every row.</li>' +
+      '<li>Add or remove rows as needed.</li>' +
+      '<li>Save the complete group.</li>' +
+      '</ol>' +
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Blank rows are ignored.</li>' +
+      '<li>All valid Tasks in the group are saved together.</li>' +
+      '<li>If one Task has a hard error, none of the Tasks in the group are saved.</li>' +
+      '<li>Warning-only cases may ask you to confirm before saving.</li>' +
+      '<li><strong>Go back</strong> keeps every row you already entered, so you can correct it.</li>' +
+      '</ul>' +
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Each Bulk Task row may also use <strong>+ Add another time</strong> to add more than one time.</li>' +
+      '<li>The 30-occurrence limit applies across all Bulk Task rows together.</li>' +
+      '<li>Error messages name the exact Task row and time that needs correcting.</li>' +
+      '</ul>'
+    ) +
+    calendarHelpSection(
+      'Add Leave',
+      'Short Leave, Half-Day Leave, Full-Day Leave, or Multi-Day Leave',
+      '<ol class="msc-cal-help-steps">' +
+      '<li>Select the date.</li>' +
+      '<li>Choose + Create.</li>' +
+      '<li>Select <strong>Leave</strong>.</li>' +
+      '<li>Choose the correct Leave type.</li>' +
+      '<li>Enter the required date or time details.</li>' +
+      '<li>Save.</li>' +
+      '</ol>' +
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Short Leave</li>' +
+      '<li>Half-Day Leave — First Half (08:30–13:00)</li>' +
+      '<li>Half-Day Leave — Second Half (13:30–18:00)</li>' +
+      '<li>Full-Day Leave</li>' +
+      '<li>Multi-Day Leave</li>' +
+      '</ul>' +
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Full-Day or Multi-Day Leave can prevent Tasks from being added on the dates it covers.</li>' +
+      '<li>Short Leave or Half-Day Leave can block a Task whose time overlaps the Leave period.</li>' +
+      '<li>The system shows a clear message whenever a Task and Leave conflict.</li>' +
+      '</ul>' +
+      '<p class="msc-cal-help-note">This Calendar’s Leave entry is for day-to-day coordination only. The ' +
+      'separate HR leave system remains official for approvals, balances, and records.</p>'
+    ) +
+    calendarHelpSection(
+      'View, edit, or delete an item',
+      'Open any Task or Leave item from the Calendar',
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Select a Task or Leave item to open its details.</li>' +
+      '<li>Use <strong>Edit</strong> to change an allowed field.</li>' +
+      '<li>Use <strong>Delete</strong> to remove an eligible item.</li>' +
+      '<li>Use the X to close without changing anything.</li>' +
+      '<li>A Task that already has a recorded outcome cannot change date and cannot be deleted.</li>' +
+      '<li>The system explains when an action is unavailable.</li>' +
+      '<li>When a Task has more than one time, each time is its own separate item and is viewed, edited, or ' +
+      'deleted independently.</li>' +
+      '</ul>'
+    ) +
+    calendarHelpSection(
+      'Use My Tasks',
+      'A focused, one-date-at-a-time list of your own Tasks',
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Switch from Calendar to Tasks using the toggle in the toolbar.</li>' +
+      '<li>My Tasks opens with today’s date already selected.</li>' +
+      '<li>Choose another date to see Tasks for that date.</li>' +
+      '<li>Only Tasks for the selected date appear in the list.</li>' +
+      '<li>Changing the My Tasks date does not move the main Calendar.</li>' +
+      '<li>Changing the My Tasks date does not change the Schedule Summary date.</li>' +
+      '</ul>'
+    ) +
+    calendarHelpSection(
+      'Mark a Task Completed or Uncompleted',
+      'Record whether a Task was finished, on its own date',
+      '<ol class="msc-cal-help-steps">' +
+      '<li>Open the Task on its own date.</li>' +
+      '<li>Choose Mark Completed when the Task is finished, then confirm.</li>' +
+      '<li>Choose Mark Uncompleted when it was not finished.</li>' +
+      '<li>Enter a clear reason of 250 characters or fewer.</li>' +
+      '</ol>' +
+      '<p>Outcome updates close at 11:59:59 PM on the Task’s own date. After that time, an untouched Task ' +
+      'shows <strong>No response</strong>.</p>' +
+      '<dl class="msc-cal-help-states">' +
+      '<div><dt>Pending</dt><dd>No result has been selected yet.</dd></div>' +
+      '<div><dt>Completed</dt><dd>The Task was completed.</dd></div>' +
+      '<div><dt>Uncompleted</dt><dd>The Task was not completed, and a reason was entered.</dd></div>' +
+      '<div><dt>No response</dt><dd>The Task’s date passed without a result being selected. This is not the ' +
+      'same as Uncompleted.</dd></div>' +
+      '</dl>'
+    ) +
+    calendarHelpSection(
+      'Download a weekly schedule',
+      'A copy of one member’s week as an .xlsx file',
+      '<ol class="msc-cal-help-steps">' +
+      '<li>Select a date in the Calendar.</li>' +
+      '<li>Choose the <strong>Download weekly schedule</strong> icon in the Calendar toolbar.</li>' +
+      '<li>The system downloads the Monday-to-Sunday week that contains the selected date.</li>' +
+      '<li>Open the downloaded .xlsx file in Excel or Google Sheets.</li>' +
+      '</ol>' +
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>The workbook has a "Weekly Schedule" tab and a "Weekly Summary" tab.</li>' +
+      '<li>It includes the selected member’s Tasks and Leave for that week.</li>' +
+      '<li>An empty week shows "No schedule found" and does not download a file.</li>' +
+      '<li>The downloaded workbook is a copy. Changing it does not update the Calendar — make changes inside ' +
+      'Management AIOS instead.</li>' +
+      '</ul>'
+    ) +
+    calendarHelpSection(
+      'Understand colors and warnings',
+      'What green, yellow, and red mean, and the weekly planning reminder',
+      '<ul class="msc-cal-help-list">' +
+      '<li><span class="msc-chip-cat task" aria-hidden="true"></span><strong>Green — Scheduled Task.</strong> ' +
+      'Created before the weekly planning deadline.</li>' +
+      '<li><span class="msc-chip-cat followup" aria-hidden="true"></span><strong>Yellow — Unscheduled Task.</strong> ' +
+      'Created or edited after the weekly planning deadline.</li>' +
+      '<li><span class="msc-chip-cat leave" aria-hidden="true"></span><strong>Red — Leave.</strong> A Leave entry ' +
+      'recorded on the Calendar for coordination.</li>' +
+      '</ul>' +
+      '<p class="msc-cal-help-note">The system assigns Scheduled or Unscheduled automatically. Members do not ' +
+      'choose the category manually.</p>' +
+      '<p>A planning reminder appears from Friday 7:00 AM through Sunday 11:59:59 PM, reminding members to enter ' +
+      'next week’s Tasks before the deadline.</p>'
+    ) +
+    calendarHelpSection(
+      'Common messages',
+      'What a message means and what to do next',
+      '<dl class="msc-cal-help-messages">' +
+      '<div><dt>Select a date</dt><dd>Choose a Calendar date before using an action that needs one.</dd></div>' +
+      '<div><dt>No schedule found</dt><dd>The selected week has no Tasks or Leave.</dd></div>' +
+      '<div><dt>Check this task time</dt><dd>The Task is during lunch, overlaps another different Task, or ' +
+      'both.</dd></div>' +
+      '<div><dt>Go back</dt><dd>Returns you to the form without saving anything.</dd></div>' +
+      '<div><dt>Duplicate task</dt><dd>The same Task already exists at the same date and time.</dd></div>' +
+      '<div><dt>Task time overlaps</dt><dd>Another time for the same Task overlaps the selected time.</dd></div>' +
+      '<div><dt>Task time required</dt><dd>The same Task already exists and needs a separate, non-overlapping ' +
+      'time.</dd></div>' +
+      '<div><dt>Too many task times</dt><dd>The submission has more than 30 Task occurrences.</dd></div>' +
+      '<div><dt>Outcome not available yet</dt><dd>The result can be selected only on the Task’s own ' +
+      'date.</dd></div>' +
+      '<div><dt>Outcome update closed</dt><dd>The Task’s date has already passed.</dd></div>' +
+      '</dl>'
+    ) +
+    calendarHelpSection(
+      'Need more help?',
+      'What to do when a message is unclear',
+      '<ul class="msc-cal-help-bullets">' +
+      '<li>Close this guide and try the action again.</li>' +
+      '<li>Read the message the system shows — it usually explains what to do next.</li>' +
+      '<li>When the message is unclear, take a screenshot and send it to the Management AIOS owner.</li>' +
+      '<li>Do not include private employee or customer details in support screenshots.</li>' +
+      '</ul>'
+    ) +
+    '</div>' +
     '</div>' +
     '</div>' +
     /* ── Calendar settings popup (Step 6) — presentation-only preferences

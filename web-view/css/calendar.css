@@ -812,6 +812,150 @@
       margin-top: 4px;
     }
 
+    /* ── Calendar help guide (redesigned calendar-help-user-guide-popup
+       task, 2026-07-27) — the Help popup only (never Settings, which
+       keeps .msc-cal-help-inner's original 420px card) grows to a wider,
+       taller reading surface for the new twelve-topic guide. Combined
+       with .msc-cal-help-inner (two-class selector) so it wins over that
+       shared rule regardless of stylesheet order. ── */
+    .msc-cal-help-inner.msc-cal-help-guide {
+      max-width: 680px;
+      max-height: 80vh;
+    }
+
+    @media (max-width: 900px) {
+      .msc-cal-help-inner.msc-cal-help-guide {
+        max-width: 92vw;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .msc-cal-help-inner.msc-cal-help-guide {
+        max-width: 100%;
+        max-height: calc(100vh - 32px);
+      }
+    }
+
+    /* Title + one-line subtitle ("How to use the Management AIOS
+       Calendar") replacing the bare <h4> this header used to hold
+       directly — .msc-cal-help-head-text carries the flex:1 the <h4>
+       used to carry so Close still sits at the far right. */
+    .msc-cal-help-head-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .msc-cal-help-subtitle {
+      margin: 2px 0 0;
+      font-size: .78rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    /* One topic per <details> (calendarHelpSection(), instance.js) —
+       reuses the plain, unclassed details/summary chrome already defined
+       above in this file (background/border/chevron/hover/focus, and the
+       [open] highlight) so every topic already reads as a clickable
+       section header with zero extra rules; only alignment/spacing for
+       a two-line "Title — one-line summary" is added here. */
+    .msc-cal-help-section > summary {
+      align-items: flex-start;
+    }
+
+    .msc-cal-help-section > summary::before {
+      margin-top: .2em;
+    }
+
+    .msc-cal-help-section .msc-cal-help-section-body :first-child {
+      margin-top: 0;
+    }
+
+    .msc-cal-help-section .msc-cal-help-section-body :last-child {
+      margin-bottom: 0;
+    }
+
+    .msc-cal-help-steps,
+    .msc-cal-help-bullets {
+      margin: 0 0 10px;
+      padding-left: 20px;
+      font-size: .84rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .msc-cal-help-steps li,
+    .msc-cal-help-bullets li {
+      margin-bottom: 4px;
+    }
+
+    .msc-cal-help-steps {
+      list-style: decimal;
+    }
+
+    .msc-cal-help-bullets {
+      list-style: disc;
+    }
+
+    /* Light, restrained callout used for the "before saving" reminder,
+       the multiple-member-date-concepts note, and similar single-point
+       emphasis — never a loud/red warning style, per this task's "no
+       flashing content" and "restrained warning styling" requirement.
+       Selector deliberately scoped as two classes (not just
+       .msc-cal-help-note alone) so its margin reliably beats the later,
+       higher-specificity .msc-modal p rule (calendar.css) that would
+       otherwise win the shared margin-bottom property on plain <p>. */
+    .msc-cal-help-section-body .msc-cal-help-note {
+      margin: 0 0 10px;
+      padding: 8px 10px;
+      background: var(--surface-tint-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: .82rem;
+      color: var(--text-secondary);
+    }
+
+    /* Task-outcome states (§13) and common-message cards (§16) — a
+       compact stacked-card list on narrow widths, two columns once the
+       popup is wide enough (min-width below sits well inside this
+       guide's own 680px desktop width), per this task's "compact
+       two-column layout or stacked cards" instruction. */
+    .msc-cal-help-states,
+    .msc-cal-help-messages {
+      margin: 8px 0 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 520px) {
+      .msc-cal-help-messages {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .msc-cal-help-states > div,
+    .msc-cal-help-messages > div {
+      background: var(--surface-tint-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+    }
+
+    .msc-cal-help-states dt,
+    .msc-cal-help-messages dt {
+      margin: 0;
+      font-size: .84rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .msc-cal-help-states dd,
+    .msc-cal-help-messages dd {
+      margin: 2px 0 0;
+      font-size: .8rem;
+      color: var(--text-secondary);
+    }
+
     .msc-cal-settings-row {
       display: flex;
       align-items: center;
