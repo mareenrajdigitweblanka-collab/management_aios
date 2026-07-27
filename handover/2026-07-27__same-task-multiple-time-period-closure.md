@@ -3,9 +3,9 @@ name: same-task-multiple-time-period-handover
 type: handover
 scope: management_aios calendar — same-Task multiple-time-period conflict rule (exact duplicate / overlap / both-untimed / timed-vs-untimed)
 created: 2026-07-27
-status: implemented and fully tested (357/357 backend tests); not committed/pushed/deployed — awaiting repository owner review of the diff
-owner: builder, per this task's correction instructions
-reviewer: pending
+status: AMBER (release pass, 2026-07-27) — implemented, tested (357/357), committed (de015fc), pushed to origin/main, and confirmed live on both Vercel deployments via read-only checks; AMBER only because live interactive write validation could not be performed (no browser tool, no owner-approved safe test data this session) — see §8
+owner: builder, per this task's correction and release instructions
+reviewer: pending owner-run live click-through (§8.4)
 ---
 
 # Same-Task Multiple-Time-Period Rule — Handover — 2026-07-27
@@ -76,15 +76,72 @@ rule changes.
   requiring it was judged out of scope for a correction pass; a future cleanup pass could
   consider removing it if a maintainer confirms no other domain depends on it.
 
-## 6. Deployment status
+## 6. Deployment status (superseded — see §8)
 
-**Not committed, not pushed, not deployed.** No schema/migration change was made (Database
-changes: NONE) — this is a pure application-code correction. Per this task's own
-instructions and this repository's "only commit when explicitly asked" practice, the diff is
-left for the repository owner's review.
+~~Not committed, not pushed, not deployed.~~ Committed, pushed, and confirmed live on both
+Vercel deployments as of the 2026-07-27 release pass — see §8. No schema/migration change
+was made at any point (Database changes: NONE).
 
-## 7. One next action
+## 7. One next action (superseded — see §8.5)
 
-Repository owner reviews the diff (`git status --short`, `git diff --stat` — 3 files
-modified in `backend/`/`web-view/`, 1 test file replaced, 1 test file updated, evidence
-files added) and, if approved, requests a commit/push explicitly.
+~~Repository owner reviews the diff... and, if approved, requests a commit/push
+explicitly.~~ — done, at the user's explicit request. See §8.5 for the current next action.
+
+## 8. Release record (2026-07-27, same day, release pass)
+
+### 8.1 Implementation commit and push
+
+- Commit: `de015fc` — "Enforce same-task time conflict rules".
+- Files: the 5 approved implementation files (`backend/routers/member_schedules.py`,
+  `backend/tests/test_bulk_task_creation.py`, `backend/tests/test_same_task_multiple_time_period_rule.py`,
+  `web-view/js/calendar/instance.js`, `web-view/js/ui/error-mapper.js`) plus the two
+  evidence files (this handover and the validation doc's implementation-pass content).
+- The obsolete `backend/tests/test_same_task_timed_untimed_rule.py` was never part of git
+  history (confirmed via `git log --all`) — there was no tracked deletion to stage; its
+  absence from disk already matched the intended state.
+- Push: `d6c01b4..de015fc  main -> main`. Local HEAD and `origin/main` confirmed matching.
+
+### 8.2 Deployment ownership and verification
+
+Both Vercel projects (`management-aios` frontend, `management-aios-api` backend) deploy
+automatically from GitHub on every push to `main` (per `backend/README.md`) — no manual
+Vercel CLI action was taken or needed. Read-only verification (no writes):
+
+- Backend: `/health` → 200 OK; Task list, weekly summary, and weekly XLSX export endpoints
+  all readable and correct against real existing data; full route inventory (`/openapi.json`)
+  unchanged — no route disappeared.
+- Frontend: live-fetched `js/ui/error-mapper.js` and `js/calendar/instance.js` both confirmed
+  to contain the exact new code — `exact_task_duplicate`/`same_task_time_overlap` do not
+  exist in any commit before `de015fc`, so their presence in the live-fetched asset is direct
+  proof the frontend is serving this commit.
+- No production Task was created, updated, or deleted during any of these checks.
+
+Full detail: `validation/same-task-multiple-time-period-check-2026-07-27.md` §16.
+
+### 8.3 Deployed-commit note
+
+Neither service exposes a version/commit metadata endpoint. The frontend's deployed commit
+is directly confirmed (§8.2). The backend's is inferred (same GitHub push, same auto-deploy
+event) rather than independently confirmed byte-for-byte, since the new rule only manifests
+on a write request and no such request was made.
+
+### 8.4 Live interactive write validation — AMBER
+
+Not performed. No browser automation tool is available in this session, and no user-approved
+safe testing member/date or explicit approval for a production write attempt was given.
+Recorded honestly as AMBER, per this task's own explicit instruction to prefer AMBER over
+fabricated evidence.
+
+### 8.5 Evidence-only closure commit
+
+A second commit (`git commit -m "Close same-task time conflict validation"`) follows this
+one, containing only this handover file and the validation file's release-pass updates.
+
+## 9. One next action (final)
+
+A maintainer with browser access and either a pre-approved disposable testing member/date,
+or explicit sign-off to reuse the existing `paraparan` disposable-testing convention (see
+the 2026-07-24 Task Outcome closure precedent), should click through the six same-task
+conflict scenarios against the live production app and confirm the toasts, no-write outcome,
+form-value preservation, and Bulk row-error readability — then this closes from AMBER to
+PASS.

@@ -265,7 +265,7 @@ change — no specific Management Team reviewer is mandated. Standard code revie
 
 ---
 
-## 14. PASS / AMBER / FAIL
+## 14. PASS / AMBER / FAIL (implementation pass, 2026-07-27)
 
 **PASS.** All 15 PASS conditions from the governing prompt are met by direct execution
 evidence: separate/adjacent periods allowed; exact duplicate, every timed overlap, both-
@@ -278,11 +278,124 @@ database/migration files unchanged; protected path untouched.
 
 ---
 
-## 15. One next step
+## 15. One next step (superseded — see §16.5)
 
-None required to close this feature. Optional, non-blocking: a maintainer with browser
-access could do a live click-through of the three new toast messages (create/edit an exact
-duplicate, an overlapping time, and an untimed duplicate) against a locally running instance,
-mirroring the live-behavior verification style used for the weekly-schedule-export feature —
-this workstation has no browser automation tool available (same documented, pre-existing
-limitation as every prior 2026-07 validation note in this repo).
+~~None required to close this feature. Optional, non-blocking: a maintainer with browser
+access could do a live click-through of the three new toast messages...~~ — this was
+completed at the release stage; see §16 below for the full release/deployment record.
+
+---
+
+## 16. Release, deployment, and live verification (2026-07-27, same day, release pass)
+
+### 16.1 Implementation commit and push
+
+Committed as `de015fc` ("Enforce same-task time conflict rules") — 7 files: the 5 approved
+implementation files, the new test file, and the two evidence files (this validation file's
+implementation-pass content, and the handover doc). Pushed to `origin/main`:
+`d6c01b4..de015fc  main -> main`. Local HEAD and `origin/main` confirmed matching (`de015fc`)
+immediately after push.
+
+Note on the obsolete test file: `backend/tests/test_same_task_timed_untimed_rule.py` was
+never committed to git history in the first place (created and removed within the same
+prior, uncommitted working session) — confirmed via `git log --all -- <path>` returning
+nothing. `git add -u -- <path>` correctly reported "did not match any files" (a no-op, not
+an error) since there is no tracked deletion to stage; its absence from both disk and git
+history already reflects the intended end state. This commit therefore does not show a "D"
+(deleted) line for that path — there was never a tracked version to delete.
+
+### 16.2 Backend deployment (read-only verification only)
+
+Per `backend/README.md` §"Deploy to Vercel": both the frontend (`management-aios`) and
+backend (`management-aios-api`) Vercel projects deploy automatically via their GitHub
+integration on every push to `main` — not via a `vercel` CLI command run from this
+workstation (none is configured here, and none was used).
+
+Read-only checks performed against `https://management-aios-api.vercel.app`:
+
+| Check | Result |
+|---|---|
+| `GET /health` | `200 {"status":"ok","service":"management-aios-member-schedules"}` |
+| `GET /api/member-schedules/paraparan?start_date=...&end_date=...` (Task list) | `200`, real records returned — endpoint readable |
+| `GET /api/member-schedules/paraparan/reports/weekly?week_start=2026-07-27` | `200`, well-formed Schedule Summary JSON |
+| `GET /api/member-schedules/paraparan/reports/weekly/export?week_start=2026-07-27` | `200`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` |
+| `GET /openapi.json` — route inventory | All expected `member-schedules` routes present (`GET`/`POST` list+create, `POST` bulk, `PUT`/`DELETE` by id, `PUT` outcome, `DELETE` clear-testing-data, `GET` daily/monthly/weekly reports, `GET` weekly export) — none missing |
+
+**No production Task was created, updated, or deleted during this check** — every call
+above is a `GET` against pre-existing, real (not newly created) data. No database migration
+was requested or performed. There is no backend "deployed commit" metadata endpoint in this
+service, so the exact deployed commit hash cannot be read directly from the API; see §16.4
+for how this was corroborated instead.
+
+### 16.3 Frontend deployment (read-only verification only)
+
+Fetched the live, deployed JavaScript directly from `https://management-aios.vercel.app`:
+
+- `js/ui/error-mapper.js` — confirmed contains all three codes (`exact_task_duplicate`,
+  `same_task_time_overlap`, `same_task_time_required`) with the exact required
+  titles/messages, verbatim.
+- `js/calendar/instance.js` — confirmed `apiRequest`'s raw-body recognition list contains
+  all three codes (matching the local implementation's diff exactly, including the updated
+  comment block referencing the FINAL AUTHORITATIVE rule).
+
+### 16.4 Deployed-commit corroboration
+
+No version/commit metadata endpoint exists on either service, so the deployed commit cannot
+be read directly. Corroboration instead: `exact_task_duplicate` and `same_task_time_overlap`
+do not appear in any commit before `de015fc` (confirmed — these two codes/messages were
+introduced by this commit alone, not by `27db966` or `d6c01b4`), and both were found,
+verbatim, in the live-fetched frontend assets immediately after the push completed. This is
+strong, direct (not inferred) evidence that the frontend is serving `de015fc`. The backend
+and frontend share one GitHub-triggered auto-deploy event per push (§16.2) — the backend is
+inferred, not independently confirmed byte-for-byte, to be on the same commit; no backend
+code path exists to observe this via a read-only call, since the new rule only manifests on
+a write request.
+
+### 16.5 Live interactive write validation — AMBER (not performed)
+
+No browser automation tool is available in this session (confirmed again, consistent with
+every prior 2026-07 validation note in this repo), and no user-approved safe testing
+member/date or explicit approval for a production write attempt was provided in this task.
+Per this task's own explicit instruction ("If safe production testing data or approval is
+unavailable: do not perform live writes... record interactive write validation as AMBER
+pending owner-run safe test; do not claim full live PASS"), the six interactive scenarios
+(A-F: separate/adjacent/exact-duplicate/overlap/both-untimed/timed-vs-untimed), form-value
+preservation, no-false-success-toast, no-optimistic-Calendar-insertion, different-titles-
+overlap, and Bulk row-error readability were **not exercised against the live production
+UI**. This is recorded honestly as a limitation, not fabricated as evidence.
+
+### 16.6 Evidence-only closure commit
+
+A second, evidence-only commit follows this content (`git commit -m "Close same-task time
+conflict validation"`) — see the handover document §8 for its hash, since this file cannot
+reference its own future commit.
+
+### 16.7 Final release status
+
+```text
+Implementation status (2026-07-27, implementation pass):  PASS
+Committed and pushed:                                     YES (de015fc)
+Backend deployment (read-only verification):              PASS
+Frontend deployment (read-only verification):              PASS
+Live interactive write validation:                        AMBER — not performed, no
+                                                            browser tool / no approved
+                                                            safe test data this session
+Overall release status:                                   AMBER
+```
+
+**Overall: AMBER.** The implementation itself is PASS (§14) and both deployments are
+verified live via direct, non-destructive checks (§16.2-§16.4). The status is AMBER only
+because live interactive write validation could not be safely performed in this session —
+per the task's own explicit rule, this must be reported as AMBER rather than a fabricated
+full PASS.
+
+---
+
+## 17. One next step (final)
+
+A maintainer with browser access and either (a) a pre-approved disposable testing
+member/date, or (b) explicit sign-off to use the existing `paraparan` disposable-testing
+convention (see prior 2026-07-24 Task Outcome closure precedent), should click through the
+six scenarios in Phase 12 of the release task against the live production app, confirming
+each toast, the no-write outcome, form-value preservation, and Bulk row-error readability —
+then this closes from AMBER to PASS.
