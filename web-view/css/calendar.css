@@ -303,11 +303,33 @@
       margin-left: auto;
     }
 
-    /* Search / Help / Settings — one tight utility cluster. */
+    /* Search / Help / Settings / Download weekly schedule — one tight
+       utility cluster. */
     .msc-cal-utility-group {
       display: flex;
       align-items: center;
       gap: 2px;
+    }
+
+    /* Weekly schedule .xlsx download busy state (member-weekly-schedule-
+       xlsx-export task, 2026-07-24) — toggled by setExportButtonBusy()
+       (calendar/instance.js), which only sets `disabled`/aria-busy/this
+       class; the icon markup itself is never replaced, so this only needs
+       to style the existing <svg> in place. Reuses the shared @keyframes
+       ui-spin (ui.css) rather than defining a second spin animation. */
+    .msc-cal-export-trigger:disabled {
+      cursor: progress;
+      opacity: .6;
+    }
+
+    .msc-cal-export-trigger.msc-cal-export-busy svg {
+      animation: ui-spin .8s linear infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .msc-cal-export-trigger.msc-cal-export-busy svg {
+        animation-duration: 1.6s;
+      }
     }
 
     /* ── Calendar-scoped search (Step 6) ── anchored popover, same

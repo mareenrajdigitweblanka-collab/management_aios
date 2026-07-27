@@ -89,6 +89,13 @@ export function pad(n) { return n < 10 ? '0' + n : '' + n; }
 export function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 export function parseDateStr(dateStr) { return new Date(dateStr + 'T00:00:00'); }
 
+/* DD-MM-YYYY (weekly-schedule-xlsx-export task, 2026-07-24) — the required
+   filename/toast date format, distinct from toDateStr()'s YYYY-MM-DD (form
+   fields/API payloads) and formatShortDate()'s locale-style "Jul 27"
+   (on-screen labels). Pure formatting only, no timezone conversion — the
+   caller already resolved the Date to the correct calendar day. */
+export function formatDDMMYYYY(d) { return pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear(); }
+
 /* Asia/Colombo-aware "today" as YYYY-MM-DD (Schedule Summary date-ownership
    task, 2026-07-24) — deterministic regardless of the browser's local
    timezone. Distinct from toDateStr(new Date()) above, which is

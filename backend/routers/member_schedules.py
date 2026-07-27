@@ -58,11 +58,12 @@ from typing import List, Optional, Tuple
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy import asc, nullslast
 from sqlalchemy.orm import Session
 
+from backend import xlsx_export
 from backend.config import (
     DEFAULT_SOURCE_SCOPE,
     LEAVE_FULL_DAY_DEDUCTION_MINUTES,
@@ -73,7 +74,7 @@ from backend.config import (
     VALID_PRIORITIES,
 )
 from backend.database import get_db
-from backend.models import MemberScheduleEvent
+from backend.models import MemberLeaveRecord, MemberScheduleEvent
 from backend.routers import leave_logic
 from backend.schemas import (
     BulkTaskCreateRequest,
@@ -876,6 +877,94 @@ def get_weekly_schedule_report(
         **current,
         **comparison,
         **leave_additions,
+    )
+
+
+@router.get("/{member_key}/reports/weekly/export")
+def export_weekly_schedule(
+    member_key: str,
+    week_start: date_type = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Weekly Schedule .xlsx export (member-weekly-schedule-xlsx-export,
+    2026-07-24) — a point-in-time download only; this endpoint issues
+    read-only SELECT queries and never calls db.add/db.commit. Row shaping,
+    sorting, and workbook formatting live in backend/xlsx_export.py; this
+    handler only queries the two source tables, reuses the existing
+    _aggregate_schedule_period() for Weekly Summary's task counts/
+    durations (never recomputed independently), and decides the empty-week
+    short-circuit.
+
+    Monday-Sunday convention matches get_weekly_schedule_report above
+    (any week_start is normalized via _monday_of_week — the caller's own
+    week_start/week_end are echoed back in the empty-week JSON body so a
+    caller passing a non-Monday date sees exactly which week was used).
+
+    Response shape is one of two things, distinguished by the frontend on
+    Content-Type (never on status code, since both are 200):
+    - Both Tasks and Leave are empty for the week: a small JSON body
+      {"empty": true, member_key, week_start, week_end} — no workbook is
+      built, matching the approved "no file, one toast" empty-week rule.
+    - Otherwise: the generated .xlsx as
+      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
+      with a Content-Disposition attachment filename built by
+      xlsx_export.build_export_filename — the same function the frontend
+      independently re-derives its own download filename from, so the two
+      can never disagree."""
+    _validate_member_key(member_key)
+
+    monday = _monday_of_week(week_start)
+    sunday = monday + timedelta(days=6)
+
+    tasks = (
+        db.query(MemberScheduleEvent)
+        .filter(
+            MemberScheduleEvent.member_key == member_key,
+            MemberScheduleEvent.deleted_at.is_(None),
+            MemberScheduleEvent.event_date >= monday,
+            MemberScheduleEvent.event_date <= sunday,
+        )
+        .all()
+    )
+    leave_records = (
+        db.query(MemberLeaveRecord)
+        .filter(
+            MemberLeaveRecord.member_key == member_key,
+            MemberLeaveRecord.deleted_at.is_(None),
+            MemberLeaveRecord.start_date <= sunday,
+            MemberLeaveRecord.end_date >= monday,
+        )
+        .all()
+    )
+
+    if not tasks and not leave_records:
+        return JSONResponse(status_code=200, content={
+            "empty": True,
+            "member_key": member_key,
+            "week_start": monday.isoformat(),
+            "week_end": sunday.isoformat(),
+        })
+
+    aggregate = _aggregate_schedule_period(db, member_key, monday, sunday)
+
+    workbook_bytes = xlsx_export.build_weekly_schedule_workbook(
+        member_key=member_key,
+        member_label=MEMBER_LABELS[member_key],
+        week_start=monday,
+        week_end=sunday,
+        tasks=tasks,
+        leave_records=leave_records,
+        aggregate=aggregate,
+        leave_count=len(leave_records),
+        generated_at_utc=datetime.now(timezone.utc),
+    )
+
+    filename = xlsx_export.build_export_filename(member_key, monday, sunday)
+
+    return Response(
+        content=workbook_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=" + filename},
     )
 
 

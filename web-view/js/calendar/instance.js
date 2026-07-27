@@ -26,6 +26,7 @@ import {
 , TG_DEFAULT_SCROLL_HOUR
 , pad
 , toDateStr
+, formatDDMMYYYY
 , parseDateStr
 , getColomboTodayStr
 , isValidDateStr
@@ -198,6 +199,19 @@ function mountScheduleCalendarInstance(container) {
     '<path d="M3 5.5h14"/><circle cx="12.5" cy="5.5" r="1.7" fill="currentColor" stroke="none"/>' +
     '<path d="M3 10h14"/><circle cx="7.5" cy="10" r="1.7" fill="currentColor" stroke="none"/>' +
     '<path d="M3 14.5h14"/><circle cx="14" cy="14.5" r="1.7" fill="currentColor" stroke="none"/></svg></button>' +
+    /* Weekly schedule .xlsx download (member-weekly-schedule-xlsx-export
+       task, 2026-07-24) — same msc-tool-btn--icon idiom as Search/Help/
+       Settings above (inline SVG, viewBox 0 0 20 20, stroke-based glyph).
+       A standard spreadsheet/download-tray icon, no Google branding.
+       Deliberately placed in the Calendar toolbar only (not My Tasks,
+       Schedule Summary, or Task Details) per the approved requirement. */
+    '<button type="button" class="msc-tool-btn msc-tool-btn--icon msc-cal-export-trigger" ' +
+    'aria-label="Download weekly schedule" title="Download weekly schedule">' +
+    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M4 3.5h9l3 3v10a.7.7 0 0 1-.7.7H4.7a.7.7 0 0 1-.7-.7v-12.3a.7.7 0 0 1 .7-.7z"/>' +
+    '<path d="M13 3.5v3h3"/>' +
+    '<path d="M10 8.5v6"/><path d="M7.3 12.2 10 14.9l2.7-2.7"/>' +
+    '</svg></button>' +
     '</div>' +
     /* Month/Week/Day dropdown (toolbar-follow-up task, 2026-07-23 —
        direct user feedback re-requested the dropdown presentation over
@@ -850,6 +864,7 @@ function mountScheduleCalendarInstance(container) {
   var settingsPopupOverlay = container.querySelector('.msc-cal-settings-popup');
   var settingsPopupClose = container.querySelector('.msc-cal-settings-close');
   var settingsSidebarToggleInput = container.querySelector('.msc-cal-settings-sidebar-toggle');
+  var exportTriggerBtn = container.querySelector('.msc-cal-export-trigger');
   var modeSwitchBtns = container.querySelectorAll('.msc-cal-mode-btn');
   var calendarMainEl = container.querySelector('.msc-calendar-main');
   var tasksMainEl = container.querySelector('.msc-tasks-main');
@@ -1346,6 +1361,100 @@ function mountScheduleCalendarInstance(container) {
     });
   }
 
+  /* ── Weekly schedule .xlsx download (member-weekly-schedule-xlsx-export
+     task, 2026-07-24) — a point-in-time export of this member's Tasks and
+     Leave for the Monday-Sunday week containing the manually selected
+     Calendar date (state.selectedDate, only once
+     state.dateManuallySelected is true — see that field's docstring
+     above). Never substitutes today, the visible Calendar month/week, the
+     My Tasks date, or the Schedule Summary date. Generation is entirely
+     backend-owned (openpyxl, backend/xlsx_export.py) — this only decides
+     the target week, requests the file, and triggers the browser
+     download; it never builds a workbook or recomputes Schedule Summary
+     figures itself. exportInFlight is a plain-boolean duplicate-click
+     guard, the same two-layer pattern (flag + the button's own `disabled`)
+     Bulk Tasks already uses (see bulkSubmitInFlight above) — the shared
+     setButtonBusy() helper (ui/loading.js) is NOT used here because it
+     replaces the button's innerHTML with a text label and, on restore,
+     writes back button.textContent — which is empty for this icon-only
+     button (no text node, only an inline <svg>) and would permanently
+     wipe the icon after the first download. setExportButtonBusy() below
+     only toggles `disabled`/aria-busy/a CSS class instead, so the SVG
+     itself is never touched. */
+  var exportInFlight = false;
+  function setExportButtonBusy(isBusy) {
+    if (!exportTriggerBtn) { return; }
+    exportTriggerBtn.disabled = !!isBusy;
+    exportTriggerBtn.classList.toggle('msc-cal-export-busy', !!isBusy);
+    if (isBusy) { exportTriggerBtn.setAttribute('aria-busy', 'true'); }
+    else { exportTriggerBtn.removeAttribute('aria-busy'); }
+  }
+  function downloadWeeklySchedule() {
+    if (exportInFlight) { return; }
+
+    if (!state.dateManuallySelected || !state.selectedDate) {
+      showToast({
+        type: 'information', title: 'Select a date',
+        message: 'Select a date in the Calendar before downloading the weekly schedule.'
+      });
+      return;
+    }
+
+    var selected = parseDateStr(state.selectedDate);
+    var monday = getReportWeekStart(selected);
+    var sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+
+    exportInFlight = true;
+    setExportButtonBusy(true);
+
+    var weekStartStr = toDateStr(monday);
+    fetch(apiBase + '/reports/weekly/export?week_start=' + encodeURIComponent(weekStartStr))
+      .then(function (res) {
+        if (!res.ok) { throw new Error('export_request_failed'); }
+        var contentType = res.headers.get('Content-Type') || '';
+        if (contentType.indexOf('application/json') !== -1) {
+          return res.json().then(function (body) { return { empty: true, body: body }; });
+        }
+        return res.blob().then(function (blob) { return { empty: false, blob: blob }; });
+      })
+      .then(function (result) {
+        if (result.empty) {
+          showToast({
+            type: 'information', title: 'No schedule found',
+            message: 'There are no Tasks or Leave for the selected week.'
+          });
+          return;
+        }
+        var mondayLabel = formatDDMMYYYY(monday);
+        var sundayLabel = formatDDMMYYYY(sunday);
+        var filename = mondayLabel + '_to_' + sundayLabel + '_' + memberKey + '_weekly_schedule.xlsx';
+        var blobUrl = URL.createObjectURL(result.blob);
+        var link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        showToast({
+          type: 'success', title: 'Weekly schedule downloaded',
+          message: 'The schedule for ' + mondayLabel + ' to ' + sundayLabel + ' was downloaded.'
+        });
+      })
+      .catch(function () {
+        showToast({
+          type: 'error', title: 'Download failed',
+          message: 'The weekly schedule could not be downloaded. Please try again.'
+        });
+      })
+      .then(function () {
+        exportInFlight = false;
+        setExportButtonBusy(false);
+      });
+  }
+  if (exportTriggerBtn) { exportTriggerBtn.addEventListener('click', downloadWeeklySchedule); }
+
   /* ── Calendar-scoped search (Step 6) — anchored popover, same
      position:fixed + viewport-clamp + capture-phase outside-click
      technique as positionMorePopup()/openMorePopup() below. Filters
@@ -1668,7 +1777,22 @@ function mountScheduleCalendarInstance(container) {
        selectedDate. summaryReqToken guards against a stale summary
        response overwriting a newer one when the user changes the Summary
        date faster than the in-flight requests resolve. */
-    summaryDate: null, summaryReqToken: 0
+    summaryDate: null, summaryReqToken: 0,
+    /* dateManuallySelected (weekly-schedule-xlsx-export task, 2026-07-24)
+       — distinguishes an actual user date-selection action from
+       selectedDate's own automatic initial value. selectDate() is called
+       both by every genuine selection path (Month cell, mini-picker,
+       Week/Day slot, Today button, post-save re-affirmation) AND once
+       automatically at mount (see the bootstrap selectDate(toDateStr(t0))
+       call below), so selectedDate alone can never answer "did the user
+       ever actually pick a date?" — this flag can. Set true inside
+       selectDate() itself, then explicitly reset to false immediately
+       after the one automatic bootstrap call, so every later call (all of
+       which are real user/save-driven selections) leaves it true. The
+       weekly schedule export (downloadWeeklySchedule below) is the only
+       reader of this flag — every other selectedDate consumer is
+       unaffected and unchanged. */
+    dateManuallySelected: false
   };
 
   /* Presentation-only status line (Phase 1 polish, 2026-07-10): same
@@ -3154,6 +3278,7 @@ function mountScheduleCalendarInstance(container) {
 
   function selectDate(dateStr) {
     state.selectedDate = dateStr;
+    state.dateManuallySelected = true;
     var d = parseDateStr(dateStr);
     state.anchorDate = d;
     state.viewYear = d.getFullYear();
@@ -5099,6 +5224,12 @@ function mountScheduleCalendarInstance(container) {
   }).then(function (loadedLeave) {
     leaveItems = loadedLeave;
     selectDate(toDateStr(t0));
+    /* This one bootstrap call is the automatic initial default, not a
+       user action — reset the flag selectDate() just set so the weekly
+       schedule export still correctly reports "no date manually selected"
+       until the user actually clicks a date, the mini-picker, a Week/Day
+       slot, or Today (see state.dateManuallySelected's docstring above). */
+    state.dateManuallySelected = false;
   });
 }
 
