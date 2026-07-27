@@ -3,9 +3,9 @@ name: member-weekly-schedule-xlsx-export-handover
 type: handover
 scope: management_aios calendar — weekly schedule .xlsx download (Weekly Schedule + Weekly Summary worksheets)
 created: 2026-07-24
-status: AMBER — implemented, tested (backend SQLite endpoint tests + live jsdom frontend behavioral tests), not committed/pushed/deployed; AMBER only because no real Excel/Google Sheets/browser/Postgres access exists in this session (see validation doc §12)
+status: PASS (2026-07-27) — implemented, tested, committed (27db966), pushed to origin/main, and externally validated (Google Sheets, mobile-width, 200% zoom all confirmed clean by the repository owner against the deployed production app). Initial implementation-pass status was AMBER pending that external validation — see §9.
 owner: builder, per this task's IMPLEMENT instructions
-reviewer: pending
+reviewer: Mareen (repository owner) — external validation performed 2026-07-27
 ---
 
 # Member Weekly Schedule .xlsx Export — Handover — 2026-07-24
@@ -98,40 +98,80 @@ No file under `member-aios/mayurika-hr/staff-data/` (protected) was touched. No 
 
 ## 5. Known limitations
 
-- **No real Microsoft Excel or Google Sheets open performed** — neither is installed on this
-  workstation. See validation doc §12.1 for exactly what structural/round-trip proof stands in for
-  it, and why the workbook is expected to open cleanly (no macros/external links/formulas/protected
-  features — only static values and standard number formats are ever written).
-- **No live Neon/Postgres re-run** — same pre-existing, documented workstation limitation as every
-  other 2026-07-24 validation note in this repo (direct Neon access hangs at the SSL handshake
-  layer). SQLite endpoint tests prove the query/filter/no-write logic; not native `TIMESTAMPTZ`
-  wire-format behavior against the real database.
-- **Mobile / 200% zoom** not independently screenshotted (no local browser). The new button reuses
-  the existing `.msc-tool-btn--icon` sizing/focus rules unchanged, so it inherits whatever responsive
-  behavior Search/Help/Settings already have, which prior validation passes have covered.
+- ~~**No real Microsoft Excel or Google Sheets open performed**~~ — **RESOLVED 2026-07-27** (§9).
+  Neither is installed on the assistant's workstation; the repository owner performed the real
+  Google Sheets open/import directly and confirmed it opened cleanly with no repair warning. No
+  Microsoft Excel open was separately reported (not required — the governing validation task's PASS
+  conditions specify Google Sheets only).
+- **No live Neon/Postgres re-run of the automated endpoint tests** — still open. Same pre-existing,
+  documented workstation limitation as every other 2026-07-24 validation note in this repo (direct
+  Neon access hangs at the SSL handshake layer from the assistant's environment). SQLite endpoint
+  tests prove the query/filter/no-write logic; not native `TIMESTAMPTZ` wire-format behavior against
+  the real database. Partially mitigated: §9.2's real production download (real Mayurika data, live
+  Neon-backed backend) succeeded, but that was one manual click, not a re-run of the full scenario
+  matrix.
+- ~~**Mobile / 200% zoom**~~ — **RESOLVED 2026-07-27** (§9). The repository owner checked both
+  directly against the deployed production app; no issues at either size.
 - **Leave Count** on the Weekly Summary sheet is a simple count of the active leave records included
   in the export (there is no existing authoritative Summary field for it) — an explicit, approved
-  fallback per this task's own instructions, not an independent recalculation of anything else.
+  fallback per this task's own instructions, not an independent recalculation of anything else. Not a
+  limitation — a recorded design decision.
 
 ## 6. Migration / deployment status
 
-**Not committed, not pushed, not deployed.** No schema/migration change was made at all (Database
-changes: NONE) — this is a pure application-code addition (one new dependency, one new backend
-route, one new frontend button/flow). Per this task's own instructions and this repository's
-"only commit when explicitly asked" practice, the diff is left for the repository owner's review.
+**Committed and pushed.** Committed as `27db966` ("Add weekly schedule .xlsx export — Weekly Schedule
+and Weekly Summary") and pushed to `origin/main` on 2026-07-27, at the user's explicit request. No
+schema/migration change was made at all (Database changes: NONE) — this was a pure application-code
+addition (one new dependency, one new backend route, one new frontend button/flow). Both Vercel
+projects (`management-aios` frontend, `management-aios-api` backend) are connected to this repository
+and auto-deploy on push to `main`, per this repository's existing two-project setup — the production
+download evidence in §9.2 (a real file downloaded from `https://management-aios.vercel.app`) confirms
+the deploy took effect.
 
 ## 7. Outstanding before this is fully "done"
 
-1. Repository owner reviews the diff (`git status --short`, `git diff --stat` — 6 files modified, 3
-   new files, all listed in §2 above).
-2. A maintainer with Excel and Google Sheets access opens one generated workbook (any member, any
-   non-empty week) directly and confirms a clean open/import with no repair prompt.
-3. Commit, push, and deploy (backend + frontend both auto-deploy from the same push, per this
-   repository's existing two-Vercel-project setup) once approved.
-4. Optional: a real-browser click-through pass (Search/Help/Settings-adjacent toolbar button, focus
-   ring, tooltip, keyboard activation) once deployed somewhere reachable by a browser.
+1. ~~Repository owner reviews the diff~~ — done; commit `27db966` created and pushed by explicit
+   request.
+2. ~~A maintainer with Google Sheets access opens one generated workbook directly and confirms a
+   clean open/import~~ — done, 2026-07-27 (§9.1).
+3. ~~Commit, push, and deploy~~ — done (§6).
+4. ~~A real-browser click-through pass (toolbar button, focus ring, tooltip, mobile width, 200%
+   zoom)~~ — done, 2026-07-27, against the deployed production app (§9.2).
+5. Optional, non-blocking: re-run the full endpoint test scenario matrix against a real Neon/Postgres
+   database once that access is available from an automated session (see validation doc §15).
 
 ## 8. Reviewer routing
 
 Per CLAUDE.md §18: Calendar/Task/Leave tooling, not an HR/KPI/recruitment/admin-authority domain
-change — no specific Management Team reviewer is mandated. Standard code review applies.
+change — no specific Management Team reviewer is mandated. Standard code review applies. The
+repository owner (Mareen) performed the external validation in §9.
+
+## 9. External validation (2026-07-27)
+
+Performed by Mareen (repository owner), directly against the deployed production app
+(`https://management-aios.vercel.app`) — not by the assistant, which has no browser or Google Sheets
+access in this environment. Full detail: `validation/member-weekly-schedule-xlsx-export-check-2026-07-24.md`
+§16.
+
+### 9.1 Google Sheets
+
+Opened/imported the generated `.xlsx` cleanly — no repair or corruption warning. Combined with the
+already-verified `openpyxl` structural round-trip (worksheet names, column order, frozen panes,
+autofilter, Tamil-text round-trip, Weekly Summary fields), this closes out the Google Sheets PASS
+conditions.
+
+### 9.2 Mobile width and 200% zoom
+
+Checked via Chrome DevTools responsive mode at 400×915 against the live production app (Mayurika
+Calendar). Toolbar rendered correctly (Search/Help/Settings/**Download weekly schedule**/view
+selector/mode switch all visible, no overlap or horizontal overflow). A real download was exercised
+end-to-end: clicking "Download weekly schedule" produced a genuine Chrome Save-As dialog for
+**`27-07-2026_to_02-08-2026_mayurika_weekly_schedule.xlsx`** — exact required filename pattern,
+against real Mayurika data on the live Neon-backed backend. Reported result at 200% zoom: no issues.
+Repository owner's summary: "It is responsive, 200% also ok"; follow-up confirmed no button overlap,
+no clipped tooltip, no focus-ring problem, and no duplicate download on repeated taps.
+
+### 9.3 Progression
+
+Initial implementation-pass status (2026-07-24): **AMBER**. Final external validation status
+(2026-07-27): **PASS**. No application-code defect was found or fixed during external validation.
