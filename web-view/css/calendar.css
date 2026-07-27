@@ -2047,6 +2047,91 @@
       grid-column: 1 / -1;
     }
 
+    /* ── Time frames (multiple-time-frames-per-task, 2026-07-27) ──────────
+       Shared by the Single Task form ("Time frame 1" = .msc-field-start/
+       .msc-field-end) and each Bulk row's own nested list (its own "Time
+       frame 1" = .msc-bulk-row-start/.msc-bulk-row-end) — one row list,
+       one visual language, in both places. Flexbox rows that wrap, never a
+       table — at any width, including 200% browser zoom, each row's
+       Start/End/Remove controls simply drop to their own line instead of
+       ever requiring horizontal scroll. */
+    .msc-time-frames-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .msc-time-frame-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 8px 12px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-tint-3, rgba(0, 0, 0, .02));
+    }
+
+    .msc-time-frame-row--primary {
+      border-style: dashed;
+    }
+
+    .msc-time-frame-row label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: .77rem;
+      color: var(--muted);
+      font-weight: 600;
+      flex: 1 1 130px;
+      min-width: 0;
+    }
+
+    .msc-time-frame-row input[type="time"] {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .88rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .msc-time-frame-heading {
+      flex: 1 1 100%;
+      font-size: .74rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .msc-time-frame-remove-btn {
+      flex: 0 0 auto;
+      align-self: flex-end;
+    }
+
+    .msc-add-time-frame-btn,
+    .msc-bulk-add-time-frame-btn {
+      align-self: flex-start;
+    }
+
+    .msc-add-time-frame-btn:disabled,
+    .msc-bulk-add-time-frame-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .msc-bulk-time-frames-extra {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
     .msc-form-actions {
       display: flex;
       gap: 8px;
@@ -3278,6 +3363,16 @@
     @media (max-width: 768px) {
       .msc-form-grid {
         grid-template-columns: 1fr;
+      }
+
+      /* Time frames (multiple-time-frames-per-task, 2026-07-27) — full
+         vertical stacking of Start/End/Remove on narrow screens, matching
+         every other form field on this breakpoint; the flex-wrap rule
+         above already lets this happen naturally, this only guarantees it
+         at exactly one field per line rather than two that still fit. */
+      .msc-time-frame-row label,
+      .msc-time-frame-remove-btn {
+        flex-basis: 100%;
       }
     }
 

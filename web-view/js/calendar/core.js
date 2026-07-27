@@ -459,6 +459,184 @@ export function frontendToApiPayload(fields) {
   };
 }
 
+/* ── MULTIPLE TIME FRAMES PER TASK (2026-07-27) ──────────────────────────
+   Client-side mirror of backend/routers/member_schedules.py
+   classify_time_frame_set — run before every Single Task / Bulk row /
+   Task Edit submission so a doomed request never round-trips to the
+   server first (same "mirror the backend rule client-side" convention
+   validateTaskTimeRange() already established for the single-pair
+   end>start check). frames: array of {start, end} HH:MM strings (each
+   may be '' or falsy for an unset field) — 1-indexed by array position to
+   match what the user sees as "Time frame N". Returns {outcome, a, b}:
+   outcome is 'ok' | 'incomplete' | 'invalid_range' | 'duplicate' |
+   'overlap'; a/b are the 1-indexed frame position(s) involved (null when
+   not applicable). This is a pure mirror only — the backend re-validates
+   from scratch on every request regardless of what this function decided
+   client-side. */
+export function classifyTimeFrameSet(frames) {
+  function isBlank(f) { return !f.start && !f.end; }
+  function isComplete(f) { return !!f.start && !!f.end; }
+
+  if (frames.length === 1) {
+    if (isBlank(frames[0])) { return { outcome: 'ok', a: null, b: null }; }
+    if (!isComplete(frames[0])) { return { outcome: 'incomplete', a: null, b: null }; }
+  } else {
+    /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — mirrors the backend's own
+       classify_time_frame_set fix: once 2+ frames are submitted, the
+       offending frame's 1-indexed position is always identifiable, so it
+       is returned here too (a stays null only for the single-frame case
+       above, where there is no "which frame" question to answer). */
+    for (var i = 0; i < frames.length; i++) {
+      if (!isComplete(frames[i])) { return { outcome: 'incomplete', a: i + 1, b: null }; }
+    }
+  }
+
+  for (var j = 0; j < frames.length; j++) {
+    var f = frames[j];
+    if (f.start && f.end && timeToMinutes(f.end) <= timeToMinutes(f.start)) {
+      return { outcome: 'invalid_range', a: j + 1, b: null };
+    }
+  }
+
+  for (var x = 0; x < frames.length; x++) {
+    var frameA = frames[x];
+    if (!frameA.start || !frameA.end) { continue; }
+    for (var y = x + 1; y < frames.length; y++) {
+      var frameB = frames[y];
+      if (!frameB.start || !frameB.end) { continue; }
+      if (frameA.start === frameB.start && frameA.end === frameB.end) {
+        return { outcome: 'duplicate', a: x + 1, b: y + 1 };
+      }
+      var aStart = timeToMinutes(frameA.start), aEnd = timeToMinutes(frameA.end);
+      var bStart = timeToMinutes(frameB.start), bEnd = timeToMinutes(frameB.end);
+      if (aStart < bEnd && bStart < aEnd) {
+        return { outcome: 'overlap', a: x + 1, b: y + 1 };
+      }
+    }
+  }
+
+  return { outcome: 'ok', a: null, b: null };
+}
+
+/* Title/message copy for each non-'ok' classifyTimeFrameSet() outcome —
+   PHASE 4/5's exact approved wording, shared by Single Task, Bulk rows,
+   and Task Edit so all three surfaces show identical text for the same
+   underlying problem. Mirrors backend TIME_FRAME_VALIDATION_MESSAGES
+   (member_schedules.py) — kept as an independent frontend copy, matching
+   this codebase's existing convention (see ui/error-mapper.js). */
+export var TIME_FRAME_VALIDATION_COPY = {
+  incomplete: {
+    title: 'Complete the task times',
+    message: 'Enter both a start and end time for every time frame, or keep only one untimed task.'
+  },
+  invalid_range: {
+    title: 'Check the task times',
+    message: 'The end time must be later than the start time.'
+  },
+  duplicate: {
+    title: 'Check the task times',
+    message: 'Two time frames use the same start and end time. Change or remove one of them.'
+  },
+  overlap: {
+    title: 'Check the task times',
+    message: 'Two time frames overlap. Use separate, non-overlapping times.'
+  }
+};
+
+/* ── FRAME-LEVEL ERROR CONTEXT (2026-07-27) ──────────────────────────────
+   Base (unprefixed) message text once a submission genuinely has more
+   than one time frame — mirrors backend/routers/member_schedules.py
+   _TIME_FRAME_SHAPE_BASE_MESSAGE / _BULK_TIME_FRAME_SHAPE_BASE_MESSAGE
+   word-for-word, so client-side pre-validation shows the EXACT same text
+   a server round-trip would have. Bulk's duplicate/overlap wording
+   additionally names "for the same task" — see the backend module note
+   for why. */
+var _TIME_FRAME_SHAPE_BASE_MESSAGE = {
+  incomplete: 'Enter both a start and end time.',
+  invalid_range: 'The end time must be later than the start time.',
+  duplicate: 'This time is already used by another time frame.',
+  overlap: 'This time overlaps another time frame. Use separate, non-overlapping times.'
+};
+
+var _BULK_TIME_FRAME_SHAPE_BASE_MESSAGE = {
+  incomplete: _TIME_FRAME_SHAPE_BASE_MESSAGE.incomplete,
+  invalid_range: _TIME_FRAME_SHAPE_BASE_MESSAGE.invalid_range,
+  duplicate: 'This time is already used by another time frame for the same task.',
+  overlap: 'This time overlaps another time frame for the same task. Use separate, non-overlapping times.'
+};
+
+/* Single entry point for "what title/message should this
+   classifyTimeFrameSet() result show" — used by both the Single/Edit form
+   (validateTimeFrames()) and each Bulk row's own pre-submit check
+   (bulkRowFieldErrors()), so the two surfaces can never drift into
+   different wording for the same underlying problem. frameCount <= 1
+   returns EXACTLY TIME_FRAME_VALIDATION_COPY[result.outcome] — the
+   pre-existing, unprefixed message — byte-for-byte unaffected by this
+   task. frameCount > 1 prefixes the message with "Time frame N: " (the
+   offending frame — duplicate/overlap name the LATER of the two
+   conflicting frames, matching the backend's own convention) and keeps
+   the SAME title (incomplete keeps "Complete the task times"; every
+   other outcome keeps "Check the task times"). forBulk selects the
+   Bulk-specific "for the same task" wording for duplicate/overlap. */
+export function describeTimeFrameValidation(result, frameCount, forBulk) {
+  var copy = TIME_FRAME_VALIDATION_COPY[result.outcome];
+  if (!frameCount || frameCount <= 1) { return copy; }
+  var frameIndex = (result.outcome === 'incomplete' || result.outcome === 'invalid_range')
+    ? result.a
+    : result.b; // duplicate/overlap — later of the two conflicting frames
+  var base = (forBulk ? _BULK_TIME_FRAME_SHAPE_BASE_MESSAGE : _TIME_FRAME_SHAPE_BASE_MESSAGE)[result.outcome];
+  return { title: copy.title, message: 'Time frame ' + frameIndex + ': ' + base };
+}
+
+/* Builds the Single Task create/update request body when the form has one
+   or more time frames (MULTIPLE TIME FRAMES PER TASK, 2026-07-27).
+   frames: array of {start, end} HH:MM strings, already known shape-valid
+   (classifyTimeFrameSet returned 'ok') and in Time-frame-1-first order.
+   A single frame is sent using the pre-existing plain start/end fields —
+   byte-for-byte the same request frontendToApiPayload has always built —
+   so the common one-time-frame case never changes on the wire; two or
+   more frames are sent as the additive `time_frames` array instead
+   (authoritative — start/end are omitted entirely, never both present,
+   matching the backend's contradictory-fields rule). */
+export function frontendToMultiFramePayload(fields) {
+  var base = {
+    date: fields.date,
+    title: fields.title,
+    priority: fields.priority,
+    notes: fields.notes ? fields.notes : null
+  };
+  var frames = fields.frames || [];
+  if (frames.length <= 1) {
+    var only = frames[0] || {};
+    base.start = only.start ? only.start : null;
+    base.end = only.end ? only.end : null;
+    return base;
+  }
+  base.time_frames = frames.map(function (f) {
+    return { start_time: f.start ? f.start : null, end_time: f.end ? f.end : null };
+  });
+  return base;
+}
+
+/* Builds the Task Edit request body (MULTIPLE TIME FRAMES PER TASK,
+   2026-07-27) — the edited occurrence's own date/title/priority/start/end
+   are sent exactly as frontendToApiPayload has always sent them ("Time
+   frame 1" is always the occurrence being edited, never reshaped into
+   time_frames); additionalFrames (if any) become the additive
+   `additional_time_frames` array of brand-new sibling occurrences. Absent
+   or empty additionalFrames omits the key entirely — byte-for-byte the
+   same request this form has always built for a plain edit. */
+export function frontendToEditPayload(fields) {
+  var base = frontendToApiPayload(fields);
+  var additional = fields.additionalFrames || [];
+  if (additional.length > 0) {
+    base.additional_time_frames = additional.map(function (f) {
+      return { start_time: f.start ? f.start : null, end_time: f.end ? f.end : null };
+    });
+  }
+  return base;
+}
+
 /* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27,
    plain-language copy pass same day) — advisory codes mirrored from
    backend/routers/member_schedules.py ADVISORY_LUNCH_BREAK_OVERLAP/
@@ -606,52 +784,83 @@ function buildSingleDialogContent(warnings, context) {
   };
 }
 
-/* One Bulk Tasks row's block of lines (STEP 8) — friendly 1-indexed
-   "Task N" numbering (never the zero-based array index), covering all
-   four combinations (lunch only / overlap only / both / — a warned row
-   always has at least one of the two, so "neither" never occurs here). */
-function buildBulkRowLines(rowNumber, hasLunch, rawConflicts) {
+/* One warned group's (a Bulk row, or — MULTIPLE TIME FRAMES PER TASK,
+   2026-07-27 — one time frame of a Single create/Edit submission) block of
+   lines (STEP 8) — friendly, caller-supplied `label` (never the zero-based
+   array index), covering all four combinations (lunch only / overlap only
+   / both / — a warned group always has at least one of the two, so
+   "neither" never occurs here). Renamed from buildBulkRowLines (2026-07-27)
+   to buildWarningGroupLines when this became shared with the new
+   per-time-frame confirmation grouping below — Bulk's own call site is
+   unchanged in behavior, only the parameter is now a pre-built label
+   string instead of a bare row number. */
+function buildWarningGroupLines(label, hasLunch, rawConflicts) {
   var deduped = dedupeAndSortConflicts(rawConflicts);
   if (hasLunch && deduped.length === 1) {
-    return ['Task ' + rowNumber + ' is during lunch and overlaps:', conflictLine(deduped[0])];
+    return [label + ' is during lunch and overlaps:', conflictLine(deduped[0])];
   }
   if (hasLunch && deduped.length > 1) {
-    return ['Task ' + rowNumber + ' is during lunch and overlaps ' + deduped.length + ' other scheduled tasks:']
+    return [label + ' is during lunch and overlaps ' + deduped.length + ' other scheduled tasks:']
       .concat(conflictListLines(deduped));
   }
   if (hasLunch) {
-    return ['Task ' + rowNumber + ' is during the lunch break.'];
+    return [label + ' is during the lunch break.'];
   }
   if (deduped.length === 1) {
-    return ['Task ' + rowNumber + ' overlaps:', conflictLine(deduped[0])];
+    return [label + ' overlaps:', conflictLine(deduped[0])];
   }
   if (deduped.length > 1) {
-    return ['Task ' + rowNumber + ' overlaps ' + deduped.length + ' other scheduled tasks:']
+    return [label + ' overlaps ' + deduped.length + ' other scheduled tasks:']
       .concat(conflictListLines(deduped));
   }
   return [];
 }
 
+/* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — Bulk's own friendly label:
+   "Task N" for a row with exactly one time frame (unchanged wording from
+   before this feature), "Task N, time frame M" once that row has more
+   than one (frame_index is only ever present on a warning in that case —
+   see backend/routers/member_schedules.py build_schedule_confirmation). */
+function bulkGroupLabel(rowNumber, frameIndex) {
+  if (frameIndex === null || frameIndex === undefined) { return 'Task ' + rowNumber; }
+  return 'Task ' + rowNumber + ', time frame ' + frameIndex;
+}
+
 /* Builds the Bulk Tasks dialog content — one combined message covering
-   every warned row (never one popup per row, never sequential popups),
-   friendly-numbered, ending with the one Bulk-specific closing question
-   (STEP 8). Bulk's per-row structure doesn't reduce to a single flat
-   list the way the single-candidate case does (multiple rows, each with
-   its own optional conflict sub-list), so — unlike buildSingleDialogContent
-   — every row's lines (including its own conflict lines) are folded into
-   one readable `message` block; `listItems` stays empty for Bulk. */
+   every warned row/frame (never one popup per row, never sequential
+   popups), friendly-numbered, ending with the one Bulk-specific closing
+   question (STEP 8). Bulk's per-row structure doesn't reduce to a single
+   flat list the way the single-candidate case does (multiple rows, each
+   with its own optional conflict sub-list), so — unlike
+   buildSingleDialogContent — every group's lines (including its own
+   conflict lines) are folded into one readable `message` block;
+   `listItems` stays empty for Bulk. Grouped by (row_index, frame_index)
+   composite key (2026-07-27) rather than row_index alone, so two
+   different time frames of the same multi-frame row never collapse into
+   one group. */
 function buildBulkDialogContent(warnings) {
-  var byRow = {};
+  var byGroup = {};
+  var order = [];
   (warnings || []).forEach(function (w) {
     if (w.row_index === null || w.row_index === undefined) { return; }
-    if (!byRow[w.row_index]) { byRow[w.row_index] = { lunch: false, conflicts: [] }; }
-    if (w.code === SCHEDULE_ADVISORY_LUNCH) { byRow[w.row_index].lunch = true; }
-    if (w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE) { byRow[w.row_index].conflicts = w.conflicts || []; }
+    var frameIndex = (w.frame_index === null || w.frame_index === undefined) ? null : w.frame_index;
+    var key = w.row_index + ':' + (frameIndex === null ? '' : frameIndex);
+    if (!byGroup[key]) {
+      byGroup[key] = { rowNumber: w.row_index, frameIndex: frameIndex, lunch: false, conflicts: [] };
+      order.push(key);
+    }
+    if (w.code === SCHEDULE_ADVISORY_LUNCH) { byGroup[key].lunch = true; }
+    if (w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE) { byGroup[key].conflicts = w.conflicts || []; }
   });
-  var rowNumbers = Object.keys(byRow).map(Number).sort(function (a, b) { return a - b; });
-  var blocks = rowNumbers.map(function (rowNumber) {
-    var row = byRow[rowNumber];
-    return buildBulkRowLines(rowNumber, row.lunch, row.conflicts).join('\n');
+  order.sort(function (a, b) {
+    var groupA = byGroup[a], groupB = byGroup[b];
+    if (groupA.rowNumber !== groupB.rowNumber) { return groupA.rowNumber - groupB.rowNumber; }
+    return (groupA.frameIndex || 0) - (groupB.frameIndex || 0);
+  });
+  var blocks = order.map(function (key) {
+    var group = byGroup[key];
+    var label = bulkGroupLabel(group.rowNumber, group.frameIndex);
+    return buildWarningGroupLines(label, group.lunch, group.conflicts).join('\n');
   });
   return {
     message: blocks.join('\n\n'),
@@ -660,14 +869,56 @@ function buildBulkDialogContent(warnings) {
   };
 }
 
+/* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — Single create/Task edit
+   dialog content when the submission has MORE THAN ONE time frame (every
+   warning then carries its own frame's 1-indexed row_index instead of
+   null — see build_schedule_confirmation's row_index contract). Mirrors
+   buildBulkDialogContent's per-group structure exactly, but with "Time
+   frame N" labels (no "Task" prefix — there is only one Task here, split
+   across several frames) and the ordinary create/edit closing question
+   context (STEP 9) rather than Bulk's. */
+function buildMultiFrameDialogContent(warnings, context) {
+  var byFrame = {};
+  var frameNumbers = [];
+  (warnings || []).forEach(function (w) {
+    if (w.row_index === null || w.row_index === undefined) { return; }
+    if (!byFrame[w.row_index]) {
+      byFrame[w.row_index] = { lunch: false, conflicts: [] };
+      frameNumbers.push(w.row_index);
+    }
+    if (w.code === SCHEDULE_ADVISORY_LUNCH) { byFrame[w.row_index].lunch = true; }
+    if (w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE) { byFrame[w.row_index].conflicts = w.conflicts || []; }
+  });
+  frameNumbers.sort(function (a, b) { return a - b; });
+  var blocks = frameNumbers.map(function (frameNumber) {
+    var frame = byFrame[frameNumber];
+    return buildWarningGroupLines('Time frame ' + frameNumber, frame.lunch, frame.conflicts).join('\n');
+  });
+  return {
+    message: blocks.join('\n\n'),
+    listItems: [],
+    footer: context === 'edit' ? editFooter() : 'Do you still want to add these time frames?'
+  };
+}
+
 /* Builds the "Check this task time" dialog content from the backend's
    warnings array. `context` is 'create' (default) | 'edit' | 'bulk' —
    selects the closing question (STEP 9) and the Bulk-specific per-row
-   structure (STEP 8). Pure, DOM-free — returns
-   { message, listItems, footer } for web-view/js/ui/dialog.js to render
-   (message + footer as plain-text paragraphs, listItems as a real <ul>). */
+   structure (STEP 8). MULTIPLE TIME FRAMES PER TASK (2026-07-27): for
+   'create'/'edit', a submission with only one time frame keeps using the
+   original single-candidate content builder (row_index is always null in
+   that case, byte-for-byte the same dialog as before this feature); once
+   any warning carries a non-null row_index (2+ frames submitted),
+   buildMultiFrameDialogContent's per-frame grouping takes over instead.
+   Pure, DOM-free — returns { message, listItems, footer } for
+   web-view/js/ui/dialog.js to render (message + footer as plain-text
+   paragraphs, listItems as a real <ul>). */
 export function buildScheduleConfirmationDialogContent(warnings, context) {
   if (context === 'bulk') { return buildBulkDialogContent(warnings); }
+  var hasFrameNumbering = (warnings || []).some(function (w) {
+    return w.row_index !== null && w.row_index !== undefined;
+  });
+  if (hasFrameNumbering) { return buildMultiFrameDialogContent(warnings, context || 'create'); }
   return buildSingleDialogContent(warnings, context || 'create');
 }
 

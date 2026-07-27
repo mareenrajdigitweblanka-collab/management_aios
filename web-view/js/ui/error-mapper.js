@@ -70,6 +70,59 @@ var KNOWN_ERRORS = {
     message: 'This task already has another time period that overlaps the selected time.',
     persistent: true
   },
+  /* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — backend-returned
+     equivalents of core.js TIME_FRAME_VALIDATION_COPY, used only when a
+     request somehow reaches the server without already having passed the
+     client-side classifyTimeFrameSet() mirror (defense in depth, not the
+     primary UX path). */
+  time_frame_incomplete: {
+    type: 'error',
+    title: 'Complete the task times',
+    message: 'Enter both a start and end time for every time frame, or keep only one untimed task.',
+    persistent: true
+  },
+  time_frame_invalid_range: {
+    type: 'error',
+    title: 'Check the task times',
+    message: 'The end time must be later than the start time.',
+    persistent: true
+  },
+  time_frame_duplicate: {
+    type: 'error',
+    title: 'Check the task times',
+    message: 'Two time frames use the same start and end time. Change or remove one of them.',
+    persistent: true
+  },
+  time_frame_overlap: {
+    type: 'error',
+    title: 'Check the task times',
+    message: 'Two time frames overlap. Use separate, non-overlapping times.',
+    persistent: true
+  },
+  contradictory_time_fields: {
+    type: 'error',
+    title: 'Check the task times',
+    message: 'Enter times using either the start/end fields or time frames, not both.',
+    persistent: true
+  },
+  /* APPROVED OCCURRENCE LIMIT (2026-07-27 owner approval): "Maximum 30
+     total Task occurrences per submission after time-frame expansion."
+     Single Task create and Task edit both route through this one
+     KNOWN_ERRORS entry (their approved wording is identical); Bulk shows
+     the backend's own message directly (applyBulkRowErrors, instance.js)
+     since Bulk's approved wording differs ("across all Bulk Task rows") —
+     this entry's message is kept word-for-word identical to the backend's
+     Single/Edit wording so the two can never drift apart. Supersedes the
+     retired too_many_time_frames code (backend/routers/
+     member_schedules.py no longer produces it — the approved rule
+     replaced that per-row check with this one shared, submission-wide
+     validator). */
+  too_many_task_occurrences: {
+    type: 'error',
+    title: 'Too many task times',
+    message: 'You can add up to 30 task time frames in one submission. Remove some time frames and try again.',
+    persistent: true
+  },
   validation: {
     type: 'error',
     title: 'Check the highlighted fields',

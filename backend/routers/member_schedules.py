@@ -91,6 +91,7 @@ from backend.schemas import (
     MemberScheduleEventUpdate,
     MonthlyScheduleReportOut,
     TaskOutcomeUpdate,
+    TimeFrameIn,
     WeeklyScheduleReportOut,
 )
 from backend.time_utils import colombo_today, derive_task_outcome
@@ -226,7 +227,14 @@ def _is_blank_bulk_row(row: BulkTaskRowIn) -> bool:
     just because priority was left at its default."""
     title_empty = not (row.title or "").strip()
     notes_empty = not (row.notes or "").strip()
-    return title_empty and row.start is None and row.end is None and notes_empty
+    # MULTIPLE TIME FRAMES PER TASK (2026-07-27) — a row using time_frames
+    # instead of start/end never has row.start/row.end set at all (see
+    # resolve_submitted_time_frames), so a row with real content ONLY in
+    # time_frames (no title/notes, blank frame-1 fields) must still count
+    # as nonblank — otherwise it would be silently dropped here before
+    # title-required validation ever ran.
+    has_time_frames = bool(row.time_frames)
+    return title_empty and row.start is None and row.end is None and notes_empty and not has_time_frames
 
 
 def _bulk_row_effective_priority(row: BulkTaskRowIn) -> str:
@@ -294,12 +302,12 @@ def _bulk_row_field_errors(row: BulkTaskRowIn) -> List[dict]:
 def _bulk_leave_conflict_errors(
     db: Session,
     member_key: str,
-    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+    expanded: List[Tuple[int, int, int, "BulkTaskRowIn"]],
 ) -> List[dict]:
-    """Authoritative Leave re-check for every nonblank row (Step 7) — calls
-    the SAME leave_logic.find_conflicting_active_leave() function the
+    """Authoritative Leave re-check for every accepted frame (Step 7) —
+    calls the SAME leave_logic.find_conflicting_active_leave() function the
     single-create/update endpoints already call; no second Leave-conflict
-    formula is implemented here. Checked against each row's OWN date
+    formula is implemented here. Checked against each frame's own row date
     (CONFIRMED ADD-ROW DATE RULE, 2026-07-24 — there is no common batch
     date any more) rather than one shared date for the whole batch. A
     conflict is folded into the same validation_failed error contract as
@@ -308,29 +316,46 @@ def _bulk_leave_conflict_errors(
     rather than a separate 409 — Bulk Tasks has only three response
     outcomes (validation_failed / duplicate_confirmation_required /
     created), so there is no fourth "leave_conflict" shape to preserve
-    here. Only called once every nonblank row already has a date (the
-    caller runs field-level validation, including date_required, first),
-    so row.date is never None here."""
+    here.
+
+    FRAME-LEVEL ERROR CONTEXT (2026-07-27): accepts the full `expanded`
+    list (row_number, frame_number, frame_count, frame_row) — not the
+    stripped (row_number, frame_row) pairs this function used before —
+    specifically so a Leave conflict on one frame of a multi-frame row can
+    be attributed to that exact frame (logical_task_index/time_frame_index)
+    instead of only the row. A row with exactly one frame (frame_count==1,
+    the pre-existing shape) gets byte-for-byte the same message as before
+    this task; the Full-Day/Multi-Day-specific wording is preserved
+    unchanged for that case. Only called once every nonblank row already
+    has a date (the caller runs field-level validation, including
+    date_required, first), so frame_row.date is never None here."""
     errors: List[dict] = []
-    for row_number, row in nonblank_rows:
+    for row_number, frame_number, frame_count, row in expanded:
         conflicts = leave_logic.find_conflicting_active_leave(
             db, member_key, row.date, row.start, row.end
         )
         if not conflicts:
             continue
-        full_day = next(
-            (c for c in conflicts if c.leave_type in ("Full-Day", "Multi-Day")), None
-        )
         anchor_field = "start" if (row.start is not None or row.end is not None) else "title"
-        if full_day is not None:
-            label = full_day.leave_type
-            message = "This date is covered by " + label + " Leave."
-        else:
-            message = "This task's time conflicts with an active leave record."
-        errors.append({
+        error = {
             "row": row_number, "field": anchor_field,
-            "code": "leave_conflict", "message": message,
-        })
+            "code": "leave_conflict", "logical_task_index": row_number,
+        }
+        if frame_count > 1:
+            error["time_frame_index"] = frame_number
+            error["message"] = (
+                "Task " + str(row_number) + ", time frame " + str(frame_number)
+                + ": " + leave_logic.LEAVE_CONFLICT_FRAME_MESSAGE
+            )
+        else:
+            full_day = next(
+                (c for c in conflicts if c.leave_type in ("Full-Day", "Multi-Day")), None
+            )
+            if full_day is not None:
+                error["message"] = "This date is covered by " + full_day.leave_type + " Leave."
+            else:
+                error["message"] = "This task's time conflicts with an active leave record."
+        errors.append(error)
     return errors
 
 
@@ -531,16 +556,54 @@ def classify_same_task_conflict(
     return SAME_TASK_CONFLICT_NONE, None
 
 
-def same_task_conflict_response_body(classification: str) -> dict:
+# FRAME-LEVEL ERROR CONTEXT (2026-07-27) — base message used ONLY when a
+# same-title hard conflict is attributable to one specific time frame
+# within a genuinely multi-frame submission (time_frame_index is not
+# None). A single-occurrence submission — the overwhelming majority of
+# Task saves — is completely unaffected: same_task_conflict_response_body
+# with time_frame_index=None (its pre-existing default) returns
+# byte-for-byte the same body it always has, via SAME_TASK_CONFLICT_INFO
+# above. EXACT_DUPLICATE and TIME_OVERLAP share one frame-indexed message
+# ("SAVED SAME-TITLE CONFLICT") — the distinction between a perfect
+# duplicate and a partial overlap remains available via the unchanged
+# `error` code either way.
+SAME_TASK_CONFLICT_FRAME_MESSAGE = {
+    SAME_TASK_CONFLICT_EXACT_DUPLICATE: "The same task is already scheduled during this time.",
+    SAME_TASK_CONFLICT_TIME_OVERLAP: "The same task is already scheduled during this time.",
+    SAME_TASK_CONFLICT_BOTH_UNTIMED: (
+        "This task already exists without a separate time, or an untimed "
+        "version is included. Use one untimed task or complete, "
+        "non-overlapping time frames."
+    ),
+    SAME_TASK_CONFLICT_TIMED_VS_UNTIMED: (
+        "This task already exists without a separate time, or an untimed "
+        "version is included. Use one untimed task or complete, "
+        "non-overlapping time frames."
+    ),
+}
+
+
+def same_task_conflict_response_body(classification: str, time_frame_index: Optional[int] = None) -> dict:
     """409 body for the single-create/update endpoints — same raw,
     no-'detail'-wrapper shape as leave_conflict_response_body
     (backend/routers/leave_logic.py), tagged with the classification's own
     machine-readable code (STEP 5) so the frontend can map it via
     ui/error-mapper.js without reading message text. Never exposes a raw
     database error, an internal row ID, or a stack trace — only the fixed
-    code/message pair for this classification."""
+    code/message pair for this classification.
+
+    time_frame_index (FRAME-LEVEL ERROR CONTEXT, 2026-07-27), additive:
+    None (the default) returns exactly the pre-existing single-occurrence
+    body. When the caller identifies which of several submitted time
+    frames triggered this conflict, passing its 1-indexed position here
+    prefixes the message with "Time frame N: " and exposes that same
+    value as `time_frame_index` — never a database id, never a zero-based
+    index."""
     info = SAME_TASK_CONFLICT_INFO[classification]
-    return {"error": info["code"], "message": info["message"]}
+    if time_frame_index is None:
+        return {"error": info["code"], "message": info["message"]}
+    message = "Time frame " + str(time_frame_index) + ": " + SAME_TASK_CONFLICT_FRAME_MESSAGE[classification]
+    return {"error": info["code"], "message": message, "time_frame_index": time_frame_index}
 
 
 def _active_same_date_occurrences(
@@ -567,6 +630,305 @@ def _active_same_date_occurrences(
         )
         for row in rows
     ]
+
+
+# ── MULTIPLE TIME FRAMES PER TASK (2026-07-27) ──────────────────────────────
+#
+# Additive feature: a Task submission (Single create, Task edit's "add
+# another time", or one Bulk row) may now carry SEVERAL non-overlapping time
+# frames instead of one start/end pair. Each accepted frame becomes its own
+# separate MemberScheduleEvent row sharing the same member/date/title/
+# priority/notes — no database schema change, and every existing hard/
+# advisory rule above (classify_same_task_conflict, leave_logic,
+# detect_schedule_advisories, schedule_confirmation_fingerprint) is reused
+# UNCHANGED, once per frame. This section only adds the shape/internal-
+# overlap validation a set of frames must pass BEFORE any of those existing
+# rules run — resolve_submitted_time_frames() adapts each call site's own
+# (start, end, time_frames) request shape into one ordered list of
+# (start, end) tuples, and classify_time_frame_set() is the one shared
+# formula for validating that list, reused identically by Single create,
+# Task edit, and each Bulk row.
+#
+# ── APPROVED OCCURRENCE LIMIT (2026-07-27 owner approval — supersedes the
+# earlier [VERIFY] status) ───────────────────────────────────────────────
+#
+# Approved business rule: "Maximum 30 total Task occurrences per
+# submission after time-frame expansion." An occurrence is one Task
+# database record. Applies consistently across every write surface via
+# check_occurrence_limit() below — the ONE shared backend validator every
+# endpoint calls with its own already-computed expanded_count, rather
+# than each independently comparing against a limit itself:
+#   - Single Task create: expanded_count = number of resolved time frames.
+#   - Bulk Tasks: expanded_count = sum of resolved time frames across
+#     every logical Bulk row (not the row count itself — see the
+#     pre-existing, unrelated MAX_BULK_TASK_ROWS row-count cap below,
+#     which this does not replace).
+#   - Task edit: expanded_count = 1 (the selected occurrence) + the
+#     number of additional time frames.
+# A backward-compatible one-time (no time_frames/additional_time_frames)
+# request always counts as exactly one occurrence.
+#
+# MAX_TASK_OCCURRENCES_PER_SUBMISSION is deliberately its OWN literal
+# (30), not derived from MAX_BULK_TASK_ROWS — the two now happen to share
+# a value because they were approved separately, not because one implies
+# the other: MAX_BULK_TASK_ROWS caps how many logical Bulk rows a
+# submission may contain (a pre-existing, unrelated rule), while this
+# caps total expanded Task occurrences after time-frame expansion (this
+# task's own approved rule). Changing one must never silently change the
+# other.
+MAX_TASK_OCCURRENCES_PER_SUBMISSION = 30
+
+_TOO_MANY_TASK_OCCURRENCES_SINGLE_MESSAGE = (
+    "You can add up to " + str(MAX_TASK_OCCURRENCES_PER_SUBMISSION)
+    + " task time frames in one submission. Remove some time frames and try again."
+)
+_TOO_MANY_TASK_OCCURRENCES_BULK_MESSAGE = (
+    "You can add up to " + str(MAX_TASK_OCCURRENCES_PER_SUBMISSION)
+    + " task time frames across all Bulk Task rows. Remove some time frames and try again."
+)
+
+
+def check_occurrence_limit(expanded_count: int, for_bulk: bool = False) -> Optional[dict]:
+    """THE single shared backend occurrence-count validator (STEP 3/4 of
+    the approval task) — create_member_schedule_event, Task edit's
+    update_member_schedule_event, and create_member_schedule_events_bulk
+    all call this ONE function with their own already-computed
+    expanded_count; none of them independently counts against or compares
+    to MAX_TASK_OCCURRENCES_PER_SUBMISSION itself.
+
+    Returns None when expanded_count is within the approved limit — the
+    caller proceeds exactly as it otherwise would. Returns a 422 body
+    (title is a frontend-only concern, per this module's existing
+    SAME_TASK_CONFLICT_INFO convention — 'Too many task times', supplied
+    by ui/error-mapper.js) once expanded_count exceeds it — for_bulk
+    selects the approved Bulk-specific wording ("across all Bulk Task
+    rows") versus the shared Single/Edit wording. Every caller of this
+    function returns immediately on a non-None result: zero Tasks
+    created, zero Tasks updated, no Continue-anyway bypass, and no
+    advisory fingerprint is ever computed for a submission this rejects
+    (STEP 5 of the approval task) — this check always runs before any
+    same-title/Leave/advisory check, exactly like every other hard
+    validation in this module."""
+    if expanded_count <= MAX_TASK_OCCURRENCES_PER_SUBMISSION:
+        return None
+    message = _TOO_MANY_TASK_OCCURRENCES_BULK_MESSAGE if for_bulk else _TOO_MANY_TASK_OCCURRENCES_SINGLE_MESSAGE
+    return {"error": "too_many_task_occurrences", "message": message}
+
+
+TIME_FRAME_INCOMPLETE_MESSAGE = (
+    "Enter both a start and end time for every time frame, or keep only "
+    "one untimed task."
+)
+
+TIME_FRAME_VALIDATION_MESSAGES = {
+    "time_frame_incomplete": TIME_FRAME_INCOMPLETE_MESSAGE,
+    "time_frame_invalid_range": "The end time must be later than the start time.",
+    "time_frame_duplicate": (
+        "Two time frames use the same start and end time. Change or "
+        "remove one of them."
+    ),
+    "time_frame_overlap": "Two time frames overlap. Use separate, non-overlapping times.",
+    "contradictory_time_fields": (
+        "Enter times using either the start/end fields or time frames, not both."
+    ),
+}
+
+
+def resolve_submitted_time_frames(
+    top_start: Optional[time_type],
+    top_end: Optional[time_type],
+    time_frames: Optional[List["TimeFrameIn"]],
+) -> Tuple[Optional[List[Tuple[Optional[time_type], Optional[time_type]]]], Optional[str]]:
+    """Adapts one request's (start, end, time_frames) into a single ordered
+    list of (start, end) tuples — frame 1 first — or an error code. Shared
+    by Single create and each Bulk row (Task edit builds its own frame list
+    directly, since frame 1 there is always the edited occurrence's
+    effective start/end, never payload.start/payload.end verbatim — see
+    update_member_schedule_event).
+
+    When `time_frames` is absent or empty: returns the pre-existing single
+    [(top_start, top_end)] frame, byte-for-byte the same value an old
+    caller's start/end pair always produced — exact backward compatibility,
+    no new validation applied here beyond what already ran at the schema
+    layer for that pair.
+
+    When `time_frames` is nonempty, it is AUTHORITATIVE: top_start and
+    top_end must both be None, or this is rejected as
+    'contradictory_time_fields' — the request is never silently resolved by
+    preferring one side over the other.
+
+    Deliberately does NOT itself cap the length of `time_frames` (APPROVED
+    OCCURRENCE LIMIT, 2026-07-27) — that responsibility belongs entirely to
+    check_occurrence_limit() above, called once by each endpoint against
+    its own submission-wide expanded_count, so the 30-occurrence limit is
+    never independently counted or compared in more than one place. A
+    request with more frames than the approved limit still resolves
+    successfully here; the caller's own check_occurrence_limit() call is
+    what rejects it.
+
+    Returns (frames, error_code) — error_code is None on success and frames
+    is None on failure, so callers can branch on `error_code is not None`
+    without also checking frames."""
+    if not time_frames:
+        return [(top_start, top_end)], None
+    if top_start is not None or top_end is not None:
+        return None, "contradictory_time_fields"
+    return [(frame.start_time, frame.end_time) for frame in time_frames], None
+
+
+def time_frame_error_response_body(code: str, **extra) -> dict:
+    """409/422 body for any multiple-time-frames validation failure —
+    same raw, no-'detail'-wrapper shape as every other hard-validation
+    response in this module. `extra` carries the additive, 1-indexed
+    `frame`/`frames` locator fields (never 0-indexed — Phase 11's "do not
+    expose zero-based indexes" rule applies here too, not just to Bulk)."""
+    body = {"error": code, "message": TIME_FRAME_VALIDATION_MESSAGES[code]}
+    body.update(extra)
+    return body
+
+
+def classify_time_frame_set(
+    frames: List[Tuple[Optional[time_type], Optional[time_type]]],
+) -> Tuple[str, Optional[int], Optional[int]]:
+    """THE single shared shape/internal-overlap classifier for a submitted
+    list of (start, end) frames — 1-indexed by position (frame 1 =
+    frames[0]) to match what the user sees on the form. Returns
+    (outcome, a, b):
+      - ('ok', None, None) — every frame accepted; proceed to the existing
+        per-frame hard/advisory checks (classify_same_task_conflict, Leave,
+        detect_schedule_advisories) unchanged.
+      - ('incomplete', frame_number, None) — untimed-mode violation
+        (PHASE 4): a frame that is neither fully blank nor fully timed.
+        frame_number is the offending frame's 1-indexed position when 2+
+        frames were submitted (FRAME-LEVEL ERROR CONTEXT, 2026-07-27) —
+        None for the single-frame case (frames has exactly one entry),
+        preserving that case's exact pre-existing (outcome, None, None)
+        shape. A single fully blank frame (both None) is always allowed —
+        one untimed Task.
+      - ('invalid_range', frame_number, None) — that frame's end is not
+        later than its start.
+      - ('duplicate', frame_a, frame_b) — two frames share the exact same
+        start and end.
+      - ('overlap', frame_a, frame_b) — two frames' timed intervals overlap
+        (half-open interval formula, identical to _classify_time_pair's own
+        overlap branch — adjacent frames, end == other's start, are NOT an
+        overlap and remain allowed).
+
+    Checked in this fixed order (shape before pairwise comparison, first
+    conflicting pair wins) so a request with multiple problems always gets
+    one deterministic, reproducible error rather than whichever check
+    happens to run first in a different implementation."""
+    if len(frames) == 1:
+        start, end = frames[0]
+        if start is None and end is None:
+            return "ok", None, None
+        if start is None or end is None:
+            return "incomplete", None, None
+    else:
+        for index, (start, end) in enumerate(frames, start=1):
+            if start is None or end is None:
+                return "incomplete", index, None
+
+    for index, (start, end) in enumerate(frames, start=1):
+        if start is not None and end is not None and end <= start:
+            return "invalid_range", index, None
+
+    for i in range(len(frames)):
+        a_start, a_end = frames[i]
+        for j in range(i + 1, len(frames)):
+            b_start, b_end = frames[j]
+            if a_start is None or a_end is None or b_start is None or b_end is None:
+                continue
+            if a_start == b_start and a_end == b_end:
+                return "duplicate", i + 1, j + 1
+            if a_start < b_end and b_start < a_end:
+                return "overlap", i + 1, j + 1
+
+    return "ok", None, None
+
+
+# ── FRAME-LEVEL ERROR CONTEXT (2026-07-27) ───────────────────────────────
+#
+# Base (unprefixed) message text for a classify_time_frame_set() outcome,
+# used ONLY once a submission genuinely has more than one time frame (a
+# single-frame submission — the overwhelming majority of Task saves — is
+# completely unaffected: time_frame_set_error_response_body's frame_count
+# <= 1 branch below returns byte-for-byte the same body it always has,
+# via TIME_FRAME_VALIDATION_MESSAGES/time_frame_error_response_body).
+# "Time frame N: " (or "Task N, time frame M: " — Bulk prepends its own
+# logical-task prefix in _expand_bulk_rows_into_frames below) is added by
+# the caller, never baked in here, so the exact same base text is reused
+# word-for-word by Single Task, Task Edit, and Bulk. duplicate/overlap
+# name only the LATER of the two conflicting frames (never both) — this
+# reads more naturally as "this new entry conflicts with something
+# already there" and matches the approved examples exactly.
+_TIME_FRAME_SHAPE_BASE_MESSAGE = {
+    "incomplete": "Enter both a start and end time.",
+    "invalid_range": "The end time must be later than the start time.",
+    "duplicate": "This time is already used by another time frame.",
+    "overlap": "This time overlaps another time frame. Use separate, non-overlapping times.",
+}
+
+# Bulk's own duplicate/overlap wording additionally names "for the same
+# task" (PHASE 5's exact required examples) — Bulk has multiple logical
+# Task rows in play, so this clarifies the conflict is between two frames
+# of the SAME row, not a different row entirely. incomplete/invalid_range
+# are identical across every surface, so only these two keys differ.
+_BULK_TIME_FRAME_SHAPE_BASE_MESSAGE = dict(_TIME_FRAME_SHAPE_BASE_MESSAGE)
+_BULK_TIME_FRAME_SHAPE_BASE_MESSAGE.update({
+    "duplicate": "This time is already used by another time frame for the same task.",
+    "overlap": "This time overlaps another time frame for the same task. Use separate, non-overlapping times.",
+})
+
+
+def time_frame_set_error_response_body(
+    outcome: str, a: Optional[int], b: Optional[int], frame_count: int = 1, for_bulk: bool = False,
+) -> dict:
+    """Maps one classify_time_frame_set() non-'ok' outcome to its 422 body.
+    Never called with outcome == 'ok' — callers check that first.
+
+    frame_count is the TOTAL number of frames in THIS submission (Single
+    create's/Task edit's len(frames), or one Bulk row's own frame count —
+    2026-07-27, FRAME-LEVEL ERROR CONTEXT task). frame_count <= 1 returns
+    EXACTLY the body this function has always returned (no 'Time frame N:'
+    prefix, no time_frame_index key) — 'duplicate'/'overlap' can never
+    actually occur with frame_count <= 1 (both require comparing at least
+    two frames), so that branch below is reachable only for
+    'incomplete'/'invalid_range'. frame_count > 1 prefixes the message
+    with 'Time frame N: ' and adds the offending 1-indexed `time_frame_index`
+    — never a database id, never a zero-based index (PHASE 11's "do not
+    expose zero-based indexes" rule). for_bulk selects
+    _BULK_TIME_FRAME_SHAPE_BASE_MESSAGE's "for the same task" wording for
+    duplicate/overlap instead of the plain Single/Edit text — the caller
+    (Bulk's _expand_bulk_rows_into_frames) still prepends its own
+    "Task N, " prefix on top of whatever this returns."""
+    if frame_count <= 1:
+        if outcome == "incomplete":
+            return time_frame_error_response_body("time_frame_incomplete")
+        if outcome == "invalid_range":
+            return time_frame_error_response_body("time_frame_invalid_range", frame=a)
+        if outcome == "duplicate":
+            return time_frame_error_response_body("time_frame_duplicate", frames=[a, b])
+        if outcome == "overlap":
+            return time_frame_error_response_body("time_frame_overlap", frames=[a, b])
+        raise ValueError("time_frame_set_error_response_body called with outcome 'ok'")
+
+    if outcome in ("incomplete", "invalid_range"):
+        frame_index = a
+    elif outcome in ("duplicate", "overlap"):
+        frame_index = b  # the later of the two conflicting frames — see module note above
+    else:
+        raise ValueError("time_frame_set_error_response_body called with outcome 'ok'")
+
+    code = {
+        "incomplete": "time_frame_incomplete",
+        "invalid_range": "time_frame_invalid_range",
+        "duplicate": "time_frame_duplicate",
+        "overlap": "time_frame_overlap",
+    }[outcome]
+    base_messages = _BULK_TIME_FRAME_SHAPE_BASE_MESSAGE if for_bulk else _TIME_FRAME_SHAPE_BASE_MESSAGE
+    message = "Time frame " + str(frame_index) + ": " + base_messages[outcome]
+    return {"error": code, "message": message, "time_frame_index": frame_index}
 
 
 # ── LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27) ──
@@ -694,6 +1056,7 @@ def _advisory_candidate_state(
     candidate_end: Optional[time_type],
     warning_codes: List[str],
     conflict_keys: List,
+    frame_index: Optional[int] = None,
 ) -> dict:
     """One candidate's JSON-serializable contribution to the confirmation
     fingerprint (STEP: fingerprint must represent relevant request data,
@@ -704,8 +1067,17 @@ def _advisory_candidate_state(
     a payload edit that happens to reproduce the same warning codes against
     a different underlying date/time/title still changes the fingerprint —
     a stale confirmation is only ever honored for the EXACT unchanged
-    payload it was issued for."""
-    return {
+    payload it was issued for.
+
+    frame_index (MULTIPLE TIME FRAMES PER TASK, 2026-07-27), additive: only
+    ever passed by a Bulk row that itself has more than one time frame —
+    row_index alone (the Task row number) can no longer uniquely identify a
+    candidate once one Task row expands into several frames, so this
+    optional 1-indexed frame position is folded into the state dict when
+    present. Every other caller (single create/edit, and Bulk when every
+    row still has exactly one frame) never passes this, so the dict shape
+    — and therefore the fingerprint — is byte-for-byte unchanged for them."""
+    state = {
         "row_index": row_index,
         "date": candidate_date.isoformat(),
         "title": _normalize_title_for_duplicate(candidate_title),
@@ -714,6 +1086,9 @@ def _advisory_candidate_state(
         "codes": list(warning_codes),
         "conflicts": sorted(str(key) for key in conflict_keys),
     }
+    if frame_index is not None:
+        state["frame_index"] = frame_index
+    return state
 
 
 def _dedupe_and_sort_conflict_details(conflict_details: List[dict]) -> List[dict]:
@@ -747,15 +1122,26 @@ def build_schedule_confirmation(
     existing_occurrences,
     exclude_key=None,
     row_index: Optional[int] = None,
+    frame_index: Optional[int] = None,
 ) -> Tuple[List[dict], dict]:
     """One-candidate convenience wrapper around detect_schedule_advisories —
     used directly by the single-create/edit endpoints (one candidate) and
-    once per nonblank row by Bulk Tasks. Returns (warnings, candidate_state):
+    once per frame by Bulk Tasks. Returns (warnings, candidate_state):
     warnings is a list of {"code", "row_index"} dicts (the client-facing
     shape, in _ADVISORY_CODE_ORDER) — row_index is always None for single
-    create/edit, the row's own 1-indexed position for Bulk; candidate_state
-    is the JSON-serializable dict schedule_confirmation_fingerprint hashes,
-    never returned to the client directly.
+    create/edit with exactly one frame, the frame's own 1-indexed position
+    for a multi-frame single create, and the Task row's own 1-indexed
+    position for Bulk; candidate_state is the JSON-serializable dict
+    schedule_confirmation_fingerprint hashes, never returned to the client
+    directly.
+
+    frame_index (MULTIPLE TIME FRAMES PER TASK, 2026-07-27), additive: only
+    passed by Bulk for a row that has more than one time frame, so the
+    client can distinguish "Task 2, time frame 3" from just "Task 2" —
+    stamped onto every warning entry this call produces and threaded into
+    _advisory_candidate_state. None (the default) for every other caller,
+    which leaves both the warning shape and the fingerprint completely
+    unchanged from before this field existed.
 
     2026-07-27 plain-language confirmation copy task: the
     ADVISORY_DIFFERENT_TASK_TIME_OVERLAP warning entry additionally carries
@@ -793,13 +1179,15 @@ def build_schedule_confirmation(
     warnings = []
     for code in warning_codes:
         entry = {"code": code, "row_index": row_index}
+        if frame_index is not None:
+            entry["frame_index"] = frame_index
         if code == ADVISORY_DIFFERENT_TASK_TIME_OVERLAP:
             entry["conflicts"] = conflict_details
         warnings.append(entry)
 
     state = _advisory_candidate_state(
         row_index, candidate_date, candidate_title, candidate_start, candidate_end,
-        warning_codes, conflict_keys,
+        warning_codes, conflict_keys, frame_index=frame_index,
     )
     return warnings, state
 
@@ -836,113 +1224,311 @@ def schedule_confirmation_response_body(warnings: List[dict], candidate_states: 
     }
 
 
+# ── MULTIPLE TIME FRAMES PER TASK, Bulk row expansion (2026-07-27) ──────────
+#
+# Each Bulk row may now carry several time frames (BulkTaskRowIn.time_frames)
+# instead of one start/end pair. _expand_bulk_rows_into_frames() is the ONE
+# place that resolves/shape-validates every row's frame(s) and turns them
+# into individual (row_number, frame_number, frame_count, frame_row) tuples
+# — every downstream helper below (_bulk_within_batch_time_conflicts,
+# _bulk_existing_task_time_conflict_errors, _bulk_leave_conflict_errors,
+# _find_batch_duplicate_warnings, _find_existing_task_duplicate_warnings)
+# keeps using the SAME row_number as its key for every frame belonging to
+# one row — deliberately, not a fresh per-frame key — so:
+#   1. None of those functions needs to change AT ALL: they already accept
+#      a plain List[Tuple[int, BulkTaskRowIn]], and a real BulkTaskRowIn
+#      carrying one frame's own start/end is exactly what they expect.
+#   2. Sibling frames of the SAME row share one exclude_key, so
+#      classify_same_task_conflict's self-exclusion naturally skips
+#      comparing a row's own frames against each other — already proven
+#      non-conflicting by classify_time_frame_set before expansion ever
+#      runs, so this is the correct behavior, not a gap.
+#   3. Every produced error/warning's `row` or `rows` value is already the
+#      correct, user-facing Task row number — no separate remapping step is
+#      needed, and messages built by e.g. _find_batch_duplicate_warnings
+#      (which bakes "Row N" into its own text) are automatically correct.
+#   4. When every row has exactly one frame (the pre-existing shape), the
+#      expanded list is byte-for-byte identical to the original
+#      nonblank_rows list, so existing single-frame-per-row Bulk behavior
+#      is completely unaffected.
+
+
+def _lowercase_first(text: str) -> str:
+    """"Time frame 2: ..." -> "time frame 2: ..." — used only to fold a
+    time_frame_set_error_response_body message into a Bulk "Task N, "
+    prefix (FRAME-LEVEL ERROR CONTEXT, 2026-07-27) without an awkward
+    double capital ("Task 2, Time frame 3: ..."). Never touches anything
+    but the first character; safe for an empty string."""
+    return (text[:1].lower() + text[1:]) if text else text
+
+
+def _expand_bulk_rows_into_frames(
+    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+) -> Tuple[List[dict], List[Tuple[int, int, int, "BulkTaskRowIn"]]]:
+    """Resolves and shape-validates every nonblank row's time frame(s)
+    (PHASE 5/11) BEFORE any same-task/leave/duplicate/advisory check runs —
+    mirrors _bulk_row_field_errors' own convention of gating every
+    downstream check behind one clean pass. Returns (shape_errors,
+    expanded):
+
+    - shape_errors: one {row, field, code, message} entry per row whose
+      time frame(s) failed resolve_submitted_time_frames/
+      classify_time_frame_set. User-facing numbering (PHASE 11 — "Task 2,
+      time frame 3", never a zero-based index): the message is prefixed
+      with "Time frame N: " (or "Time frames N and M: ") only when the
+      classifier identified specific frame position(s); a whole-row
+      'contradictory_time_fields' failure has no single frame to name, so
+      its message is used as-is. The approved occurrence-limit check
+      (check_occurrence_limit, called separately by the caller against
+      this row's OWN resolved frame count summed with every other row's)
+      is a distinct, whole-SUBMISSION concern and never appears here.
+    - expanded: one (row_number, frame_number, frame_count, frame_row)
+      tuple per ACCEPTED frame across every row that had no shape error,
+      in stable (row, frame) order. frame_row is a real BulkTaskRowIn
+      carrying the row's own date/title/priority/notes plus this one
+      frame's start/end — the exact shape every existing same-task/leave/
+      duplicate/advisory helper already expects."""
+    shape_errors: List[dict] = []
+    expanded: List[Tuple[int, int, int, "BulkTaskRowIn"]] = []
+    for row_number, row in nonblank_rows:
+        frames, resolve_error = resolve_submitted_time_frames(
+            row.start, row.end, row.time_frames
+        )
+        if resolve_error is not None:
+            shape_errors.append({
+                "row": row_number, "field": "start",
+                "code": resolve_error,
+                "message": TIME_FRAME_VALIDATION_MESSAGES[resolve_error],
+                # logical_task_index (FRAME-LEVEL ERROR CONTEXT, 2026-07-27)
+                # — always the same value as `row` above; `row` is kept
+                # unchanged for the pre-existing frontend/DOM-targeting
+                # contract (applyBulkRowErrors keys off it), and
+                # logical_task_index is the additive, semantically-named
+                # field the structured Task/time-frame error concept uses.
+                # No time_frame_index here — a whole-row
+                # 'contradictory_time_fields' failure has no single frame
+                # to name.
+                "logical_task_index": row_number,
+            })
+            continue
+
+        shape_outcome, a, b = classify_time_frame_set(frames)
+        if shape_outcome != "ok":
+            body = time_frame_set_error_response_body(
+                shape_outcome, a, b, frame_count=len(frames), for_bulk=True
+            )
+            error = {
+                "row": row_number, "field": "start",
+                "code": body["error"], "message": body["message"],
+                "logical_task_index": row_number,
+            }
+            if "time_frame_index" in body:
+                # body["message"] is already "Time frame N: <text>" — this
+                # row has more than one time frame, so the user-facing
+                # message becomes "Task <row>, time frame N: <text>"
+                # (PHASE 5's exact required wording), and time_frame_index
+                # is carried alongside logical_task_index so the frontend
+                # can target the specific nested frame row/input, never
+                # just the logical Task row as a whole.
+                error["time_frame_index"] = body["time_frame_index"]
+                error["message"] = "Task " + str(row_number) + ", " + _lowercase_first(body["message"])
+            shape_errors.append(error)
+            continue
+
+        frame_count = len(frames)
+        for frame_number, (start, end) in enumerate(frames, start=1):
+            frame_row = BulkTaskRowIn(
+                date=row.date, title=row.title, priority=row.priority,
+                start=start, end=end, notes=row.notes,
+            )
+            expanded.append((row_number, frame_number, frame_count, frame_row))
+
+    return shape_errors, expanded
+
+
 def _bulk_schedule_advisories(
-    db: Session, member_key: str, nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+    db: Session, member_key: str, expanded: List[Tuple[int, int, int, "BulkTaskRowIn"]],
 ) -> Tuple[List[dict], List[dict]]:
     """Lunch + different-title ADVISORY detection across a Bulk Tasks
     submission — covers all three required comparison sources in one pass
-    per row: (A) lunch, (B) other rows in the SAME submitted batch sharing
-    the row's own date, and (C) already-active Tasks saved for this member
-    on that date. (B) and (C) are merged into one `existing_occurrences`
-    list per row (rather than two separate passes, unlike the hard
-    same-title classifier's own within-batch/against-existing split) since
+    per frame: (A) lunch, (B) every OTHER frame in the same submitted batch
+    (any row, including sibling frames of a different row) sharing this
+    frame's own date, and (C) already-active Tasks saved for this member on
+    that date. (B) and (C) are merged into one `existing_occurrences` list
+    per frame (rather than two separate passes, unlike the hard same-title
+    classifier's own within-batch/against-existing split) since
     detect_schedule_advisories is one shared, single-call detector — a
-    batch row's own row_number key can never collide with a database row's
-    UUID key, so exclude_key safely excludes only the row's own in-batch
-    entry. Returns (warnings, candidate_states) — warnings is every row's
-    {"code","row_index"} entries in row-then-code order; candidate_states is
-    the full per-row state list schedule_confirmation_fingerprint hashes
-    (every nonblank row is included, even one with zero warning codes, so
-    the fingerprint is sensitive to any row's underlying data changing)."""
+    batch frame's own row_number key can never collide with a database
+    row's UUID key, so exclude_key safely excludes every frame belonging to
+    THIS SAME row (already proven mutually non-conflicting by
+    classify_time_frame_set before expansion). Returns (warnings,
+    candidate_states) — warnings is every frame's {"code","row_index",
+    ["frame_index"]} entries in frame-then-code order; candidate_states is
+    the full per-frame state list schedule_confirmation_fingerprint hashes
+    (every accepted frame is included, even one with zero warning codes, so
+    the fingerprint is sensitive to any frame's underlying data changing).
+    frame_index (see build_schedule_confirmation) is only ever passed for a
+    row that itself has more than one frame — a row with exactly one frame
+    behaves exactly as it always has (row_index alone, no frame_index)."""
     batch_occurrences_by_date: dict = {}
-    for row_number, row in nonblank_rows:
-        batch_occurrences_by_date.setdefault(row.date, []).append(
+    for row_number, _frame_number, _frame_count, frame_row in expanded:
+        batch_occurrences_by_date.setdefault(frame_row.date, []).append(
             SameTaskOccurrence(
-                key=row_number, event_date=row.date, title=row.title,
-                start=row.start, end=row.end,
+                key=row_number, event_date=frame_row.date, title=frame_row.title,
+                start=frame_row.start, end=frame_row.end,
             )
         )
 
     warnings: List[dict] = []
     candidate_states: List[dict] = []
-    for row_number, row in nonblank_rows:
+    for row_number, frame_number, frame_count, frame_row in expanded:
         combined_occurrences = (
-            _active_same_date_occurrences(db, member_key, row.date)
-            + batch_occurrences_by_date.get(row.date, [])
+            _active_same_date_occurrences(db, member_key, frame_row.date)
+            + batch_occurrences_by_date.get(frame_row.date, [])
         )
-        row_warnings, state = build_schedule_confirmation(
-            row.date, row.title, row.start, row.end, combined_occurrences,
-            exclude_key=row_number, row_index=row_number,
+        frame_index = frame_number if frame_count > 1 else None
+        frame_warnings, state = build_schedule_confirmation(
+            frame_row.date, frame_row.title, frame_row.start, frame_row.end,
+            combined_occurrences, exclude_key=row_number, row_index=row_number,
+            frame_index=frame_index,
         )
-        warnings.extend(row_warnings)
+        warnings.extend(frame_warnings)
         candidate_states.append(state)
 
     return warnings, candidate_states
 
 
+def _dedupe_and_sort_bulk_errors(errors: List[dict]) -> List[dict]:
+    """PHASE 7 (multiple errors, 2026-07-27 FRAME-LEVEL ERROR CONTEXT
+    follow-up task): every hard-validation error the Bulk endpoint
+    collects is still shown — never replaced by one generic banner — this
+    only (1) removes an EXACT duplicate (identical row/field/code/message)
+    that two independent checks happened to both produce for the same
+    frame (e.g. a frame conflicting with both an in-batch frame and an
+    existing saved Task, landing on the identical resulting message), and
+    (2) orders the remainder by logical Task row, then time frame, so the
+    user reads errors in the same order they'd naturally scan the form.
+    Errors with no `row` (a whole-submission problem like "no tasks
+    submitted"/"too many tasks") sort first — a blocking, unscoped issue
+    is read before any per-row detail. Deliberately never drops a
+    non-duplicate error — two DIFFERENT problems on the same frame (e.g.
+    an overlap AND a separate field error) are both kept."""
+    seen = set()
+    deduped: List[dict] = []
+    for error in errors:
+        key = (error.get("row"), error.get("field"), error.get("code"), error.get("message"))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(error)
+    deduped.sort(key=lambda e: (
+        e.get("row") if e.get("row") is not None else -1,
+        e.get("time_frame_index") if e.get("time_frame_index") is not None else 0,
+    ))
+    return deduped
+
+
+def _bulk_same_task_conflict_error(
+    row_number: int, frame_number: int, frame_count: int, classification: str, anchor_field: str,
+) -> dict:
+    """Shared error-dict builder for a Bulk same-task hard conflict
+    (FRAME-LEVEL ERROR CONTEXT, 2026-07-27) — the ONE narrow correction
+    point both _bulk_within_batch_time_conflicts and
+    _bulk_existing_task_time_conflict_errors below call, so the two
+    same-title conflict sources (within-batch, against-existing) can never
+    word this differently. frame_count <= 1 (the pre-existing shape)
+    returns byte-for-byte the same {row, field, code, message} error this
+    codebase has always produced; frame_count > 1 adds
+    logical_task_index/time_frame_index and the "Task N, time frame M: "
+    wording, reusing SAME_TASK_CONFLICT_FRAME_MESSAGE — the exact same
+    base text Single Task/Task Edit's own frame-indexed same-title
+    messages use (same_task_conflict_response_body)."""
+    info = SAME_TASK_CONFLICT_INFO[classification]
+    error = {
+        "row": row_number, "field": anchor_field,
+        "code": info["code"], "logical_task_index": row_number,
+    }
+    if frame_count > 1:
+        error["time_frame_index"] = frame_number
+        error["message"] = (
+            "Task " + str(row_number) + ", time frame " + str(frame_number)
+            + ": " + SAME_TASK_CONFLICT_FRAME_MESSAGE[classification]
+        )
+    else:
+        error["message"] = info["message"]
+    return error
+
+
 def _bulk_within_batch_time_conflicts(
-    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+    expanded: List[Tuple[int, int, int, "BulkTaskRowIn"]],
 ) -> List[dict]:
     """FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE, WITHIN the
-    current Bulk Tasks submission only (STEP 7.A) — every nonblank row is
+    current Bulk Tasks submission only (STEP 7.A) — every accepted frame is
     checked, via the shared classify_same_task_conflict(), against every
-    OTHER nonblank row (itself excluded by row_number via exclude_key), so
-    exact duplicates, overlaps, both-untimed, and timed-vs-untimed pairs are
-    all caught the same way a DB-backed check would catch them. A
-    conflicting pair naturally flags BOTH rows involved: iterating row A as
-    the candidate finds row B as the conflicting occurrence (flags A), and
-    iterating row B as the candidate finds row A (flags B) — every
-    classification here is symmetric (equality, timed-status mismatch, and
-    interval overlap are all symmetric relations), so no separate
-    "flag the other side too" step is needed. Only called once every
-    nonblank row already has a date (see _bulk_leave_conflict_errors'
-    docstring), so row.date is never None here."""
+    OTHER frame in the batch (every frame belonging to the SAME row is
+    excluded via exclude_key=row_number — already proven mutually
+    non-conflicting by classify_time_frame_set before expansion, see
+    _expand_bulk_rows_into_frames), so exact duplicates, overlaps,
+    both-untimed, and timed-vs-untimed pairs are all caught the same way a
+    DB-backed check would catch them. A conflicting pair naturally flags
+    BOTH frames involved: iterating frame A as the candidate finds frame B
+    as the conflicting occurrence (flags A), and iterating frame B as the
+    candidate finds frame A (flags B) — every classification here is
+    symmetric (equality, timed-status mismatch, and interval overlap are
+    all symmetric relations), so no separate "flag the other side too"
+    step is needed.
+
+    FRAME-LEVEL ERROR CONTEXT (2026-07-27): accepts the full `expanded`
+    list (row_number, frame_number, frame_count, frame_row) — not the
+    stripped (row_number, frame_row) pairs this function used before —
+    specifically so a conflict on one frame of a multi-frame row can be
+    attributed to that exact frame. Only called once every nonblank row
+    already has a date (see _bulk_leave_conflict_errors' docstring), so
+    frame_row.date is never None here."""
     occurrences = [
         SameTaskOccurrence(key=row_number, event_date=row.date, title=row.title,
                             start=row.start, end=row.end)
-        for row_number, row in nonblank_rows
+        for row_number, _frame_number, _frame_count, row in expanded
     ]
 
     errors: List[dict] = []
-    for row_number, row in nonblank_rows:
+    for row_number, frame_number, frame_count, row in expanded:
         classification, _conflict = classify_same_task_conflict(
             row.date, row.title, row.start, row.end, occurrences, exclude_key=row_number,
         )
         if classification == SAME_TASK_CONFLICT_NONE:
             continue
-        info = SAME_TASK_CONFLICT_INFO[classification]
         anchor_field = "start" if (row.start is not None or row.end is not None) else "title"
-        errors.append({
-            "row": row_number, "field": anchor_field,
-            "code": info["code"], "message": info["message"],
-        })
+        errors.append(
+            _bulk_same_task_conflict_error(row_number, frame_number, frame_count, classification, anchor_field)
+        )
     return errors
 
 
 def _bulk_existing_task_time_conflict_errors(
     db: Session,
     member_key: str,
-    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+    expanded: List[Tuple[int, int, int, "BulkTaskRowIn"]],
 ) -> List[dict]:
     """FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE, each
-    nonblank row AGAINST Tasks already saved for this member (STEP 7.B) —
+    accepted frame AGAINST Tasks already saved for this member (STEP 7.B) —
     reuses classify_same_task_conflict() via _active_same_date_occurrences(),
     the same formula/adapter the single-create/update endpoints call; no
-    second formula is implemented here."""
+    second formula is implemented here. FRAME-LEVEL ERROR CONTEXT
+    (2026-07-27): see _bulk_within_batch_time_conflicts' docstring above —
+    same `expanded`-list-instead-of-stripped-pairs rationale."""
     errors: List[dict] = []
-    for row_number, row in nonblank_rows:
+    for row_number, frame_number, frame_count, row in expanded:
         occurrences = _active_same_date_occurrences(db, member_key, row.date)
         classification, _conflict = classify_same_task_conflict(
             row.date, row.title, row.start, row.end, occurrences,
         )
         if classification == SAME_TASK_CONFLICT_NONE:
             continue
-        info = SAME_TASK_CONFLICT_INFO[classification]
         anchor_field = "start" if (row.start is not None or row.end is not None) else "title"
-        errors.append({
-            "row": row_number, "field": anchor_field,
-            "code": info["code"], "message": info["message"],
-        })
+        errors.append(
+            _bulk_same_task_conflict_error(row_number, frame_number, frame_count, classification, anchor_field)
+        )
     return errors
 
 
@@ -1629,7 +2215,48 @@ def create_member_schedule_event(
     payload: MemberScheduleEventCreate,
     db: Session = Depends(get_db),
 ):
+    """Single Task creation. Additive as of 2026-07-27 (MULTIPLE TIME FRAMES
+    PER TASK, see the helper section above): payload.time_frames, when
+    nonempty, replaces the single payload.start/payload.end pair with
+    several candidate frames — each accepted frame becomes its own separate
+    MemberScheduleEvent row sharing this same date/title/priority/notes. An
+    old caller that never sends time_frames gets byte-for-byte the same
+    single-event behavior and the same MemberScheduleEventOut response as
+    before (the `if len(frames) == 1` branch below returns the bare ORM
+    object exactly as this endpoint always has). A multi-frame request
+    returns the same {"status","created_count","items"} shape Bulk Tasks
+    already uses (built by hand here since response_model stays
+    MemberScheduleEventOut for the single-event case — returning a
+    JSONResponse directly, as every other non-2xx branch in this endpoint
+    already does, bypasses response_model for this one branch only)."""
     _validate_member_key(member_key)
+
+    frames, resolve_error = resolve_submitted_time_frames(
+        payload.start, payload.end, payload.time_frames
+    )
+    if resolve_error is not None:
+        return JSONResponse(
+            status_code=422, content=time_frame_error_response_body(resolve_error)
+        )
+
+    # APPROVED OCCURRENCE LIMIT (2026-07-27) — expanded_count for Single
+    # Task create is simply the number of resolved frames (each becomes
+    # its own Task record). Checked via the ONE shared validator before
+    # shape validation — a submission that is simply too large is rejected
+    # on its own terms, independent of whether its frames also happen to
+    # be individually valid.
+    occurrence_limit_error = check_occurrence_limit(len(frames), for_bulk=False)
+    if occurrence_limit_error is not None:
+        return JSONResponse(status_code=422, content=occurrence_limit_error)
+
+    shape_outcome, shape_a, shape_b = classify_time_frame_set(frames)
+    if shape_outcome != "ok":
+        return JSONResponse(
+            status_code=422,
+            content=time_frame_set_error_response_body(
+                shape_outcome, shape_a, shape_b, frame_count=len(frames)
+            ),
+        )
 
     # One instant used for both classification and storage, generated once
     # at the start of the request — never trust browser time, never derive
@@ -1641,65 +2268,114 @@ def create_member_schedule_event(
     # cannot bypass classification (see MemberScheduleEventCreate docstring).
     category = classify_new_task(event_date=payload.date, created_at=created_at)
 
-    # FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE (2026-07-27) —
-    # checked before the Leave-conflict check below; independent of it, so
-    # order between the two has no effect on correctness (neither check
-    # mutates anything). See classify_same_task_conflict's docstring above.
     same_date_occurrences = _active_same_date_occurrences(db, member_key, payload.date)
-    same_task_classification, _same_task_conflict = classify_same_task_conflict(
-        payload.date, payload.title, payload.start, payload.end,
-        same_date_occurrences,
-    )
-    if same_task_classification != SAME_TASK_CONFLICT_NONE:
-        return JSONResponse(
-            status_code=409, content=same_task_conflict_response_body(same_task_classification)
-        )
 
-    conflicts = leave_logic.find_conflicting_active_leave(
-        db, member_key, payload.date, payload.start, payload.end
-    )
-    if conflicts:
-        return JSONResponse(
-            status_code=409, content=leave_logic.leave_conflict_response_body(conflicts)
+    # FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE (2026-07-27) —
+    # checked once per frame, before the Leave-conflict check below; the
+    # FIRST hard conflict found rejects the WHOLE submission — zero records
+    # created, exactly like every other hard-block path here (Phase 7:
+    # never create frame 1 while rejecting frame 2).
+    for index, (start, end) in enumerate(frames, start=1):
+        same_task_classification, _same_task_conflict = classify_same_task_conflict(
+            payload.date, payload.title, start, end, same_date_occurrences,
         )
+        if same_task_classification != SAME_TASK_CONFLICT_NONE:
+            frame_index = index if len(frames) > 1 else None
+            return JSONResponse(
+                status_code=409,
+                content=same_task_conflict_response_body(
+                    same_task_classification, time_frame_index=frame_index
+                ),
+            )
+
+    for index, (start, end) in enumerate(frames, start=1):
+        conflicts = leave_logic.find_conflicting_active_leave(
+            db, member_key, payload.date, start, end
+        )
+        if conflicts:
+            frame_index = index if len(frames) > 1 else None
+            return JSONResponse(
+                status_code=409,
+                content=leave_logic.leave_conflict_response_body(conflicts, time_frame_index=frame_index),
+            )
 
     # LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27)
     # — ADVISORY, checked only after every hard block above has already
-    # passed (a doomed request never reaches here). Reuses same_date_
-    # occurrences (no second query). A zero-warning candidate proceeds
-    # straight to the write below regardless of any submitted fingerprint;
-    # a warned candidate writes only when the submitted fingerprint matches
-    # the freshly recomputed one for THIS exact request.
-    warnings, candidate_state = build_schedule_confirmation(
-        payload.date, payload.title, payload.start, payload.end, same_date_occurrences,
-    )
-    if warnings:
-        fingerprint = schedule_confirmation_fingerprint([candidate_state])
+    # passed for every frame (a doomed request never reaches here). One
+    # candidate_state per frame, combined into ONE confirmation response
+    # covering the whole submission (never one popup per frame) — row_index
+    # is None when there is only one frame (identical fingerprint shape to
+    # the pre-existing single-frame behavior), and each frame's own
+    # 1-indexed position once there are several, mirroring how Bulk already
+    # numbers its rows.
+    all_warnings: List[dict] = []
+    candidate_states: List[dict] = []
+    for index, (start, end) in enumerate(frames, start=1):
+        row_index = index if len(frames) > 1 else None
+        frame_warnings, state = build_schedule_confirmation(
+            payload.date, payload.title, start, end, same_date_occurrences,
+            row_index=row_index,
+        )
+        all_warnings.extend(frame_warnings)
+        candidate_states.append(state)
+
+    if all_warnings:
+        fingerprint = schedule_confirmation_fingerprint(candidate_states)
         if payload.confirmation_fingerprint != fingerprint:
             return JSONResponse(
                 status_code=409,
-                content=schedule_confirmation_response_body(warnings, [candidate_state]),
+                content=schedule_confirmation_response_body(all_warnings, candidate_states),
             )
 
-    event = MemberScheduleEvent(
-        member_key=member_key,
-        member_label=MEMBER_LABELS[member_key],
-        event_date=payload.date,
-        title=payload.title,
-        category=category,
-        priority=payload.priority,
-        start_time=payload.start,
-        end_time=payload.end,
-        notes=payload.notes,
-        source_scope=DEFAULT_SOURCE_SCOPE,
-        is_official_truth=False,
-        created_at=created_at,
-        updated_at=created_at,
+    # ── Atomic multi-insert (Phase 7) ────────────────────────────────────
+    # Every frame shares one member/date/title/priority/notes/category —
+    # only start_time/end_time differ per row, exactly the "shared fields
+    # copied correctly, independent event ID per occurrence" contract.
+    events = [
+        MemberScheduleEvent(
+            member_key=member_key,
+            member_label=MEMBER_LABELS[member_key],
+            event_date=payload.date,
+            title=payload.title,
+            category=category,
+            priority=payload.priority,
+            start_time=start,
+            end_time=end,
+            notes=payload.notes,
+            source_scope=DEFAULT_SOURCE_SCOPE,
+            is_official_truth=False,
+            created_at=created_at,
+            updated_at=created_at,
+        )
+        for start, end in frames
+    ]
+
+    try:
+        for event in events:
+            db.add(event)
+        db.flush()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Task could not be created due to a server error. Please try again.",
+        )
+
+    for event in events:
+        db.refresh(event)
+
+    if len(events) == 1:
+        return events[0]
+
+    items = [
+        MemberScheduleEventOut.model_validate(event).model_dump(mode="json")
+        for event in events
+    ]
+    return JSONResponse(
+        status_code=201,
+        content={"status": "created", "created_count": len(events), "items": items},
     )
-    db.add(event)
-    db.commit()
-    db.refresh(event)
-    return event
 
 
 @router.post("/{member_key}/bulk", response_model=BulkTaskCreateSuccessOut, status_code=201)
@@ -1775,36 +2451,83 @@ def create_member_schedule_events_bulk(
         for field_error in _bulk_row_field_errors(row):
             errors.append({"row": row_number, **field_error})
 
-    # FINAL CONFIRMED TIMED-VERSUS-UNTIMED RULE (2026-07-27) and the
-    # authoritative Leave re-check (Step 7) only run once field-level
-    # rules already pass for every row — no point flagging either kind of
-    # conflict on a row whose title/time is itself invalid. Within-batch
-    # and against-existing-Tasks time conflicts are independent checks
-    # (Tests C/D/E); both always run so every offending row is reported at
-    # once, matching the existing "collect across every row" convention
-    # (never stop at the first invalid row).
+    # MULTIPLE TIME FRAMES PER TASK (2026-07-27) — shape/internal-overlap
+    # validation of every row's time frame(s), gated the same way the
+    # plain-field errors above already are: only attempted once every row's
+    # title/notes/priority/date already pass, and any failure here likewise
+    # blocks the same-task/leave checks below for the WHOLE batch (same
+    # "collect across every row, then stop" convention _bulk_row_field_
+    # errors already established) until fixed. `expanded` is the row list
+    # every downstream helper below now consumes instead of nonblank_rows —
+    # see _expand_bulk_rows_into_frames' docstring for why none of those
+    # helpers themselves need to change.
+    expanded: List[Tuple[int, int, int, "BulkTaskRowIn"]] = []
     if not errors:
-        errors.extend(_bulk_within_batch_time_conflicts(nonblank_rows))
+        shape_errors, expanded = _expand_bulk_rows_into_frames(nonblank_rows)
+        errors.extend(shape_errors)
+
+    expanded_rows: List[Tuple[int, "BulkTaskRowIn"]] = [
+        (row_number, frame_row) for row_number, _fn, _fc, frame_row in expanded
+    ]
+
+    # APPROVED OCCURRENCE LIMIT (2026-07-27 owner approval) — a Bulk batch
+    # may now expand to more individual Task records than it has logical
+    # rows; the whole submission's expanded_count (sum of every row's own
+    # resolved frame count) is checked against the single shared
+    # check_occurrence_limit() validator defined above — the SAME function
+    # Single Task create and Task edit call with their own expanded_count,
+    # so this limit is never independently counted in more than one place.
+    # This is a DIFFERENT concern from the pre-existing MAX_BULK_TASK_ROWS
+    # row-count cap enforced earlier in this function (that one limits how
+    # many logical Bulk rows may be submitted at all, regardless of time
+    # frames, and is unaffected by this task).
+    if not errors:
+        occurrence_limit_error = check_occurrence_limit(len(expanded_rows), for_bulk=True)
+        if occurrence_limit_error is not None:
+            errors.append({
+                "row": None, "field": "tasks",
+                "code": occurrence_limit_error["error"],
+                "message": occurrence_limit_error["message"],
+            })
+
+    # FINAL CONFIRMED TIMED-VERSUS-UNTIMED RULE (2026-07-27) and the
+    # authoritative Leave re-check (Step 7) only run once field-level and
+    # time-frame-shape rules already pass for every row — no point flagging
+    # either kind of conflict on a row whose title/time is itself invalid.
+    # Within-batch and against-existing-Tasks time conflicts are
+    # independent checks (Tests C/D/E); both always run so every offending
+    # row is reported at once, matching the existing "collect across every
+    # row" convention (never stop at the first invalid row).
+    if not errors:
+        # FRAME-LEVEL ERROR CONTEXT (2026-07-27): these three checks take
+        # the full `expanded` list (row_number, frame_number, frame_count,
+        # frame_row), not the stripped expanded_rows pairs — see each
+        # function's own docstring for why.
+        errors.extend(_bulk_within_batch_time_conflicts(expanded))
         errors.extend(
-            _bulk_existing_task_time_conflict_errors(db, member_key, nonblank_rows)
+            _bulk_existing_task_time_conflict_errors(db, member_key, expanded)
         )
         errors.extend(
-            _bulk_leave_conflict_errors(db, member_key, nonblank_rows)
+            _bulk_leave_conflict_errors(db, member_key, expanded)
         )
 
     if errors:
         return JSONResponse(status_code=422, content={
             "status": "validation_failed",
             "created_count": 0,
-            "errors": errors,
+            "errors": _dedupe_and_sort_bulk_errors(errors),
         })
 
     # Duplicate detection (Step 8/9/10) — warnings, not hard errors. Both
     # sources are always computed (even when confirm_duplicates=True) so
     # the check is never skipped, only the "stop and ask" short-circuit is.
-    warnings: List[dict] = _find_batch_duplicate_warnings(nonblank_rows)
+    # expanded_rows keeps every frame keyed by its own Task row number (see
+    # _expand_bulk_rows_into_frames), so the "Row N" wording these two
+    # functions already build into their own messages stays correct even
+    # for a multi-frame row.
+    warnings: List[dict] = _find_batch_duplicate_warnings(expanded_rows)
     warnings.extend(
-        _find_existing_task_duplicate_warnings(db, member_key, nonblank_rows)
+        _find_existing_task_duplicate_warnings(db, member_key, expanded_rows)
     )
 
     if warnings and not payload.confirm_duplicates:
@@ -1821,8 +2544,8 @@ def create_member_schedule_events_bulk(
     # Independent bypass token from confirm_duplicates above — a batch can
     # require both confirmations in sequence, one at a time, each fully
     # revalidated. Zero writes on this path; the whole batch remains
-    # atomic — either every nonblank row is created, or none is.
-    schedule_warnings, candidate_states = _bulk_schedule_advisories(db, member_key, nonblank_rows)
+    # atomic — either every accepted frame is created, or none is.
+    schedule_warnings, candidate_states = _bulk_schedule_advisories(db, member_key, expanded)
     if schedule_warnings:
         fingerprint = schedule_confirmation_fingerprint(candidate_states)
         if payload.confirmation_fingerprint != fingerprint:
@@ -1832,35 +2555,38 @@ def create_member_schedule_events_bulk(
             )
 
     # ── Atomic transaction (Step 12/13) ──────────────────────────────────
-    # One authoritative UTC instant shared by every row's created_at and
+    # One authoritative UTC instant shared by every frame's created_at and
     # updated_at — this is what prevents rows created in the same batch
     # from ever disagreeing on "when this batch happened". category,
-    # however, is now computed PER ROW (CONFIRMED ADD-ROW DATE RULE,
-    # 2026-07-24) since it depends on (event_date, created_at) and rows no
-    # longer necessarily share one event_date — two rows in the same batch
-    # can therefore land in different Scheduled/Unscheduled categories if
-    # their own dates fall on opposite sides of that date's own weekly
-    # cutoff, which is correct: classification has always been a
-    # per-event_date decision, never a per-batch one.
+    # however, is computed PER FRAME (CONFIRMED ADD-ROW DATE RULE,
+    # 2026-07-24, extended to per-frame by MULTIPLE TIME FRAMES PER TASK)
+    # since it depends on (event_date, created_at) and rows no longer
+    # necessarily share one event_date — two frames in the same batch can
+    # therefore land in different Scheduled/Unscheduled categories if their
+    # own dates fall on opposite sides of that date's own weekly cutoff,
+    # which is correct: classification has always been a per-event_date
+    # decision, never a per-batch or per-row one. Every frame belonging to
+    # one Task row shares that row's own date, so in practice every sibling
+    # frame of one row always lands in the same category as its siblings.
     created_at = datetime.now(timezone.utc)
 
     events = [
         MemberScheduleEvent(
             member_key=member_key,
             member_label=MEMBER_LABELS[member_key],
-            event_date=row.date,
-            title=(row.title or "").strip(),
-            category=classify_new_task(event_date=row.date, created_at=created_at),
-            priority=_bulk_row_effective_priority(row),
-            start_time=row.start,
-            end_time=row.end,
-            notes=((row.notes or "").strip() or None),
+            event_date=frame_row.date,
+            title=(frame_row.title or "").strip(),
+            category=classify_new_task(event_date=frame_row.date, created_at=created_at),
+            priority=_bulk_row_effective_priority(frame_row),
+            start_time=frame_row.start,
+            end_time=frame_row.end,
+            notes=((frame_row.notes or "").strip() or None),
             source_scope=DEFAULT_SOURCE_SCOPE,
             is_official_truth=False,
             created_at=created_at,
             updated_at=created_at,
         )
-        for _, row in nonblank_rows
+        for _row_number, frame_row in expanded_rows
     ]
 
     try:
@@ -1937,46 +2663,113 @@ def update_member_schedule_event(
     effective_title = update_data.get("title", event.title)
     effective_start = update_data.get("start", event.start_time)
     effective_end = update_data.get("end", event.end_time)
+    effective_priority = update_data.get("priority", event.priority)
+    effective_notes = update_data.get("notes", event.notes)
+
+    # MULTIPLE TIME FRAMES PER TASK, Task Edit surface (2026-07-27) — the
+    # occurrence being edited (event_id) is always "Time frame 1"; any
+    # payload.additional_time_frames entries are candidate NEW occurrences
+    # 2..N, sharing this same resulting date/title/priority/notes.
+    # classify_time_frame_set's frame numbering therefore lines up exactly
+    # with what the user sees on the Edit form ("Time frame 1" = the
+    # occurrence they opened, "Time frame 2" = the first added row, ...).
+    # Absent/empty additional_time_frames reduces this to the single
+    # pre-existing frame — same shape validation (PHASE 4's start-without-
+    # end / end-without-start rule) now applies there too, universally,
+    # not only when a frame is added.
+    additional_frames = [
+        (frame.start_time, frame.end_time) for frame in (payload.additional_time_frames or [])
+    ]
+    frames = [(effective_start, effective_end)] + additional_frames
+
+    # APPROVED OCCURRENCE LIMIT (2026-07-27) — expanded_count for Task edit
+    # is the selected occurrence (always counted, even though it is an
+    # update, not an insert) plus every additional time frame. Checked via
+    # the ONE shared validator, before shape validation, exactly like
+    # Single Task create above — updates nothing and inserts nothing on
+    # rejection.
+    occurrence_limit_error = check_occurrence_limit(len(frames), for_bulk=False)
+    if occurrence_limit_error is not None:
+        return JSONResponse(status_code=422, content=occurrence_limit_error)
+
+    shape_outcome, shape_a, shape_b = classify_time_frame_set(frames)
+    if shape_outcome != "ok":
+        return JSONResponse(
+            status_code=422,
+            content=time_frame_set_error_response_body(
+                shape_outcome, shape_a, shape_b, frame_count=len(frames)
+            ),
+        )
 
     # FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE (2026-07-27) —
-    # evaluated against the resulting (post-edit) date/title/start/end,
-    # excluding this task's own row from comparison (STEP 8 / required
-    # behavior #4). Independent of the Leave-conflict check below; order
-    # between the two has no effect on correctness.
+    # evaluated once per frame against the resulting (post-edit) date/
+    # title, excluding this task's own row from comparison for EVERY frame
+    # (STEP 8 / required behavior #4) — additional frames have no event id
+    # of their own yet, so the only row that could ever falsely conflict
+    # with any of them is the one being edited itself, already excluded via
+    # exclude_key=event.id. Frames are already known mutually
+    # non-conflicting (classify_time_frame_set above), so this only checks
+    # each frame against OTHER active occurrences. The FIRST hard conflict
+    # found rejects the WHOLE request — nothing updated, nothing inserted
+    # (Phase 13: never partially apply an edit-with-added-frames).
     effective_date_occurrences = _active_same_date_occurrences(db, member_key, effective_date)
-    same_task_classification, _same_task_conflict = classify_same_task_conflict(
-        effective_date, effective_title, effective_start, effective_end,
-        effective_date_occurrences,
-        exclude_key=event.id,
-    )
-    if same_task_classification != SAME_TASK_CONFLICT_NONE:
-        return JSONResponse(
-            status_code=409, content=same_task_conflict_response_body(same_task_classification)
+    for index, (start, end) in enumerate(frames, start=1):
+        same_task_classification, _same_task_conflict = classify_same_task_conflict(
+            effective_date, effective_title, start, end,
+            effective_date_occurrences, exclude_key=event.id,
         )
+        if same_task_classification != SAME_TASK_CONFLICT_NONE:
+            frame_index = index if len(frames) > 1 else None
+            return JSONResponse(
+                status_code=409,
+                content=same_task_conflict_response_body(
+                    same_task_classification, time_frame_index=frame_index
+                ),
+            )
 
-    conflicts = leave_logic.find_conflicting_active_leave(
-        db, member_key, effective_date, effective_start, effective_end
-    )
-    if conflicts:
-        return JSONResponse(
-            status_code=409, content=leave_logic.leave_conflict_response_body(conflicts)
+    # Task/Leave hard block (PHASE 16) — one conflicting frame rolls back
+    # the whole edit, including the selected occurrence's own update; no
+    # Continue-anyway bypass exists for this check, same as every other
+    # write path in this module.
+    for index, (start, end) in enumerate(frames, start=1):
+        conflicts = leave_logic.find_conflicting_active_leave(
+            db, member_key, effective_date, start, end
         )
+        if conflicts:
+            frame_index = index if len(frames) > 1 else None
+            return JSONResponse(
+                status_code=409,
+                content=leave_logic.leave_conflict_response_body(conflicts, time_frame_index=frame_index),
+            )
 
     # LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27)
-    # — ADVISORY, evaluated against the resulting (post-edit) date/title/
-    # start/end, excluding this task's own row (exclude_key=event.id, same
-    # self-exclusion the same-title classifier above already applies).
-    # Reuses effective_date_occurrences (no second query).
-    warnings, candidate_state = build_schedule_confirmation(
-        effective_date, effective_title, effective_start, effective_end,
-        effective_date_occurrences, exclude_key=event.id,
-    )
-    if warnings:
-        fingerprint = schedule_confirmation_fingerprint([candidate_state])
+    # — ADVISORY, evaluated once per frame against the resulting (post-edit)
+    # date/title, excluding this task's own row (exclude_key=event.id, same
+    # self-exclusion the same-title classifier above applies). Reuses
+    # effective_date_occurrences (no second query). row_index stays None
+    # when there is only the one (possibly edited) frame — byte-for-byte
+    # the same single-candidate fingerprint shape as before this feature —
+    # and becomes each frame's own 1-indexed position (1 = the edited
+    # occurrence) once additional frames exist, combined into ONE
+    # confirmation response covering the whole edit (never one popup per
+    # frame).
+    all_warnings: List[dict] = []
+    candidate_states: List[dict] = []
+    for index, (start, end) in enumerate(frames, start=1):
+        row_index = index if len(frames) > 1 else None
+        frame_warnings, state = build_schedule_confirmation(
+            effective_date, effective_title, start, end,
+            effective_date_occurrences, exclude_key=event.id, row_index=row_index,
+        )
+        all_warnings.extend(frame_warnings)
+        candidate_states.append(state)
+
+    if all_warnings:
+        fingerprint = schedule_confirmation_fingerprint(candidate_states)
         if payload.confirmation_fingerprint != fingerprint:
             return JSONResponse(
                 status_code=409,
-                content=schedule_confirmation_response_body(warnings, [candidate_state]),
+                content=schedule_confirmation_response_body(all_warnings, candidate_states),
             )
 
     if "date" in update_data:
@@ -1998,7 +2791,9 @@ def update_member_schedule_event(
     # as just assigned above (the new date if this update changed it,
     # otherwise the task's existing date) — classify_updated_task always
     # evaluates against the week the task now belongs to, never the week
-    # it belonged to before this update.
+    # it belonged to before this update. The SAME instant is reused below
+    # as created_at/updated_at for any additional new occurrences, so the
+    # edited row and its new siblings always agree on "when this happened".
     updated_at = datetime.now(timezone.utc)
     event.category = classify_updated_task(
         current_category=event.category,
@@ -2007,9 +2802,67 @@ def update_member_schedule_event(
     )
     event.updated_at = updated_at
 
-    db.commit()
+    # New occurrences (PHASE 12/17) — each a genuinely NEW row, so
+    # classify_new_task (not classify_updated_task) decides its category;
+    # each starts with no outcome/outcome_reason (column defaults — never
+    # copied from the edited occurrence, and never set here). Existing
+    # sibling occurrences that were not explicitly loaded into this edit
+    # (any other same-title/date row besides event.id) are never queried,
+    # touched, or discovered by this endpoint — only event.id is updated
+    # and only these new frames are inserted.
+    new_events = [
+        MemberScheduleEvent(
+            member_key=member_key,
+            member_label=MEMBER_LABELS[member_key],
+            event_date=effective_date,
+            title=effective_title,
+            category=classify_new_task(event_date=effective_date, created_at=updated_at),
+            priority=effective_priority,
+            start_time=start,
+            end_time=end,
+            notes=effective_notes,
+            source_scope=DEFAULT_SOURCE_SCOPE,
+            is_official_truth=False,
+            created_at=updated_at,
+            updated_at=updated_at,
+        )
+        for start, end in additional_frames
+    ]
+
+    # ── Atomic transaction (PHASE 13) ────────────────────────────────────
+    # The selected occurrence's update and every new occurrence's insert
+    # commit together or not at all — a failure after db.add() below rolls
+    # back the in-session attribute changes already made to `event` too,
+    # not just the new inserts (db.rollback() reverts the whole pending
+    # unit of work, exactly like the Bulk/Single-create atomic transactions
+    # above).
+    try:
+        for new_event in new_events:
+            db.add(new_event)
+        db.flush()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Task could not be updated due to a server error. Please try again.",
+        )
+
     db.refresh(event)
-    return event
+    for new_event in new_events:
+        db.refresh(new_event)
+
+    if not new_events:
+        return event
+
+    items = [
+        MemberScheduleEventOut.model_validate(item).model_dump(mode="json")
+        for item in [event] + new_events
+    ]
+    return JSONResponse(
+        status_code=200,
+        content={"status": "updated", "created_count": len(new_events), "items": items},
+    )
 
 
 @router.put("/{member_key}/{event_id}/outcome", response_model=MemberScheduleEventOut)

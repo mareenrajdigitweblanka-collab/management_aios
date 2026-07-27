@@ -375,15 +375,40 @@ def find_conflicting_active_leave(
     return conflicts
 
 
-def leave_conflict_response_body(conflicts: List[MemberLeaveRecord]) -> dict:
+# FRAME-LEVEL ERROR CONTEXT (2026-07-27) — shared base message reused
+# verbatim by leave_conflict_response_body below AND by Bulk Tasks'
+# _bulk_leave_conflict_errors (backend/routers/member_schedules.py), so
+# Single Task, Task Edit, and Bulk never drift into two different
+# wordings for the same underlying Task/Leave hard conflict.
+LEAVE_CONFLICT_FRAME_MESSAGE = (
+    "This time conflicts with Leave on the selected date. Choose another time or date."
+)
+
+
+def leave_conflict_response_body(
+    conflicts: List[MemberLeaveRecord], time_frame_index: Optional[int] = None
+) -> dict:
     """Builds the 409 response body. Deliberately omits `purpose` and any
     other free-text field beyond leave_id/leave_type/date/time (requirement
     §8.7 — "omit unnecessary sensitive purpose text"). No `status` field
     (2026-07-16 simplification amendment) — there is no workflow status to
-    report."""
-    return {
+    report.
+
+    time_frame_index (FRAME-LEVEL ERROR CONTEXT, 2026-07-27), additive and
+    used only by member_schedules.py's Single Task create/Task edit
+    endpoints (this function's only two callers) — None (the default)
+    returns exactly the pre-existing message/body, byte-for-byte, for a
+    single-occurrence submission. When the caller identifies which of
+    several submitted time frames conflicts with Leave, passing its
+    1-indexed position here swaps in the frame-specific message and
+    exposes that same value as `time_frame_index` — never a database id,
+    never a zero-based index. Leave/Task, Task/Leave, and Leave/Leave
+    overlap rules themselves are entirely unchanged by this — only this
+    one response body's wording is affected."""
+    message = "This task conflicts with active leave."
+    body = {
         "error": "leave_conflict",
-        "message": "This task conflicts with active leave.",
+        "message": message,
         "conflicts": [
             {
                 "leave_id": str(record.id),
@@ -396,6 +421,10 @@ def leave_conflict_response_body(conflicts: List[MemberLeaveRecord]) -> dict:
             for record in conflicts
         ],
     }
+    if time_frame_index is not None:
+        body["time_frame_index"] = time_frame_index
+        body["message"] = "Time frame " + str(time_frame_index) + ": " + LEAVE_CONFLICT_FRAME_MESSAGE
+    return body
 
 
 # ── Leave-versus-task overlap prevention (calendar-empty-slot-create-and-

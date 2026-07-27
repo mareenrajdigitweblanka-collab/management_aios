@@ -42,6 +42,21 @@ from backend.config import (
 from backend.time_utils import derive_task_outcome
 
 
+class TimeFrameIn(BaseModel):
+    """One time frame within a multiple-time-frames-per-Task submission
+    (multiple-time-frames-per-task, 2026-07-27). Each valid frame becomes
+    its own separate MemberScheduleEvent row — see the module-level note
+    on MemberScheduleEventCreate.time_frames for the full contract.
+    Deliberately loosely typed (no end>start validator here, unlike the
+    top-level start/end pair) — mirrors BulkTaskRowIn's own reasoning: real
+    validation happens once in the router (classify_time_frame_set) so an
+    incomplete/invalid frame produces one structured, frame-numbered error
+    instead of a generic Pydantic 422 that can't reference "time frame 2"."""
+
+    start_time: Optional[time_type] = None
+    end_time: Optional[time_type] = None
+
+
 class MemberScheduleEventCreate(BaseModel):
     date: date_type
     title: str = Field(..., max_length=120, min_length=1)
@@ -63,6 +78,18 @@ class MemberScheduleEventCreate(BaseModel):
     # scratch — this value is never trusted as still-current truth, only
     # compared against the freshly recomputed one.
     confirmation_fingerprint: Optional[str] = None
+    # Multiple time frames per Task (2026-07-27), additive: when present
+    # and nonempty, this list is AUTHORITATIVE and the top-level start/end
+    # above must both be absent/None (checked in the router — a request
+    # that sets both is rejected as contradictory, never silently
+    # resolved). Every frame is validated (backend/routers/
+    # member_schedules.py classify_time_frame_set) and, once accepted,
+    # becomes its own separate MemberScheduleEvent row sharing this same
+    # date/title/priority/notes — no database schema change; see
+    # create_member_schedule_event for the full sequence. Absent or empty
+    # preserves the exact pre-existing single start/end behavior for old
+    # callers.
+    time_frames: Optional[List[TimeFrameIn]] = None
 
     @field_validator("priority")
     @classmethod
@@ -100,6 +127,18 @@ class MemberScheduleEventUpdate(BaseModel):
     # above — see its docstring. Evaluated against the resulting (post-edit)
     # date/title/start/end, excluding this task's own row.
     confirmation_fingerprint: Optional[str] = None
+    # Multiple time frames per Task, Edit surface (2026-07-27), additive:
+    # the occurrence being edited (event_id in the URL) is always "time
+    # frame 1" — its date/title/priority/notes/start/end continue to be
+    # edited exactly as before via the fields above. additional_time_frames
+    # lists EXTRA new occurrences to create alongside that edit, sharing the
+    # edited occurrence's final date/title/priority/notes. Absent or empty
+    # preserves the exact pre-existing single-row update behavior. This
+    # never causes any existing sibling occurrence (any other row that
+    # happens to share the same title/date) to be discovered, grouped, or
+    # modified — only event_id itself is updated, and only the frames
+    # listed here are newly inserted. See update_member_schedule_event.
+    additional_time_frames: Optional[List[TimeFrameIn]] = None
 
     @field_validator("priority")
     @classmethod
@@ -251,6 +290,15 @@ class BulkTaskRowIn(BaseModel):
     start: Optional[time_type] = None
     end: Optional[time_type] = None
     notes: Optional[str] = None
+    # Multiple time frames per Task, Bulk surface (2026-07-27), additive:
+    # same authoritative-when-present contract as
+    # MemberScheduleEventCreate.time_frames — when nonempty, this row's own
+    # start/end above must both be absent/None (checked in the router), and
+    # each frame in this list expands into its own separate
+    # MemberScheduleEvent row sharing this row's date/title/priority/notes.
+    # Absent or empty preserves the exact pre-existing single-frame-per-row
+    # Bulk behavior for old callers.
+    time_frames: Optional[List[TimeFrameIn]] = None
 
 
 class BulkTaskCreateRequest(BaseModel):

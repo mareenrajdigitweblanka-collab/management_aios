@@ -46,6 +46,10 @@ import {
 , apiItemToFrontend
 , frontendToApiPayload
 , buildScheduleConfirmationDialogContent
+, classifyTimeFrameSet
+, describeTimeFrameValidation
+, frontendToMultiFramePayload
+, frontendToEditPayload
 } from './core.js';
 import { trapTab, returnFocus } from '../ui/popup.js';
 import { showToast } from '../ui/toast.js';
@@ -652,8 +656,24 @@ function mountScheduleCalendarInstance(container) {
     '<option value="Medium" selected>Medium</option>' +
     '<option value="Low">Low</option>' +
     '</select></label>' +
+    /* ── Time frames (multiple-time-frames-per-task, 2026-07-27) ──────
+       "Time frame 1" is always the classic Start/End pair below — the
+       same .msc-field-start/.msc-field-end inputs every existing
+       click-to-create prefill, drag/resize, and editItem() code path
+       already reads/writes directly, completely unchanged. Frames 2+ are
+       additive rows rendered into .msc-time-frames-extra only once the
+       user clicks "+ Add another time" — see addTimeFrameRow() et al.
+       below. A single time frame therefore renders and behaves exactly
+       as the form always has; this section is purely additive. */
+    '<div class="msc-time-frames-section msc-form-full">' +
+    '<div class="msc-time-frame-row msc-time-frame-row--primary">' +
+    '<div class="msc-time-frame-heading">Time frame 1</div>' +
     '<label>Start time<input type="time" class="msc-field-start" /></label>' +
     '<label>End time<input type="time" class="msc-field-end" /></label>' +
+    '</div>' +
+    '<div class="msc-time-frames-extra"></div>' +
+    '<button type="button" class="msc-btn msc-btn-ghost msc-add-time-frame-btn">+ Add another time</button>' +
+    '</div>' +
     '<label class="msc-form-full">Notes<textarea class="msc-field-notes" maxlength="240" ' +
     'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
     '</form>' +
@@ -778,6 +798,154 @@ function mountScheduleCalendarInstance(container) {
   var fieldStart = container.querySelector('.msc-field-start');
   var fieldEnd = container.querySelector('.msc-field-end');
   var fieldNotes = container.querySelector('.msc-field-notes');
+
+  /* ── Time frames (multiple-time-frames-per-task, 2026-07-27) ──────────
+     "Time frame 1" is always fieldStart/fieldEnd above — untouched by
+     everything below. Frames 2+ live in timeFramesExtraEl, one
+     .msc-time-frame-row per additional frame, added/removed entirely in
+     JS (mirrors the existing Bulk row list convention — addBulkRow()/
+     removeBulkRow()/renderBulkRowNumbers() below — but scoped to this one
+     form's own extra-frames list, not a separate row of Date/Title/
+     Priority/Notes fields). Reuses MAX_BULK_TASK_ROWS's value (30) as its
+     own cap rather than inventing a second constant, exactly like the
+     Bulk row cap below already documents doing for the backend's
+     MAX_BULK_TASK_ROWS. */
+  var MAX_TIME_FRAMES_PER_TASK = 30;
+  var timeFramesExtraEl = container.querySelector('.msc-time-frames-extra');
+  var addTimeFrameBtn = container.querySelector('.msc-add-time-frame-btn');
+
+  function timeFrameRowMarkup() {
+    return (
+      '<div class="msc-time-frame-row">' +
+      '<div class="msc-time-frame-heading"></div>' +
+      '<label>Start time<input type="time" class="msc-time-frame-start" /></label>' +
+      '<label>End time<input type="time" class="msc-time-frame-end" /></label>' +
+      '<button type="button" class="msc-btn msc-btn-ghost msc-time-frame-remove-btn">Remove</button>' +
+      '</div>'
+    );
+  }
+
+  function getTimeFrameExtraRows() {
+    return Array.prototype.slice.call(timeFramesExtraEl.querySelectorAll('.msc-time-frame-row'));
+  }
+
+  /* Keeps every row's visible "Time frame N" heading (and the Remove
+     button's accessible label) in sync with its current position —
+     called after every add/remove so numbering is always dense and
+     1-indexed, matching what the same-title/advisory backend responses
+     also use for row_index/frame_index (Phase 11: never a zero-based
+     index shown to the user). */
+  function renumberTimeFrames() {
+    getTimeFrameExtraRows().forEach(function (rowEl, index) {
+      var frameNumber = index + 2; // frame 1 is always fieldStart/fieldEnd
+      var heading = rowEl.querySelector('.msc-time-frame-heading');
+      if (heading) { heading.textContent = 'Time frame ' + frameNumber; }
+      var startInput = rowEl.querySelector('.msc-time-frame-start');
+      var endInput = rowEl.querySelector('.msc-time-frame-end');
+      var removeBtn = rowEl.querySelector('.msc-time-frame-remove-btn');
+      if (startInput) { startInput.setAttribute('aria-label', 'Time frame ' + frameNumber + ' start time'); }
+      if (endInput) { endInput.setAttribute('aria-label', 'Time frame ' + frameNumber + ' end time'); }
+      if (removeBtn) { removeBtn.setAttribute('aria-label', 'Remove time frame ' + frameNumber); }
+    });
+  }
+
+  function addTimeFrameRow(focus) {
+    if (getTimeFrameExtraRows().length + 1 >= MAX_TIME_FRAMES_PER_TASK) {
+      if (addTimeFrameBtn) { addTimeFrameBtn.disabled = true; }
+    }
+    if (getTimeFrameExtraRows().length + 1 > MAX_TIME_FRAMES_PER_TASK) { return null; }
+    var wrap = document.createElement('div');
+    wrap.innerHTML = timeFrameRowMarkup();
+    var rowEl = wrap.firstChild;
+    timeFramesExtraEl.appendChild(rowEl);
+    renumberTimeFrames();
+    var startInput = rowEl.querySelector('.msc-time-frame-start');
+    var endInput = rowEl.querySelector('.msc-time-frame-end');
+    var removeBtn = rowEl.querySelector('.msc-time-frame-remove-btn');
+    if (startInput) { startInput.addEventListener('input', function () { clearFieldError(startInput); }); }
+    if (endInput) { endInput.addEventListener('input', function () { clearFieldError(endInput); }); }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () { removeTimeFrameRow(rowEl); });
+    }
+    if (focus !== false && startInput) { startInput.focus(); }
+    return rowEl;
+  }
+
+  function removeTimeFrameRow(rowEl) {
+    if (!rowEl || !rowEl.parentNode) { return; }
+    rowEl.parentNode.removeChild(rowEl);
+    renumberTimeFrames();
+    if (addTimeFrameBtn) { addTimeFrameBtn.disabled = false; }
+  }
+
+  /* Discards every additional time frame, leaving only frame 1
+     (fieldStart/fieldEnd, cleared separately by resetForm()) — called on
+     resetForm() and whenever a fresh edit is opened, since Task Edit never
+     pre-populates additional frames from another existing occurrence
+     (PHASE 12: editing one occurrence must never auto-discover or group
+     any other same-title/date row). */
+  function resetTimeFrames() {
+    timeFramesExtraEl.innerHTML = '';
+    if (addTimeFrameBtn) { addTimeFrameBtn.disabled = false; }
+  }
+
+  /* Collects every time frame currently in the form, Time-frame-1-first,
+     as plain {start, end} HH:MM-string pairs — the shape
+     classifyTimeFrameSet()/frontendToMultiFramePayload()/
+     frontendToEditPayload() (core.js) all expect. */
+  function collectTimeFrames() {
+    var frames = [{ start: fieldStart.value, end: fieldEnd.value }];
+    getTimeFrameExtraRows().forEach(function (rowEl) {
+      var startInput = rowEl.querySelector('.msc-time-frame-start');
+      var endInput = rowEl.querySelector('.msc-time-frame-end');
+      frames.push({ start: startInput ? startInput.value : '', end: endInput ? endInput.value : '' });
+    });
+    return frames;
+  }
+
+  /* Frame N's End time input in the Single/Edit form — frame 1 is always
+     fieldEnd, frame 2+ is the (N-2)th additional row's own End input.
+     Shared by validateTimeFrames() (client-side pre-submit) and the
+     server-error handlers in performTaskCreate/performTaskUpdate below
+     (FRAME-LEVEL ERROR CONTEXT, 2026-07-27 — a hard-conflict/leave-
+     conflict 409 that names a specific time_frame_index needs to target
+     the exact same input a client-side rejection would have). Returns
+     null for an out-of-range frameNumber rather than throwing. */
+  function inputForFrame(frameNumber) {
+    if (!frameNumber || frameNumber === 1) { return fieldEnd; }
+    var rows = getTimeFrameExtraRows();
+    var row = rows[frameNumber - 2];
+    return row ? row.querySelector('.msc-time-frame-end') : null;
+  }
+
+  /* Runs classifyTimeFrameSet() against the form's current frames and, on
+     failure, shows the exact PHASE 4/5 title/message via a toast plus a
+     field-level error on the first offending time input — mirrors
+     validateTaskTimeRange()'s own inline-error + toast pattern. Returns
+     true only when every frame is shape-valid and non-conflicting; never
+     clears any entered value either way (PHASE 5: "preserve all entered
+     values after rejection"). */
+  function validateTimeFrames() {
+    var frames = collectTimeFrames();
+    var result = classifyTimeFrameSet(frames);
+    if (result.outcome === 'ok') { return true; }
+    var copy = describeTimeFrameValidation(result, frames.length, false);
+    /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — target whichever frame the
+       message actually names: incomplete/invalid_range name `a`;
+       duplicate/overlap name `b` (the later of the two conflicting
+       frames — see describeTimeFrameValidation), so the highlighted
+       input always matches what the message says. */
+    var namedFrame = (result.outcome === 'duplicate' || result.outcome === 'overlap') ? result.b : result.a;
+    var target = inputForFrame(namedFrame || 1);
+    if (target) { setFieldError(target, copy.message); }
+    showToast({ type: 'error', title: copy.title, message: copy.message });
+    return false;
+  }
+
+  if (addTimeFrameBtn) {
+    addTimeFrameBtn.addEventListener('click', function () { addTimeFrameRow(); });
+  }
+
   var addBtn = container.querySelector('.msc-add-btn');
   var updateBtn = container.querySelector('.msc-update-btn');
   var cancelBtn = container.querySelector('.msc-cancel-btn');
@@ -1850,6 +2018,16 @@ function mountScheduleCalendarInstance(container) {
             err = new Error(errBody.message || 'This task conflicts with active leave.');
             err.code = 'leave_conflict';
             err.conflicts = errBody.conflicts || [];
+            /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — present only when
+               this Leave conflict is attributable to one specific time
+               frame within a multi-frame Single/Edit submission (see
+               backend/routers/leave_logic.py leave_conflict_response_body);
+               null for the pre-existing single-occurrence case. Consumed
+               by performTaskCreate/performTaskUpdate below to decide
+               whether to show this exact backend message (which already
+               reads "Time frame N: ...") instead of the generic mapped
+               text. */
+            err.timeFrameIndex = errBody.time_frame_index != null ? errBody.time_frame_index : null;
           } else if (errBody && errBody.error === 'schedule_confirmation_required') {
             /* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION
                (2026-07-27) — additive ADVISORY (never a hard block) 409
@@ -1887,7 +2065,26 @@ function mountScheduleCalendarInstance(container) {
             errBody.error === 'outcome_recorded_immutable' ||
             errBody.error === 'same_task_time_required' ||
             errBody.error === 'exact_task_duplicate' ||
-            errBody.error === 'same_task_time_overlap'
+            errBody.error === 'same_task_time_overlap' ||
+            /* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — server-side
+               backstop for the same rules classifyTimeFrameSet() already
+               mirrors client-side (see core.js). Reaching this branch
+               means a request somehow bypassed that client-side check;
+               ui/error-mapper.js's matching KNOWN_ERRORS entries supply
+               the same "Complete/Check the task times" copy either way. */
+            errBody.error === 'time_frame_incomplete' ||
+            errBody.error === 'time_frame_invalid_range' ||
+            errBody.error === 'time_frame_duplicate' ||
+            errBody.error === 'time_frame_overlap' ||
+            errBody.error === 'contradictory_time_fields' ||
+            /* APPROVED OCCURRENCE LIMIT (2026-07-27 owner approval) —
+               Single Task create/Task edit's "too many total occurrences"
+               rejection (backend/routers/member_schedules.py
+               check_occurrence_limit). Whole-submission, never
+               frame-specific, so err.timeFrameIndex stays unset below and
+               the generic mapped title/message (ui/error-mapper.js,
+               word-for-word the approved Single/Edit wording) is shown. */
+            errBody.error === 'too_many_task_occurrences'
           )) {
             /* FINAL BUSINESS RULES (2026-07-24) — the three 409s a Task
                outcome/date-change/delete request can get once outside the
@@ -1911,6 +2108,12 @@ function mountScheduleCalendarInstance(container) {
                duplicate branch needed per code. */
             err = new Error(errBody.message || 'This request could not be completed.');
             err.code = errBody.error;
+            /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — see the
+               leave_conflict branch above for the full rationale; same
+               additive, null-unless-multi-frame contract for every code
+               in this branch's list (same-title hard conflicts and the
+               multiple-time-frames shape errors alike). */
+            err.timeFrameIndex = errBody.time_frame_index != null ? errBody.time_frame_index : null;
           } else {
             err = new Error('Request failed.');
             err.code = classifyHttpStatus(res.status);
@@ -2079,13 +2282,27 @@ function mountScheduleCalendarInstance(container) {
       '<div class="msc-bulk-row-fields msc-form-grid">' +
       '<label>Date<input type="date" class="msc-bulk-row-date"' + dateAttr + ' required /></label>' +
       '<label>Task title<input type="text" class="msc-bulk-row-title" maxlength="120" placeholder="e.g. Prepare weekly report" /></label>' +
-      '<label>Start time<input type="time" class="msc-bulk-row-start" /></label>' +
-      '<label>End time<input type="time" class="msc-bulk-row-end" /></label>' +
       '<label>Priority<select class="msc-bulk-row-priority">' +
       '<option value="High">High</option>' +
       '<option value="Medium" selected>Medium</option>' +
       '<option value="Low">Low</option>' +
       '</select></label>' +
+      /* ── Nested time frames (multiple-time-frames-per-task, 2026-07-27) —
+         mirrors the Single Task form's own frame-1-plus-additive-rows
+         structure (see timeFrameRowMarkup() above), scoped to THIS row —
+         each Bulk row gets its own independent time-frame list.
+         .msc-bulk-row-start/.msc-bulk-row-end keep their exact original
+         class names so bulkRowFieldElement()/rowElToPayloadRow() below
+         need no change to keep reading "Time frame 1". */
+      '<div class="msc-time-frames-section msc-form-full">' +
+      '<div class="msc-time-frame-row msc-time-frame-row--primary">' +
+      '<div class="msc-time-frame-heading">Time frame 1</div>' +
+      '<label>Start time<input type="time" class="msc-bulk-row-start" /></label>' +
+      '<label>End time<input type="time" class="msc-bulk-row-end" /></label>' +
+      '</div>' +
+      '<div class="msc-bulk-time-frames-extra"></div>' +
+      '<button type="button" class="msc-btn msc-btn-ghost msc-bulk-add-time-frame-btn">+ Add another time</button>' +
+      '</div>' +
       '<label class="msc-form-full">Notes<textarea class="msc-bulk-row-notes" maxlength="240" ' +
       'placeholder="Optional note — no real names, meetings, or customer details"></textarea></label>' +
       '</div>' +
@@ -2093,6 +2310,87 @@ function mountScheduleCalendarInstance(container) {
       'covered by Full-Day or Multi-Day leave.</p>' +
       '</div>'
     );
+  }
+
+  /* ── Nested per-row time frames (multiple-time-frames-per-task,
+     2026-07-27) — each Bulk row gets its own independent frame list,
+     "Time frame 1" always being that row's own .msc-bulk-row-start/
+     .msc-bulk-row-end pair. Deliberately a thin, row-scoped rewrite of
+     the Single Task form's timeFrameRowMarkup()/addTimeFrameRow() family
+     above rather than a shared function, since every DOM query here must
+     stay scoped to `rowEl` (a Bulk row) instead of the one global form. */
+  function bulkTimeFrameExtraEl(rowEl) {
+    return rowEl.querySelector('.msc-bulk-time-frames-extra');
+  }
+
+  function getBulkRowTimeFrameExtraRows(rowEl) {
+    var extraEl = bulkTimeFrameExtraEl(rowEl);
+    return extraEl ? Array.prototype.slice.call(extraEl.querySelectorAll('.msc-time-frame-row')) : [];
+  }
+
+  function renumberBulkRowTimeFrames(rowEl) {
+    getBulkRowTimeFrameExtraRows(rowEl).forEach(function (frameEl, index) {
+      var frameNumber = index + 2;
+      var heading = frameEl.querySelector('.msc-time-frame-heading');
+      if (heading) { heading.textContent = 'Time frame ' + frameNumber; }
+      var startInput = frameEl.querySelector('.msc-time-frame-start');
+      var endInput = frameEl.querySelector('.msc-time-frame-end');
+      var removeBtn = frameEl.querySelector('.msc-time-frame-remove-btn');
+      if (startInput) { startInput.setAttribute('aria-label', 'Time frame ' + frameNumber + ' start time'); }
+      if (endInput) { endInput.setAttribute('aria-label', 'Time frame ' + frameNumber + ' end time'); }
+      if (removeBtn) { removeBtn.setAttribute('aria-label', 'Remove time frame ' + frameNumber); }
+    });
+  }
+
+  function addBulkRowTimeFrame(rowEl) {
+    var extraEl = bulkTimeFrameExtraEl(rowEl);
+    if (!extraEl) { return null; }
+    var addBtn = rowEl.querySelector('.msc-bulk-add-time-frame-btn');
+    if (getBulkRowTimeFrameExtraRows(rowEl).length + 1 >= MAX_TIME_FRAMES_PER_TASK) {
+      if (addBtn) { addBtn.disabled = true; }
+    }
+    if (getBulkRowTimeFrameExtraRows(rowEl).length + 1 > MAX_TIME_FRAMES_PER_TASK) { return null; }
+    var wrap = document.createElement('div');
+    wrap.innerHTML = timeFrameRowMarkup();
+    var frameEl = wrap.firstChild;
+    extraEl.appendChild(frameEl);
+    renumberBulkRowTimeFrames(rowEl);
+    var startInput = frameEl.querySelector('.msc-time-frame-start');
+    var endInput = frameEl.querySelector('.msc-time-frame-end');
+    var removeBtn = frameEl.querySelector('.msc-time-frame-remove-btn');
+    [startInput, endInput].forEach(function (input) {
+      if (!input) { return; }
+      input.addEventListener('input', function () {
+        clearFieldError(input);
+        rowEl.classList.remove('msc-bulk-row-error', 'msc-bulk-row-duplicate-warning');
+        refreshBulkDuplicateHints();
+      });
+    });
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        frameEl.parentNode.removeChild(frameEl);
+        renumberBulkRowTimeFrames(rowEl);
+        if (addBtn) { addBtn.disabled = false; }
+        refreshBulkDuplicateHints();
+      });
+    }
+    if (startInput) { startInput.focus(); }
+    return frameEl;
+  }
+
+  /* Frame 1 first, then every additive row in DOM order — the shape
+     classifyTimeFrameSet()/rowElToPayloadRow() expect. */
+  function collectBulkRowTimeFrames(rowEl) {
+    var frames = [{
+      start: bulkRowFieldElement(rowEl, 'start').value,
+      end: bulkRowFieldElement(rowEl, 'end').value
+    }];
+    getBulkRowTimeFrameExtraRows(rowEl).forEach(function (frameEl) {
+      var startInput = frameEl.querySelector('.msc-time-frame-start');
+      var endInput = frameEl.querySelector('.msc-time-frame-end');
+      frames.push({ start: startInput ? startInput.value : '', end: endInput ? endInput.value : '' });
+    });
+    return frames;
   }
 
   function wireBulkRowEvents(rowEl) {
@@ -2118,6 +2416,10 @@ function mountScheduleCalendarInstance(container) {
     });
     var priorityEl = rowEl.querySelector('.msc-bulk-row-priority');
     if (priorityEl) { priorityEl.addEventListener('change', refreshBulkDuplicateHints); }
+    var addTimeFrameBtnForRow = rowEl.querySelector('.msc-bulk-add-time-frame-btn');
+    if (addTimeFrameBtnForRow) {
+      addTimeFrameBtnForRow.addEventListener('click', function () { addBulkRowTimeFrame(rowEl); });
+    }
   }
 
   /* dateValue seeds the new row's Date field only at creation — every
@@ -2215,7 +2517,16 @@ function mountScheduleCalendarInstance(container) {
     var start = bulkRowFieldElement(rowEl, 'start').value;
     var end = bulkRowFieldElement(rowEl, 'end').value;
     var notes = (bulkRowFieldElement(rowEl, 'notes').value || '').trim();
-    return !title && !start && !end && !notes;
+    /* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — a row with real content
+       only in an additional time frame (frame 1/title/notes all blank)
+       must still count as nonblank, mirroring the backend's own
+       _is_blank_bulk_row fix for the same edge case. */
+    var hasExtraFrameContent = getBulkRowTimeFrameExtraRows(rowEl).some(function (frameEl) {
+      var startInput = frameEl.querySelector('.msc-time-frame-start');
+      var endInput = frameEl.querySelector('.msc-time-frame-end');
+      return (startInput && startInput.value) || (endInput && endInput.value);
+    });
+    return !title && !start && !end && !notes && !hasExtraFrameContent;
   }
 
   /* Mirrors the backend's own _bulk_row_field_errors rules exactly (same
@@ -2244,12 +2555,39 @@ function mountScheduleCalendarInstance(container) {
     if (notes.length > 240) {
       errors.push({ field: 'notes', message: 'Notes must be 240 characters or fewer.' });
     }
-    var start = bulkRowFieldElement(rowEl, 'start').value;
-    var end = bulkRowFieldElement(rowEl, 'end').value;
-    if (start && end && timeToMinutes(end) <= timeToMinutes(start)) {
-      errors.push({ field: 'end', message: 'End time must be later than start time.' });
+    /* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — classifyTimeFrameSet()
+       (core.js) supersedes the old bare end>start check here: it covers
+       that same rule for "Time frame 1" (frames.length === 1 reduces to
+       exactly the previous behavior) plus the new untimed-mode/duplicate/
+       overlap rules once this row has additional time frames. Anchored on
+       the 'end' field, matching this function's pre-existing convention
+       for every time-related error.
+
+       FRAME-LEVEL ERROR CONTEXT (2026-07-27): describeTimeFrameValidation
+       (forBulk=true) supplies "Task N, time frame M: ..." wording once
+       this row has more than one frame — timeFrameIndex is carried
+       alongside so the caller (the Bulk submit handler below) can
+       highlight the exact nested frame input via bulkFrameFieldElement,
+       not just this row's primary Start/End pair. */
+    var timeFrames = collectBulkRowTimeFrames(rowEl);
+    var timeFrameResult = classifyTimeFrameSet(timeFrames);
+    if (timeFrameResult.outcome !== 'ok') {
+      var rowNumber = getBulkRows().indexOf(rowEl) + 1;
+      var copy = describeTimeFrameValidation(timeFrameResult, timeFrames.length, true);
+      var namedFrame = (timeFrameResult.outcome === 'duplicate' || timeFrameResult.outcome === 'overlap')
+        ? timeFrameResult.b : timeFrameResult.a;
+      var message = timeFrames.length > 1 ? ('Task ' + rowNumber + ', ' + lowercaseFirst(copy.message)) : copy.message;
+      errors.push({ field: 'end', timeFrameIndex: namedFrame || 1, message: message });
     }
     return errors;
+  }
+
+  /* "Time frame 2: ..." -> "time frame 2: ..." — folds a
+     describeTimeFrameValidation() message into a Bulk "Task N, " prefix
+     without an awkward double capital, mirroring the backend's own
+     _lowercase_first (member_schedules.py). */
+  function lowercaseFirst(text) {
+    return text ? (text.charAt(0).toLowerCase() + text.slice(1)) : text;
   }
 
   function bulkDuplicateKey(rowEl) {
@@ -2291,17 +2629,31 @@ function mountScheduleCalendarInstance(container) {
   function rowElToPayloadRow(rowEl) {
     var date = bulkRowFieldElement(rowEl, 'date').value;
     var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
-    var start = bulkRowFieldElement(rowEl, 'start').value;
-    var end = bulkRowFieldElement(rowEl, 'end').value;
     var notes = (bulkRowFieldElement(rowEl, 'notes').value || '').trim();
-    return {
+    var row = {
       date: date ? date : null,
       title: title,
       priority: bulkRowFieldElement(rowEl, 'priority').value,
-      start: start ? start : null,
-      end: end ? end : null,
       notes: notes ? notes : null
     };
+    /* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — a row with no
+       additional frames sends plain start/end exactly as this function
+       has always built (byte-for-byte unchanged for the common
+       one-time-frame-per-row case); one or more additional frames send
+       the additive `time_frames` array instead (authoritative — start/end
+       omitted entirely, mirroring frontendToMultiFramePayload in core.js). */
+    var extraFrames = getBulkRowTimeFrameExtraRows(rowEl);
+    if (extraFrames.length === 0) {
+      var start = bulkRowFieldElement(rowEl, 'start').value;
+      var end = bulkRowFieldElement(rowEl, 'end').value;
+      row.start = start ? start : null;
+      row.end = end ? end : null;
+    } else {
+      row.time_frames = collectBulkRowTimeFrames(rowEl).map(function (f) {
+        return { start_time: f.start ? f.start : null, end_time: f.end ? f.end : null };
+      });
+    }
+    return row;
   }
 
   /* Step 15 (full-day-leave-blocks-create task, 2026-07-23; per-row gating
@@ -2338,24 +2690,55 @@ function mountScheduleCalendarInstance(container) {
      status "validation_failed". Keeps the form open with every row and
      value intact, marks each affected row, and focuses the first failing
      field, exactly like the single Task form's own error handling. */
+  /* Locates the exact input a Bulk hard-conflict error should highlight
+     (FRAME-LEVEL ERROR CONTEXT, 2026-07-27) — time_frame_index 1 is
+     always the row's own primary start/end pair (bulkRowFieldElement);
+     2+ is the (N-2)th additional time-frame row within that Bulk row.
+     Falls back to the row-level field when time_frame_index doesn't
+     resolve to a real nested row (defensive only — should not happen for
+     a well-formed response). */
+  function bulkFrameFieldElement(rowEl, timeFrameIndex, field) {
+    if (!timeFrameIndex || timeFrameIndex === 1) { return bulkRowFieldElement(rowEl, field); }
+    var extraRows = getBulkRowTimeFrameExtraRows(rowEl);
+    var frameEl = extraRows[timeFrameIndex - 2];
+    if (!frameEl) { return bulkRowFieldElement(rowEl, field); }
+    return frameEl.querySelector(field === 'end' ? '.msc-time-frame-end' : '.msc-time-frame-start');
+  }
+
   function applyBulkRowErrors(errorList) {
     var firstFieldEl = null;
     (errorList || []).forEach(function (e) {
       if (e.row == null) {
-        showToast({ type: 'error', title: 'Tasks were not created', message: e.message });
+        /* APPROVED OCCURRENCE LIMIT (2026-07-27 owner approval) — the
+           one whole-submission Bulk error with its own approved title
+           ("Too many task times"); every other row==null error keeps the
+           existing generic title. e.message already carries the
+           approved Bulk-specific wording ("...across all Bulk Task
+           rows...") built server-side (check_occurrence_limit,
+           for_bulk=True). */
+        var title = e.code === 'too_many_task_occurrences' ? 'Too many task times' : 'Tasks were not created';
+        showToast({ type: 'error', title: title, message: e.message });
         return;
       }
       var rowEl = getBulkRowByNumber(e.row);
       if (!rowEl) { return; }
       rowEl.classList.add('msc-bulk-row-error');
-      var fieldEl = bulkRowFieldElement(rowEl, e.field) || bulkRowFieldElement(rowEl, 'title');
+      /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — e.time_frame_index set
+         means e.message already reads "Task N, time frame M: ..." (built
+         server-side), so no extra "Row N — " prefix is added here (that
+         would double up); absent (the pre-existing shape) keeps the
+         original "Row N — <message>" convention unchanged. */
+      var fieldEl = e.time_frame_index
+        ? (bulkFrameFieldElement(rowEl, e.time_frame_index, e.field) || bulkRowFieldElement(rowEl, 'title'))
+        : (bulkRowFieldElement(rowEl, e.field) || bulkRowFieldElement(rowEl, 'title'));
+      var displayMessage = e.time_frame_index ? e.message : ('Row ' + e.row + ' — ' + e.message);
       if (fieldEl) {
-        setFieldError(fieldEl, 'Row ' + e.row + ' — ' + e.message);
+        setFieldError(fieldEl, displayMessage);
         if (!firstFieldEl) { firstFieldEl = fieldEl; }
       }
     });
     showApiStatus(
-      'Tasks were not created. Fix the highlighted rows and submit again. No tasks were saved.',
+      'Some task times need to be corrected. Fix the highlighted rows and submit again. No tasks were saved.',
       true, bulkPopupStatusEl
     );
     if (firstFieldEl && firstFieldEl.focus) { firstFieldEl.focus(); }
@@ -2559,7 +2942,13 @@ function mountScheduleCalendarInstance(container) {
       var hasError = false;
       nonblankEls.forEach(function (rowEl) {
         bulkRowFieldErrors(rowEl).forEach(function (fieldErr) {
-          var fieldEl = bulkRowFieldElement(rowEl, fieldErr.field);
+          /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — timeFrameIndex, when
+             present, targets the exact nested time-frame row a shape
+             error belongs to, not just this row's primary Start/End
+             pair. */
+          var fieldEl = fieldErr.timeFrameIndex
+            ? bulkFrameFieldElement(rowEl, fieldErr.timeFrameIndex, fieldErr.field)
+            : bulkRowFieldElement(rowEl, fieldErr.field);
           if (fieldEl) { setFieldError(fieldEl, fieldErr.message); }
           rowEl.classList.add('msc-bulk-row-error');
           hasError = true;
@@ -3649,6 +4038,7 @@ function mountScheduleCalendarInstance(container) {
     fieldStart.value = '';
     fieldEnd.value = '';
     fieldNotes.value = '';
+    resetTimeFrames();
     /* FINAL BUSINESS RULES (2026-07-24, closure review pass — Rule 8) —
        re-enable unconditionally so the disabled state editItem() applies
        below never leaks into a later Add-task flow, which always reuses
@@ -3698,31 +4088,13 @@ function mountScheduleCalendarInstance(container) {
 
   cancelBtn.addEventListener('click', handleCancelEditClick);
 
-  /* Task time-order validation (calendar-popup-close-time-validation-
-     task-list-return task, 2026-07-22) — mirrors the backend's own
-     MemberScheduleEventCreate/Update.end_after_start rule (end must be
-     greater than start when both are provided, backend/schemas.py) so an
-     invalid range is caught before the request is sent, with a field-
-     specific message, instead of round-tripping to the server only to
-     show the generic "Check the highlighted fields" validation-error
-     text a 422 previously produced. Both times are parsed with
-     timeToMinutes() (core.js) — the same whole-minutes-since-midnight
-     normalization drag/resize already use — rather than a raw string
-     compare, so "10:42"/"11:42" (which happen to compare correctly as
-     strings) and any other same-day pair are both handled the same
-     unambiguous way. Only fires when BOTH times are present, exactly
-     like the backend rule — an untimed Task, or one with only a start
-     or only an end time, is unaffected (no new timing rule invented). */
-  function validateTaskTimeRange() {
-    if (!fieldStart.value || !fieldEnd.value) { return true; }
-    if (timeToMinutes(fieldEnd.value) > timeToMinutes(fieldStart.value)) { return true; }
-    setFieldError(fieldEnd, 'End time must be later than start time.');
-    showToast({
-      type: 'error', title: 'Check the end time',
-      message: 'Choose an end time later than the start time.'
-    });
-    return false;
-  }
+  /* Task time-order / multiple-time-frames validation (calendar-popup-
+     close-time-validation-task-list-return task, 2026-07-22; superseded
+     2026-07-27 by MULTIPLE TIME FRAMES PER TASK — validateTimeFrames()
+     above is now the single gate for both the classic end>start rule and
+     the new untimed-mode/duplicate/overlap rules, replacing this
+     function's narrower single-pair check). Kept only as the input
+     listeners below that clear a stale error as the user retypes. */
   if (fieldStart) { fieldStart.addEventListener('input', function () { clearFieldError(fieldEnd); }); }
   if (fieldEnd) { fieldEnd.addEventListener('input', function () { clearFieldError(fieldEnd); }); }
 
@@ -3734,13 +4106,28 @@ function mountScheduleCalendarInstance(container) {
      user cancelling that popup, never touches `items`/the Calendar/the
      form/a success toast. */
   function performTaskCreate(payload, addedDate) {
-    return apiRequest('POST', apiBase, payload).then(function (apiItem) {
-      items.push(apiItemToFrontend(apiItem));
+    return apiRequest('POST', apiBase, payload).then(function (apiResult) {
+      /* MULTIPLE TIME FRAMES PER TASK (2026-07-27) — a single-frame
+         submission still returns the bare MemberScheduleEventOut object
+         this endpoint has always returned; two or more frames return
+         {status:"created", created_count, items}, mirroring the Bulk
+         response shape. Either way, every created occurrence is pushed
+         into `items` and the Calendar refreshes exactly once — no
+         optimistic partial insertion, no per-frame success toast. */
+      var apiItems = (apiResult && apiResult.items) ? apiResult.items : [apiResult];
+      apiItems.forEach(function (apiItem) { items.push(apiItemToFrontend(apiItem)); });
       selectDate(addedDate);
       refreshSummary();
       resetForm();
       closeTaskPopup();
-      showToast({ type: 'success', title: 'Task created', message: 'Your task was added to the calendar.' });
+      if (apiItems.length > 1) {
+        showToast({
+          type: 'success', title: 'Tasks added',
+          message: apiItems.length + ' task time frames were added successfully.'
+        });
+      } else {
+        showToast({ type: 'success', title: 'Task created', message: 'Your task was added to the calendar.' });
+      }
     }).catch(function (err) {
       if (err.code === 'schedule_confirmation_required') {
         return showScheduleConfirmation(err.warnings, addBtn, function () {
@@ -3749,10 +4136,23 @@ function mountScheduleCalendarInstance(container) {
         }, 'create', 'Add task anyway');
       }
       var mapped = mapApiError(err);
+      /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — a hard conflict
+         attributable to one specific time frame (err.timeFrameIndex set)
+         shows the backend's own "Time frame N: ..." message instead of
+         the generic mapped text, and highlights that exact frame's End
+         input — mirrors validateTimeFrames()'s own inline-error pattern.
+         err.timeFrameIndex is null for the pre-existing single-occurrence
+         case, so that case is completely unaffected (byte-identical to
+         before this task). */
+      var displayMessage = err.timeFrameIndex ? err.message : mapped.message;
+      if (err.timeFrameIndex) {
+        var frameTarget = inputForFrame(err.timeFrameIndex);
+        if (frameTarget) { setFieldError(frameTarget, displayMessage); }
+      }
       if (err.code === 'leave_conflict') {
-        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
+        showApiStatus(mapped.title + ' — ' + displayMessage, true, taskPopupStatusEl);
       } else {
-        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        showToast({ type: mapped.type, title: mapped.title, message: displayMessage, persistent: mapped.persistent });
       }
     });
   }
@@ -3768,15 +4168,14 @@ function mountScheduleCalendarInstance(container) {
       setFieldError(fieldTitle, 'Enter a title (e.g. Prepare weekly report).');
       hasError = true;
     }
-    if (!validateTaskTimeRange()) { hasError = true; }
+    if (!validateTimeFrames()) { hasError = true; }
     if (hasError) { focusFirstInvalid(formEl); return; }
-    var payload = frontendToApiPayload({
+    var payload = frontendToMultiFramePayload({
       date: fieldDate.value,
       title: fieldTitle.value.trim(),
       priority: fieldPriority.value,
-      start: fieldStart.value,
-      end: fieldEnd.value,
-      notes: fieldNotes.value.trim()
+      notes: fieldNotes.value.trim(),
+      frames: collectTimeFrames()
     });
     var addedDate = fieldDate.value;
     setButtonBusy(addBtn, true, { busyLabel: 'Saving…' });
@@ -3806,6 +4205,13 @@ function mountScheduleCalendarInstance(container) {
     fieldStart.value = it.start || '';
     fieldEnd.value = it.end || '';
     fieldNotes.value = it.notes || '';
+    /* MULTIPLE TIME FRAMES PER TASK, Task Edit surface (2026-07-27) —
+       the occurrence being edited is always Time frame 1 (fieldStart/
+       fieldEnd above); any additional-frame rows from a previous form
+       session are always discarded here (PHASE 12: editing one occurrence
+       never auto-discovers or pre-loads any other same-title/date row —
+       "+ Add another time" only ever creates brand-new occurrences). */
+    resetTimeFrames();
     addBtn.style.display = 'none';
     updateBtn.style.display = '';
     cancelBtn.style.display = '';
@@ -3823,11 +4229,22 @@ function mountScheduleCalendarInstance(container) {
      write has happened yet by the time a confirmed retry runs — the
      `items` array is guaranteed unchanged in between. */
   function performTaskUpdate(payload, editingId) {
-    return apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiItem) {
+    return apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiResult) {
+      /* MULTIPLE TIME FRAMES PER TASK, Task Edit surface (2026-07-27) —
+         no additional_time_frames still returns the bare
+         MemberScheduleEventOut this endpoint has always returned; one or
+         more added frames return {status:"updated", created_count,
+         items}, where items[0] is the edited occurrence itself (frame 1)
+         and every remaining entry is a brand-new sibling occurrence —
+         see update_member_schedule_event. Existing sibling occurrences
+         not loaded into this edit are never touched, so only these
+         specific entries are applied to the local `items` array. */
+      var apiItems = (apiResult && apiResult.items) ? apiResult.items : [apiResult];
       var it = items.filter(function (x) { return x.id === editingId; })[0];
-      var updated = apiItemToFrontend(apiItem);
+      var updated = apiItemToFrontend(apiItems[0]);
       var idx = it ? items.indexOf(it) : -1;
       if (idx !== -1) { items[idx] = updated; }
+      apiItems.slice(1).forEach(function (apiItem) { items.push(apiItemToFrontend(apiItem)); });
       /* Origin-aware return (Step 8, calendar-popup-close-time-
          validation-task-list-return task, 2026-07-22) — captured before
          cancelEdit()/closeTaskPopup() below (neither touches these
@@ -3847,7 +4264,14 @@ function mountScheduleCalendarInstance(container) {
       if (flowOrigin && flowOrigin.type === 'more-task-list') {
         reopenTaskListOrigin(flowOrigin);
       }
-      showToast({ type: 'success', title: 'Task updated', message: 'Your changes were saved.' });
+      if (apiItems.length > 1) {
+        showToast({
+          type: 'success', title: 'Tasks added',
+          message: (apiItems.length - 1) + ' additional task time frames were added successfully.'
+        });
+      } else {
+        showToast({ type: 'success', title: 'Task updated', message: 'Your changes were saved.' });
+      }
     }).catch(function (err) {
       if (err.code === 'schedule_confirmation_required') {
         return showScheduleConfirmation(err.warnings, updateBtn, function () {
@@ -3856,10 +4280,20 @@ function mountScheduleCalendarInstance(container) {
         }, 'edit', 'Save changes anyway');
       }
       var mapped = mapApiError(err);
+      /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — see performTaskCreate's
+         matching catch handler above for the full rationale. Edit never
+         labels its selected occurrence "Task 1" (PHASE 6) — the backend
+         message here only ever says "Time frame N: ...", never "Task N,
+         time frame M: ...", so no extra transformation is needed here. */
+      var displayMessage = err.timeFrameIndex ? err.message : mapped.message;
+      if (err.timeFrameIndex) {
+        var frameTarget = inputForFrame(err.timeFrameIndex);
+        if (frameTarget) { setFieldError(frameTarget, displayMessage); }
+      }
       if (err.code === 'leave_conflict') {
-        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
+        showApiStatus(mapped.title + ' — ' + displayMessage, true, taskPopupStatusEl);
       } else {
-        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        showToast({ type: mapped.type, title: mapped.title, message: displayMessage, persistent: mapped.persistent });
       }
     });
   }
@@ -3874,15 +4308,17 @@ function mountScheduleCalendarInstance(container) {
       setFieldError(fieldTitle, 'Enter a title before updating.');
       hasUpdateError = true;
     }
-    if (!validateTaskTimeRange()) { hasUpdateError = true; }
+    if (!validateTimeFrames()) { hasUpdateError = true; }
     if (hasUpdateError) { focusFirstInvalid(formEl); return; }
-    var payload = frontendToApiPayload({
+    var timeFrames = collectTimeFrames();
+    var payload = frontendToEditPayload({
       date: fieldDate.value,
       title: fieldTitle.value.trim(),
       priority: fieldPriority.value,
-      start: fieldStart.value,
-      end: fieldEnd.value,
-      notes: fieldNotes.value.trim()
+      start: timeFrames[0].start,
+      end: timeFrames[0].end,
+      notes: fieldNotes.value.trim(),
+      additionalFrames: timeFrames.slice(1)
     });
     var editingId = state.editingId;
     setButtonBusy(updateBtn, true, { busyLabel: 'Saving…' });
