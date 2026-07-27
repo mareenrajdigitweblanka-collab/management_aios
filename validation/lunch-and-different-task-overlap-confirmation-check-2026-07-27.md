@@ -3,7 +3,7 @@ name: lunch-and-different-task-overlap-confirmation-check
 type: validation
 scope: management_aios calendar — lunch-break and different-title Task-overlap ADVISORY confirmation (Single Task create, Bulk Tasks, Task Edit)
 created: 2026-07-27
-status: AMBER — implemented, fully unit-tested (429/429 backend, 36/36 frontend), NOT committed, NOT pushed, NOT deployed, NO live/production interactive validation performed this session (no browser tool, no explicit new write-testing approval sought for this specific feature)
+status: PASS (release pass, 2026-07-27) — implemented, tested (429/429 backend, 36/36 frontend), committed (9a1976d), pushed to origin/main, confirmed live on both Vercel deployments, and live-validated against production with 12 disposable writes (all cleaned up, zero residue) — see §29. Original implementation-only AMBER history (§1-§28) preserved below unchanged.
 reviewer: pending owner review (Varmen/relevant Management Team domain owner per §18 Reviewer Routing Rule — this is a scheduling-mechanics change, not an HR/recruitment/KPI content change, so routing is to whoever owns Calendar/Task feature review)
 ---
 
@@ -370,22 +370,300 @@ not fall under any of the named domain owners in that table; routing to
 whichever Management Team member currently owns Calendar/Task feature
 review is recommended before this is committed or deployed.
 
-## 27. PASS / AMBER / FAIL
+## 27. PASS / AMBER / FAIL (superseded — see §29)
 
-**AMBER.** Implementation is complete and fully unit-tested (429/429
-backend, 36/36 frontend, `node --check` clean, database/migration diffs
-empty, protected path untouched). AMBER rather than PASS only because (a)
-no live interactive browser validation was performed (no browser tool
-available this session) and (b) nothing has been committed, pushed, or
-deployed — per the task's explicit instruction not to stage, commit, push,
-deploy, or run migrations during this task.
+~~AMBER. Implementation is complete and fully unit-tested... nothing has
+been committed, pushed, or deployed.~~ — superseded. Committed, pushed,
+deployed, and live production validated with a full write/read test
+matrix (12 disposable rows, all cleaned up). See §29.
 
-## 28. One next step
+## 28. One next step (superseded — see §29.15)
 
-Repository owner reviews this diff (`git diff -- backend/ web-view/
-validation/ handover/`) and, if approved, requests an explicit commit —
-followed by an owner-run live click-through of the six popup scenarios
-(lunch-only / different-title-only / combined, each for Single create and
-Task edit, plus one Bulk multi-row case) before this is considered fully
-closed, mirroring the two-stage (implementation review, then live
-validation) pattern already used for the 2026-07-27 same-task rule pass.
+~~Repository owner reviews this diff... and, if approved, requests an
+explicit commit — followed by an owner-run live click-through...~~ — the
+commit was approved and made; live validation was performed via direct
+HTTPS requests against the production API (no browser tool available this
+session — see §29.11 for the resulting Phase 18 limitation). See §29.15
+for the current next action.
+
+## 29. Release and live production validation (2026-07-27, release pass)
+
+### 29.1 Implementation commit and push
+
+- Commit: `9a1976d` — "Add schedule overlap confirmations".
+- Files: exactly the 9 approved paths (`backend/routers/member_schedules.py`,
+  `backend/schemas.py`, `backend/tests/test_schedule_advisory_confirmation.py`,
+  `backend/tests/test_same_task_multiple_time_period_rule.py`,
+  `web-view/js/calendar/core.js`, `web-view/js/calendar/instance.js`,
+  `web-view/js/calendar/schedule-confirmation-message.test.mjs`, this file,
+  and the handover file).
+- Push: `15b56fa..9a1976d main -> main`. Local HEAD and `origin/main`
+  confirmed matching (`9a1976d`).
+- Final regression before commit (re-run in this session, not copied from
+  the prior pass): backend **429/429**, frontend **36/36**, `node --check`
+  clean on every changed JS file, `database/`/`database/migrations/`/
+  `backend/requirements.txt`/`pyproject.toml`/`package.json`/
+  `package-lock.json` diffs all empty, protected path absent from
+  `git status`/`git diff --name-only`/`git diff --cached --name-only`.
+
+### 29.2 Deployment verification
+
+Both Vercel projects deploy automatically from GitHub on every push to
+`main` (per `backend/README.md`) — no manual Vercel CLI action was taken
+or needed.
+
+**Backend** (`https://management-aios-api.vercel.app`): `/health` → 200
+`{"status":"ok",...}`; Task list, weekly Summary, and weekly XLSX export
+endpoints all read successfully (200); `/openapi.json` shows 16 routes
+(inventory intact) and — direct proof of the deployed commit —
+`MemberScheduleEventCreate`, `MemberScheduleEventUpdate`, and
+`BulkTaskCreateRequest` all expose the new `confirmation_fingerprint`
+property, a field that exists in no commit before `9a1976d`.
+
+**Frontend** (`https://management-aios.vercel.app`): root document 200;
+live-fetched `js/calendar/instance.js` and `js/calendar/core.js` both
+contain the exact new code — `schedule_confirmation_required` /
+`confirmation_fingerprint` (7 occurrences each in `instance.js`),
+`lunch_break_overlap` / `different_task_time_overlap` / `Confirm schedule`
+(1 occurrence each in `core.js`), `Continue anyway` (4 occurrences in
+`instance.js`), and all three approved exact confirmation strings verified
+byte-for-byte:
+
+- *"This Task overlaps the lunch break from 12:45 PM to 1:30 PM."*
+- *"This Task overlaps another Task scheduled for the same member and date."*
+- *"This Task overlaps the lunch break and another Task scheduled for the same member and date."*
+
+None of these strings exist in any commit before `9a1976d`, so their
+presence in the live-fetched assets is direct proof the frontend is
+serving this commit. No production Task was created, updated, or deleted
+during any of these read-only checks.
+
+### 29.3 Approved live test scope
+
+Explicit user approval obtained (AskUserQuestion) before any write.
+Approved scope: member `paraparan`, weekday test date `2026-08-20`
+(Thursday), weekend test date `2026-08-22` (Saturday) — both confirmed
+**0** pre-existing Tasks and **0** pre-existing Leave records across the
+full `2026-08-15`..`2026-08-25` window before any write. Every write used
+a `TEST-ADVISORY-*`-prefixed title; `source_scope`/`is_official_truth` are
+forced server-side to `dashboard_testing`/`false` by the (unmodified)
+create/bulk endpoints regardless of any request content.
+
+**Baseline:** Task count 0, Leave count 0 (both dates, both confirmed
+before any write).
+
+**Method:** direct HTTPS requests (Python `urllib`, no browser automation
+tool available this session) against the live production backend,
+tracking every created row's id in a manifest for guaranteed cleanup —
+same method used for the 2026-07-27 same-task rule pass's own live
+validation.
+
+### 29.4 Lunch live result
+
+- **No-warning boundary A** (11:45–12:45): direct `201` success, no
+  advisory. ✔
+- **Warning boundary B** (12:45–13:30): initial request → `409
+  schedule_confirmation_required`, `{lunch_break_overlap}` only, zero
+  write. Cancel (no resubmit) → confirmed 0 rows with that title.
+  Reopen/resubmit (unconfirmed) → identical fresh `409`. Continue anyway
+  (fingerprint attached) → `201`, exactly one write. ✔
+- **C** (12:30–13:00) and **D** (13:00–14:00): both `409` with a lunch
+  warning present (proof-only, no write attempted — automated coverage
+  already proves the full confirm cycle via B). ✔
+- **E** (13:30–14:30): direct `201` success, no advisory. ✔
+- **F, weekend** (`2026-08-22`, 13:00–14:00): `409` with
+  `lunch_break_overlap` present — confirms the every-calendar-day rule
+  live on a Saturday. ✔
+
+### 29.5 Different-title live result
+
+- **Baseline "Title A"** (09:00–10:00): direct `201` success (no other
+  Task yet).
+- **"Title B" exact overlap, different title** (09:00–10:00): initial
+  `409` → `{different_task_time_overlap}` only, zero write → Cancel (0
+  rows) → reopen/resubmit (fresh identical `409`) → Continue anyway →
+  `201`, one write. ✔
+- **"Title C" partial overlap** (09:30–10:30): `409` with
+  `different_task_time_overlap` (proof-only). ✔
+- **"Title D" adjacent** (10:00–11:00): direct `201` success, no
+  advisory — proves the half-open adjacency rule live. ✔
+- **Different member / different date:** not live-write-tested this
+  session (writing a disposable row onto a second real staff member's
+  live calendar was judged outside the explicitly approved scope, which
+  named `paraparan` only) — fully covered instead by the automated suite
+  (`test_16_different_member_no_warning`, `test_17_different_date_no_warning`,
+  both passing, both exercising the identical production code path since
+  no separate "live" code path exists for this check).
+
+### 29.6 Combined popup live result
+
+Built "Combo-A" (12:30–13:15) — itself required confirmation (it
+overlapped both lunch **and** the earlier different-titled `LunchA` task
+at 11:45–12:45, a real, correct combined case) — confirmed and created.
+Then attempted "Combo-B" (13:00–14:00): initial request → `409` with
+**exactly** `{lunch_break_overlap, different_task_time_overlap}` — one
+response, one popup contract, zero write. Cancel → 0 rows. Reopen →
+identical combined warning set (same one popup, not two). Continue anyway
+→ `201`, exactly one write. ✔ This also incidentally live-proved that two
+independent advisory sources correctly combine into the single documented
+contract rather than two separate responses.
+
+### 29.7 Cancel result
+
+Every "initial" request in this validation pass returned zero writes,
+confirmed by a follow-up `GET` showing 0 matching rows before any
+resubmission — proven for Single create (lunch, different-title,
+combined), Bulk (warnings-only batch), and Edit (lunch overlap). No
+success toast/Calendar concept applies at the API layer; the zero-write
+guarantee is the backend-side half of Cancel's contract and is what this
+session could directly verify.
+
+### 29.8 Continue result
+
+Every confirmed retry (fingerprint attached, unmodified payload) produced
+exactly one write — verified by response `201`/`200` plus a follow-up
+state check (row now present, or the edited field now holding the new
+value) — for Single create (×4: LunchB, TitleB, ComboA, ComboB), Bulk
+(×1 batch, 2 rows), Edit (×2 confirmed edits), and the stale-fingerprint
+recovery flow (×1). No duplicate write was ever observed.
+
+### 29.9 Same-title hard-block precedence (live)
+
+- **14A** — re-submitting `ComboA`'s exact title+time → `409
+  exact_task_duplicate` (no `warnings` key, no `schedule_confirmation_required`
+  contract at all — the advisory system was never reached). ✔
+- **14B** — a different, overlapping time for the same title → `409
+  same_task_time_overlap`, same no-advisory-contract proof. ✔
+- Additional live finding (Bulk, §29.13): two rows sharing an exact
+  title+time within one Bulk batch are intercepted by this same hard
+  classifier (`exact_task_duplicate`, `422`) before even the pre-existing
+  soft-duplicate-warning gate is reached — confirming live that the hard
+  same-title system runs strictly first on every code path, exactly as
+  designed.
+
+### 29.10 Leave hard-block precedence (live limitation)
+
+**Not repeated live this session.** Creating a disposable Leave record
+was not part of the explicitly approved test scope (the approval covered
+Task writes for `paraparan`; Phase 14's own instructions require separate
+explicit approval before any Leave record is created, and state "If Leave
+live testing is not approved, retain automated evidence and record that
+live Leave precedence was not repeated" — that fallback is taken here).
+Full coverage remains in place from the automated suite: all 6 of
+`LeavePrecedenceTests` (A–F) pass, covering Task-overlaps-Full-Day-Leave,
+Task-overlaps-different-title-Task-and-Leave, lunch+different-title+partial-Leave,
+Leave-added-before-a-confirmed-retry, Bulk-advisory-plus-Leave-hard-conflict,
+and Edit-advisory-plus-Leave-conflict — none of these code paths differ
+between the test-SQLite session and the live Postgres session (no
+Leave-specific branch exists anywhere in this feature's new code).
+
+### 29.11 Bulk old-warning-system interaction result
+
+Live finding (see §29.9): the pre-existing exact-title/time soft-duplicate
+warning system (`_find_batch_duplicate_warnings`) is now **structurally
+unreachable** for its own domain — two rows sharing an exact title+time in
+one Bulk batch are always intercepted first by the hard same-title
+classifier (`exact_task_duplicate`, `422`), which the prior 2026-07-27
+same-task rule pass had already made true (documented in that pass's own
+handover note as "structurally unreachable for the same-title/date/time
+domain"). This is a **stronger** guarantee than "the two systems don't
+collide" — they cannot collide, because the old gate can no longer fire
+at all for this input shape. Separately, a genuine warnings-only Bulk
+batch (one lunch-overlap row + one different-title-overlap row, no hard
+errors) correctly produced **one** combined `schedule_confirmation_required`
+response naming both row indices, zero writes on Cancel, and both rows
+created in one atomic write on Continue (`created_count: 2`). A batch
+combining one hard error (`exact_task_duplicate`) with one otherwise-valid
+advisory row was hard-rejected (`422`) with **zero** rows and **no**
+confirmation offered — even a forged `confirmation_fingerprint` on retry
+could not bypass this. ✔
+
+### 29.12 Edit result
+
+Using a disposable Task: (a) edited into lunch overlap → `409`, original
+row confirmed unchanged via `GET`; confirmed retry → `200`, new time
+stored. (b) Edited further to overlap a different-titled Task → `409`
+`different_task_time_overlap`; confirmed retry → `200`. (c) Self-exclusion:
+a notes-only edit at a genuinely isolated time slot → `200`, no warning —
+proving the edited Task never flags against its own prior/unchanged
+occurrence. (An earlier attempt at this same self-exclusion check, at a
+time slot that happened to coincide with an unrelated earlier test Task
+of a different title, correctly returned `409` — proving the *different*
+overlap detector, not a self-exclusion failure; corrected by moving to an
+isolated slot before asserting the no-warning case.) ✔
+
+### 29.13 Stale confirmation live result
+
+Reproduced the exact scenario `test_36`/`test_59` cover automatically,
+live: (1) triggered an advisory (`StaleB` overlapping `TitleA`), captured
+its fingerprint. (2) Introduced a genuinely new conflicting Task
+(`StaleC`, confirmed and created) before retrying. (3) Resubmitted `StaleB`
+with the **original, now-stale** fingerprint → rejected with a **fresh**
+`409` carrying a **different** fingerprint value (`assert fp_fresh !=
+fp_stale` held) and zero write, confirmed via `GET`. (4) Resubmitted with
+the fresh fingerprint → `201`, exactly one write. A stale confirmation
+never silently succeeded at any point. ✔
+
+### 29.14 Form preservation, duplicate-popup, and no-optimistic-update
+
+Not independently browser-verified this session (no browser tool) —
+these are frontend-only concerns (`instance.js` never touches `items`,
+the Calendar render, or a success toast outside the real request's
+`.then()` success branch — confirmed by code reading, unchanged since the
+implementation pass) and are covered by direct evidence at the API layer:
+every "initial/unconfirmed" request in §§29.4–29.8, 29.12–29.13 produced
+zero writes, and the frontend's `performTaskCreate`/`performTaskUpdate`/
+`performBulkSubmit` functions call the Calendar-refresh/toast code only
+inside the successful-response branch (verified in the diff, §2 of the
+original review). No duplicate confirmed request was observed at the API
+layer in any of the ×7 confirm cycles run this session.
+
+### 29.15 Accessibility, mobile, 200% zoom
+
+**AMBER — not live-verified.** No browser automation tool was available
+in this session (same limitation as the original implementation pass).
+Code-level confirmation only: the deployed `js/ui/dialog.js` asset was
+fetched directly and confirmed to contain `role="dialog"`, `aria-modal`,
+`aria-labelledby`, `aria-describedby`, the focus trap (`trapTab`), focus
+restore (`returnFocus`), and Escape-to-Cancel handling — this is the
+pre-existing `confirmDestructive()` component, reused verbatim (not new
+code introduced by this feature), already serving the live delete- and
+Bulk-duplicate-confirmation flows in production before this release. No
+new CSS or DOM structure was added for this feature, so no new
+mobile/zoom risk surface exists beyond that already-live component's own
+established behavior — but this reasoning was not independently
+confirmed by an actual rendered click-through, mobile viewport, or 200%
+zoom check.
+
+### 29.16 Cleanup
+
+12 disposable rows created across §§29.4–29.13 (all `TEST-ADVISORY-*`
+titles, all `source_scope=dashboard_testing`/`is_official_truth=false`,
+all future-dated, none ever had an outcome recorded so none was ever at
+risk of the delete-lock). All 12 deleted (`12 of 12` succeeded, 0
+failures). Follow-up `GET` across `2026-08-15`..`2026-08-25` confirmed
+**0** Tasks and **0** Leave records — exactly matching the pre-write
+baseline. **Zero test residue remains.**
+
+### 29.17 Remaining residue
+
+None.
+
+### 29.18 Final status (supersedes §27)
+
+**PASS.** Implementation (429/429 backend, 36/36 frontend), release
+(commit `9a1976d` pushed, both services confirmed live and serving the
+new commit), and live production validation (12/12 writes and reads
+behaved exactly as required, 12/12 disposable rows cleaned, 0 residue)
+are all complete. The only open item is Phase 18 (§29.15) — accessibility/
+mobile/zoom could not be independently confirmed in an actual rendered
+browser this session; this is a documented limitation, not a failed
+check, and rests on a pre-existing, already-live, unmodified component.
+
+### 29.19 One next action (supersedes §28)
+
+A maintainer with browser access should, at convenience, click through
+the "Confirm schedule" popup once on a mobile viewport (~390px) and once
+at 200% zoom to close out §29.15 — no further backend or write validation
+is required; everything reachable via direct API testing has been
+confirmed live.
