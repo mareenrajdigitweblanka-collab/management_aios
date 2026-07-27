@@ -52,6 +52,17 @@ class MemberScheduleEventCreate(BaseModel):
     start: Optional[time_type] = None
     end: Optional[time_type] = None
     notes: Optional[str] = Field(default=None, max_length=240)
+    # Lunch/different-title ADVISORY confirmation (2026-07-27 — see
+    # backend/routers/member_schedules.py detect_schedule_advisories/
+    # schedule_confirmation_fingerprint). Additive, optional field: absent
+    # or None on a first submission. When a prior response returned
+    # {"error": "schedule_confirmation_required", ...,
+    # "confirmation_fingerprint": "..."}, the frontend resubmits the exact
+    # same payload with this field set to that value. The backend always
+    # recomputes the current advisory set and its own fingerprint from
+    # scratch — this value is never trusted as still-current truth, only
+    # compared against the freshly recomputed one.
+    confirmation_fingerprint: Optional[str] = None
 
     @field_validator("priority")
     @classmethod
@@ -85,6 +96,10 @@ class MemberScheduleEventUpdate(BaseModel):
     start: Optional[time_type] = None
     end: Optional[time_type] = None
     notes: Optional[str] = Field(default=None, max_length=240)
+    # Same additive advisory-confirmation field as MemberScheduleEventCreate
+    # above — see its docstring. Evaluated against the resulting (post-edit)
+    # date/title/start/end, excluding this task's own row.
+    confirmation_fingerprint: Optional[str] = None
 
     @field_validator("priority")
     @classmethod
@@ -256,6 +271,13 @@ class BulkTaskCreateRequest(BaseModel):
 
     tasks: List[BulkTaskRowIn] = Field(default_factory=list)
     confirm_duplicates: bool = False
+    # Same additive advisory-confirmation field as MemberScheduleEventCreate
+    # (lunch/different-title overlap — a separate concern from
+    # confirm_duplicates above, which only ever bypasses the pre-existing
+    # exact title/time soft-duplicate warning). See
+    # backend/routers/member_schedules.py detect_schedule_advisories/
+    # schedule_confirmation_fingerprint.
+    confirmation_fingerprint: Optional[str] = None
 
 
 class BulkTaskRowErrorOut(BaseModel):

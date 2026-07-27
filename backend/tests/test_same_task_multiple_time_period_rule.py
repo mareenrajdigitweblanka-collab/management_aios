@@ -301,12 +301,37 @@ class SingleCreateTests(SameTaskEndpointTestCase):
         self.assertEqual(self.row_count(session), before)
 
     def test_19_different_title_overlap_allowed(self):
+        """Different-title timed overlap is no longer silently allowed
+        (superseded 2026-07-27 by the LUNCH-BREAK AND DIFFERENT-TITLE
+        TASK-OVERLAP CONFIRMATION feature — see
+        test_schedule_advisory_confirmation.py) — it now requires an
+        advisory confirmation before it is allowed. This test proves the
+        hard same-title classifier itself still returns NONE (allowed, not
+        hard-blocked) for a different title; confirmed end-to-end advisory
+        behavior (zero-write first response, one-write confirmed retry) is
+        covered in test_schedule_advisory_confirmation.py."""
         session = self.make_session()
         self.make_task(session, DATE, "Standup", start_time=time(9, 0), end_time=time(10, 0))
         response = create_member_schedule_event(
             "mayurika", self.create_payload(DATE, "Retro", time(9, 0), time(10, 0)), db=session,
         )
-        self.assertNotIsInstance(response, JSONResponse)
+        self.assertIsInstance(response, JSONResponse)
+        self.assertEqual(response.status_code, 409)
+        import json
+        body = json.loads(response.body)
+        self.assertEqual(body["error"], "schedule_confirmation_required")
+        codes = {w["code"] for w in body["warnings"]}
+        self.assertIn("different_task_time_overlap", codes)
+        self.assertEqual(self.row_count(session), 1)
+
+        confirmed = create_member_schedule_event(
+            "mayurika",
+            self.create_payload(DATE, "Retro", time(9, 0), time(10, 0)).model_copy(
+                update={"confirmation_fingerprint": body["confirmation_fingerprint"]}
+            ),
+            db=session,
+        )
+        self.assertNotIsInstance(confirmed, JSONResponse)
         self.assertEqual(self.row_count(session), 2)
 
     def test_20_rejected_create_causes_no_write(self):

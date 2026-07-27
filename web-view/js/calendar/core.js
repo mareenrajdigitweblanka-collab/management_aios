@@ -459,3 +459,56 @@ export function frontendToApiPayload(fields) {
   };
 }
 
+/* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27) —
+   advisory codes mirrored from backend/routers/member_schedules.py
+   ADVISORY_LUNCH_BREAK_OVERLAP/ADVISORY_DIFFERENT_TASK_TIME_OVERLAP (kept
+   as plain string literals here, not a shared JSON contract file, matching
+   this codebase's existing convention of mirroring backend error codes as
+   frontend string constants — see ui/error-mapper.js KNOWN_ERRORS). */
+export var SCHEDULE_ADVISORY_LUNCH = 'lunch_break_overlap';
+export var SCHEDULE_ADVISORY_DIFFERENT_TITLE = 'different_task_time_overlap';
+
+/* Builds the "Confirm schedule" popup body text from the backend's
+   warnings array ({code, row_index}[]). Pure, DOM-free — the exact three
+   single-candidate strings are the approved requirement's literal wording
+   (Single Task create/edit, where every warning shares row_index=null); a
+   per-row summary line is built instead whenever any warning carries a
+   real row_index (Bulk Tasks) — the approved requirement allows, but does
+   not mandate, exact wording for the multi-row case. */
+export function scheduleConfirmationMessage(warnings) {
+  var list = warnings || [];
+  var hasRowIndex = list.some(function (w) { return w.row_index !== null && w.row_index !== undefined; });
+
+  if (hasRowIndex) {
+    var byRow = {};
+    list.forEach(function (w) {
+      if (!byRow[w.row_index]) { byRow[w.row_index] = { lunch: false, differentTitle: false }; }
+      if (w.code === SCHEDULE_ADVISORY_LUNCH) { byRow[w.row_index].lunch = true; }
+      if (w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE) { byRow[w.row_index].differentTitle = true; }
+    });
+    var rowNumbers = Object.keys(byRow).map(Number).sort(function (a, b) { return a - b; });
+    var lines = rowNumbers.map(function (rowNumber) {
+      var flags = byRow[rowNumber];
+      if (flags.lunch && flags.differentTitle) {
+        return 'Task ' + rowNumber + ' overlaps the lunch break and another Task.';
+      }
+      if (flags.lunch) { return 'Task ' + rowNumber + ' overlaps the lunch break.'; }
+      return 'Task ' + rowNumber + ' overlaps another Task.';
+    });
+    return lines.join(' ');
+  }
+
+  var hasLunch = list.some(function (w) { return w.code === SCHEDULE_ADVISORY_LUNCH; });
+  var hasDifferentTitle = list.some(function (w) { return w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE; });
+  if (hasLunch && hasDifferentTitle) {
+    return 'This Task overlaps the lunch break and another Task scheduled for the same member and date.';
+  }
+  if (hasLunch) {
+    return 'This Task overlaps the lunch break from 12:45 PM to 1:30 PM.';
+  }
+  if (hasDifferentTitle) {
+    return 'This Task overlaps another Task scheduled for the same member and date.';
+  }
+  return 'This Task needs confirmation before it can be saved.';
+}
+

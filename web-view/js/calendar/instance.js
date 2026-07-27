@@ -45,6 +45,7 @@ import {
 , escapeHtml
 , apiItemToFrontend
 , frontendToApiPayload
+, scheduleConfirmationMessage
 } from './core.js';
 import { trapTab, returnFocus } from '../ui/popup.js';
 import { showToast } from '../ui/toast.js';
@@ -1849,6 +1850,22 @@ function mountScheduleCalendarInstance(container) {
             err = new Error(errBody.message || 'This task conflicts with active leave.');
             err.code = 'leave_conflict';
             err.conflicts = errBody.conflicts || [];
+          } else if (errBody && errBody.error === 'schedule_confirmation_required') {
+            /* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION
+               (2026-07-27) — additive ADVISORY (never a hard block) 409
+               shared by Single Task creation, Task editing, and Bulk Tasks
+               (backend/routers/member_schedules.py
+               schedule_confirmation_response_body). warnings is a list of
+               {code, row_index} — row_index is null for single/edit, the
+               row's own 1-indexed position for Bulk. confirmationFingerprint
+               is an opaque, request-scoped token: the caller resubmits the
+               EXACT SAME payload with it attached to confirm; the backend
+               always fully revalidates and recomputes its own fingerprint
+               before ever honoring it, so this is never a raw bypass. */
+            err = new Error('This Task needs confirmation before it can be saved.');
+            err.code = 'schedule_confirmation_required';
+            err.warnings = errBody.warnings || [];
+            err.confirmationFingerprint = errBody.confirmation_fingerprint || null;
           } else if (errBody && errBody.status === 'validation_failed') {
             /* Same-day Bulk Tasks (2026-07-23) — zero-write hard-validation
                contract (backend/schemas.py BulkTaskRowErrorOut). Tagged
@@ -2344,6 +2361,46 @@ function mountScheduleCalendarInstance(container) {
     if (firstFieldEl && firstFieldEl.focus) { firstFieldEl.focus(); }
   }
 
+  /* ── LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION
+     (2026-07-27) ── One shared popup — reused by Single Task creation, Task
+     editing, and Bulk Tasks — built on the same confirmDestructive() dialog
+     the pre-existing Bulk duplicate-warning popup below already uses.
+     scheduleConfirmationMessage (exact wording per the approved
+     requirement) is a pure, DOM-free function and lives in core.js
+     (imported above) so it can be unit-tested the same way this file's
+     other pure helpers already are — see
+     schedule-confirmation-message.test.mjs. */
+
+  /* Plain ES5 shallow-merge (this file uses var/function throughout, no
+     Object.assign/arrow functions elsewhere) — returns a new object with
+     every own key of base, then every own key of overrides layered on
+     top. Used only to attach confirmation_fingerprint onto an unmodified
+     payload for a confirmed retry, never to mutate the original payload
+     object a caller may still reference. */
+  function mergeInto(base, overrides) {
+    var merged = {};
+    Object.keys(base || {}).forEach(function (key) { merged[key] = base[key]; });
+    Object.keys(overrides || {}).forEach(function (key) { merged[key] = overrides[key]; });
+    return merged;
+  }
+
+  /* onConfirm must return a Promise — confirmDestructive keeps the dialog
+     open and busy until it settles (dialog.js), so a resubmitted request
+     that itself returns a fresh schedule_confirmation_required (a new
+     conflict appeared) can safely reopen a new confirmation popup from
+     inside the same onConfirm callback without ever showing a stale one. */
+  function showScheduleConfirmation(warnings, trigger, onConfirm) {
+    return confirmDestructive({
+      title: 'Confirm schedule',
+      message: scheduleConfirmationMessage(warnings),
+      confirmLabel: 'Continue anyway',
+      cancelLabel: 'Cancel',
+      confirmVariant: 'primary',
+      trigger: trigger,
+      onConfirm: onConfirm
+    });
+  }
+
   /* Applies the backend's duplicate warnings (Step 9/10/11) — status
      "duplicate_confirmation_required". Reuses the shared confirmDestructive
      dialog with confirmVariant:'primary' (Create tasks anyway creates
@@ -2392,13 +2449,17 @@ function mountScheduleCalendarInstance(container) {
      ones — row numbers in every backend response are 1-indexed positions
      in this same array, so they always match exactly what the user sees
      as "Row N" regardless of which rows are blank (Step 5/18). */
-  function performBulkSubmit(confirmDuplicates) {
+  function performBulkSubmit(confirmDuplicates, confirmationFingerprint) {
     var tasks = getBulkRows().map(rowElToPayloadRow);
     /* No top-level common `date` any more — every row carries its own
        (CONFIRMED ADD-ROW DATE RULE, 2026-07-24); the backend validates
        and stores each row against its own date (backend/schemas.py
-       BulkTaskRowIn.date). */
+       BulkTaskRowIn.date). confirmation_fingerprint (2026-07-27, LUNCH-BREAK
+       AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION) is only ever attached
+       when resubmitting after a schedule_confirmation_required response —
+       see the catch handler below. */
     var payload = { tasks: tasks, confirm_duplicates: !!confirmDuplicates };
+    if (confirmationFingerprint) { payload.confirmation_fingerprint = confirmationFingerprint; }
     return apiRequest('POST', apiBase + '/bulk', payload).then(function (result) {
       (result.items || []).forEach(function (apiItem) { items.push(apiItemToFrontend(apiItem)); });
       var count = result.created_count != null ? result.created_count : (result.items || []).length;
@@ -2429,6 +2490,16 @@ function mountScheduleCalendarInstance(container) {
         applyBulkRowErrors(err.errors);
       } else if (err.code === 'bulk_duplicate_confirmation_required') {
         showBulkDuplicateConfirmation(err.warnings);
+      } else if (err.code === 'schedule_confirmation_required') {
+        /* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION
+           (2026-07-27) — independent bypass token from confirm_duplicates
+           above (a batch can require both confirmations in sequence, one
+           at a time). "Continue anyway" resubmits the unchanged batch with
+           confirmation_fingerprint; the backend fully revalidates
+           (including hard rules) before ever writing. */
+        showScheduleConfirmation(err.warnings, bulkCreateBtn, function () {
+          return performBulkSubmit(confirmDuplicates, err.confirmationFingerprint).then(function () { return true; });
+        });
       } else {
         var mapped = mapApiError(err);
         showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
@@ -3639,6 +3710,37 @@ function mountScheduleCalendarInstance(container) {
   if (fieldStart) { fieldStart.addEventListener('input', function () { clearFieldError(fieldEnd); }); }
   if (fieldEnd) { fieldEnd.addEventListener('input', function () { clearFieldError(fieldEnd); }); }
 
+  /* Single Task create — the actual POST call, shared by the initial
+     submit and the "Continue anyway" confirmed retry below (LUNCH-BREAK
+     AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION, 2026-07-27). No
+     optimistic Calendar insertion happens anywhere in this function except
+     inside the success branch — a confirmation-required response, or the
+     user cancelling that popup, never touches `items`/the Calendar/the
+     form/a success toast. */
+  function performTaskCreate(payload, addedDate) {
+    return apiRequest('POST', apiBase, payload).then(function (apiItem) {
+      items.push(apiItemToFrontend(apiItem));
+      selectDate(addedDate);
+      refreshSummary();
+      resetForm();
+      closeTaskPopup();
+      showToast({ type: 'success', title: 'Task created', message: 'Your task was added to the calendar.' });
+    }).catch(function (err) {
+      if (err.code === 'schedule_confirmation_required') {
+        return showScheduleConfirmation(err.warnings, addBtn, function () {
+          var confirmedPayload = mergeInto(payload, { confirmation_fingerprint: err.confirmationFingerprint });
+          return performTaskCreate(confirmedPayload, addedDate);
+        });
+      }
+      var mapped = mapApiError(err);
+      if (err.code === 'leave_conflict') {
+        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
+      } else {
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+      }
+    });
+  }
+
   addBtn.addEventListener('click', function () {
     clearFormErrors(formEl);
     var hasError = false;
@@ -3663,21 +3765,7 @@ function mountScheduleCalendarInstance(container) {
     var addedDate = fieldDate.value;
     setButtonBusy(addBtn, true, { busyLabel: 'Saving…' });
     showApiStatus('', false, taskPopupStatusEl);
-    apiRequest('POST', apiBase, payload).then(function (apiItem) {
-      items.push(apiItemToFrontend(apiItem));
-      selectDate(addedDate);
-      refreshSummary();
-      resetForm();
-      closeTaskPopup();
-      showToast({ type: 'success', title: 'Task created', message: 'Your task was added to the calendar.' });
-    }).catch(function (err) {
-      var mapped = mapApiError(err);
-      if (err.code === 'leave_conflict') {
-        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
-      } else {
-        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
-      }
-    }).then(function () { setButtonBusy(addBtn, false); });
+    performTaskCreate(payload, addedDate).then(function () { setButtonBusy(addBtn, false); });
   });
 
   function editItem(id) {
@@ -3712,6 +3800,54 @@ function mountScheduleCalendarInstance(container) {
     openTaskPopup();
   }
 
+  /* Task edit — the actual PUT call, shared by the initial submit and the
+     "Continue anyway" confirmed retry below (LUNCH-BREAK AND
+     DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION, 2026-07-27). `it` is looked
+     up fresh by id (rather than captured once by the caller) since no
+     write has happened yet by the time a confirmed retry runs — the
+     `items` array is guaranteed unchanged in between. */
+  function performTaskUpdate(payload, editingId) {
+    return apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiItem) {
+      var it = items.filter(function (x) { return x.id === editingId; })[0];
+      var updated = apiItemToFrontend(apiItem);
+      var idx = it ? items.indexOf(it) : -1;
+      if (idx !== -1) { items[idx] = updated; }
+      /* Origin-aware return (Step 8, calendar-popup-close-time-
+         validation-task-list-return task, 2026-07-22) — captured before
+         cancelEdit()/closeTaskPopup() below (neither touches these
+         variables) and cleared here so a later, unrelated edit session
+         can't accidentally reuse a stale origin. selectDate(updated.date)
+         still runs first (existing "refresh calendar data" behavior,
+         unchanged) — the reopened list reads the already-updated
+         `items` array, so it reflects the save immediately. */
+      var flowOrigin = editOriginFlowOrigin;
+      editOriginViewId = null;
+      editOriginTriggerEl = null;
+      editOriginFlowOrigin = null;
+      selectDate(updated.date);
+      refreshSummary();
+      cancelEdit();
+      closeTaskPopup();
+      if (flowOrigin && flowOrigin.type === 'more-task-list') {
+        reopenTaskListOrigin(flowOrigin);
+      }
+      showToast({ type: 'success', title: 'Task updated', message: 'Your changes were saved.' });
+    }).catch(function (err) {
+      if (err.code === 'schedule_confirmation_required') {
+        return showScheduleConfirmation(err.warnings, updateBtn, function () {
+          var confirmedPayload = mergeInto(payload, { confirmation_fingerprint: err.confirmationFingerprint });
+          return performTaskUpdate(confirmedPayload, editingId);
+        });
+      }
+      var mapped = mapApiError(err);
+      if (err.code === 'leave_conflict') {
+        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
+      } else {
+        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+      }
+    });
+  }
+
   updateBtn.addEventListener('click', function () {
     if (!state.editingId) { return; }
     var it = items.filter(function (x) { return x.id === state.editingId; })[0];
@@ -3735,38 +3871,7 @@ function mountScheduleCalendarInstance(container) {
     var editingId = state.editingId;
     setButtonBusy(updateBtn, true, { busyLabel: 'Saving…' });
     showApiStatus('', false, taskPopupStatusEl);
-    apiRequest('PUT', apiBase + '/' + encodeURIComponent(editingId), payload).then(function (apiItem) {
-      var updated = apiItemToFrontend(apiItem);
-      var idx = items.indexOf(it);
-      if (idx !== -1) { items[idx] = updated; }
-      /* Origin-aware return (Step 8, calendar-popup-close-time-
-         validation-task-list-return task, 2026-07-22) — captured before
-         cancelEdit()/closeTaskPopup() below (neither touches these
-         variables) and cleared here so a later, unrelated edit session
-         can't accidentally reuse a stale origin. selectDate(updated.date)
-         still runs first (existing "refresh calendar data" behavior,
-         unchanged) — the reopened list reads the already-updated
-         `items` array, so it reflects the save immediately. */
-      var flowOrigin = editOriginFlowOrigin;
-      editOriginViewId = null;
-      editOriginTriggerEl = null;
-      editOriginFlowOrigin = null;
-      selectDate(updated.date);
-      refreshSummary();
-      cancelEdit();
-      closeTaskPopup();
-      if (flowOrigin && flowOrigin.type === 'more-task-list') {
-        reopenTaskListOrigin(flowOrigin);
-      }
-      showToast({ type: 'success', title: 'Task updated', message: 'Your changes were saved.' });
-    }).catch(function (err) {
-      var mapped = mapApiError(err);
-      if (err.code === 'leave_conflict') {
-        showApiStatus(mapped.title + ' — ' + mapped.message, true, taskPopupStatusEl);
-      } else {
-        showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
-      }
-    }).then(function () { setButtonBusy(updateBtn, false); });
+    performTaskUpdate(payload, editingId).then(function () { setButtonBusy(updateBtn, false); });
   });
 
   /* Returns a Promise<boolean> (true only on a confirmed, successful

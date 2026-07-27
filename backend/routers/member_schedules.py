@@ -53,6 +53,8 @@ separate from the pre-existing updated_at/updated_by columns.
 """
 
 import calendar
+import hashlib
+import json
 from datetime import date as date_type, datetime, time as time_type, timedelta, timezone
 from typing import List, Optional, Tuple
 from uuid import UUID
@@ -65,6 +67,8 @@ from sqlalchemy.orm import Session
 
 from backend import xlsx_export
 from backend.config import (
+    ACTUAL_OFFICE_BREAK_END,
+    ACTUAL_OFFICE_BREAK_START,
     DEFAULT_SOURCE_SCOPE,
     LEAVE_FULL_DAY_DEDUCTION_MINUTES,
     MAX_BULK_TASK_ROWS,
@@ -563,6 +567,258 @@ def _active_same_date_occurrences(
         )
         for row in rows
     ]
+
+
+# ── LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27) ──
+#
+# ADVISORY (confirmable), never a hard block — strictly separate from every
+# hard-block domain above (same-title via classify_same_task_conflict,
+# Task/Leave via leave_logic). Two independent conditions, either or both of
+# which may apply to one candidate Task:
+#
+#   1. Lunch-break overlap: the candidate's [start, end) interval overlaps
+#      the company lunch interval, every calendar day including weekends.
+#      Reuses ACTUAL_OFFICE_BREAK_START/END (backend/config.py) — the
+#      already-registered "actual company office break" constant (12:45-
+#      13:30), never a second, independently-defined lunch constant.
+#   2. Different-title Task-time overlap: the candidate overlaps an ACTIVE
+#      Task for the SAME member and SAME date whose normalized title
+#      DIFFERS from the candidate's. Same-normalized-title occurrences are
+#      classify_same_task_conflict's domain exclusively — this detector
+#      only ever compares against occurrences that classifier would already
+#      treat as SAME_TASK_CONFLICT_NONE by title, so the two checks can
+#      never disagree or double-flag the same pair.
+#
+# Both conditions require the CANDIDATE to be timed (an untimed Task can
+# never overlap anything, per the half-open-interval time model shared with
+# classify_same_task_conflict). detect_schedule_advisories() is the one
+# shared detector every write path (single create, Task edit, Bulk Tasks —
+# once per row) calls; none of them re-implements either formula.
+
+ADVISORY_LUNCH_BREAK_OVERLAP = "lunch_break_overlap"
+ADVISORY_DIFFERENT_TASK_TIME_OVERLAP = "different_task_time_overlap"
+
+# Fixed emission order for one candidate's warnings — lunch before
+# different-title — so the response body, the popup summary, and the
+# confirmation fingerprint are all deterministic regardless of dict/set
+# iteration order (STEP 24 of the approved test matrix).
+_ADVISORY_CODE_ORDER = (ADVISORY_LUNCH_BREAK_OVERLAP, ADVISORY_DIFFERENT_TASK_TIME_OVERLAP)
+
+
+def _overlaps_lunch_break(start: Optional[time_type], end: Optional[time_type]) -> bool:
+    """True when a timed [start, end) interval overlaps the company lunch
+    interval [12:45, 13:30) — applies identically on every calendar day,
+    including Saturday/Sunday (there is no day-of-week branch here at all).
+    An untimed candidate (either value None) never overlaps anything.
+    Approved half-open formula: candidate_start < lunch_end AND
+    lunch_start < candidate_end — a Task ending exactly at 12:45 or starting
+    exactly at 13:30 does NOT warn (matches the approved boundary cases)."""
+    if start is None or end is None:
+        return False
+    return start < ACTUAL_OFFICE_BREAK_END and ACTUAL_OFFICE_BREAK_START < end
+
+
+def _timed_intervals_overlap(
+    a_start: time_type, a_end: time_type, b_start: time_type, b_end: time_type
+) -> bool:
+    """Same half-open interval formula classify_same_task_conflict's own
+    overlap branch uses (candidate_start < existing_end AND existing_start <
+    candidate_end) — kept as an independent one-line pure function rather
+    than extracted out of _classify_time_pair, so the live, already-shipped
+    same-title classifier is never touched by this additive feature. Only
+    ever called here with two already-timed pairs (both callers check
+    start/end is not None first)."""
+    return a_start < b_end and b_start < a_end
+
+
+def detect_schedule_advisories(
+    candidate_date: date_type,
+    candidate_title: Optional[str],
+    candidate_start: Optional[time_type],
+    candidate_end: Optional[time_type],
+    existing_occurrences,
+    exclude_key=None,
+) -> Tuple[List[str], List]:
+    """THE single shared ADVISORY detector (lunch + different-title
+    overlap) — Single Task creation, Task editing, and Bulk Tasks (each
+    nonblank row) all call this one function via build_schedule_confirmation
+    below; none of them re-implements either formula.
+
+    existing_occurrences: same SameTaskOccurrence shape/scoping
+    classify_same_task_conflict uses (already scoped by the caller to
+    "active Tasks for this member" — deleted_at IS NULL is enforced by
+    every caller's own query, never here). For Bulk Tasks, a caller may
+    additionally merge in-batch rows (adapted to the same shape, keyed by
+    row number) into this list — see _bulk_schedule_advisories below.
+
+    Returns (warning_codes, conflict_keys):
+    - warning_codes: ADVISORY_LUNCH_BREAK_OVERLAP and/or
+      ADVISORY_DIFFERENT_TASK_TIME_OVERLAP, in _ADVISORY_CODE_ORDER, or an
+      empty list when nothing applies.
+    - conflict_keys: every existing occurrence's own key that produced a
+      different-title overlap (empty when that warning did not fire) — used
+      only to build the confirmation fingerprint (schedule_confirmation_
+      fingerprint below); never exposed to the client directly, so no
+      internal database ID ever appears in user-visible text."""
+    warning_codes: List[str] = []
+    conflict_keys: List = []
+
+    if _overlaps_lunch_break(candidate_start, candidate_end):
+        warning_codes.append(ADVISORY_LUNCH_BREAK_OVERLAP)
+
+    if candidate_start is not None and candidate_end is not None:
+        candidate_normalized_title = _normalize_title_for_duplicate(candidate_title)
+        for occurrence in existing_occurrences:
+            if exclude_key is not None and occurrence.key == exclude_key:
+                continue
+            if occurrence.event_date != candidate_date:
+                continue
+            if occurrence.start is None or occurrence.end is None:
+                continue
+            if _normalize_title_for_duplicate(occurrence.title) == candidate_normalized_title:
+                continue  # same-title domain — classify_same_task_conflict's, not this detector's
+            if _timed_intervals_overlap(candidate_start, candidate_end, occurrence.start, occurrence.end):
+                conflict_keys.append(occurrence.key)
+
+    if conflict_keys:
+        warning_codes.append(ADVISORY_DIFFERENT_TASK_TIME_OVERLAP)
+
+    return warning_codes, conflict_keys
+
+
+def _advisory_candidate_state(
+    row_index: Optional[int],
+    candidate_date: date_type,
+    candidate_title: Optional[str],
+    candidate_start: Optional[time_type],
+    candidate_end: Optional[time_type],
+    warning_codes: List[str],
+    conflict_keys: List,
+) -> dict:
+    """One candidate's JSON-serializable contribution to the confirmation
+    fingerprint (STEP: fingerprint must represent relevant request data,
+    current advisory codes, Bulk row ownership, current conflicting Task
+    facts, and lunch status) — never returned to the client directly, only
+    hashed by schedule_confirmation_fingerprint below. Deliberately includes
+    the raw candidate date/title/start/end (not just the derived codes) so
+    a payload edit that happens to reproduce the same warning codes against
+    a different underlying date/time/title still changes the fingerprint —
+    a stale confirmation is only ever honored for the EXACT unchanged
+    payload it was issued for."""
+    return {
+        "row_index": row_index,
+        "date": candidate_date.isoformat(),
+        "title": _normalize_title_for_duplicate(candidate_title),
+        "start": candidate_start.isoformat() if candidate_start else None,
+        "end": candidate_end.isoformat() if candidate_end else None,
+        "codes": list(warning_codes),
+        "conflicts": sorted(str(key) for key in conflict_keys),
+    }
+
+
+def build_schedule_confirmation(
+    candidate_date: date_type,
+    candidate_title: Optional[str],
+    candidate_start: Optional[time_type],
+    candidate_end: Optional[time_type],
+    existing_occurrences,
+    exclude_key=None,
+    row_index: Optional[int] = None,
+) -> Tuple[List[dict], dict]:
+    """One-candidate convenience wrapper around detect_schedule_advisories —
+    used directly by the single-create/edit endpoints (one candidate) and
+    once per nonblank row by Bulk Tasks. Returns (warnings, candidate_state):
+    warnings is a list of {"code", "row_index"} dicts (the client-facing
+    shape, in _ADVISORY_CODE_ORDER) — row_index is always None for single
+    create/edit, the row's own 1-indexed position for Bulk; candidate_state
+    is the JSON-serializable dict schedule_confirmation_fingerprint hashes,
+    never returned to the client directly."""
+    warning_codes, conflict_keys = detect_schedule_advisories(
+        candidate_date, candidate_title, candidate_start, candidate_end,
+        existing_occurrences, exclude_key=exclude_key,
+    )
+    warnings = [{"code": code, "row_index": row_index} for code in warning_codes]
+    state = _advisory_candidate_state(
+        row_index, candidate_date, candidate_title, candidate_start, candidate_end,
+        warning_codes, conflict_keys,
+    )
+    return warnings, state
+
+
+def schedule_confirmation_fingerprint(candidate_states: List[dict]) -> str:
+    """Deterministic SHA-256 hex digest over every candidate's
+    _advisory_candidate_state dict (sorted by row_index so dict/list
+    ordering can never affect the digest), request-scoped only — never
+    stored in the database (PHASE 8: "does not need to be stored"). Any
+    change to the request data, the current advisory codes, or the current
+    conflicting Task facts (a new conflicting Task appearing before a
+    confirmed retry, an edited payload, a changed lunch status) changes this
+    digest, so a stale confirmation can never silently match a freshly
+    recomputed one."""
+    ordered = sorted(
+        candidate_states,
+        key=lambda state: (state["row_index"] if state["row_index"] is not None else -1),
+    )
+    encoded = json.dumps(ordered, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def schedule_confirmation_response_body(warnings: List[dict], candidate_states: List[dict]) -> dict:
+    """409 body for the "advisory confirmation required, zero writes"
+    contract — same raw, no-"detail"-wrapper shape as
+    leave_conflict_response_body/same_task_conflict_response_body. Never
+    exposes a raw database error, an internal row ID, or a stack trace —
+    warnings only ever carry {"code", "row_index"}, and
+    confirmation_fingerprint is an opaque SHA-256 digest."""
+    return {
+        "error": "schedule_confirmation_required",
+        "warnings": warnings,
+        "confirmation_fingerprint": schedule_confirmation_fingerprint(candidate_states),
+    }
+
+
+def _bulk_schedule_advisories(
+    db: Session, member_key: str, nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+) -> Tuple[List[dict], List[dict]]:
+    """Lunch + different-title ADVISORY detection across a Bulk Tasks
+    submission — covers all three required comparison sources in one pass
+    per row: (A) lunch, (B) other rows in the SAME submitted batch sharing
+    the row's own date, and (C) already-active Tasks saved for this member
+    on that date. (B) and (C) are merged into one `existing_occurrences`
+    list per row (rather than two separate passes, unlike the hard
+    same-title classifier's own within-batch/against-existing split) since
+    detect_schedule_advisories is one shared, single-call detector — a
+    batch row's own row_number key can never collide with a database row's
+    UUID key, so exclude_key safely excludes only the row's own in-batch
+    entry. Returns (warnings, candidate_states) — warnings is every row's
+    {"code","row_index"} entries in row-then-code order; candidate_states is
+    the full per-row state list schedule_confirmation_fingerprint hashes
+    (every nonblank row is included, even one with zero warning codes, so
+    the fingerprint is sensitive to any row's underlying data changing)."""
+    batch_occurrences_by_date: dict = {}
+    for row_number, row in nonblank_rows:
+        batch_occurrences_by_date.setdefault(row.date, []).append(
+            SameTaskOccurrence(
+                key=row_number, event_date=row.date, title=row.title,
+                start=row.start, end=row.end,
+            )
+        )
+
+    warnings: List[dict] = []
+    candidate_states: List[dict] = []
+    for row_number, row in nonblank_rows:
+        combined_occurrences = (
+            _active_same_date_occurrences(db, member_key, row.date)
+            + batch_occurrences_by_date.get(row.date, [])
+        )
+        row_warnings, state = build_schedule_confirmation(
+            row.date, row.title, row.start, row.end, combined_occurrences,
+            exclude_key=row_number, row_index=row_number,
+        )
+        warnings.extend(row_warnings)
+        candidate_states.append(state)
+
+    return warnings, candidate_states
 
 
 def _bulk_within_batch_time_conflicts(
@@ -1330,9 +1586,10 @@ def create_member_schedule_event(
     # checked before the Leave-conflict check below; independent of it, so
     # order between the two has no effect on correctness (neither check
     # mutates anything). See classify_same_task_conflict's docstring above.
+    same_date_occurrences = _active_same_date_occurrences(db, member_key, payload.date)
     same_task_classification, _same_task_conflict = classify_same_task_conflict(
         payload.date, payload.title, payload.start, payload.end,
-        _active_same_date_occurrences(db, member_key, payload.date),
+        same_date_occurrences,
     )
     if same_task_classification != SAME_TASK_CONFLICT_NONE:
         return JSONResponse(
@@ -1346,6 +1603,24 @@ def create_member_schedule_event(
         return JSONResponse(
             status_code=409, content=leave_logic.leave_conflict_response_body(conflicts)
         )
+
+    # LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27)
+    # — ADVISORY, checked only after every hard block above has already
+    # passed (a doomed request never reaches here). Reuses same_date_
+    # occurrences (no second query). A zero-warning candidate proceeds
+    # straight to the write below regardless of any submitted fingerprint;
+    # a warned candidate writes only when the submitted fingerprint matches
+    # the freshly recomputed one for THIS exact request.
+    warnings, candidate_state = build_schedule_confirmation(
+        payload.date, payload.title, payload.start, payload.end, same_date_occurrences,
+    )
+    if warnings:
+        fingerprint = schedule_confirmation_fingerprint([candidate_state])
+        if payload.confirmation_fingerprint != fingerprint:
+            return JSONResponse(
+                status_code=409,
+                content=schedule_confirmation_response_body(warnings, [candidate_state]),
+            )
 
     event = MemberScheduleEvent(
         member_key=member_key,
@@ -1382,15 +1657,24 @@ def create_member_schedule_events_bulk(
 
     Every call to this endpoint independently revalidates everything from
     scratch — hard field rules, the authoritative Leave-conflict check,
-    and both duplicate checks — against current database state. Nothing
-    from an earlier response (e.g. a prior duplicate_confirmation_required
-    reply) is ever trusted as still true; confirm_duplicates=True only
-    skips the "stop and ask" step, it does not skip re-validation.
+    and every duplicate/advisory check — against current database state.
+    Nothing from an earlier response (e.g. a prior
+    duplicate_confirmation_required or schedule_confirmation_required
+    reply) is ever trusted as still true; confirm_duplicates=True and a
+    matching confirmation_fingerprint each only skip their own "stop and
+    ask" step, neither skips re-validation.
 
-    Three possible outcomes, matching the approved contract exactly:
+    Four possible outcomes, matching the approved contract exactly:
     - validation_failed (422): zero rows inserted, one error per problem.
     - duplicate_confirmation_required (409): zero rows inserted, one
-      warning per current-batch or existing-Task duplicate match.
+      warning per current-batch or existing-Task exact title/time
+      duplicate match (pre-existing soft-duplicate system, unmodified).
+    - schedule_confirmation_required (409, additive 2026-07-27): zero rows
+      inserted, one warning per row with a lunch-break and/or
+      different-title time-overlap ADVISORY — see
+      detect_schedule_advisories/_bulk_schedule_advisories above. A batch
+      may require both this and the duplicate confirmation above, one at a
+      time, each independently confirmed and revalidated.
     - created (201, response_model=BulkTaskCreateSuccessOut): every
       nonblank row inserted in one all-or-nothing transaction, sharing one
       authoritative created_at/updated_at/category.
@@ -1470,6 +1754,23 @@ def create_member_schedule_events_bulk(
             "created_count": 0,
             "warnings": warnings,
         })
+
+    # LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27)
+    # — ADVISORY, checked once every hard error AND the pre-existing exact
+    # title/time soft-duplicate warning above have already been cleared (a
+    # doomed or already-pending-confirmation batch never reaches here).
+    # Independent bypass token from confirm_duplicates above — a batch can
+    # require both confirmations in sequence, one at a time, each fully
+    # revalidated. Zero writes on this path; the whole batch remains
+    # atomic — either every nonblank row is created, or none is.
+    schedule_warnings, candidate_states = _bulk_schedule_advisories(db, member_key, nonblank_rows)
+    if schedule_warnings:
+        fingerprint = schedule_confirmation_fingerprint(candidate_states)
+        if payload.confirmation_fingerprint != fingerprint:
+            return JSONResponse(
+                status_code=409,
+                content=schedule_confirmation_response_body(schedule_warnings, candidate_states),
+            )
 
     # ── Atomic transaction (Step 12/13) ──────────────────────────────────
     # One authoritative UTC instant shared by every row's created_at and
@@ -1583,9 +1884,10 @@ def update_member_schedule_event(
     # excluding this task's own row from comparison (STEP 8 / required
     # behavior #4). Independent of the Leave-conflict check below; order
     # between the two has no effect on correctness.
+    effective_date_occurrences = _active_same_date_occurrences(db, member_key, effective_date)
     same_task_classification, _same_task_conflict = classify_same_task_conflict(
         effective_date, effective_title, effective_start, effective_end,
-        _active_same_date_occurrences(db, member_key, effective_date),
+        effective_date_occurrences,
         exclude_key=event.id,
     )
     if same_task_classification != SAME_TASK_CONFLICT_NONE:
@@ -1600,6 +1902,23 @@ def update_member_schedule_event(
         return JSONResponse(
             status_code=409, content=leave_logic.leave_conflict_response_body(conflicts)
         )
+
+    # LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27)
+    # — ADVISORY, evaluated against the resulting (post-edit) date/title/
+    # start/end, excluding this task's own row (exclude_key=event.id, same
+    # self-exclusion the same-title classifier above already applies).
+    # Reuses effective_date_occurrences (no second query).
+    warnings, candidate_state = build_schedule_confirmation(
+        effective_date, effective_title, effective_start, effective_end,
+        effective_date_occurrences, exclude_key=event.id,
+    )
+    if warnings:
+        fingerprint = schedule_confirmation_fingerprint([candidate_state])
+        if payload.confirmation_fingerprint != fingerprint:
+            return JSONResponse(
+                status_code=409,
+                content=schedule_confirmation_response_body(warnings, [candidate_state]),
+            )
 
     if "date" in update_data:
         event.event_date = update_data["date"]
