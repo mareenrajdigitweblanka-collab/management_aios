@@ -338,6 +338,299 @@ def _normalize_title_for_duplicate(title: Optional[str]) -> str:
     return (title or "").strip().casefold()
 
 
+# ── FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE (2026-07-27) ────
+#
+# Supersedes the narrower 2026-07-27 "FINAL CONFIRMED TIMED-VERSUS-UNTIMED
+# RULE" pass, which only caught a timed occurrence conflicting with an
+# untimed one and did not yet catch exact-duplicate or overlapping-timed
+# occurrences, nor both-untimed duplicates. For the same member, same
+# normalized Task title, and same Task date:
+#
+#   1. Different non-overlapping timed periods            -> ALLOW
+#   2. Adjacent timed periods (end == other's start)       -> ALLOW
+#   3. Exact same start and end time                       -> BLOCK (exact_task_duplicate)
+#   4. Any positive-duration timed overlap                 -> BLOCK (same_task_time_overlap)
+#   5. Both Tasks untimed                                  -> BLOCK (same_task_time_required)
+#   6. One timed and one untimed                           -> BLOCK (same_task_time_required)
+#
+# Different Task titles may overlap freely — this rule only ever compares
+# rows that already share a normalized title (_normalize_title_for_duplicate,
+# the same normalization the pre-existing soft duplicate-warning system
+# below uses, so "the same title" never means two different things in this
+# file). This rule never touches Task-vs-Leave overlap rules (leave_logic),
+# which are a completely separate, unmodified check.
+#
+# ONE shared classifier (classify_same_task_conflict, per SAME_TASK_CONFLICT_*
+# below) is the single formula for all three write paths — Single Task
+# creation, Task editing, and Bulk Tasks (both within-batch and against
+# existing active Tasks). It operates on plain SameTaskOccurrence tuples
+# rather than any one ORM/Pydantic model directly, which is what lets one
+# function serve a DB-backed MemberScheduleEvent row (single create/update,
+# bulk-against-existing) and an in-memory BulkTaskRowIn row (bulk
+# within-batch) without a second, parallel implementation — each call site
+# only adapts its own data into that common shape first.
+
+SAME_TASK_CONFLICT_NONE = "none"
+SAME_TASK_CONFLICT_EXACT_DUPLICATE = "exact_duplicate"
+SAME_TASK_CONFLICT_TIME_OVERLAP = "time_overlap"
+SAME_TASK_CONFLICT_BOTH_UNTIMED = "both_untimed"
+SAME_TASK_CONFLICT_TIMED_VS_UNTIMED = "timed_vs_untimed"
+
+SAME_TASK_TIME_REQUIRED_MESSAGE = (
+    "This task already exists on the selected date. Add separate "
+    "non-overlapping times to create another occurrence."
+)
+
+# Machine-readable code + user-facing message per classification (STEP 5 of
+# the approved rule). BOTH_UNTIMED and TIMED_VS_UNTIMED deliberately share
+# one code/message (same_task_time_required) — both describe the same
+# underlying problem ("no reliable interval to prove separateness"), exactly
+# as the approved rule specifies; EXACT_DUPLICATE and TIME_OVERLAP each get
+# their own distinct code/message so the frontend (and the user) can tell a
+# perfect duplicate from a partial-overlap conflict. Titles are a frontend-
+# only concern (ui/error-mapper.js KNOWN_ERRORS) — never sent by the backend.
+SAME_TASK_CONFLICT_INFO = {
+    SAME_TASK_CONFLICT_EXACT_DUPLICATE: {
+        "code": "exact_task_duplicate",
+        "message": "This task already exists at the same date and time.",
+    },
+    SAME_TASK_CONFLICT_TIME_OVERLAP: {
+        "code": "same_task_time_overlap",
+        "message": "This task already has another time period that overlaps the selected time.",
+    },
+    SAME_TASK_CONFLICT_BOTH_UNTIMED: {
+        "code": "same_task_time_required",
+        "message": SAME_TASK_TIME_REQUIRED_MESSAGE,
+    },
+    SAME_TASK_CONFLICT_TIMED_VS_UNTIMED: {
+        "code": "same_task_time_required",
+        "message": SAME_TASK_TIME_REQUIRED_MESSAGE,
+    },
+}
+
+
+def _is_timed_occurrence(start: Optional[time_type], end: Optional[time_type]) -> bool:
+    """A Task 'occurrence' counts as timed only when it carries a complete
+    start+end interval — mirrors _task_duration_minutes' own 'either time
+    missing -> no reliable interval' rule above. A row with only one of
+    start/end set is treated as untimed for this rule, same as for
+    duration reporting. This preserves all existing schema-layer validation
+    for partial/invalid time fields (MemberScheduleEventCreate/Update's
+    end_after_start validator, and BulkTaskRowIn's equivalent per-row check
+    in _bulk_row_field_errors) unchanged — this function only classifies
+    values that already passed that validation."""
+    return start is not None and end is not None
+
+
+def _classify_time_pair(
+    candidate_start: Optional[time_type],
+    candidate_end: Optional[time_type],
+    existing_start: Optional[time_type],
+    existing_end: Optional[time_type],
+) -> str:
+    """Pure, DB-free classification of ONE candidate-vs-existing time pair —
+    assumes the two occurrences already match on member + date + normalized
+    title (every caller filters down to that scope first). Returns one of
+    the SAME_TASK_CONFLICT_* constants.
+
+    Both-untimed and timed-vs-untimed are decided before either occurrence's
+    actual clock time is ever compared (STEP 4/5: an untimed occurrence has
+    no reliable interval, so it is never compared as an interval at all).
+    For two timed occurrences, exact duplicate is checked BEFORE general
+    overlap (STEP 4's explicit ordering requirement) so an identical
+    start+end pair is reported as exact_duplicate, never merely overlap.
+    General overlap uses the approved half-open interval formula:
+    candidate_start < existing_end AND existing_start < candidate_end —
+    which is False (allowed) for two back-to-back adjacent periods such as
+    09:00-10:00 and 10:00-11:00, and True (blocked) for any positive-
+    duration overlap, including one period fully containing the other."""
+    candidate_timed = _is_timed_occurrence(candidate_start, candidate_end)
+    existing_timed = _is_timed_occurrence(existing_start, existing_end)
+
+    if not candidate_timed and not existing_timed:
+        return SAME_TASK_CONFLICT_BOTH_UNTIMED
+    if candidate_timed != existing_timed:
+        return SAME_TASK_CONFLICT_TIMED_VS_UNTIMED
+
+    # Both timed from here on — real start/end values on both sides.
+    if candidate_start == existing_start and candidate_end == existing_end:
+        return SAME_TASK_CONFLICT_EXACT_DUPLICATE
+
+    if candidate_start < existing_end and existing_start < candidate_end:
+        return SAME_TASK_CONFLICT_TIME_OVERLAP
+
+    return SAME_TASK_CONFLICT_NONE
+
+
+class SameTaskOccurrence:
+    """Uniform, source-agnostic shape classify_same_task_conflict() compares
+    a candidate against — deliberately NOT a MemberScheduleEvent or
+    BulkTaskRowIn directly, so the classifier never needs to know which of
+    the three call sites (single create/update against the database, Bulk
+    Tasks within-batch, Bulk Tasks against the database) built it. `key` is
+    whatever uniquely identifies this occurrence for self-exclusion — the
+    real event UUID for a database row, or the row's 1-indexed submission
+    position for an in-memory Bulk Tasks row (see
+    _bulk_within_batch_time_conflicts)."""
+
+    __slots__ = ("key", "event_date", "title", "start", "end")
+
+    def __init__(self, key, event_date, title, start, end):
+        self.key = key
+        self.event_date = event_date
+        self.title = title
+        self.start = start
+        self.end = end
+
+
+def classify_same_task_conflict(
+    candidate_date: date_type,
+    candidate_title: Optional[str],
+    candidate_start: Optional[time_type],
+    candidate_end: Optional[time_type],
+    existing_occurrences,
+    exclude_key=None,
+):
+    """THE single shared classifier (STEP 3) for the FINAL AUTHORITATIVE
+    SAME-TASK MULTIPLE-TIME-PERIOD RULE — Single Task creation, Task
+    editing, and both Bulk Tasks checks (within-batch and against existing
+    active Tasks) all call this one function; none of them re-implements
+    any part of the classification logic itself.
+
+    existing_occurrences: an iterable of SameTaskOccurrence — already
+    scoped by the caller to "active Tasks for this member" (deleted_at IS
+    NULL is enforced by every caller's own query, never by this function,
+    since this function never touches a database session). exclude_key
+    lets an edit exclude its own row from comparison against itself (STEP
+    8 / required behavior #4).
+
+    Returns (classification, conflicting_occurrence_or_None) — the FIRST
+    conflicting occurrence found, or (SAME_TASK_CONFLICT_NONE, None) when
+    nothing conflicts. Different normalized titles and different dates
+    never conflict (checked first, before any time comparison) — different
+    Task titles may overlap and remain allowed, exactly as required."""
+    candidate_normalized_title = _normalize_title_for_duplicate(candidate_title)
+
+    for occurrence in existing_occurrences:
+        if exclude_key is not None and occurrence.key == exclude_key:
+            continue
+        if occurrence.event_date != candidate_date:
+            continue
+        if _normalize_title_for_duplicate(occurrence.title) != candidate_normalized_title:
+            continue
+        classification = _classify_time_pair(
+            candidate_start, candidate_end, occurrence.start, occurrence.end
+        )
+        if classification != SAME_TASK_CONFLICT_NONE:
+            return classification, occurrence
+
+    return SAME_TASK_CONFLICT_NONE, None
+
+
+def same_task_conflict_response_body(classification: str) -> dict:
+    """409 body for the single-create/update endpoints — same raw,
+    no-'detail'-wrapper shape as leave_conflict_response_body
+    (backend/routers/leave_logic.py), tagged with the classification's own
+    machine-readable code (STEP 5) so the frontend can map it via
+    ui/error-mapper.js without reading message text. Never exposes a raw
+    database error, an internal row ID, or a stack trace — only the fixed
+    code/message pair for this classification."""
+    info = SAME_TASK_CONFLICT_INFO[classification]
+    return {"error": info["code"], "message": info["message"]}
+
+
+def _active_same_date_occurrences(
+    db: Session, member_key: str, event_date: date_type
+) -> List["SameTaskOccurrence"]:
+    """Adapts active (deleted_at IS NULL) MemberScheduleEvent rows for
+    member_key on event_date into the classifier's shared SameTaskOccurrence
+    shape — the one place a database row is translated into that shape, so
+    Single Task creation/editing and the Bulk-against-existing check (below)
+    can never disagree about which rows qualify or how they're adapted."""
+    rows = (
+        db.query(MemberScheduleEvent)
+        .filter(
+            MemberScheduleEvent.member_key == member_key,
+            MemberScheduleEvent.deleted_at.is_(None),
+            MemberScheduleEvent.event_date == event_date,
+        )
+        .all()
+    )
+    return [
+        SameTaskOccurrence(
+            key=row.id, event_date=row.event_date, title=row.title,
+            start=row.start_time, end=row.end_time,
+        )
+        for row in rows
+    ]
+
+
+def _bulk_within_batch_time_conflicts(
+    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+) -> List[dict]:
+    """FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE, WITHIN the
+    current Bulk Tasks submission only (STEP 7.A) — every nonblank row is
+    checked, via the shared classify_same_task_conflict(), against every
+    OTHER nonblank row (itself excluded by row_number via exclude_key), so
+    exact duplicates, overlaps, both-untimed, and timed-vs-untimed pairs are
+    all caught the same way a DB-backed check would catch them. A
+    conflicting pair naturally flags BOTH rows involved: iterating row A as
+    the candidate finds row B as the conflicting occurrence (flags A), and
+    iterating row B as the candidate finds row A (flags B) — every
+    classification here is symmetric (equality, timed-status mismatch, and
+    interval overlap are all symmetric relations), so no separate
+    "flag the other side too" step is needed. Only called once every
+    nonblank row already has a date (see _bulk_leave_conflict_errors'
+    docstring), so row.date is never None here."""
+    occurrences = [
+        SameTaskOccurrence(key=row_number, event_date=row.date, title=row.title,
+                            start=row.start, end=row.end)
+        for row_number, row in nonblank_rows
+    ]
+
+    errors: List[dict] = []
+    for row_number, row in nonblank_rows:
+        classification, _conflict = classify_same_task_conflict(
+            row.date, row.title, row.start, row.end, occurrences, exclude_key=row_number,
+        )
+        if classification == SAME_TASK_CONFLICT_NONE:
+            continue
+        info = SAME_TASK_CONFLICT_INFO[classification]
+        anchor_field = "start" if (row.start is not None or row.end is not None) else "title"
+        errors.append({
+            "row": row_number, "field": anchor_field,
+            "code": info["code"], "message": info["message"],
+        })
+    return errors
+
+
+def _bulk_existing_task_time_conflict_errors(
+    db: Session,
+    member_key: str,
+    nonblank_rows: List[Tuple[int, "BulkTaskRowIn"]],
+) -> List[dict]:
+    """FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE, each
+    nonblank row AGAINST Tasks already saved for this member (STEP 7.B) —
+    reuses classify_same_task_conflict() via _active_same_date_occurrences(),
+    the same formula/adapter the single-create/update endpoints call; no
+    second formula is implemented here."""
+    errors: List[dict] = []
+    for row_number, row in nonblank_rows:
+        occurrences = _active_same_date_occurrences(db, member_key, row.date)
+        classification, _conflict = classify_same_task_conflict(
+            row.date, row.title, row.start, row.end, occurrences,
+        )
+        if classification == SAME_TASK_CONFLICT_NONE:
+            continue
+        info = SAME_TASK_CONFLICT_INFO[classification]
+        anchor_field = "start" if (row.start is not None or row.end is not None) else "title"
+        errors.append({
+            "row": row_number, "field": anchor_field,
+            "code": info["code"], "message": info["message"],
+        })
+    return errors
+
+
 def _normalize_time_for_duplicate(value: Optional[time_type]) -> Optional[str]:
     """HH:MM representation for duplicate comparison only (Step 8) —
     seconds are never part of a Task's start/end time in this API, so
@@ -1033,6 +1326,19 @@ def create_member_schedule_event(
     # cannot bypass classification (see MemberScheduleEventCreate docstring).
     category = classify_new_task(event_date=payload.date, created_at=created_at)
 
+    # FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE (2026-07-27) —
+    # checked before the Leave-conflict check below; independent of it, so
+    # order between the two has no effect on correctness (neither check
+    # mutates anything). See classify_same_task_conflict's docstring above.
+    same_task_classification, _same_task_conflict = classify_same_task_conflict(
+        payload.date, payload.title, payload.start, payload.end,
+        _active_same_date_occurrences(db, member_key, payload.date),
+    )
+    if same_task_classification != SAME_TASK_CONFLICT_NONE:
+        return JSONResponse(
+            status_code=409, content=same_task_conflict_response_body(same_task_classification)
+        )
+
     conflicts = leave_logic.find_conflicting_active_leave(
         db, member_key, payload.date, payload.start, payload.end
     )
@@ -1126,10 +1432,19 @@ def create_member_schedule_events_bulk(
         for field_error in _bulk_row_field_errors(row):
             errors.append({"row": row_number, **field_error})
 
-    # Authoritative Leave re-check (Step 7) only runs once field-level
-    # rules already pass for every row — no point flagging a Leave
-    # conflict on a row whose title/time is itself invalid.
+    # FINAL CONFIRMED TIMED-VERSUS-UNTIMED RULE (2026-07-27) and the
+    # authoritative Leave re-check (Step 7) only run once field-level
+    # rules already pass for every row — no point flagging either kind of
+    # conflict on a row whose title/time is itself invalid. Within-batch
+    # and against-existing-Tasks time conflicts are independent checks
+    # (Tests C/D/E); both always run so every offending row is reported at
+    # once, matching the existing "collect across every row" convention
+    # (never stop at the first invalid row).
     if not errors:
+        errors.extend(_bulk_within_batch_time_conflicts(nonblank_rows))
+        errors.extend(
+            _bulk_existing_task_time_conflict_errors(db, member_key, nonblank_rows)
+        )
         errors.extend(
             _bulk_leave_conflict_errors(db, member_key, nonblank_rows)
         )
@@ -1259,8 +1574,24 @@ def update_member_schedule_event(
         )
 
     effective_date = update_data.get("date", event.event_date)
+    effective_title = update_data.get("title", event.title)
     effective_start = update_data.get("start", event.start_time)
     effective_end = update_data.get("end", event.end_time)
+
+    # FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE (2026-07-27) —
+    # evaluated against the resulting (post-edit) date/title/start/end,
+    # excluding this task's own row from comparison (STEP 8 / required
+    # behavior #4). Independent of the Leave-conflict check below; order
+    # between the two has no effect on correctness.
+    same_task_classification, _same_task_conflict = classify_same_task_conflict(
+        effective_date, effective_title, effective_start, effective_end,
+        _active_same_date_occurrences(db, member_key, effective_date),
+        exclude_key=event.id,
+    )
+    if same_task_classification != SAME_TASK_CONFLICT_NONE:
+        return JSONResponse(
+            status_code=409, content=same_task_conflict_response_body(same_task_classification)
+        )
 
     conflicts = leave_logic.find_conflicting_active_leave(
         db, member_key, effective_date, effective_start, effective_end

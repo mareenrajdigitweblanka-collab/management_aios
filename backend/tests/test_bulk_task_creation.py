@@ -372,9 +372,26 @@ class LeaveConflictTests(unittest.TestCase):
 
 
 class DuplicateWarningTests(unittest.TestCase):
-    """Step 22 items 12-16."""
+    """Step 22 items 12-16.
 
-    def test_batch_duplicate_returns_warning_and_zero_inserts(self):
+    SUPERSEDED IN PART by the FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-
+    PERIOD RULE (2026-07-27, backend/routers/member_schedules.py
+    classify_same_task_conflict()): every scenario in this class matches
+    the exact-duplicate or both-untimed domain, which that rule now hard-
+    blocks (422 validation_failed, exact_task_duplicate/
+    same_task_time_required) BEFORE the soft duplicate-warning phase below
+    is ever reached — confirm_duplicates can no longer override an exact
+    title/date/time match (approved rule: "Do not leave exact same
+    title/date/time as warning-only"). The soft duplicate-warning system
+    itself (_find_batch_duplicate_warnings/_find_existing_task_duplicate_
+    warnings) is unmodified and still wired, but is now structurally
+    unreachable for this exact domain — see
+    validation/same-task-multiple-time-period-check-2026-07-27.md §9 for
+    the full analysis of which cases (if any) still reach it. These tests
+    are updated to assert the new, correct hard-block behavior rather than
+    the old soft-warning-then-confirm flow."""
+
+    def test_batch_duplicate_is_hard_blocked_not_a_warning(self):
         rows = [
             _row("Review reports", start=time(10, 0), end=time(11, 0)),
             _row("Something else"),
@@ -383,36 +400,40 @@ class DuplicateWarningTests(unittest.TestCase):
         db = _FakeSession()
         response = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
         self.assertIsInstance(response, JSONResponse)
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(len(db.added), 0)
         import json
         body = json.loads(response.body)
-        self.assertEqual(body["status"], "duplicate_confirmation_required")
+        self.assertEqual(body["status"], "validation_failed")
         self.assertEqual(body["created_count"], 0)
-        batch_warnings = [w for w in body["warnings"] if w["source"] == "current_batch"]
-        self.assertEqual(len(batch_warnings), 1)
-        self.assertEqual(sorted(batch_warnings[0]["rows"]), [1, 3])
+        codes = {e["code"] for e in body["errors"]}
+        self.assertIn("exact_task_duplicate", codes)
+        flagged_rows = sorted(e["row"] for e in body["errors"] if e["code"] == "exact_task_duplicate")
+        self.assertEqual(flagged_rows, [1, 3])
 
-    def test_existing_task_duplicate_returns_warning_and_zero_inserts(self):
+    def test_existing_task_duplicate_is_hard_blocked_not_a_warning(self):
         d = date(2099, 1, 5)
         existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=d)
         db = _FakeSession(existing_task_rows=[existing])
         rows = [_row("Standup", start=time(9, 0), end=time(9, 15), date=d)]
         response = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(len(db.added), 0)
         import json
         body = json.loads(response.body)
-        existing_warnings = [w for w in body["warnings"] if w["source"] == "existing_task"]
-        self.assertEqual(len(existing_warnings), 1)
-        self.assertEqual(existing_warnings[0]["rows"], [1])
-        self.assertNotIn(str(existing.id), existing_warnings[0]["message"])
+        self.assertEqual(body["status"], "validation_failed")
+        codes = [e["code"] for e in body["errors"]]
+        self.assertIn("exact_task_duplicate", codes)
+        # No internal database ID is ever exposed in the user-facing message.
+        for e in body["errors"]:
+            self.assertNotIn(str(existing.id), e["message"])
 
     def test_existing_task_on_a_different_date_is_not_a_duplicate(self):
         # CONFIRMED ADD-ROW DATE RULE (2026-07-24) — the existing-Task
-        # duplicate check is now scoped per row date; an existing Task on
-        # one date must never warn against a submitted row for a
-        # different date, even with an identical title/time.
+        # conflict check is scoped per row date; an existing Task on one
+        # date must never conflict against a submitted row for a different
+        # date, even with an identical title/time. Unaffected by the
+        # 2026-07-27 same-task rule, which is equally date-scoped.
         existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=date(2099, 1, 5))
         db = _FakeSession(existing_task_rows=[existing])
         rows = [_row("Standup", start=time(9, 0), end=time(9, 15), date=date(2099, 1, 6))]
@@ -420,7 +441,7 @@ class DuplicateWarningTests(unittest.TestCase):
         self.assertEqual(result["status"], "created")
         self.assertEqual(result["created_count"], 1)
 
-    def test_both_duplicate_sources_return_all_warnings(self):
+    def test_both_duplicate_sources_are_both_hard_blocked(self):
         d = date(2099, 1, 5)
         existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=d)
         db = _FakeSession(existing_task_rows=[existing])
@@ -430,29 +451,39 @@ class DuplicateWarningTests(unittest.TestCase):
             _row("Review reports", start=time(10, 0), end=time(11, 0), date=d),
         ]
         response = create_member_schedule_events_bulk("mayurika", _request(rows), db=db)
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 422)
         import json
         body = json.loads(response.body)
-        sources = sorted(w["source"] for w in body["warnings"])
-        self.assertEqual(sources, ["current_batch", "existing_task"])
+        self.assertEqual(body["status"], "validation_failed")
+        flagged_rows = sorted({e["row"] for e in body["errors"] if e["code"] == "exact_task_duplicate"})
+        self.assertEqual(flagged_rows, [1, 2, 3])
+        self.assertEqual(len(db.added), 0)
 
-    def test_confirm_duplicates_false_creates_zero(self):
-        rows = [_row("Dup"), _row("Dup")]
+    def test_confirm_duplicates_false_both_untimed_hard_blocked(self):
+        rows = [_row("Dup"), _row("Dup")]  # both untimed -> both_untimed
         db = _FakeSession()
         response = create_member_schedule_events_bulk(
             "mayurika", _request(rows, confirm_duplicates=False), db=db
         )
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 422)
         self.assertEqual(len(db.added), 0)
 
-    def test_confirm_duplicates_true_creates_all_rows(self):
+    def test_confirm_duplicates_true_does_not_override_hard_block(self):
+        """FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-PERIOD RULE
+        (2026-07-27): confirm_duplicates=True only skips the SOFT
+        duplicate-warning confirmation step — it must never let a true
+        both-untimed (or exact-duplicate/overlap) conflict through. This
+        replaces the pre-2026-07-27 test of the same name, which asserted
+        the opposite (that confirm_duplicates=True created both rows) —
+        that was the exact behavior the approved rule now forbids."""
         rows = [_row("Dup"), _row("Dup")]
         db = _FakeSession()
-        result = create_member_schedule_events_bulk(
+        response = create_member_schedule_events_bulk(
             "mayurika", _request(rows, confirm_duplicates=True), db=db
         )
-        self.assertEqual(result["status"], "created")
-        self.assertEqual(result["created_count"], 2)
+        self.assertIsInstance(response, JSONResponse)
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(len(db.added), 0)
 
 
 class AtomicTransactionTests(unittest.TestCase):
@@ -544,14 +575,17 @@ class MemberIsolationTests(unittest.TestCase):
         # (same convention as this repo's other fake-session tests) — this
         # test documents that create_member_schedule_events_bulk passes
         # member_key through to the query unconditionally for every
-        # member, so the real SQL filter is always applied.
+        # member, so the real SQL filter is always applied. Status code
+        # updated to 422 (FINAL AUTHORITATIVE SAME-TASK MULTIPLE-TIME-
+        # PERIOD RULE, 2026-07-27) — an exact title/date/time match is now
+        # a hard validation_failed block, not a 409 duplicate warning.
         d = date(2099, 1, 5)
         existing = FakeExistingTask("Standup", time(9, 0), time(9, 15), event_date=d)
         db = _FakeSession(existing_task_rows=[existing])
         response = create_member_schedule_events_bulk(
             "suman", _request([_row("Standup", start=time(9, 0), end=time(9, 15), date=d)]), db=db
         )
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 422)
 
 
 class SingleCreateEndpointUnchangedTests(unittest.TestCase):

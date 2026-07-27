@@ -52,6 +52,24 @@ var KNOWN_ERRORS = {
     message: 'An outcome has already been recorded for this task, so its date can’t be changed and it can’t be deleted.',
     persistent: true
   },
+  same_task_time_required: {
+    type: 'error',
+    title: 'Task time required',
+    message: 'This task already exists on the selected date. Add separate non-overlapping times to create another occurrence.',
+    persistent: true
+  },
+  exact_task_duplicate: {
+    type: 'error',
+    title: 'Duplicate task',
+    message: 'This task already exists at the same date and time.',
+    persistent: true
+  },
+  same_task_time_overlap: {
+    type: 'error',
+    title: 'Task time overlaps',
+    message: 'This task already has another time period that overlaps the selected time.',
+    persistent: true
+  },
   validation: {
     type: 'error',
     title: 'Check the highlighted fields',

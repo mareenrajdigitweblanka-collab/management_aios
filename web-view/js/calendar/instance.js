@@ -1867,7 +1867,10 @@ function mountScheduleCalendarInstance(container) {
           } else if (errBody && (
             errBody.error === 'outcome_locked' ||
             errBody.error === 'outcome_not_available_yet' ||
-            errBody.error === 'outcome_recorded_immutable'
+            errBody.error === 'outcome_recorded_immutable' ||
+            errBody.error === 'same_task_time_required' ||
+            errBody.error === 'exact_task_duplicate' ||
+            errBody.error === 'same_task_time_overlap'
           )) {
             /* FINAL BUSINESS RULES (2026-07-24) — the three 409s a Task
                outcome/date-change/delete request can get once outside the
@@ -1875,6 +1878,15 @@ function mountScheduleCalendarInstance(container) {
                recorded (backend/routers/member_schedules.py
                update_member_schedule_event_outcome/
                update_member_schedule_event/delete_member_schedule_event).
+               same_task_time_required/exact_task_duplicate/
+               same_task_time_overlap (FINAL AUTHORITATIVE SAME-TASK
+               MULTIPLE-TIME-PERIOD RULE, 2026-07-27 — supersedes the
+               narrower 2026-07-27 timed-versus-untimed-only pass) — the
+               single-create/update 409 a Task save gets when an existing
+               active Task of the same normalized title/date conflicts per
+               the shared classify_same_task_conflict() classifier (exact
+               same start/end, any positive-duration overlap, both
+               untimed, or one timed/one untimed).
                Same raw-body-with-no-"detail"-wrapper shape as
                leave_conflict above; err.code is set to the exact backend
                error string so ui/error-mapper.js's KNOWN_ERRORS entry of
