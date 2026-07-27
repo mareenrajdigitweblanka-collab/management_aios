@@ -148,15 +148,105 @@
   z-index: 1000;
 }
 
+/* .ui-dialog becomes a flex column with a viewport-bounded max-height
+   (2026-07-27 plain-language confirmation copy task) so .ui-dialog-body
+   below is the dialog's only scrollable region — a long conflicting-Task
+   list scrolls there while the title and action row (Go back / the
+   primary action) stay pinned and visible even on a short viewport,
+   mirroring the established .msc-view-modal-inner scroll-containment
+   pattern (calendar.css) used by the Task/Leave detail popup for its own
+   long-content case. Every pre-existing caller's content (one short
+   message line, no list, no footer) never approaches this height, so
+   this is a no-op layout change for delete confirmation and Bulk's
+   duplicate-warning popup. */
+.ui-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 40px);
+}
+
+.ui-dialog-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Required for a flex child to actually shrink and scroll instead of
+     overflowing its flex column parent (the well-known flexbox
+     min-height:auto default trap). */
+  min-height: 0;
+}
+
+/* Header and actions never shrink to make room for .ui-dialog-body above
+   — they always keep their natural content height, which is what keeps
+   the title and buttons visible while the body scrolls. */
+.ui-dialog-head {
+  flex-shrink: 0;
+}
+
 .ui-dialog-message {
   font-size: var(--font-base);
   color: var(--text);
   margin: 0 0 4px;
   line-height: 1.5;
+  /* Renders the real newline characters the plain-language message
+     builder (calendar/core.js buildScheduleConfirmationDialogContent)
+     uses to separate its own paragraph(s) — textContent never inserts
+     <br>, so without this the two paragraphs would visually run
+     together as one line. Every pre-existing caller's message is a
+     single line with no '\n', so this is a no-op for them. */
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+/* Conflicting-Task list (2026-07-27) — real <ul>/<li> markup so a screen
+   reader announces each conflicting Task as a distinct list item (STEP
+   10: "conflicting Tasks represented as semantic list items where
+   possible"). Hidden (and therefore excluded from aria-describedby, see
+   dialog.js) whenever a caller supplies no listItems — every
+   pre-existing caller (delete confirmation, Bulk's duplicate-warning
+   popup) never populates this, so it never renders for them. */
+.ui-dialog-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ui-dialog-list li {
+  font-size: var(--font-base);
+  color: var(--text);
+  line-height: 1.4;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  /* Long Task titles wrap onto a second line inside the pill rather than
+     clipping or forcing the dialog to scroll horizontally (STEP 11). */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Closing question (e.g. "Do you still want to add it?" / "...save these
+   changes?") — visually and structurally distinct from the lead-in
+   message above the conflict list, so the reading order (intro -> list
+   -> question) is preserved for sighted users the same way
+   aria-describedby preserves it for assistive tech (dialog.js). Hidden
+   whenever a caller supplies no footer (every pre-existing caller). */
+.ui-dialog-footer {
+  font-size: var(--font-base);
+  color: var(--text);
+  margin: 10px 0 0;
+  line-height: 1.5;
+  font-weight: 600;
 }
 
 .ui-dialog-actions {
   justify-content: flex-end;
+  /* Never shrinks out of view even when .ui-dialog-body above is at its
+     own max-height and scrolling (STEP 11: "keep Go back and the primary
+     action visible"). */
+  flex-shrink: 0;
 }
 
 /* ── Shared busy-button state (ui/loading.js setButtonBusy) ── */

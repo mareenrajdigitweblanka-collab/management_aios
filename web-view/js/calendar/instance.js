@@ -45,7 +45,7 @@ import {
 , escapeHtml
 , apiItemToFrontend
 , frontendToApiPayload
-, scheduleConfirmationMessage
+, buildScheduleConfirmationDialogContent
 } from './core.js';
 import { trapTab, returnFocus } from '../ui/popup.js';
 import { showToast } from '../ui/toast.js';
@@ -2362,10 +2362,11 @@ function mountScheduleCalendarInstance(container) {
   }
 
   /* ── LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION
-     (2026-07-27) ── One shared popup — reused by Single Task creation, Task
-     editing, and Bulk Tasks — built on the same confirmDestructive() dialog
-     the pre-existing Bulk duplicate-warning popup below already uses.
-     scheduleConfirmationMessage (exact wording per the approved
+     (2026-07-27; plain-language copy pass same day) ── One shared popup —
+     reused by Single Task creation, Task editing, and Bulk Tasks — built on
+     the same confirmDestructive() dialog the pre-existing Bulk
+     duplicate-warning popup below already uses.
+     buildScheduleConfirmationDialogContent (exact wording per the approved
      requirement) is a pure, DOM-free function and lives in core.js
      (imported above) so it can be unit-tested the same way this file's
      other pure helpers already are — see
@@ -2388,13 +2389,28 @@ function mountScheduleCalendarInstance(container) {
      open and busy until it settles (dialog.js), so a resubmitted request
      that itself returns a fresh schedule_confirmation_required (a new
      conflict appeared) can safely reopen a new confirmation popup from
-     inside the same onConfirm callback without ever showing a stale one. */
-  function showScheduleConfirmation(warnings, trigger, onConfirm) {
+     inside the same onConfirm callback without ever showing a stale one.
+
+     `context` ('create' | 'edit' | 'bulk') selects both the closing
+     question buildScheduleConfirmationDialogContent appends (Edit always
+     closes with "Do you still want to save these changes?", overriding
+     Create's own closing question — see core.js) and the action-specific
+     primary button label the caller supplies via `confirmLabel` — "Go
+     back" is always the secondary label; there is no generic "Continue
+     anyway" any more, per the approved copy: Single Task create uses "Add
+     task anyway", Task edit uses "Save changes anyway", Bulk Tasks uses
+     "Add all tasks anyway". The Close (X) control is unaffected by any of
+     this — it already resolves exactly like Go back (dialog.js
+     settle(false), no write) and is left untouched here. */
+  function showScheduleConfirmation(warnings, trigger, onConfirm, context, confirmLabel) {
+    var content = buildScheduleConfirmationDialogContent(warnings, context);
     return confirmDestructive({
-      title: 'Confirm schedule',
-      message: scheduleConfirmationMessage(warnings),
-      confirmLabel: 'Continue anyway',
-      cancelLabel: 'Cancel',
+      title: 'Check this task time',
+      message: content.message,
+      listItems: content.listItems,
+      footer: content.footer,
+      confirmLabel: confirmLabel,
+      cancelLabel: 'Go back',
       confirmVariant: 'primary',
       trigger: trigger,
       onConfirm: onConfirm
@@ -2494,12 +2510,12 @@ function mountScheduleCalendarInstance(container) {
         /* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION
            (2026-07-27) — independent bypass token from confirm_duplicates
            above (a batch can require both confirmations in sequence, one
-           at a time). "Continue anyway" resubmits the unchanged batch with
-           confirmation_fingerprint; the backend fully revalidates
+           at a time). "Add all tasks anyway" resubmits the unchanged batch
+           with confirmation_fingerprint; the backend fully revalidates
            (including hard rules) before ever writing. */
         showScheduleConfirmation(err.warnings, bulkCreateBtn, function () {
           return performBulkSubmit(confirmDuplicates, err.confirmationFingerprint).then(function () { return true; });
-        });
+        }, 'bulk', 'Add all tasks anyway');
       } else {
         var mapped = mapApiError(err);
         showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
@@ -3730,7 +3746,7 @@ function mountScheduleCalendarInstance(container) {
         return showScheduleConfirmation(err.warnings, addBtn, function () {
           var confirmedPayload = mergeInto(payload, { confirmation_fingerprint: err.confirmationFingerprint });
           return performTaskCreate(confirmedPayload, addedDate);
-        });
+        }, 'create', 'Add task anyway');
       }
       var mapped = mapApiError(err);
       if (err.code === 'leave_conflict') {
@@ -3837,7 +3853,7 @@ function mountScheduleCalendarInstance(container) {
         return showScheduleConfirmation(err.warnings, updateBtn, function () {
           var confirmedPayload = mergeInto(payload, { confirmation_fingerprint: err.confirmationFingerprint });
           return performTaskUpdate(confirmedPayload, editingId);
-        });
+        }, 'edit', 'Save changes anyway');
       }
       var mapped = mapApiError(err);
       if (err.code === 'leave_conflict') {

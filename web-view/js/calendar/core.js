@@ -459,56 +459,215 @@ export function frontendToApiPayload(fields) {
   };
 }
 
-/* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27) —
-   advisory codes mirrored from backend/routers/member_schedules.py
-   ADVISORY_LUNCH_BREAK_OVERLAP/ADVISORY_DIFFERENT_TASK_TIME_OVERLAP (kept
-   as plain string literals here, not a shared JSON contract file, matching
-   this codebase's existing convention of mirroring backend error codes as
-   frontend string constants — see ui/error-mapper.js KNOWN_ERRORS). */
+/* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION (2026-07-27,
+   plain-language copy pass same day) — advisory codes mirrored from
+   backend/routers/member_schedules.py ADVISORY_LUNCH_BREAK_OVERLAP/
+   ADVISORY_DIFFERENT_TASK_TIME_OVERLAP (kept as plain string literals
+   here, not a shared JSON contract file, matching this codebase's
+   existing convention of mirroring backend error codes as frontend
+   string constants — see ui/error-mapper.js KNOWN_ERRORS). */
 export var SCHEDULE_ADVISORY_LUNCH = 'lunch_break_overlap';
 export var SCHEDULE_ADVISORY_DIFFERENT_TITLE = 'different_task_time_overlap';
 
-/* Builds the "Confirm schedule" popup body text from the backend's
-   warnings array ({code, row_index}[]). Pure, DOM-free — the exact three
-   single-candidate strings are the approved requirement's literal wording
-   (Single Task create/edit, where every warning shares row_index=null); a
-   per-row summary line is built instead whenever any warning carries a
-   real row_index (Bulk Tasks) — the approved requirement allows, but does
-   not mandate, exact wording for the multi-row case. */
-export function scheduleConfirmationMessage(warnings) {
+/* Plain-language copy pass (2026-07-27, same day as the original advisory
+   feature) — replaces the earlier "This Task overlaps..." system wording
+   with member-facing language that says what's wrong, which existing Task
+   conflicts, the conflicting time, and what happens on Continue. No
+   mention of "member"/"date"/"advisory"/"interval"/"fingerprint"/
+   "validation"/"request"/"backend" anywhere in the built strings. */
+
+/* "13:15" (24-hour, backend's %H:%M convention — see
+   _dedupe_and_sort_conflict_details in member_schedules.py) -> "1:15 PM".
+   Pure, DOM-free. Deliberately local to this module rather than reusing
+   formatHourLabel() above, which only ever labels a whole hour (the Time
+   Grid's hour-axis ticks) and has no minutes component to format. Returns
+   '' for a missing/malformed value rather than throwing, so a defensive
+   caller never has to guard first. */
+export function formatTimeAmPm(hhmm) {
+  if (!hhmm) { return ''; }
+  var parts = hhmm.split(':');
+  var hour = parseInt(parts[0], 10);
+  var minute = parts[1] || '00';
+  if (isNaN(hour)) { return ''; }
+  var period = hour < 12 ? 'AM' : 'PM';
+  var hour12 = hour % 12;
+  if (hour12 === 0) { hour12 = 12; }
+  return hour12 + ':' + minute + ' ' + period;
+}
+
+var MAX_CONFLICTS_SHOWN = 5;
+
+/* Display-only dedup + sort, mirroring the backend's own
+   _dedupe_and_sort_conflict_details (member_schedules.py) — kept as an
+   independent frontend copy (not re-fetched from the network) since the
+   backend already sends conflicts pre-deduped/sorted; this second pass is
+   a defensive no-op against a well-formed backend response and the actual
+   contract this file's own unit tests exercise directly against raw
+   conflict arrays. Never mutates its input. */
+function dedupeAndSortConflicts(conflicts) {
+  var seen = {};
+  var deduped = [];
+  (conflicts || []).forEach(function (c) {
+    var key = (c.title || '') + '|' + (c.start_time || '') + '|' + (c.end_time || '');
+    if (seen[key]) { return; }
+    seen[key] = true;
+    deduped.push(c);
+  });
+  deduped.sort(function (a, b) {
+    var byStart = (a.start_time || '').localeCompare(b.start_time || '');
+    if (byStart !== 0) { return byStart; }
+    var byEnd = (a.end_time || '').localeCompare(b.end_time || '');
+    if (byEnd !== 0) { return byEnd; }
+    return (a.title || '').localeCompare(b.title || '');
+  });
+  return deduped;
+}
+
+/* One readable line for a single conflicting Task — STEP 5's exact
+   format ("<Task title> — <start time> to <end time>"), with the
+   documented fallback ("Another task — <start> to <end>") whenever a
+   title is unexpectedly missing/blank, so the dialog can never render
+   undefined/null or blank quote punctuation. */
+function conflictLine(c) {
+  var title = c && c.title ? c.title : null;
+  var label = title ? '“' + title + '”' : 'Another task';
+  return label + ' — ' + formatTimeAmPm(c && c.start_time) + ' to ' + formatTimeAmPm(c && c.end_time);
+}
+
+/* Already-deduped/sorted conflicts -> display lines, capped at
+   MAX_CONFLICTS_SHOWN with a trailing "And N more scheduled tasks." line
+   when the real count exceeds the cap (STEP 6). */
+function conflictListLines(dedupedConflicts) {
+  var shown = dedupedConflicts.slice(0, MAX_CONFLICTS_SHOWN);
+  var lines = shown.map(conflictLine);
+  var remaining = dedupedConflicts.length - shown.length;
+  if (remaining > 0) { lines.push('And ' + remaining + ' more scheduled tasks.'); }
+  return lines;
+}
+
+var LUNCH_SENTENCE = 'This task is during the lunch break, from 12:45 PM to 1:30 PM.';
+
+function editFooter() { return 'Do you still want to save these changes?'; }
+
+/* Builds the single-candidate (Single Task create / Task edit) dialog
+   content: { message, listItems, footer }. `message` is the lead-in
+   narrative paragraph (no embedded conflict details — those always live
+   in `listItems`, a real list even when there is exactly one conflict, so
+   the dialog can render it as a semantic list item); `footer` is the
+   closing question, context-dependent (STEP 9: Edit always closes with
+   "Do you still want to save these changes?", overriding whatever
+   Create's own closing question would have been). */
+function buildSingleDialogContent(warnings, context) {
   var list = warnings || [];
-  var hasRowIndex = list.some(function (w) { return w.row_index !== null && w.row_index !== undefined; });
+  var lunch = list.some(function (w) { return w.code === SCHEDULE_ADVISORY_LUNCH; });
+  var overlapWarning = list.filter(function (w) { return w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE; })[0];
+  var deduped = overlapWarning ? dedupeAndSortConflicts(overlapWarning.conflicts) : [];
+  var isEdit = context === 'edit';
 
-  if (hasRowIndex) {
-    var byRow = {};
-    list.forEach(function (w) {
-      if (!byRow[w.row_index]) { byRow[w.row_index] = { lunch: false, differentTitle: false }; }
-      if (w.code === SCHEDULE_ADVISORY_LUNCH) { byRow[w.row_index].lunch = true; }
-      if (w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE) { byRow[w.row_index].differentTitle = true; }
-    });
-    var rowNumbers = Object.keys(byRow).map(Number).sort(function (a, b) { return a - b; });
-    var lines = rowNumbers.map(function (rowNumber) {
-      var flags = byRow[rowNumber];
-      if (flags.lunch && flags.differentTitle) {
-        return 'Task ' + rowNumber + ' overlaps the lunch break and another Task.';
-      }
-      if (flags.lunch) { return 'Task ' + rowNumber + ' overlaps the lunch break.'; }
-      return 'Task ' + rowNumber + ' overlaps another Task.';
-    });
-    return lines.join(' ');
+  if (lunch && deduped.length === 1) {
+    return {
+      message: LUNCH_SENTENCE.slice(0, -1) + ', and it also overlaps:',
+      listItems: [conflictLine(deduped[0])],
+      footer: isEdit ? editFooter() : 'Do you still want to add it?'
+    };
   }
+  if (lunch && deduped.length > 1) {
+    return {
+      message: 'This task is during the lunch break, from 12:45 PM to 1:30 PM, and it also overlaps '
+        + deduped.length + ' other scheduled tasks.\n\nPlease review the conflicting task times before continuing.',
+      listItems: conflictListLines(deduped),
+      footer: isEdit ? editFooter() : null
+    };
+  }
+  if (lunch) {
+    return { message: LUNCH_SENTENCE, listItems: [], footer: isEdit ? editFooter() : 'Do you still want to add it?' };
+  }
+  if (deduped.length === 1) {
+    return {
+      message: 'Another task is already scheduled during this time:',
+      listItems: [conflictLine(deduped[0])],
+      footer: isEdit ? editFooter() : 'Do you still want to add this task?'
+    };
+  }
+  if (deduped.length > 1) {
+    return {
+      message: 'This time overlaps ' + deduped.length + ' other scheduled tasks.'
+        + '\n\nPlease review the conflicting task times before continuing.',
+      listItems: conflictListLines(deduped),
+      footer: isEdit ? editFooter() : null
+    };
+  }
+  // Defensive fallback only — every real response carries at least one
+  // warning by the time this dialog is shown at all.
+  return {
+    message: 'This task needs confirmation before it can be saved.',
+    listItems: [],
+    footer: isEdit ? editFooter() : null
+  };
+}
 
-  var hasLunch = list.some(function (w) { return w.code === SCHEDULE_ADVISORY_LUNCH; });
-  var hasDifferentTitle = list.some(function (w) { return w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE; });
-  if (hasLunch && hasDifferentTitle) {
-    return 'This Task overlaps the lunch break and another Task scheduled for the same member and date.';
+/* One Bulk Tasks row's block of lines (STEP 8) — friendly 1-indexed
+   "Task N" numbering (never the zero-based array index), covering all
+   four combinations (lunch only / overlap only / both / — a warned row
+   always has at least one of the two, so "neither" never occurs here). */
+function buildBulkRowLines(rowNumber, hasLunch, rawConflicts) {
+  var deduped = dedupeAndSortConflicts(rawConflicts);
+  if (hasLunch && deduped.length === 1) {
+    return ['Task ' + rowNumber + ' is during lunch and overlaps:', conflictLine(deduped[0])];
+  }
+  if (hasLunch && deduped.length > 1) {
+    return ['Task ' + rowNumber + ' is during lunch and overlaps ' + deduped.length + ' other scheduled tasks:']
+      .concat(conflictListLines(deduped));
   }
   if (hasLunch) {
-    return 'This Task overlaps the lunch break from 12:45 PM to 1:30 PM.';
+    return ['Task ' + rowNumber + ' is during the lunch break.'];
   }
-  if (hasDifferentTitle) {
-    return 'This Task overlaps another Task scheduled for the same member and date.';
+  if (deduped.length === 1) {
+    return ['Task ' + rowNumber + ' overlaps:', conflictLine(deduped[0])];
   }
-  return 'This Task needs confirmation before it can be saved.';
+  if (deduped.length > 1) {
+    return ['Task ' + rowNumber + ' overlaps ' + deduped.length + ' other scheduled tasks:']
+      .concat(conflictListLines(deduped));
+  }
+  return [];
+}
+
+/* Builds the Bulk Tasks dialog content — one combined message covering
+   every warned row (never one popup per row, never sequential popups),
+   friendly-numbered, ending with the one Bulk-specific closing question
+   (STEP 8). Bulk's per-row structure doesn't reduce to a single flat
+   list the way the single-candidate case does (multiple rows, each with
+   its own optional conflict sub-list), so — unlike buildSingleDialogContent
+   — every row's lines (including its own conflict lines) are folded into
+   one readable `message` block; `listItems` stays empty for Bulk. */
+function buildBulkDialogContent(warnings) {
+  var byRow = {};
+  (warnings || []).forEach(function (w) {
+    if (w.row_index === null || w.row_index === undefined) { return; }
+    if (!byRow[w.row_index]) { byRow[w.row_index] = { lunch: false, conflicts: [] }; }
+    if (w.code === SCHEDULE_ADVISORY_LUNCH) { byRow[w.row_index].lunch = true; }
+    if (w.code === SCHEDULE_ADVISORY_DIFFERENT_TITLE) { byRow[w.row_index].conflicts = w.conflicts || []; }
+  });
+  var rowNumbers = Object.keys(byRow).map(Number).sort(function (a, b) { return a - b; });
+  var blocks = rowNumbers.map(function (rowNumber) {
+    var row = byRow[rowNumber];
+    return buildBulkRowLines(rowNumber, row.lunch, row.conflicts).join('\n');
+  });
+  return {
+    message: blocks.join('\n\n'),
+    listItems: [],
+    footer: 'Do you still want to add all these tasks?'
+  };
+}
+
+/* Builds the "Check this task time" dialog content from the backend's
+   warnings array. `context` is 'create' (default) | 'edit' | 'bulk' —
+   selects the closing question (STEP 9) and the Bulk-specific per-row
+   structure (STEP 8). Pure, DOM-free — returns
+   { message, listItems, footer } for web-view/js/ui/dialog.js to render
+   (message + footer as plain-text paragraphs, listItems as a real <ul>). */
+export function buildScheduleConfirmationDialogContent(warnings, context) {
+  if (context === 'bulk') { return buildBulkDialogContent(warnings); }
+  return buildSingleDialogContent(warnings, context || 'create');
 }
 

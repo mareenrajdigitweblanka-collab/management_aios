@@ -3,7 +3,7 @@ name: lunch-and-different-task-overlap-confirmation-handover
 type: handover
 scope: management_aios calendar — lunch-break and different-title Task-overlap ADVISORY confirmation (Single Task create, Bulk Tasks, Task Edit)
 created: 2026-07-27
-status: PASS (release pass, 2026-07-27) — implemented, tested (429/429 backend, 36/36 frontend), committed (9a1976d), pushed to origin/main, confirmed live on both Vercel deployments, and live-validated against production (12 disposable writes, all cleaned up, zero residue) — see §13. Original implementation-only AMBER history (§1-§12) preserved below unchanged.
+status: PASS (release pass, 2026-07-27) — implemented, tested (429/429 backend, 36/36 frontend), committed (9a1976d), pushed to origin/main, confirmed live on both Vercel deployments, and live-validated against production (12 disposable writes, all cleaned up, zero residue) — see §13. UPDATED (same day, plain-language copy pass) — replaced the popup wording with plain language and added a safe conflicting-Task title/time display; implemented and fully unit-tested (435/435 backend, 46/46 frontend), NOT yet committed/pushed — see §14. Original implementation-only AMBER history (§1-§12) preserved below unchanged.
 owner: builder, per this task's implementation instructions
 reviewer: pending owner review — see validation note §26
 ---
@@ -264,3 +264,85 @@ and reads behaved exactly as required, verified clean cleanup) are all
 complete. The only remaining open item is an owner-run accessibility/
 mobile/200%-zoom click-through of the "Confirm schedule" popup (§13.10) —
 no further backend or write validation is required.
+
+## 14. Plain-language confirmation copy pass (2026-07-27, same day)
+
+### 14.1 Requirement summary
+
+Replaced the popup's technical wording ("This Task overlaps another Task
+scheduled for the same member and date.") with plain, member-facing
+language that states what's wrong, which existing Task conflicts, the
+conflicting time, and what happens on Continue — plus action-specific
+button labels ("Add task anyway" / "Save changes anyway" / "Add all tasks
+anyway", all paired with "Go back") replacing the generic "Continue
+anyway"/"Cancel". Full detail:
+`validation/lunch-and-different-task-overlap-confirmation-check-2026-07-27.md`
+§30.
+
+### 14.2 Files changed (this pass only)
+
+| File | Change |
+| --- | --- |
+| `backend/routers/member_schedules.py` | `build_schedule_confirmation()` now additionally attaches a `conflicts: [{title, start_time, end_time}]` array to the `different_task_time_overlap` warning entry — built from data already in scope (`existing_occurrences`), no second query. `detect_schedule_advisories()`, `_advisory_candidate_state()`, and `schedule_confirmation_fingerprint()` are all **untouched**. |
+| `backend/tests/test_schedule_advisory_confirmation.py` | Added `ConflictDisplayContextTests` (6 tests) — safe title/time context, internal-ID exclusion, fingerprint-unaffected proof, stale-confirmation-unchanged proof, multiple-conflict representation, old-client-safety proof. |
+| `web-view/js/calendar/core.js` | Replaced `scheduleConfirmationMessage()` with `buildScheduleConfirmationDialogContent(warnings, context)` — returns `{message, listItems, footer}`; added `formatTimeAmPm()`, dedup/sort/cap helpers, and the Single/Edit/Bulk wording builders. |
+| `web-view/js/calendar/schedule-confirmation-message.test.mjs` | Rewritten — 16 tests against the new exact copy, dedup, sort, five-item cap, missing-title fallback, Edit-context override, and Bulk per-row wording. |
+| `web-view/js/calendar/instance.js` | `showScheduleConfirmation()` now takes `(warnings, trigger, onConfirm, context, confirmLabel)` — title is always "Check this task time", cancel label is always "Go back"; the three call sites (Single create, Edit, Bulk) each pass their own context and primary-button label. |
+| `web-view/js/ui/dialog.js` | Additive: a `.ui-dialog-body` wrapper, a new `<ul>` (`listItems` option) and a new closing-question `<p>` (`footer` option) — both hidden/empty and fully backward compatible for every pre-existing caller (delete confirmation, Bulk's own pre-existing duplicate-warning popup, neither of which supplies these options). |
+| `web-view/css/ui.css` | Additive rules for `.ui-dialog`/`.ui-dialog-body`/`.ui-dialog-list`/`.ui-dialog-footer` — flex-column scroll containment (mirrors the pre-existing `.msc-view-modal-inner` pattern) so a long conflict list scrolls while the title and action buttons stay visible; `white-space: pre-line` on the message so its `\n`-separated paragraphs render as real line breaks. |
+
+No file under `member-aios/mayurika-hr/staff-data/` was touched. No
+`database/`, migration, or dependency file was touched.
+
+### 14.3 Backend contract (additive)
+
+```json
+{
+  "code": "different_task_time_overlap",
+  "row_index": null,
+  "conflicts": [
+    { "title": "Staff Attendance", "start_time": "12:30", "end_time": "13:15" }
+  ]
+}
+```
+
+`start_time`/`end_time` are `HH:MM` 24-hour strings (matching this
+file's existing `_normalize_time_for_duplicate` convention) — the
+frontend's `formatTimeAmPm()` converts to the 12-hour display format.
+No internal ID, member key, or source-scope field is ever included. The
+`lunch_break_overlap` entry never carries a `conflicts` key (nothing to
+list). The confirmation fingerprint contract, stale-confirmation
+rejection, and hard-block precedence are all **completely unchanged** —
+this pass only enriches what the client is told about an already-issued
+advisory; it changes nothing about when one is issued or when a write is
+allowed.
+
+### 14.4 Test results
+
+Backend: **435/435 passing** (429 + 6 new). Frontend: **46/46 passing**
+(30 + 16 new/rewritten). `node --check` clean on all 4 changed JS files.
+Every regression suite named in the task brief (same-task, Bulk,
+Task/Leave, Leave, classification, Outcomes, Schedule Summary, XLSX
+export) re-run in full and unchanged.
+
+### 14.5 Known limits (this pass)
+
+- No live browser/screen-reader/mobile/zoom verification — no browser
+  tool available this session. Layout and ARIA changes are additive to
+  the pre-existing, previously-live `confirmDestructive()` component and
+  mirror an already-established scroll-containment pattern
+  (`.msc-view-modal-inner`), but were not independently rendered.
+- Bulk's per-row conflict details render as inline text (not a `<ul>`)
+  — a deliberate scoping decision documented in the validation note
+  §30.12, since Bulk's multi-row structure doesn't reduce to one flat
+  list the way the single-candidate case does.
+- **Not committed, not pushed, not deployed** — per this task's explicit
+  instruction not to stage, commit, push, deploy, or migrate.
+
+### 14.6 Next action
+
+Repository owner reviews this diff and, if approved, requests an
+explicit commit — followed by an owner-run live click-through of the
+"Check this task time" popup (all four wording cases, all three button
+contexts) to close the remaining accessibility/mobile/zoom AMBER items
+from both this pass and the original feature.

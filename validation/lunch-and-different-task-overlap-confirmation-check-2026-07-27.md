@@ -3,7 +3,7 @@ name: lunch-and-different-task-overlap-confirmation-check
 type: validation
 scope: management_aios calendar — lunch-break and different-title Task-overlap ADVISORY confirmation (Single Task create, Bulk Tasks, Task Edit)
 created: 2026-07-27
-status: PASS (release pass, 2026-07-27) — implemented, tested (429/429 backend, 36/36 frontend), committed (9a1976d), pushed to origin/main, confirmed live on both Vercel deployments, and live-validated against production with 12 disposable writes (all cleaned up, zero residue) — see §29. Original implementation-only AMBER history (§1-§28) preserved below unchanged.
+status: PASS (release pass, 2026-07-27) — implemented, tested (429/429 backend, 36/36 frontend), committed (9a1976d), pushed to origin/main, confirmed live on both Vercel deployments, and live-validated against production with 12 disposable writes (all cleaned up, zero residue) — see §29. UPDATED (same day, plain-language copy pass) — the popup wording was replaced with member-facing plain language and a safe conflicting-Task title/time display; not yet committed/pushed — see §30. Original implementation-only AMBER history (§1-§28) preserved below unchanged.
 reviewer: pending owner review (Varmen/relevant Management Team domain owner per §18 Reviewer Routing Rule — this is a scheduling-mechanics change, not an HR/recruitment/KPI content change, so routing is to whoever owns Calendar/Task feature review)
 ---
 
@@ -667,3 +667,233 @@ the "Confirm schedule" popup once on a mobile viewport (~390px) and once
 at 200% zoom to close out §29.15 — no further backend or write validation
 is required; everything reachable via direct API testing has been
 confirmed live.
+
+## 30. Plain-language confirmation copy pass (2026-07-27, same day)
+
+### 30.1 Screenshot-derived usability problem
+
+A Management AIOS member reported the popup wording as confusing —
+non-technical staff could not tell what was wrong, which existing Task
+was involved, what time it occupied, or what would happen if they
+proceeded. The old wording never named the conflicting Task or its time
+at all, and used system-facing phrasing ("Task", "advisory", implicit
+"member"/"date" framing) rather than plain language.
+
+### 30.2 Old technical wording (replaced)
+
+- Lunch only: *"This Task overlaps the lunch break from 12:45 PM to 1:30 PM."*
+- Different-title only: *"This Task overlaps another Task scheduled for the same member and date."*
+- Combined: *"This Task overlaps the lunch break and another Task scheduled for the same member and date."*
+- Title: "Confirm schedule". Buttons: "Cancel" / "Continue anyway" (identical for Single create, Task edit, and Bulk Tasks — no context-specific wording at all).
+
+None of the old wording named the conflicting Task's title or time —
+the backend never sent that information to the frontend in the first
+place (§30.5).
+
+### 30.3 Final plain-language wording (implemented)
+
+Title: **"Check this task time"**. Exact copy, verified byte-for-byte by
+`schedule-confirmation-message.test.mjs` (16 tests):
+
+- **Lunch only:** *"This task is during the lunch break, from 12:45 PM to 1:30 PM."* — closing question (create): *"Do you still want to add it?"*
+- **One different-title conflict:** *"Another task is already scheduled during this time:"* + a semantic list item *"“`existing Task title`” — `start time` to `end time`"* — closing question (create): *"Do you still want to add this task?"*
+- **Combined, one conflict:** *"This task is during the lunch break, from 12:45 PM to 1:30 PM, and it also overlaps:"* + the same conflict list item — closing question (create): *"Do you still want to add it?"*
+- **Multiple conflicts:** *"This time overlaps `count` other scheduled tasks."* + *"Please review the conflicting task times before continuing."* + up to 5 list items, each *"`Task title` — `start` to `end`"*, plus *"And `N` more scheduled tasks."* when more than 5 exist.
+- **Missing-title fallback:** *"Another task — `start time` to `end time`"* (no quotes, never `undefined`/`null`/blank punctuation).
+- **Times** are formatted 12-hour (`formatTimeAmPm` in core.js), e.g. `12:30` → `12:30 PM`, `13:15` → `1:15 PM`.
+- No mention anywhere of "member", "date", "advisory", "interval", "fingerprint", "validation", "request", or "backend" — confirmed by direct string inspection of every built message/list/footer value across all 16 tests.
+
+### 30.4 Button-label changes
+
+| Context | Secondary (was "Cancel") | Primary (was "Continue anyway") |
+| --- | --- | --- |
+| Single Task create | Go back | Add task anyway |
+| Task edit | Go back | Save changes anyway |
+| Bulk Tasks | Go back | Add all tasks anyway |
+
+The Close (X) control is untouched — it already resolved exactly like
+Cancel/Go back in the pre-existing `confirmDestructive()` component
+(`settle(false)`, zero write) before this task, and still does.
+
+### 30.5 Conflict-detail display (backend + frontend)
+
+**Backend** (`backend/routers/member_schedules.py:build_schedule_confirmation`):
+the `different_task_time_overlap` warning entry now additionally carries
+a `conflicts` array — `[{"title", "start_time", "end_time"}]` — built by
+cross-referencing the detector's existing `conflict_keys` back against
+`existing_occurrences` (already in scope; **no second DB query**), deduped
+and sorted (`_dedupe_and_sort_conflict_details`, start time then end time
+then title) before being attached. This is purely additive:
+
+- `detect_schedule_advisories()` itself was **not touched** — same
+  signature, same return shape, all 15+ existing direct callers in the
+  test suite untouched.
+- `_advisory_candidate_state()`/`schedule_confirmation_fingerprint()`
+  were **not touched** — the fingerprint still hashes only
+  `conflict_keys` (opaque internal keys), never the new title/start/end
+  display strings. Proven directly by `test_24_fingerprint_unaffected_by_
+  display_context`: two occurrences producing the identical
+  `conflict_keys` but different display titles fingerprint identically;
+  a genuinely different key changes it. Confirmed byte-for-byte stale-
+  fingerprint behavior unchanged by `test_25_stale_confirmation_behavior_
+  unchanged` (a live-style end-to-end run through the real endpoint).
+- No internal database ID, member key, `source_scope`,
+  `is_official_truth`, or created-by identifier is ever included —
+  proven by `test_23_internal_ids_and_unsafe_fields_excluded`, which
+  serializes the full response body and asserts the internal occurrence
+  key string never appears in it.
+- An old client that only reads `{code, row_index}` (ignoring the new
+  `conflicts` key) sees every field it already relied on, unchanged in
+  shape — proven by `test_27_old_client_without_display_context_handling_
+  remains_safe`.
+- No database column, migration, or schema change of any kind — the
+  `conflicts` array is computed in memory per-request from data the
+  backend already had in scope.
+
+**Frontend** (`web-view/js/calendar/core.js`): the conflict list is
+rendered as real `<li>` elements (`web-view/js/ui/dialog.js`, additive
+`listItems`/`footer` options — every pre-existing caller, e.g. delete
+confirmation and Bulk's own pre-existing duplicate-warning popup, is
+completely unaffected since neither ever supplies these two new options).
+The frontend never infers conflicts from stale local Calendar data — it
+only ever renders exactly what the backend's `conflicts` array (freshly
+computed on every request/retry) supplies.
+
+### 30.6 Single/Bulk/Edit results
+
+- **Single create:** title/times/list/footer render per §30.3; primary
+  button "Add task anyway"; confirmed by unit tests + code-reading of
+  `performTaskCreate`'s `showScheduleConfirmation(..., 'create', 'Add
+  task anyway')` call site.
+- **Bulk:** friendly 1-indexed "Task N" numbering (never 0-based —
+  `test_bulk_never_shows_a_zero-based_row_index`); every warned row's
+  block folded into **one** combined message (never one popup per row,
+  never sequential popups — unchanged from the pre-existing
+  architecture, which already never opened more than one dialog per
+  submission); ends with *"Do you still want to add all these tasks?"*;
+  primary button "Add all tasks anyway".
+- **Edit:** closing question is **always** *"Do you still want to save
+  these changes?"*, overriding whatever Create's own closing question
+  would have been, for every warning shape including the multiple-
+  conflict case — proven by the dedicated `edit context` test (4
+  sub-assertions: lunch-only, one-overlap, multiple, combined); primary
+  button "Save changes anyway". Cancel/Go back leaves the stored Task
+  unchanged and preserves the edited form values — unaffected by this
+  task, since Cancel is still a zero-request no-op (unchanged control
+  flow from the original advisory feature).
+
+### 30.7 Accessibility result
+
+Code-level only (no browser tool available this session, same limitation
+as both prior passes on this feature — see §29.15). `web-view/js/ui/
+dialog.js` was extended, not replaced: `role="dialog"`, `aria-modal`,
+`aria-labelledby`, the focus trap, Escape-to-Cancel, and focus restore
+are all the pre-existing, unmodified provisions. New this pass:
+`aria-describedby` now lists three ids (`ui-dialog-message ui-dialog-list
+ui-dialog-footer`) so the conflict list and closing question are announced
+in reading order even though hidden/empty for every pre-existing caller;
+conflicting Tasks render as real `<li>` elements inside a `<ul>` (a
+genuine semantic list, not styled `<div>`s); the list/footer are fully
+rebuilt on every `open()` call so no stale content can ever be announced,
+and since this is a single-Promise, open-once-per-call dialog with no
+re-render loop, "no repeated announcement after a harmless re-render"
+holds structurally. Not independently confirmed with an actual screen
+reader or rendered click-through.
+
+### 30.8 Mobile result
+
+Code-level only. `.msc-modal`'s existing `max-width:420px; width:100%`
+(calendar.css, unchanged) already fits a 390px viewport with the overlay's
+20px padding. New CSS (`web-view/css/ui.css`): `.ui-dialog-list li` and
+`.ui-dialog-message` both get `overflow-wrap: break-word` (long Task
+titles wrap rather than clip or force horizontal scroll); the list uses
+`display:flex; flex-direction:column; gap:6px`, a layout that degrades
+identically at any viewport width. Not independently confirmed in an
+actual rendered mobile viewport.
+
+### 30.9 200% zoom result
+
+Code-level only. `.ui-dialog` is now `display:flex; flex-direction:column;
+max-height:calc(100vh - 40px)`, with `.ui-dialog-body` (message + list +
+footer) as the sole `flex:1 1 auto; overflow-y:auto; min-height:0` scroll
+region and `.ui-dialog-head`/`.ui-dialog-actions` both `flex-shrink:0` —
+the same scroll-containment shape as the pre-existing
+`.msc-view-modal-inner` pattern (calendar.css) already used and
+presumably already verified for the Task/Leave detail popup. This means
+Go back and the primary action always stay visible even when the
+conflict list would otherwise overflow a zoomed/short viewport, and no
+text is reduced below its normal size to compensate (no new `font-size`
+override was introduced anywhere in this pass). Not independently
+confirmed at an actual 200% browser zoom level.
+
+### 30.10 Regression results
+
+Full backend suite: **435/435 passing** (429 pre-existing + 6 new
+`ConflictDisplayContextTests`). Full frontend suite: **46/46 passing**
+(30 pre-existing + 16 new in the rewritten
+`schedule-confirmation-message.test.mjs`). `node --check` clean on all 4
+changed JavaScript files
+(`core.js`, `instance.js`, `web-view/js/ui/dialog.js`,
+`schedule-confirmation-message.test.mjs`). Specifically confirmed
+unchanged: lunch boundaries (`LunchDetectorTests`, all passing
+unmodified), different-title overlap detection
+(`DifferentTitleDetectorTests`, all passing unmodified, plus
+`detect_schedule_advisories` itself has zero diff lines), same-title hard
+blocks (`test_same_task_multiple_time_period_rule.py`, 48/48, zero diff
+in `classify_same_task_conflict`/`_classify_time_pair`), Leave hard
+blocks (`test_task_leave_overlap.py` 15/15, `test_member_leave.py` 86/86,
+`leave_logic.py` has zero diff), Bulk atomicity
+(`test_bulk_task_creation.py` 36/36), classification
+(`test_schedule_classification.py` 48/48), Outcomes
+(`test_task_outcome.py` + `test_task_outcome_endpoint.py`, 42/42),
+Schedule Summary (`test_schedule_duration_reports.py` 49/49), XLSX export
+(`test_weekly_schedule_export_endpoint.py` +
+`test_weekly_schedule_xlsx_export.py`, 33/33).
+
+### 30.11 Database impact
+
+None. `git diff -- database/ database/migrations/` both empty. The
+`conflicts` display array is computed in memory per-request; no schema,
+migration, or dependency file was touched
+(`backend/requirements.txt`/`pyproject.toml`/`package.json`/
+`package-lock.json` diffs all empty).
+
+### 30.12 Known limitations
+
+- No live browser click-through, screen reader, mobile-viewport, or
+  200%-zoom verification this session (no browser automation tool
+  available) — same limitation as both prior passes on this feature.
+  Everything reachable via pure-function unit tests and backend
+  endpoint tests has been verified exactly.
+- Not committed, not pushed, not deployed as part of this pass — per
+  this task's explicit instruction not to stage, commit, push, deploy,
+  or migrate.
+- Bulk's per-row conflict details are rendered as inline text lines
+  within the message (never a semantic `<ul>`), unlike the single-
+  candidate case — a deliberate scoping decision: Bulk's structure
+  (multiple rows, each with its own optional conflict sub-list) doesn't
+  reduce to one flat list the way a single candidate's conflicts do, and
+  forcing it into one would either lose the "Task N" grouping or require
+  nested lists. This is documented as "where possible" semantic-list
+  usage per the approved requirement, not a gap against it.
+
+### 30.13 PASS / AMBER / FAIL
+
+**AMBER.** All required copy, button-label, conflict-detail-display,
+dedup/sort/cap, and backend-contract changes are implemented and fully
+unit-tested (435/435 backend, 46/46 frontend, `node --check` clean,
+database/migration/dependency diffs empty, protected path untouched).
+AMBER rather than PASS only because (a) no live interactive browser/
+screen-reader/mobile/zoom validation was performed (no browser tool
+available this session) and (b) nothing from this pass has been
+committed, pushed, or deployed yet.
+
+### 30.14 One next step
+
+Repository owner reviews this diff
+(`git diff -- backend/ web-view/ validation/ handover/`) and, if
+approved, requests an explicit commit — followed by an owner-run live
+click-through of the "Check this task time" popup (lunch-only,
+one-overlap, combined, and one multiple-conflict case; Single create,
+Task edit, and Bulk) to close out the remaining accessibility/mobile/
+zoom AMBER items from both this pass and the original feature (§29.15).

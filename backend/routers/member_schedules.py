@@ -716,6 +716,29 @@ def _advisory_candidate_state(
     }
 
 
+def _dedupe_and_sort_conflict_details(conflict_details: List[dict]) -> List[dict]:
+    """Display-only dedup + sort for a candidate's conflicting-Task summary
+    (2026-07-27 plain-language confirmation copy task) — collapses two
+    entries that display identically (same title/start/end, e.g. two
+    distinct DB rows that happen to coincide) down to one, then orders the
+    remainder by start time, then end time, then title, so the popup and
+    every caller (single create/edit, each Bulk row) present conflicts in
+    one deterministic, readable order. Operates purely on the small
+    display dicts built by build_schedule_confirmation below — never
+    touches conflict_keys/_advisory_candidate_state, so the confirmation
+    fingerprint is completely unaffected by this ordering/dedup."""
+    seen = set()
+    deduped: List[dict] = []
+    for item in conflict_details:
+        key = (item["title"], item["start_time"], item["end_time"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+    deduped.sort(key=lambda item: (item["start_time"], item["end_time"], item["title"]))
+    return deduped
+
+
 def build_schedule_confirmation(
     candidate_date: date_type,
     candidate_title: Optional[str],
@@ -732,12 +755,48 @@ def build_schedule_confirmation(
     shape, in _ADVISORY_CODE_ORDER) — row_index is always None for single
     create/edit, the row's own 1-indexed position for Bulk; candidate_state
     is the JSON-serializable dict schedule_confirmation_fingerprint hashes,
-    never returned to the client directly."""
+    never returned to the client directly.
+
+    2026-07-27 plain-language confirmation copy task: the
+    ADVISORY_DIFFERENT_TASK_TIME_OVERLAP warning entry additionally carries
+    a `conflicts` array — safe, display-only {"title","start_time",
+    "end_time"} dicts for every conflicting occurrence, deduped/sorted for
+    readability — built by cross-referencing conflict_keys (already
+    computed by detect_schedule_advisories) back against the SAME
+    existing_occurrences list already in scope here, so no second DB query
+    is introduced. This is purely additive: conflict_keys itself, and
+    therefore _advisory_candidate_state/schedule_confirmation_fingerprint,
+    are completely unchanged by this — the fingerprint remains the sole
+    write-authorizing contract; `conflicts` exists only so the frontend can
+    show the user which existing Task and time is involved, never as a
+    second source of truth an old client's absence of this field could
+    ever break (any client that does not read `conflicts` behaves exactly
+    as it did before this field existed)."""
     warning_codes, conflict_keys = detect_schedule_advisories(
         candidate_date, candidate_title, candidate_start, candidate_end,
         existing_occurrences, exclude_key=exclude_key,
     )
-    warnings = [{"code": code, "row_index": row_index} for code in warning_codes]
+
+    conflict_details: List[dict] = []
+    if conflict_keys:
+        conflict_key_set = set(conflict_keys)
+        conflict_details = _dedupe_and_sort_conflict_details([
+            {
+                "title": occurrence.title,
+                "start_time": occurrence.start.strftime("%H:%M"),
+                "end_time": occurrence.end.strftime("%H:%M"),
+            }
+            for occurrence in existing_occurrences
+            if occurrence.key in conflict_key_set
+        ])
+
+    warnings = []
+    for code in warning_codes:
+        entry = {"code": code, "row_index": row_index}
+        if code == ADVISORY_DIFFERENT_TASK_TIME_OVERLAP:
+            entry["conflicts"] = conflict_details
+        warnings.append(entry)
+
     state = _advisory_candidate_state(
         row_index, candidate_date, candidate_title, candidate_start, candidate_end,
         warning_codes, conflict_keys,

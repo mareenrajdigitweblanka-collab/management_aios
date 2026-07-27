@@ -63,6 +63,7 @@ from backend.routers.member_schedules import (
     create_member_schedule_events_bulk,
     detect_schedule_advisories,
     schedule_confirmation_fingerprint,
+    schedule_confirmation_response_body,
     update_member_schedule_event,
 )
 from backend.schemas import (
@@ -953,6 +954,140 @@ class LeavePrecedenceTests(_EndpointFixture):
         still passes unmodified — see that file directly."""
         from backend.routers import leave_logic
         self.assertTrue(callable(leave_logic.find_overlapping_leave_records))
+
+
+# ── Plain-language confirmation copy task (2026-07-27, same day) —
+# additive `conflicts` display field on the different_task_time_overlap
+# warning entry. Tests 22-27 of that task's own required matrix. ─────────
+class ConflictDisplayContextTests(unittest.TestCase):
+    """Pure-function tests (no DB) for the safe conflict title/time context
+    build_schedule_confirmation() now attaches to a different_task_time_
+    overlap warning entry — see _dedupe_and_sort_conflict_details in
+    backend/routers/member_schedules.py."""
+
+    DATE = date(2099, 1, 5)
+
+    def test_22_safe_conflict_title_and_time_context_returned(self):
+        occ = _occ(key="abc", title="Staff Attendance", start=time(12, 30), end=time(13, 15))
+        warnings, _state = build_schedule_confirmation(
+            self.DATE, "Developer Meeting", time(13, 0), time(14, 0), [occ],
+        )
+        overlap_warning = next(w for w in warnings if w["code"] == ADVISORY_DIFFERENT_TASK_TIME_OVERLAP)
+        self.assertEqual(
+            overlap_warning["conflicts"],
+            [{"title": "Staff Attendance", "start_time": "12:30", "end_time": "13:15"}],
+        )
+
+    def test_23_internal_ids_and_unsafe_fields_excluded(self):
+        occ = _occ(key="abc-internal-uuid", title="Staff Attendance", start=time(12, 30), end=time(13, 15))
+        warnings, state = build_schedule_confirmation(
+            self.DATE, "Developer Meeting", time(13, 0), time(14, 0), [occ],
+        )
+        overlap_warning = next(w for w in warnings if w["code"] == ADVISORY_DIFFERENT_TASK_TIME_OVERLAP)
+        conflict_entry = overlap_warning["conflicts"][0]
+        self.assertEqual(set(conflict_entry.keys()), {"title", "start_time", "end_time"})
+        serialized_warnings = json.dumps(warnings)
+        self.assertNotIn("abc-internal-uuid", serialized_warnings)
+        # The full response body (warnings + fingerprint) also never leaks
+        # the internal key — only the fingerprint digest itself, which is
+        # an opaque SHA-256 hash the key merely contributed to computing.
+        body = schedule_confirmation_response_body(warnings, [state])
+        self.assertNotIn("abc-internal-uuid", json.dumps(body))
+        for unsafe_field in ("id", "member_key", "source_scope", "is_official_truth", "created_by"):
+            self.assertNotIn(unsafe_field, conflict_entry)
+
+    def test_24_fingerprint_unaffected_by_display_context(self):
+        """The fingerprint must be byte-for-byte identical to what it was
+        before this task's own change — proven by asserting it depends
+        only on conflict_keys (occurrence.key), never on the newly-added
+        title/start/end display strings. Two occurrences that produce the
+        SAME conflict_keys but different titles must fingerprint
+        identically; two that differ only in key must fingerprint
+        differently."""
+        occ_a = _occ(key="same-key", title="Staff Attendance", start=time(12, 30), end=time(13, 15))
+        occ_b = _occ(key="same-key", title="A Completely Different Title", start=time(12, 30), end=time(13, 15))
+        _warnings_a, state_a = build_schedule_confirmation(
+            self.DATE, "Developer Meeting", time(13, 0), time(14, 0), [occ_a],
+        )
+        _warnings_b, state_b = build_schedule_confirmation(
+            self.DATE, "Developer Meeting", time(13, 0), time(14, 0), [occ_b],
+        )
+        self.assertEqual(
+            schedule_confirmation_fingerprint([state_a]),
+            schedule_confirmation_fingerprint([state_b]),
+            "changing only the conflicting occurrence's display title must never change the fingerprint",
+        )
+        # A genuinely different conflict_keys set (different key) DOES
+        # change the fingerprint — proving it is not simply constant.
+        occ_c = _occ(key="different-key", title="Staff Attendance", start=time(12, 30), end=time(13, 15))
+        _warnings_c, state_c = build_schedule_confirmation(
+            self.DATE, "Developer Meeting", time(13, 0), time(14, 0), [occ_c],
+        )
+        self.assertNotEqual(
+            schedule_confirmation_fingerprint([state_a]),
+            schedule_confirmation_fingerprint([state_c]),
+        )
+
+    def test_25_stale_confirmation_behavior_unchanged(self):
+        """End-to-end proof (real endpoint, real DB) that the stale-
+        fingerprint rejection this feature always had still works
+        identically now that the response also carries display context."""
+        payload = MemberScheduleEventCreate(date=self.DATE, title="Retro", start=time(9, 0), end=time(10, 0))
+        db = _ScheduleTestDB()
+        session = db.make_session()
+        db.make_task(session, self.DATE, "Standup", start_time=time(9, 0), end_time=time(10, 0))
+        first = create_member_schedule_event("mayurika", payload, db=session)
+        self.assertIsInstance(first, JSONResponse)
+        body = json.loads(first.body)
+        stale_fingerprint = body["confirmation_fingerprint"]
+        # A new conflicting Task appears before the retry.
+        db.make_task(session, self.DATE, "Planning", start_time=time(9, 0), end_time=time(10, 0))
+        retry = create_member_schedule_event(
+            "mayurika",
+            payload.model_copy(update={"confirmation_fingerprint": stale_fingerprint}),
+            db=session,
+        )
+        self.assertIsInstance(retry, JSONResponse)
+        self.assertEqual(retry.status_code, 409)
+        retry_body = json.loads(retry.body)
+        self.assertEqual(retry_body["error"], "schedule_confirmation_required")
+        self.assertNotEqual(retry_body["confirmation_fingerprint"], stale_fingerprint)
+        # "Standup" (seeded) + "Planning" (added mid-test) — "Retro" (the
+        # stale-fingerprint retry) must NOT have been written.
+        self.assertEqual(db.row_count(session), 2)
+
+    def test_26_multiple_conflicts_represented_correctly(self):
+        occ_a = _occ(key="a", title="Team Standup", start=time(9, 0), end=time(9, 30))
+        occ_b = _occ(key="b", title="Client Call", start=time(9, 15), end=time(9, 45))
+        warnings, _state = build_schedule_confirmation(
+            self.DATE, "Planning Session", time(9, 0), time(10, 0), [occ_a, occ_b],
+        )
+        overlap_warning = next(w for w in warnings if w["code"] == ADVISORY_DIFFERENT_TASK_TIME_OVERLAP)
+        self.assertEqual(len(overlap_warning["conflicts"]), 2)
+        titles = {c["title"] for c in overlap_warning["conflicts"]}
+        self.assertEqual(titles, {"Team Standup", "Client Call"})
+
+    def test_27_old_client_without_display_context_handling_remains_safe(self):
+        """A client that only reads {code, row_index} (the pre-2026-07-27-
+        copy-pass contract) and ignores the new `conflicts` key must see
+        every field it already relied on, completely unchanged in shape —
+        proving the addition is purely additive, never a breaking change."""
+        occ = _occ(key="abc", title="Staff Attendance", start=time(12, 30), end=time(13, 15))
+        warnings, state = build_schedule_confirmation(
+            self.DATE, "Developer Meeting", time(13, 0), time(14, 0), [occ],
+        )
+        body = schedule_confirmation_response_body(warnings, [state])
+        self.assertEqual(set(body.keys()), {"error", "warnings", "confirmation_fingerprint"})
+        self.assertEqual(body["error"], "schedule_confirmation_required")
+        for entry in body["warnings"]:
+            self.assertIn("code", entry)
+            self.assertIn("row_index", entry)
+        # An "old" client that only ever destructures {code, row_index}
+        # from each entry gets exactly what it always got — the extra
+        # `conflicts` key on the different_task_time_overlap entry is
+        # simply an unread, harmless extra property in that scenario.
+        lunch_entry = next(w for w in body["warnings"] if w["code"] == ADVISORY_LUNCH_BREAK_OVERLAP)
+        self.assertEqual(set(lunch_entry.keys()), {"code", "row_index"})
 
 
 if __name__ == "__main__":

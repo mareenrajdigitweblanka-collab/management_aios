@@ -25,14 +25,37 @@ function ensureDialog() {
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-labelledby', 'ui-dialog-title');
-  overlay.setAttribute('aria-describedby', 'ui-dialog-message');
+  /* All three ids are always listed — aria-describedby happily skips a
+     hidden (display:none via the `hidden` attribute) referenced element
+     when computing the accessible description in every evergreen
+     browser, so .ui-dialog-list/.ui-dialog-footer contribute nothing
+     when empty (every pre-existing caller: delete confirmation, Bulk's
+     duplicate-warning popup) and contribute their text, in this listed
+     order, only when a caller populates them (the schedule-confirmation
+     popup's conflict list / closing question — see instance.js
+     showScheduleConfirmation). This keeps read order correct (list, then
+     closing question) even though .ui-dialog-footer sits after
+     .ui-dialog-list in the DOM for a reason unrelated to reading order
+     (see the .ui-dialog-body wrapper below). */
+  overlay.setAttribute('aria-describedby', 'ui-dialog-message ui-dialog-list ui-dialog-footer');
   overlay.innerHTML =
     '<div class="msc-modal ui-dialog">' +
     '<div class="msc-modal-form-head ui-dialog-head">' +
     '<h4 id="ui-dialog-title"></h4>' +
     '<button type="button" class="msc-modal-close ui-dialog-close" aria-label="Close">&times;</button>' +
     '</div>' +
+    /* .ui-dialog-body is the ONLY scrollable region (ui.css) — a long
+       conflict list scrolls inside it while the title and action buttons
+       (Go back / the primary action) always stay visible, matching the
+       established .msc-view-modal-inner pattern used by the Task/Leave
+       detail popup for its own long-content case (calendar.css). Every
+       pre-existing caller leaves .ui-dialog-list/.ui-dialog-footer empty
+       and hidden, so this wrapper is a no-op layout change for them. */
+    '<div class="ui-dialog-body">' +
     '<p id="ui-dialog-message" class="ui-dialog-message"></p>' +
+    '<ul id="ui-dialog-list" class="ui-dialog-list" hidden></ul>' +
+    '<p id="ui-dialog-footer" class="ui-dialog-footer" hidden></p>' +
+    '</div>' +
     '<div class="msc-form-actions ui-dialog-actions">' +
     '<button type="button" class="msc-btn msc-btn-ghost ui-dialog-cancel"></button>' +
     '<button type="button" class="msc-btn msc-btn-danger ui-dialog-confirm"></button>' +
@@ -43,6 +66,8 @@ function ensureDialog() {
   var modalEl = overlay.querySelector('.ui-dialog');
   var titleEl = overlay.querySelector('#ui-dialog-title');
   var messageEl = overlay.querySelector('#ui-dialog-message');
+  var listEl = overlay.querySelector('#ui-dialog-list');
+  var footerEl = overlay.querySelector('#ui-dialog-footer');
   var cancelBtn = overlay.querySelector('.ui-dialog-cancel');
   var confirmBtn = overlay.querySelector('.ui-dialog-confirm');
   var closeBtn = overlay.querySelector('.ui-dialog-close');
@@ -110,6 +135,27 @@ function ensureDialog() {
         onConfirmHandler = typeof options.onConfirm === 'function' ? options.onConfirm : null;
         titleEl.textContent = options.title || 'Are you sure?';
         messageEl.textContent = options.message || '';
+        /* Conflicting-Task list (2026-07-27 plain-language confirmation
+           copy task) — real <li> elements via textContent (never
+           innerHTML), so a Task title can never inject markup; always
+           rebuilt from scratch on every open() so a dialog reused for an
+           unrelated later call (e.g. delete confirmation, right after a
+           schedule-confirmation popup) never inherits stale list/footer
+           content — "Do not repeatedly announce the same warning after
+           harmless re-renders" only applies within one still-open dialog
+           instance, which this single open()-per-Promise design already
+           guarantees (there is no re-render loop that calls open() again
+           for the same still-visible dialog). */
+        listEl.textContent = '';
+        var listItems = options.listItems || [];
+        listItems.forEach(function (text) {
+          var li = document.createElement('li');
+          li.textContent = text;
+          listEl.appendChild(li);
+        });
+        listEl.hidden = listItems.length === 0;
+        footerEl.textContent = options.footer || '';
+        footerEl.hidden = !options.footer;
         cancelBtn.textContent = options.cancelLabel || 'Cancel';
         confirmBtn.textContent = options.confirmLabel || 'Confirm';
         /* Same-day Bulk Tasks duplicate-confirmation flow (2026-07-23) is
