@@ -1276,6 +1276,16 @@ function mountScheduleCalendarInstance(container) {
   var helpTriggerBtn = container.querySelector('.msc-cal-help-trigger');
   var helpPopupOverlay = container.querySelector('.msc-cal-help-popup');
   var helpPopupClose = container.querySelector('.msc-cal-help-close');
+  /* Scroll-position reset target (calendar-help-user-guide-popup live-
+     review follow-up, 2026-07-27) — same root cause as
+     resetCreatePopupScroll() below: nothing ever reset this popup's own
+     scrollTop, which was harmless while the old short help card never
+     needed to scroll. The new twelve-topic guide does scroll, so a
+     scrollTop left over from a previous open (e.g. the user had
+     scrolled down to a later section) combined with the sticky header
+     made older content appear to float above/through the title on
+     reopen — see openHelpPopup() below. */
+  var helpPopupCard = helpPopupOverlay ? helpPopupOverlay.querySelector('.msc-modal') : null;
   var settingsTriggerBtn = container.querySelector('.msc-cal-settings-trigger');
   var settingsPopupOverlay = container.querySelector('.msc-cal-settings-popup');
   var settingsPopupClose = container.querySelector('.msc-cal-settings-close');
@@ -1714,6 +1724,12 @@ function mountScheduleCalendarInstance(container) {
     closeSettingsPopup();
     closeViewDropdown();
     helpPopupOverlay.classList.add('show');
+    /* Reset to the top on every open (live-review follow-up, 2026-07-27)
+       — must run after adding 'show' above, since scrollTop is a no-op
+       on a display:none element; see helpPopupCard's own comment above
+       for why this was needed once the guide grew tall enough to
+       actually scroll. */
+    if (helpPopupCard) { helpPopupCard.scrollTop = 0; }
     /* True modal (full-screen backdrop) — locks the background page
        (popup-detail-close-and-scroll-containment task, 2026-07-23). */
     lockBodyScroll();
