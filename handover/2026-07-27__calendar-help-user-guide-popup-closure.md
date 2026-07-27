@@ -3,7 +3,8 @@ name: calendar-help-user-guide-popup-handover
 type: handover
 scope: web-view frontend only — Calendar help popup content/presentation redesign
 created: 2026-07-27
-status: AMBER — implemented, static/automated checks pass, no backend/API/database change; live-browser manual pass not performed (no browser tool in this session)
+updated: 2026-07-27 — committed (9bbd7af), pushed, live-review font-weight follow-up (b2b0722), deployment verified via read-only content checks (§13); still AMBER — live-browser/keyboard/screen-reader/network-tab pass not performed (§13.5)
+status: AMBER — released and deployment-verified; live-browser manual pass still not performed (no browser-automation tool in this session)
 owner: Mareenraj (build); relevant Management Team member per CLAUDE.md §18 for review/sign-off
 reviewer: pending
 ---
@@ -130,10 +131,85 @@ protected path untouched). AMBER only because the live-browser manual pass was n
 disclosed rather than fabricated, matching this repository's existing AMBER convention for the same reason
 (see `handover/2026-07-27__multiple-time-frames-task-entry-closure.md` §21.3).
 
-## 12. One next step
+## 12. One next step (superseded — see §13.6)
 
-A person with browser access should open the redesigned Help popup on a live member-schedule page at
+~~A person with browser access should open the redesigned Help popup on a live member-schedule page at
 1920×1080, 768px, 390px, and 200% zoom; confirm Close and the last section ("Need more help?") both stay
 reachable and keyboard/Escape/focus-return behave as expected; then update this handover and its matching
 validation file from AMBER to PASS. No commit, push, or deploy was performed in this session — the change
-remains in the working tree only, awaiting that review.
+remains in the working tree only, awaiting that review.~~ Preserved verbatim as the historical record of
+this handover's original AMBER finding (§1–§11 above are otherwise unchanged from the original session).
+Release and deployment happened in a follow-up session — see §13.
+
+## 13. Release, deployment, and follow-up fix (2026-07-27, follow-up session)
+
+### 13.1 Implementation commit and push
+
+- Commit `9bbd7af` — "Expand Calendar help guide" — the exact 4 approved files (`web-view/js/calendar/
+  instance.js`, `web-view/css/calendar.css`, this handover, and the matching validation file).
+- Pushed: `git push origin main` → `5694b0a..9bbd7af main -> main`, accepted, no force, no `git add .`/
+  `git add -A` used (each file staged individually by exact path).
+
+### 13.2 Live-review follow-up: title boldness
+
+The repository owner ran the app locally and, from real screenshots, confirmed the popup itself worked
+(title/subtitle visible, Quick start open by default, "Move around the Calendar" expanding correctly on
+click) but asked for the "Calendar help" title's boldness to be reduced to match the rest of the guide's
+text. Fix: `.msc-cal-help-head-text .msc-view-title { font-weight: 600; }` (`calendar.css`), scoped to this
+popup's own title wrapper so the Task/Leave detail and Settings popups — which reuse the bare
+`.msc-view-title` rule — are unaffected. `git diff --stat` for this fix: `calendar.css` only, +12/-0.
+`node --test web-view/js/calendar/*.test.mjs` → 87/87 pass, unchanged.
+
+- Commit `b2b0722` — "Reduce Calendar help title boldness" — `calendar.css` only.
+- Pushed: `git push origin main` → `9bbd7af..b2b0722 main -> main`, accepted, no force.
+- `git rev-parse --short HEAD` and `git log origin/main -1 --oneline` both read `b2b0722` — local and
+  remote match.
+
+### 13.3 Deployment status
+
+Both commits triggered a Vercel build. The first (`9bbd7af`) took noticeably longer than prior tasks in
+this repository's history to appear on the production frontend — read-only polling of the deployed
+`instance.js` was used to watch for it rather than any write or destructive action, and it resolved on its
+own without a manual redeploy.
+
+### 13.4 Deployed-commit content evidence
+
+Frontend `https://management-aios.vercel.app` loads `200 OK`; backend `https://management-aios-api.vercel.app/health`
+returns `200 OK` (unaffected — no backend files changed). The deployed `instance.js` (fetched directly,
+cache-busted) contains all 12 required section headings exactly once each, the "Calendar help" title and
+"How to use the Management AIOS Calendar" subtitle, the exact five Leave-type labels, all four outcome
+states, both XLSX tab names ("Weekly Schedule"/"Weekly Summary"), the 30-occurrence and "Add another time"
+wording, and the ten common-message strings — full detail and counts in
+`validation/calendar-help-user-guide-popup-check-2026-07-27.md` §16.4. The deployed `calendar.css` contains
+the §13.2 font-weight fix. Deployed-commit correlation: `b2b0722`'s commit timestamp (12:14:04 UTC) is 29
+seconds before the deployed `instance.js`'s own `Last-Modified` header (12:14:33 GMT) — a timestamp/content
+correlation, not a direct SHA comparison (Vercel does not expose one via HTTP headers), stated honestly.
+
+### 13.5 What was NOT done — explicit, non-fabricated disclosure
+
+This session's environment has no browser-automation tool, the same limitation as the original AMBER
+closure. An actual rendered-browser pass (1920×1080, 1366×768, 1024px, 768px, 390px, 200% zoom), actual
+keyboard-only navigation and focus-return, an actual accessibility-tree inspection, and an actual
+Network-tab observation while opening the popup were **not performed** and are not reported as observed.
+The "no backend request on open" claim remains a static-code-review finding (no `fetch`/`apiRequest` call
+added; `openHelpPopup()`/`closeHelpPopup()` byte-for-byte unchanged), not a live network-tab observation.
+The repository owner's own local screenshots (§13.2) are informal, real, and corroborating — but they are a
+spot-check at one window size by the owner, not the full systematic checklist this task specifies, so they
+do not move the status to PASS. Full detail: `validation/calendar-help-user-guide-popup-check-2026-07-27.md`
+§16.5.
+
+### 13.6 One next step
+
+A person with real browser access should run the still-outstanding checklist — 1920×1080 / 1366×768 /
+1024px / 768px / 390px / 200% zoom, keyboard-only navigation, accessibility-tree inspection, and a
+Network-tab observation while opening Help — then update this handover and the matching validation file
+from AMBER to PASS. Release, deployment, and content-accuracy verification are otherwise complete.
+
+## 14. PASS / AMBER / FAIL (current)
+
+**AMBER** — implemented, committed (`9bbd7af`, `b2b0722`), pushed to `origin/main`, and deployment-verified
+via read-only HTTP/content checks against the live production frontend and backend; the follow-up
+title-boldness fix requested during local review is included and deployed; 87/87 frontend tests pass; zero
+backend/API/database/dependency diff across both commits; protected path untouched. AMBER only, and
+specifically because the live-browser/keyboard/screen-reader/network-tab checklist (§13.5) has still not
+been performed by an actual browser session.

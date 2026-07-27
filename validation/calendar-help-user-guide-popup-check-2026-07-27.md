@@ -3,7 +3,8 @@ name: calendar-help-user-guide-popup-check
 type: validation
 scope: web-view frontend only — Calendar help popup content and presentation
 created: 2026-07-27
-status: AMBER — implemented, static/automated checks pass; live-browser manual pass not performed (no browser tool in this session)
+updated: 2026-07-27 — committed (9bbd7af, b2b0722), pushed to origin/main, deployment verified via read-only HTTP/content checks (§16); still AMBER — live-browser/keyboard/screen-reader/network-tab pass not performed (§16.5)
+status: AMBER — released and deployment-verified; live-browser manual pass still not performed (no browser-automation tool in this session)
 owner: Mareenraj (build); relevant Management Team member per CLAUDE.md §18 for review/sign-off
 reviewer: pending
 ---
@@ -176,9 +177,126 @@ Rajiv/Paraparan pages all share this same `instance.js`).
 suite is green (87/87, zero regressions), and no backend/API/database/dependency surface was touched. AMBER
 only because the live-browser manual pass (§9) was not performed in this no-browser session.
 
-## 15. One next step
+## 15. One next step (superseded — see §17)
 
-A person with browser access (or a future browser-capable session) should open the Calendar help popup on
+~~A person with browser access (or a future browser-capable session) should open the Calendar help popup on
 each of the five member-schedule pages at 1920×1080, 768px, and 390px, and at 200% zoom, confirm the Close
 button and last section ("Need more help?") are always reachable, then update this file and the matching
-handover from AMBER to PASS.
+handover from AMBER to PASS.~~ Preserved verbatim as the historical record of this check's original AMBER
+finding (§1–§14 above are otherwise unchanged from the original session). Release, deployment, and a
+content-accuracy check against the live site were completed in a follow-up session — see §16.
+
+## 16. Release and deployment verification (2026-07-27, follow-up session)
+
+### 16.1 Implementation commit and push
+
+- Commit `9bbd7af` — "Expand Calendar help guide" — the 4 files from §1–§14 above (`instance.js`,
+  `calendar.css`, this file, and the matching handover).
+- Pushed: `git push origin main` → `5694b0a..9bbd7af main -> main`, accepted, no force.
+
+### 16.2 Live-review follow-up fix
+
+A live local run (`127.0.0.1:5500/web-view/index.html`, screenshots supplied directly by the repository
+owner) confirmed the popup renders correctly — title/subtitle visible, Quick start open by default, "Move
+around the Calendar" expanding on click with its full content visible — but the owner reported the popup
+title ("Calendar help") read visually heavier/bolder than the rest of the guide's text. Root cause: the
+shared `.msc-view-title` rule relies on the browser's default `<h4>` weight (bold/700); nothing in this
+popup's own CSS had set an explicit weight. Fix: `.msc-cal-help-head-text .msc-view-title { font-weight:
+600; }` (`calendar.css`) — scoped to this popup's own title wrapper only, so the Task/Leave detail and
+Settings popups, which reuse the bare `.msc-view-title` rule unchanged, keep their original weight.
+Verified: CSS brace balance still 434/434 after the addition; `git diff --stat` for this fix touched only
+`calendar.css` (+12 lines, no deletions); `node --test web-view/js/calendar/*.test.mjs` → 87/87 pass,
+unchanged.
+
+- Commit `b2b0722` — "Reduce Calendar help title boldness" — `calendar.css` only.
+- Pushed: `git push origin main` → `9bbd7af..b2b0722 main -> main`, accepted, no force.
+- `git rev-parse --short HEAD` (`b2b0722`) matches `git log origin/main -1 --oneline` (`b2b0722`).
+
+### 16.3 Deployment status
+
+Both pushes triggered a Vercel deployment, though the first one (`9bbd7af`) took noticeably longer to
+appear than earlier tasks in this repository's history (the Vercel dashboard still showed the prior
+commit as the latest deployment ~20+ minutes after the push, before it finally updated) — this was
+monitored by repeated read-only content checks against the live URL rather than any destructive or
+write action, and eventually resolved on its own; no manual redeploy or dashboard intervention was
+needed in the end.
+
+### 16.4 Deployed-commit content evidence (read-only HTTP checks actually run)
+
+Frontend `https://management-aios.vercel.app`: root loads `200 OK`. Backend
+`https://management-aios-api.vercel.app/health`: `200 OK` (unaffected, as expected — no backend files
+changed in either commit).
+
+`web-view/js/calendar/instance.js` fetched directly from the deployed frontend (cache-busted) contains,
+with the following occurrence counts:
+
+| String checked | Count | String checked | Count |
+|---|---|---|---|
+| "Calendar help" | 7 | "Download a weekly schedule" | 1 |
+| "How to use the Management AIOS Calendar" | 2 | "Understand colors and warnings" | 1 |
+| "Quick start" | 2 | "Common messages" | 1 |
+| "Move around the Calendar" | 1 | "Need more help?" | 1 |
+| "Create a Task" | 1 | "calendarHelpSection" | 14 |
+| "Create several Tasks with Bulk Tasks" | 1 | "Short Leave" / "Full-Day Leave" / "Multi-Day Leave" | 11 / 3 / 4 |
+| "Add Leave" | 1 | "Half-Day Leave — First/Second Half (…)" | 2 / 2 |
+| "Use My Tasks" | 1 | "Weekly Schedule" / "Weekly Summary" | 1 / 1 |
+| "Mark a Task Completed or Uncompleted" | 1 | "30 Task occurrences" / "Add another time" | 2 / 6 |
+
+All 12 required section headings are present exactly once each. "This is not the same as Uncompleted"
+is split across two adjacent JS string-literal lines in the raw source (this file's own established
+multi-line string-concatenation style: one literal ends `...This is not the ` and the next begins
+`same as Uncompleted...`) — confirmed present by checking each half separately ("This is not the": 1,
+"same as Uncompleted": 1); the browser joins them into one sentence at render time, so this is a grep
+artifact, not a content gap.
+
+`web-view/css/calendar.css` fetched from the deployed frontend contains `.msc-cal-help-head-text
+.msc-view-title` (the §16.2 font-weight fix) — 1 match.
+
+Deployed-commit correlation: `b2b0722` committed at `2026-07-27T17:44:04+05:30` (12:14:04 UTC); the deployed
+`instance.js`'s own `Last-Modified` response header read `Mon, 27 Jul 2026 12:14:33 GMT` — 29 seconds after
+the commit, consistent with this being the deployed build. As before, Vercel does not expose a commit SHA
+via HTTP headers, so this is a timestamp/content correlation, not a direct SHA comparison — stated honestly
+rather than implied as exact.
+
+### 16.5 What was verified vs. not performed in this follow-up session (honest disclosure)
+
+**Verified:** the implementation and font-weight-fix commits exist, are pushed, and match `origin/main`;
+both are live on the production frontend (§16.4); the backend remains healthy and untouched; the full
+87-test frontend suite still passes after the follow-up fix; every one of the 12 required section headings,
+the title/subtitle, and a further ~24 specific content strings (Leave types, outcome states, message copy,
+XLSX tab names, the 30-occurrence and "Add another time" wording) are present in the deployed source with
+the exact wording specified in the original task brief — this is a legitimate content-accuracy check, but
+it was performed by reading the deployed, unminified source text directly (this project ships plain JS/CSS
+files, not a bundled/minified build), not by inspecting a rendered DOM or accessibility tree in a live
+browser.
+
+**Not performed (still no browser-automation tool available in this or the follow-up session, disclosed
+honestly rather than fabricated):** an actual rendered-browser pass at 1920×1080, 1366×768, 1024px, 768px,
+390px, or 200% zoom; actual keyboard-only navigation (Tab to the Help button, Enter/Space to open,
+disclosure toggling, Escape, focus-return) driven and observed live; an actual accessibility-tree inspection
+(computed `role`, `aria-labelledby`/`aria-describedby` resolution, duplicate-ID check against the live DOM);
+an actual browser Network-tab observation while opening/interacting with the popup. The "no backend
+request on open" and "no database write" claims remain a **static-code-review** finding (§9 above: no
+`fetch`/`XMLHttpRequest`/`apiRequest` call was added anywhere in the diff, and `openHelpPopup()`/
+`closeHelpPopup()` are byte-for-byte unchanged), not a live network-tab observation — this distinction is
+called out explicitly so it is not mistaken for a stronger claim than it is.
+
+**Informal supporting evidence, not a substitute for the above:** the repository owner ran the app locally
+(`127.0.0.1:5500/web-view/index.html`, a separate environment from this session) and supplied two
+screenshots showing the popup open with the title/subtitle visible, Quick start expanded by default, and
+the "Move around the Calendar" section successfully expanded by click, with its full content readable and
+no visible clipping at that window size. This corroborates that the popup renders and the disclosure
+interaction works in at least one real browser/window size, but it is a spot-check performed by the
+repository owner, not the systematic 1920×1080/1366×768/390px/200%-zoom/keyboard/screen-reader pass
+specified in this task — it does not change the AMBER status.
+
+### 16.6 Working tree after release
+
+`git status --short` — clean immediately after the `b2b0722` push (before the evidence-file update below).
+
+## 17. One next step
+
+A person with real browser access should run the still-outstanding checklist: 1920×1080 / 1366×768 / 1024px
+/ 768px / 390px / 200% zoom rendering, keyboard-only navigation (Tab/Enter/Space/Escape/focus-return),
+accessibility-tree inspection, and a Network-tab observation while opening Help — then update this file and
+the matching handover from AMBER to PASS. Everything else (release, deployment, content accuracy) is done.
