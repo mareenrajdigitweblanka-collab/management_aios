@@ -845,6 +845,18 @@
       min-width: 0;
     }
 
+    /* Live-review follow-up (2026-07-27) — the shared .msc-view-title
+       rule (calendar.css) relies on the browser's default <h4> weight
+       (bold/700), which read visually heavier than the rest of this
+       guide's own text (plain body copy, and <strong> section headings
+       at the browser's normal bold). Scoped to this popup's own title
+       only (.msc-cal-help-head-text, not the bare .msc-view-title) so
+       the Task/Leave detail and Settings popups, which reuse
+       .msc-view-title unchanged, keep their original weight. */
+    .msc-cal-help-head-text .msc-view-title {
+      font-weight: 600;
+    }
+
     .msc-cal-help-subtitle {
       margin: 2px 0 0;
       font-size: .78rem;
