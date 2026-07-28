@@ -777,12 +777,20 @@
     /* The header is pinned to the top of the scrolling panel above, so
        the top-right Close stays visible even while the body content
        (help list / settings rows) scrolls underneath it — required so
-       Close "remains visible at 200% zoom" per this task's spec. */
+       Close "remains visible at 200% zoom" per this task's spec.
+       isolation:isolate forces this sticky header onto its own stacking
+       context (calendar-popup-header-bleed-fix task, 2026-07-28) — without
+       it, a static-positioned ancestor (.msc-cal-help-inner has no
+       `position`) lets the scrolled body content's paint order bleed
+       above/behind the header's own z-index in some rendering paths;
+       isolate + a slightly higher z-index guarantees this header always
+       paints on top of the scrolling body underneath it. */
     .msc-cal-help-inner .msc-view-modal-head {
       position: sticky;
       top: 0;
       background: #fff;
-      z-index: 1;
+      z-index: 2;
+      isolation: isolate;
     }
 
     .msc-cal-help-list {
@@ -876,6 +884,17 @@
 
     .msc-cal-help-section > summary::before {
       margin-top: .2em;
+    }
+
+    /* Live-review follow-up (calendar-popup-header-bleed-fix task,
+       2026-07-28) — calendarHelpSection() (instance.js) wraps just the
+       section title in <strong>, which renders at the browser's default
+       bold (700) on top of the shared details>summary rule's own 600
+       (components.css), stacking two levels of bold and making the title
+       read visibly heavier than the " — hint" text on the same line.
+       inherit makes the title match the summary's own weight exactly. */
+    .msc-cal-help-section > summary strong {
+      font-weight: inherit;
     }
 
     .msc-cal-help-section .msc-cal-help-section-body :first-child {
@@ -2990,6 +3009,12 @@
       scroll-padding-top: 44px;
     }
 
+    /* isolation:isolate forces this sticky header onto its own stacking
+       context (calendar-popup-header-bleed-fix task, 2026-07-28) — same
+       fix and same reasoning as .msc-cal-help-inner .msc-view-modal-head
+       above: .msc-modal-form has no `position` of its own, so without an
+       explicit stacking context the scrolled form body's paint order can
+       bleed above/behind this header's z-index in some rendering paths. */
     .msc-modal-form-head {
       display: flex;
       align-items: center;
@@ -3001,7 +3026,8 @@
       position: sticky;
       top: 0;
       background: #fff;
-      z-index: 1;
+      z-index: 2;
+      isolation: isolate;
     }
 
     .msc-modal-form-head h4 {
