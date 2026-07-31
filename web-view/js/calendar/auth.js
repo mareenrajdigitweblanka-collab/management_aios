@@ -207,7 +207,73 @@ function ensureTokenDialog() {
   inputEl.autocomplete = 'off';
   inputEl.setAttribute('autocapitalize', 'off');
   inputEl.setAttribute('spellcheck', 'false');
-  inputEl.className = 'calendar-auth-input';
+  inputEl.className = 'calendar-auth-input calendar-auth-input--with-toggle';
+
+  /* Show/hide toggle (2026-07-31 usability addition) — reveals only
+     whatever is currently typed into THIS open input, by flipping
+     inputEl.type between 'password' and 'text'. Never reads
+     getStoredToken()/readStoredAuth() and never writes inputEl.value
+     itself — it has no access to, and no effect on, the saved
+     localStorage token at all. Built via createElementNS (real SVG),
+     same as the rest of this dialog: no innerHTML. */
+  var inputWrapEl = document.createElement('div');
+  inputWrapEl.className = 'calendar-auth-input-wrap';
+
+  var toggleVisibilityBtn = document.createElement('button');
+  toggleVisibilityBtn.type = 'button';
+  toggleVisibilityBtn.className = 'calendar-auth-toggle-visibility';
+
+  var tokenVisible = false;
+
+  function renderVisibilityIcon(visible) {
+    while (toggleVisibilityBtn.firstChild) { toggleVisibilityBtn.removeChild(toggleVisibilityBtn.firstChild); }
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 20 20');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.6');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    var eyeOutline = document.createElementNS(svgNS, 'path');
+    eyeOutline.setAttribute('d', 'M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z');
+    var pupil = document.createElementNS(svgNS, 'circle');
+    pupil.setAttribute('cx', '10');
+    pupil.setAttribute('cy', '10');
+    pupil.setAttribute('r', '2.4');
+    svg.appendChild(eyeOutline);
+    svg.appendChild(pupil);
+    if (visible) {
+      // Token currently shown as plain text — icon becomes a slashed eye
+      // ("click to hide"), the same open-eye shape plus one diagonal line.
+      var slash = document.createElementNS(svgNS, 'line');
+      slash.setAttribute('x1', '2');
+      slash.setAttribute('y1', '18');
+      slash.setAttribute('x2', '18');
+      slash.setAttribute('y2', '2');
+      svg.appendChild(slash);
+    }
+    toggleVisibilityBtn.appendChild(svg);
+  }
+
+  function setTokenVisible(visible) {
+    tokenVisible = visible;
+    inputEl.type = visible ? 'text' : 'password';
+    toggleVisibilityBtn.setAttribute('aria-label', visible ? 'Hide token' : 'Show token');
+    toggleVisibilityBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+    renderVisibilityIcon(visible);
+  }
+
+  setTokenVisible(false); // masked by default
+
+  toggleVisibilityBtn.addEventListener('click', function () {
+    setTokenVisible(!tokenVisible);
+    inputEl.focus(); // toggling never steals focus away from the field itself
+  });
+
+  inputWrapEl.appendChild(inputEl);
+  inputWrapEl.appendChild(toggleVisibilityBtn);
 
   var errorEl = document.createElement('p');
   errorEl.id = 'calendar-auth-error';
@@ -224,7 +290,7 @@ function ensureTokenDialog() {
 
   bodyEl.appendChild(messageEl);
   bodyEl.appendChild(labelEl);
-  bodyEl.appendChild(inputEl);
+  bodyEl.appendChild(inputWrapEl);
   bodyEl.appendChild(errorEl);
   bodyEl.appendChild(warningEl);
 
@@ -273,6 +339,7 @@ function ensureTokenDialog() {
     activeOptions = null;
     openPromise = null;
     inputEl.value = ''; // never prefilled, on open or on close — no saved token is ever reflected here
+    setTokenVisible(false); // always resets to masked — never carries a "revealed" state into the next open
     clearError();
     setButtonBusy(submitBtn, false);
     submitting = false;

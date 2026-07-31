@@ -177,3 +177,55 @@ None — no browser tool was available to capture any, and the task explicitly p
 ### 13.14 One next step
 
 Commit and push this pass (see handover document), then request reviewer sign-off before a live desktop/mobile/200%-zoom walkthrough is performed against a running preview.
+
+## 14. Show/hide token toggle (2026-07-31 usability addition)
+
+A small, focused usability addition on branch `feat/calendar-auth-token-visibility-toggle` (off `main`, which by this point includes both prior UX-correction merges). **No backend, token-validation, or localStorage-structure change** — purely a frontend input-masking convenience.
+
+### 14.1 Eye icon requirement
+
+Add a show/hide toggle to the member-token input in both dialog modes ("Authorize this browser" and "Change Calendar token"), masked by default, revealing only the currently-typed value in that one open input.
+
+### 14.2 Files changed
+
+`web-view/js/calendar/auth.js` (the toggle button, icon rendering, and visibility state — added to the one shared dialog builder both modes already use, no duplicate input component), `web-view/css/ui.css` (positioning/sizing/hover/focus-visible styles), `web-view/js/calendar/auth-test-dom.mjs` (added `document.createElementNS` support — a documented alias to the existing `createElement`, since the fake DOM does no real rendering and the SVG namespace is otherwise irrelevant to it), `web-view/js/calendar/auth.test.mjs` (7 new tests).
+
+### 14.3 Show/hide behavior result
+
+Implemented as one boolean (`tokenVisible`) toggling `inputEl.type` between `'password'` and `'text'` — never touches `inputEl.value` itself, so the typed value is provably unaffected by toggling (verified by test). Icon is a real inline SVG (`document.createElementNS`, not `innerHTML`, matching this dialog's existing no-innerHTML convention) — an eye outline + pupil by default, with an added diagonal slash line once visible, re-rendered on every toggle. Clicking the icon keeps focus in the token input itself (a deliberate UX choice — toggling should not interrupt typing).
+
+### 14.4 Accessibility result
+
+`aria-label` switches between `"Show token"` and `"Hide token"`; `aria-pressed` switches between `"false"`/`"true"` alongside it (a natural, correct addition for a toggle-button role, not explicitly required but low-cost and standards-correct). It is a real `<button type="button">` — Tab reachability and Enter/Space activation are native browser behavior, not custom key handling (confirmed: `ui/popup.js`'s `trapTab`/`getFocusableEls` selector already includes `button:not([disabled])`, so no focus-trap change was needed). `:focus-visible` gives a visible focus ring using the same `var(--focus-ring)` token every other control in this dialog uses. The decorative SVG itself carries `aria-hidden="true"` — the button's own `aria-label` is the sole accessible name.
+
+### 14.5 No-prefill / no-reveal result
+
+The toggle button never calls `getStoredToken()`/`readStoredAuth()` and never writes `inputEl.value` — it only ever reads/writes `inputEl.type` and its own `aria-*`/icon state. Verified by a dedicated test: with a real token already saved, opening "Change Calendar token" and toggling visibility on the (still-empty) input reveals nothing, because there is nothing in the field to reveal — the saved token itself is asserted unchanged throughout. `close()` (fired on every exit path — Cancel, Escape, backdrop click, successful submit) now also calls `setTokenVisible(false)`, so a dialog left visible is never carried into the next open.
+
+### 14.6 Desktop / mobile / 200% zoom result
+
+**Not live-tested** — same tooling gap as the prior UX-correction pass (no browser automation available in this environment). Code-level review: the input keeps `box-sizing: border-box` (pre-existing), so the new `padding-right: 40px` (room for the icon) can never push the input wider than its container at any viewport width — no overflow risk. The icon button is `28×28px` (CSS px), meeting the WCAG 2.2 AA minimum target size (24×24px) and consistent with this app's existing compact icon-button sizing elsewhere (e.g. `ui/toast.js`'s dismiss button). At 200% browser zoom, all sizing is in relative/px units that scale uniformly with the rest of the page — no fixed-viewport-unit sizing was introduced that could break independently of the rest of the dialog.
+
+### 14.7 Test totals
+
+- `auth.test.mjs`: **37/37 passing** (up from 30; net +7: masked-by-default in both modes, toggle-to-visible-and-back, aria-label/aria-pressed updates, native keyboard/focus semantics, reopen-resets-to-masked, no-reveal-of-saved-token, toggle present and functional in both dialog modes).
+- Complete Calendar frontend suite: **124/124 passing** (87 pre-existing + 37 auth), zero regressions.
+- Backend: not touched, not re-run (no backend file in this pass's diff).
+
+### 14.8 Screenshot paths
+
+None — no browser tool was available, and no token/hash may appear in any screenshot regardless.
+
+### 14.9 Remaining limitations
+
+1. No live browser walkthrough (desktop, mobile, 200% zoom) — same gap as §13.12, still open.
+2. Icon is a small hand-built SVG (open eye / slashed eye), not a design-system icon library asset — visually simple by design, not pixel-matched against any external icon set.
+3. All limitations carried from §9/§13.12 (shared-secret-per-member model, localStorage/XSS exposure, no CSP/script audit) remain open and unaffected by this pass.
+
+### 14.10 Final status (this pass)
+
+**AMBER** — implementation and automated tests complete and passing; live-browser validation remains pending, consistent with the overall feature's status.
+
+### 14.11 One next step
+
+Commit and push (see handover document), then fold this into the same pending live-browser walkthrough already queued for the rest of the feature.

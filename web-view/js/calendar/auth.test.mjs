@@ -112,6 +112,10 @@ function storedAuthRecord(fake) {
   return raw ? JSON.parse(raw) : null;
 }
 
+function findToggleBtn(doc) {
+  return findByClass(doc, 'calendar-auth-toggle-visibility');
+}
+
 // ── 0. Top-bar wording (regression guard against the real markup file) ──
 
 test('the topbar control reads "Change token", never "Forget or change token"', () => {
@@ -884,6 +888,207 @@ test('the input remains available and focused for correction after an inline ver
 
     findByClass(fake.document, 'calendar-auth-cancel').click();
     await pending.catch(function () {});
+  } finally {
+    fake.restore();
+  }
+});
+
+// ── 11. Show/hide token toggle (2026-07-31 usability addition) ──────────
+//
+// Reveals only whatever is currently typed into the OPEN dialog's own
+// input — never the saved localStorage token. The toggle button never
+// calls getStoredToken()/readStoredAuth() and never sets inputEl.value
+// itself (only inputEl.type), so it structurally cannot read or expose
+// the saved token even if it wanted to; these tests confirm that
+// contract holds for both dialog modes.
+
+test('the token input is masked by default in both dialog modes', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    var indicator = mountIndicatorMarkup(fake.document);
+    globalThis.fetch = fakeFetchJson(200, { memberKey: 'mayurika', displayLabel: 'Mayurika — HR' });
+    var auth = await freshAuthModule();
+    auth.initCalendarAuthIndicator();
+
+    var firstAttempt = auth.ensureAuthorized();
+    var input = fake.document.getElementById('calendar-auth-token-input');
+    assert.equal(input.type, 'password', 'Authorize mode: masked by default');
+    var toggleBtn = findToggleBtn(fake.document);
+    assert.ok(toggleBtn, 'the toggle button exists');
+    assert.equal(toggleBtn.getAttribute('aria-label'), 'Show token');
+    assert.equal(toggleBtn.getAttribute('aria-pressed'), 'false');
+    findByClass(fake.document, 'calendar-auth-cancel').click();
+    await firstAttempt.catch(function () {});
+
+    var pending = auth.ensureAuthorized();
+    input.value = 'x';
+    findByClass(fake.document, 'calendar-auth-submit').click();
+    await pending;
+
+    indicator.changeTokenBtn.click();
+    assert.equal(input.type, 'password', 'Change-token mode: also masked by default');
+    assert.equal(findToggleBtn(fake.document).getAttribute('aria-label'), 'Show token');
+  } finally {
+    fake.restore();
+  }
+});
+
+test('clicking the eye icon toggles the input to visible text, and back to masked', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    globalThis.fetch = fakeFetchJson(200, {});
+    var auth = await freshAuthModule();
+
+    auth.ensureAuthorized();
+    var input = fake.document.getElementById('calendar-auth-token-input');
+    var toggleBtn = findToggleBtn(fake.document);
+    input.value = 'my-typed-token';
+
+    toggleBtn.click();
+    assert.equal(input.type, 'text', 'toggled to visible');
+    assert.equal(input.value, 'my-typed-token', 'the typed value itself is completely unchanged by toggling');
+
+    toggleBtn.click();
+    assert.equal(input.type, 'password', 'toggled back to masked');
+    assert.equal(input.value, 'my-typed-token', 'still unchanged');
+  } finally {
+    fake.restore();
+  }
+});
+
+test('the toggle button aria-label and aria-pressed update correctly with each click', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    globalThis.fetch = fakeFetchJson(200, {});
+    var auth = await freshAuthModule();
+
+    auth.ensureAuthorized();
+    var toggleBtn = findToggleBtn(fake.document);
+
+    assert.equal(toggleBtn.getAttribute('aria-label'), 'Show token');
+    assert.equal(toggleBtn.getAttribute('aria-pressed'), 'false');
+
+    toggleBtn.click();
+    assert.equal(toggleBtn.getAttribute('aria-label'), 'Hide token');
+    assert.equal(toggleBtn.getAttribute('aria-pressed'), 'true');
+
+    toggleBtn.click();
+    assert.equal(toggleBtn.getAttribute('aria-label'), 'Show token');
+    assert.equal(toggleBtn.getAttribute('aria-pressed'), 'false');
+  } finally {
+    fake.restore();
+  }
+});
+
+test('the toggle button is a real, keyboard-activatable, focusable button (native semantics, no custom key handling needed)', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    globalThis.fetch = fakeFetchJson(200, {});
+    var auth = await freshAuthModule();
+
+    auth.ensureAuthorized();
+    var toggleBtn = findToggleBtn(fake.document);
+
+    assert.equal(toggleBtn.tagName, 'BUTTON', 'a real <button> — Enter/Space activation and Tab reachability are native, not custom-wired');
+    assert.equal(toggleBtn.getAttribute('type'), null);
+    assert.equal(toggleBtn.type, 'button', 'type="button" — can never accidentally submit the form');
+    assert.equal(toggleBtn.disabled, false, 'never disabled — always reachable in the Tab order (ui/popup.js trapTab selects button:not([disabled]))');
+
+    toggleBtn.focus();
+    assert.equal(fake.document.activeElement, toggleBtn, 'focusable by the same .focus() every other control in this dialog uses');
+
+    toggleBtn.click();
+    var input = fake.document.getElementById('calendar-auth-token-input');
+    assert.equal(input.type, 'text', 'activating it (click stands in for Enter/Space on a real button) toggles the field');
+  } finally {
+    fake.restore();
+  }
+});
+
+test('reopening the dialog after a close resets the input to masked, even if it was left visible', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    var indicator = mountIndicatorMarkup(fake.document);
+    globalThis.fetch = fakeFetchJson(200, { memberKey: 'mayurika', displayLabel: 'Mayurika — HR' });
+    var auth = await freshAuthModule();
+    auth.initCalendarAuthIndicator();
+
+    var pending = auth.ensureAuthorized();
+    var input = fake.document.getElementById('calendar-auth-token-input');
+    var toggleBtn = findToggleBtn(fake.document);
+    input.value = 'original-token';
+    toggleBtn.click(); // leave it visible
+    assert.equal(input.type, 'text');
+    findByClass(fake.document, 'calendar-auth-submit').click();
+    await pending;
+
+    indicator.changeTokenBtn.click();
+
+    assert.equal(input.type, 'password', 'the NEXT open starts masked again, regardless of the previous open\'s visible/hidden state');
+    assert.equal(toggleBtn.getAttribute('aria-label'), 'Show token');
+    assert.equal(toggleBtn.getAttribute('aria-pressed'), 'false');
+    assert.equal(input.value, '', 'and empty, per the existing never-prefilled guarantee');
+  } finally {
+    fake.restore();
+  }
+});
+
+test('toggling visibility never reads, reveals, or is influenced by the saved localStorage token', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    var indicator = mountIndicatorMarkup(fake.document);
+    globalThis.fetch = fakeFetchJson(200, { memberKey: 'mayurika', displayLabel: 'Mayurika — HR' });
+    var auth = await freshAuthModule();
+    auth.initCalendarAuthIndicator();
+
+    var pending = auth.ensureAuthorized();
+    fake.document.getElementById('calendar-auth-token-input').value = 'the-actual-saved-secret-token';
+    findByClass(fake.document, 'calendar-auth-submit').click();
+    await pending;
+    assert.equal(auth.getStoredToken(), 'the-actual-saved-secret-token');
+
+    // Open Change-token (a token IS already saved at this point) and
+    // toggle visibility WITHOUT typing anything.
+    indicator.changeTokenBtn.click();
+    var input = fake.document.getElementById('calendar-auth-token-input');
+    var toggleBtn = findToggleBtn(fake.document);
+    assert.equal(input.value, '', 'confirmed empty before toggling — nothing to reveal yet');
+
+    toggleBtn.click();
+    assert.equal(input.type, 'text');
+    assert.equal(input.value, '', 'toggling to visible does not pull in, prefill, or reveal the saved token — there is nothing here to show');
+    assert.equal(auth.getStoredToken(), 'the-actual-saved-secret-token', 'the saved token itself is completely unaffected by toggling this empty field');
+  } finally {
+    fake.restore();
+  }
+});
+
+test('the toggle is present and functional in both Authorize this browser and Change Calendar token', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    var indicator = mountIndicatorMarkup(fake.document);
+    globalThis.fetch = fakeFetchJson(200, { memberKey: 'mayurika', displayLabel: 'Mayurika — HR' });
+    var auth = await freshAuthModule();
+    auth.initCalendarAuthIndicator();
+
+    // Authorize this browser
+    var firstPending = auth.ensureAuthorized();
+    assert.equal(fake.document.getElementById('calendar-auth-title').textContent, 'Authorize this browser');
+    var input = fake.document.getElementById('calendar-auth-token-input');
+    var toggleBtn = findToggleBtn(fake.document);
+    input.value = 'first-token';
+    toggleBtn.click();
+    assert.equal(input.type, 'text', 'toggle works in Authorize mode');
+    findByClass(fake.document, 'calendar-auth-submit').click();
+    await firstPending;
+
+    // Change Calendar token
+    indicator.changeTokenBtn.click();
+    assert.equal(fake.document.getElementById('calendar-auth-title').textContent, 'Change Calendar token');
+    assert.equal(input.type, 'password', 'starts masked again in this new open');
+    input.value = 'second-token';
+    findToggleBtn(fake.document).click();
+    assert.equal(input.type, 'text', 'toggle also works in Change-token mode');
   } finally {
     fake.restore();
   }

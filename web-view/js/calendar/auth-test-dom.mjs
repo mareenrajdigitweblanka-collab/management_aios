@@ -160,6 +160,12 @@ export function createFakeDocument() {
     _all: [],
     activeElement: null,
     createElement: function (tag) { return new FakeElement(tag, doc); },
+    // auth.js's show/hide-token icon (2026-07-31) builds a real SVG via
+    // createElementNS — the namespace URI itself is irrelevant to this
+    // fake DOM's own behavior (no rendering happens here), so this is a
+    // deliberate, documented alias to createElement rather than a
+    // separate SVG-aware element type.
+    createElementNS: function (ns, tag) { return new FakeElement(tag, doc); },
     getElementById: function (id) {
       return Object.prototype.hasOwnProperty.call(doc._byId, id) ? doc._byId[id] : null;
     },
