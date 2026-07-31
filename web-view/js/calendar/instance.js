@@ -59,6 +59,7 @@ import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } fr
 import { mapApiError, classifyHttpStatus } from '../ui/error-mapper.js';
 import { lockBodyScroll, unlockBodyScroll } from '../ui/scroll-lock.js';
 import { registerDateIcon } from './date-icon.js';
+import { ensureAuthorized, handleUnauthorizedResponse } from './auth.js';
 
 /* Calendar help guide — one small builder for each expandable topic in the
    redesigned "Calendar help" popup (calendar-help-user-guide-popup task,
@@ -2260,14 +2261,58 @@ function mountScheduleCalendarInstance(container) {
      is read from or written to. On failure, the UI shows a visible status
      message rather than silently falling back to any local storage. ── */
   function apiRequest(method, url, body) {
-    var opts = { method: method, headers: {} };
-    if (body !== undefined) {
-      opts.headers['Content-Type'] = 'application/json';
-      opts.body = JSON.stringify(body);
-    }
-    return fetch(url, opts).then(function (res) {
+    /* Calendar member-token authorization (2026-07-29): every non-GET
+       request must carry a valid member token; GET never does (viewing
+       and reports stay unauthenticated). ensureAuthorized() resolves
+       immediately with the already-stored token when one exists — no
+       dialog, no delay — and only shows the "Authorize this browser"
+       dialog the first time a mutation is attempted with none stored, or
+       after Forget/change. The actual fetch below is only ever issued
+       once, AFTER that promise settles, so a token dialog can never
+       result in this mutation being sent twice. */
+    var isMutation = method !== 'GET';
+    var authPromise = isMutation ? ensureAuthorized() : Promise.resolve(null);
+    return authPromise.then(function (token) {
+      var opts = { method: method, headers: {} };
+      if (body !== undefined) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      if (token) {
+        opts.headers['Authorization'] = 'Bearer ' + token;
+      }
+      return fetch(url, opts);
+    }).then(function (res) {
       if (!res.ok) {
         return res.json().catch(function () { return {}; }).then(function (errBody) {
+          /* Calendar member-token authorization (2026-07-29) — checked
+             before every other branch below, since neither status ever
+             carries one of this file's existing business-conflict shapes.
+             401: the token that was just sent is no longer accepted
+             (expired/rotated/revoked, or never verified) — clear it so
+             the NEXT mutation attempt re-shows the authorize dialog
+             (never automatically retried here). 403: a real, valid token
+             for a DIFFERENT member than this request's target — the
+             message is the backend's own approved copy
+             (backend/routers/calendar_auth.py require_matching_member),
+             read directly rather than rebuilt from any local/display
+             value, so the saved token is left untouched (no re-prompt) and
+             the user simply sees why this one action was denied. */
+          if (res.status === 401) {
+            handleUnauthorizedResponse();
+            var authErr = new Error('Your Calendar authorization has expired or changed.');
+            authErr.code = 'auth_required';
+            authErr.status = 401;
+            throw authErr;
+          }
+          if (res.status === 403) {
+            var deniedMessage = (errBody && errBody.detail && errBody.detail.message)
+              || 'You can only manage your own Tasks and Leave.';
+            var deniedErr = new Error(deniedMessage);
+            deniedErr.code = 'cross_member_denied';
+            deniedErr.status = 403;
+            throw deniedErr;
+          }
           /* REQ-LEAVE-COPY-001: a task save blocked by active leave
              returns a raw 409 body ({error:"leave_conflict", message,
              conflicts:[...]}) with no "detail" wrapper. Tagged with a
@@ -5582,14 +5627,42 @@ function mountScheduleCalendarInstance(container) {
      Unscheduled tasks. ── */
 
   function leaveApiRequest(method, url, body) {
-    var opts = { method: method, headers: {} };
-    if (body !== undefined) {
-      opts.headers['Content-Type'] = 'application/json';
-      opts.body = JSON.stringify(body);
-    }
-    return fetch(url, opts).then(function (res) {
+    /* Calendar member-token authorization (2026-07-29) — same contract as
+       apiRequest() above: only non-GET requests need a token, resolved
+       once (dialog on first use only) before the single fetch below. */
+    var isMutation = method !== 'GET';
+    var authPromise = isMutation ? ensureAuthorized() : Promise.resolve(null);
+    return authPromise.then(function (token) {
+      var opts = { method: method, headers: {} };
+      if (body !== undefined) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      if (token) {
+        opts.headers['Authorization'] = 'Bearer ' + token;
+      }
+      return fetch(url, opts);
+    }).then(function (res) {
       if (!res.ok) {
         return res.json().catch(function () { return {}; }).then(function (errBody) {
+          /* Calendar member-token authorization (2026-07-29) — see
+             apiRequest() above for the full rationale; identical 401/403
+             handling shared by every Leave create/update/delete call. */
+          if (res.status === 401) {
+            handleUnauthorizedResponse();
+            var authErr = new Error('Your Calendar authorization has expired or changed.');
+            authErr.code = 'auth_required';
+            authErr.status = 401;
+            throw authErr;
+          }
+          if (res.status === 403) {
+            var deniedMessage = (errBody && errBody.detail && errBody.detail.message)
+              || 'You can only manage your own Tasks and Leave.';
+            var deniedErr = new Error(deniedMessage);
+            deniedErr.code = 'cross_member_denied';
+            deniedErr.status = 403;
+            throw deniedErr;
+          }
           /* member-leave-overlap-prevention (2026-07-17): a create/edit
              blocked by another active leave record this member already
              holds returns a raw 409 body ({error:"leave_overlap",

@@ -9,6 +9,7 @@
 
 import { initNavigation } from './navigation.js';
 import { initAllScheduleCalendars } from './calendar/instance.js';
+import { initCalendarAuthIndicator } from './calendar/auth.js';
 import { initStaffDataPilot } from './staff-data.js';
 import { initPlanningWarning } from './planning-warning.js';
 
@@ -17,6 +18,7 @@ function boot() {
      calendar instances exactly once — boot() itself runs only once. */
   initNavigation();
   initAllScheduleCalendars();
+  initCalendarAuthIndicator();
   initStaffDataPilot();
   initPlanningWarning();
 }

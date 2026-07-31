@@ -249,6 +249,54 @@
   flex-shrink: 0;
 }
 
+/* ── Calendar member-token authorization dialog (calendar/auth.js) ──
+   Built on the same .msc-modal-overlay/.msc-modal/.ui-dialog* foundation
+   as the shared confirmation dialog above — only the token input field,
+   its inline verify-error text, and the shared-browser warning text are
+   new here. ── */
+
+.calendar-auth-label {
+  display: block;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text);
+  margin: 4px 0 6px;
+}
+
+.calendar-auth-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--font-base);
+  font-family: inherit;
+}
+
+.calendar-auth-input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--accent);
+}
+
+.calendar-auth-error {
+  color: var(--error);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  margin: 8px 0 0;
+}
+
+.calendar-auth-warning {
+  color: var(--text-secondary);
+  font-size: var(--font-2xs);
+  line-height: 1.5;
+  margin: 14px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
 /* ── Shared busy-button state (ui/loading.js setButtonBusy) ── */
 
 .ui-btn-busy {

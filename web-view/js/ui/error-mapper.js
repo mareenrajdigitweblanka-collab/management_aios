@@ -129,6 +129,35 @@ var KNOWN_ERRORS = {
     message: 'Some information is missing or not valid. Correct the highlighted fields and try again.',
     persistent: false
   },
+  /* Calendar member-token authorization (2026-07-29). auth_required: the
+     saved token was rejected (missing/expired/rotated/revoked) — the
+     fetch wrapper (instance.js) has already cleared localStorage and
+     will show the "Authorize this browser" dialog again on the next
+     mutation attempt, so this message only needs to explain what
+     happened, not what to do next. cross_member_denied: the request
+     itself carries the backend's own plain-language message
+     (errBody.detail.message — see instance.js), so this generic entry is
+     only the fallback used if that field is ever missing. auth_cancelled:
+     the user closed/escaped the authorize dialog without submitting a
+     token — not a server error, so distinct wording. */
+  auth_required: {
+    type: 'error',
+    title: 'Authorization needed',
+    message: 'Your saved Calendar authorization has expired or changed. Enter your token again to continue.',
+    persistent: true
+  },
+  cross_member_denied: {
+    type: 'error',
+    title: 'Not authorized for this member',
+    message: 'You can only manage your own Tasks and Leave.',
+    persistent: true
+  },
+  auth_cancelled: {
+    type: 'error',
+    title: 'Authorization needed',
+    message: 'Enter your Calendar member token to complete this action.',
+    persistent: false
+  },
   not_found: {
     type: 'error',
     title: 'This record is no longer available',

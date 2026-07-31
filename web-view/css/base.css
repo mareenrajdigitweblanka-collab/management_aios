@@ -286,6 +286,54 @@
       line-height: 1.35;
     }
 
+    /* ── Calendar member-token authorization indicator (2026-07-29) ──
+       Fourth .topbar flex child. Hidden by default via the `hidden`
+       attribute in index.html and toggled by calendar/auth.js
+       renderIndicator() — never shown merely because a Calendar tab is
+       open; only once this browser holds a verified token. */
+    .topbar-calendar-auth {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid #334155;
+      white-space: nowrap;
+    }
+
+    .topbar-calendar-auth[hidden] {
+      display: none;
+    }
+
+    .topbar-calendar-auth-label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .topbar-calendar-auth-forget {
+      font-size: .74rem;
+      font-weight: 600;
+      color: #93c5fd;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .topbar-calendar-auth-forget:hover {
+      color: #bfdbfe;
+    }
+
+    .topbar-calendar-auth-forget:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+      border-radius: 2px;
+    }
+
     /* Narrow header: drop the least-essential elements first, but the
        product identity and search are never hidden. */
     @media (max-width: 900px) {

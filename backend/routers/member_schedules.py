@@ -80,6 +80,7 @@ from backend.config import (
 from backend.database import get_db
 from backend.models import MemberLeaveRecord, MemberScheduleEvent
 from backend.routers import leave_logic
+from backend.routers.calendar_auth import get_verified_member, require_matching_member
 from backend.schemas import (
     BulkTaskCreateRequest,
     BulkTaskCreateSuccessOut,
@@ -2209,7 +2210,6 @@ def get_monthly_schedule_report(
     )
 
 
-@router.post("/{member_key}", response_model=MemberScheduleEventOut, status_code=201)
 def create_member_schedule_event(
     member_key: str,
     payload: MemberScheduleEventCreate,
@@ -2378,7 +2378,31 @@ def create_member_schedule_event(
     )
 
 
-@router.post("/{member_key}/bulk", response_model=BulkTaskCreateSuccessOut, status_code=201)
+@router.post("/{member_key}", response_model=MemberScheduleEventOut, status_code=201)
+def create_member_schedule_event_route(
+    member_key: str,
+    payload: MemberScheduleEventCreate,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — the ONLY route
+    FastAPI registers for POST /{member_key}; create_member_schedule_event
+    above is the unmodified, pre-existing business-logic function (still
+    imported and called directly, with no auth, by every existing test
+    that already did so — see backend/tests/test_bulk_task_creation.py
+    etc.). This wrapper compares the verified acting_member against the
+    URL's own member_key BEFORE any database access — a mismatch is
+    rejected with 403 and the core function is never called, so zero rows
+    are ever created for a cross-member attempt. Once the comparison
+    passes, member_key is provably the same value as acting_member, so
+    every `member_key=member_key` assignment inside the core function is
+    already "assigned from the validated token", with no second parameter
+    needed."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return create_member_schedule_event(member_key, payload, db)
+
+
 def create_member_schedule_events_bulk(
     member_key: str,
     payload: BulkTaskCreateRequest,
@@ -2616,7 +2640,23 @@ def create_member_schedule_events_bulk(
     return {"status": "created", "created_count": len(events), "items": events}
 
 
-@router.put("/{member_key}/{event_id}", response_model=MemberScheduleEventOut)
+@router.post("/{member_key}/bulk", response_model=BulkTaskCreateSuccessOut, status_code=201)
+def create_member_schedule_events_bulk_route(
+    member_key: str,
+    payload: BulkTaskCreateRequest,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — see
+    create_member_schedule_event_route above for the shared rationale.
+    The 403 cross-member check runs before create_member_schedule_events_bulk
+    is ever called, so a denied batch creates zero rows — the existing
+    atomic transaction inside that function is completely untouched."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return create_member_schedule_events_bulk(member_key, payload, db)
+
+
 def update_member_schedule_event(
     member_key: str,
     event_id: UUID,
@@ -2801,6 +2841,12 @@ def update_member_schedule_event(
         updated_at=updated_at,
     )
     event.updated_at = updated_at
+    # Calendar member-token authorization (2026-07-29): member_key is the
+    # authenticated acting member for every real HTTP request (the route
+    # wrapper below proves member_key == acting_member with a 403 before
+    # this function is ever called); a direct test call simply records
+    # whichever member_key it already passed in, unchanged.
+    event.updated_by = member_key
 
     # New occurrences (PHASE 12/17) — each a genuinely NEW row, so
     # classify_new_task (not classify_updated_task) decides its category;
@@ -2865,7 +2911,27 @@ def update_member_schedule_event(
     )
 
 
-@router.put("/{member_key}/{event_id}/outcome", response_model=MemberScheduleEventOut)
+@router.put("/{member_key}/{event_id}", response_model=MemberScheduleEventOut)
+def update_member_schedule_event_route(
+    member_key: str,
+    event_id: UUID,
+    payload: MemberScheduleEventUpdate,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — see
+    create_member_schedule_event_route above for the shared rationale.
+    Requires record ownership by comparing acting_member against the
+    URL's member_key before update_member_schedule_event ever looks up the
+    row; that function's own _get_active_event_or_404 additionally
+    requires the row itself to belong to member_key, so a mismatch is
+    caught even sooner (403 before any query) than the pre-existing 404
+    row lookup."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return update_member_schedule_event(member_key, event_id, payload, db)
+
+
 def update_member_schedule_event_outcome(
     member_key: str,
     event_id: UUID,
@@ -2910,10 +2976,13 @@ def update_member_schedule_event_outcome(
         the same "authoritative server clock, generated once, never
         client-supplied" convention create_member_schedule_event/
         update_member_schedule_event already use for created_at/updated_at)
-      - event.outcome_updated_by = member_key (the URL path's own
-        member_key, already validated by _validate_member_key above — this
-        app has no separate authenticated-actor concept, so the calendar
-        instance's own member context IS the canonical actor)
+      - event.outcome_updated_by = member_key (Calendar member-token
+        authorization, 2026-07-29: for every real HTTP request this is
+        the URL path's own member_key, already proven equal to the
+        cryptographically verified acting member by
+        update_member_schedule_event_outcome_route's require_matching_member
+        call below, before this function is ever reached — member_key is
+        therefore the authenticated actor, not merely the URL's claim)
 
     Atomicity: every assignment above happens on the same in-memory `event`
     ORM object; nothing is flushed to the database until the single
@@ -2971,7 +3040,21 @@ def update_member_schedule_event_outcome(
     return event
 
 
-@router.delete("/{member_key}/clear-testing-data", status_code=200)
+@router.put("/{member_key}/{event_id}/outcome", response_model=MemberScheduleEventOut)
+def update_member_schedule_event_outcome_route(
+    member_key: str,
+    event_id: UUID,
+    payload: TaskOutcomeUpdate,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — see
+    create_member_schedule_event_route above for the shared rationale."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return update_member_schedule_event_outcome(member_key, event_id, payload, db)
+
+
 def clear_testing_data(member_key: str, db: Session = Depends(get_db)):
     _validate_member_key(member_key)
 
@@ -2990,7 +3073,19 @@ def clear_testing_data(member_key: str, db: Session = Depends(get_db)):
     return {"member_key": member_key, "cleared_count": updated_count}
 
 
-@router.delete("/{member_key}/{event_id}", status_code=200)
+@router.delete("/{member_key}/clear-testing-data", status_code=200)
+def clear_testing_data_route(
+    member_key: str,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — see
+    create_member_schedule_event_route above for the shared rationale."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return clear_testing_data(member_key, db)
+
+
 def delete_member_schedule_event(
     member_key: str, event_id: UUID, db: Session = Depends(get_db)
 ):
@@ -3017,3 +3112,17 @@ def delete_member_schedule_event(
     event.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return {"id": str(event.id), "deleted": True}
+
+
+@router.delete("/{member_key}/{event_id}", status_code=200)
+def delete_member_schedule_event_route(
+    member_key: str,
+    event_id: UUID,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — see
+    create_member_schedule_event_route above for the shared rationale."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return delete_member_schedule_event(member_key, event_id, db)
