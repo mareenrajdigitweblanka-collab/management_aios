@@ -80,3 +80,9 @@ Nothing has been merged or deployed, so rollback is simply: do not merge/deploy 
 ## 10. One next step
 
 Reviewer (Arun, per §7) reviews the design and code on `feat/calendar-member-token-authorization`; once approved, generate the five real per-member tokens out-of-band, configure their hashes in the backend's Vercel project environment, and perform a live browser walkthrough (first-use dialog, persistence, 401, 403, Forget) before merging/deploying.
+
+## 11. Commit-inventory correction (2026-07-31)
+
+A prior closing report described the commit as "23 files from the implementation plus the 3 evidence files," which read as if 3 files existed beyond the 23 (implying 26). This was a **reporting-wording error only**, corrected here after re-deriving the true count directly from Git (`git diff --name-status f5cdbb8..bcedadc145837043cddcaa3c55cb8b7bb21c3946`, `git diff --stat` over the same range):
+
+**Commit `bcedadc145837043cddcaa3c55cb8b7bb21c3946` contains 23 unique changed files in total: 10 added and 13 modified (0 deleted).** The requirement, validation, and handover documents (§2 above) are three of those 10 added files, not three additional files on top of 23. §2's "Files created" table lists 9 of the 10 added files by design (a handover document does not customarily list itself); the 10th added file is this document. No file content changed as part of this correction — only prior reporting wording.

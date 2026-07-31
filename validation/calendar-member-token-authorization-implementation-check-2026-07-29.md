@@ -91,3 +91,14 @@ Total: 21 HTTP operations registered (the 10 above + 11 unauthenticated GET rout
 - `.env.example`: removed trailing whitespace on the `CALENDAR_AUTH_TOKEN_HASH_RAJIV` line and an extra blank line at end-of-file — both flagged by `git diff --check` (now exits 0). Placeholder content itself (`set_a_real_token_hash_here` for all five variables) was already names/placeholders-only with no real value; this was a whitespace-only fix, not a content or security correction.
 - Configuration error-message review confirmed: the per-variable `RuntimeError` messages raised by `backend/config.py load_calendar_auth_token_hashes` (e.g. naming which `CALENDAR_AUTH_TOKEN_HASH_*` variable is missing/malformed) are caught by `backend/routers/calendar_auth.py`'s per-request path and converted to one fully generic `401 "Calendar authorization is not available."` before ever reaching a client — the variable-naming detail is visible only in server-side startup logs, never in any HTTP response. No secret value (hash or token) appears in any error message, startup or per-request. No correction was required here.
 - Dependency, CORS, and frontend token-handling reviews (backend/requirements.txt diff, `allow_headers`/`allow_credentials`/origin allowlist, and `auth.js`/`instance.js` token-in-header-only/no-console-logging/no-innerHTML/no-token-redisplay behavior) found no defects requiring correction.
+
+## 12. Commit-inventory correction (2026-07-31)
+
+The implementation was committed as `bcedadc145837043cddcaa3c55cb8b7bb21c3946` (branch `feat/calendar-member-token-authorization`, base `f5cdbb8`) and pushed to `origin`. A follow-up review found that the prior closing report's phrasing — "All 23 files from the implementation plus the 3 evidence files" — read as if 3 additional files existed beyond the 23, implying 26. This was a **reporting-wording error only**, verified against Git as the source of truth:
+
+```bash
+git diff --name-status f5cdbb8..bcedadc145837043cddcaa3c55cb8b7bb21c3946
+git diff --stat        f5cdbb8..bcedadc145837043cddcaa3c55cb8b7bb21c3946
+```
+
+**Commit `bcedadc` contains 23 unique changed files in total: 10 added and 13 modified (0 deleted).** The requirement, validation, and handover files (`docs/2026-07-29_calendar-member-token-authorization-requirement.md`, this file, and `handover/2026-07-29__calendar-member-token-authorization-closure.md`) are three of the 10 **added** files — they are already included within the 23, not three files in addition to it. No file was added, removed, or changed as part of this correction; only the prior report's wording was inaccurate. A repeat secret scan of the full commit diff found no real token, hash, or production credential, and the protected path `member-aios/mayurika-hr/staff-data/` does not appear anywhere in the commit.
