@@ -300,6 +300,53 @@
   border-color: var(--accent);
 }
 
+/* Show/hide token toggle (2026-07-31 usability addition) — a standard
+   inset icon button, positioned inside the input's own box via a
+   position:relative wrapper (no layout change to the input's own
+   width/margins otherwise). --with-toggle reserves room on the right so
+   typed text never renders underneath the icon. */
+.calendar-auth-input-wrap {
+  position: relative;
+}
+
+.calendar-auth-input--with-toggle {
+  padding-right: 40px;
+}
+
+.calendar-auth-toggle-visibility {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.calendar-auth-toggle-visibility svg {
+  width: 18px;
+  height: 18px;
+}
+
+.calendar-auth-toggle-visibility:hover {
+  background: var(--surface-tint-3);
+  color: var(--text);
+}
+
+.calendar-auth-toggle-visibility:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  color: var(--text);
+}
+
 /* Strengthened to a red-tinted alert box (2026-07-31 follow-up) — plain
    var(--error) text alone (dark red, #b91c1c) read as too close to
    ordinary dark text at this small size/weight, unlike the clearly-red

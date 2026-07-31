@@ -97,3 +97,14 @@ A separate, focused follow-up pass on branch `fix/calendar-auth-ux-corrections` 
 - **Tests:** `auth.test.mjs` 30/30 (up from 12); full Calendar frontend suite 117/117; backend untouched and not re-run this pass.
 - **Not done this pass:** live browser walkthrough (desktop/mobile/200% zoom) — no browser automation tool was available in this environment; a code-level responsive CSS review was performed instead (§13.9 of the validation document). This remains a pre-merge gate alongside the CSP/script review already carried from the original feature.
 - **Status:** AMBER, same as the overall feature — implementation and automated tests complete; live-browser validation, CSP review, and reviewer sign-off remain pending.
+
+## 13. Show/hide token toggle (2026-07-31 usability addition)
+
+A small, focused usability addition on branch `feat/calendar-auth-token-visibility-toggle` (off `main`, which by this point also includes a small unrelated red-alert-styling fix, `fix/calendar-auth-error-red-styling`, merged as PR #4). Full detail: `validation/calendar-member-token-authorization-implementation-check-2026-07-29.md` §14.
+
+- **What changed:** an eye-icon toggle button was added to the member-token input in both dialog modes ("Authorize this browser" and "Change Calendar token"), added to the one shared dialog builder both modes already use (no duplicate input component). Masked (`type="password"`) by default; clicking toggles `type` to `"text"`/back, with `aria-label` switching "Show token"/"Hide token" and `aria-pressed` switching `"false"`/`"true"`. The toggle only ever reads/writes `inputEl.type` — never `inputEl.value`, never the saved localStorage token — so it structurally cannot reveal or be influenced by anything beyond what's currently typed into that one open input. Resets to masked on every dialog close (Cancel, Escape, backdrop click, successful submit), so a later reopen never carries over a "revealed" state.
+- **What did NOT change:** no backend code, token validation, or `management_aios_calendar_auth_v1` storage structure; no change to which fields exist in the stored record or what's sent to the backend.
+- **Files touched:** `web-view/js/calendar/auth.js`, `web-view/css/ui.css`, `web-view/js/calendar/auth-test-dom.mjs` (added `document.createElementNS` support to the test DOM stand-in), `web-view/js/calendar/auth.test.mjs` (7 new tests).
+- **Tests:** `auth.test.mjs` 37/37 (up from 30); full Calendar frontend suite 124/124; backend untouched and not re-run this pass.
+- **Not done this pass:** live browser walkthrough — same tooling gap as §12; a code-level responsive/accessibility review was performed instead (§14.6 of the validation document).
+- **Status:** AMBER, same as the overall feature.
