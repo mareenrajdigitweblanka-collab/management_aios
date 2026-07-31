@@ -15,10 +15,18 @@ DELETE, which soft-deletes it (deleted_at). A row's existence with
 deleted_at IS NULL is its active state; no status/active-inactive enum
 column exists.
 
-No authentication or role-based authorization exists anywhere in this
-router (matches the existing member-schedules access model) —
-created_by/updated_by, if supplied, are optional unauthenticated free-text
-labels only.
+Calendar member-token authorization (2026-07-29 approved requirement):
+GET routes (list, summary) remain fully unauthenticated. Every mutation
+(create/update/delete) requires a valid member token — see
+backend/routers/calendar_auth.py — and may only ever act on that same
+token's own member_key; there is no cross-member override. Each mutation's
+plain business-logic function below (create_member_leave_record,
+update_member_leave_record, delete_member_leave_record) is unchanged and
+still directly callable with no auth by tests, exactly as before this
+feature; the actual FastAPI routes are the *_route wrapper functions
+immediately after each one, which enforce the token check before any
+database access. created_by/updated_by remain optional free-text labels
+independent of this authorization check.
 
 Source contract: docs/2026-07-16_management-calendar-leave-copy-requirement.md
 and docs/management-calendar-leave-copy-design.md.
@@ -46,6 +54,7 @@ from backend.config import (
 from backend.database import get_db
 from backend.models import MemberLeaveRecord
 from backend.routers import leave_logic
+from backend.routers.calendar_auth import get_verified_member, require_matching_member
 from backend.schemas import (
     LeaveConfigurationOut,
     LeaveSummaryOut,
@@ -141,7 +150,6 @@ def list_member_leave_records(
     return [_to_out(record) for record in query.all()]
 
 
-@router.post("/{member_key}", response_model=MemberLeaveRecordOut, status_code=201)
 def create_member_leave_record(
     member_key: str,
     payload: MemberLeaveRecordCreate,
@@ -251,7 +259,25 @@ def create_member_leave_record(
     return _to_out(record)
 
 
-@router.put("/{member_key}/{leave_id}", response_model=MemberLeaveRecordOut)
+@router.post("/{member_key}", response_model=MemberLeaveRecordOut, status_code=201)
+def create_member_leave_record_route(
+    member_key: str,
+    payload: MemberLeaveRecordCreate,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — the ONLY route
+    FastAPI registers for POST /{member_key}; create_member_leave_record
+    above is the unmodified, pre-existing business-logic function, still
+    directly callable with no auth by every existing test that already
+    did so. The 403 cross-member check runs before that function is ever
+    called, so a denied create writes no row and never even acquires the
+    per-member leave-write lock."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return create_member_leave_record(member_key, payload, db)
+
+
 def update_member_leave_record(
     member_key: str,
     leave_id: UUID,
@@ -359,8 +385,14 @@ def update_member_leave_record(
         record.purpose = update_data["purpose"]
     if "external_reference" in update_data:
         record.external_reference = update_data["external_reference"]
-    if "updated_by" in update_data:
-        record.updated_by = update_data["updated_by"]
+
+    # Calendar member-token authorization (2026-07-29): member_key is the
+    # authenticated acting member for every real HTTP request (the route
+    # wrapper below proves member_key == acting_member with a 403 before
+    # this function is ever called) — always sourced from that verified
+    # value, never from payload.updated_by, which no longer determines
+    # the stored value.
+    record.updated_by = member_key
 
     if fields_changed:
         record.effective_leave_minutes = new_effective_minutes
@@ -372,7 +404,21 @@ def update_member_leave_record(
     return _to_out(record)
 
 
-@router.delete("/{member_key}/{leave_id}", status_code=200)
+@router.put("/{member_key}/{leave_id}", response_model=MemberLeaveRecordOut)
+def update_member_leave_record_route(
+    member_key: str,
+    leave_id: UUID,
+    payload: MemberLeaveRecordUpdate,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — see
+    create_member_leave_record_route above for the shared rationale."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return update_member_leave_record(member_key, leave_id, payload, db)
+
+
 def delete_member_leave_record(
     member_key: str, leave_id: UUID, db: Session = Depends(get_db)
 ):
@@ -389,6 +435,20 @@ def delete_member_leave_record(
     record.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return {"id": str(record.id), "deleted": True}
+
+
+@router.delete("/{member_key}/{leave_id}", status_code=200)
+def delete_member_leave_record_route(
+    member_key: str,
+    leave_id: UUID,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Calendar member-token authorization (2026-07-29) — see
+    create_member_leave_record_route above for the shared rationale."""
+    _validate_member_key(member_key)
+    require_matching_member(member_key, acting_member)
+    return delete_member_leave_record(member_key, leave_id, db)
 
 
 @router.get("/{member_key}/summary", response_model=LeaveSummaryOut)

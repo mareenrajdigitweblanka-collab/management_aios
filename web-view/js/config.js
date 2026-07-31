@@ -28,3 +28,14 @@ export var MEMBER_LEAVE_API_BASE = (function () {
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
   return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
 }());
+
+/* Calendar member-token authorization (2026-07-29) — same local-vs-
+   production host detection as the two bases above, just a different
+   route prefix (backend/routers/calendar_auth.py). Used only by
+   calendar/auth.js's verify request. */
+export var CALENDAR_AUTH_API_BASE = (function () {
+  var LOCAL_BASE = 'http://127.0.0.1:8000/api/calendar-auth';
+  var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/calendar-auth';
+  var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
+}());

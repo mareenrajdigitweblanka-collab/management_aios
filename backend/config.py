@@ -215,3 +215,86 @@ ACTUAL_OFFICE_BREAK_END = time(13, 30)
 # interval-based overlap deduplication; a Full-Day/Multi-Day weekday
 # dominates any partial-day leave on the same date).
 LEAVE_MAX_DAILY_DEDUCTION_MINUTES = LEAVE_FULL_DAY_DEDUCTION_MINUTES
+
+# ── Calendar member-token authorization (2026-07-29) ─────────────────────
+# Approved requirement: a valid per-member token is required for every
+# Task/Leave mutation (create/update/delete/outcome/clear-testing-data);
+# viewing and reports stay unauthenticated. See
+# backend/routers/calendar_auth.py for the token-validation logic that
+# consumes this configuration, and docs/2026-07-29_calendar-member-token-
+# authorization-requirement.md for the full approved requirement.
+#
+# Each member's token hash lives in its own backend-only environment
+# variable (never a database row, never a frontend-visible value, never
+# committed to this or any tracked file) — see .env.example for the
+# placeholder-only documentation of these names.
+CALENDAR_AUTH_TOKEN_ENV_VARS = {
+    "mayurika": "CALENDAR_AUTH_TOKEN_HASH_MAYURIKA",
+    "suman": "CALENDAR_AUTH_TOKEN_HASH_SUMAN",
+    "arun": "CALENDAR_AUTH_TOKEN_HASH_ARUN",
+    "rajiv": "CALENDAR_AUTH_TOKEN_HASH_RAJIV",
+    "paraparan": "CALENDAR_AUTH_TOKEN_HASH_PARAPARAN",
+}
+
+_SHA256_HEX_DIGEST_LENGTH = 64
+
+
+def _looks_like_sha256_hex_digest(value: str) -> bool:
+    """True only for a 64-character hexadecimal string — the exact shape
+    of hashlib.sha256(...).hexdigest(). Does not (and cannot) confirm the
+    value is actually a SHA-256 digest of anything in particular; it only
+    rejects blank, truncated, or non-hex configuration values before they
+    are ever compared against a submitted token."""
+    if len(value) != _SHA256_HEX_DIGEST_LENGTH:
+        return False
+    try:
+        int(value, 16)
+    except ValueError:
+        return False
+    return True
+
+
+def load_calendar_auth_token_hashes(environ=None):
+    """Fail-closed loader for the five per-member Calendar auth token
+    hashes. Raises RuntimeError — NEVER silently disables authorization —
+    when any of the five CALENDAR_AUTH_TOKEN_ENV_VARS is missing, blank,
+    not a 64-character SHA-256 hexadecimal digest, or duplicated across
+    members.
+
+    Called once at application startup (backend/main.py's lifespan
+    handler) so a misconfigured deployment fails to start rather than
+    silently serving traffic with authorization disabled or broken, and
+    again on every request by backend/routers/calendar_auth.py — this
+    function deliberately does no caching, so a token hash rotated after
+    startup (a fresh deployment picks up new env vars) is honored
+    immediately by both paths without a stale in-memory copy; the
+    per-call cost is five environment-variable reads plus a hex-shape
+    check, not a database or network call.
+
+    `environ` defaults to os.environ. Tests pass an isolated mapping of
+    their own test-only hashes here (see backend/tests/test_calendar_auth.py)
+    — production secrets are never read by, or needed for, any test."""
+    source = os.environ if environ is None else environ
+    hashes = {}
+    for member_key, env_var in CALENDAR_AUTH_TOKEN_ENV_VARS.items():
+        raw = (source.get(env_var) or "").strip()
+        if not raw:
+            raise RuntimeError(
+                f"{env_var} is not configured. All five "
+                "CALENDAR_AUTH_TOKEN_HASH_* variables must be set for "
+                "Calendar member-token authorization to start."
+            )
+        normalized = raw.lower()
+        if not _looks_like_sha256_hex_digest(normalized):
+            raise RuntimeError(
+                f"{env_var} must be a 64-character SHA-256 hexadecimal digest."
+            )
+        hashes[member_key] = normalized
+
+    if len(set(hashes.values())) != len(hashes):
+        raise RuntimeError(
+            "CALENDAR_AUTH_TOKEN_HASH_* values must be unique per member — "
+            "a duplicate hash was found across two or more members."
+        )
+
+    return hashes
