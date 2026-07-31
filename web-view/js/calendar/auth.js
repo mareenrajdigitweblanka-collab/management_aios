@@ -29,6 +29,7 @@
 import { trapTab, returnFocus } from '../ui/popup.js';
 import { setButtonBusy } from '../ui/loading.js';
 import { lockBodyScroll, unlockBodyScroll } from '../ui/scroll-lock.js';
+import { showToast } from '../ui/toast.js';
 import { CALENDAR_AUTH_API_BASE } from '../config.js';
 
 var STORAGE_KEY = 'management_aios_calendar_auth_v1';
@@ -106,8 +107,10 @@ export function getStoredMemberKey() {
    second, parallel label map in this module that could drift from the
    backend's own MEMBER_LABELS (backend/config.py). Falls back to the raw
    key if the DOM lookup ever fails (e.g. in a test harness with no
-   calendar markup mounted). */
-function labelForMemberKey(memberKey) {
+   calendar markup mounted). Exported so instance.js can build the same
+   dynamic cross-member copy (crossMemberAlertCopy below) for the backend-
+   403 fallback path, using the identical label source. */
+export function labelForMemberKey(memberKey) {
   if (!memberKey) { return null; }
   var el = document.querySelector('.msc-instance[data-member-key="' + memberKey + '"]');
   var label = el && el.getAttribute('data-member-label');
@@ -132,12 +135,24 @@ function verifyToken(token) {
   });
 }
 
-// ── Authorize-this-browser dialog (lazy singleton, same pattern as
-//    ui/dialog.js's ensureDialog()) ──────────────────────────────────────
+// ── Token dialog — "Authorize this browser" (first use) and "Change
+//    Calendar token" (topbar control) share ONE lazy-singleton dialog
+//    (same pattern as ui/dialog.js's ensureDialog()), parameterized per
+//    open() call — both are structurally "enter a token, verify it,
+//    store it only on success"; only title/message/submit-label/post-
+//    success behavior differ. ─────────────────────────────────────────
+
+var DEFAULT_AUTHORIZE_MESSAGE =
+  'Enter your Calendar member token to create, update, or delete Tasks and Leave. ' +
+  'You normally only need to do this once on this browser.';
+
+var CHANGE_TOKEN_MESSAGE =
+  'Enter a different member token for this browser. Your current authorization ' +
+  'will remain active until the new token is verified.';
 
 var dialogApi = null;
 
-function ensureAuthorizeDialog() {
+function ensureTokenDialog() {
   if (dialogApi) { return dialogApi; }
 
   var overlay = document.createElement('div');
@@ -163,7 +178,7 @@ function ensureAuthorizeDialog() {
   headEl.className = 'msc-modal-form-head ui-dialog-head';
   var titleEl = document.createElement('h4');
   titleEl.id = 'calendar-auth-title';
-  titleEl.textContent = 'Authorize this browser';
+  titleEl.textContent = 'Authorize this browser'; // default; overwritten per open() call
   var closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'msc-modal-close calendar-auth-close';
@@ -178,9 +193,7 @@ function ensureAuthorizeDialog() {
   var messageEl = document.createElement('p');
   messageEl.id = 'calendar-auth-message';
   messageEl.className = 'ui-dialog-message';
-  messageEl.textContent =
-    'Enter your Calendar member token to create, update, or delete Tasks and Leave. ' +
-    'You normally only need to do this once on this browser.';
+  messageEl.textContent = DEFAULT_AUTHORIZE_MESSAGE; // default; overwritten per open() call
 
   var labelEl = document.createElement('label');
   labelEl.setAttribute('for', 'calendar-auth-token-input');
@@ -224,7 +237,7 @@ function ensureAuthorizeDialog() {
   var submitBtn = document.createElement('button');
   submitBtn.type = 'button';
   submitBtn.className = 'msc-btn msc-btn-primary calendar-auth-submit';
-  submitBtn.textContent = 'Authorize';
+  submitBtn.textContent = 'Authorize'; // default; overwritten per open() call
   actionsEl.appendChild(cancelBtn);
   actionsEl.appendChild(submitBtn);
 
@@ -236,8 +249,10 @@ function ensureAuthorizeDialog() {
 
   var activeResolve = null;
   var activeReject = null;
+  var activeOptions = null;
   var triggerEl = null;
   var submitting = false;
+  var openPromise = null;
 
   function showError(message) {
     errorEl.textContent = message;
@@ -255,7 +270,9 @@ function ensureAuthorizeDialog() {
     unlockBodyScroll();
     returnFocus(triggerEl);
     triggerEl = null;
-    inputEl.value = '';
+    activeOptions = null;
+    openPromise = null;
+    inputEl.value = ''; // never prefilled, on open or on close — no saved token is ever reflected here
     clearError();
     setButtonBusy(submitBtn, false);
     submitting = false;
@@ -304,9 +321,17 @@ function ensureAuthorizeDialog() {
     clearError();
     setButtonBusy(submitBtn, true, { busyLabel: 'Verifying…' });
     cancelBtn.disabled = true;
+    var announceSuccess = !!(activeOptions && activeOptions.announceSuccess);
     verifyToken(token).then(function (body) {
       writeStoredAuth(token, body.memberKey);
       renderIndicator();
+      if (announceSuccess) {
+        showToast({
+          type: 'success',
+          title: 'Authorization updated',
+          message: 'Calendar authorization changed to ' + labelForMemberKey(body.memberKey) + '.'
+        });
+      }
       submitting = false;
       settleResolve(token);
     }).catch(function (err) {
@@ -330,16 +355,36 @@ function ensureAuthorizeDialog() {
   submitBtn.addEventListener('click', submit);
 
   dialogApi = {
-    open: function () {
-      return new Promise(function (resolve, reject) {
+    /* options: { title, message, submitLabel, announceSuccess, trigger }
+       — all optional; omitted options fall back to the original
+       "Authorize this browser" wording/behavior (ensureAuthorized() below
+       calls open() with no options at all, so that flow is byte-for-byte
+       unchanged). A second open() call while this dialog is already open
+       returns the SAME pending promise rather than starting a second,
+       conflicting one — this dialog is a single shared singleton, and in
+       practice a second trigger is already unreachable while the first
+       is showing (full-screen modal + focus trap), but this guard makes
+       that explicit rather than relying only on that. */
+    open: function (options) {
+      if (openPromise) { return openPromise; }
+      options = options || {};
+      activeOptions = options;
+      titleEl.textContent = options.title || 'Authorize this browser';
+      messageEl.textContent = options.message || DEFAULT_AUTHORIZE_MESSAGE;
+      submitBtn.textContent = options.submitLabel || 'Authorize';
+      openPromise = new Promise(function (resolve, reject) {
         activeResolve = resolve;
         activeReject = reject;
-        triggerEl = document.activeElement;
+        triggerEl = options.trigger || document.activeElement;
         overlay.classList.add('show');
         lockBodyScroll();
         overlay.addEventListener('keydown', onKeydown);
+        // Opening the dialog (either mode) moves focus to the token
+        // input — never prefilled (inputEl.value is always '' here,
+        // untouched from the last close()).
         inputEl.focus();
       });
+      return openPromise;
     }
   };
   return dialogApi;
@@ -363,7 +408,7 @@ export function ensureAuthorized() {
   if (pendingAuthorization) {
     return pendingAuthorization;
   }
-  pendingAuthorization = ensureAuthorizeDialog().open().then(
+  pendingAuthorization = ensureTokenDialog().open().then(
     function (token) {
       pendingAuthorization = null;
       return token;
@@ -374,6 +419,99 @@ export function ensureAuthorized() {
     }
   );
   return pendingAuthorization;
+}
+
+// ── openChangeTokenDialog() — the topbar "Change token" control. Opens
+//    the SAME dialog in "change" mode: current localStorage is left
+//    completely untouched until the replacement token verifies
+//    successfully (never cleared just for opening the dialog, and never
+//    cleared on Cancel/Escape/close or an invalid replacement — the
+//    existing authorization keeps working throughout). Always resolves
+//    (never rejects) with a boolean — true only on a confirmed,
+//    successful replacement — so callers never need a .catch(). ──
+
+export function openChangeTokenDialog() {
+  var els = getIndicatorEls();
+  var trigger = els && els.changeTokenBtn;
+  return ensureTokenDialog().open({
+    title: 'Change Calendar token',
+    message: CHANGE_TOKEN_MESSAGE,
+    submitLabel: 'Change token',
+    announceSuccess: true,
+    trigger: trigger
+  }).then(
+    function () { return true; },
+    function () { return false; }
+  );
+}
+
+// ── Cross-member pre-block ────────────────────────────────────────────
+//
+// Approved copy (CROSS-MEMBER FLOW) — kept as one pure function so both
+// the client-side pre-block below and instance.js's backend-403 fallback
+// (apiRequest/leaveApiRequest, using the backend's own actingMember/
+// targetMember facts) render the exact same wording. actingLabel/
+// targetLabel are already-resolved display labels (never raw member
+// keys) — this function does no DOM lookup itself, so it stays testable
+// with plain strings and safely callable from instance.js too.
+
+export function crossMemberAlertCopy(actingLabel, targetLabel) {
+  return {
+    title: "You can't manage " + targetLabel + "'s Calendar",
+    message: 'You are authorized as ' + actingLabel + '. You can only create or change ' +
+      actingLabel + "'s Tasks and Leave."
+  };
+}
+
+function showCrossMemberAlert(actingMemberKey, targetMemberKey) {
+  var copy = crossMemberAlertCopy(labelForMemberKey(actingMemberKey), labelForMemberKey(targetMemberKey));
+  showToast({ type: 'error', title: copy.title, message: copy.message, persistent: true });
+}
+
+// ── guardMutationAccess() — the single pre-flight gate every mutation-
+//    initiating UI action (Create/Bulk-Create/Leave-Create, Task/Leave
+//    Edit-open, Task/Leave Delete, Task Outcome) calls BEFORE opening its
+//    own modal/confirmation/form, and before sending any request:
+//
+//    - No token stored: runs the first-time authorization flow (opens
+//      "Authorize this browser" — this IS "stop before opening the final
+//      mutation action"). Once verified, compares the now-current
+//      verified member against targetMemberKey.
+//    - Token already stored: compares its (display-only) member against
+//      targetMemberKey immediately — no dialog, no delay.
+//    - Match: resolves true — the caller proceeds to open its modal/form.
+//    - Mismatch: shows the cross-member alert and resolves false — the
+//      caller must not open anything or send anything. The saved token
+//      is never touched (still valid, just for a different member).
+//    - Cancelled/failed authorization: resolves false (the dialog itself
+//      already showed its own inline error/cancel state; no separate
+//      alert here, and the token dialog is never reopened automatically
+//      afterward — matches "do not reopen the token dialog after a valid
+//      403" for the equivalent already-authorized-elsewhere case).
+//
+//    Always resolves (never rejects) — every caller can use one plain
+//    .then(function (allowed) {...}) with no .catch(). ──
+
+export function guardMutationAccess(targetMemberKey) {
+  var token = getStoredToken();
+  if (token) {
+    var currentMemberKey = getStoredMemberKey();
+    if (currentMemberKey && currentMemberKey !== targetMemberKey) {
+      showCrossMemberAlert(currentMemberKey, targetMemberKey);
+      return Promise.resolve(false);
+    }
+    return Promise.resolve(true);
+  }
+  return ensureAuthorized().then(function () {
+    var verifiedMemberKey = getStoredMemberKey();
+    if (verifiedMemberKey && verifiedMemberKey !== targetMemberKey) {
+      showCrossMemberAlert(verifiedMemberKey, targetMemberKey);
+      return false;
+    }
+    return true;
+  }, function () {
+    return false; // cancelled or failed — caller does not proceed
+  });
 }
 
 // ── 401 handling ─────────────────────────────────────────────────────────
@@ -388,7 +526,7 @@ export function handleUnauthorizedResponse() {
   renderIndicator();
 }
 
-// ── "Authorized as" indicator + Forget/change control (topbar, browser-
+// ── "Authorized as" indicator + Change-token control (topbar, browser-
 //    wide — one instance for the whole page, not per calendar tab) ──────
 
 var indicatorEls = null;
@@ -400,7 +538,7 @@ function getIndicatorEls() {
   indicatorEls = {
     root: root,
     label: document.getElementById('calendarAuthIndicatorLabel'),
-    forgetBtn: document.getElementById('calendarAuthForgetBtn')
+    changeTokenBtn: document.getElementById('calendarAuthChangeTokenBtn')
   };
   return indicatorEls;
 }
@@ -418,19 +556,14 @@ function renderIndicator() {
   }
 }
 
-export function forgetToken() {
-  clearStoredAuth();
-  renderIndicator();
-}
-
 /* Called once at app boot (web-view/js/app.js). Renders the indicator's
    initial state from whatever is already in localStorage (e.g. a reload
-   in an already-authorized browser) and wires the Forget/change control —
-   idempotent, safe to call once. */
+   in an already-authorized browser) and wires the "Change token" control
+   to openChangeTokenDialog() — idempotent, safe to call once. */
 export function initCalendarAuthIndicator() {
   var els = getIndicatorEls();
-  if (els && els.forgetBtn) {
-    els.forgetBtn.addEventListener('click', forgetToken);
+  if (els && els.changeTokenBtn) {
+    els.changeTokenBtn.addEventListener('click', function () { openChangeTokenDialog(); });
   }
   renderIndicator();
 }

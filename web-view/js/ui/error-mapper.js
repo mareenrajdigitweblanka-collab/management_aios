@@ -129,17 +129,22 @@ var KNOWN_ERRORS = {
     message: 'Some information is missing or not valid. Correct the highlighted fields and try again.',
     persistent: false
   },
-  /* Calendar member-token authorization (2026-07-29). auth_required: the
-     saved token was rejected (missing/expired/rotated/revoked) — the
-     fetch wrapper (instance.js) has already cleared localStorage and
-     will show the "Authorize this browser" dialog again on the next
-     mutation attempt, so this message only needs to explain what
-     happened, not what to do next. cross_member_denied: the request
-     itself carries the backend's own plain-language message
-     (errBody.detail.message — see instance.js), so this generic entry is
-     only the fallback used if that field is ever missing. auth_cancelled:
-     the user closed/escaped the authorize dialog without submitting a
-     token — not a server error, so distinct wording. */
+  /* Calendar member-token authorization (2026-07-29; UX correction
+     2026-07-31). auth_required: the saved token was rejected (missing/
+     expired/rotated/revoked) — the fetch wrapper (instance.js) has
+     already cleared localStorage and will show the "Authorize this
+     browser" dialog again on the next mutation attempt, so this message
+     only needs to explain what happened, not what to do next.
+     cross_member_denied: this static entry is only the FALLBACK used
+     when the thrown error carries no actingMemberLabel/targetMemberLabel
+     (should not happen in practice — instance.js's apiRequest/
+     leaveApiRequest always attach both from the backend's own
+     actingMember/targetMember facts before throwing). The normal case is
+     handled below, in mapApiError itself, with the same approved dynamic
+     copy calendar/auth.js's crossMemberAlertCopy() renders for the
+     client-side pre-block path — both must stay word-for-word identical.
+     auth_cancelled: the user closed/escaped the authorize dialog without
+     submitting a token — not a server error, so distinct wording. */
   auth_required: {
     type: 'error',
     title: 'Authorization needed',
@@ -203,10 +208,27 @@ export function classifyHttpStatus(status) {
    optional ({ field }) and only ever adds which field a validation error
    concerns; it never changes the message text itself, so nothing
    backend-specific can leak through it. Never reads or returns
-   error.message, error.status, or any other raw backend detail. */
+   error.message, error.status, or any other raw backend detail — the
+   only exception is cross_member_denied below, which reads the two
+   already-resolved DISPLAY LABEL strings the fetch wrapper attaches
+   (never raw member keys, never anything backend-supplied verbatim), so
+   this file never needs a calendar/DOM import of its own (this is a
+   leaf ui/* module — see the file header). */
 export function mapApiError(error, context) {
   context = context || {};
   var code = (error && error.code) || 'unknown';
+  if (code === 'cross_member_denied' && error && error.actingMemberLabel && error.targetMemberLabel) {
+    /* Same approved copy as calendar/auth.js's crossMemberAlertCopy() —
+       keep both in sync if this wording ever changes. */
+    return {
+      type: 'error',
+      title: "You can't manage " + error.targetMemberLabel + "'s Calendar",
+      message: 'You are authorized as ' + error.actingMemberLabel + '. You can only create or change ' +
+        error.actingMemberLabel + "'s Tasks and Leave.",
+      field: context.field || null,
+      persistent: true
+    };
+  }
   var base = KNOWN_ERRORS[code] || KNOWN_ERRORS.unknown;
   return {
     type: base.type,

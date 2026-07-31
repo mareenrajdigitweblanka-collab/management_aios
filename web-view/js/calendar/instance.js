@@ -59,7 +59,7 @@ import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } fr
 import { mapApiError, classifyHttpStatus } from '../ui/error-mapper.js';
 import { lockBodyScroll, unlockBodyScroll } from '../ui/scroll-lock.js';
 import { registerDateIcon } from './date-icon.js';
-import { ensureAuthorized, handleUnauthorizedResponse } from './auth.js';
+import { ensureAuthorized, handleUnauthorizedResponse, guardMutationAccess, labelForMemberKey } from './auth.js';
 
 /* Calendar help guide — one small builder for each expandable topic in the
    redesigned "Calendar help" popup (calendar-help-user-guide-popup task,
@@ -1586,14 +1586,34 @@ function mountScheduleCalendarInstance(container) {
     else if (e.key === 'Tab') { trapPopupTab(createPopupOverlay, e); }
   }
 
+  /* Calendar member-token authorization — cross-member pre-block
+     (2026-07-31 UX correction): openCreatePopup(kind) is the ONE shared
+     entry point for Task create, Bulk Task create, Task edit-open, Leave
+     create, and Leave edit-open (editItem()/editLeaveItem() below both
+     call it via the openTaskPopup()/openLeavePopup() aliases) — gating
+     it here covers all five without a separate check at every one of
+     those call sites. guardMutationAccess (calendar/auth.js) runs BEFORE
+     the popup ever opens: with no token stored it opens "Authorize this
+     browser" first (this IS "stop before opening the final mutation
+     action"); with a token for a different member than this instance's
+     own memberKey, it shows the cross-member alert and resolves false —
+     the popup is never opened and no request is ever sent either way.
+     No busy/"Saving…" state is involved here — opening a popup was never
+     a network operation, unlike the Save/Delete/Outcome flows below. */
+  function openCreatePopup(kind) {
+    guardMutationAccess(memberKey).then(function (allowed) {
+      if (allowed) { openCreatePopupInner(kind); }
+    });
+  }
+
   /* kind: 'task' | 'leave'. Tabs are hidden while editing an existing
      record (state.editingId for Task, editingLeaveId for Leave — both
      are already set by editItem()/editLeaveItem() before they call
-     openTaskPopup()/openLeavePopup(), which alias to this) since an
-     existing item's fundamental type isn't switchable — matches the
-     pre-existing behavior (there was never a way to turn a Task into a
-     Leave record or vice versa). */
-  function openCreatePopup(kind) {
+     openTaskPopup()/openLeavePopup(), which alias to openCreatePopup
+     above) since an existing item's fundamental type isn't switchable —
+     matches the pre-existing behavior (there was never a way to turn a
+     Task into a Leave record or vice versa). */
+  function openCreatePopupInner(kind) {
     var alreadyOpen = createPopupOverlay.classList.contains('show');
     /* Bulk Tasks never has an edit mode (it only ever creates), so
        `editing` is always false for kind === 'bulk' — the tabs stay
@@ -2306,11 +2326,26 @@ function mountScheduleCalendarInstance(container) {
             throw authErr;
           }
           if (res.status === 403) {
-            var deniedMessage = (errBody && errBody.detail && errBody.detail.message)
-              || 'You can only manage your own Tasks and Leave.';
-            var deniedErr = new Error(deniedMessage);
+            /* Calendar member-token authorization UX correction
+               (2026-07-31): the guardMutationAccess() pre-block (auth.js)
+               already catches almost every cross-member attempt before
+               any request is sent, so this branch is now a rare fallback
+               (e.g. the token was reassigned server-side in the instant
+               between the pre-block check and this request). Uses the
+               backend's own actingMember/targetMember member_key facts
+               (backend/routers/calendar_auth.py require_matching_member)
+               resolved to on-page display labels HERE (labelForMemberKey,
+               ./auth.js) — never the backend's own message text — so the
+               resulting toast (ui/error-mapper.js mapApiError) renders
+               the SAME approved dynamic copy as the pre-block path's
+               crossMemberAlertCopy (auth.js), word for word. The saved
+               token is left completely untouched — no re-prompt. */
+            var detail = (errBody && errBody.detail) || {};
+            var deniedErr = new Error('Cross-member mutation denied.');
             deniedErr.code = 'cross_member_denied';
             deniedErr.status = 403;
+            deniedErr.actingMemberLabel = labelForMemberKey(detail.actingMember) || 'another member';
+            deniedErr.targetMemberLabel = labelForMemberKey(detail.targetMember) || 'this calendar';
             throw deniedErr;
           }
           /* REQ-LEAVE-COPY-001: a task save blocked by active leave
@@ -3274,7 +3309,13 @@ function mountScheduleCalendarInstance(container) {
 
       bulkSubmitInFlight = true;
       setButtonBusy(bulkCreateBtn, true, { busyLabel: 'Creating…' });
-      performBulkSubmit(false).then(function () {
+      /* Calendar member-token authorization busy-state correction
+         (2026-07-31 UX correction): .finally() (not .then()) so the
+         button is always restored — Cancel/invalid-token/network-
+         failure/401/403 during the auth flow performBulkSubmit's own
+         apiRequest call now goes through, exactly like a normal
+         validation/server failure, never leaves "Creating…" stuck. */
+      performBulkSubmit(false).finally(function () {
         bulkSubmitInFlight = false;
         setButtonBusy(bulkCreateBtn, false);
       });
@@ -4488,7 +4529,11 @@ function mountScheduleCalendarInstance(container) {
     var addedDate = fieldDate.value;
     setButtonBusy(addBtn, true, { busyLabel: 'Saving…' });
     showApiStatus('', false, taskPopupStatusEl);
-    performTaskCreate(payload, addedDate).then(function () { setButtonBusy(addBtn, false); });
+    /* .finally() (2026-07-31 UX correction) — always restores the button
+       regardless of success/failure, including any Cancel/invalid-token/
+       network-failure/401/403 that occurs during apiRequest's own
+       ensureAuthorized() step inside performTaskCreate. */
+    performTaskCreate(payload, addedDate).finally(function () { setButtonBusy(addBtn, false); });
   });
 
   function editItem(id) {
@@ -4631,7 +4676,9 @@ function mountScheduleCalendarInstance(container) {
     var editingId = state.editingId;
     setButtonBusy(updateBtn, true, { busyLabel: 'Saving…' });
     showApiStatus('', false, taskPopupStatusEl);
-    performTaskUpdate(payload, editingId).then(function () { setButtonBusy(updateBtn, false); });
+    /* .finally() (2026-07-31 UX correction) — see performTaskCreate's
+       call site above for the full rationale. */
+    performTaskUpdate(payload, editingId).finally(function () { setButtonBusy(updateBtn, false); });
   });
 
   /* Returns a Promise<boolean> (true only on a confirmed, successful
@@ -4648,28 +4695,39 @@ function mountScheduleCalendarInstance(container) {
   function deleteItem(id, triggerEl) {
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) { return Promise.resolve(false); }
-    return confirmDestructive({
-      title: 'Delete task?',
-      message: '“' + it.title + '” will be permanently removed from Management AIOS.',
-      confirmLabel: 'Delete task',
-      cancelLabel: 'Cancel',
-      trigger: triggerEl,
-      onConfirm: function () {
-        return apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
-          items = items.filter(function (x) { return x.id !== id; });
-          if (state.editingId === id) { cancelEdit(); }
-          renderActiveView();
-          renderPriorityPreview();
-          if (currentMode === 'tasks') { renderTasksWorkspace(); }
-          refreshSummary();
-          showToast({ type: 'success', title: 'Task deleted', message: 'The task was removed.' });
-          return true;
-        }).catch(function (err) {
-          var mapped = mapApiError(err);
-          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
-          return false;
-        });
-      }
+    /* Calendar member-token authorization — cross-member pre-block
+       (2026-07-31 UX correction): gated BEFORE confirmDestructive() ever
+       opens, so a cross-member attempt never shows the delete
+       confirmation dialog and never sends a request. A blocked gate
+       resolves false here, which every existing caller (viewDeleteBtn's
+       click handler below) already treats identically to "the user
+       declined the confirmation" — no new return-value shape, no changed
+       caller code needed. */
+    return guardMutationAccess(memberKey).then(function (allowed) {
+      if (!allowed) { return false; }
+      return confirmDestructive({
+        title: 'Delete task?',
+        message: '“' + it.title + '” will be permanently removed from Management AIOS.',
+        confirmLabel: 'Delete task',
+        cancelLabel: 'Cancel',
+        trigger: triggerEl,
+        onConfirm: function () {
+          return apiRequest('DELETE', apiBase + '/' + encodeURIComponent(id)).then(function () {
+            items = items.filter(function (x) { return x.id !== id; });
+            if (state.editingId === id) { cancelEdit(); }
+            renderActiveView();
+            renderPriorityPreview();
+            if (currentMode === 'tasks') { renderTasksWorkspace(); }
+            refreshSummary();
+            showToast({ type: 'success', title: 'Task deleted', message: 'The task was removed.' });
+            return true;
+          }).catch(function (err) {
+            var mapped = mapApiError(err);
+            showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+            return false;
+          });
+        }
+      });
     });
   }
 
@@ -5104,7 +5162,10 @@ function mountScheduleCalendarInstance(container) {
         showToast({ type: mapped.type, title: title, message: message, persistent: mapped.persistent });
         return false;
       })
-      .then(function (ok) { setButtonBusy(triggerBtn, false); return ok; });
+      /* .finally() (2026-07-31 UX correction) — restores triggerBtn on
+         every path, .then()'s original resolved value (true/false) passes
+         through unchanged since this callback returns nothing. */
+      .finally(function () { setButtonBusy(triggerBtn, false); });
   }
 
   /* Mark Completed (FINAL BUSINESS RULES, 2026-07-24, closure review pass
@@ -5125,26 +5186,33 @@ function mountScheduleCalendarInstance(container) {
       if (!id) { return; }
       var it = items.filter(function (x) { return x.id === id; })[0];
       if (!it) { return; }
-      /* Availability gate (screenshot-derived defect, 2026-07-24) —
-         recomputed fresh here (never a value cached from renderOutcome()'s
-         last call) so a popup left open across the Colombo midnight
-         boundary is judged correctly (STEP 9). A blocked click shows the
-         explanatory toast and stops before the confirmation dialog opens
-         or any request is sent; the backend still independently rejects
-         a stale request either way (unchanged). */
-      var availability = getOutcomeAvailability(it);
-      if (availability !== 'current') { showOutcomeUnavailableToast(it, availability); return; }
-      var clearsReason = it.outcome === 'Uncompleted';
-      confirmDestructive({
-        title: 'Mark task Completed?',
-        message: clearsReason
-          ? 'This clears the previously recorded Uncompleted reason. This cannot be undone.'
-          : 'Confirm this task is Completed.',
-        confirmLabel: 'Mark Completed',
-        cancelLabel: 'Cancel',
-        confirmVariant: clearsReason ? 'danger' : 'primary',
-        trigger: viewOutcomeCompletedBtn,
-        onConfirm: function () { return setTaskOutcome(id, 'Completed', null, viewOutcomeCompletedBtn); }
+      /* Calendar member-token authorization — cross-member pre-block
+         (2026-07-31 UX correction): checked BEFORE the availability gate
+         and before confirmDestructive() opens, so a cross-member attempt
+         never shows the confirmation dialog and never sends a request. */
+      guardMutationAccess(memberKey).then(function (allowed) {
+        if (!allowed) { return; }
+        /* Availability gate (screenshot-derived defect, 2026-07-24) —
+           recomputed fresh here (never a value cached from renderOutcome()'s
+           last call) so a popup left open across the Colombo midnight
+           boundary is judged correctly (STEP 9). A blocked click shows the
+           explanatory toast and stops before the confirmation dialog opens
+           or any request is sent; the backend still independently rejects
+           a stale request either way (unchanged). */
+        var availability = getOutcomeAvailability(it);
+        if (availability !== 'current') { showOutcomeUnavailableToast(it, availability); return; }
+        var clearsReason = it.outcome === 'Uncompleted';
+        confirmDestructive({
+          title: 'Mark task Completed?',
+          message: clearsReason
+            ? 'This clears the previously recorded Uncompleted reason. This cannot be undone.'
+            : 'Confirm this task is Completed.',
+          confirmLabel: 'Mark Completed',
+          cancelLabel: 'Cancel',
+          confirmVariant: clearsReason ? 'danger' : 'primary',
+          trigger: viewOutcomeCompletedBtn,
+          onConfirm: function () { return setTaskOutcome(id, 'Completed', null, viewOutcomeCompletedBtn); }
+        });
       });
     });
   }
@@ -5160,12 +5228,18 @@ function mountScheduleCalendarInstance(container) {
       if (!id) { return; }
       var it = items.filter(function (x) { return x.id === id; })[0];
       if (!it) { return; }
-      /* Availability gate — same reasoning as the Mark Completed handler
-         above; blocked here means the reason-entry form never opens and
-         no request is sent. */
-      var availability = getOutcomeAvailability(it);
-      if (availability !== 'current') { showOutcomeUnavailableToast(it, availability); return; }
-      showOutcomeReasonForm(it.outcome === 'Uncompleted' ? it.outcome_reason : '');
+      /* Calendar member-token authorization — cross-member pre-block
+         (2026-07-31 UX correction): checked before the reason-entry form
+         ever opens — a cross-member attempt never sees that form. */
+      guardMutationAccess(memberKey).then(function (allowed) {
+        if (!allowed) { return; }
+        /* Availability gate — same reasoning as the Mark Completed handler
+           above; blocked here means the reason-entry form never opens and
+           no request is sent. */
+        var availability = getOutcomeAvailability(it);
+        if (availability !== 'current') { showOutcomeUnavailableToast(it, availability); return; }
+        showOutcomeReasonForm(it.outcome === 'Uncompleted' ? it.outcome_reason : '');
+      });
     });
   }
 
@@ -5656,11 +5730,26 @@ function mountScheduleCalendarInstance(container) {
             throw authErr;
           }
           if (res.status === 403) {
-            var deniedMessage = (errBody && errBody.detail && errBody.detail.message)
-              || 'You can only manage your own Tasks and Leave.';
-            var deniedErr = new Error(deniedMessage);
+            /* Calendar member-token authorization UX correction
+               (2026-07-31): the guardMutationAccess() pre-block (auth.js)
+               already catches almost every cross-member attempt before
+               any request is sent, so this branch is now a rare fallback
+               (e.g. the token was reassigned server-side in the instant
+               between the pre-block check and this request). Uses the
+               backend's own actingMember/targetMember member_key facts
+               (backend/routers/calendar_auth.py require_matching_member)
+               resolved to on-page display labels HERE (labelForMemberKey,
+               ./auth.js) — never the backend's own message text — so the
+               resulting toast (ui/error-mapper.js mapApiError) renders
+               the SAME approved dynamic copy as the pre-block path's
+               crossMemberAlertCopy (auth.js), word for word. The saved
+               token is left completely untouched — no re-prompt. */
+            var detail = (errBody && errBody.detail) || {};
+            var deniedErr = new Error('Cross-member mutation denied.');
             deniedErr.code = 'cross_member_denied';
             deniedErr.status = 403;
+            deniedErr.actingMemberLabel = labelForMemberKey(detail.actingMember) || 'another member';
+            deniedErr.targetMemberLabel = labelForMemberKey(detail.targetMember) || 'this calendar';
             throw deniedErr;
           }
           /* member-leave-overlap-prevention (2026-07-17): a create/edit
@@ -5825,7 +5914,10 @@ function mountScheduleCalendarInstance(container) {
       } else {
         showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
       }
-    }).then(function () { setButtonBusy(leaveCreateBtn, false); });
+      /* .finally() (2026-07-31 UX correction) — always restores the
+         button, including any Cancel/invalid-token/network-failure/401/
+         403 during apiRequest's own ensureAuthorized() step above. */
+    }).finally(function () { setButtonBusy(leaveCreateBtn, false); });
   });
 
   /* ── Leave popup create/edit mode toggle (calendar-based Leave
@@ -5950,7 +6042,9 @@ function mountScheduleCalendarInstance(container) {
       } else {
         showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
       }
-    }).then(function () { setButtonBusy(leaveUpdateBtn, false); });
+      /* .finally() (2026-07-31 UX correction) — see leaveCreateBtn's call
+         site above for the full rationale. */
+    }).finally(function () { setButtonBusy(leaveUpdateBtn, false); });
   });
 
   /* Soft-deletes an active leave record (2026-07-16 simplification
@@ -5958,26 +6052,35 @@ function mountScheduleCalendarInstance(container) {
      Cancelled/Rejected status). Confirms first, then refreshes the
      calendar and the leave-deduction reports. Reused unchanged by the
      Leave-detail popup's Delete button below. */
+  /* Calendar member-token authorization — cross-member pre-block
+     (2026-07-31 UX correction): same pattern as deleteItem() above —
+     gated BEFORE confirmDestructive() opens, so a cross-member attempt
+     never shows the delete confirmation and never sends a request. A
+     blocked gate resolves false, identical to "the user declined the
+     confirmation" for every existing caller. */
   function deleteLeaveRecord(leaveId, btn) {
-    return confirmDestructive({
-      title: 'Delete leave?',
-      message: 'This leave entry will be permanently removed from the calendar.',
-      confirmLabel: 'Delete leave',
-      cancelLabel: 'Cancel',
-      trigger: btn,
-      onConfirm: function () {
-        return leaveApiRequest('DELETE', leaveApiBase + '/' + encodeURIComponent(leaveId)).then(function () {
-          leaveItems = leaveItems.filter(function (lv) { return lv.id !== leaveId; });
-          renderActiveView();
-          refreshSummary();
-          showToast({ type: 'success', title: 'Leave deleted', message: 'The leave entry was removed.' });
-          return true;
-        }).catch(function (err) {
-          var mapped = mapApiError(err);
-          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
-          return false;
-        });
-      }
+    return guardMutationAccess(memberKey).then(function (allowed) {
+      if (!allowed) { return false; }
+      return confirmDestructive({
+        title: 'Delete leave?',
+        message: 'This leave entry will be permanently removed from the calendar.',
+        confirmLabel: 'Delete leave',
+        cancelLabel: 'Cancel',
+        trigger: btn,
+        onConfirm: function () {
+          return leaveApiRequest('DELETE', leaveApiBase + '/' + encodeURIComponent(leaveId)).then(function () {
+            leaveItems = leaveItems.filter(function (lv) { return lv.id !== leaveId; });
+            renderActiveView();
+            refreshSummary();
+            showToast({ type: 'success', title: 'Leave deleted', message: 'The leave entry was removed.' });
+            return true;
+          }).catch(function (err) {
+            var mapped = mapApiError(err);
+            showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+            return false;
+          });
+        }
+      });
     });
   }
 

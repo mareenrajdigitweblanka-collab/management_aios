@@ -27,8 +27,8 @@ class FakeElement {
     this._listeners = {};
     this._children = [];
     this._id = '';
+    this._innerHTML = '';
     this.textContent = '';
-    this.innerHTML = '';
     this.hidden = false;
     this.disabled = false;
     this.value = '';
@@ -49,6 +49,43 @@ class FakeElement {
   get className() { return this._classes.join(' '); }
   set className(value) { this._classes = value ? value.split(/\s+/) : []; }
 
+  /* auth.js never uses innerHTML (built via createElement/appendChild
+     specifically to avoid needing this) — only ui/toast.js does, for its
+     fixed showToast() template. This is a deliberately narrow, flat
+     parser (no real nesting, no attribute values beyond class) — good
+     enough to make ui/toast.js's own el.querySelector('.ui-toast-dismiss')
+     lookup succeed and to let tests read back toast title/message text,
+     without a real HTML parser. */
+  get innerHTML() { return this._innerHTML; }
+  set innerHTML(html) {
+    this._innerHTML = html;
+    this._children = [];
+    /* Trailing (?=<) is a zero-width lookahead, not a consumed literal —
+       when one tag's content is immediately followed by another opening
+       tag with no text between them (e.g. <div class="ui-toast-body">
+       immediately followed by <p class="ui-toast-title">...), a consumed
+       trailing '<' would swallow that next tag's own opening '<' as part
+       of THIS match, so the next exec() never sees it as a fresh match
+       start and that whole element is silently skipped. The lookahead
+       leaves the '<' at lastIndex for the next exec() call to actually
+       match, whether it starts an opening tag (matches next time) or a
+       closing tag (fails \w+ after '<', so exec() just scans past it to
+       the next real '<'). */
+    var tagRe = /<(\w+)\b([^>]*)>([^<]*)(?=<)/g;
+    var m;
+    while ((m = tagRe.exec(html))) {
+      var tag = m[1], attrs = m[2], text = m[3];
+      var classMatch = /class="([^"]*)"/.exec(attrs);
+      var idMatch = /\bid="([^"]*)"/.exec(attrs);
+      var child = new FakeElement(tag, this._doc);
+      if (classMatch) { child.className = classMatch[1]; }
+      if (idMatch) { child.id = idMatch[1]; }
+      child.textContent = text;
+      this._children.push(child);
+      if (this._doc) { this._doc._all.push(child); }
+    }
+  }
+
   setAttribute(name, value) { this._attrs[name] = String(value); }
   getAttribute(name) { return Object.prototype.hasOwnProperty.call(this._attrs, name) ? this._attrs[name] : null; }
   removeAttribute(name) { delete this._attrs[name]; }
@@ -57,6 +94,25 @@ class FakeElement {
     this._children.push(child);
     if (this._doc) { this._doc._all.push(child); }
     return child;
+  }
+
+  /* Minimal scoped querySelector — searches this element's own
+     descendant subtree (never siblings/ancestors, matching real DOM
+     semantics). Supports the two selector shapes this codebase's test
+     harness ever needs: a plain '.class-name' (ui/toast.js's own
+     el.querySelector('.ui-toast-dismiss')) and '.class[attr="value"]'
+     (auth.js's .msc-instance[data-member-key="X"] lookup) — see
+     matchesSimpleSelector below, shared with document.querySelector.
+     Anything more exotic throws loudly rather than silently returning
+     null, so a test relying on unsupported selector syntax fails fast. */
+  querySelector(selector) {
+    var stack = this._children.slice();
+    while (stack.length) {
+      var el = stack.shift();
+      if (matchesSimpleSelector(el, selector)) { return el; }
+      if (el._children && el._children.length) { stack = el._children.concat(stack); }
+    }
+    return null;
   }
 
   addEventListener(type, handler) {
@@ -82,13 +138,20 @@ class FakeElement {
   }
 }
 
+/* Shared by document.querySelector and FakeElement.querySelector.
+   Supports exactly two shapes: '.class-name' (ui/toast.js) and
+   '.class[attr="value"]' (auth.js's .msc-instance[data-member-key="X"]
+   lookup) — everything either module actually uses. Anything else throws
+   loudly rather than silently returning null/false. */
 function matchesSimpleSelector(el, selector) {
-  // Only ever needs to support auth.js's one lookup:
-  // '.msc-instance[data-member-key="X"]'
-  var m = /^\.([\w-]+)\[([\w-]+)="([^"]*)"\]$/.exec(selector);
-  if (!m) { throw new Error('auth-test-dom: unsupported selector "' + selector + '"'); }
-  var className = m[1], attrName = m[2], attrValue = m[3];
-  return el.classList.contains(className) && el.getAttribute(attrName) === attrValue;
+  var withAttr = /^\.([\w-]+)\[([\w-]+)="([^"]*)"\]$/.exec(selector);
+  if (withAttr) {
+    var className = withAttr[1], attrName = withAttr[2], attrValue = withAttr[3];
+    return el.classList.contains(className) && el.getAttribute(attrName) === attrValue;
+  }
+  var plain = /^\.([\w-]+)$/.exec(selector);
+  if (plain) { return el.classList.contains(plain[1]); }
+  throw new Error('auth-test-dom: unsupported selector "' + selector + '"');
 }
 
 export function createFakeDocument() {
@@ -137,7 +200,12 @@ export function installFakeBrowserGlobals() {
     localStorage: fakeLocalStorage,
     location: { hostname: 'localhost' },
     scrollY: 0,
-    scrollTo: function () {}
+    scrollTo: function () {},
+    // Synchronous stand-in — ui/toast.js only uses this to add the
+    // 'show' class one tick after mount for a CSS transition; running it
+    // immediately is deterministic and sufficient for tests, which never
+    // assert on the pre-transition state.
+    requestAnimationFrame: function (cb) { cb(); }
   };
 
   globalThis.document = fakeDocument;

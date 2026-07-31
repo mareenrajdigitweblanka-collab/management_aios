@@ -313,7 +313,7 @@
       color: #cbd5e1;
     }
 
-    .topbar-calendar-auth-forget {
+    .topbar-calendar-auth-change-btn {
       font-size: .74rem;
       font-weight: 600;
       color: #93c5fd;
@@ -324,11 +324,11 @@
       text-decoration: underline;
     }
 
-    .topbar-calendar-auth-forget:hover {
+    .topbar-calendar-auth-change-btn:hover {
       color: #bfdbfe;
     }
 
-    .topbar-calendar-auth-forget:focus-visible {
+    .topbar-calendar-auth-change-btn:focus-visible {
       outline: none;
       box-shadow: var(--focus-ring);
       border-radius: 2px;
@@ -399,6 +399,24 @@
 
       #searchClear {
         padding: 0 10px;
+      }
+
+      /* Calendar member-token authorization indicator (2026-07-31 UX
+         correction) — narrow viewports: the label truncates with an
+         ellipsis rather than pushing the topbar into a second row (the
+         same single-row/fixed-56px-height constraint the comment above
+         explains) or letting it overflow off-screen; "Change token"
+         itself is never shrunk or hidden — it stays a full-size, easily
+         tappable target regardless of viewport width. */
+      .topbar-calendar-auth {
+        max-width: 58vw;
+      }
+
+      .topbar-calendar-auth-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
       }
     }
 

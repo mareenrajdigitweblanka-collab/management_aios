@@ -32,14 +32,17 @@
       <div class="topbar-sep"></div>
       <span class="topbar-sub">Dashboard v0.1</span>
     </div>
-    <!-- Calendar member-token authorization (2026-07-29) — browser-wide,
-         not per member tab: hidden until this browser has a verified
-         token (calendar/auth.js renderIndicator()); viewing any member's
-         Calendar never requires this. -->
+    <!-- Calendar member-token authorization (2026-07-29; Change-token UX
+         correction 2026-07-31) — browser-wide, not per member tab: hidden
+         until this browser has a verified token (calendar/auth.js
+         renderIndicator()); viewing any member's Calendar never requires
+         this. "Change token" opens a dedicated dialog (calendar/auth.js
+         openChangeTokenDialog()) rather than clearing authorization
+         immediately — the current token stays active until a replacement
+         verifies successfully. -->
     <div class="topbar-calendar-auth" id="calendarAuthIndicator" hidden>
       <span class="topbar-calendar-auth-label" id="calendarAuthIndicatorLabel"></span>
-      <button type="button" class="topbar-calendar-auth-forget" id="calendarAuthForgetBtn">Forget or change
-        token</button>
+      <button type="button" class="topbar-calendar-auth-change-btn" id="calendarAuthChangeTokenBtn">Change token</button>
     </div>
     <!-- Search moved into the top header (2026-07-20 header/sidebar UX task)
          — same #searchInput/#searchClear/#searchResults/#searchHint IDs and
