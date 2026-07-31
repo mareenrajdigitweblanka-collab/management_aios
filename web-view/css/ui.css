@@ -300,11 +300,23 @@
   border-color: var(--accent);
 }
 
+/* Strengthened to a red-tinted alert box (2026-07-31 follow-up) — plain
+   var(--error) text alone (dark red, #b91c1c) read as too close to
+   ordinary dark text at this small size/weight, unlike the clearly-red
+   cross-member toast beside it. Reuses --error-bg (the same token
+   --status-error-text/--blocked-bg pairing already used elsewhere in
+   this design system, tokens.css) rather than inventing a new color, so
+   this inline verification error is unmistakably red at a glance while
+   staying visually consistent with the rest of the app's error styling. */
 .calendar-auth-error {
   color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm);
   font-size: var(--font-xs);
   font-weight: 600;
   margin: 8px 0 0;
+  padding: 6px 10px;
 }
 
 .calendar-auth-warning {
