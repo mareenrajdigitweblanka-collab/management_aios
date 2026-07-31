@@ -91,6 +91,25 @@
   line-height: 1.4;
 }
 
+/* Error toast strengthening (2026-07-31 Calendar member-token
+   authorization UX correction) — icon and left border were already red
+   (lines above); title/message did not previously distinguish an error
+   toast from any other type by color. var(--error) (#b91c1c, backend/
+   config.py's own accessible "blocked" red — see tokens.css) already
+   meets text-contrast requirements on the toast's light --surface
+   background, so both lines below reuse it directly rather than
+   introducing a second red. Icon, left border, title, AND message all
+   carry the error color together — color is never the only signal (the
+   ✕ icon and the message text itself remain regardless of color
+   perception), and every error/warning toast already renders with
+   role="alert" (ui/toast.js), which browsers treat as an implicit
+   assertive live-region announcement — no separate aria-live wrapper is
+   needed on top of that. */
+.ui-toast--error .ui-toast-title,
+.ui-toast--error .ui-toast-message {
+  color: var(--error);
+}
+
 .ui-toast-dismiss {
   flex-shrink: 0;
   border: none;

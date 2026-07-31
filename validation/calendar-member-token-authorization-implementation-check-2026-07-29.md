@@ -102,3 +102,78 @@ git diff --stat        f5cdbb8..bcedadc145837043cddcaa3c55cb8b7bb21c3946
 ```
 
 **Commit `bcedadc` contains 23 unique changed files in total: 10 added and 13 modified (0 deleted).** The requirement, validation, and handover files (`docs/2026-07-29_calendar-member-token-authorization-requirement.md`, this file, and `handover/2026-07-29__calendar-member-token-authorization-closure.md`) are three of the 10 **added** files — they are already included within the 23, not three files in addition to it. No file was added, removed, or changed as part of this correction; only the prior report's wording was inaccurate. A repeat secret scan of the full commit diff found no real token, hash, or production credential, and the protected path `member-aios/mayurika-hr/staff-data/` does not appear anywhere in the commit.
+
+## 13. Frontend UX correction (2026-07-31)
+
+A focused frontend-only follow-up pass, branched as `fix/calendar-auth-ux-corrections` off `main` (which by this point already includes the merged PR #2). **No backend route, schema, or authorization rule was changed** — the backend already returned `actingMember`/`targetMember` in its 403 `detail` body (`backend/routers/calendar_auth.py require_matching_member`, unchanged), which is all this pass needed. Files touched: `web-view/js/calendar/auth.js`, `web-view/js/calendar/instance.js`, `web-view/js/ui/error-mapper.js`, `web-view/index.html`, `web-view/css/base.css`, `web-view/css/ui.css`, `web-view/js/calendar/auth.test.mjs`, `web-view/js/calendar/auth-test-dom.mjs`.
+
+### 13.1 UX requirement addressed
+
+Five confirmed problems from the approved UX correction: (1) the topbar control's wording ("Forget or change token") was confusing; (2) clicking it destructively cleared authorization instead of opening a token-entry form; (3) a cross-member mutation attempt could leave the Create/Edit modal open behind (or interleaved with) the authorization dialog; (4) the cross-member error toast was not visually distinct enough as an error; (5) an invalid token, Cancel, a network failure, a 401, or a 403 could leave the originating Task/Leave button stuck showing "Saving…".
+
+### 13.2 Exact wording changes
+
+| Element | Before | After |
+| --- | --- | --- |
+| Topbar control text | "Forget or change token" | "Change token" |
+| Topbar control id | `calendarAuthForgetBtn` | `calendarAuthChangeTokenBtn` |
+| Topbar control CSS class | `.topbar-calendar-auth-forget` | `.topbar-calendar-auth-change-btn` |
+| Dialog title (new mode) | — | "Change Calendar token" |
+| Dialog description (new mode) | — | "Enter a different member token for this browser. Your current authorization will remain active until the new token is verified." |
+| Dialog submit button (new mode) | — | "Change token" (Cancel unchanged) |
+| Success confirmation | — | "Calendar authorization changed to `<member>`." (toast) |
+| Cross-member alert title | generic "Not authorized for this member" (KNOWN_ERRORS fallback, now used only if the dynamic labels are ever missing) | "You can't manage `<selected member>`'s Calendar" |
+| Cross-member alert message | generic "You can only manage your own Tasks and Leave." (same fallback-only status) | "You are authorized as `<acting member>`. You can only create or change `<acting member>`'s Tasks and Leave." |
+
+### 13.3 Change-token behavior
+
+Implemented as a second `open()` mode on the SAME lazy-singleton dialog `ensureAuthorized()` already used (`web-view/js/calendar/auth.js`, `ensureTokenDialog()`), parameterized by title/message/submit-label/`announceSuccess` rather than a second dialog implementation. `openChangeTokenDialog()` (new, exported): opens immediately on click (no intermediate confirmation step), never calls `clearStoredAuth()` on open, never prefills the input from the currently-saved token (the input is always built empty via `createElement` and only ever cleared, never populated, by `close()`), and only calls `writeStoredAuth()` — replacing the prior token — after `verifyToken()` resolves successfully. Always resolves (never rejects) with a boolean, so the topbar click handler needs no `.catch()`.
+
+### 13.4 Retain-on-cancel / retain-on-invalid behavior
+
+Verified by `auth.test.mjs`: Cancel and Escape both resolve `openChangeTokenDialog()` with `false` and leave `getStoredToken()`/`getStoredMemberKey()` completely unchanged (the original token). An invalid replacement token (mocked 401 from `/api/calendar-auth/verify`) shows the existing inline red error, keeps the dialog open for correction, and — critically — also leaves the original stored token unchanged (never partially overwritten). A cross-member 403 from the backend (existing behavior, confirmed unchanged) likewise never triggers `handleUnauthorizedResponse()`/`clearStoredAuth()` — only a genuine 401 does that.
+
+### 13.5 Cross-member alert result
+
+New `guardMutationAccess(targetMemberKey)` (`auth.js`) is the single pre-flight gate called by every mutation-initiating UI action before its own modal/confirmation/form ever opens and before any request is sent: `instance.js`'s `openCreatePopup()` (the one shared entry point for Task create, Bulk Task create, Task edit-open, Leave create, and Leave edit-open), `deleteItem()` (Task delete), `deleteLeaveRecord()` (Leave delete), and both Task Outcome click handlers (Mark Completed, Mark Uncompleted). Verified by `auth.test.mjs`: a cross-member attempt (token already verified for a different member than the current calendar tab) resolves `false`, shows the dynamic alert (§13.2), retains the valid token, and never opens an authorize dialog. A first-time attempt (no token yet) opens "Authorize this browser" first; once verified, a matching member resumes the original action exactly once, a mismatched member shows the same alert without ever reopening the dialog ("do not reopen the token dialog after a valid 403" — this is the equivalent already-authorized-elsewhere case, handled identically). The identical dynamic copy is also used as the fallback for the rare residual backend-403 case (`instance.js` `apiRequest`/`leaveApiRequest`, now attaching `actingMemberLabel`/`targetMemberLabel` resolved via `auth.js`'s exported `labelForMemberKey`; `ui/error-mapper.js` `mapApiError` renders from those two fields, keeping `ui/*` a leaf module with no calendar/DOM import of its own).
+
+### 13.6 Red error styling result
+
+`ui/toast.js`'s error toast already had a red left border and red icon (`var(--error)`, tokens.css's `#b91c1c` — the same "blocked" red already used elsewhere for accessible error text, e.g. `--status-error-text`). Added: `.ui-toast--error .ui-toast-title`/`.ui-toast-message` now also render in `var(--error)`, so title, description, icon, and border are all consistently red. Color is never the only signal — the icon (✕) and the message text remain regardless of color perception. Every error/warning toast already renders with `role="alert"` (unchanged, `ui/toast.js`), which is treated as an implicit assertive live-region announcement by browsers — no separate `aria-live` wrapper was needed on top of that. The dismiss control was already a real, keyboard-focusable `<button>` with visible hover/focus-visible states — confirmed adequate, not modified.
+
+### 13.7 Busy-state reset result
+
+Every `setButtonBusy(btn, false)` reset that follows a mutation's promise chain was converted from `.then(fn)` to `.finally(fn)` (`addBtn`/Task create, `updateBtn`/Task update, `triggerBtn`/Task outcome, `bulkCreateBtn`/Bulk create, `leaveCreateBtn`/Leave create, `leaveUpdateBtn`/Leave update) — this restores the button on every settlement path (success, business-rule rejection, network failure, and now also `auth_cancelled`/`auth_required`/`cross_member_denied`) unconditionally, rather than relying on each flow's own internal `.catch()` never re-throwing. Task/Leave Delete and Task Outcome's confirmation step use the shared `ui/dialog.js` `confirmDestructive()`, whose own busy-state handling was already unconditional (`settle()` always resets its internal confirm button; a rejected/`false`-returning `onConfirm` also resets it) — confirmed unchanged and adequate. The NEW pre-block gate itself never marks a "Saving…" state on the triggering button while its own dialog is open (opening a popup, or the pre-block check, was never a network operation) — only the dialog's own "Verifying…" submit button shows busy state during that phase, and it is reset on every exit path (Cancel, Escape, close button, invalid token, network failure) via the existing `close()`/`catch()` logic in `ensureTokenDialog()`, confirmed via `auth.test.mjs`.
+
+### 13.8 Keyboard/focus result
+
+Verified by `auth.test.mjs`: opening either dialog mode moves focus to the token input; Escape and Cancel close without changing the saved token; focus returns to whichever control triggered the dialog (the "Change token" button, or whatever had focus before a mutation's first-time authorize flow) on every close, including after a successful replacement; the input remains focused and available for correction after an inline verification error.
+
+### 13.9 Desktop / mobile / 200% zoom results
+
+**Not verified in a live browser this session** — no browser automation/screenshot tool was available in this environment (checked via tool search; none found). Coverage for this pass is: (a) 30 automated `auth.test.mjs` tests exercising the real code paths through a hand-rolled DOM stand-in (not pixel/layout rendering), and (b) a code-level responsive review: the new topbar indicator reuses the existing flex-row topbar (no new fixed pixel widths/heights), and a new `max-width: 58vw` + label ellipsis-truncation rule was added at the existing `max-width: 640px` breakpoint (`web-view/css/base.css`) so the indicator degrades gracefully on narrow viewports without ever shrinking or hiding the "Change token" button itself, mirroring the existing `.topbar-planning-warning` narrow-viewport pattern. 200% zoom was not independently modeled — it was not distinguished from the narrow-viewport case in this review, since browser zoom and a narrower effective viewport produce the same CSS layout constraints. A live desktop/mobile/200%-zoom walkthrough remains a pre-merge action item (§13.11).
+
+### 13.10 Test totals
+
+- New/updated file: `web-view/js/calendar/auth.test.mjs` — **30/30 passing** (up from 12; net +18: Change-token dialog open/prefill/cancel/invalid/success/wiring, `crossMemberAlertCopy`/`guardMutationAccess` pre-block behavior for both already-authorized and first-time-authorization paths, keyboard/focus, and a static regression guard reading the real `index.html` for the "Change token" wording).
+- Complete Calendar frontend suite (`node --test *.test.mjs` from `web-view/js/calendar/`): **117/117 passing** (87 pre-existing + 30 auth), zero regressions.
+- Backend: not touched this pass; not re-run (no backend file in this session's diff — confirmed via `git status --short`).
+
+### 13.11 Screenshot paths
+
+None — no browser tool was available to capture any, and the task explicitly prohibits tokens/hashes appearing in any screenshot or evidence file, so none were fabricated or simulated.
+
+### 13.12 Remaining limitations (this pass)
+
+1. No live browser walkthrough (desktop, mobile, or 200% zoom) — code-level/automated-test coverage only (§13.9).
+2. The `.finally()` busy-state hardening (§13.7) is a genuine, verified defensive improvement, but was not re-confirmed via a live click-through — only via code reading and the existing automated suite (which does not drive real `setTimeout`-based network timing).
+3. All limitations already carried from §9 (shared-secret-per-member model, localStorage/XSS exposure, no CSP/script audit, no per-device token, audit-log scope) are unchanged and still open.
+4. This pass has not been committed, pushed, or reviewed as of this section being written — see the handover document for the commit/push record once complete.
+
+### 13.13 Final status (this pass)
+
+**AMBER** — implementation and automated tests complete and passing; a live browser walkthrough, CSP/script review, and reviewer sign-off remain pending, consistent with the overall feature's status.
+
+### 13.14 One next step
+
+Commit and push this pass (see handover document), then request reviewer sign-off before a live desktop/mobile/200%-zoom walkthrough is performed against a running preview.
