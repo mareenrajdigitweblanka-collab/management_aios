@@ -123,4 +123,28 @@ Owner (builder): Mareenraj, per explicit direct-main implementation authorizatio
 
 ## 19. One next step
 
-Review this evidence and the local `main` diff (implementation commit, not yet pushed per this task's explicit instruction), then — if approved — either arrange a real-browser manual QA pass against the mode-switching/weekday-chip/date-chip UI (mobile width, 200% zoom, screen reader) before general rollout, or push and deploy first and perform that pass against the live page, consistent with how prior Calendar features in this repository have sequenced their own remaining browser-verification steps.
+~~Review this evidence and the local `main` diff...~~ **Superseded — see §20.** The user explicitly authorized pushing without local browser validation and will validate directly in production.
+
+## 20. Human-in-the-loop local browser validation — attempted, not completed (2026-08-03, same-day follow-up)
+
+A separate task requested human-in-the-loop local browser validation (24 phases: repository gate, diff review, local startup, pre/post production task counts, DevTools network-request blocking, then manual clicks/keyboard/ARIA/responsive checks across Single/Range/Weekend/Multiple-date/multi-time-frame/limit-boundary/invalid-state/add-another-task/authorization scenarios).
+
+**What the assistant completed directly (no browser required):**
+
+- Repository gate: PASS — branch `main`, local HEAD `6a8c4fe`, `origin/main` `ec4baab`, working tree clean, exactly 1 commit ahead, no independent remote divergence.
+- Implementation diff review: PASS — commit `6a8c4fe` touches exactly the 7 expected files; no backend/database/secret/token/env/protected-path file; `git diff --check` clean; targeted credential grep found nothing.
+- Local startup discovery: the existing, documented method in `backend/README.md` was used exactly as written — `python -m uvicorn backend.main:app --port 8000` + `python -m http.server 8080 --directory web-view`, frontend at `http://127.0.0.1:8080/index.html`. Both confirmed healthy/serving (`/health` 200, `index.html` 200) before being stopped again (see below).
+- **Read-only discovery, not previously flagged**: the local `.env` (present, untracked, never opened/read by the assistant) connects this local backend to the **same production database** as the deployed app — confirmed via one GET call returning 241 real records for one member, with no row content ever displayed or recorded. There is no separate local/dev database in this environment.
+- Production task count **before**: `total_tasks = 860`, `active_tasks = 726` (aggregate-only query, `management_aios.member_schedule_events`, no row content selected).
+- Local servers were then stopped (`Stop-Process` on the two listening Python processes; confirmed both ports refuse connections afterward).
+- Production task count **after** (re-run following the user's decision below): `total_tasks = 860`, `active_tasks = 726` — **unchanged**.
+
+**What was NOT performed, and why:** Phases 5–19 (DevTools network-request blocking, then every manual click/keyboard/ARIA/responsive/console scenario) require a real browser driven by a human or a browser-automation tool. No browser-automation tool is available in this environment (consistent with every prior Calendar feature's evidence trail in this repository) — the assistant cannot open Chrome/Edge, click a button, toggle DevTools request blocking, tab through controls, or judge visual layout. This was disclosed to the user directly rather than fabricated.
+
+**User decision**: after being told the above, the user explicitly instructed: *"Just commit and push I will check in production"* — i.e., proceed directly to commit/push without the local browser-validation phases, with the user taking personal responsibility for validating the feature live in production themselves. This is a deliberate, explicit override of this sub-task's own push gate ("push only when every core browser scenario passed"), not a silent skip — recorded here for the record, not presented as if the gate were actually met.
+
+**Production data safety for this sub-session**: writes: 0. Records changed: 0. Every action taken (health checks, one GET call, two aggregate COUNT queries, stopping local processes) was read-only or purely local-process-lifecycle; no POST/PUT/DELETE was ever sent to the bulk-create endpoint or any other mutation endpoint, locally or in production.
+
+**Status of this specific sub-task**: **AMBER, explicitly downgraded from any claim of PASS** — the manual browser-validation checklist (Phases 5–19) was not executed by the assistant and its results are not recorded as PASS/FAIL for any scenario; the "PASS / AMBER / FAIL" verdict in §18 above is not upgraded on the strength of this sub-session, since none of the additional browser-only checks it describes were actually run.
+
+**One next step (for this sub-task)**: the user validates the feature directly against the production deployment after push (see the companion handover document for the push/deployment record); if a defect is found there, it should be triaged and fixed as its own follow-up, the same way this repository has handled every prior real-browser-found defect (e.g. the Review Summaries CSS-visibility fix, `a2aafa9`).

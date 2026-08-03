@@ -3,7 +3,7 @@ name: calendar-bulk-task-multi-date-implementation-handover
 type: handover
 scope: management_aios Calendar — Bulk Tasks multi-date creation (REQ-CAL-BULK-DATES-001)
 created: 2026-08-03
-status: AMBER — implemented directly on main per explicit direct-main authorization, zero backend/database change, all automated tests pass (628 backend with 2 pre-existing unrelated failures, 232/232 frontend including 55 new tests). Committed locally, NOT pushed pending review of the final implementation report. AMBER because no DOM-mounted or real-browser verification was performed — architectural/tooling limitations, honestly disclosed.
+status: AMBER — implemented directly on main per explicit direct-main authorization, zero backend/database change, all automated tests pass (628 backend with 2 pre-existing unrelated failures, 232/232 frontend including 55 new tests). Human-in-the-loop local browser validation was attempted (repo gate/diff review/local startup/pre-post production task counts all PASS) but the 15 manual browser-interaction phases were not performed — no browser-automation tool available, requires a human. User explicitly instructed to push and validate directly in production instead (§12) — pushed per that explicit authorization (§13). AMBER because no DOM-mounted or real-browser verification was performed — architectural/tooling limitations, honestly disclosed, and the push gate was explicitly overridden by the user, not met.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -76,4 +76,24 @@ Nothing has been pushed, so rollback is simply: do not push this commit. `origin
 
 ## 11. One next step
 
-Review this evidence and the local `main` diff (implementation commit, not yet pushed), then — if approved — either arrange a real-browser manual QA pass (mobile width, 200% zoom, screen reader, actual mode-switching/weekday-chip/date-chip interaction) before pushing, or push and deploy first and perform that pass against the live page, consistent with how prior Calendar features in this repository have sequenced their own remaining browser-verification steps.
+~~Review this evidence and the local `main` diff...~~ **Superseded — see §12.**
+
+## 12. Human-in-the-loop local browser validation — attempted, not completed; user-authorized push (2026-08-03, same-day follow-up)
+
+Full detail: `validation/calendar-bulk-task-multi-date-implementation-check-2026-08-03.md`, "Human-in-the-loop local browser validation" section.
+
+**Attempted**: repository gate (PASS), implementation diff review (PASS — exactly the 7 expected files, no backend/database/secret file), local startup via the existing documented method (`backend/README.md`), production task count before validation (`total_tasks=860`, `active_tasks=726`, aggregate-only).
+
+**Discovered during setup**: the local `.env` (present, never opened) connects the local backend to the **same production database** as the deployed app — no separate local/dev database exists in this environment. This was disclosed to the user before any further step.
+
+**Not performed**: the 15 manual browser-interaction phases (network-request blocking, Single/Range/Weekend/Multiple-date/multi-time-frame/limit-boundary/invalid-state/add-another-task/authorization/keyboard/ARIA/responsive/console checks) — no browser-automation tool is available in this environment; this requires a human directly driving a real browser. Local dev servers were started, offered to the user, then stopped again (confirmed both ports refuse connections) once the user's decision below was given.
+
+**User decision**: the user explicitly instructed *"Just commit and push I will check in production"* — an explicit, informed override of this sub-task's own push gate, with the user taking personal responsibility for validating the feature live in production after deployment.
+
+**Production task count after**: re-queried following that decision — `total_tasks=860`, `active_tasks=726`, unchanged from before. **Production writes this sub-session: 0.**
+
+**Status**: AMBER, unchanged from §8 above — this sub-session does not add a browser-validation PASS of any kind; the push that follows (§13) is user-authorized despite the unmet browser-validation gate, not a claim that the gate was met.
+
+## 13. One next step
+
+The user validates the feature directly against the production deployment after push/deploy. If a defect is found, triage and fix it as its own follow-up task, the same way this repository has handled every prior real-browser-found defect for this Calendar feature area.
