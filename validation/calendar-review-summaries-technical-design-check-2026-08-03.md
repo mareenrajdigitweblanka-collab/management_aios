@@ -48,6 +48,32 @@ Per CLAUDE.md §18 (Reviewer Routing Rule): KPI/AXIOM/ROI/implementation domain 
 
 **PASS.** Per the numeric pass/fail rule stated in the design document (§18): 0 unresolved contradictions with REQ-CAL-REV-001, 5/5 API routes fully documented, 30/30 authorization-matrix cells filled, 40 ≥ 30 proposed tests, 0 application/migration/database files touched. The design document's own status is READY WITH LIMITATION (not BLOCKED) — the one outstanding item (live staff-id verification) is a pre-implementation checklist item, not a design defect, and does not fail this validation check.
 
-## 6. One next step
+## 6. One next step (as of the design-only session, 2026-08-03)
 
-Obtain an approved read-only database connection (or an operator-run query) to close the live staff-id verification gap, then begin backend implementation with the additive `StaffRecordOut.id` field per the design document §4.
+~~Obtain an approved read-only database connection (or an operator-run query) to close the live staff-id verification gap, then begin backend implementation with the additive `StaffRecordOut.id` field per the design document §4.~~ **Superseded — see §7.** The database connection was obtained and the gap is closed.
+
+## 7. Live database verification (2026-08-03, same-day follow-up)
+
+Companion evidence for `docs/2026-08-03_calendar-review-summaries-technical-design.md` §20. Sections 1–6 above (the design-phase PASS and READY WITH LIMITATION history) are preserved unchanged; this section records the subsequent live-database verification pass.
+
+| Check | Result |
+|---|---|
+| Live metadata verification | PASS |
+| UUID type | PASS — `data_type`/`udt_name` = `uuid` |
+| Primary key | PASS — `staff_dashboard_records_pkey` on `id` |
+| Null-id count | 0 |
+| Duplicate-id count | 0 (310 total rows, 310 distinct ids) |
+| Database write count | 0 |
+| Sensitive-row output count | 0 — only schema metadata and aggregate counts were queried; no staff names, employee numbers, emails, phones, or full rows were selected or displayed |
+| StaffRecordOut.id technical readiness | READY — additive `id: UUID` field design (design doc §4) is now backed by live-verified non-null, unique, PK-constrained source data |
+| Remaining open business parameter | 10,000-character summary maximum (proposed, pending final business confirmation — not implemented this session) |
+| Residual technical note | The live `id` column carries no DB-level `DEFAULT` clause (unlike the migration-file evidence in design doc §2, which specifies `DEFAULT gen_random_uuid()`). Non-null/uniqueness remain fully guaranteed by the `PRIMARY KEY` constraint and the SQLAlchemy ORM's Python-side default; this is an implementation-phase note (§6 of the design doc), not a blocker |
+| Final design status | READY FOR IMPLEMENTATION |
+
+### PASS / AMBER / FAIL
+
+**PASS.** All six status-rule conditions are met: table exists, `id` type is UUID, primary key confirmed, null-id count is 0, duplicate-id count is 0, zero database writes occurred.
+
+### One next step
+
+Begin backend implementation starting with the additive `StaffRecordOut.id` field (design doc §4), carrying forward the residual DB-default note above as an implementation-phase consideration, and obtain final business confirmation of the 10,000-character summary maximum before or during that phase.

@@ -3,7 +3,7 @@ name: calendar-review-summaries-technical-design
 type: technical-design-document
 created: 2026-08-03
 created-by: Mareenraj (builder)
-status: READY WITH LIMITATION — live staff.id verification pending; summary maximum length pending final business confirmation
+status: READY FOR IMPLEMENTATION (updated 2026-08-03 after live staff.id verification, see §20) — one open business parameter remains (summary maximum length)
 requirement-id: REQ-CAL-REV-001
 ---
 
@@ -444,7 +444,7 @@ None of these files were created or modified during this design session.
 
 ## 17. Known limitations
 
-1. Live staff-id verification (row count, null count, duplicate count against the actually-deployed table) is UNVERIFIED this session — no approved database connection was available. Repository schema evidence is strong (PK + NOT NULL + default at the DDL layer, no hard-delete path) but is not a substitute for a live query.
+1. ~~Live staff-id verification (row count, null count, duplicate count against the actually-deployed table) is UNVERIFIED this session — no approved database connection was available.~~ **RESOLVED 2026-08-03** — see §20. Live query confirms 310 rows, 0 null ids, 0 duplicate ids, `id` is `uuid` NOT NULL, PK-constrained. One residual note carried forward from that verification: the live column has no DB-level `DEFAULT` clause (see §20) — id generation currently relies on the SQLAlchemy ORM-side default, not a Postgres-side one; this does not affect the null/duplicate/uniqueness guarantees already enforced by the `PRIMARY KEY` constraint, but should be considered when the migration in §6 is finalized (adding `DEFAULT gen_random_uuid()` to the live column, or accepting the ORM-only default, is an implementation-phase decision, not a blocker).
 2. Summary maximum length (10,000 characters) is proposed but not finally confirmed by the business owner.
 3. The Calendar's "currently selected date" cannot be used to prefill `meeting_date` without a new export from `instance.js`'s private closure state — deferred as an optional follow-up, not Phase 1 scope.
 4. No live browser walkthrough was performed (no browser automation tool available in this environment), consistent with the pattern already documented for prior Calendar-auth work in this repo.
@@ -452,9 +452,11 @@ None of these files were created or modified during this design session.
 
 ## 18. Approval / status
 
-**Status: READY WITH LIMITATION.**
+**Original status (2026-08-03, design session): READY WITH LIMITATION.**
 
-Per this task's explicit instruction, READY FOR IMPLEMENTATION cannot be claimed while staff.id stability rests on repository schema evidence rather than a live database query (Known Limitation #1). The design itself is complete, internally consistent with the approved requirement (§3), and every technical question raised in the requirement's §6 "Technical verification required" list has a documented answer or an explicit UNVERIFIED flag — nothing here is BLOCKED, and no open item requires a further business decision beyond the already-flagged summary-length confirmation.
+Per this task's explicit instruction, READY FOR IMPLEMENTATION could not be claimed while staff.id stability rested on repository schema evidence rather than a live database query (Known Limitation #1). The design itself was complete and internally consistent with the approved requirement (§3), and every technical question raised in the requirement's §6 "Technical verification required" list had a documented answer or an explicit UNVERIFIED flag — nothing was BLOCKED, and no open item required a further business decision beyond the already-flagged summary-length confirmation.
+
+**Updated status (2026-08-03, live verification session): READY FOR IMPLEMENTATION.** See §20 for the live database evidence that resolves Known Limitation #1. The single remaining open item is the non-blocking summary-maximum-length business parameter (§10), which does not gate implementation start per the requirement's own framing.
 
 ### Numeric pass/fail rule
 
@@ -469,4 +471,32 @@ All five conditions are met. The single outstanding item (live staff-id verifica
 
 ## 19. One next step
 
-Obtain an approved read-only database connection (or request an operator to run the row-count/null-count/duplicate-`id` queries manually) to close Known Limitation #1, then begin backend implementation starting with the additive `StaffRecordOut.id` field (§4) — the one change every other part of this design depends on.
+~~Obtain an approved read-only database connection (or request an operator to run the row-count/null-count/duplicate-`id` queries manually) to close Known Limitation #1, then begin backend implementation starting with the additive `StaffRecordOut.id` field (§4) — the one change every other part of this design depends on.~~ **Superseded by §20** — the database connection was obtained and Known Limitation #1 is resolved. The next step is now: begin backend implementation starting with the additive `StaffRecordOut.id` field (§4).
+
+## 20. Live Staff ID Verification (2026-08-03)
+
+Read-only verification performed against the live PostgreSQL database using an already-approved, pre-authorized connection (`claude.ai postgres` MCP connector). No credentials, connection strings, or passwords are recorded here.
+
+| Item | Result |
+|---|---|
+| Connection target confirmed | Database `order_management_copy`, user `postgres`, `search_path = "$user", public` |
+| Database/table checked | `management_aios.staff_dashboard_records` |
+| Table existence | Confirmed present |
+| Column checked | `id` |
+| Column data type | `uuid` (`data_type` = `uuid`, `udt_name` = `uuid`) |
+| Nullability | `is_nullable = NO` |
+| Column default | **None** — the live column carries no `DEFAULT` clause at the database level (see note below; this is a discrepancy from the repository migration-file evidence cited in §2, which specifies `DEFAULT gen_random_uuid()`) |
+| Primary-key result | Confirmed — constraint `staff_dashboard_records_pkey`, type `PRIMARY KEY`, column `id` |
+| Total row count | 310 |
+| Null-id count | 0 |
+| Distinct-id count | 310 |
+| Duplicate-id count | 310 − 310 = **0** |
+| Read-only method | Individual `SELECT`-only metadata/aggregate statements (see note below on transaction wrapping), plus one no-op `ROLLBACK` issued for compliance with the task's transaction-close instruction |
+| Row-level staff data displayed | **NO** — only schema metadata and aggregate counts were queried or reported; no names, employee numbers, emails, phones, or full rows were selected or displayed |
+| Database writes executed | **0** |
+| Verification date | 2026-08-03 |
+| Remaining limitation | The live `id` column has no DB-level `DEFAULT`. Non-null/uniqueness is still fully guaranteed by the `PRIMARY KEY` constraint for any row already in the table, and by the SQLAlchemy ORM's `default=uuid.uuid4()` for any row inserted through the application — but a row inserted by a tool that bypasses the ORM (e.g. a raw `INSERT` without an explicit `id`) would fail rather than auto-generate one. This is a note for the implementation phase (§6's migration should consider adding `DEFAULT gen_random_uuid()` to match the originally-designed DDL), not a blocker to this design's readiness. |
+
+**Note on transaction wrapping**: the available query tool executes each statement independently; a combined `BEGIN READ ONLY; ...; ROLLBACK;` batch did not return the intermediate `SELECT` result (only the trailing statement's empty result was visible), so per this task's explicit fallback instruction ("If the driver or environment cannot guarantee read-only mode, run only the listed SELECT metadata and aggregate queries"), each metadata/aggregate query was instead run individually. Every statement executed was a `SELECT` against `information_schema`/`management_aios.staff_dashboard_records` or a no-op `ROLLBACK` — no `INSERT`, `UPDATE`, `DELETE`, `UPSERT`, or DDL statement was issued at any point.
+
+**Status-rule evaluation**: table exists ✓; `id` type is `uuid` ✓; primary key confirmed ✓; null-id count is 0 ✓; duplicate-id count is 0 ✓; no write occurred ✓. All six conditions required for READY FOR IMPLEMENTATION (§18) are met.
