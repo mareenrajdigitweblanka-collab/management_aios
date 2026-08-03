@@ -14,6 +14,29 @@
   gap: var(--space-4);
 }
 
+/* Authorization-context fix follow-up (2026-08-03, real-browser defect
+   found in production smoke testing) — several elements in this widget
+   (.review-summaries-panel, .review-summaries-blocked, .review-summaries-
+   form, .review-summaries-selected-staff below) set an explicit `display`
+   value. review-summaries.js toggles visibility on many of these via the
+   native `hidden` DOM attribute/property, but the browser's default
+   `[hidden] { display: none }` user-agent rule loses to ANY author-
+   stylesheet `display` declaration of equal-or-higher specificity — so
+   `el.hidden = true` silently did nothing visually on any element whose
+   class also sets `display`. Confirmed live: a cross-member-blocked panel
+   stayed fully visible and interactive (only the actual network request
+   was blocked, by guardedApiRequest — not the UI), and the blocked banner
+   showed as an empty bar on an ALLOWED panel. One scoped, `!important`
+   rule closes the whole bug class (present and future) rather than
+   patching each conflicting selector individually — `!important` is the
+   standard, safe pattern for a `[hidden]` override (same reasoning
+   Bootstrap/Tailwind use for their own `.hidden`/`.d-none` utilities);
+   scoped to `.review-summaries-instance` so it cannot affect any other
+   part of the app. */
+.review-summaries-instance [hidden] {
+  display: none !important;
+}
+
 .review-summaries-header {
   display: flex;
   flex-direction: column;
