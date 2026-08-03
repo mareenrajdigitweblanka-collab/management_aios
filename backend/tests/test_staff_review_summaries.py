@@ -300,13 +300,117 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         ids = [r["id"] for r in resp.json()["records"]]
         self.assertIn(str(summary_id), ids)
 
-    def test_different_reviewer_cannot_see_owner_history(self):
+    def test_reviewer_member_key_omitted_defaults_to_authenticated_reviewer(self):
+        """PHASE 5.5 (REQ-CAL-REV-001 shared-read revision) — a caller that
+        never passes ?reviewer_member_key= keeps seeing only their own
+        history, matching the prior owner-only behavior exactly."""
         self.seed_summary(reviewer_member_key="mayurika")
         resp = self.client.get(
             "/api/staff-review-summaries", headers=bearer_header("suman")
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["records"], [])
+
+    def test_mayurika_reads_arun_list(self):
+        """PHASE 5.2 — an authenticated reviewer may read another valid
+        reviewer's history via ?reviewer_member_key=."""
+        summary_id, _ = self.seed_summary(
+            reviewer_member_key="arun", summary_text="Arun's own summary."
+        )
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "arun"},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(summary_id)])
+        self.assertEqual(resp.json()["records"][0]["reviewer_member_key"], "arun")
+
+    def test_arun_reads_mayurika_list(self):
+        """PHASE 5.3 — symmetric to the above, in the other direction."""
+        summary_id, _ = self.seed_summary(
+            reviewer_member_key="mayurika", summary_text="Mayurika's own summary."
+        )
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "mayurika"},
+            headers=bearer_header("arun"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(summary_id)])
+
+    def test_different_reviewers_reviewing_same_staff_return_separate_selected_owner_histories(self):
+        """PHASE 5.4 — two reviewers each hold a summary about the SAME
+        reviewed staff member; selecting one reviewer's key must return
+        only that reviewer's row, never the other's, even though both
+        summaries concern the same reviewed_staff_id."""
+        staff_id = self.seed_staff(source_record_key="staff-shared", full_name="Shared Staff")
+        summary_a_id, _ = self.seed_summary(
+            reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+            summary_text="Mayurika's summary about the shared staff member.",
+        )
+        summary_b_id, _ = self.seed_summary(
+            reviewer_member_key="arun", reviewed_staff_id=staff_id,
+            summary_text="Arun's summary about the shared staff member.",
+        )
+
+        resp_mayurika = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "mayurika"},
+            headers=bearer_header("suman"),
+        )
+        self.assertEqual([r["id"] for r in resp_mayurika.json()["records"]], [str(summary_a_id)])
+
+        resp_arun = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "arun"},
+            headers=bearer_header("suman"),
+        )
+        self.assertEqual([r["id"] for r in resp_arun.json()["records"]], [str(summary_b_id)])
+
+    def test_invalid_reviewer_member_key_rejected_safely(self):
+        """PHASE 5.6 — an unknown reviewer_member_key is a 422 validation
+        error, never silently ignored and never a 500/leak."""
+        self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "not-a-real-member"},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    def test_date_filters_work_for_another_reviewers_history(self):
+        """PHASE 5.18."""
+        staff_id = self.seed_staff(source_record_key="staff-datefilter")
+        self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=10))
+        in_range_id, _ = self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id,
+                                            meeting_date=self.today)
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "arun", "date_from": str(self.today - timedelta(days=1))},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(in_range_id)])
+
+    def test_pagination_works_for_another_reviewers_history(self):
+        """PHASE 5.19."""
+        staff_id = self.seed_staff(source_record_key="staff-paginate-other")
+        for i in range(3):
+            self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id,
+                               meeting_date=self.today - timedelta(days=i))
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "arun", "limit": 2},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()["records"]), 2)
+        self.assertEqual(resp.json()["total"], 3)
 
     def test_public_list_returns_401(self):
         self.seed_summary(reviewer_member_key="mayurika")
@@ -354,21 +458,21 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         ids_b = [r["id"] for r in resp_b.json()["records"]]
         self.assertEqual(ids_b, [str(summary_b_id)])
 
-        # Reviewer A cannot open Reviewer B's summary and vice versa.
-        self.assertEqual(
-            self.client.get(
-                "/api/staff-review-summaries/" + str(summary_b_id),
-                headers=bearer_header("mayurika"),
-            ).status_code,
-            404,
+        # Reviewer A CAN now open Reviewer B's summary detail and vice versa
+        # (2026-08-03 revised business rule: shared read access) — this is
+        # the deliberate change from the prior owner-only detail behavior.
+        detail_b_from_a = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_b_id),
+            headers=bearer_header("mayurika"),
         )
-        self.assertEqual(
-            self.client.get(
-                "/api/staff-review-summaries/" + str(summary_a_id),
-                headers=bearer_header("arun"),
-            ).status_code,
-            404,
+        self.assertEqual(detail_b_from_a.status_code, 200)
+        self.assertEqual(detail_b_from_a.json()["reviewer_member_key"], "arun")
+        detail_a_from_b = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_a_id),
+            headers=bearer_header("arun"),
         )
+        self.assertEqual(detail_a_from_b.status_code, 200)
+        self.assertEqual(detail_a_from_b.json()["reviewer_member_key"], "mayurika")
 
         # Cross-reviewer update/delete on the same shared-staff summaries
         # also return the non-disclosing 404 (not a 403 that would leak
@@ -399,10 +503,35 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["id"], str(summary_id))
 
-    def test_cross_reviewer_detail_returns_404(self):
+    def test_cross_reviewer_detail_is_readable(self):
+        """PHASE 5.9 (REQ-CAL-REV-001 shared-read revision) — any
+        authenticated Management Team member may open another reviewer's
+        summary detail; this replaces the prior owner-only 404 behavior."""
         summary_id, _ = self.seed_summary(reviewer_member_key="arun")
         resp = self.client.get(
             "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("rajiv")
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["id"], str(summary_id))
+        self.assertEqual(resp.json()["reviewer_member_key"], "arun")
+
+    def test_missing_detail_returns_404(self):
+        """PHASE 5.10."""
+        resp = self.client.get(
+            "/api/staff-review-summaries/00000000-0000-0000-0000-000000000000",
+            headers=bearer_header("rajiv"),
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_deleted_detail_returns_404_even_for_the_owner(self):
+        """PHASE 5.10 — a soft-deleted summary is 404 for everyone,
+        including its own owner, not just for other reviewers."""
+        summary_id, _ = self.seed_summary(reviewer_member_key="arun")
+        self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
+        )
+        resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
         )
         self.assertEqual(resp.status_code, 404)
 
@@ -628,6 +757,26 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         )
         list_resp = self.client.get(
             "/api/staff-review-summaries", headers=bearer_header("mayurika")
+        )
+        self.assertEqual(list_resp.json()["records"], [])
+        detail_resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        self.assertEqual(detail_resp.status_code, 404)
+
+    def test_deleted_summary_absent_from_another_readers_selected_list_and_detail(self):
+        """PHASE 5.17 — a soft-deleted summary stays invisible to every
+        reader, not just to its own owner: neither another reviewer's
+        ?reviewer_member_key= list nor the shared detail route ever
+        surfaces it once deleted_at is set."""
+        summary_id, _ = self.seed_summary(reviewer_member_key="arun")
+        self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
+        )
+        list_resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewer_member_key": "arun"},
+            headers=bearer_header("mayurika"),
         )
         self.assertEqual(list_resp.json()["records"], [])
         detail_resp = self.client.get(

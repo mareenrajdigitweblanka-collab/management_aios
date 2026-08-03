@@ -3,31 +3,49 @@ Review Meeting Summaries).
 
 Management Team members conduct review meetings about company staff (who
 may be a non-management staff member or another Management Team member).
-Each summary is privately owned by the reviewer who created it — never by
-the reviewed staff member. Only the owning reviewer may create, view,
-update, or soft-delete their own summaries; other reviewers cannot
-discover or access them; the reviewed staff member has no access in
-Phase 1.
+Each summary is authored, updated, and soft-deleted only by the reviewer
+who created it — never by the reviewed staff member — but, as of the
+2026-08-03 revised business rule, every authenticated Management Team
+member may READ summaries created by other Management Team members. Only
+the owning reviewer may create records under their identity, update their
+own summaries, or delete their own summaries. Public users, invalid
+tokens, and ordinary reviewed staff without a Management Team token still
+have no access at all — see get_verified_member below.
 
 Structural difference from backend/routers/member_leave.py: these routes
-carry NO {member_key} URL path segment — ownership is always "whoever the
-verified Calendar token says," so there is no separate URL-embedded
-identity to compare against, and require_matching_member's 403-on-mismatch
-pattern does not apply. Every filter is instead an implicit
-`WHERE reviewer_member_key = acting_member` added directly to each query,
-mirroring how backend/routers/member_leave.py's _get_active_record_or_404
-already combines id + owner + deleted_at IS NULL in one filter call — just
-substituting the token-derived value for the URL one. Cross-reviewer
-detail/update/delete access returns a non-disclosing 404 (never 403),
-since a 403 would confirm the record's existence to a non-owner.
+carry NO {member_key} URL path segment — the acting identity is always
+"whoever the verified Calendar token says" (Depends(get_verified_member)),
+so there is no separate URL-embedded identity to compare against, and
+require_matching_member's 403-on-mismatch pattern does not apply.
+
+Read (list/detail) vs. write (create/update/delete) now have DIFFERENT
+scoping rules:
+  - LIST is scoped to a "selected reviewer" — the optional
+    ?reviewer_member_key= query parameter, defaulting to the acting member
+    when omitted, validated against VALID_MEMBER_KEYS when supplied. This
+    is a deliberate, explicit read-widening: any authenticated member may
+    pass any other valid member's key to read that reviewer's history.
+  - DETAIL is scoped to id + deleted_at IS NULL only — no owner filter at
+    all — since any authenticated member may open any active summary by
+    id (see _get_active_summary_or_404).
+  - UPDATE/DELETE remain scoped to id + reviewer_member_key = acting
+    member + deleted_at IS NULL, mirroring backend/routers/member_leave.py's
+    _get_active_record_or_404 pattern exactly (see
+    _get_owned_summary_or_404) — cross-reviewer update/delete still
+    returns a non-disclosing 404 (never 403), since a 403 would confirm
+    the record's existence/ownership to a non-owner.
 
 All five routes require a valid Calendar member token
 (Depends(get_verified_member)) — including GET, a deliberate divergence
 from Task/Leave's public-GET convention, justified by the private nature
-of review content (approved requirement §8/§3).
+of review content (approved requirement §8/§3). There is no public GET
+route; an invalid or missing token is always 401 regardless of which
+reviewer's records are requested.
 
 Source contract: docs/2026-08-03_calendar-review-summaries-requirement.md
 and docs/2026-08-03_calendar-review-summaries-technical-design.md.
+REQ-CAL-REV-001 shared-read/owner-write revision:
+validation/calendar-review-summaries-technical-design-check-2026-08-03.md.
 """
 
 from datetime import date as date_type, datetime, timezone
@@ -38,6 +56,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from backend.config import VALID_MEMBER_KEYS
 from backend.database import get_db
 from backend.models import StaffDashboardRecord, StaffReviewSummary
 from backend.routers.calendar_auth import get_verified_member
@@ -86,12 +105,13 @@ def _reviewed_staff_or_422(db: Session, reviewed_staff_id: UUID) -> StaffDashboa
 def _get_owned_summary_or_404(
     db: Session, summary_id: UUID, acting_member: str
 ) -> StaffReviewSummary:
-    """Single combined query — id + owner + deleted_at IS NULL all in one
-    filter call — so a nonexistent id, a soft-deleted id, and an id
-    belonging to a different reviewer are indistinguishable by
-    construction. This is what makes the 404 non-disclosing: there is no
-    separate "look up by id, then check owner" step that could leak
-    existence via a different status code or timing."""
+    """Used only by the write routes (update/delete). Single combined
+    query — id + owner + deleted_at IS NULL all in one filter call — so a
+    nonexistent id, a soft-deleted id, and an id belonging to a different
+    reviewer are indistinguishable by construction. This is what makes the
+    404 non-disclosing: there is no separate "look up by id, then check
+    owner" step that could leak existence via a different status code or
+    timing."""
     record = (
         db.query(StaffReviewSummary)
         .filter(
@@ -104,6 +124,41 @@ def _get_owned_summary_or_404(
     if record is None:
         raise HTTPException(status_code=404, detail="Review summary not found.")
     return record
+
+
+def _get_active_summary_or_404(db: Session, summary_id: UUID) -> StaffReviewSummary:
+    """Used only by the read route (detail). No reviewer_member_key filter
+    at all — any authenticated Management Team member may open any active
+    summary by id (2026-08-03 revised business rule: shared read access).
+    Still excludes soft-deleted rows, and still returns 404 (not the
+    record) for a missing/deleted id."""
+    record = (
+        db.query(StaffReviewSummary)
+        .filter(
+            StaffReviewSummary.id == summary_id,
+            StaffReviewSummary.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if record is None:
+        raise HTTPException(status_code=404, detail="Review summary not found.")
+    return record
+
+
+def _valid_reviewer_member_key_or_422(reviewer_member_key: str) -> str:
+    """Validates an explicitly-supplied ?reviewer_member_key= against the
+    same VALID_MEMBER_KEYS tuple backend/routers/member_leave.py validates
+    its {member_key} URL path segment against (backend/config.py) — the
+    set of Management Team member keys is not secret (every sidebar tab
+    already names them), so rejecting an unknown key with 422 discloses
+    nothing a client couldn't already see."""
+    if reviewer_member_key not in VALID_MEMBER_KEYS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown reviewer_member_key '{reviewer_member_key}'. "
+            f"Must be one of {VALID_MEMBER_KEYS}.",
+        )
+    return reviewer_member_key
 
 
 def _to_out(record: StaffReviewSummary, db: Session) -> StaffReviewSummaryOut:
@@ -162,6 +217,7 @@ def create_staff_review_summary(
 @router.get("", response_model=StaffReviewSummaryListResponse)
 def list_staff_review_summaries(
     response: Response,
+    reviewer_member_key: Optional[str] = Query(default=None),
     reviewed_staff_id: Optional[UUID] = Query(default=None),
     date_from: Optional[date_type] = Query(default=None),
     date_to: Optional[date_type] = Query(default=None),
@@ -170,19 +226,28 @@ def list_staff_review_summaries(
     db: Session = Depends(get_db),
     acting_member: str = Depends(get_verified_member),
 ):
-    """Every query is unconditionally scoped to
-    `reviewer_member_key = acting_member` — there is no route or query
-    parameter that can ever return another reviewer's rows. Ordered
-    meeting_date DESC, created_at DESC (approved requirement §6/§9), the
-    exact reverse-direction mirror of member_leave.py's
+    """Scoped to a "selected reviewer" (2026-08-03 revised business rule):
+    ?reviewer_member_key= is optional and, when omitted, defaults to the
+    authenticated acting member — the prior owner-only behavior is
+    therefore unchanged for a caller that never passes the parameter. When
+    supplied, it is validated against VALID_MEMBER_KEYS and the query is
+    scoped to THAT reviewer's rows instead — any authenticated Management
+    Team member may read any other valid reviewer's history this way; a
+    valid token is still always required (Depends(get_verified_member)).
+    Ordered meeting_date DESC, created_at DESC (approved requirement
+    §6/§9), the exact reverse-direction mirror of member_leave.py's
     asc(start_date), asc(created_at)."""
     _set_no_store(response)
+
+    selected_reviewer = acting_member
+    if reviewer_member_key is not None:
+        selected_reviewer = _valid_reviewer_member_key_or_422(reviewer_member_key)
 
     if date_from is not None and date_to is not None and date_from > date_to:
         raise HTTPException(status_code=422, detail="date_from must not be after date_to.")
 
     query = db.query(StaffReviewSummary).filter(
-        StaffReviewSummary.reviewer_member_key == acting_member,
+        StaffReviewSummary.reviewer_member_key == selected_reviewer,
         StaffReviewSummary.deleted_at.is_(None),
     )
     if reviewed_staff_id is not None:
@@ -218,8 +283,12 @@ def get_staff_review_summary(
     db: Session = Depends(get_db),
     acting_member: str = Depends(get_verified_member),
 ):
+    """Any authenticated Management Team member may open any active
+    summary by id (2026-08-03 revised business rule) — acting_member is
+    still required (a valid token gates the route at all) but is not used
+    to filter the lookup; see _get_active_summary_or_404."""
     _set_no_store(response)
-    record = _get_owned_summary_or_404(db, summary_id, acting_member)
+    record = _get_active_summary_or_404(db, summary_id)
     return _to_out(record, db)
 
 

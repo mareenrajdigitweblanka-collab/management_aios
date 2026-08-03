@@ -16,23 +16,20 @@
 
 /* Authorization-context fix follow-up (2026-08-03, real-browser defect
    found in production smoke testing) — several elements in this widget
-   (.review-summaries-panel, .review-summaries-blocked, .review-summaries-
-   form, .review-summaries-selected-staff below) set an explicit `display`
-   value. review-summaries.js toggles visibility on many of these via the
-   native `hidden` DOM attribute/property, but the browser's default
-   `[hidden] { display: none }` user-agent rule loses to ANY author-
-   stylesheet `display` declaration of equal-or-higher specificity — so
-   `el.hidden = true` silently did nothing visually on any element whose
-   class also sets `display`. Confirmed live: a cross-member-blocked panel
-   stayed fully visible and interactive (only the actual network request
-   was blocked, by guardedApiRequest — not the UI), and the blocked banner
-   showed as an empty bar on an ALLOWED panel. One scoped, `!important`
-   rule closes the whole bug class (present and future) rather than
-   patching each conflicting selector individually — `!important` is the
-   standard, safe pattern for a `[hidden]` override (same reasoning
-   Bootstrap/Tailwind use for their own `.hidden`/`.d-none` utilities);
-   scoped to `.review-summaries-instance` so it cannot affect any other
-   part of the app. */
+   (.review-summaries-panel, .review-summaries-unauthorized, .review-
+   summaries-form, .review-summaries-selected-staff below) set an explicit
+   `display` value. review-summaries.js toggles visibility on many of
+   these via the native `hidden` DOM attribute/property, but the browser's
+   default `[hidden] { display: none }` user-agent rule loses to ANY
+   author-stylesheet `display` declaration of equal-or-higher specificity
+   — so `el.hidden = true` silently did nothing visually on any element
+   whose class also sets `display`. One scoped, `!important` rule closes
+   the whole bug class (present and future) rather than patching each
+   conflicting selector individually — `!important` is the standard, safe
+   pattern for a `[hidden]` override (same reasoning Bootstrap/Tailwind
+   use for their own `.hidden`/`.d-none` utilities); scoped to
+   `.review-summaries-instance` so it cannot affect any other part of the
+   app. */
 .review-summaries-instance [hidden] {
   display: none !important;
 }
@@ -52,20 +49,44 @@
   font-weight: 700;
 }
 
+.review-summaries-authorized-as {
+  font-size: var(--font-sm);
+  color: var(--muted);
+  margin: 0;
+}
+
 .review-summaries-subheading {
   font-size: var(--font-sm);
   color: var(--muted);
   margin: 0;
 }
 
-/* Cross-member blocked banner (REQ-CAL-REV-001 authorization-context
-   fix, 2026-08-03 follow-up) — shown instead of the staff/form/history
-   panels whenever the selected sidebar member does not match the
-   authenticated reviewer. Same --blocked/--blocked-bg red pairing
-   already used for .calendar-auth-error (ui.css) and .review-summaries-
-   error above, so this reads as unmistakably the same "authorization
-   denied" language as the rest of the app, not a new color. */
-.review-summaries-blocked {
+/* Read-only note (REQ-CAL-REV-001 shared-read revision, 2026-08-03) —
+   shown only while viewing another reviewer's history. Deliberately
+   uses the neutral --status-info-* tokens (already used by
+   .msc-api-status--info and staff-data.css), NOT the red --blocked
+   pairing below — read-only access is expected, everyday behavior under
+   the revised business rule, not an authorization failure, so it must
+   never read as an error (see PHASE 7: "Do not display the red
+   cross-member error merely because another reviewer's history is being
+   viewed"). */
+.review-summaries-readonly-note {
+  color: var(--status-info-text);
+  background: var(--status-info-bg);
+  border: 1px solid var(--status-info-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--font-sm);
+}
+
+/* Unauthorized prompt (PHASE 6: "Requires authorization before reading")
+   — shown instead of the staff/form/history panels whenever no valid
+   Calendar token is stored at all. Same --blocked/--blocked-bg red
+   pairing already used for .calendar-auth-error (ui.css) — this state IS
+   an access gap (not merely "someone else's data"), so it keeps the
+   red/error treatment the prior cross-member banner used. */
+.review-summaries-unauthorized {
   color: var(--blocked);
   background: var(--blocked-bg);
   border: 1px solid var(--blocked);
@@ -74,15 +95,11 @@
   margin-top: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  align-items: flex-start;
+  gap: var(--space-2);
 }
 
-.review-summaries-blocked-title {
-  font-weight: 700;
-  margin: 0;
-}
-
-.review-summaries-blocked-message {
+.review-summaries-unauthorized-message {
   font-size: var(--font-sm);
   margin: 0;
 }

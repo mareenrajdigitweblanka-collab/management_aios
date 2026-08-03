@@ -111,6 +111,16 @@ test('buildListQuery omits unset filters and defaults limit/offset', async (t) =
   assert.equal(q, 'limit=50&offset=0');
 });
 
+test('buildListQuery includes reviewer_member_key when set, and omits it when unset', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var q = mod.buildListQuery({ reviewerMemberKey: 'arun', reviewedStaffId: 'abc-123' });
+  assert.equal(q, 'reviewer_member_key=arun&reviewed_staff_id=abc-123&limit=50&offset=0');
+  var qNoReviewer = mod.buildListQuery({ reviewedStaffId: 'abc-123' });
+  assert.ok(!qNoReviewer.includes('reviewer_member_key'));
+});
+
 test('validateSummaryText rejects a blank summary', async (t) => {
   var globals = installFakeBrowserGlobals();
   t.after(globals.restore);
@@ -213,6 +223,39 @@ test('reviewSummariesHeadingText names the authorized reviewer, or says unauthor
   assert.equal(mod.reviewSummariesHeadingText(''), 'My Review Summaries — not yet authorized on this browser');
 });
 
+test('reviewSummariesReadOnlyHeadingText names the selected reviewer', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.reviewSummariesReadOnlyHeadingText('Arun — Implementation Officer'), "Viewing Arun — Implementation Officer's Review Summaries — read only");
+});
+
+test('authorizedAsLabelText names the authenticated member', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.authorizedAsLabelText('Mayurika — HR'), 'Authorized as: Mayurika — HR');
+});
+
+test('reviewSummaryAccessDecision returns own/read_only/unauthorized', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.reviewSummaryAccessDecision({ authenticatedMemberKey: null, selectedReviewerMemberKey: 'mayurika' }), 'unauthorized');
+  assert.equal(mod.reviewSummaryAccessDecision({ authenticatedMemberKey: 'mayurika', selectedReviewerMemberKey: 'mayurika' }), 'own');
+  assert.equal(mod.reviewSummaryAccessDecision({ authenticatedMemberKey: 'mayurika', selectedReviewerMemberKey: 'arun' }), 'read_only');
+});
+
+test('reviewSummariesReadOnlyBlockedCopy names both the acting and target reviewer', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var copy = mod.reviewSummariesReadOnlyBlockedCopy('Mayurika — HR', 'Arun — Implementation Officer');
+  assert.match(copy.title, /Arun — Implementation Officer/);
+  assert.match(copy.message, /Mayurika — HR/);
+  assert.match(copy.message, /Arun — Implementation Officer/);
+});
+
 // ── DOM-mounted behavior ─────────────────────────────────────────────
 
 test('heading shows the AUTHORIZED reviewer when the selected panel matches (not the tab it happens to be mounted under)', async (t) => {
@@ -239,82 +282,112 @@ test('heading shows the AUTHORIZED reviewer when the selected panel matches (not
 //    constraint documented above for freshReviewSummariesModule()). ─────
 var CALENDAR_AUTH_CHANGED_EVENT_NAME = 'management-aios:calendar-auth-changed';
 
-test('mismatched panel is blocked, not silently relabeled (regression test for the cross-tab confusion defect)', async (t) => {
-  // Mounted under Suman's tab (memberKey='suman') but the browser's stored
-  // token belongs to Mayurika — previously this rendered Mayurika's data
-  // mislabeled under Suman's tab (only the heading text was "fixed" by an
-  // earlier pass); the actual production defect was that the workspace
-  // itself stayed fully interactive regardless of which panel it was in.
-  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
-  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
-  t.after(globals.restore);
-  var mod = await freshReviewSummariesModule();
-  var mountEl = globals.document.createElement('div');
-  var api = mod.mountReviewSummariesForMember(mountEl, 'suman');
+// ── PHASE 10 (REQ-CAL-REV-001 shared-read/owner-write revision) — three
+//    access modes replace the old binary allowed/blocked: 'own' (this
+//    panel's member IS the authenticated reviewer — full CRUD),
+//    'read_only' (a DIFFERENT, valid reviewer is authenticated — history/
+//    detail viewing only), 'unauthorized' (no token stored — nothing
+//    readable or writable). ─────────────────────────────────────────
 
-  assert.equal(api.accessDecision(), 'blocked');
-  var blocked = findByClass(mountEl, 'review-summaries-blocked');
-  assert.ok(blocked, 'a .review-summaries-blocked banner should exist');
-  assert.equal(blocked.hidden, false);
-  assert.match(blocked.allText(), /suman/i, 'the blocked banner must name the selected sidebar member (target)');
-  assert.match(blocked.allText(), /mayurika/i, 'the blocked banner must name the authenticated reviewer (acting)');
-  assert.equal(fetchMock.calls.length, 0, 'no network request should be sent for a mismatched panel');
-});
-
-test('matching panel allows the workspace (Mayurika token + Mayurika panel)', async (t) => {
+test('Mayurika token + Mayurika panel = own mode', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika');
-  assert.equal(api.accessDecision(), 'allowed');
-  assert.equal(findByClass(mountEl, 'review-summaries-blocked').hidden, true);
+  assert.equal(api.accessDecision(), 'own');
+  assert.equal(findByClass(mountEl, 'review-summaries-unauthorized').hidden, true);
+  assert.equal(findByClass(mountEl, 'review-summaries-form-panel').hidden, false, 'Write Summary section should be visible in own mode');
 });
 
-test('mismatched panel blocks the workspace (Mayurika token + Arun panel)', async (t) => {
+test('Mayurika token + Arun panel = read-only mode', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesForMember(mountEl, 'arun');
-  assert.equal(api.accessDecision(), 'blocked');
+  assert.equal(api.accessDecision(), 'read_only');
 });
 
-test('matching panel allows the workspace (Arun token + Arun panel)', async (t) => {
-  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
-  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'arun' }, fetchImpl: fetchMock });
-  t.after(globals.restore);
-  var mod = await freshReviewSummariesModule();
-  var mountEl = globals.document.createElement('div');
-  var api = mod.mountReviewSummariesForMember(mountEl, 'arun');
-  assert.equal(api.accessDecision(), 'allowed');
-});
-
-test('mismatched panel blocks the workspace (Arun token + Mayurika panel)', async (t) => {
+test('Arun token + Mayurika panel = read-only mode', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'arun' }, fetchImpl: fetchMock });
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika');
-  assert.equal(api.accessDecision(), 'blocked');
+  assert.equal(api.accessDecision(), 'read_only');
 });
 
-test('cross-member block sends zero GET requests even if staff is selected programmatically', async (t) => {
+test('missing token = unauthorized mode', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'arun');
+  assert.equal(api.accessDecision(), 'unauthorized');
+  assert.equal(findByClass(mountEl, 'review-summaries-unauthorized').hidden, false, 'the unauthorized prompt should be visible');
+  assert.equal(findByClass(mountEl, 'review-summaries-staff-panel').hidden, true, 'the staff selector should be hidden until authorized');
+  assert.equal(findByClass(mountEl, 'review-summaries-history-panel').hidden, true, 'the history panel should be hidden until authorized');
+});
+
+test('unauthorized panel sends zero requests even if staff is selected programmatically', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
-  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
+  var globals = installFakeBrowserGlobals({ fetchImpl: fetchMock });
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesForMember(mountEl, 'suman');
   api.selectStaff({ id: 'staff-x', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  assert.equal(fetchMock.calls.length, 0, 'no GET should ever be sent through a blocked panel');
+  assert.equal(fetchMock.calls.length, 0, 'no request should ever be sent through an unauthorized panel');
 });
 
-test('cross-member block sends zero POST requests even if the form is submitted directly', async (t) => {
+test('read-only panel sends an authorized GET including the selected reviewer_member_key, and displays the returned history', async (t) => {
+  var record = { id: 'sum-1', reviewer_member_key: 'mayurika', reviewed_staff_id: 'staff-x', reviewed_staff_full_name: 'Someone', meeting_date: '2026-08-01', summary_text: "Mayurika's own summary.", created_at: '2026-08-01T09:00:00Z', updated_at: '2026-08-01T09:00:00Z' };
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'suman' }, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika'); // suman token, viewing mayurika's panel
+  api.selectStaff({ id: 'staff-x', full_name: 'Someone', calling_name: null });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.accessDecision(), 'read_only');
+  var getCalls = fetchMock.calls.filter(function (c) { return !c.options.method || c.options.method === 'GET'; });
+  assert.ok(getCalls.length > 0, 'a GET request should be sent for a read-only panel');
+  var lastGetUrl = String(getCalls[getCalls.length - 1].url);
+  assert.ok(getCalls[getCalls.length - 1].options.headers && getCalls[getCalls.length - 1].options.headers.Authorization, 'the GET request must carry the Authorization bearer header');
+  assert.match(lastGetUrl, /reviewer_member_key=mayurika/, 'the GET request must include the selected reviewer_member_key');
+
+  var historyEl = findByClass(mountEl, 'review-summaries-history');
+  assert.match(historyEl.allText(), /Mayurika's own summary/, 'read-only history should render the fetched records');
+});
+
+test('read-only panel hides the Write Summary section, Save Summary, Edit, and Delete', async (t) => {
+  var record = { id: 'sum-1', reviewer_member_key: 'mayurika', reviewed_staff_id: 'staff-1', reviewed_staff_full_name: 'Someone', meeting_date: '2026-08-01', summary_text: 'Text.', created_at: '2026-08-01T09:00:00Z', updated_at: '2026-08-01T09:00:00Z' };
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'suman'); // mayurika token, viewing suman's panel
+  api.selectStaff({ id: 'staff-1', full_name: 'Someone', calling_name: null });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.accessDecision(), 'read_only');
+  var formPanelEl = findByClass(mountEl, 'review-summaries-form-panel');
+  assert.equal(formPanelEl.hidden, true, 'the entire Write Summary section (including Save Summary) should be hidden');
+  assert.ok(formPanelEl.classList.contains('review-summaries-panel'), 'Save Summary lives inside this now-hidden panel');
+  assert.equal(findByClass(mountEl, 'review-summaries-edit-btn'), null, 'no Edit button should render for a read-only history card');
+  assert.equal(findByClass(mountEl, 'review-summaries-delete-btn'), null, 'no Delete button should render for a read-only history card');
+  assert.equal(fetchMock.calls.filter(function (c) { return c.options.method === 'DELETE'; }).length, 0);
+});
+
+test('read-only panel sends zero POST requests even if the form is submitted directly (stale-state pre-block)', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
   t.after(globals.restore);
@@ -324,13 +397,15 @@ test('cross-member block sends zero POST requests even if the form is submitted 
   api.selectStaff({ id: 'staff-x', full_name: 'Someone', calling_name: null });
   var form = findByTag(mountEl, 'FORM');
   var textarea = findByTag(form, 'TEXTAREA');
-  textarea.value = 'Attempted cross-member write.';
+  textarea.value = 'Attempted read-only write.';
+  var postCallsBefore = fetchMock.calls.filter(function (c) { return c.options.method === 'POST'; }).length;
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  assert.equal(fetchMock.calls.length, 0, 'no POST should ever be sent through a blocked panel');
+  var postCallsAfter = fetchMock.calls.filter(function (c) { return c.options.method === 'POST'; }).length;
+  assert.equal(postCallsAfter, postCallsBefore, 'no POST should ever be sent through a read-only panel, even via stale form state');
 });
 
-test('cross-member block sends zero PUT requests even if edit state is set directly', async (t) => {
+test('read-only panel sends zero PUT requests even if edit state is set directly (stale-state pre-block)', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
   t.after(globals.restore);
@@ -341,35 +416,86 @@ test('cross-member block sends zero PUT requests even if edit state is set direc
   api.state.editingId = 'sum-fake-id';
   var form = findByTag(mountEl, 'FORM');
   var textarea = findByTag(form, 'TEXTAREA');
-  textarea.value = 'Attempted cross-member edit.';
+  textarea.value = 'Attempted read-only edit.';
+  var putCallsBefore = fetchMock.calls.filter(function (c) { return c.options.method === 'PUT'; }).length;
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  assert.equal(fetchMock.calls.length, 0, 'no PUT should ever be sent through a blocked panel');
+  var putCallsAfter = fetchMock.calls.filter(function (c) { return c.options.method === 'PUT'; }).length;
+  assert.equal(putCallsAfter, putCallsBefore, 'no PUT should ever be sent through a read-only panel, even via stale edit state');
 });
 
-test('cross-member block renders no delete/edit buttons — nothing to trigger a DELETE from', async (t) => {
-  var record = { id: 'sum-1', reviewer_member_key: 'mayurika', reviewed_staff_id: 'staff-1', reviewed_staff_full_name: 'Someone', meeting_date: '2026-08-01', summary_text: 'Text.', created_at: '2026-08-01T09:00:00Z', updated_at: '2026-08-01T09:00:00Z' };
-  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
-  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
-  t.after(globals.restore);
-  var mod = await freshReviewSummariesModule();
-  var mountEl = globals.document.createElement('div');
-  var api = mod.mountReviewSummariesForMember(mountEl, 'suman');
-  api.selectStaff({ id: 'staff-1', full_name: 'Someone', calling_name: null });
-  await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  assert.equal(findByClass(mountEl, 'review-summaries-delete-btn'), null);
-  assert.equal(fetchMock.calls.filter(function (c) { return c.options.method === 'DELETE'; }).length, 0);
-});
-
-test('valid token remains stored after a cross-member block', async (t) => {
+test('a prohibited stale-state mutation attempt shows the red authorization warning and preserves the valid token', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
-  mod.mountReviewSummariesForMember(mountEl, 'suman'); // blocked
+  mod.mountReviewSummariesForMember(mountEl, 'suman');
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'Attempted read-only write.';
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
   var stored = JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1'));
-  assert.equal(stored.token, 'test-token', 'the valid token must never be cleared just because a panel is blocked');
+  assert.equal(stored.token, 'test-token', 'the valid token must never be cleared just because a mutation was blocked');
+});
+
+test('own panel shows Edit/Delete for its own records', async (t) => {
+  var record = { id: 'sum-own-1', reviewer_member_key: 'mayurika', reviewed_staff_id: 'staff-own-1', reviewed_staff_full_name: 'Someone', meeting_date: '2026-08-01', summary_text: 'Text.', created_at: '2026-08-01T09:00:00Z', updated_at: '2026-08-01T09:00:00Z' };
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika');
+  api.selectStaff({ id: 'staff-own-1', full_name: 'Someone', calling_name: null });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.accessDecision(), 'own');
+  assert.ok(findByClass(mountEl, 'review-summaries-edit-btn'), 'Edit should render for an own-mode history card');
+  assert.ok(findByClass(mountEl, 'review-summaries-delete-btn'), 'Delete should render for an own-mode history card');
+});
+
+test('reviewer label identifies the selected reviewer in read-only mode', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesForMember(mountEl, 'arun');
+  var heading = findByClass(mountEl, 'review-summaries-heading');
+  assert.match(heading.textContent, /arun/i, 'the heading should name the selected reviewer (arun), not the authenticated member');
+  assert.match(heading.textContent, /read only/i);
+});
+
+test('authorized-as label identifies the authenticated token owner in read-only mode', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesForMember(mountEl, 'arun');
+  var authorizedAsEl = findByClass(mountEl, 'review-summaries-authorized-as');
+  assert.ok(authorizedAsEl, 'an .review-summaries-authorized-as element should exist');
+  assert.equal(authorizedAsEl.hidden, false);
+  assert.match(authorizedAsEl.textContent, /mayurika/i, 'authorized-as must name the authenticated member (mayurika), not the selected reviewer');
+});
+
+test('reviewed staff remains a separate selector from the reviewer identity', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika');
+  assert.equal(api.accessDecision(), 'own');
+  api.selectStaff({ id: 'staff-independent', full_name: 'Independent Staff', calling_name: null });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  // Selecting a reviewed staff member must never change which reviewer's
+  // panel/mode this is — the two concepts are fully independent.
+  assert.equal(api.accessDecision(), 'own');
+  assert.equal(api.state.selectedStaff.id, 'staff-independent');
 });
 
 test('sidebar change clears selected staff, history, edit mode, and unsaved draft text', async (t) => {
@@ -417,7 +543,7 @@ test('sidebar-panel-switch event triggers the same reset for every mounted insta
   assert.equal(api.state.selectedStaff, null, 'this instance must reset even though it listens document-wide, not only for its own tab');
 });
 
-test('token change clears the previously-authorized panel and unblocks the newly matching one', async (t) => {
+test('token change recalculates access — clears the previously-own panel to read-only and unblocks the newly matching one', async (t) => {
   var mayurikaRecord = { id: 'sum-mayu', reviewer_member_key: 'mayurika', reviewed_staff_id: 'staff-1', reviewed_staff_full_name: 'Someone', meeting_date: '2026-08-01', summary_text: 'Mayurika summary.', created_at: '2026-08-01T09:00:00Z', updated_at: '2026-08-01T09:00:00Z' };
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [mayurikaRecord], total: 1, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: { token: 'mayurika-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
@@ -428,12 +554,12 @@ test('token change clears the previously-authorized panel and unblocks the newly
   var mayurikaApi = mod.mountReviewSummariesForMember(mayurikaMountEl, 'mayurika');
   mayurikaApi.selectStaff({ id: 'staff-1', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  assert.equal(mayurikaApi.accessDecision(), 'allowed');
+  assert.equal(mayurikaApi.accessDecision(), 'own');
   assert.ok(mayurikaApi.state.selectedStaff, 'Mayurika panel should have loaded state before the token change');
 
   var arunMountEl = globals.document.createElement('div');
   var arunApi = mod.mountReviewSummariesForMember(arunMountEl, 'arun');
-  assert.equal(arunApi.accessDecision(), 'blocked', 'Arun panel is blocked while the Mayurika token is active');
+  assert.equal(arunApi.accessDecision(), 'read_only', 'Arun panel is read-only while the Mayurika token is active');
 
   // Simulate a successful "Change token" verify to Arun — write the new
   // stored auth directly (this DOM stand-in cannot drive the real token
@@ -444,9 +570,14 @@ test('token change clears the previously-authorized panel and unblocks the newly
   }));
   globals.document.dispatchEvent({ type: CALENDAR_AUTH_CHANGED_EVENT_NAME });
 
-  assert.equal(mayurikaApi.state.selectedStaff, null, 'the previously-authorized panel must clear its stale selection on token change');
-  assert.equal(mayurikaApi.accessDecision(), 'blocked', 'Mayurika panel must now be blocked — the token no longer belongs to Mayurika');
-  assert.equal(arunApi.accessDecision(), 'allowed', 'Arun panel must now be allowed — the token now belongs to Arun');
+  assert.equal(mayurikaApi.state.selectedStaff, null, 'the previously-own panel must clear its stale selection on token change');
+  assert.equal(mayurikaApi.accessDecision(), 'read_only', 'Mayurika panel must now be read-only — the token no longer belongs to Mayurika');
+  assert.equal(arunApi.accessDecision(), 'own', 'Arun panel must now be own — the token now belongs to Arun');
+
+  // A read-only token remains stored — token change never clears
+  // localStorage as a side effect of a panel's mode flipping.
+  var storedAfter = JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1'));
+  assert.equal(storedAfter.token, 'arun-token', 'the newly-verified token remains stored in localStorage after the panel recalculation');
 });
 
 test('heading shows "not yet authorized" before any token is stored', async (t) => {
@@ -715,10 +846,17 @@ test('401 on list fetch clears the stored Calendar token AND clears Review Summa
   // handleUnauthorizedResponse() (calendar/auth.js) fires
   // CALENDAR_AUTH_CHANGED_EVENT synchronously as part of clearing the
   // token — reevaluateAccess() uses that to clear this panel's state in
-  // the same tick, not on some later, separate interaction.
+  // the same tick, not on some later, separate interaction. With the
+  // token gone, the panel's mode becomes 'unauthorized' (PHASE 6) — it
+  // must show the authorize prompt, never a stale "Request failed" error
+  // box, and never the old "select a staff member" placeholder either
+  // (that placeholder is only for an authorized panel with no staff
+  // chosen yet — this panel is no longer authorized at all).
   assert.equal(api.state.selectedStaff, null, 'selected staff should be cleared once the token is rejected');
+  assert.equal(api.accessDecision(), 'unauthorized');
+  assert.equal(findByClass(mountEl, 'review-summaries-unauthorized').hidden, false, 'the authorize prompt should show once the token is rejected');
   var historyEl = findByClass(mountEl, 'review-summaries-history');
-  assert.match(historyEl.allText(), /Select a staff member/, 'history should reset to the placeholder, not show a stale "Request failed" error box');
+  assert.ok(!/Request failed/i.test(historyEl.allText()), 'no stale error box should remain in the history panel');
 });
 
 test('network error on list fetch renders an error state without throwing', async (t) => {

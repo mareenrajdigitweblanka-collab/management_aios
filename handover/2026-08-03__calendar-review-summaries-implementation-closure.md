@@ -3,7 +3,7 @@ name: calendar-review-summaries-implementation-handover
 type: handover
 scope: management_aios Calendar — Staff Review Summaries (REQ-CAL-REV-001)
 created: 2026-08-03
-status: AMBER — authorization-context defect fixed and deployed (§19/§21), plus two further real-browser-found defects (blocked-panel CSS visibility; long-summary-text readability) fixed and deployed same-day (§21). Real-browser validation against production confirmed the core defect fixed across all 5 reviewer/panel combinations (§21). Final: backend 619 total/617 passed (2 pre-existing unrelated failures, unchanged), review-summaries.test.mjs 44/44, Calendar frontend suite 124/124. Commits f1182a2, a2aafa9, 6576985 all pushed to origin/main and confirmed live. AMBER, not PASS — see §21 for what remains unperformed.
+status: AMBER — authorization-context defect fixed and deployed (§19/§21), plus two further real-browser-found defects (blocked-panel CSS visibility; long-summary-text readability) fixed and deployed same-day (§21). Real-browser validation against production confirmed the core defect fixed across all 5 reviewer/panel combinations (§21). Commits f1182a2, a2aafa9, 6576985 all pushed to origin/main and confirmed live. Read-access rule revised (§23, 2026-08-03 same-day follow-up) — every authenticated Management Team member can now READ other reviewers' summaries; only the owning reviewer can create/update/delete. Committed locally on main, NOT pushed. Final: backend 628 total/626 passed (2 pre-existing unrelated failures, unchanged), review-summaries.test.mjs 53/53, Calendar frontend suite 124/124. AMBER, not PASS — see §23 for what remains unperformed.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -189,4 +189,26 @@ Full detail: `validation/calendar-review-summaries-technical-design-check-2026-0
 
 ## 22. One next step
 
-If general rollout is desired, perform Scenarios C/D/E, a DevTools network/localStorage capture, and a Task/Leave/console regression pass — none are blocking given the core defect is conclusively fixed. UI/UX polish and staff-search performance (§18's original follow-up) remain queued after that.
+~~If general rollout is desired, perform Scenarios C/D/E...~~ **Superseded — see §23.** A new business-rule revision (shared read access) was implemented before any further rollout work.
+
+## 23. Read-access rule revision — 2026-08-03 (same-day follow-up)
+
+Full detail: `validation/calendar-review-summaries-technical-design-check-2026-08-03.md`, "Read-Access Rule Revision — 2026-08-03" section.
+
+**New business rule**: every authenticated Management Team member may now read review summaries created by other Management Team members. Only the reviewer identified by a record's `reviewer_member_key` may create summaries under their own identity, update their own summaries, or delete their own summaries. Public users, invalid tokens, and reviewed staff without a Management Team token still have zero access.
+
+**Backend**: `GET /api/staff-review-summaries` gained an optional `?reviewer_member_key=` param (defaults to the authenticated reviewer when omitted — unchanged behavior for existing callers; validated against `VALID_MEMBER_KEYS` when supplied, 422 on an unknown key). `GET /api/staff-review-summaries/{summary_id}` no longer filters by owner at all (`_get_active_summary_or_404`, `id + deleted_at IS NULL` only) — any authenticated member may open any active summary by id. `POST`/`PUT`/`DELETE` are unchanged: `reviewer_member_key` is still never accepted from the client, and update/delete still return a non-disclosing 404 for a cross-reviewer id.
+
+**Frontend**: replaced the binary allowed/blocked gate with three access modes — `own` (full CRUD), `read_only` (history/detail viewing only; Write Summary/Edit/Delete hidden; a neutral, non-red banner explains the rule), `unauthorized` (nothing readable; a red prompt offers "Authorize this browser"). A stale-state mutation attempt is still blocked pre-flight (never touches the stored token) and, in `read_only` mode, surfaces a reactive red toast — never a persistent banner merely for viewing another reviewer's history. List requests in read-only mode carry `?reviewer_member_key=<selected reviewer>`; the bearer token stays only in the `Authorization` header.
+
+**Tests**: backend 619 → 628 (+9, all passing; same 2 pre-existing unrelated baseline failures, unchanged); `review-summaries.test.mjs` 44 → 53 (+9); full Calendar frontend suite still 124/124 (zero regression).
+
+**Files changed**: `backend/routers/staff_review_summaries.py`, `backend/tests/test_staff_review_summaries.py`, `web-view/js/review-summaries.js`, `web-view/js/review-summaries.test.mjs`, `web-view/css/review-summaries.css` — 5 files, no migration, no protected-path file.
+
+**Production data safety**: 0 database writes, 0 records changed — no database connection was used this session (authorization-logic-only change against the already-migrated table).
+
+**Status**: AMBER — committed locally on `main`, not pushed, not deployed. All automated coverage passes; no real-browser walkthrough was performed this session (no browser automation tool available, same limitation documented throughout this feature's evidence trail).
+
+## 24. One next step
+
+Review this evidence report and the local `main` diff, then — if approved — push `main`, redeploy, and perform a read-only production smoke check (unauthenticated/invalid-token 401 on both GET routes; an authorized cross-reviewer list read; a same-reviewer write still succeeding) before general rollout.

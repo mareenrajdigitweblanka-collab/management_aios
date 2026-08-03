@@ -714,3 +714,100 @@ No file under `member-aios/mayurika-hr/staff-data/` was touched at any point. `b
 ### One next step
 
 If general rollout is desired, perform Scenarios C/D/E, a DevTools network/localStorage capture, and a Task/Leave/console regression pass at a convenient time — none are blocking given the core defect is conclusively fixed, but they would close the remaining gaps in this evidence trail.
+
+---
+
+## Read-Access Rule Revision — 2026-08-03 (same-day follow-up)
+
+Companion evidence for the revised business rule: **every authenticated Management Team member may read review summaries created by other Management Team members; only the reviewer who created a summary may create, update, or delete it.** This replaces the strict owner-only read model documented throughout every section above. Implemented directly on local `main` per explicit direct-main authorization for this session (no feature branch, no approval PR).
+
+### New business rule
+
+- Any authenticated Management Team member (`get_verified_member()`) may LIST and view the DETAIL of any other valid reviewer's review summaries.
+- Only the reviewer identified by the record's `reviewer_member_key` (the "record owner," derived from the creator's validated token) may create summaries under their own identity, update their own summaries, or delete their own summaries.
+- Public users, invalid tokens, and ordinary reviewed staff without a Management Team token still have zero access — no public GET route exists.
+
+### Prior owner-only read model (superseded)
+
+Every one of the five routes filtered on `reviewer_member_key = acting_member` (list, detail) or combined `id + reviewer_member_key + deleted_at IS NULL` in one query (detail/update/delete), so a reviewer could only ever see, open, edit, or delete their own records — cross-reviewer access of any kind returned a non-disclosing 404.
+
+### Revised shared-read / owner-write model
+
+| Route | Prior | Revised |
+|---|---|---|
+| `POST /api/staff-review-summaries` | `reviewer_member_key = acting_member` (server-derived, unspoofable) | **Unchanged** |
+| `GET /api/staff-review-summaries` (list) | Unconditionally `reviewer_member_key = acting_member` | New optional `?reviewer_member_key=` query param — defaults to `acting_member` when omitted (byte-for-byte same behavior as before for a caller that never passes it); when supplied, validated against `VALID_MEMBER_KEYS` (`backend/config.py`) and the query scopes to that reviewer's rows instead. `reviewed_staff_id`/`date_from`/`date_to`/`limit`/`offset` and `meeting_date DESC, created_at DESC` ordering are unchanged and confirmed to still work against a selected-reviewer's history |
+| `GET /api/staff-review-summaries/{summary_id}` (detail) | `id + reviewer_member_key = acting_member + deleted_at IS NULL` | `id + deleted_at IS NULL` only — no owner filter; any authenticated member may open any active summary by id (`_get_active_summary_or_404`, new helper, replacing the owner-filtered `_get_owned_summary_or_404` for this route only) |
+| `PUT /api/staff-review-summaries/{summary_id}` | `id + reviewer_member_key = acting_member + deleted_at IS NULL`, cross-reviewer → 404 | **Unchanged** — still uses `_get_owned_summary_or_404` |
+| `DELETE /api/staff-review-summaries/{summary_id}` | Same as PUT | **Unchanged** — still uses `_get_owned_summary_or_404` |
+
+**Owner-only write rule (unchanged, reconfirmed)**: `StaffReviewSummaryCreate`/`Update` still have no `reviewer_member_key` field at all, so it can never be spoofed from the request body; update/delete still combine id + owner + `deleted_at IS NULL` in one non-disclosing-404 query, exactly as before.
+
+**Invalid `reviewer_member_key`**: rejected with 422 (`_valid_reviewer_member_key_or_422`, validated against `VALID_MEMBER_KEYS`) — the set of Management Team member keys is not secret (every sidebar tab already names them), so this discloses nothing new.
+
+**No public GET route**: reconfirmed — every route, including both GET routes, still requires `Depends(get_verified_member)`; missing/invalid token is still 401 regardless of which reviewer's records are requested.
+
+### Backend list/detail changes
+
+`backend/routers/staff_review_summaries.py` — `list_staff_review_summaries` gained the `reviewer_member_key` query parameter and now filters on a `selected_reviewer` variable instead of unconditionally on `acting_member`; `get_staff_review_summary` now calls the new `_get_active_summary_or_404(db, summary_id)` (no owner filter) instead of `_get_owned_summary_or_404`; added `_valid_reviewer_member_key_or_422`. Module docstring rewritten to describe the read/write scoping asymmetry explicitly. No change to `backend/schemas.py` (response shape already included `reviewer_member_key`/`reviewed_staff_id`/reviewed-staff display fields/`meeting_date`/`summary_text`/`created_at`/`updated_at` — sufficient to identify a record's owner and content without exposing private staff fields or any token/authorization metadata). No migration or database schema change — this is an authorization-logic-only change against the existing table.
+
+### Frontend own/read-only/unauthorized modes
+
+Replaced the binary allowed/blocked gate (`reviewSummaryAccessDecision(selectedMemberKey, authorizedMemberKey)` → `'allowed' | 'blocked'`) with a three-mode decision (`reviewSummaryAccessDecision({authenticatedMemberKey, selectedReviewerMemberKey})` → `'own' | 'read_only' | 'unauthorized'`):
+
+- **own** (panel's own member IS the authenticated reviewer): full create/view/edit/delete — unchanged from the prior "allowed" behavior.
+- **read_only** (a different, valid reviewer is authenticated): staff selector, "Include inactive," date filters, and full history/detail viewing all remain functional and now send real `GET` requests (including `?reviewer_member_key=<selected reviewer>`); the entire "Write Summary" section (title + form, including Save Summary) is hidden, and Edit/Delete are never rendered on any history card. A neutral, non-red `.review-summaries-readonly-note` banner (existing `--status-info-*` tokens, already used elsewhere in this app) states the read-only rule — the prior persistent red cross-member banner is never shown merely for viewing another reviewer's history, per the approved requirement.
+- **unauthorized** (no token stored): staff/form/history panels are hidden entirely; a red `.review-summaries-unauthorized` prompt (reusing the existing `--blocked`/`--blocked-bg` tokens) explains that authorization is required and offers an "Authorize this browser" button wired directly to the existing `ensureAuthorized()` flow (`calendar/auth.js`) — no separate token entry point was invented.
+- **Stale-state mutation pre-block**: a new `guardedWriteRequest()` (replacing the old single `guardedApiRequest()`) rejects synchronously — before `ensureAuthorized()` or `fetch()` is ever reached, and without touching the stored token — whenever mode is not `'own'`, whether the attempt comes through the (now-hidden) form, a direct `state.editingId` write, or any other stale in-memory path. For `read_only` specifically, it also shows a reactive red `showToast` warning (`reviewSummariesReadOnlyBlockedCopy`) naming both the authenticated member and the selected reviewer — never a persistent banner.
+- **Stale-request guard**: a new `state.historyRequestId` counter (bumped on every new history fetch and on every `clearWorkspaceState()`) discards a list response that resolves after a panel switch/token change has already moved the panel on, preventing a slow in-flight `read_only`/`own` fetch from rendering into a panel whose mode or selection has since changed.
+- **Request rules**: read requests carry `?reviewer_member_key=<selected sidebar reviewer>` (`buildListQuery`'s new `reviewerMemberKey` param, always set to the panel's own `memberKey`); the bearer token remains only in the `Authorization` header; `reviewer_member_key` is never sent in POST/PUT bodies (unchanged — the create/update payload shapes were never touched); no summary text or token ever appears in a URL or `localStorage` (existing tests for both retained and still passing).
+- **State isolation**: switching panels or changing tokens still clears selected staff, history, edit mode, unsaved draft text, and pending deletion state, and still cancels/ignores stale requests — reusing the existing `clearWorkspaceState()`/`reevaluateAccess()` pattern, extended with the `historyRequestId` guard above and the three-mode `renderAccessGate()`.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/routers/staff_review_summaries.py` | List route gained `?reviewer_member_key=`; detail route no longer owner-filtered; added `_get_active_summary_or_404`, `_valid_reviewer_member_key_or_422`; module docstring rewritten |
+| `backend/tests/test_staff_review_summaries.py` | +9 net tests: cross-reviewer list read (both directions), same-staff-different-owner list isolation, omitted-param default, invalid-key rejection, date-filter/pagination for another reviewer's history, cross-reviewer detail now-allowed (rewritten from the old 404 test), missing/deleted-detail 404, deleted-summary-absent-from-another-reader's-list-and-detail |
+| `web-view/js/review-summaries.js` | Three-mode access decision, `guardedReadRequest`/`guardedWriteRequest` (replacing single `guardedApiRequest`), read-only UI (heading/authorized-as/read-only-note/unauthorized-prompt elements, distinguishing panel classes), `reviewerMemberKey` in `buildListQuery`, `historyRequestId` stale-request guard, updated subheading copy |
+| `web-view/js/review-summaries.test.mjs` | +9 net tests: own/read-only/unauthorized mode matrix, authorized GET with `reviewer_member_key`, read-only hides Write Summary/Edit/Delete, read-only zero-POST/PUT stale-state pre-block, stale-mutation red-warning + token-preserved, own-mode Edit/Delete presence, reviewer/authorized-as label tests, reviewed-staff-separate-selector test, new pure-function tests for the revised exports, updated 401/token-change tests for the new mode semantics |
+| `web-view/css/review-summaries.css` | Replaced `.review-summaries-blocked*` (always red) with `.review-summaries-readonly-note` (neutral `--status-info-*`) and `.review-summaries-unauthorized*` (red, reused for the genuinely-unauthorized case only) |
+
+No file under `member-aios/mayurika-hr/staff-data/` was opened or modified. No migration file was created or modified. No database connection was used this session.
+
+### Test totals (literal runner output)
+
+| Suite | Before this revision | After this revision |
+|---|---|---|
+| `backend/tests/test_staff_review_summaries.py` | 39 | 48 |
+| Full backend (`python -m unittest discover -s backend/tests -p "test_*.py"`) | 619 | 628 |
+| `web-view/js/review-summaries.test.mjs` | 44 | 53 |
+| `web-view/js/calendar/*.test.mjs` (full Calendar suite, includes `auth.test.mjs`) | 124 | 124 |
+
+Full backend run: `Ran 628 tests in 5.591s` / `FAILED (failures=2)` — the same two pre-existing, unrelated, previously-documented baseline failures (`test_missing_variable_fails_closed`, `test_pending_task_no_outcome`), unchanged. No new failure introduced.
+
+`web-view/js/review-summaries.test.mjs`: `# tests 53 / # pass 53 / # fail 0`. `web-view/js/calendar/*.test.mjs`: `# tests 124 / # pass 124 / # fail 0` — zero regression to the existing Task/Leave/Calendar-auth coverage.
+
+### Production data safety
+
+**Production database writes this session: 0.** **Production records changed: 0.** No database connection was used at any point in this session — this was an authorization-logic-only change against the existing, already-migrated `management_aios.staff_review_summaries` table; no SQL of any kind was issued.
+
+### Real-browser status
+
+**Not performed.** No browser automation tool is available in this environment — the same documented limitation carried forward from every prior session for this feature. Coverage is HTTP-level (backend `TestClient`, via FastAPI's real routing/dependency injection) and DOM-stand-in-level (frontend `node --test`) only. This is explicitly NOT claimed as a real-browser PASS.
+
+### Protected path
+
+**Excluded.** `member-aios/mayurika-hr/staff-data/` was confirmed present (via a directory-existence check only, per Phase 1 of this task) but never opened or read at any point in this session.
+
+### Push / deployment status
+
+**NOT PUSHED, NOT DEPLOYED.** Committed locally on `main` only, per this task's explicit instruction to implement directly on `main` without pushing until the report is reviewed.
+
+### PASS / AMBER / FAIL
+
+**AMBER.** All automated backend and frontend coverage passes (628 backend with only the two pre-existing unrelated failures; 53/53 + 124/124 frontend; zero new regressions). AMBER, not PASS, strictly because no real-browser walkthrough was performed (tooling limitation, not a defect) and this change has not yet been pushed, deployed, or exercised against production with a real Management Team token.
+
+### One next step
+
+Review this evidence report and the local `main` diff, then — if approved — push `main`, redeploy, and perform a read-only production smoke check (unauthenticated/invalid-token 401 on both GET routes; an authorized cross-reviewer list read; a same-reviewer write still succeeding) before general rollout.
