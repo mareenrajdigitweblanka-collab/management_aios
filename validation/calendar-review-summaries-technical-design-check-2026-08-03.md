@@ -98,3 +98,47 @@ This section records the design-approval gate review for REQ-CAL-REV-001. No exi
 ### One next step (approval gate)
 
 Route this design to Arun (technical, per CLAUDE.md §18) and to the business owner for the two PENDING approvals above (10,000-character maximum; transition-to-implementation authorization) before starting backend implementation.
+
+## Approval Closure — 2026-08-03
+
+Requirement ID: REQ-CAL-REV-001
+
+Business approval: APPROVED
+
+Approved summary length: 1 to 10,000 characters after trimming
+
+Paragraph handling: Preserve paragraphs and line breaks
+
+Rendering rule: Safe text only
+
+Queryability approval: APPROVED
+
+History ordering: meeting_date DESC, created_at DESC
+
+History access: Only the authenticated reviewer's records
+
+Technical approval from Arun: NOT REQUIRED by business-owner decision
+
+Coordinator approval: NOT REQUIRED by business-owner decision
+
+Implementation authorization: YES after approval evidence is merged into main
+
+Design status: READY FOR IMPLEMENTATION
+
+Validation result: PASS
+
+Application files changed: 0
+
+Migration created: NO
+
+Database writes: 0
+
+Protected path: EXCLUDED
+
+Remaining limitations:
+
+- staff.id has no live database-level default;
+- implementation must not assume PostgreSQL generates staff IDs;
+- this note is non-blocking for review-summary implementation.
+
+One next step: Merge approval evidence and create the backend implementation branch.
