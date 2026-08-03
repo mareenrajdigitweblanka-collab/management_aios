@@ -15,6 +15,12 @@
    no module-level singleton (auth.js's dialog/indicator cache, this
    module's per-mount closures) ever leaks state between tests.
 
+   Element lookups use findByClass()/findByTag() below (recursive
+   subtree search), not direct _children indexing — this keeps tests
+   resilient to internal DOM restructuring (e.g. wrapping fields in
+   section containers) as long as the same class names/tags are used
+   somewhere in the tree.
+
    Coverage boundary, stated plainly (mirrors auth.test.mjs's own note):
    the full confirmDestructive() dialog interaction (ui/dialog.js) is not
    driven end-to-end here — that dialog's markup relies on nested/ID
@@ -57,6 +63,32 @@ function makeFetchMock(handler) {
   };
   fn.calls = calls;
   return fn;
+}
+
+/* Recursive subtree search — first descendant (any depth) with the given
+   class, or the given tagName. Used instead of direct _children indexing
+   so tests survive internal DOM restructuring. */
+function findByClass(root, className) {
+  if (!root || !root._children) { return null; }
+  var stack = root._children.slice();
+  while (stack.length) {
+    var node = stack.shift();
+    if (node.classList && node.classList.contains(className)) { return node; }
+    if (node._children && node._children.length) { stack = node._children.concat(stack); }
+  }
+  return null;
+}
+
+function findByTag(root, tagName) {
+  if (!root || !root._children) { return null; }
+  var stack = root._children.slice();
+  var upper = tagName.toUpperCase();
+  while (stack.length) {
+    var node = stack.shift();
+    if (node.tagName === upper) { return node; }
+    if (node._children && node._children.length) { stack = node._children.concat(stack); }
+  }
+  return null;
 }
 
 var AUTHORIZED = { token: 'test-only-frontend-token', memberKey: 'mayurika' };
@@ -154,9 +186,9 @@ test('heading shows the AUTHORIZED reviewer, never the tab it happens to be moun
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
-  var api = mod.mountReviewSummariesForMember(mountEl, 'suman');
+  mod.mountReviewSummariesForMember(mountEl, 'suman');
 
-  var heading = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-heading'); })[0];
+  var heading = findByClass(mountEl, 'review-summaries-heading');
   assert.ok(heading, 'a .review-summaries-heading element should exist');
   assert.match(heading.textContent, /mayurika/i, 'heading must name the authorized (token) member, "mayurika"');
   assert.ok(!/suman/i.test(heading.textContent), 'heading must never claim to be Suman\'s just because it is mounted on Suman\'s tab');
@@ -168,7 +200,7 @@ test('heading shows "not yet authorized" before any token is stored', async (t) 
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   mod.mountReviewSummariesForMember(mountEl, 'arun');
-  var heading = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-heading'); })[0];
+  var heading = findByClass(mountEl, 'review-summaries-heading');
   assert.match(heading.textContent, /not yet authorized/i);
 });
 
@@ -186,8 +218,8 @@ test('selecting a staff result stores staff.id, never employee_number, and never
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   assert.equal(api.state.selectedStaff.id, 'staff-uuid-1');
-  var staffField = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-field'); })[0];
-  var selectedStaffEl = staffField._children.filter(function (c) { return c.classList.contains('review-summaries-selected-staff'); })[0];
+  var selectedStaffEl = findByClass(mountEl, 'review-summaries-selected-staff');
+  assert.ok(selectedStaffEl, 'a .review-summaries-selected-staff element should exist');
   assert.match(selectedStaffEl.allText(), /Regular Staff/);
   assert.ok(!selectedStaffEl.allText().includes('EMP-777'), 'employee_number must never be displayed as the staff selector value/label');
 });
@@ -198,7 +230,7 @@ test('empty state before staff selection', async (t) => {
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   mod.mountReviewSummariesForMember(mountEl, 'mayurika');
-  var historyEl = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-history'); })[0];
+  var historyEl = findByClass(mountEl, 'review-summaries-history');
   assert.ok(historyEl, 'history container should be mounted');
   assert.match(historyEl.allText(), /Select a staff member/);
 });
@@ -214,7 +246,7 @@ test('empty state after staff selection with zero results', async (t) => {
   var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika');
   api.selectStaff({ id: 'staff-uuid-2', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  var historyEl = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-history'); })[0];
+  var historyEl = findByClass(mountEl, 'review-summaries-history');
   assert.match(historyEl.allText(), /No review summaries yet/);
 });
 
@@ -234,10 +266,7 @@ test('history renders full summary text safely (script-like content never become
   api.selectStaff({ id: 'staff-uuid-3', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var historyEl = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-history'); })[0];
-  var card = historyEl._children[0];
-  assert.ok(card, 'a history card should have rendered');
-  var textNode = card._children.filter(function (c) { return c.classList.contains('review-summary-text'); })[0];
+  var textNode = findByClass(mountEl, 'review-summary-text');
   assert.ok(textNode, 'a .review-summary-text node should exist');
   // Rendered via textContent only — the raw string survives byte-for-byte
   // as text, and (since it was never passed through innerHTML) no actual
@@ -255,7 +284,7 @@ test('create form rejects a blank summary before any POST is sent', async (t) =>
   api.selectStaff({ id: 'staff-uuid-4', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var form = mountEl._children.filter(function (c) { return c.tagName === 'FORM'; })[0];
+  var form = findByTag(mountEl, 'FORM');
   var callsBefore = fetchMock.calls.length;
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
@@ -272,8 +301,8 @@ test('create form rejects a summary over 10,000 characters before any POST is se
   api.selectStaff({ id: 'staff-uuid-5', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var form = mountEl._children.filter(function (c) { return c.tagName === 'FORM'; })[0];
-  var textarea = form._children.filter(function (c) { return c.tagName === 'TEXTAREA'; })[0];
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
   textarea.value = 'A'.repeat(10001);
   var callsBefore = fetchMock.calls.length;
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
@@ -298,8 +327,8 @@ test('successful create sends POST with reviewed_staff_id/meeting_date/summary_t
   api.selectStaff({ id: 'staff-uuid-6', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var form = mountEl._children.filter(function (c) { return c.tagName === 'FORM'; })[0];
-  var textarea = form._children.filter(function (c) { return c.tagName === 'TEXTAREA'; })[0];
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
   textarea.value = 'A real review discussion.';
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
@@ -329,15 +358,12 @@ test('edit flow prefills the form and submits a PUT to the correct id', async (t
   api.selectStaff({ id: 'staff-uuid-7', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var historyEl = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-history'); })[0];
-  var card = historyEl._children[0];
-  var actions = card._children.filter(function (c) { return c.classList.contains('review-summaries-card-actions'); })[0];
-  var editBtn = actions._children.filter(function (c) { return c.classList.contains('review-summaries-edit-btn'); })[0];
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
   editBtn.click();
 
-  var form = mountEl._children.filter(function (c) { return c.tagName === 'FORM'; })[0];
-  var textarea = form._children.filter(function (c) { return c.tagName === 'TEXTAREA'; })[0];
-  var dateInput = form._children.filter(function (c) { return c.classList.contains('review-summaries-date-input'); })[0];
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  var dateInput = findByClass(form, 'review-summaries-date-input');
   assert.equal(textarea.value, 'Original text.');
   assert.equal(dateInput.value, '2026-08-01');
 
@@ -364,11 +390,7 @@ test('delete button does not send DELETE immediately — confirmation is require
   api.selectStaff({ id: 'staff-uuid-8', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var historyEl = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-history'); })[0];
-  var card = historyEl._children[0];
-  var actions = card._children.filter(function (c) { return c.classList.contains('review-summaries-card-actions'); })[0];
-  var deleteBtn = actions._children.filter(function (c) { return c.classList.contains('review-summaries-delete-btn'); })[0];
-
+  var deleteBtn = findByClass(mountEl, 'review-summaries-delete-btn');
   var deleteCallsBefore = fetchMock.calls.filter(function (c) { return c.options.method === 'DELETE'; }).length;
   deleteBtn.click();
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
@@ -399,7 +421,7 @@ test('network error on list fetch renders an error state without throwing', asyn
   api.selectStaff({ id: 'staff-uuid-10', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var historyEl = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-history'); })[0];
+  var historyEl = findByClass(mountEl, 'review-summaries-history');
   assert.ok(historyEl.allText().length > 0, 'an error message should be rendered, not a silent blank state');
 });
 
@@ -417,12 +439,9 @@ test('404 on update shows the generic not-found message, never a permission-deni
   api.selectStaff({ id: 'staff-uuid-11', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var historyEl = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-history'); })[0];
-  var card = historyEl._children[0];
-  var actions = card._children.filter(function (c) { return c.classList.contains('review-summaries-card-actions'); })[0];
-  var editBtn = actions._children.filter(function (c) { return c.classList.contains('review-summaries-edit-btn'); })[0];
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
   editBtn.click();
-  var form = mountEl._children.filter(function (c) { return c.tagName === 'FORM'; })[0];
+  var form = findByTag(mountEl, 'FORM');
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
@@ -449,8 +468,8 @@ test('no summary content is ever written to localStorage', async (t) => {
   api.selectStaff({ id: 'staff-uuid-12', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var form = mountEl._children.filter(function (c) { return c.tagName === 'FORM'; })[0];
-  var textarea = form._children.filter(function (c) { return c.tagName === 'TEXTAREA'; })[0];
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
   textarea.value = secret;
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
@@ -480,8 +499,8 @@ test('no summary content is ever included in a request URL', async (t) => {
   api.selectStaff({ id: 'staff-uuid-13', full_name: 'Someone', calling_name: null });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var form = mountEl._children.filter(function (c) { return c.tagName === 'FORM'; })[0];
-  var textarea = form._children.filter(function (c) { return c.tagName === 'TEXTAREA'; })[0];
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
   textarea.value = secret;
   form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
@@ -489,4 +508,39 @@ test('no summary content is ever included in a request URL', async (t) => {
   fetchMock.calls.forEach(function (call) {
     assert.ok(!String(call.url).includes(secret), 'summary text must never appear in a request URL: ' + call.url);
   });
+});
+
+test('staff search shows an immediate "Searching…" indicator while the request is in flight', async (t) => {
+  var resolveSearch;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/api/staff') === 0 || String(url).indexOf('management-aios') !== -1 || String(url).indexOf('127.0.0.1:8000/api/staff') !== -1) {
+      return new Promise(function (resolve) { resolveSearch = resolve; });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesForMember(mountEl, 'mayurika');
+
+  var searchInput = findByClass(mountEl, 'review-summaries-staff-search');
+  assert.ok(searchInput, 'staff search input should exist');
+  searchInput.value = 'jane';
+  searchInput.dispatchEvent({ type: 'input' });
+  await new Promise(function (resolve) { setTimeout(resolve, 320); }); // clear the debounce window
+
+  var resultsEl = findByClass(mountEl, 'review-summaries-staff-results');
+  assert.ok(resultsEl, 'results container should exist');
+  // showInlineLoading (ui/loading.js) sets innerHTML with the loading text
+  // positioned after the spinner span's closing tag — this test-dom's
+  // deliberately narrow innerHTML parser (see review-summaries-test-dom.mjs)
+  // only reconstructs text immediately following an opening tag, so it
+  // cannot recover that trailing text as a child node; the raw HTML string
+  // itself (always preserved verbatim) is the reliable thing to assert on.
+  assert.match(resultsEl._innerHTML, /Searching/i, 'a loading indicator should appear while the staff search request is in flight');
+  assert.equal(resultsEl.hidden, false);
+
+  resolveSearch(jsonResponse(200, { records: [], total: 0, limit: 20, offset: 0 }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
 });

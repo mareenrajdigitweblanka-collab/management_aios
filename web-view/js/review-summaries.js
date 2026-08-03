@@ -215,6 +215,8 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
 
   mountEl.textContent = '';
 
+  // ── Header ─────────────────────────────────────────────────────
+  var headerEl = el('div', 'review-summaries-header');
   var heading = el('h4', 'review-summaries-heading');
 
   function updateHeading() {
@@ -228,30 +230,41 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     'Private to the Management Team member currently authorized on this browser — ' +
     'not necessarily the member this tab is named after. ' +
     'Other reviewers and the reviewed staff member cannot see these summaries.';
+  headerEl.appendChild(heading);
+  headerEl.appendChild(subheading);
 
   // ── Reviewed-staff selector ──────────────────────────────────────
+  var staffPanel = el('div', 'review-summaries-panel');
+  var staffPanelTitle = el('h5', 'review-summaries-step-title');
+  staffPanelTitle.textContent = '1. Select staff member';
   var staffField = el('div', 'review-summaries-field');
-  var staffLabel = el('label', 'review-summaries-label');
-  staffLabel.textContent = 'Reviewed staff member';
+  var staffSearchWrap = el('div', 'review-summaries-search-wrap');
   var staffSearchInput = el('input', 'review-summaries-staff-search');
   staffSearchInput.type = 'search';
   staffSearchInput.placeholder = 'Search staff by name…';
   staffSearchInput.setAttribute('aria-label', 'Search reviewed staff member');
   var staffResultsEl = el('div', 'review-summaries-staff-results');
   staffResultsEl.hidden = true;
+  staffSearchWrap.appendChild(staffSearchInput);
+  staffSearchWrap.appendChild(staffResultsEl);
   var selectedStaffEl = el('div', 'review-summaries-selected-staff');
   selectedStaffEl.hidden = true;
-  var includeInactiveLabel = el('label', 'review-summaries-include-inactive');
-  var includeInactiveCheckbox = el('input');
-  includeInactiveCheckbox.type = 'checkbox';
-  includeInactiveLabel.appendChild(includeInactiveCheckbox);
-  includeInactiveLabel.appendChild(document.createTextNode(' Include inactive staff'));
 
-  staffField.appendChild(staffLabel);
-  staffField.appendChild(staffSearchInput);
-  staffField.appendChild(staffResultsEl);
+  var includeInactiveLabel = el('label', 'review-summaries-toggle');
+  var includeInactiveCheckbox = el('input', 'review-summaries-toggle-input');
+  includeInactiveCheckbox.type = 'checkbox';
+  var includeInactiveTrack = el('span', 'review-summaries-toggle-track');
+  var includeInactiveText = el('span', 'review-summaries-toggle-text');
+  includeInactiveText.textContent = 'Include inactive staff';
+  includeInactiveLabel.appendChild(includeInactiveCheckbox);
+  includeInactiveLabel.appendChild(includeInactiveTrack);
+  includeInactiveLabel.appendChild(includeInactiveText);
+
+  staffField.appendChild(staffSearchWrap);
   staffField.appendChild(selectedStaffEl);
   staffField.appendChild(includeInactiveLabel);
+  staffPanel.appendChild(staffPanelTitle);
+  staffPanel.appendChild(staffField);
 
   function renderStaffResults(records) {
     staffResultsEl.textContent = '';
@@ -288,12 +301,14 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
       selectedStaffEl.hidden = true;
       staffSearchInput.hidden = false;
       staffSearchInput.focus();
+      updateFormVisibility();
       renderHistory();
     });
     selectedStaffEl.appendChild(nameEl);
     selectedStaffEl.appendChild(changeBtn);
     selectedStaffEl.hidden = false;
     staffSearchInput.hidden = true;
+    updateFormVisibility();
     renderHistory();
   }
 
@@ -303,10 +318,22 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     if (state.staffSearchAbort) { state.staffSearchAbort.abort(); }
     var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     state.staffSearchAbort = controller;
+    // Immediate feedback the moment the request is sent — the actual
+    // network round-trip can take a couple of seconds, and with nothing
+    // shown in that window the search reads as broken/unresponsive
+    // rather than "working." showInlineLoading matches the same visual
+    // language already used for the history list's own loading state.
+    showInlineLoading(staffResultsEl, 'Searching…');
+    staffResultsEl.hidden = false;
+    var requestToken = controller;
     fetchStaffOptions(query, state.includeInactive, controller && controller.signal)
-      .then(renderStaffResults)
+      .then(function (records) {
+        if (requestToken !== state.staffSearchAbort) { return; } // a newer search superseded this one
+        renderStaffResults(records);
+      })
       .catch(function (err) {
         if (err && err.name === 'AbortError') { return; }
+        if (requestToken !== state.staffSearchAbort) { return; }
         staffResultsEl.textContent = '';
         var e = el('div', 'review-summaries-staff-result-empty');
         e.textContent = 'Could not load staff records. Check your connection.';
@@ -322,22 +349,39 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   });
 
   // ── Create / edit form ───────────────────────────────────────────
+  var formPanel = el('div', 'review-summaries-panel');
+  var formPanelTitle = el('h5', 'review-summaries-step-title');
+  formPanelTitle.textContent = '2. Write summary';
+  var formPlaceholder = el('p', 'review-summaries-form-placeholder');
+  formPlaceholder.textContent = 'Select a staff member above to write a summary.';
+
   var form = el('form', 'review-summaries-form');
   form.setAttribute('novalidate', 'novalidate');
+  form.hidden = true;
 
+  var dateFieldGroup = el('div', 'review-summaries-field-group');
   var dateLabel = el('label', 'review-summaries-label');
   dateLabel.textContent = 'Meeting date';
   var dateInput = el('input', 'review-summaries-date-input');
   dateInput.type = 'date';
   dateInput.value = getColomboTodayStr();
+  dateFieldGroup.appendChild(dateLabel);
+  dateFieldGroup.appendChild(dateInput);
 
+  var summaryFieldGroup = el('div', 'review-summaries-field-group');
+  var summaryLabelRow = el('div', 'review-summaries-summary-label-row');
   var summaryLabel = el('label', 'review-summaries-label');
   summaryLabel.textContent = 'Summary';
+  var counterEl = el('span', 'review-summaries-counter');
+  counterEl.textContent = summaryCounterText('');
+  summaryLabelRow.appendChild(summaryLabel);
+  summaryLabelRow.appendChild(counterEl);
   var summaryTextarea = el('textarea', 'review-summaries-textarea');
   summaryTextarea.setAttribute('maxlength', String(SUMMARY_MAX_LENGTH));
+  summaryTextarea.setAttribute('placeholder', 'What was discussed? Preserve paragraphs and line breaks as needed.');
   summaryTextarea.rows = 6;
-  var counterEl = el('div', 'review-summaries-counter');
-  counterEl.textContent = summaryCounterText('');
+  summaryFieldGroup.appendChild(summaryLabelRow);
+  summaryFieldGroup.appendChild(summaryTextarea);
 
   summaryTextarea.addEventListener('input', function () {
     counterEl.textContent = summaryCounterText(summaryTextarea.value);
@@ -345,6 +389,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     if (summaryTextarea.value.trim()) { clearFieldError(summaryTextarea); }
   });
 
+  var formActions = el('div', 'review-summaries-form-actions');
   var saveBtn = el('button', 'msc-btn msc-btn-primary review-summaries-save-btn');
   saveBtn.type = 'submit';
   saveBtn.textContent = 'Save Summary';
@@ -354,14 +399,27 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   cancelEditBtn.textContent = 'Cancel edit';
   cancelEditBtn.hidden = true;
   cancelEditBtn.addEventListener('click', function () { exitEditMode(); });
+  formActions.appendChild(saveBtn);
+  formActions.appendChild(cancelEditBtn);
 
-  form.appendChild(dateLabel);
-  form.appendChild(dateInput);
-  form.appendChild(summaryLabel);
-  form.appendChild(summaryTextarea);
-  form.appendChild(counterEl);
-  form.appendChild(saveBtn);
-  form.appendChild(cancelEditBtn);
+  form.appendChild(dateFieldGroup);
+  form.appendChild(summaryFieldGroup);
+  form.appendChild(formActions);
+
+  formPanel.appendChild(formPanelTitle);
+  formPanel.appendChild(formPlaceholder);
+  formPanel.appendChild(form);
+
+  /* The form is only shown once a staff member is chosen — an editable-
+     looking form with no context for what it's editing reads as
+     confusing/half-finished; a clear placeholder instead makes the
+     required order of operations (pick staff, then write) obvious. */
+  function updateFormVisibility() {
+    var hasStaff = !!state.selectedStaff;
+    form.hidden = !hasStaff;
+    formPlaceholder.hidden = hasStaff;
+  }
+  updateFormVisibility();
 
   function exitEditMode() {
     state.editingId = null;
@@ -429,24 +487,37 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   });
 
   // ── History (datewise) ───────────────────────────────────────────
+  var historyPanel = el('div', 'review-summaries-panel');
+  var historyPanelTitle = el('h5', 'review-summaries-step-title');
+  historyPanelTitle.textContent = '3. Review history';
+
   var filtersEl = el('div', 'review-summaries-filters');
+  var dateFromGroup = el('div', 'review-summaries-filter-field');
   var dateFromLabel = el('label', 'review-summaries-label');
   dateFromLabel.textContent = 'From';
   var dateFromInput = el('input', 'review-summaries-date-from');
   dateFromInput.type = 'date';
+  dateFromGroup.appendChild(dateFromLabel);
+  dateFromGroup.appendChild(dateFromInput);
+
+  var dateToGroup = el('div', 'review-summaries-filter-field');
   var dateToLabel = el('label', 'review-summaries-label');
   dateToLabel.textContent = 'To';
   var dateToInput = el('input', 'review-summaries-date-to');
   dateToInput.type = 'date';
-  filtersEl.appendChild(dateFromLabel);
-  filtersEl.appendChild(dateFromInput);
-  filtersEl.appendChild(dateToLabel);
-  filtersEl.appendChild(dateToInput);
+  dateToGroup.appendChild(dateToLabel);
+  dateToGroup.appendChild(dateToInput);
+
+  filtersEl.appendChild(dateFromGroup);
+  filtersEl.appendChild(dateToGroup);
 
   dateFromInput.addEventListener('change', function () { state.dateFrom = dateFromInput.value; renderHistory(); });
   dateToInput.addEventListener('change', function () { state.dateTo = dateToInput.value; renderHistory(); });
 
   var historyEl = el('div', 'review-summaries-history');
+  historyPanel.appendChild(historyPanelTitle);
+  historyPanel.appendChild(filtersEl);
+  historyPanel.appendChild(historyEl);
 
   function renderHistoryCard(record) {
     var card = el('div', 'review-summaries-card');
@@ -551,12 +622,10 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     });
   }
 
-  mountEl.appendChild(heading);
-  mountEl.appendChild(subheading);
-  mountEl.appendChild(staffField);
-  mountEl.appendChild(form);
-  mountEl.appendChild(filtersEl);
-  mountEl.appendChild(historyEl);
+  mountEl.appendChild(headerEl);
+  mountEl.appendChild(staffPanel);
+  mountEl.appendChild(formPanel);
+  mountEl.appendChild(historyPanel);
 
   renderHistory();
 

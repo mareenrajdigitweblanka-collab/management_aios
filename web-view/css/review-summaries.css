@@ -14,10 +14,19 @@
   gap: var(--space-4);
 }
 
+.review-summaries-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--hairline);
+}
+
 .review-summaries-heading {
   font-size: var(--font-lg);
   color: var(--text);
   margin: 0;
+  font-weight: 700;
 }
 
 .review-summaries-subheading {
@@ -26,18 +35,73 @@
   margin: 0;
 }
 
+/* Each numbered step ("1. Select staff member", etc.) gets its own
+   card so the three-stage flow reads as distinct, sequential sections
+   instead of one long undifferentiated form. */
+.review-summaries-panel {
+  background: var(--surface-tint-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.review-summaries-step-title {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin: 0;
+}
+
 .review-summaries-field,
 .review-summaries-form,
 .review-summaries-filters {
   display: flex;
   flex-direction: column;
+  gap: var(--space-3);
+}
+
+.review-summaries-field-group {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
+}
+
+.review-summaries-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.review-summaries-filters {
+  flex-direction: row;
+  gap: var(--space-4);
+}
+
+.review-summaries-summary-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.review-summaries-summary-label-row .review-summaries-label {
+  margin: 0;
 }
 
 .review-summaries-label {
   font-size: var(--font-sm);
   color: var(--text-secondary);
   font-weight: 600;
+}
+
+.review-summaries-search-wrap {
+  position: relative;
 }
 
 .review-summaries-staff-search,
@@ -51,6 +115,35 @@
   font-size: var(--font-base);
   color: var(--text);
   background: var(--surface);
+  width: 100%;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.review-summaries-staff-search:focus,
+.review-summaries-date-input:focus,
+.review-summaries-date-from:focus,
+.review-summaries-date-to:focus,
+.review-summaries-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.review-summaries-form-placeholder {
+  color: var(--muted);
+  font-size: var(--font-sm);
+  font-style: italic;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.review-summaries-form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .review-summaries-textarea {
@@ -78,12 +171,17 @@
 }
 
 .review-summaries-staff-results {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: 20;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   max-height: 220px;
   overflow-y: auto;
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-md);
 }
 
 .review-summaries-staff-result {
@@ -128,12 +226,64 @@
   text-decoration: underline;
 }
 
-.review-summaries-include-inactive {
+/* Toggle switch (checkbox visually hidden, styled via its sibling track)
+   for "Include inactive staff" — reads as a deliberate on/off control
+   rather than a plain checkbox that's easy to overlook. */
+.review-summaries-toggle {
   font-size: var(--font-sm);
-  color: var(--muted);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
+  cursor: pointer;
+  width: fit-content;
+}
+
+.review-summaries-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.review-summaries-toggle-track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex: none;
+  border-radius: var(--pill-radius);
+  background: var(--border);
+  transition: background .15s ease;
+}
+
+.review-summaries-toggle-track::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform .15s ease;
+}
+
+.review-summaries-toggle-input:checked + .review-summaries-toggle-track {
+  background: var(--accent);
+}
+
+.review-summaries-toggle-input:checked + .review-summaries-toggle-track::before {
+  transform: translateX(14px);
+}
+
+.review-summaries-toggle-input:focus-visible + .review-summaries-toggle-track {
+  box-shadow: var(--focus-ring);
+}
+
+.review-summaries-toggle-text {
+  font-size: var(--font-sm);
 }
 
 .review-summaries-history {
@@ -146,7 +296,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--space-3);
-  background: var(--surface-tint-2);
+  background: var(--surface);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
