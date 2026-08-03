@@ -3,7 +3,7 @@ name: calendar-review-summaries-implementation-handover
 type: handover
 scope: management_aios Calendar — Staff Review Summaries (REQ-CAL-REV-001)
 created: 2026-08-03
-status: AMBER — implemented, deployed (§17), and later found to have a production authorization-context defect (screenshot-evidenced) which was fixed same-day directly on local main (§19): backend 619/619 (2 pre-existing unrelated failures, unchanged), frontend calendar suite 124/124, review-summaries.test.mjs 39/39; committed locally, not yet pushed — see §19/§20.
+status: AMBER — authorization-context defect fixed and deployed (§19/§21), plus two further real-browser-found defects (blocked-panel CSS visibility; long-summary-text readability) fixed and deployed same-day (§21). Real-browser validation against production confirmed the core defect fixed across all 5 reviewer/panel combinations (§21). Final: backend 619 total/617 passed (2 pre-existing unrelated failures, unchanged), review-summaries.test.mjs 44/44, Calendar frontend suite 124/124. Commits f1182a2, a2aafa9, 6576985 all pushed to origin/main and confirmed live. AMBER, not PASS — see §21 for what remains unperformed.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -166,4 +166,27 @@ Full detail: `validation/calendar-review-summaries-technical-design-check-2026-0
 
 ## 20. One next step
 
-Review the evidence report, then — if approved — push `main` to `origin/main` and perform a real-browser smoke check of the exact reported scenario before considering the defect closed in production. UI/UX polish and staff-search performance (§18's original follow-up) remain queued after that.
+~~Review the evidence report, then — if approved — push `main`...~~ **Superseded — see §21.** Pushed, deployed, and validated in a real browser; two further defects found during validation were fixed and deployed same-day.
+
+## 21. Deployment and real-browser validation — 2026-08-03 (same-day follow-up)
+
+Full detail: `validation/calendar-review-summaries-technical-design-check-2026-08-03.md`, "Deployment and Real-Browser Validation — 2026-08-03" section.
+
+**Push/deploy**: `f1182a2` pushed and confirmed live (backend healthy, frontend assets byte-for-byte identical to source).
+
+**Real-browser defects found and fixed same-day**:
+
+1. **`a2aafa9`** — blocked panels stayed visually interactive (form/history fully usable, only the actual network request was blocked by `guardedApiRequest`). Root cause: `.review-summaries-panel`/`.review-summaries-blocked` set `display: flex` in the author stylesheet, which beats the browser's default `[hidden] { display: none }` rule — so `el.hidden = true` never actually hid anything, even though every DOM-stand-in test (no real CSS engine) reported it as hidden. Fixed with one scoped `.review-summaries-instance [hidden] { display: none !important; }` rule.
+2. **`6576985`** — separate UX feedback (not an authorization issue): long summaries rendered as an unbroken wall of text with no way to collapse. Added a word-boundary-aware `summaryPreview()` + "Show more"/"Show less" toggle, still `textContent`-only.
+
+**Real-browser validation (user-performed, Chrome/Windows)**: Scenario A (Mayurika's own panel) — PASS. Scenario B (cross-member block on Suman/Arun/Rajiv/Paraparan, all 4) — PASS, correct hidden form/history, correct red banner naming both reviewer and target, zero leaked data. Scenarios C/D/E, DevTools network/localStorage inspection, responsive/zoom, and Task/Leave/console regression were explicitly not performed — a deliberate scope decision by the user once the core defect was conclusively confirmed fixed, not a tooling limitation this time.
+
+**Production data**: `management_aios.staff_review_summaries` row count went 4 → 6 during this session. Not a Claude-invoked write (the assistant issued only `GET`/read-only SQL all session) — attributable to the user's own successful `Save Summary` actions on Mayurika's own, correctly-authorized panel during Scenario A testing. Reported transparently, not suppressed.
+
+**Final test totals**: `review-summaries.test.mjs` 44/44; Calendar frontend suite 124/124; full backend 619 total / 617 passed / 2 failed (same two pre-existing, unrelated, unchanged failures).
+
+**Status**: AMBER — core defect conclusively fixed and validated live; Scenarios C/D/E, DevTools capture, responsive/zoom, and full regression pass remain open for a future session if general rollout requires them.
+
+## 22. One next step
+
+If general rollout is desired, perform Scenarios C/D/E, a DevTools network/localStorage capture, and a Task/Leave/console regression pass — none are blocking given the core defect is conclusively fixed. UI/UX polish and staff-search performance (§18's original follow-up) remain queued after that.

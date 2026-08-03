@@ -623,4 +623,94 @@ Committed locally on `main` per explicit direct-main authorization for this sess
 
 ### One next step
 
-Review this evidence report, then — if approved — push `main` to `origin/main` and perform a real-browser smoke check of the exact reported scenario (authorize as one member, confirm every other member's panel is blocked with the red warning and zero network requests, switch panels, confirm state resets) before considering the defect closed in production.
+~~Review this evidence report, then — if approved — push `main`...~~ **Superseded — see the deployment-and-validation section below.** The fix was pushed, deployed, and validated in a real browser; two additional defects found during that validation were fixed and deployed same-day.
+
+---
+
+## Deployment and Real-Browser Validation — 2026-08-03 (same-day follow-up)
+
+### Repository safety (PHASE 1)
+
+Start of session: local `main` `f1182a2` == `origin/main` `b0b422b`+1 (0 behind, 1 ahead — the unpushed authorization-context fix), clean tree. Confirmed via `git fetch`/`git rev-list --left-right --count` before any push.
+
+### Fix diff review (PHASE 2)
+
+`git diff --name-status origin/main...main` confirmed exactly the 9 approved files (backend test, 2 evidence docs, CSS, 2 test-DOM stand-ins, `auth.js`, `review-summaries.js`, `review-summaries.test.mjs`) — no backend router, migration, SQL, or database-config change; `git diff --check` clean; a targeted secret/token grep over the diff (excluding known test fixture strings like `test-only-token-*`) returned zero matches.
+
+### Test-total correction (PHASE 3) — literal runner output
+
+| Suite | Result |
+|---|---|
+| `backend/tests/test_staff_review_summaries.py` | `Ran 39 tests in 1.153s` / `OK` |
+| Full backend (`python -m unittest discover -s backend/tests -p "test_*.py"`) | `Ran 619 tests in 5.370s` / `FAILED (failures=2)` — the same two pre-existing, unrelated failures (`test_missing_variable_fails_closed`, `test_pending_task_no_outcome`), unchanged |
+| `web-view/js/review-summaries.test.mjs` | `# tests 39 / # pass 39 / # fail 0` |
+| `web-view/js/calendar/*.test.mjs` | `# tests 124 / # pass 124 / # fail 0` |
+
+No new failure. Proceeded to push.
+
+### Push and deployment (PHASES 4–5)
+
+`f1182a2` pushed — `git push origin main` → `b0b422b..f1182a2 main -> main`. Post-push `git fetch`/`git rev-parse` confirmed `origin/main` == local `HEAD` == `f1182a2`, `git branch -r --contains f1182a2` listed `origin/main`, working tree clean.
+
+**Backend**: `GET /openapi.json` → 200, includes both `/api/staff-review-summaries` paths (unchanged, as expected — backend was never modified); `GET /api/staff-review-summaries` unauthenticated → 401; invalid token → 401; `GET /api/staff` (public) → 200. No startup/table error.
+
+**Frontend**: fetched the deployed `js/review-summaries.js`, `js/calendar/auth.js`, and `css/review-summaries.css` directly and diffed them (CRLF/LF-normalized) against the committed source — **byte-for-byte identical** for all three. `Age: 68s` on `review-summaries.js` at check time confirmed a fresh deploy, not a stale cached asset.
+
+### Real-browser defects found and fixed (same-day, before validation could pass)
+
+The user performed the real-browser walkthrough this session could not perform itself (no browser automation tool, no real Management Team token available to the assistant — same documented limitation as every prior session for this feature). Two defects were found and fixed as part of this same deployment cycle:
+
+**Defect 1 — blocked panel stayed visually interactive (commit `a2aafa9`)**: screenshot evidence showed a user on Suman's tab (token = Mayurika) with the staff selector/form fully populated and a "Something went wrong" toast after clicking Save. Root cause: `staffPanel`/`formPanel`/`historyPanel` (class `.review-summaries-panel`) and `blockedEl` (class `.review-summaries-blocked`) each set `display: flex` in the author stylesheet, which wins over the browser's default `[hidden] { display: none }` rule (author origin always beats user-agent origin at equal-or-lower specificity) — so `el.hidden = true` never actually hid these elements visually, even though it correctly hid them from every DOM-stand-in test (the Node test harness has no real CSS cascade). The "Something went wrong" toast was `guardedApiRequest`'s own synchronous rejection surfacing through the generic error mapper — the actual network request was correctly never sent; only the *visual* gate failed. A second symptom of the same root cause: an empty pink bar appeared on Mayurika's own (allowed) panel, from `blockedEl.hidden = true` also failing to hide.
+
+Fix: one scoped rule, `.review-summaries-instance [hidden] { display: none !important; }`, closing the entire bug class (present and any future conflicting-class instance) rather than patching each selector. Frontend tests re-ran clean (39/39 + 124/124 — CSS-only change, no JS logic touched). Committed and pushed as `a2aafa9`; deployed CSS reconfirmed byte-for-byte identical to source after redeploy.
+
+**Defect 2 (UX, not authorization) — long summary text unreadable (commit `6576985`)**: separate user feedback during the same real-browser session — a long summary rendered as one unbroken wall of text in the history card with no way to collapse it (unrelated to the authorization fix; occurred on Mayurika's own, correctly-allowed panel). Added `summaryPreview(text, maxLength)` (word-boundary-aware, 400-character default, pure/exported/tested) and a "Show more"/"Show less" toggle in `renderHistoryCard`, still `textContent`-only (never `innerHTML`) per the module's existing safe-text convention. Added 5 new tests (3 pure-function, 2 DOM-level covering both the truncated and untruncated cases and the expand/collapse toggle itself) — `review-summaries.test.mjs` 39 → 44. Full Calendar suite still 124/124. Committed and pushed as `6576985`; deployed assets reconfirmed byte-for-byte identical after redeploy (confirmed twice — the user's first re-check hit a stale browser-cached copy of the module in an already-open tab; a hard refresh/incognito load resolved it, confirming this was a client-side cache artifact, not a server-side staleness issue, since the CDN asset was already correct both times it was checked via `curl`).
+
+### Real-browser validation results (PHASES 6, 9 — user-performed)
+
+**Browser**: Chrome (Windows) — exact version number not visible in the screenshots provided; not independently confirmed via `chrome://version`.
+
+**Scenario A — own panel (Mayurika)**: PASS. Correct "Authorized as: Mayurika — HR" label (topbar and workspace heading both), own history loaded (2 records, both dated 2026-08-03), the new "Show more"/"Show less" toggle worked correctly on a long summary (confirmed expand and, implicitly, the button is present only for text over the preview length).
+
+**Scenario B — cross-member block, all 4 non-Mayurika panels**: PASS for Suman, Arun, Rajiv, and Paraparan — each showed the form/history correctly hidden (not just an empty banner) and the red blocked banner with the exact expected copy pattern, e.g. *"You can't manage Arun — Implementation Officer's Review Summaries."* / *"You are authorized as Mayurika — HR. You can only create, view or change Mayurika — HR's review summaries."* — naming both the authenticated reviewer and the selected sidebar member, with zero visible leakage of Mayurika's own history into any of the other 4 panels.
+
+**Scenarios C (state clearing), D (return-to-Mayurika), E (token change)**: **NOT PERFORMED** — by explicit user decision after Scenarios A and B passed, since those two cover the actual reported production defect. Not a tooling limitation this time; a deliberate scope decision to close out once the core defect was conclusively confirmed fixed.
+
+**PHASE 7 (responsive/zoom), PHASE 8 (DevTools network/localStorage inspection), PHASE 10 (Task/Leave/console regression)**: **NOT PERFORMED**, same reason. Note: PHASE 8's "zero request" requirement has strong indirect evidence even without DevTools — the pre-fix screenshot's "Something went wrong" toast (a client-side-only rejection message, not a backend error shape) is consistent with `guardedApiRequest` never sending a request; this was not, however, independently confirmed via a Network tab capture.
+
+### Production data safety (PHASE 9)
+
+`SELECT COUNT(*) FROM management_aios.staff_review_summaries` against `order_management_copy` (confirmed via `current_database()` in the same query):
+
+| When | Row count |
+|---|---|
+| Before this session's deployment work | 4 |
+| After the user's real-browser validation | 6 |
+
+**Row count changed: +2.** This was NOT caused by any Claude-invoked action — no create/update/delete request was ever issued by the assistant this session (only `GET`/read-only SQL). The two new rows are attributable to the user's own manual interactive testing on Mayurika's own, correctly-authorized panel (Scenario A) — i.e., a successful `Save Summary` action against Mayurika's own data, which is the intended, correct behavior for an authorized reviewer on their own panel, not a defect. Reported here transparently rather than claimed as "0 change" — the original task's row-count gate was designed to catch an *unintended* write (e.g. a defect letting a blocked panel write, or an assistant-invoked write); neither occurred. No record was deleted; the previously-observed test record was left untouched, per instruction.
+
+### Files changed this deployment session
+
+| Commit | Files |
+|---|---|
+| `f1182a2` (already covered above) | 9 files — the authorization-context fix itself |
+| `a2aafa9` | `web-view/css/review-summaries.css` (1 file — `[hidden]` visibility fix) |
+| `6576985` | `web-view/css/review-summaries.css`, `web-view/js/review-summaries.js`, `web-view/js/review-summaries.test.mjs` (3 files — truncate/expand UX addition) |
+
+No file under `member-aios/mayurika-hr/staff-data/` was touched at any point. `backend/routers/staff_review_summaries.py` and the database schema were never touched.
+
+### Final test totals (after all three commits)
+
+| Suite | Result |
+|---|---|
+| `web-view/js/review-summaries.test.mjs` | 44/44 (39 from the auth fix + 5 from the truncate/expand addition) |
+| `web-view/js/calendar/*.test.mjs` | 124/124 (unchanged — CSS/JS-additive changes only, zero regression) |
+| Full backend | 619 total, 617 passed, 2 failed (same two pre-existing, unrelated, unchanged failures) |
+
+### PASS / AMBER / FAIL
+
+**AMBER.** The core reported defect (cross-member panel showing the same workspace/history regardless of selected sidebar member) is conclusively confirmed fixed in a real browser against production, across all 5 reviewer/panel combinations tested against a live Mayurika token, including two additional real-browser-only defects (CSS visibility, long-text readability) found and fixed same-day. AMBER, not PASS, because: state-clearing (Scenario C), return-to-own-panel (Scenario D), token-change (Scenario E), DevTools network/localStorage inspection, responsive/zoom checks, and the Task/Leave/console regression pass were not performed (deliberate scope decision, not a defect); production row count changed by +2 (explained above, not a security or correctness issue, but a fact this report does not suppress).
+
+### One next step
+
+If general rollout is desired, perform Scenarios C/D/E, a DevTools network/localStorage capture, and a Task/Leave/console regression pass at a convenient time — none are blocking given the core defect is conclusively fixed, but they would close the remaining gaps in this evidence trail.
