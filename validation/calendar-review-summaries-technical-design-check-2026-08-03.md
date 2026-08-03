@@ -77,3 +77,24 @@ Companion evidence for `docs/2026-08-03_calendar-review-summaries-technical-desi
 ### One next step
 
 Begin backend implementation starting with the additive `StaffRecordOut.id` field (design doc §4), carrying forward the residual DB-default note above as an implementation-phase consideration, and obtain final business confirmation of the 10,000-character summary maximum before or during that phase.
+
+## 8. Design-approval gate (2026-08-03, same-day follow-up)
+
+This section records the design-approval gate review for REQ-CAL-REV-001. No existing approval-record file convention was found elsewhere in this repository (checked for `approval-record`/`sign-off` naming patterns); this section extends the existing validation file rather than creating a duplicate requirement or design document.
+
+**PR status**: `docs/2026-08-03_calendar-review-summaries-requirement.md` and `docs/2026-08-03_calendar-review-summaries-technical-design.md` (with this companion validation file) were merged into `main` via PR #7 (`https://github.com/mareenrajdigitweblanka-collab/management_aios/pull/7`) and PR #8 (`https://github.com/mareenrajdigitweblanka-collab/management_aios/pull/8`), merge commit `228d433`. Both merges were performed by the repository owner via GitHub, outside this session — not by an automated merge in this workflow. `design/calendar-review-summaries` (`589be90`) is confirmed as an ancestor of `origin/main` with zero diff between them.
+
+| Approval | Status | Basis |
+|---|---|---|
+| Business — reviewer-owned visibility model | **APPROVED** | Explicit business-owner decisions recorded in `validation/calendar-review-summaries-identifier-decision-check-2026-08-03.md` §1 (reviewer ownership, staff.id, employee_number prohibition, Staff API reuse) |
+| Business — 10,000-character summary maximum | **PENDING** | No recorded business-owner confirmation exists anywhere in the requirement, design, or validation documents; every reference explicitly marks it "pending final business confirmation" |
+| Technical — staff.id exposure / schema / API / auth / migration design | **PENDING** | No recorded sign-off from the CLAUDE.md §18-designated technical reviewer (Arun, KPI/implementation domain) exists in this repository; the design's internal PASS status (§5, §7) reflects self-consistency, not external technical approval |
+| Technical — missing staff.id DB-default note | **ACKNOWLEDGED IN DOCUMENTATION** (design doc §17/§20; this file §7) — not yet a reviewer sign-off | Builder-documented, not externally confirmed |
+| Queryability — reviewer + reviewed-staff + datewise-history metadata | **PENDING** | No recorded queryability-reviewer confirmation exists |
+| Coordinator — transition to implementation | **PENDING** | No recorded coordinator authorization beyond the builder's own "one next step" recommendations |
+
+**Implementation authorization**: **AMBER**. Per this task's explicit rule, the design remains technically PASS, but because Technical, Queryability, and Coordinator approvals — and the 10,000-character business parameter — are all PENDING, implementation must not begin on the strength of this session alone.
+
+### One next step (approval gate)
+
+Route this design to Arun (technical, per CLAUDE.md §18) and to the business owner for the two PENDING approvals above (10,000-character maximum; transition-to-implementation authorization) before starting backend implementation.
