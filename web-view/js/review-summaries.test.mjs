@@ -134,7 +134,43 @@ test('staffOptionLabel never includes employee_number and adds calling_name when
   assert.equal(sameCalling, 'Same Name');
 });
 
+test('reviewSummariesHeadingText names the authorized reviewer, or says unauthorized when none is stored', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.reviewSummariesHeadingText('Mayurika — HR'), 'My Review Summaries — Authorized as: Mayurika — HR');
+  assert.equal(mod.reviewSummariesHeadingText(null), 'My Review Summaries — not yet authorized on this browser');
+  assert.equal(mod.reviewSummariesHeadingText(''), 'My Review Summaries — not yet authorized on this browser');
+});
+
 // ── DOM-mounted behavior ─────────────────────────────────────────────
+
+test('heading shows the AUTHORIZED reviewer, never the tab it happens to be mounted under (regression test for the cross-tab confusion bug)', async (t) => {
+  // Mounted under Suman's tab (memberKey='suman') but the browser's stored
+  // token belongs to Mayurika — the heading must reflect Mayurika, not
+  // Suman, since the widget's data is scoped by the token, not the tab.
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: { token: 'test-token', memberKey: 'mayurika' }, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'suman');
+
+  var heading = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-heading'); })[0];
+  assert.ok(heading, 'a .review-summaries-heading element should exist');
+  assert.match(heading.textContent, /mayurika/i, 'heading must name the authorized (token) member, "mayurika"');
+  assert.ok(!/suman/i.test(heading.textContent), 'heading must never claim to be Suman\'s just because it is mounted on Suman\'s tab');
+});
+
+test('heading shows "not yet authorized" before any token is stored', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesForMember(mountEl, 'arun');
+  var heading = mountEl._children.filter(function (c) { return c.classList.contains('review-summaries-heading'); })[0];
+  assert.match(heading.textContent, /not yet authorized/i);
+});
 
 test('selecting a staff result stores staff.id, never employee_number, and never displays it', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });

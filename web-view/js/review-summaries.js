@@ -26,7 +26,12 @@
 import { STAFF_REVIEW_SUMMARIES_API_BASE } from './config.js';
 import { STAFF_API_BASE } from './staff-data.js';
 import { getColomboTodayStr } from './calendar/core.js';
-import { ensureAuthorized, handleUnauthorizedResponse } from './calendar/auth.js';
+import {
+  ensureAuthorized,
+  handleUnauthorizedResponse,
+  getStoredMemberKey,
+  labelForMemberKey
+} from './calendar/auth.js';
 import { classifyHttpStatus, mapApiError } from './ui/error-mapper.js';
 import { setButtonBusy, renderSkeletonRows, showInlineLoading } from './ui/loading.js';
 import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from './ui/form-feedback.js';
@@ -91,6 +96,22 @@ export function staffOptionLabel(staff) {
     return name + ' (' + staff.calling_name + ')';
   }
   return name;
+}
+
+/* The single most important piece of this widget's copy: Calendar auth is
+   browser-wide, not per-tab (calendar/auth.js), so a Review Summaries block
+   mounted under "Suman's" tab does NOT mean the summaries shown there
+   belong to Suman — they belong to whichever member's token is currently
+   authorized in this browser. This heading is the only on-screen signal of
+   that fact, so it must never read as a static "My Review Summaries" with
+   no reviewer named — a user sitting on one member's tab while a different
+   member's token is stored must be able to see, at a glance, whose data
+   they are about to view or edit. `authorizedLabel` is the already-resolved
+   display label (labelForMemberKey(getStoredMemberKey())) or null/empty
+   when no token is stored yet. */
+export function reviewSummariesHeadingText(authorizedLabel) {
+  if (!authorizedLabel) { return 'My Review Summaries — not yet authorized on this browser'; }
+  return 'My Review Summaries — Authorized as: ' + authorizedLabel;
 }
 
 // ── Fetch wrapper — every request (including GET) is authenticated ─────
@@ -195,11 +216,17 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   mountEl.textContent = '';
 
   var heading = el('h4', 'review-summaries-heading');
-  heading.textContent = 'My Review Summaries';
+
+  function updateHeading() {
+    var authorizedLabel = labelForMemberKey(getStoredMemberKey());
+    heading.textContent = reviewSummariesHeadingText(authorizedLabel);
+  }
+  updateHeading();
 
   var subheading = el('p', 'review-summaries-subheading');
   subheading.textContent =
-    'Private to the Management Team member currently authorized on this browser. ' +
+    'Private to the Management Team member currently authorized on this browser — ' +
+    'not necessarily the member this tab is named after. ' +
     'Other reviewers and the reviewed staff member cannot see these summaries.';
 
   // ── Reviewed-staff selector ──────────────────────────────────────
@@ -482,6 +509,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   }
 
   function renderHistory() {
+    updateHeading();
     historyEl.textContent = '';
     if (!state.selectedStaff) {
       var promptEl = el('div', 'review-summaries-empty');
@@ -496,6 +524,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
       dateTo: state.dateTo
     });
     reviewSummariesApiRequest('?' + query).then(function (body) {
+      updateHeading(); // the ensureAuthorized() call inside the request above may have just resolved a first-time authorization or a token change — refresh the label now that it's current.
       historyEl.textContent = '';
       if (!body.records.length) {
         var empty = el('div', 'review-summaries-empty');
@@ -534,6 +563,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   return {
     selectStaff: selectStaff,
     renderHistory: renderHistory,
+    updateHeading: updateHeading,
     state: state
   };
 }
