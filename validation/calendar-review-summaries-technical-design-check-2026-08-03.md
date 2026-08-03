@@ -142,3 +142,89 @@ Remaining limitations:
 - this note is non-blocking for review-summary implementation.
 
 One next step: Merge approval evidence and create the backend implementation branch.
+
+## Implementation — 2026-08-03 (direct-main, business-owner-authorized)
+
+Recorded per explicit user instruction: no feature branch or approval PR is required for this implementation pass — work performed directly on local `main`, not pushed to `origin/main`, no production migration executed.
+
+**Direct-main implementation authorization**: explicit, recorded in the task instructions for this session ("The user has explicitly instructed that no feature branch or approval PR is required. Work directly on main.").
+
+**Starting main commit**: `228d433` (`origin/main` at session start).
+
+**Approval cherry-picks incorporated**: `341bbbf` ("Record Calendar review summary design approval status") and `89f67c8` ("Approve Calendar review summaries implementation") — both cherry-picked cleanly onto local `main`, no conflicts. Both commits confirmed to touch only `validation/calendar-review-summaries-technical-design-check-2026-08-03.md` before cherry-picking (`git show --stat --name-status`).
+
+### Files created
+
+| File | Purpose |
+|---|---|
+| `backend/routers/staff_review_summaries.py` | All 5 API routes, ownership filtering, non-disclosing 404 |
+| `backend/tests/test_staff_review_summaries.py` | 37 backend tests |
+| `database/migrations/2026-08-03-create-staff-review-summaries.sql` | Migration — **NOT EXECUTED** |
+| `database/staff_review_summaries_schema.sql` | Companion fresh-install schema file |
+| `web-view/js/review-summaries.js` | Frontend workspace module |
+| `web-view/js/review-summaries-test-dom.mjs` | Hand-rolled DOM stand-in for frontend tests (not a test file itself) |
+| `web-view/js/review-summaries.test.mjs` | 22 frontend tests |
+| `web-view/css/review-summaries.css` | Layout + safe-text (`white-space: pre-wrap`) styles |
+
+### Files modified
+
+| File | Change |
+|---|---|
+| `backend/models.py` | Added `StaffReviewSummary` ORM model; added `ForeignKey`/`Text` imports |
+| `backend/schemas.py` | Added `id: UUID` to `StaffRecordOut` (additive); added `StaffReviewSummaryCreate`/`Update`/`Out`/`ListResponse` |
+| `backend/main.py` | Registered `staff_review_summaries_router` |
+| `web-view/js/config.js` | Added `STAFF_REVIEW_SUMMARIES_API_BASE` |
+| `web-view/js/staff-data.js` | Exported the existing `STAFF_API_BASE` constant (additive — no existing behavior changed) so the new selector reuses it instead of duplicating a host-detection constant |
+| `web-view/js/app.js` | Wired `initReviewSummaries()` into `boot()` |
+| `web-view/index.html` | Added 1 `<link>` for the new stylesheet + 5 `.review-summaries-instance` mount points (one per member tab-panel) |
+
+**StaffRecordOut.id result**: Additive `id: UUID` field confirmed working — `test_staff_record_out_exposes_uuid_id` passes; existing 16 fields confirmed unchanged (`test_existing_staff_api_fields_remain_compatible`).
+
+**Model result**: `StaffReviewSummary` created exactly per the approved design (§5 of the technical design doc) — UUID PK, `reviewer_member_key` CHECK, `reviewed_staff_id` FK to `staff_dashboard_records.id`, `meeting_date`, `summary_text` with nonblank/max-length CHECKs, `created_at`/`updated_at`/`deleted_at`. No `reviewed_staff_name_snapshot` column (per design decision).
+
+**Migration path**: `database/migrations/2026-08-03-create-staff-review-summaries.sql` (+ companion `database/staff_review_summaries_schema.sql`).
+
+**Migration execution**: **NOT EXECUTED** — no database connection was used this session; no production or any other database was modified.
+
+**Five API routes**: `POST /api/staff-review-summaries`, `GET /api/staff-review-summaries`, `GET /api/staff-review-summaries/{summary_id}`, `PUT /api/staff-review-summaries/{summary_id}`, `DELETE /api/staff-review-summaries/{summary_id}` — all confirmed registered via `app.openapi()` (19 total paths, up from 14 baseline).
+
+**Reviewer ownership result**: `reviewer_member_key` is server-derived from `Depends(get_verified_member)` on every route; never declared on any request schema; confirmed by `test_ownership_spoof_field_is_ignored_safely` (backend) and the frontend POST-body assertion that `reviewer_member_key` is absent.
+
+**Cross-reviewer result**: Every detail/update/delete query combines `id + reviewer_member_key + deleted_at IS NULL` in one filter — confirmed non-disclosing 404 (never 403) by `test_cross_reviewer_detail_returns_404`, `test_cross_reviewer_update_returns_404`, `test_cross_reviewer_delete_returns_404`, and the underlying row asserted untouched in each case.
+
+**Datewise-history result**: `ORDER BY meeting_date DESC, created_at DESC` confirmed by `test_meeting_date_descending_order` and `test_created_at_secondary_order`; `date_from`/`date_to` filters confirmed; pagination default 50 / max 500 confirmed (`test_pagination_default_and_maximum_behavior`).
+
+**Summary-length result**: 1–10,000 characters after trimming, enforced both client-side (`validateSummaryText`) and server-side (Pydantic validators + DB CHECK constraints) — boundary-tested at exactly 10,000 (accepted) and 10,001 (rejected) on both layers.
+
+**Safe-text result**: `textContent` + `white-space: pre-wrap` only — never `innerHTML` for summary content. Confirmed by `history renders full summary text safely` (frontend) using literal `<script>`/`<img onerror>` content, asserting it survives as plain text and is never parsed into a live element.
+
+**Backend test totals**: 37/37 new tests passing (`backend/tests/test_staff_review_summaries.py`).
+
+**Full backend regression total**: 615/617 (580 baseline + 37 new = 617; 2 failures, both pre-existing and unchanged from the pre-implementation baseline captured in this same session — see below).
+
+**Frontend test totals**: 22/22 new tests passing (`web-view/js/review-summaries.test.mjs`, run from `web-view/js/`).
+
+**Full frontend Calendar regression total**: 124/124 (`web-view/js/calendar/*.test.mjs`, run from `web-view/js/calendar/`) — identical to the pre-implementation baseline, zero regressions.
+
+**Baseline failures** (confirmed present and unchanged both before and after this implementation pass, via an explicit Phase 3 baseline run and an explicit Phase 14 full-suite re-run):
+
+1. `test_pending_task_no_outcome` (`test_weekly_schedule_xlsx_export.py`) — pre-existing, date-sensitive "Pending" vs. "No response" outcome-label mismatch, unrelated to this feature (previously documented in `validation/calendar-member-token-authorization-implementation-check-2026-07-29.md`).
+2. `test_missing_variable_fails_closed` (`test_calendar_auth.py`) — environment-specific: a local, untracked `.env` file at the repo root (loaded via `backend/config.py`'s `load_dotenv()` at first import) already provides a value for `CALENDAR_AUTH_TOKEN_HASH_PARAPARAN`, so the one test that relies on deleting that key from its own local dict (rather than explicitly overriding it) doesn't see it as missing in this environment. Reproduces identically in isolation, with zero code from this feature touched.
+
+No new failure was introduced by this implementation in either suite.
+
+**Database writes**: 0 (no database connection used this session).
+
+**Production records created**: 0.
+
+**Protected path excluded**: Confirmed — `member-aios/mayurika-hr/staff-data/` never opened.
+
+**Implementation status**: Complete and tested, committed locally on `main`, **not pushed**.
+
+### PASS / AMBER / FAIL
+
+**PASS** for the implementation content and test evidence itself (37 + 22 = 59 new tests, all passing; zero regressions; zero database writes; zero production records; protected path excluded). Overall session status remains **AMBER** per the push gate below — pushing `main` was explicitly withheld this session (§18 push-gate rule: pushing may trigger production deployment, and the production `staff_review_summaries` table does not exist yet).
+
+### One next step
+
+Review the local `main` commits for this feature, then — once the production migration is separately approved and executed against the correct database — push `main` and deploy.
