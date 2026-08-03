@@ -443,6 +443,78 @@ Exact agreement with `backend/models.py` `StaffReviewSummary` and the migration 
 
 **READY TO PUSH AND DEPLOY** — the database prerequisite for the Staff Review Summaries feature is now satisfied. Application code push/deploy was explicitly out of scope for this session.
 
+### One next step (as of the migration-execution session)
+
+~~Push local `main` to `origin/main`...~~ **Superseded — see below.** Push, deployment, and read-only smoke checks are complete.
+
+## Deployment and Read-Only Smoke Check — 2026-08-03 (same-day follow-up)
+
+### Push
+
+| Item | Value |
+|---|---|
+| Pre-push local `main` HEAD | `3c2d798` |
+| Pre-push `origin/main` HEAD | `228d433` |
+| Ahead/behind before push | 0 behind / 7 ahead |
+| Tests rerun before push | Targeted: 37/37 backend, 22/22 frontend, 124/124 Calendar. Full backend: 615/617 — same 2 known pre-existing failures (`test_pending_task_no_outcome`, `test_missing_variable_fails_closed`), no new failure |
+| Push result | Success — `228d433..3c2d798  main -> main` |
+| Pushed commits | `fa08802`, `337abef`, `0f5b108`, `5faef75`, `95d62a1`, `c865ee7`, `3c2d798` (7 commits) |
+| Post-push `origin/main` | `3c2d798` — matches local exactly, 0 ahead / 0 behind |
+
+### Deployment verification
+
+**Backend** (`https://management-aios-api.vercel.app`): `/health` responds `{"status":"ok","service":"management-aios-member-schedules"}`. Production `/openapi.json` confirms both new paths registered: `POST/GET /api/staff-review-summaries` and `GET/PUT/DELETE /api/staff-review-summaries/{summary_id}` — these routes did not exist before this feature, confirming the deployment picked up the pushed commit, not a stale build.
+
+**Frontend** (`https://management-aios.vercel.app`): Direct content fetch of `/css/review-summaries.css` and `/js/review-summaries.js` returned the exact file content authored this session (verified byte-for-byte on the opening comment header, not summarized). The root page's "Review Summaries" heading text appears exactly 5 times, one per Management Team member (Mayurika, Suman, Arun, Rajiv, Paraparan) — matching the 5-panel mount design. Existing Schedule Calendar/Leave/Task content confirmed still present (no apparent regression from the page-content check available).
+
+**Tooling caveat**: WebFetch converts HTML to markdown, which strips tag attributes — so `<link href>`/`<script src>` values themselves are invisible to it (an early WebFetch summary incorrectly claimed the page had no such tags at all; this was a tool/summarization artifact, not real page content, and was disregarded in favor of the direct asset-content fetch above, which is conclusive).
+
+### Production API route check
+
+Confirmed via `/openapi.json`: all 5 routes present exactly as designed.
+
+### Read-only authorization smoke check
+
+| Check | Result |
+|---|---|
+| Unauthenticated `GET /api/staff-review-summaries` | **401** (confirmed via `curl`, precise status code) |
+| Invalid-token `GET /api/staff-review-summaries` (bogus bearer value, no real credential involved) | **401** (confirmed via `curl`) |
+| Authorized `GET` using a real Management Team token | **NOT PERFORMED** — no real Calendar member token is available to this session (these are secrets held by the company, never present in the repository or given to this session); fabricating or requesting one would violate this project's credential-handling rules. This remains a genuine outstanding verification item, not a failure. |
+
+No token value, connection string, or credential was displayed, logged, or recorded at any point.
+
+### Staff API smoke check
+
+`id` field exists: **YES**. UUID format: **PASS**. Existing 16-field compatibility: **PASS**. No staff record content (names, employee numbers, etc.) was displayed or recorded — only boolean pass/fail results, per this check's own read-only privacy requirement.
+
+### Frontend read-only walkthrough
+
+**Automated portion** (via WebFetch/curl, no browser engine): confirmed the Review Summaries section renders in all 5 member panels; confirmed the referenced CSS/JS assets are served correctly; confirmed existing Task/Leave/Calendar content is still present.
+
+**Not performed via automation**: no browser automation tool (Playwright/Puppeteer/etc.) is available in this environment — console-error checking, actual click-through interaction (staff selector, date filters, character counter, empty-history state, Save Summary button visibility), localStorage inspection, and URL-content inspection could not be driven by this session directly. This is a known, previously-documented limitation carried forward from the Calendar member-token authorization feature's own evidence trail.
+
+**Real user verification (informal, out-of-band)**: the user independently opened the live production page in a real browser during this session and confirmed the feature **works end-to-end** — this is stronger evidence than the automated checks alone for functional correctness. The user also identified three follow-up items, **not deployment blockers**, tracked as a separate next task: (1) the Review Summaries UI is not user-friendly, (2) the UI does not look professional, (3) the staff search feels slow. These are UX/performance polish items on top of an already-functional, already-verified-safe feature (correct data, correct auth, correct routes) — not a correctness or security defect.
+
+### Production row-count recheck
+
+Before smoke checks: 0. After smoke checks (including the Staff API check and both 401 checks): **0** — unchanged. No write occurred at any point in this session.
+
+### Evidence summary
+
+| Item | Result |
+|---|---|
+| Production records created | 0 |
+| Protected path excluded | Confirmed — `member-aios/mayurika-hr/staff-data/` never opened |
+| Remaining limitation | Live production CRUD (create/read/update/delete with a real authorized token) not yet tested — no real token available to this session. UI/UX polish and staff-search performance are known follow-up items per direct user feedback. |
+
+### PASS / AMBER / FAIL
+
+**PASS** for everything this session could verify: push, both deployments, all 5 routes live, unauthenticated/invalid-token rejection, Staff API `id` exposure, asset serving, zero regressions, zero unintended writes. **AMBER** overall — the "authorized CRUD with a real token" verification and a full interactive browser walkthrough remain outstanding (tooling/credential limitations, not defects), and the user has flagged UX/professionalism/search-speed issues to address next.
+
+### LIVE CRUD TEST PENDING / READY FOR GENERAL USE / BLOCKED
+
+**LIVE CRUD TEST PENDING** — the feature is deployed, safe, and functionally confirmed working by the user in a real browser, but authorized create/read/update/delete has not been formally verified with a real token, and UX polish is outstanding before general rollout is advisable.
+
 ### One next step
 
-Push local `main` to `origin/main`, confirm the deployment completes, then perform the read-only production smoke-check plan (already prepared in the preceding preflight section) before a live browser walkthrough and general rollout.
+Address the user's UX/professionalism/search-performance feedback on the Review Summaries workspace (separate follow-up task, profiling to identify the actual bottleneck), then perform one authorized live CRUD test with a real Management Team token before declaring the feature ready for general use.

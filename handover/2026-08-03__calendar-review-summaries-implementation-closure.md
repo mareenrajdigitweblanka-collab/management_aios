@@ -124,6 +124,26 @@ Full detail: `validation/calendar-review-summaries-technical-design-check-2026-0
 
 **Status**: PASS. Not pushed, not deployed this session.
 
-## 16. One next step
+## 16. One next step (as of the migration-execution session)
 
-Push local `main` to `origin/main`, confirm the deployment completes, then perform the read-only production smoke-check plan (already prepared in the validation document's preflight section) before a live browser walkthrough and general rollout.
+~~Push local `main` to `origin/main`...~~ **Superseded — see §17.** Push, deployment, and read-only smoke checks are complete.
+
+## 17. Deployment and read-only smoke check (2026-08-03, same-day follow-up)
+
+Full detail: `validation/calendar-review-summaries-technical-design-check-2026-08-03.md`, "Deployment and Read-Only Smoke Check — 2026-08-03" section.
+
+**Push**: `228d433..3c2d798 main -> main` — 7 commits pushed, `origin/main` now matches local exactly.
+
+**Deployment**: Both backend (`management-aios-api.vercel.app`) and frontend (`management-aios.vercel.app`) confirmed live with the pushed commit — production OpenAPI includes both new route paths (didn't exist before this feature); `review-summaries.css`/`review-summaries.js` served with exact authored content; "Review Summaries" heading present in all 5 member panels.
+
+**Smoke checks**: Unauthenticated and invalid-token requests both correctly return 401 (verified via `curl`, precise status codes). Staff API `id` field confirmed present with valid UUID format, existing 16-field compatibility intact — no staff data displayed. Production table row count: 0 before and after all checks — no write occurred.
+
+**Not performed** (genuine tooling/credential limitations, not defects): authorized CRUD with a real Management Team token (no real token available to this session — never requested or fabricated); a fully automated interactive browser walkthrough (no browser automation tool available — same limitation already documented for the Calendar member-token authorization feature).
+
+**User verification (informal, out-of-band)**: the user opened the live production page in a real browser and confirmed the feature works end-to-end. They also flagged three follow-up items — the Review Summaries UI is not user-friendly, does not look professional, and the staff search feels slow. These are **UX/performance polish items, not deployment blockers or correctness/security defects** — tracked as a separate next task (profiling to be performed by the builder).
+
+**Status**: AMBER — deployed, safe, and functionally confirmed; authorized live-token CRUD test and UX/performance polish remain outstanding before general rollout.
+
+## 18. One next step
+
+Profile and address the staff-search performance issue and general UI/UX polish on the Review Summaries workspace (separate follow-up task), then perform one authorized live CRUD test with a real Management Team token before declaring the feature ready for general use.
