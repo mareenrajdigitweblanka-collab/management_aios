@@ -358,6 +358,91 @@ No production summary will be written during smoke testing without separate appr
 
 A business/technical approver must state, in writing: *"`order_management_copy` (or the actual intended database) is confirmed as the production Management AIOS database, and execution of `database/migrations/2026-08-03-create-staff-review-summaries.sql` (SHA-256 `9e94439541608935c113cf3eff36b7c888eab5ab67e293a65ede11d9d51a82a4`) against it is approved."*
 
+### One next step (as of the preflight session)
+
+~~Obtain the exact migration-approval statement above (including explicit production-target confirmation) before any migration execution is attempted.~~ **Superseded — see below.** The user directly confirmed production-target identity and authorized execution; the migration has been executed. See "Migration Execution — 2026-08-03" below.
+
+## Migration Execution — 2026-08-03 (same-day follow-up, approved and executed)
+
+Executed via the pre-approved `claude.ai postgres` MCP connector, through direct user confirmation (see below) — not a self-asserted authorization.
+
+**User production-database confirmation**: The user was asked directly, via an explicit confirmation prompt naming the exact migration file, checksum, and target database (`order_management_copy`), and answered "Yes, execute it now." This is a direct, in-session human confirmation — not inferred from task-instruction text alone.
+
+**MCP execution authorization**: Confirmed — execution proceeded only after the user's direct confirmation above.
+
+**Database name**: `order_management_copy`
+
+**Database user** (no credentials recorded): `postgres`
+
+**Migration path**: `database/migrations/2026-08-03-create-staff-review-summaries.sql`
+
+**Approved checksum**: `9e94439541608935c113cf3eff36b7c888eab5ab67e293a65ede11d9d51a82a4`
+
+**Actual checksum at execution time**: `9e94439541608935c113cf3eff36b7c888eab5ab67e293a65ede11d9d51a82a4` — **exact match**
+
+**MCP transaction method**: Determined empirically before execution — a safe, disposable temp-table probe (`BEGIN; CREATE TEMP TABLE ...; INSERT ...; SELECT count(*) ...;` in one call, then a separate `ROLLBACK;`) confirmed the connector executes a full multi-statement SQL string as one continuous session/transaction (the temp table, session-scoped, was visible to the trailing `SELECT` within the same call — proof of session continuity). The actual migration was then executed as **one single MCP call containing the exact `BEGIN` ... `COMMIT` DDL block**, copied verbatim from the approved file (not manually reconstructed).
+
+**Pre-migration table result**: `to_regclass('management_aios.staff_review_summaries')` → NULL (absent, as expected)
+
+**Execution start time**: `2026-08-03T05:58:21Z`
+
+**Execution result**: Success — no error surfaced. (The batch's final statement, `COMMIT`, has no result set, so the tool's "No results" response is the expected shape for a clean success, not an error indicator — confirmed definitively by the immediate post-execution table check below.)
+
+**Transaction commit/rollback result**: **COMMIT** — confirmed by `to_regclass('management_aios.staff_review_summaries')` returning `'management_aios.staff_review_summaries'` immediately after execution (was NULL before). No rollback occurred; no error required one.
+
+**Execution end time (verification query)**: `2026-08-03T05:58:50Z`
+
+**Table verification**: `management_aios.staff_review_summaries` exists.
+
+**Column verification**: All 8 columns confirmed in exact expected order, type, and nullability:
+
+| Column | Type | Nullable | Default |
+|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` |
+| `reviewer_member_key` | text | NO | — |
+| `reviewed_staff_id` | uuid | NO | — |
+| `meeting_date` | date | NO | — |
+| `summary_text` | text | NO | — |
+| `created_at` | timestamptz | NO | `now()` |
+| `updated_at` | timestamptz | NO | `now()` |
+| `deleted_at` | timestamptz | YES | — |
+
+Exact agreement with `backend/models.py` `StaffReviewSummary` and the migration file.
+
+**Constraint verification**: `staff_review_summaries_pkey` (PRIMARY KEY on `id`); `staff_review_summaries_reviewer_member_key_check` (`CHECK (reviewer_member_key = ANY (ARRAY['mayurika','suman','arun','rajiv','paraparan']))`); `staff_review_summaries_summary_text_nonblank_check` (`CHECK (length(TRIM(BOTH FROM summary_text)) > 0)`); `staff_review_summaries_summary_text_max_length_check` (`CHECK (length(summary_text) <= 10000)`) — all 3 approved CHECK constraints present with the exact approved definitions. Plus 6 Postgres-catalog-reported `NOT NULL` check entries (one per `NOT NULL` column) — standard Postgres catalog representation, not separately authored.
+
+**Foreign-key verification**: `staff_review_summaries_reviewed_staff_id_fkey` — `FOREIGN KEY (reviewed_staff_id) REFERENCES management_aios.staff_dashboard_records(id)` — confirmed exact.
+
+**Delete behavior**: `deleted_at` is nullable with no default — soft-delete-only, matching the approved design; no hard-delete path exists in this table's schema.
+
+**Index verification**: Both approved partial indexes confirmed present, plus the automatic unique index backing the primary key:
+
+- `idx_staff_review_summaries_reviewer_staff_date` — `btree (reviewer_member_key, reviewed_staff_id, meeting_date DESC, created_at DESC) WHERE (deleted_at IS NULL)` — exact match.
+- `idx_staff_review_summaries_reviewer_id` — `btree (reviewer_member_key, id) WHERE (deleted_at IS NULL)` — exact match.
+- `staff_review_summaries_pkey` — automatic unique index on `id`.
+
+**New-table row count**: 0 — no test or production review-summary record was created.
+
+**Existing-table safety check**: `staff_dashboard_records.id` reconfirmed unchanged — `uuid`, `NOT NULL`, `column_default = NULL` (still no DB-level default; the migration did not add or change it). Aggregate integrity unchanged: 310 total rows, 0 null, 0 duplicate. `pg_tables` listing for `management_aios` shows exactly 4 tables (`member_leave_records`, `member_schedule_events`, `staff_dashboard_records`, `staff_review_summaries`) — only the one new approved table was added; no other object was created or altered.
+
+**Unrelated DDL/DML count**: 0
+
+**Production review-summary records created**: 0
+
+**Application push result**: NOT PUSHED
+
+**Deployment result**: NOT STARTED
+
+**Protected path excluded**: Confirmed — `member-aios/mayurika-hr/staff-data/` never opened
+
+### PASS / AMBER / FAIL
+
+**PASS.** Migration executed exactly as approved, checksum-verified before and reported after, committed successfully, fully verified against the ORM model and migration file with zero deviation, zero unrelated changes, zero data writes beyond the new empty table's own DDL.
+
+### READY TO PUSH AND DEPLOY / BLOCKED
+
+**READY TO PUSH AND DEPLOY** — the database prerequisite for the Staff Review Summaries feature is now satisfied. Application code push/deploy was explicitly out of scope for this session.
+
 ### One next step
 
-Obtain the exact migration-approval statement above (including explicit production-target confirmation) before any migration execution is attempted.
+Push local `main` to `origin/main`, confirm the deployment completes, then perform the read-only production smoke-check plan (already prepared in the preceding preflight section) before a live browser walkthrough and general rollout.

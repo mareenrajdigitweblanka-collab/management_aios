@@ -3,7 +3,7 @@ name: calendar-review-summaries-implementation-handover
 type: handover
 scope: management_aios Calendar — Staff Review Summaries (REQ-CAL-REV-001)
 created: 2026-08-03
-status: AMBER — implemented and tested directly on local main (backend 615/617, 2 pre-existing unrelated failures; frontend 124/124 + 22/22); committed locally, not pushed, no migration executed, no deployment this session — see §8. Migration/deployment preflight (2026-08-03, same-day follow-up) is NO-GO — production database target not explicitly confirmed — see §13.
+status: AMBER — implemented and tested directly on local main (backend 615/617, 2 pre-existing unrelated failures; frontend 124/124 + 22/22); committed locally, not pushed, no deployment this session — see §8. Migration was approved by the user, executed successfully, and verified with zero deviation (§15) — the production database prerequisite is now satisfied; application push/deploy remains outstanding.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -108,6 +108,22 @@ A read-only preflight (repository + database) was performed against local `main`
 
 **Status**: NO-GO for migration execution. No database was written to; no migration was executed; no push occurred; no deployment happened; no production review-summary record was created.
 
-## 14. One next step
+## 14. One next step (as of the preflight session)
 
-Obtain an explicit, written production-target confirmation (see the exact approval statement recorded in the validation document's preflight section) — specifically, confirmation of which database is the real Management AIOS production instance — before any migration execution is attempted. Once confirmed, re-run this preflight against the confirmed target if it differs from `order_management_copy`, then follow the 10-step rollout order already documented in §7 of the validation document's preflight section.
+~~Obtain an explicit, written production-target confirmation...~~ **Superseded — see §15.** The user directly confirmed the production target in-session and authorized execution; the migration has since been executed successfully.
+
+## 15. Migration execution (2026-08-03, same-day follow-up — approved and executed)
+
+Full detail: `validation/calendar-review-summaries-technical-design-check-2026-08-03.md`, "Migration Execution — 2026-08-03" section.
+
+**Authorization**: The user was asked directly (naming the exact migration file, checksum, and `order_management_copy` as the target) and answered "Yes, execute it now" — a direct in-session confirmation, not inferred from instruction text alone.
+
+**Execution**: `database/migrations/2026-08-03-create-staff-review-summaries.sql` (SHA-256 `9e94439541608935c113cf3eff36b7c888eab5ab67e293a65ede11d9d51a82a4`, reconfirmed exact at execution time) was executed as one single MCP call containing the file's complete `BEGIN`...`COMMIT` DDL block, copied verbatim. A safe, disposable temp-table probe confirmed beforehand that the MCP connector executes a multi-statement batch in one continuous session/transaction.
+
+**Result**: **COMMIT succeeded.** `management_aios.staff_review_summaries` now exists with all 8 columns, the primary key, the foreign key to `staff_dashboard_records.id`, all 3 approved CHECK constraints, and both approved partial indexes — verified with zero deviation from `backend/models.py`. Row count: 0 (no test or production record created). `staff_dashboard_records` reconfirmed completely unchanged (still no DB-level default on `id`; 310/0/0 aggregate integrity unchanged). Exactly one new table exists in `management_aios` — no unrelated object created or altered.
+
+**Status**: PASS. Not pushed, not deployed this session.
+
+## 16. One next step
+
+Push local `main` to `origin/main`, confirm the deployment completes, then perform the read-only production smoke-check plan (already prepared in the validation document's preflight section) before a live browser walkthrough and general rollout.
