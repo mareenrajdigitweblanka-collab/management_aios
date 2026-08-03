@@ -3,7 +3,7 @@ name: calendar-review-summaries-implementation-handover
 type: handover
 scope: management_aios Calendar — Staff Review Summaries (REQ-CAL-REV-001)
 created: 2026-08-03
-status: AMBER — implemented and tested directly on local main (backend 615/617, 2 pre-existing unrelated failures; frontend 124/124 + 22/22); committed locally, not pushed, no migration executed, no deployment this session — see §8
+status: AMBER — implemented and tested directly on local main (backend 615/617, 2 pre-existing unrelated failures; frontend 124/124 + 22/22); committed locally, not pushed, no migration executed, no deployment this session — see §8. Migration/deployment preflight (2026-08-03, same-day follow-up) is NO-GO — production database target not explicitly confirmed — see §13.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -90,6 +90,24 @@ Nothing has been pushed, merged, or deployed, so rollback is simply: do not push
 2. `337abef` — Approve Calendar review summaries implementation (cherry-picked from `89f67c8`)
 3. Implementation commits — see `git log` on `main` for this session's exact hashes (backend, frontend, evidence — see §12 routing note in the final report for the precise list).
 
-## 12. One next step
+## 12. One next step (as of the implementation session)
 
-Obtain migration-execution approval, run `database/migrations/2026-08-03-create-staff-review-summaries.sql` against the correct Neon/`management_aios` instance, then push `main` and deploy. A live browser walkthrough (desktop/mobile) is recommended before wide rollout, consistent with the outstanding item already carried from the Calendar member-token authorization feature.
+~~Obtain migration-execution approval, run `database/migrations/2026-08-03-create-staff-review-summaries.sql` against the correct Neon/`management_aios` instance, then push `main` and deploy.~~ **Superseded — see §13.** A read-only preflight was performed the same day; it found a different, more specific blocker (production-target confirmation) than "obtain approval and run it."
+
+## 13. Migration and deployment preflight (2026-08-03, same-day follow-up)
+
+A read-only preflight (repository + database) was performed against local `main` at `95d62a1`. Full detail: `validation/calendar-review-summaries-technical-design-check-2026-08-03.md`, "Migration and Deployment Preflight — 2026-08-03" section.
+
+**Repository result**: local `main` (`95d62a1`) is 5 commits ahead / 0 behind `origin/main` (`228d433`) — no remote divergence. The 17-file implementation diff scope was reconfirmed as containing only approved changes.
+
+**Migration static review**: `database/migrations/2026-08-03-create-staff-review-summaries.sql` (SHA-256 `9e94439541608935c113cf3eff36b7c888eab5ab67e293a65ede11d9d51a82a4`) and its companion `database/staff_review_summaries_schema.sql` (SHA-256 `118c4cbf35746e19546c2c9b5f98217c799dd7bf9b2a320e418b2e80a98c7e4e`) define equivalent, purely additive table behavior — no `DROP`/`TRUNCATE`/`DELETE`/`UPDATE`/`INSERT`/`ALTER`/`GRANT` statement exists anywhere except inside a documented, never-executed comment block.
+
+**Live database preflight**: schema exists, target table does not exist yet (expected pre-migration state), `staff_dashboard_records.id` confirmed `uuid NOT NULL` with a primary key, `gen_random_uuid()` available, zero naming conflicts across `pg_class`/`pg_constraint`/`pg_indexes`, staff-id aggregate integrity unchanged (310/0/0) since the prior verification session.
+
+**Blocker — NOT a technical defect**: the connected database (`order_management_copy`, via the pre-approved `claude.ai postgres` connector) was **not explicitly confirmed as the correct production Management AIOS database**. Per the preflight task's explicit rule, this is a hard NO-GO, not an AMBER — every other check passed cleanly.
+
+**Status**: NO-GO for migration execution. No database was written to; no migration was executed; no push occurred; no deployment happened; no production review-summary record was created.
+
+## 14. One next step
+
+Obtain an explicit, written production-target confirmation (see the exact approval statement recorded in the validation document's preflight section) — specifically, confirmation of which database is the real Management AIOS production instance — before any migration execution is attempted. Once confirmed, re-run this preflight against the confirmed target if it differs from `order_management_copy`, then follow the 10-step rollout order already documented in §7 of the validation document's preflight section.
