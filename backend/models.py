@@ -54,8 +54,10 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    ForeignKey,
     Integer,
     String,
+    Text,
     Time,
     text,
 )
@@ -344,3 +346,65 @@ class StaffDashboardRecord(Base):
     # for scripts/update_staff_locations_from_hr_sources.py. Not part of the
     # 16-field dashboard API contract (StaffRecordOut) — bookkeeping only.
     updated_by = Column(String, nullable=True)
+
+
+class StaffReviewSummary(Base):
+    """SQLAlchemy ORM model for management_aios.staff_review_summaries
+    (REQ-CAL-REV-001 — Reviewer-Owned Staff Review Meeting Summaries).
+    Mirrors database/migrations/<date>-create-staff-review-summaries.sql
+    and database/staff_review_summaries_schema.sql exactly, following the
+    same "Python mapping only, SQL file is DDL truth" convention as
+    MemberScheduleEvent/MemberLeaveRecord above.
+
+    Ownership: reviewer_member_key is the sole owner of every row — always
+    server-derived from the validated Calendar token
+    (backend/routers/calendar_auth.py get_verified_member), never accepted
+    from a request body. Only the owning reviewer may ever read, update, or
+    soft-delete a given row (backend/routers/staff_review_summaries.py) —
+    other reviewers and the reviewed staff member have no access in Phase 1.
+
+    reviewed_staff_id is a UUID FK to staff_dashboard_records.id — the
+    approved stable identifier (see StaffRecordOut docstring above);
+    employee_number is prohibited as an identifier and is never used here.
+
+    No reviewed_staff_name_snapshot column exists by design (approved
+    technical design, docs/2026-08-03_calendar-review-summaries-technical-
+    design.md §5) — display always live-joins to staff_dashboard_records,
+    since staff rows are never hard-deleted and a snapshot would show a
+    stale name after an HR correction.
+
+    Soft delete only (deleted_at) — matching MemberLeaveRecord's identical
+    convention; no hard DELETE statement is ever issued by this feature."""
+
+    __tablename__ = "staff_review_summaries"
+    __table_args__ = (
+        CheckConstraint(
+            "reviewer_member_key IN ('mayurika', 'suman', 'arun', 'rajiv', 'paraparan')",
+            name="staff_review_summaries_reviewer_member_key_check",
+        ),
+        CheckConstraint(
+            "length(trim(summary_text)) > 0",
+            name="staff_review_summaries_summary_text_nonblank_check",
+        ),
+        CheckConstraint(
+            "length(summary_text) <= 10000",
+            name="staff_review_summaries_summary_text_max_length_check",
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    reviewer_member_key = Column(String, nullable=False)
+    reviewed_staff_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("management_aios.staff_dashboard_records.id"),
+        nullable=False,
+    )
+
+    meeting_date = Column(Date, nullable=False)
+    summary_text = Column(Text, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    deleted_at = Column(DateTime(timezone=True), nullable=True)

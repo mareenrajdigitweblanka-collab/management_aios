@@ -762,15 +762,24 @@ class TaskConflictResponseOut(BaseModel):
 
 
 class StaffRecordOut(BaseModel):
-    """Dashboard-facing staff record shape — exactly the 16 approved fields
-    (member-aios/staff-data/data-maps/staff-field-map-draft.md). Internal
-    bookkeeping columns (source_record_key, source_hash, source_status,
-    is_current, imported_at, imported_by, created_at, updated_at) are
-    intentionally not exposed here — this is a read-only dashboard
-    projection, not a full table dump. No salary/address/email/phone/
-    guardian field exists on the ORM model this is built from, so none can
-    appear here regardless of this schema's definition."""
+    """Dashboard-facing staff record shape — the 16 approved fields
+    (member-aios/staff-data/data-maps/staff-field-map-draft.md) plus the
+    stable surrogate primary key `id` (REQ-CAL-REV-001, 2026-08-03 —
+    additive, backward compatible; every pre-existing consumer of this
+    schema is unaffected since no existing field changed shape or meaning).
 
+    `id` is the approved stable reviewed-staff identifier for the Staff
+    Review Summaries feature — never `employee_number`, which is known
+    non-unique across distinct people (see backend/models.py
+    StaffDashboardRecord.source_record_key docstring). Internal bookkeeping
+    columns (source_record_key, source_hash, source_status, is_current,
+    imported_at, imported_by, created_at, updated_at) remain unexposed —
+    this is still a read-only dashboard projection, not a full table dump.
+    No salary/address/email/phone/guardian field exists on the ORM model
+    this is built from, so none can appear here regardless of this
+    schema's definition."""
+
+    id: UUID
     employee_number: Optional[str] = None
     epf_number: Optional[str] = None
     date_of_joining: Optional[date_type] = None
@@ -815,3 +824,93 @@ class StaffFilterOptionsResponse(BaseModel):
     staff_statuses: list[str]
     employment_stages: list[str]
     locations: list[str]
+
+
+# ── Staff Review Summaries (REQ-CAL-REV-001, 2026-08-03) ─────────────────
+# Reviewer-owned staff review meeting summaries. reviewer_member_key is
+# NEVER accepted from the client on any of these schemas — it is always
+# server-derived from the validated Calendar token (backend/routers/
+# calendar_auth.py get_verified_member) and assigned directly by the
+# router, mirroring MemberLeaveRecordCreate's exclusion of member_key
+# above. reviewed_staff_id uses staff.id (StaffRecordOut.id), never
+# employee_number — see that schema's docstring.
+
+
+class StaffReviewSummaryCreate(BaseModel):
+    """Request body for POST /api/staff-review-summaries. Only these three
+    fields may ever be supplied by the browser — reviewer_member_key,
+    created_at, updated_at, deleted_at, and id are all absent from this
+    model by design, so a client attempting to send any of them has the
+    value silently ignored by Pydantic, exactly as MemberLeaveRecordCreate
+    excludes member_key/half_day_period above."""
+
+    reviewed_staff_id: UUID
+    meeting_date: date_type
+    summary_text: str = Field(..., min_length=1, max_length=10000)
+
+    @field_validator("summary_text")
+    @classmethod
+    def trim_and_validate_summary_text(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("summary_text must contain at least 1 non-whitespace character.")
+        if len(trimmed) > 10000:
+            raise ValueError("summary_text must be 10,000 characters or fewer after trimming.")
+        return trimmed
+
+
+class StaffReviewSummaryUpdate(BaseModel):
+    """Editable fields only. reviewed_staff_id is intentionally absent —
+    Phase 1 has no requirement for reassigning who was reviewed (mirrors
+    MemberLeaveRecordUpdate's exclusion of leave_type above); correcting
+    the reviewed person requires deleting this summary and creating a new
+    one. reviewer_member_key, created_at, updated_at, and deleted_at are
+    likewise never accepted here."""
+
+    meeting_date: Optional[date_type] = None
+    summary_text: Optional[str] = Field(default=None, min_length=1, max_length=10000)
+
+    @field_validator("summary_text")
+    @classmethod
+    def trim_and_validate_summary_text(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("summary_text must contain at least 1 non-whitespace character.")
+        if len(trimmed) > 10000:
+            raise ValueError("summary_text must be 10,000 characters or fewer after trimming.")
+        return trimmed
+
+
+class StaffReviewSummaryOut(BaseModel):
+    """Response shape for every Staff Review Summaries route. Never
+    returned for a soft-deleted record (deleted_at IS NOT NULL) — every
+    route filters those out server-side (backend/routers/
+    staff_review_summaries.py), so this schema has no deleted_at field at
+    all; there is nothing for it to ever expose.
+
+    reviewed_staff_full_name/reviewed_staff_calling_name are populated by
+    the router via a live lookup against staff_dashboard_records at read
+    time (no reviewed_staff_name_snapshot column exists — approved
+    technical design §5) — display always reflects the current name, not
+    a name-at-review-time snapshot."""
+
+    id: UUID
+    reviewer_member_key: str
+    reviewed_staff_id: UUID
+    reviewed_staff_full_name: Optional[str] = None
+    reviewed_staff_calling_name: Optional[str] = None
+    meeting_date: date_type
+    summary_text: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class StaffReviewSummaryListResponse(BaseModel):
+    records: list[StaffReviewSummaryOut]
+    total: int
+    limit: int
+    offset: int

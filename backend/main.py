@@ -21,6 +21,7 @@ from backend.routers.calendar_auth import router as calendar_auth_router
 from backend.routers.member_leave import router as member_leave_router
 from backend.routers.member_schedules import router as member_schedules_router
 from backend.routers.staff import router as staff_router
+from backend.routers.staff_review_summaries import router as staff_review_summaries_router
 from backend.schemas import HealthResponse
 
 
@@ -64,6 +65,7 @@ app.include_router(member_schedules_router)
 app.include_router(member_leave_router)
 app.include_router(staff_router)
 app.include_router(calendar_auth_router)
+app.include_router(staff_review_summaries_router)
 
 
 @app.get("/health", response_model=HealthResponse)
