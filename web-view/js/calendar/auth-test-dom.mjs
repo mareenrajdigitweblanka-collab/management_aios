@@ -155,6 +155,7 @@ function matchesSimpleSelector(el, selector) {
 }
 
 export function createFakeDocument() {
+  var listeners = {};
   var doc = {
     _byId: {},
     _all: [],
@@ -174,6 +175,28 @@ export function createFakeDocument() {
         if (matchesSimpleSelector(doc._all[i], selector)) { return doc._all[i]; }
       }
       return null;
+    },
+    // Document-level event bus (2026-08-03 review-summaries authorization
+    // fix) — auth.js's dispatchAuthChanged() calls document.dispatchEvent
+    // directly (not on a specific element), which real browsers support
+    // natively; this fake document needs its own listener registry to
+    // exercise that same call in tests.
+    addEventListener: function (type, handler) {
+      (listeners[type] = listeners[type] || []).push(handler);
+    },
+    removeEventListener: function (type, handler) {
+      if (!listeners[type]) { return; }
+      listeners[type] = listeners[type].filter(function (h) { return h !== handler; });
+    },
+    dispatchEvent: function (event) {
+      // event.target is a read-only getter on a real CustomEvent (the
+      // kind auth.js's own dispatchAuthChanged() constructs) — assigning
+      // to it throws. Guard with try/catch rather than a type check so
+      // both a real Event and a plain object-literal fake event work.
+      if (!event.target) {
+        try { event.target = doc; } catch (e) { /* real Event — target is read-only, already correct */ }
+      }
+      (listeners[event.type] || []).slice().forEach(function (handler) { handler(event); });
     }
   };
   doc.body = new FakeElement('body', doc);

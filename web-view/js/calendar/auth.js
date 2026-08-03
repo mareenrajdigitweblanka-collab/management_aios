@@ -101,6 +101,27 @@ export function getStoredMemberKey() {
   return stored ? stored.verifiedMemberKey : null;
 }
 
+/* Calendar review summary authorization-context fix (REQ-CAL-REV-001,
+   2026-08-03 follow-up). Every module that gates on "which member does
+   the browser-wide token currently belong to" (currently only
+   review-summaries.js) needs to know the instant that answer changes —
+   a successful verify (first-time authorize OR Change Token) or a 401-
+   triggered clear — so it can re-evaluate and clear any state loaded
+   under the previous token owner. One shared event name (exported, not
+   duplicated as a string literal in a second module) dispatched from the
+   two places this module's own stored-auth state actually changes. The
+   `typeof document` guard is defensive only — every real caller runs in
+   a browser or a test stand-in that now provides document.dispatchEvent
+   (see calendar/auth-test-dom.mjs). */
+export var CALENDAR_AUTH_CHANGED_EVENT = 'management-aios:calendar-auth-changed';
+
+function dispatchAuthChanged() {
+  if (typeof document === 'undefined' || !document.dispatchEvent) { return; }
+  document.dispatchEvent(new CustomEvent(CALENDAR_AUTH_CHANGED_EVENT, {
+    detail: { memberKey: getStoredMemberKey() }
+  }));
+}
+
 /* Resolves a member_key to its existing on-page display label by reading
    the same data-member-label attribute already present on that member's
    .msc-instance container (web-view/index.html) — avoids maintaining a
@@ -392,6 +413,7 @@ function ensureTokenDialog() {
     verifyToken(token).then(function (body) {
       writeStoredAuth(token, body.memberKey);
       renderIndicator();
+      dispatchAuthChanged();
       if (announceSuccess) {
         showToast({
           type: 'success',
@@ -591,6 +613,7 @@ export function guardMutationAccess(targetMemberKey) {
 export function handleUnauthorizedResponse() {
   clearStoredAuth();
   renderIndicator();
+  dispatchAuthChanged();
 }
 
 // ── "Authorized as" indicator + Change-token control (topbar, browser-

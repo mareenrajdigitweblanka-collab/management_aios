@@ -313,6 +313,84 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         resp = self.client.get("/api/staff-review-summaries")
         self.assertEqual(resp.status_code, 401)
 
+    def test_invalid_token_list_returns_401(self):
+        self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            headers={"Authorization": "Bearer not-a-real-token"},
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_two_reviewers_same_staff_each_see_only_their_own_summary(self):
+        """PHASE 4 two-reviewer isolation check (production authorization-
+        context defect follow-up, REQ-CAL-REV-001, 2026-08-03) — Reviewer A
+        and Reviewer B each hold a summary about the SAME reviewed staff
+        member. Unlike test_different_reviewer_cannot_see_owner_history
+        (which only proves an empty-handed reviewer sees nothing), this
+        proves list filtering actually EXCLUDES the other reviewer's row
+        from a populated result set, not merely that it returns nothing
+        when there is nothing of the other reviewer's to exclude."""
+        staff_id = self.seed_staff(source_record_key="staff-common", full_name="Common Staff")
+        summary_a_id, _ = self.seed_summary(
+            reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+            summary_text="Reviewer A's private summary.",
+        )
+        summary_b_id, _ = self.seed_summary(
+            reviewer_member_key="arun", reviewed_staff_id=staff_id,
+            summary_text="Reviewer B's private summary.",
+        )
+
+        resp_a = self.client.get(
+            "/api/staff-review-summaries", headers=bearer_header("mayurika")
+        )
+        self.assertEqual(resp_a.status_code, 200)
+        ids_a = [r["id"] for r in resp_a.json()["records"]]
+        self.assertEqual(ids_a, [str(summary_a_id)])
+
+        resp_b = self.client.get(
+            "/api/staff-review-summaries", headers=bearer_header("arun")
+        )
+        self.assertEqual(resp_b.status_code, 200)
+        ids_b = [r["id"] for r in resp_b.json()["records"]]
+        self.assertEqual(ids_b, [str(summary_b_id)])
+
+        # Reviewer A cannot open Reviewer B's summary and vice versa.
+        self.assertEqual(
+            self.client.get(
+                "/api/staff-review-summaries/" + str(summary_b_id),
+                headers=bearer_header("mayurika"),
+            ).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.get(
+                "/api/staff-review-summaries/" + str(summary_a_id),
+                headers=bearer_header("arun"),
+            ).status_code,
+            404,
+        )
+
+        # Cross-reviewer update/delete on the same shared-staff summaries
+        # also return the non-disclosing 404 (not a 403 that would leak
+        # existence), and never mutate the other reviewer's row.
+        update_resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_b_id),
+            json={"summary_text": "Hijack attempt."},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(update_resp.status_code, 404)
+        delete_resp = self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_a_id),
+            headers=bearer_header("arun"),
+        )
+        self.assertEqual(delete_resp.status_code, 404)
+
+        record_a = self.load_summary(summary_a_id)
+        record_b = self.load_summary(summary_b_id)
+        self.assertEqual(record_a.summary_text, "Reviewer A's private summary.")
+        self.assertIsNone(record_a.deleted_at)
+        self.assertEqual(record_b.summary_text, "Reviewer B's private summary.")
+
     def test_owner_can_open_detail(self):
         summary_id, _ = self.seed_summary(reviewer_member_key="arun")
         resp = self.client.get(

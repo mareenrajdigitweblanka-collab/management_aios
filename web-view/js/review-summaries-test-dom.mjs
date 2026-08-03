@@ -187,6 +187,7 @@ class FakeElement {
 }
 
 export function createFakeDocument() {
+  var listeners = {};
   var doc = {
     _byId: {},
     _all: [],
@@ -202,6 +203,32 @@ export function createFakeDocument() {
         if (matchesSimpleSelector(doc._all[i], selector)) { return doc._all[i]; }
       }
       return null;
+    },
+    // Document-level event bus (2026-08-03 review-summaries authorization
+    // fix) — review-summaries.js listens for the shared tab-switch event
+    // (navigation.js's 'msc:close-toolbar-popovers') and auth.js's
+    // CALENDAR_AUTH_CHANGED_EVENT on `document` directly (never on a
+    // specific element), which real browsers support natively; this fake
+    // document needs its own listener registry to exercise both paths.
+    addEventListener: function (type, handler) {
+      (listeners[type] = listeners[type] || []).push(handler);
+    },
+    removeEventListener: function (type, handler) {
+      if (!listeners[type]) { return; }
+      listeners[type] = listeners[type].filter(function (h) { return h !== handler; });
+    },
+    dispatchEvent: function (event) {
+      // event.target is a read-only getter on a real CustomEvent (the
+      // kind calendar/auth.js's dispatchAuthChanged() constructs) —
+      // assigning to it throws. Plain object-literal fake events (as
+      // used elsewhere in this test-dom for element-level dispatch)
+      // don't define that getter, so the assignment is safe for those;
+      // guard with try/catch rather than a type check so both shapes
+      // work without this stand-in needing to know which one it got.
+      if (!event.target) {
+        try { event.target = doc; } catch (e) { /* real Event — target is read-only, already correct */ }
+      }
+      (listeners[event.type] || []).slice().forEach(function (handler) { handler(event); });
     }
   };
   doc.body = new FakeElement('body', doc);

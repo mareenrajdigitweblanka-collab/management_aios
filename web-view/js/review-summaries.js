@@ -30,7 +30,8 @@ import {
   ensureAuthorized,
   handleUnauthorizedResponse,
   getStoredMemberKey,
-  labelForMemberKey
+  labelForMemberKey,
+  CALENDAR_AUTH_CHANGED_EVENT
 } from './calendar/auth.js';
 import { classifyHttpStatus, mapApiError } from './ui/error-mapper.js';
 import { setButtonBusy, renderSkeletonRows, showInlineLoading } from './ui/loading.js';
@@ -112,6 +113,45 @@ export function staffOptionLabel(staff) {
 export function reviewSummariesHeadingText(authorizedLabel) {
   if (!authorizedLabel) { return 'My Review Summaries — not yet authorized on this browser'; }
   return 'My Review Summaries — Authorized as: ' + authorizedLabel;
+}
+
+/* Authorization-context fix (2026-08-03 production defect — the observed
+   bug: switching sidebar member panels left the same Review Summaries
+   workspace/history visible, because nothing ever compared the panel's
+   own member against the browser-wide token's member). One pure decision
+   function reused by every mounted instance (guardReviewSummaryAccess
+   below is the impure wrapper that supplies the two arguments from real
+   DOM/storage state):
+
+   - authorizedMemberKey is null (no token stored yet in this browser at
+     all) -> 'unauthorized'. Not a cross-member conflict — there is no
+     other member's data at risk, since nothing can be fetched without a
+     token anyway (reviewSummariesApiRequest's own ensureAuthorized()
+     call already gates that). The workspace stays interactive so a
+     first-time user can still trigger the normal authorize flow from it.
+   - authorizedMemberKey matches this panel's own selectedMemberKey ->
+     'allowed'.
+   - Any other authorizedMemberKey -> 'blocked'. This is the actual gate:
+     a token already verified for a DIFFERENT member than the panel the
+     user is currently looking at must never list, create, view, edit, or
+     delete anything through that panel. */
+export function reviewSummaryAccessDecision(selectedMemberKey, authorizedMemberKey) {
+  if (!authorizedMemberKey) { return 'unauthorized'; }
+  return authorizedMemberKey === selectedMemberKey ? 'allowed' : 'blocked';
+}
+
+/* Approved copy (PHASE 6, REQ-CAL-REV-001 authorization-context fix) —
+   kept as one pure function, mirroring calendar/auth.js's
+   crossMemberAlertCopy, so the inline blocked-workspace banner and any
+   toast reinforcement render identical, approved wording. actingLabel/
+   targetLabel are already-resolved display labels (never raw member
+   keys). */
+export function reviewSummariesCrossMemberCopy(actingLabel, targetLabel) {
+  return {
+    title: "You can't manage " + targetLabel + "'s Review Summaries.",
+    message: 'You are authorized as ' + actingLabel + '. You can only create, view or change ' +
+      actingLabel + "'s review summaries."
+  };
 }
 
 // ── Fetch wrapper — every request (including GET) is authenticated ─────
@@ -197,10 +237,17 @@ function renderSummaryText(text) {
 }
 
 /* One mounted instance per member tab-panel. `memberKey` is the tab's
-   own member — used ONLY for the heading copy fallback and DOM id
-   namespacing, never as an authorization identity (the actual owning
-   reviewer is always whoever's token is currently authorized in this
-   browser — see the module header note). */
+   own member — the "selected sidebar member" in the approved
+   authorization-context fix (REQ-CAL-REV-001, 2026-08-03 follow-up).
+   The owning reviewer is still always whoever's token is currently
+   authorized in this browser (see the module header note) — `memberKey`
+   is never treated as authorization proof by itself — but this panel's
+   workspace (list/create/view/edit/delete) is now gated on the two
+   matching: see reviewSummaryAccessDecision()/guardReviewSummaryAccess()
+   below. Previously `memberKey` was captured but never compared against
+   anything, which was the defect: every one of the 5 mounted instances
+   rendered and fetched identically regardless of which tab it lived in,
+   so switching sidebar panels never changed what was visible. */
 export function mountReviewSummariesForMember(mountEl, memberKey) {
   if (!mountEl) { return null; }
 
@@ -214,6 +261,30 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   };
 
   mountEl.textContent = '';
+
+  // ── Authorization gate (selected sidebar member vs. authenticated
+  //    reviewer) — required before this panel's workspace may list,
+  //    create, view, edit, or delete anything. ──────────────────────
+  function guardReviewSummaryAccess() {
+    return reviewSummaryAccessDecision(memberKey, getStoredMemberKey());
+  }
+
+  /* The ONLY path any list/create/view/edit/delete request may travel —
+     every call site below (renderHistory, form submit, delete) goes
+     through this wrapper instead of calling reviewSummariesApiRequest
+     directly, so a blocked panel can never send a request no matter which
+     code path triggers it (a real click, a test calling the returned API
+     object directly, a stale in-flight retry, etc.). Rejects synchronously
+     before ensureAuthorized() or fetch() is ever reached — the stored
+     token is never touched. */
+  function guardedApiRequest(pathAndQuery, options) {
+    if (guardReviewSummaryAccess() === 'blocked') {
+      var err = new Error('Cross-member review summary access blocked.');
+      err.code = 'cross_member_blocked';
+      return Promise.reject(err);
+    }
+    return reviewSummariesApiRequest(pathAndQuery, options);
+  }
 
   // ── Header ─────────────────────────────────────────────────────
   var headerEl = el('div', 'review-summaries-header');
@@ -232,6 +303,20 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     'Other reviewers and the reviewed staff member cannot see these summaries.';
   headerEl.appendChild(heading);
   headerEl.appendChild(subheading);
+
+  // ── Cross-member blocked banner — shown INSTEAD of the staff/form/
+  //    history panels whenever guardReviewSummaryAccess() returns
+  //    'blocked'. Mirrors the existing cross-member red alert wording
+  //    (calendar/auth.js crossMemberAlertCopy) but Review-Summaries-
+  //    specific text (reviewSummariesCrossMemberCopy above). ──────────
+  var blockedEl = el('div', 'review-summaries-blocked');
+  blockedEl.setAttribute('role', 'alert');
+  blockedEl.hidden = true;
+  var blockedTitleEl = el('p', 'review-summaries-blocked-title');
+  var blockedMessageEl = el('p', 'review-summaries-blocked-message');
+  blockedEl.appendChild(blockedTitleEl);
+  blockedEl.appendChild(blockedMessageEl);
+  headerEl.appendChild(blockedEl);
 
   // ── Reviewed-staff selector ──────────────────────────────────────
   var staffPanel = el('div', 'review-summaries-panel');
@@ -287,6 +372,20 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     staffResultsEl.hidden = false;
   }
 
+  /* Shared by the "Change" button below and clearWorkspaceState() (state
+     isolation, PHASE 7) — resets the staff-selector UI back to its
+     pre-selection state without touching anything else (date filters,
+     edit mode). */
+  function deselectStaff() {
+    state.selectedStaff = null;
+    selectedStaffEl.hidden = true;
+    selectedStaffEl.textContent = '';
+    staffSearchInput.value = '';
+    staffSearchInput.hidden = false;
+    staffResultsEl.hidden = true;
+    staffResultsEl.textContent = '';
+  }
+
   function selectStaff(staff) {
     state.selectedStaff = staff;
     staffResultsEl.hidden = true;
@@ -297,9 +396,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     changeBtn.type = 'button';
     changeBtn.textContent = 'Change';
     changeBtn.addEventListener('click', function () {
-      state.selectedStaff = null;
-      selectedStaffEl.hidden = true;
-      staffSearchInput.hidden = false;
+      deselectStaff();
       staffSearchInput.focus();
       updateFormVisibility();
       renderHistory();
@@ -455,12 +552,12 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
 
     var request;
     if (state.editingId) {
-      request = reviewSummariesApiRequest('/' + state.editingId, {
+      request = guardedApiRequest('/' + state.editingId, {
         method: 'PUT',
         body: { meeting_date: dateInput.value, summary_text: validation.trimmed }
       });
     } else {
-      request = reviewSummariesApiRequest('', {
+      request = guardedApiRequest('', {
         method: 'POST',
         body: {
           reviewed_staff_id: state.selectedStaff.id,
@@ -558,7 +655,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
         confirmLabel: 'Delete summary',
         trigger: deleteBtn,
         onConfirm: function () {
-          return reviewSummariesApiRequest('/' + record.id, { method: 'DELETE' })
+          return guardedApiRequest('/' + record.id, { method: 'DELETE' })
             .then(function () {
               showToast({ type: 'success', title: 'Summary deleted', message: '' });
               renderHistory();
@@ -581,6 +678,13 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
 
   function renderHistory() {
     updateHeading();
+    // Gate re-checked on every render (not just at mount) — a staff
+    // selection or filter change could otherwise slip past a mismatch
+    // introduced since mount (e.g. a token change mid-session). Blocked
+    // panels never reach the fetch below; guardedApiRequest would refuse
+    // it anyway, but returning here also avoids showing a stale
+    // "Loading…" state that would never resolve into real data.
+    if (guardReviewSummaryAccess() === 'blocked') { return; }
     historyEl.textContent = '';
     if (!state.selectedStaff) {
       var promptEl = el('div', 'review-summaries-empty');
@@ -594,7 +698,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
       dateFrom: state.dateFrom,
       dateTo: state.dateTo
     });
-    reviewSummariesApiRequest('?' + query).then(function (body) {
+    guardedApiRequest('?' + query).then(function (body) {
       updateHeading(); // the ensureAuthorized() call inside the request above may have just resolved a first-time authorization or a token change — refresh the label now that it's current.
       historyEl.textContent = '';
       if (!body.records.length) {
@@ -607,6 +711,14 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
         historyEl.appendChild(renderHistoryCard(record));
       });
     }).catch(function (err) {
+      // auth_required (401): handleUnauthorizedResponse() already fired
+      // CALENDAR_AUTH_CHANGED_EVENT synchronously (calendar/auth.js),
+      // which reevaluateAccess()'s listener (below) already used to
+      // clear this panel's state and re-render the correct
+      // authorized/blocked/unauthorized view — rendering the generic
+      // error box here on top of that would stomp the just-recovered UI
+      // with a stale "Request failed" message.
+      if (err && err.code === 'auth_required') { return; }
       historyEl.textContent = '';
       var mapped = mapApiError(err);
       var errorEl = el('div', 'review-summaries-error');
@@ -622,17 +734,85 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     });
   }
 
+  // ── State isolation (PHASE 7, REQ-CAL-REV-001 authorization-context
+  //    fix) — every field a stale selection/edit/filter could leak
+  //    through, reset in one place so both a sidebar-panel switch and a
+  //    token change clear the same complete set. ─────────────────────
+  function clearWorkspaceState() {
+    if (state.staffSearchAbort) { state.staffSearchAbort.abort(); state.staffSearchAbort = null; }
+    deselectStaff();
+    state.dateFrom = '';
+    state.dateTo = '';
+    dateFromInput.value = '';
+    dateToInput.value = '';
+    exitEditMode();
+    updateFormVisibility();
+    historyEl.textContent = '';
+  }
+
+  /* Shows/hides the blocked banner vs. the staff/form/history panels per
+     guardReviewSummaryAccess(). Returns true when blocked (callers use
+     this to skip renderHistory()'s fetch). Does not itself clear state —
+     callers that need a full reset call clearWorkspaceState() first (see
+     reevaluateAccess() below); renderHistory()'s own per-render check
+     deliberately leaves already-loaded state alone (re-rendering mid-
+     session should not wipe what's on screen only to redraw it). */
+  function renderAccessGate() {
+    var decision = guardReviewSummaryAccess();
+    if (decision === 'blocked') {
+      var copy = reviewSummariesCrossMemberCopy(
+        labelForMemberKey(getStoredMemberKey()), labelForMemberKey(memberKey)
+      );
+      blockedTitleEl.textContent = copy.title;
+      blockedMessageEl.textContent = copy.message;
+      blockedEl.hidden = false;
+      staffPanel.hidden = true;
+      formPanel.hidden = true;
+      historyPanel.hidden = true;
+      return true;
+    }
+    blockedEl.hidden = true;
+    staffPanel.hidden = false;
+    formPanel.hidden = false;
+    historyPanel.hidden = false;
+    return false;
+  }
+
+  /* The single reactive entry point for anything that can change WHICH
+     reviewer/panel-pairing is now in effect — a sidebar-panel switch
+     (navigation.js's 'msc:close-toolbar-popovers', fired on every
+     activatePanel() call) or a token change (calendar/auth.js's
+     CALENDAR_AUTH_CHANGED_EVENT, fired on a successful authorize/change-
+     token verify AND on a 401-triggered clear). Always clears state
+     first (PHASE 7 — "on sidebar-member change"/"on token change" both
+     require a full clear), then re-renders the gate, then — only when
+     now allowed — reloads history for whatever's left selected (nothing,
+     immediately after a clear, so this never re-fetches stale data; it
+     simply leaves the "select a staff member" placeholder showing). */
+  function reevaluateAccess() {
+    clearWorkspaceState();
+    updateHeading();
+    var blocked = renderAccessGate();
+    if (!blocked) { renderHistory(); }
+  }
+
+  document.addEventListener('msc:close-toolbar-popovers', reevaluateAccess);
+  document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, reevaluateAccess);
+
   mountEl.appendChild(headerEl);
   mountEl.appendChild(staffPanel);
   mountEl.appendChild(formPanel);
   mountEl.appendChild(historyPanel);
 
+  renderAccessGate();
   renderHistory();
 
   return {
     selectStaff: selectStaff,
     renderHistory: renderHistory,
     updateHeading: updateHeading,
+    reevaluateAccess: reevaluateAccess,
+    accessDecision: guardReviewSummaryAccess,
     state: state
   };
 }

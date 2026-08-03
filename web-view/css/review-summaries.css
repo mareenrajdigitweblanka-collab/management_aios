@@ -35,6 +35,35 @@
   margin: 0;
 }
 
+/* Cross-member blocked banner (REQ-CAL-REV-001 authorization-context
+   fix, 2026-08-03 follow-up) — shown instead of the staff/form/history
+   panels whenever the selected sidebar member does not match the
+   authenticated reviewer. Same --blocked/--blocked-bg red pairing
+   already used for .calendar-auth-error (ui.css) and .review-summaries-
+   error above, so this reads as unmistakably the same "authorization
+   denied" language as the rest of the app, not a new color. */
+.review-summaries-blocked {
+  color: var(--blocked);
+  background: var(--blocked-bg);
+  border: 1px solid var(--blocked);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.review-summaries-blocked-title {
+  font-weight: 700;
+  margin: 0;
+}
+
+.review-summaries-blocked-message {
+  font-size: var(--font-sm);
+  margin: 0;
+}
+
 /* Each numbered step ("1. Select staff member", etc.) gets its own
    card so the three-stage flow reads as distinct, sequential sections
    instead of one long undifferentiated form. */

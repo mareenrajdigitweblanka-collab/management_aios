@@ -3,7 +3,7 @@ name: calendar-review-summaries-implementation-handover
 type: handover
 scope: management_aios Calendar — Staff Review Summaries (REQ-CAL-REV-001)
 created: 2026-08-03
-status: AMBER — implemented and tested directly on local main (backend 615/617, 2 pre-existing unrelated failures; frontend 124/124 + 22/22); committed locally, not pushed, no deployment this session — see §8. Migration was approved by the user, executed successfully, and verified with zero deviation (§15) — the production database prerequisite is now satisfied; application push/deploy remains outstanding.
+status: AMBER — implemented, deployed (§17), and later found to have a production authorization-context defect (screenshot-evidenced) which was fixed same-day directly on local main (§19): backend 619/619 (2 pre-existing unrelated failures, unchanged), frontend calendar suite 124/124, review-summaries.test.mjs 39/39; committed locally, not yet pushed — see §19/§20.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -146,4 +146,24 @@ Full detail: `validation/calendar-review-summaries-technical-design-check-2026-0
 
 ## 18. One next step
 
-Profile and address the staff-search performance issue and general UI/UX polish on the Review Summaries workspace (separate follow-up task), then perform one authorized live CRUD test with a real Management Team token before declaring the feature ready for general use.
+~~Profile and address the staff-search performance issue and general UI/UX polish...~~ **Superseded — see §19.** A production authorization-context defect was reported (screenshot-evidenced) and fixed first as a correctness/security issue, ahead of the UX polish follow-up.
+
+## 19. Authorization-context defect fix — 2026-08-03 (same-day follow-up)
+
+Full detail: `validation/calendar-review-summaries-technical-design-check-2026-08-03.md`, "Authorization-Context Defect Fix — 2026-08-03" section.
+
+**Reported defect**: browser authorized as Mayurika — HR; switching the sidebar panel from Mayurika to Arun left the same Review Summaries workspace and history visible — access appeared gated by the selected sidebar panel, not the validated token.
+
+**Backend result**: already correct — every route required `Depends(get_verified_member)`, reviewer ownership was always server-derived, list/detail/update/delete were always filtered by `reviewer_member_key`, cross-reviewer access was already a non-disclosing 404. No backend code changed. Added 2 backend tests closing minor coverage gaps (invalid-token list-401; two populated reviewers sharing one reviewed staff member, proving list exclusion rather than just an empty result).
+
+**Frontend root cause**: `mountReviewSummariesForMember(mountEl, memberKey)` mounted one independent instance per member tab-panel, but `memberKey` (the panel's own member) was captured and never compared against `getStoredMemberKey()` (the token's member) anywhere — every panel fetched and rendered identically regardless of which tab it lived in.
+
+**Fix**: a per-instance authorization gate (`reviewSummaryAccessDecision`/`guardReviewSummaryAccess`) now blocks list/create/view/edit/delete whenever the panel's own member does not match the authenticated reviewer — showing an inline red blocked banner (same `--blocked`/`--blocked-bg` tokens used elsewhere), sending zero requests, never touching the stored token. State (selected staff, history, edit mode, draft text, date filters) is cleared on every sidebar-panel switch (reusing `navigation.js`'s existing `msc:close-toolbar-popovers` event — no change to `navigation.js`) and on every token change (a new `CALENDAR_AUTH_CHANGED_EVENT`, `calendar/auth.js`, dispatched on verify-success and on the existing 401-triggered token clear).
+
+**Tests**: backend 617 → 619 (2 new, both passing; same 2 pre-existing unrelated baseline failures, unchanged); `review-summaries.test.mjs` 22 → 39; full Calendar frontend suite still 124/124 (zero regression, including `auth.test.mjs`'s coverage of the two call sites now also dispatching the new event).
+
+**Status**: AMBER — committed locally on `main`, not pushed. All automated coverage passes and the exact reported scenario was reproduced and confirmed fixed via a DOM-stand-in-level end-to-end script (mounted all 5 panels under one token, confirmed only the matching panel is interactive, confirmed zero content leakage into the other 4, confirmed zero extra requests on a simulated panel switch). No real-browser walkthrough was performed (no browser automation tool in this environment — same limitation documented throughout this feature's evidence trail).
+
+## 20. One next step
+
+Review the evidence report, then — if approved — push `main` to `origin/main` and perform a real-browser smoke check of the exact reported scenario before considering the defect closed in production. UI/UX polish and staff-search performance (§18's original follow-up) remain queued after that.

@@ -517,4 +517,110 @@ Before smoke checks: 0. After smoke checks (including the Staff API check and bo
 
 ### One next step
 
-Address the user's UX/professionalism/search-performance feedback on the Review Summaries workspace (separate follow-up task, profiling to identify the actual bottleneck), then perform one authorized live CRUD test with a real Management Team token before declaring the feature ready for general use.
+~~Address the user's UX/professionalism/search-performance feedback...~~ **Superseded — see the authorization-context fix section below.** A production authorization-context defect (screenshot-evidenced) was reported and fixed first, since it is a correctness/security concern, not UX polish.
+
+---
+
+## Authorization-Context Defect Fix — 2026-08-03 (same-day follow-up)
+
+**Trigger**: screenshot-evidenced production defect report. Browser authorized as Mayurika — HR; switching the sidebar panel from Mayurika to Arun left the same Review Summaries workspace and history visible, creating the appearance that access was gated by the selected sidebar panel rather than the validated token.
+
+### Repository state at start
+
+Local `main` `b0b422b` == `origin/main` `b0b422b` (zero divergence), working tree clean. Protected path `member-aios/mayurika-hr/staff-data/` present but never opened (only listed via `ls` to confirm presence, per the repository-check step — no file inside it was read).
+
+### Production containment assessment
+
+Confirmed via `handover/2026-08-03__calendar-review-summaries-implementation-closure.md` §13–§17: the feature was already fully deployed before this session began — pushed to `origin/main` at `3c2d798`, migration executed against production (`management_aios.staff_review_summaries`, 0 rows), both Vercel deployments (frontend + backend) live with the feature's routes/assets. Two further commits (`b6a1fd0`, `b0b422b`) landed after that deployment (heading-wording fix, panel redesign) and are also already live on `origin/main` (HEAD matches). This means the defect being fixed here was live in production, not merely staged — consistent with the screenshot evidence.
+
+### Backend verification (PHASE 3) — result: backend was already correct
+
+Read `backend/routers/staff_review_summaries.py` end to end. Confirmed, unchanged:
+
+- All 5 routes depend on `Depends(get_verified_member)` (`backend/routers/calendar_auth.py`), including GET.
+- `CREATE` assigns `reviewer_member_key=acting_member` from the verified token only; `StaffReviewSummaryCreate`/`Update` (`backend/schemas.py`) have no `reviewer_member_key` field at all, so a client cannot send, spoof, or override it.
+- `LIST` unconditionally filters `reviewer_member_key == acting_member AND deleted_at IS NULL`.
+- `DETAIL`/`UPDATE`/`DELETE` combine `id + reviewer_member_key + deleted_at IS NULL` in one query (`_get_owned_summary_or_404`) so a nonexistent id and a cross-reviewer id are indistinguishable — non-disclosing 404, never 403.
+
+**Conclusion**: the production defect is entirely a frontend context/gating and state-leakage issue. No backend code was changed in this fix session.
+
+### Backend test hardening (PHASE 4)
+
+Added 2 tests to `backend/tests/test_staff_review_summaries.py` (37 → 39): `test_invalid_token_list_returns_401` (the existing suite only covered missing-token list-401, not invalid-token) and `test_two_reviewers_same_staff_each_see_only_their_own_summary` (a stronger two-reviewer isolation proof than the pre-existing `test_different_reviewer_cannot_see_owner_history` — seeds a populated summary for BOTH Reviewer A and Reviewer B against the SAME reviewed staff member, then proves each reviewer's list contains only their own row, cross-reviewer detail/update/delete all return 404, and neither row is mutated). Both pass; full backend suite (below) confirms no regression.
+
+### Frontend root cause (PHASE 5)
+
+`web-view/js/review-summaries.js`'s `mountReviewSummariesForMember(mountEl, memberKey)` mounts one independent widget instance per member tab-panel (5 total, one per `.review-summaries-instance[data-member-key=...]` in `web-view/index.html`). The `memberKey` parameter (the tab's own member) was captured but **never compared against anything** — every instance's `reviewSummariesApiRequest()` derives the acting reviewer purely from the single browser-wide Calendar token (`getStoredMemberKey()`/`ensureAuthorized()`, `calendar/auth.js`), which is identical across all 5 mounted instances. There was no code path anywhere that compared "which panel is this" against "whose token is this." Consequently all 5 panels were functionally identical: whichever reviewer's data the current token authorized was visible and fully interactive (list/create/edit/delete) from every tab, which is exactly the screenshot-observed defect. State itself was not literally shared between panels (each mount closure has its own `state` object) — the bug was the absence of any gate, not a shared-singleton leak.
+
+### Frontend fix (PHASES 6–8)
+
+- Added `reviewSummaryAccessDecision(selectedMemberKey, authorizedMemberKey)` (pure, exported) returning `'allowed' | 'blocked' | 'unauthorized'`, and the per-instance wrapper `guardReviewSummaryAccess()` inside `mountReviewSummariesForMember`.
+- Added `guardedApiRequest()` — the only path any list/create/view/edit/delete request may travel; rejects synchronously (no token touched, no `ensureAuthorized()` call, no fetch) whenever the gate is `'blocked'`. Every existing call site (`renderHistory`, form submit create/update, delete) now goes through it instead of the raw fetch wrapper.
+- Added an inline blocked banner (`.review-summaries-blocked`, styled with the existing `--blocked`/`--blocked-bg` red tokens already used by `.calendar-auth-error`/`.review-summaries-error`) shown instead of the staff/form/history panels when blocked, with copy from the new `reviewSummariesCrossMemberCopy(actingLabel, targetLabel)` — `"You can't manage Arun's Review Summaries." / "You are authorized as Mayurika — HR. You can only create, view or change Mayurika's review summaries."`, matching the approved wording.
+- **Workspace placement (PHASE 8)**: kept Option A (mounts in all 5 panels; only the token-matching panel is active/interactive) — the smallest change consistent with the current UI, achieved entirely by the per-instance gate rather than any DOM/mount-point restructuring.
+- **Design decision — no toast on every gate re-evaluation**: the approved copy calls for reusing "the existing cross-member red authorization warning." The Task/Leave pattern for this is a persistent `showToast(...)` call. Because up to 4 of the 5 mounted instances can be simultaneously blocked, and the gate is re-evaluated on every sidebar-panel switch across all 5 instances (see state isolation below), firing a toast from the gate itself would stack up to 4 persistent toasts on a single tab switch. The inline blocked banner (same red design tokens, `role="alert"`) satisfies the "show a red authorization warning" requirement without that stacking problem; this trade-off is recorded here rather than silently made.
+- **No token dialog auto-opened for a cross-member token** — `guardedApiRequest`/`renderHistory`'s gate check happens before `ensureAuthorized()` is ever reached when blocked, so a mismatched panel never triggers the token dialog.
+
+### State isolation (PHASE 7)
+
+- `clearWorkspaceState()` resets: aborts any in-flight staff search, deselects staff, clears date filters, exits edit mode (clears unsaved draft text), clears the history container.
+- `reevaluateAccess()` = clear state, re-render the gate, and — only when now allowed — refresh history (which, immediately after a clear, simply shows the "select a staff member" placeholder; it never re-fetches stale data).
+- **Sidebar-panel-switch reactivity**: subscribes to `navigation.js`'s existing `msc:close-toolbar-popovers` event (already dispatched on every `activatePanel()` call — no change to `navigation.js` was needed). Deliberately resets every mounted instance on every switch (not only the panel switched to/from) — simpler to reason about and strictly satisfies "clear... on sidebar-member change" without needing DOM-parent traversal to detect which panel just became active.
+- **Token-change reactivity**: added `CALENDAR_AUTH_CHANGED_EVENT` (exported constant, `calendar/auth.js`) — dispatched from the two places that module's own stored-auth state changes: a successful dialog verify (first-time authorize AND "Change token") and `handleUnauthorizedResponse()` (401-triggered clear). `review-summaries.js` subscribes to it per instance and calls the same `reevaluateAccess()`.
+- **401 handling**: `handleUnauthorizedResponse()` (existing behavior: clears the token) now also fires the event synchronously, so `reevaluateAccess()` clears this panel's state and re-renders in the same tick — `renderHistory()`'s own `.catch` special-cases `err.code === 'auth_required'` to return without rendering a stale "Request failed" box over the just-recovered UI.
+- **403/404**: unchanged — the backend's non-disclosing 404 convention (PHASE 3) already prevents existence disclosure; no frontend change needed here.
+
+### Test-infrastructure change required
+
+`calendar/auth.js`'s `dispatchAuthChanged()` calls `document.dispatchEvent(new CustomEvent(...))` directly (not on a specific element) — a call shape neither `calendar/auth-test-dom.mjs` nor `review-summaries-test-dom.mjs`'s fake `document` previously supported (only individual `FakeElement`s had `addEventListener`/`dispatchEvent`). Added a document-level listener registry to both fake documents. One bug was caught and fixed during this work: the first implementation unconditionally did `event.target = event.target || doc`, which threw `TypeError: Cannot set property target of #<Event> which has only a getter` against a real `CustomEvent` instance (`target` is a read-only getter on real `Event` objects) — this was caught by a failing test (`401 on list fetch clears the stored Calendar token AND clears Review Summaries state`), root-caused with a throwaway debug script, and fixed with a `try/catch` guard in both stand-ins so both a real `Event` and this codebase's plain-object-literal fake events work.
+
+### Frontend tests added (PHASES 9–10)
+
+`web-view/js/review-summaries.test.mjs`: replaced 1 test that encoded the OLD (buggy) behavior — "heading shows the AUTHORIZED reviewer, never the tab it happens to be mounted under," which mounted a mismatched panel and asserted it stayed interactive with a corrected label only — with a matching-panel-only variant, plus added 15 new tests: the 2×2 token/panel matrix (Mayurika/Arun × own/other panel), zero-GET/POST/PUT/DELETE-while-blocked (4 tests, including two that bypass the UI entirely via the returned `state`/`selectStaff` API to prove `guardedApiRequest` itself blocks, not just DOM hiding), no delete/edit buttons render while blocked, token retained after a block, sidebar-change clears staff/history/edit-mode/draft (1 consolidated test + 1 cross-instance test), and token-change clears the old panel and unblocks the new one. Extended the existing 401 test to also assert state clearing. Net: 22 → 39 tests in this file.
+
+### Test totals
+
+| Suite | Before | After |
+| --- | --- | --- |
+| `backend/tests/test_staff_review_summaries.py` | 37 | 39 |
+| Full backend (`python -m unittest discover -s backend/tests -p "test_*.py"`) | 617 | 619 |
+| `web-view/js/review-summaries.test.mjs` | 22 | 39 |
+| `web-view/js/calendar/*.test.mjs` (full Calendar suite, includes `auth.test.mjs`) | 124 | 124 |
+
+Full backend run: **619 tests, 2 failures** — both are the same pre-existing, unrelated, previously-documented baseline failures (`test_missing_variable_fails_closed` — local `.env` provides a value the test expects absent; `test_pending_task_no_outcome` — date-sensitive "Pending" vs. "No response" label), unchanged by this session. (Baseline before this session's backend test addition was 617; +2 new tests = 619, consistent.)
+
+Full Calendar frontend suite (124/124, including `auth.test.mjs`) confirms the `auth.js` event-dispatch addition caused zero regression to the existing token dialog/indicator/`guardMutationAccess`/`handleUnauthorizedResponse` test coverage.
+
+### End-to-end scenario verification (informal, DOM-stand-in-level)
+
+Ran a throwaway script (not committed) reproducing the exact screenshot scenario: mounted all 5 member panels with a single Mayurika token, confirmed only the Mayurika panel is `'allowed'` and the other 4 are `'blocked'`; selected staff and loaded history on the Mayurika panel (1 network request, real content rendered); confirmed the Arun panel's rendered text does NOT contain the Mayurika panel's content anywhere in its subtree; simulated a sidebar-panel-switch event and confirmed zero additional network requests were sent and the Mayurika panel's own state was cleared. Deleted after use, not part of the committed test suite.
+
+### Real-browser check
+
+**Not performed** — no browser automation tool is available in this environment, the same documented limitation carried forward from every prior Calendar feature's evidence trail (see §8/§17 above). Coverage is HTTP-level (backend `TestClient`) and DOM-stand-in-level (frontend `node --test`) only. This is explicitly NOT claimed as a real-browser PASS.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/tests/test_staff_review_summaries.py` | +2 tests (invalid-token-list-401, two-reviewer same-staff isolation) |
+| `web-view/js/calendar/auth.js` | Added `CALENDAR_AUTH_CHANGED_EVENT` export + `dispatchAuthChanged()`, called from the dialog-verify-success path and `handleUnauthorizedResponse()` |
+| `web-view/js/calendar/auth-test-dom.mjs` | Added document-level `addEventListener`/`removeEventListener`/`dispatchEvent` to the fake document |
+| `web-view/js/review-summaries-test-dom.mjs` | Same document-level event support, for this module's own fake document |
+| `web-view/js/review-summaries.js` | Core fix — `reviewSummaryAccessDecision()`, `reviewSummariesCrossMemberCopy()`, `guardReviewSummaryAccess()`, `guardedApiRequest()`, blocked banner, `clearWorkspaceState()`, `renderAccessGate()`, `reevaluateAccess()`, event subscriptions |
+| `web-view/js/review-summaries.test.mjs` | +17 net tests (1 replaced, 16 added), covering the full authorization-context gate and state-isolation behavior |
+| `web-view/css/review-summaries.css` | `.review-summaries-blocked`/`-title`/`-message` styles (existing `--blocked`/`--blocked-bg` tokens) |
+
+No file under `member-aios/mayurika-hr/staff-data/` was touched. `backend/routers/staff_review_summaries.py` was NOT modified (already correct). No database connection was used; no production record was created, edited, or deleted; no migration was run.
+
+### Git state
+
+Committed locally on `main` per explicit direct-main authorization for this session (see CLAUDE.md project convention already in force for this requirement — same authorization basis as the original implementation, `handover/2026-08-03__calendar-review-summaries-implementation-closure.md` §1). **Not pushed** — per the task instructions, push/deployment is withheld until this evidence report is reviewed.
+
+### PASS / AMBER / FAIL
+
+**AMBER.** All automated backend and frontend coverage passes (619 backend / 39 + 39 frontend, zero new regressions, exact reproduction of the reported defect confirmed fixed at the DOM-stand-in level). AMBER, not PASS, strictly because no real-browser walkthrough was performed (tooling limitation, not a defect) and this fix has not yet been pushed/deployed or exercised with a real Management Team token in production.
+
+### One next step
+
+Review this evidence report, then — if approved — push `main` to `origin/main` and perform a real-browser smoke check of the exact reported scenario (authorize as one member, confirm every other member's panel is blocked with the red warning and zero network requests, switch panels, confirm state resets) before considering the defect closed in production.
