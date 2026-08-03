@@ -116,7 +116,12 @@ function uniqueValues(rows, field) {
    see the access/deployment-boundary note in the Staff Data tab and
    validation/staff-data-api-check-2026-07-13.md). Read-only: this
    script only ever issues GET requests to /api/staff*. */
-var STAFF_API_BASE = (function () {
+/* Exported (REQ-CAL-REV-001, 2026-08-03) so review-summaries.js's
+   reviewed-staff selector can call the same GET /api/staff endpoint
+   without inventing a second host-detection constant or a duplicate
+   staff list — the export is additive; every existing use within this
+   file is unaffected. */
+export var STAFF_API_BASE = (function () {
   var LOCAL_BASE = 'http://127.0.0.1:8000/api/staff';
   var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/staff';
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);

@@ -12,6 +12,7 @@ import { initAllScheduleCalendars } from './calendar/instance.js';
 import { initCalendarAuthIndicator } from './calendar/auth.js';
 import { initStaffDataPilot } from './staff-data.js';
 import { initPlanningWarning } from './planning-warning.js';
+import { initReviewSummaries } from './review-summaries.js';
 
 function boot() {
   /* Each subsystem is idempotent to a single call and mounts its listeners /
@@ -21,6 +22,9 @@ function boot() {
   initCalendarAuthIndicator();
   initStaffDataPilot();
   initPlanningWarning();
+  // REQ-CAL-REV-001 (2026-08-03) — Staff Review Summaries workspace, one
+  // instance per member tab-panel (web-view/index.html).
+  initReviewSummaries();
 }
 
 if (document.readyState === 'loading') {

@@ -39,3 +39,17 @@ export var CALENDAR_AUTH_API_BASE = (function () {
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
   return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
 }());
+
+/* Staff Review Summaries (REQ-CAL-REV-001, 2026-08-03) — same local-vs-
+   production host detection as the three bases above, just a different
+   route prefix (backend/routers/staff_review_summaries.py). Unlike
+   MEMBER_SCHEDULE_API_BASE/MEMBER_LEAVE_API_BASE, every request against
+   this base requires a token — including GET — since review-summary
+   content is private to the authenticated reviewer (see
+   web-view/js/review-summaries.js). */
+export var STAFF_REVIEW_SUMMARIES_API_BASE = (function () {
+  var LOCAL_BASE = 'http://127.0.0.1:8000/api/staff-review-summaries';
+  var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/staff-review-summaries';
+  var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
+}());
