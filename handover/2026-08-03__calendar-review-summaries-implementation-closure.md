@@ -3,7 +3,7 @@ name: calendar-review-summaries-implementation-handover
 type: handover
 scope: management_aios Calendar — Staff Review Summaries (REQ-CAL-REV-001)
 created: 2026-08-03
-status: AMBER — authorization-context defect fixed and deployed (§19/§21), plus two further real-browser-found defects (blocked-panel CSS visibility; long-summary-text readability) fixed and deployed same-day (§21). Real-browser validation against production confirmed the core defect fixed across all 5 reviewer/panel combinations (§21). Commits f1182a2, a2aafa9, 6576985 all pushed to origin/main and confirmed live. Read-access rule revised (§23, 2026-08-03 same-day follow-up) — every authenticated Management Team member can now READ other reviewers' summaries; only the owning reviewer can create/update/delete. Committed locally on main, NOT pushed. Final: backend 628 total/626 passed (2 pre-existing unrelated failures, unchanged), review-summaries.test.mjs 53/53, Calendar frontend suite 124/124. AMBER, not PASS — see §23 for what remains unperformed.
+status: AMBER — authorization-context defect fixed and deployed (§19/§21), plus two further real-browser-found defects (blocked-panel CSS visibility; long-summary-text readability) fixed and deployed same-day (§21). Read-access rule revised (§23) and deployed (§25, commit 1cf94d7 pushed and confirmed live on both backend and frontend, 2026-08-03) — every authenticated Management Team member can now READ other reviewers' summaries; only the owning reviewer can create/update/delete. Backend/frontend deployment fully verified (byte-identical assets, new routes/params live, zero regression). Three token-gated API checks and the full real-browser walkthrough (Phases 8-10) NOT PERFORMED this session (no real token, no browser automation tool available). Production row count changed 6->7 during the session window; investigated and attributed to independent concurrent human testing, not an assistant write (0 active rows before and after) — reported per §25. Evidence commit held LOCAL ONLY, not pushed, pending user review of that investigation. Final: backend 628 total/626 passed (2 pre-existing unrelated failures, unchanged), review-summaries.test.mjs 53/53, Calendar frontend suite 124/124. AMBER, not PASS — see §25 for what remains unperformed.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -211,4 +211,28 @@ Full detail: `validation/calendar-review-summaries-technical-design-check-2026-0
 
 ## 24. One next step
 
-Review this evidence report and the local `main` diff, then — if approved — push `main`, redeploy, and perform a read-only production smoke check (unauthenticated/invalid-token 401 on both GET routes; an authorized cross-reviewer list read; a same-reviewer write still succeeding) before general rollout.
+~~Review this evidence report and the local `main` diff, then — if approved — push `main`...~~ **Superseded — see §25.** Pushed and deployed this same day.
+
+## 25. Deployment and validation — 2026-08-03 (same-day follow-up, revision commit `1cf94d7`)
+
+Full detail: `validation/calendar-review-summaries-technical-design-check-2026-08-03.md`, "Deployment and Validation — 2026-08-03" section.
+
+**Push**: `4a05b60..1cf94d7 main -> main` — fast-forward, no force push. `origin/main` confirmed matching local `HEAD` exactly after push.
+
+**Backend deployment**: confirmed live — `/health` OK, `/openapi.json` shows the new `reviewer_member_key` list param and all 5 routes (a ~2-minute propagation delay was observed and waited out before the check confirmed the new param). No startup/database error. Existing `/api/staff` unaffected.
+
+**Frontend deployment**: confirmed live — `review-summaries.js`/`review-summaries.css` fetched and diffed byte-for-byte identical to the committed source; contains the new mode-logic identifiers and CSS classes; all 5 member mount points present; asset `Age` header confirmed a fresh (not stale) CDN fill.
+
+**API smoke test**: missing-token and invalid-token `GET /api/staff-review-summaries` both confirmed **401**. The three token-gated checks (own-reviewer GET, cross-reviewer GET, cross-reviewer detail) were **not performed** — no real Management Team member token is available to this session, the same limitation documented throughout this feature's evidence trail; this task's own instructions also preclude requesting a token be typed into the conversation.
+
+**Real-browser walkthrough (Phases 8–10)**: **not performed** — no browser automation tool is available in this environment (confirmed via tool search this session), the same limitation carried forward from every prior session for this feature.
+
+**Database row count**: 6 (pre-push) → 7 (post-smoke-test). Investigated (metadata only, no summary content read): the assistant issued zero POST/PUT/DELETE requests all session; all 7 rows are soft-deleted (0 active/visible, both before and after); the newest row's full create-then-delete cycle (15:03:56–15:09:00 Colombo time) falls inside the session window but is attributable to independent concurrent human testing on the live production page, not to any assistant action — the same pattern documented in §21's prior +2 row-count change. Per this task's literal rule, this specific check is reported as **FAIL** (count changed) despite the benign, investigated explanation.
+
+**Evidence push gate**: per this task's explicit rule ("push the evidence commit only when... no production row-count change occurred"), the evidence commit is **held back from `origin/main`** — committed locally only, pending user review of the row-count investigation above.
+
+**Status**: AMBER — code deployment fully verified correct with zero regression; AMBER because the token-gated API checks, the entire real-browser walkthrough, and the row-count check did not cleanly pass (tooling/credential limitations and an investigated-benign external row-count change, not defects in the shipped code).
+
+## 26. One next step
+
+Review the PHASE 11 row-count investigation in the validation file; if satisfied it is benign, explicitly authorize pushing the evidence commit to `origin/main`. Separately, arrange a real Management Team token and/or a user-performed real-browser session to close out the three token-gated API checks and Phases 8–10.

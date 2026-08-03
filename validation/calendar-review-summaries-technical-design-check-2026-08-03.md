@@ -811,3 +811,91 @@ Full backend run: `Ran 628 tests in 5.591s` / `FAILED (failures=2)` — the same
 ### One next step
 
 Review this evidence report and the local `main` diff, then — if approved — push `main`, redeploy, and perform a read-only production smoke check (unauthenticated/invalid-token 401 on both GET routes; an authorized cross-reviewer list read; a same-reviewer write still succeeding) before general rollout.
+
+---
+
+## Deployment and Validation — 2026-08-03 (same-day follow-up, revision commit `1cf94d7`)
+
+Deploys and validates the shared-read/owner-write revision (commit `1cf94d7`) directly from `main`. No production review summary was created, updated, or deleted by the assistant during this session.
+
+### Repository safety (PHASE 1)
+
+Local `main` HEAD `1cf94d7`, `origin/main` HEAD (pre-push) `4a05b60` — 1 ahead / 0 behind, no independent remote divergence. Working tree clean. Protected path `member-aios/mayurika-hr/staff-data/` confirmed present via directory-existence check only, never opened.
+
+### Diff review (PHASE 2)
+
+`git diff --name-status origin/main...main` confirmed exactly the 7 expected files (backend router, backend tests, `review-summaries.js`, `review-summaries.test.mjs`, `review-summaries.css`, and the two evidence files from the prior implementation session) — no migration/SQL file, no database-configuration change, no protected-path file. `git diff --check` clean. A targeted secret/credential grep over the diff returned zero matches (the only "token"/"secret" hits were prose noting that Management Team member keys are not secret).
+
+### Final pre-push tests (PHASE 3) — literal runner output
+
+| Suite | Result |
+|---|---|
+| `backend/tests/test_staff_review_summaries.py` | `Ran 48 tests in 1.426s` / `OK` |
+| Full backend (`python -m unittest discover -s backend/tests -p "test_*.py"`) | `Ran 628 tests in 5.608s` / `FAILED (failures=2)` — same two pre-existing, unrelated failures (`test_missing_variable_fails_closed`, `test_pending_task_no_outcome`), unchanged |
+| `web-view/js/review-summaries.test.mjs` | `# tests 53 / # pass 53 / # fail 0` |
+| `web-view/js/calendar/*.test.mjs` | `# tests 124 / # pass 124 / # fail 0` |
+
+No new failure. Proceeded to the pre-push database check.
+
+### Pre-push database count (PHASE 4)
+
+`SELECT current_database();` → `order_management_copy` (confirmed correct target). `SELECT COUNT(*) FROM management_aios.staff_review_summaries;` → **6**. No row-level content was selected; zero writes issued.
+
+### Push (PHASE 5)
+
+`git push origin main` → `4a05b60..1cf94d7 main -> main` (fast-forward, no force). Post-push `git fetch`/`git rev-parse` confirmed `origin/main` == local `HEAD` == `1cf94d7`; `git branch -r --contains 1cf94d7` listed `origin/main`; working tree clean.
+
+### Deployment verification (PHASE 6)
+
+**Backend**: `GET /health` → `{"status":"ok","service":"management-aios-member-schedules"}`. `GET /openapi.json` confirms both `staff-review-summaries` path templates registered with all 5 methods (`POST`/`GET` on the collection path; `GET`/`PUT`/`DELETE` on the detail path) and, critically, the list route's parameter set now includes `reviewer_member_key` (it did not on the first check immediately after push — a ~2-minute propagation delay was observed and waited out before re-checking) — confirming the deployed backend is running commit `1cf94d7`, not a stale build. No startup or database error. Existing `GET /api/staff` still returns 200 (no regression).
+
+**Frontend**: `js/review-summaries.js` and `css/review-summaries.css` fetched directly and diffed byte-for-byte (CRLF-normalized) against the committed source — **identical**. The deployed JS contains 62 occurrences of the new mode-logic identifiers (`read_only`, `reviewSummaryAccessDecision`, `guardedReadRequest`, `guardedWriteRequest`, `reviewSummariesReadOnlyHeadingText`, `unauthorized`); the deployed CSS contains the new `.review-summaries-readonly-note`/`.review-summaries-unauthorized` selectors. `Age: 405` on the JS asset at check time confirmed a fresh CDN fill consistent with this push, not a stale cached copy. Root page confirms all 5 `.review-summaries-instance` mount points present (`data-member-key` = mayurika, suman, arun, rajiv, paraparan).
+
+### API authorization smoke test (PHASE 7)
+
+| Check | Result |
+|---|---|
+| Missing-token `GET /api/staff-review-summaries` | **401** (confirmed via `curl`, precise status code) |
+| Invalid-token `GET /api/staff-review-summaries` (bogus bearer value, no real credential involved) | **401** (confirmed via `curl`) |
+| Own-reviewer `GET` using an approved token | **NOT PERFORMED** |
+| Cross-reviewer `GET ?reviewer_member_key=<other>` using an approved token | **NOT PERFORMED** |
+| Cross-reviewer detail read | **NOT PERFORMED** |
+
+The three token-gated checks were not performed for the same reason documented throughout this feature's entire evidence trail: no real Management Team member token is available to this session (these are secrets held by the company, never present in the repository or given to this session), and this task's own instructions ("do not record or display the raw token") preclude requesting one be typed into this conversation, which would place it in session/transcript history. This remains a genuine outstanding verification item, not a failure of the implementation. No token value, connection string, or credential was displayed, logged, or recorded at any point.
+
+### Real-browser walkthrough (PHASES 8–10)
+
+**NOT PERFORMED.** No browser automation tool is available in this environment (confirmed via a tool search this session) — the same documented limitation carried forward from every prior session for this feature (design-approval gate, implementation, migration, deployment, and the prior authorization-context-fix sessions all record the identical constraint). Own-mode/read-only-mode/unauthorized-mode visual confirmation, the mutation-pre-block Network-tab check, state-clearing, token-change, responsive/zoom, and Task/Leave/console regression (Phases 8–10) all require either a real browser or a real Management Team token, neither of which this session has access to. This is not claimed as a real-browser PASS. If the user performs this walkthrough independently (as in the prior authorization-context-fix session), the findings should be appended to this file.
+
+### Final database count and investigation (PHASE 11)
+
+`SELECT COUNT(*) FROM management_aios.staff_review_summaries;` (post-smoke-test) → **7** — **changed from the pre-push count of 6.**
+
+Per this task's explicit rule, nothing was deleted and the change was investigated (metadata only — id, `reviewer_member_key`, `meeting_date`, `created_at`, `updated_at`, `deleted_at`; no summary text or other row-level content was ever selected):
+
+- The assistant issued **zero** `POST`/`PUT`/`DELETE` requests to the production API this session — every request made was `GET` (health, OpenAPI, asset fetches, the two 401 checks above) or a read-only `SELECT`. Neither 401 check can reach the database (both are rejected by `validate_calendar_auth_token` before any query executes).
+- All 7 rows in the table are soft-deleted (`deleted_at IS NOT NULL`) — **0 active/visible rows**, both functionally before and after this session's checks.
+- The newest row (id `d2effbcf-...`) was created at `2026-08-03 15:03:56` Colombo time and soft-deleted at `2026-08-03 15:09:00` Colombo time — a full create-then-delete cycle that falls entirely inside this session's push-to-smoke-test window (session time at the final count check: `2026-08-03 15:12:57` Colombo), but is not attributable to any assistant action per the point above.
+- Conclusion: consistent with independent, concurrent human usage of the live production page during this session (the same pattern documented in the prior "Deployment and Real-Browser Validation" session, where the user's own manual `Save Summary` testing changed the row count by +2, also not an assistant-invoked write). Not a security or correctness defect — the create-then-delete cycle exercised the feature's own-mode write path exactly as designed, by its owning reviewer, and left zero active rows either way.
+
+Per this phase's literal rule ("if the count changes... report FAIL"), **this specific check is reported as FAIL** (count changed, 6 → 7) even though the investigation clears the assistant of any write and finds no active/visible-state change and no security implication.
+
+### Evidence gate
+
+Per this task's explicit push gate ("push the evidence commit to main only when... no production row-count change occurred"), **the evidence commit below is NOT pushed to `origin/main`** — the row-count change documented in PHASE 11 fails that specific literal condition, even though it is explained and benign. The evidence commit is created locally on `main` only; pushing it is left to the user's discretion after reviewing this explanation.
+
+### Production data safety summary
+
+**Production database writes by the assistant this session: 0.** **Production records changed by the assistant: 0.** Row count did change externally (+1 raw, 0 net active) per the investigation above — reported transparently, not suppressed.
+
+### Protected path
+
+**Excluded.** `member-aios/mayurika-hr/staff-data/` was never opened or read.
+
+### PASS / AMBER / FAIL
+
+**AMBER.** Code deployment (backend + frontend) is fully verified and correct — routes, byte-identical assets, mode logic present, zero regression on existing routes/tests (628 backend with only the two pre-existing unrelated failures; 53/53 + 124/124 frontend). AMBER, not PASS, because: (1) the three token-gated API checks and the entire real-browser walkthrough (Phases 8–10) were not performed — genuine tooling/credential limitations, not defects; (2) the production row count changed during the session window (PHASE 11, investigated and explained as benign concurrent human activity, not an assistant write); (3) per the explicit push gate, the evidence commit is therefore held back from `origin/main` pending user review.
+
+### One next step
+
+Review this evidence (especially the PHASE 11 row-count investigation) and, if satisfied it is benign, either explicitly authorize pushing the evidence commit to `origin/main`, or arrange for a real Management Team token and/or a real-browser session (by the user, as in prior sessions) to close out the three token-gated API checks and Phases 8–10.
