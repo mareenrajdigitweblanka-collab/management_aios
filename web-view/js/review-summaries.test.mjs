@@ -155,6 +155,44 @@ test('summaryCounterText and isSummaryCounterWarning', async (t) => {
   assert.equal(mod.isSummaryCounterWarning('A'.repeat(9501)), true);
 });
 
+test('summaryPreview leaves short text untouched', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var result = mod.summaryPreview('A short summary.');
+  assert.equal(result.truncated, false);
+  assert.equal(result.preview, 'A short summary.');
+});
+
+test('summaryPreview truncates long text at a word boundary and appends an ellipsis', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var words = [];
+  for (var i = 0; i < 100; i++) { words.push('word' + i); }
+  var longText = words.join(' '); // well over 400 characters, plenty of spaces
+  var result = mod.summaryPreview(longText);
+  assert.equal(result.truncated, true);
+  assert.ok(result.preview.endsWith('…'));
+  assert.ok(result.preview.length <= 401, 'preview should not exceed maxLength + ellipsis');
+  // The character right before the ellipsis must not be mid-word — the
+  // preview (minus the ellipsis) must be a prefix of the original text
+  // ending exactly at a word the original text also has at that position.
+  var withoutEllipsis = result.preview.slice(0, -1);
+  assert.equal(longText.indexOf(withoutEllipsis), 0);
+  assert.notEqual(longText.charAt(withoutEllipsis.length), undefined);
+});
+
+test('summaryPreview hard-cuts a single long token with no spaces', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var result = mod.summaryPreview('A'.repeat(1000));
+  assert.equal(result.truncated, true);
+  assert.ok(result.preview.endsWith('…'));
+  assert.equal(result.preview.length, 401); // 400 chars + ellipsis, no space to back off to
+});
+
 test('staffOptionLabel never includes employee_number and adds calling_name when it differs', async (t) => {
   var globals = installFakeBrowserGlobals();
   t.after(globals.restore);
@@ -489,6 +527,54 @@ test('history renders full summary text safely (script-like content never become
   // as text, and (since it was never passed through innerHTML) no actual
   // <script>/<img> FakeElement was ever created for it.
   assert.equal(textNode.textContent, dangerous);
+});
+
+test('short summary text renders in full with no "Show more" toggle', async (t) => {
+  var record = { id: 'sum-short', reviewer_member_key: 'mayurika', reviewed_staff_id: 'staff-uuid-14', reviewed_staff_full_name: 'Someone', meeting_date: '2026-08-03', summary_text: 'A short review discussion.', created_at: '2026-08-03T09:00:00Z', updated_at: '2026-08-03T09:00:00Z' };
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika');
+  api.selectStaff({ id: 'staff-uuid-14', full_name: 'Someone', calling_name: null });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var textNode = findByClass(mountEl, 'review-summary-text');
+  assert.equal(textNode.textContent, 'A short review discussion.');
+  assert.equal(findByClass(mountEl, 'review-summaries-toggle-text-btn'), null, 'no toggle button should render for text under the preview length');
+});
+
+test('long summary text renders truncated with a "Show more"/"Show less" toggle', async (t) => {
+  var words = [];
+  for (var i = 0; i < 100; i++) { words.push('word' + i); }
+  var longText = words.join(' ');
+  var record = { id: 'sum-long', reviewer_member_key: 'mayurika', reviewed_staff_id: 'staff-uuid-15', reviewed_staff_full_name: 'Someone', meeting_date: '2026-08-03', summary_text: longText, created_at: '2026-08-03T09:00:00Z', updated_at: '2026-08-03T09:00:00Z' };
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesForMember(mountEl, 'mayurika');
+  api.selectStaff({ id: 'staff-uuid-15', full_name: 'Someone', calling_name: null });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var textNode = findByClass(mountEl, 'review-summary-text');
+  var toggleBtn = findByClass(mountEl, 'review-summaries-toggle-text-btn');
+  assert.ok(toggleBtn, 'a "Show more" toggle button should render for text over the preview length');
+  assert.notEqual(textNode.textContent, longText, 'initial render should be the truncated preview, not the full text');
+  assert.equal(toggleBtn.textContent, 'Show more');
+  assert.equal(toggleBtn.getAttribute('aria-expanded'), 'false');
+
+  toggleBtn.click();
+  assert.equal(textNode.textContent, longText, 'clicking "Show more" should reveal the full text');
+  assert.equal(toggleBtn.textContent, 'Show less');
+  assert.equal(toggleBtn.getAttribute('aria-expanded'), 'true');
+
+  toggleBtn.click();
+  assert.notEqual(textNode.textContent, longText, 'clicking "Show less" should collapse back to the preview');
+  assert.equal(toggleBtn.textContent, 'Show more');
+  assert.equal(toggleBtn.getAttribute('aria-expanded'), 'false');
 });
 
 test('create form rejects a blank summary before any POST is sent', async (t) => {

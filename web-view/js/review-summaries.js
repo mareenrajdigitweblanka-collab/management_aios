@@ -41,6 +41,7 @@ import { showToast } from './ui/toast.js';
 
 var SUMMARY_MAX_LENGTH = 10000;
 var STAFF_SEARCH_DEBOUNCE_MS = 300;
+var SUMMARY_PREVIEW_LENGTH = 400;
 
 // ── Pure helpers (exported for direct testing — no DOM involved) ───────
 
@@ -86,6 +87,26 @@ export function summaryCounterText(raw) {
 export function isSummaryCounterWarning(raw) {
   var length = String(raw == null ? '' : raw).length;
   return length > SUMMARY_MAX_LENGTH * 0.95;
+}
+
+/* History-card long-summary truncation (2026-08-03 UX fix — production
+   feedback: a long summary rendered as one unbroken wall of text with no
+   way to collapse it). Word-boundary-aware so a preview never cuts a
+   word in half — only backs off to the last space when doing so doesn't
+   throw away more than 40% of the preview (a summary with no spaces
+   before maxLength, e.g. one extremely long token, still gets a hard cut
+   rather than no truncation at all). Pure/exported for direct testing;
+   the DOM-facing expand/collapse toggle lives in renderHistoryCard. */
+export function summaryPreview(text, maxLength) {
+  maxLength = maxLength || SUMMARY_PREVIEW_LENGTH;
+  var full = String(text == null ? '' : text);
+  if (full.length <= maxLength) {
+    return { truncated: false, preview: full };
+  }
+  var cut = full.slice(0, maxLength);
+  var lastSpace = cut.lastIndexOf(' ');
+  if (lastSpace > maxLength * 0.6) { cut = cut.slice(0, lastSpace); }
+  return { truncated: true, preview: cut + '…' };
 }
 
 /* Reviewed-staff option label — full_name primary, calling_name as a
@@ -628,7 +649,27 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
       head.appendChild(editedEl);
     }
     card.appendChild(head);
-    card.appendChild(renderSummaryText(record.summary_text));
+
+    var preview = summaryPreview(record.summary_text);
+    var textNode = renderSummaryText(preview.truncated ? preview.preview : record.summary_text);
+    card.appendChild(textNode);
+
+    if (preview.truncated) {
+      var expanded = false;
+      var toggleTextBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-toggle-text-btn');
+      toggleTextBtn.type = 'button';
+      toggleTextBtn.textContent = 'Show more';
+      toggleTextBtn.setAttribute('aria-expanded', 'false');
+      toggleTextBtn.addEventListener('click', function () {
+        expanded = !expanded;
+        // textContent only — never innerHTML — matching the module-wide
+        // safe-text rule (renderSummaryText's own header note).
+        textNode.textContent = expanded ? record.summary_text : preview.preview;
+        toggleTextBtn.textContent = expanded ? 'Show less' : 'Show more';
+        toggleTextBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      });
+      card.appendChild(toggleTextBtn);
+    }
 
     var actions = el('div', 'review-summaries-card-actions');
     var editBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-edit-btn');

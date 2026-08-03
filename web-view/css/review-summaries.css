@@ -386,6 +386,17 @@
   line-height: 1.5;
 }
 
+/* "Show more"/"Show less" toggle for a truncated history-card summary
+   (2026-08-03 UX fix — production feedback: a long summary previously
+   rendered as one unbroken wall of text). Sits between the text and the
+   Edit/Delete actions row, sized down from the standard .msc-btn so it
+   doesn't compete visually with those primary actions. */
+.review-summaries-toggle-text-btn {
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: var(--font-xs);
+}
+
 .review-summaries-card-actions {
   display: flex;
   gap: var(--space-2);
