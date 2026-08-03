@@ -3234,9 +3234,171 @@
       margin-top: 8px;
     }
 
+    /* ── Bulk Tasks multi-date expansion (REQ-CAL-BULK-DATES-001,
+       2026-08-03) — date-selection-mode fieldset per .msc-bulk-row card.
+       Native <fieldset>/<legend> reset to match this form's existing
+       label styling rather than the browser's default fieldset border/
+       inset padding. ── */
+    .msc-bulk-date-mode-fieldset {
+      border: 1px solid var(--hairline, var(--border));
+      border-radius: var(--radius-sm);
+      padding: 10px 12px 12px;
+      margin: 0 0 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msc-bulk-date-mode-fieldset legend {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      padding: 0 4px;
+    }
+
+    .msc-bulk-date-mode-select-label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--text);
+      max-width: 240px;
+    }
+
+    /* [hidden] alone would be enough on a plain block element, but this
+       panel needs `display:flex` when visible — the exact same class-of-
+       bug the Review Summaries authorization-context fix (2026-08-03)
+       ran into (an author `display` rule silently beating the native
+       `[hidden] { display:none }` UA rule). Using `:not([hidden])`
+       instead of an unconditional `display:flex` + a separate
+       `[hidden]{display:none!important}` override avoids that whole bug
+       class structurally, rather than patching it after the fact. */
+    .msc-bulk-date-mode-panel {
+      display: none;
+    }
+
+    .msc-bulk-date-mode-panel:not([hidden]) {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .msc-bulk-weekday-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    /* Pressed/unpressed state is never color-only — a filled background
+       AND a bold label AND a visible check mark together signal
+       "included," so the distinction still reads for a colorblind user
+       or on a low-contrast display, on top of the aria-pressed state
+       already exposed to assistive tech. */
+    .msc-bulk-weekday-chip {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: .8rem;
+      font-weight: 500;
+      cursor: pointer;
+      min-width: 44px;
+    }
+
+    .msc-bulk-weekday-chip[aria-pressed="true"] {
+      background: var(--accent, var(--brand, #2563eb));
+      border-color: var(--accent, var(--brand, #2563eb));
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .msc-bulk-weekday-chip[aria-pressed="true"]::before {
+      content: "\2713 ";
+    }
+
+    .msc-bulk-date-preview {
+      font-size: .8rem;
+      color: var(--text-secondary);
+      margin: 0;
+      /* Compact preview must never force the card to scroll horizontally
+         at any validated width (desktop/tablet/mobile) — wrap instead of
+         overflow. */
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .msc-bulk-date-warning {
+      color: var(--error);
+      font-weight: 600;
+      font-size: .82rem;
+      margin: 0;
+    }
+
+    .msc-bulk-multi-date-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .msc-bulk-date-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface-tint-2, var(--surface));
+      border-radius: 999px;
+      padding: 3px 4px 3px 10px;
+      font-size: .8rem;
+      color: var(--text);
+    }
+
+    .msc-bulk-date-chip-remove {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      font-size: .9rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .msc-bulk-date-chip-remove:hover {
+      background: var(--surface-tint-3, var(--border));
+      color: var(--text);
+    }
+
+    .msc-bulk-occurrence-summary {
+      font-size: .8rem;
+      color: var(--text-secondary);
+      margin: -4px 0 0;
+    }
+
+    .msc-bulk-occurrence-summary--over-limit {
+      color: var(--error);
+      font-weight: 600;
+    }
+
     @media (max-width: 900px) {
       .msc-modal-form {
         max-width: 92vw;
+      }
+    }
+
+    /* Bulk Tasks multi-date controls at the same mobile width already
+       validated for this modal's own scroll/heading fix (2026-07-24) —
+       weekday chips and date chips already wrap via flex-wrap above;
+       this only widens their touch target slightly so they never shrink
+       below a comfortably tappable size on a narrow viewport. */
+    @media (max-width: 480px) {
+      .msc-bulk-weekday-chip {
+        padding: 6px 12px;
+        min-width: 48px;
       }
     }
 

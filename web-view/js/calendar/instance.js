@@ -12,6 +12,12 @@ import {
 , LEAVE_TYPE_DISPLAY_LABEL
 , formatLeaveCalendarLabel
 , expandWeekdaysClientSide
+, expandTaskDates
+, DEFAULT_RANGE_WEEKDAYS
+, buildBulkPayloadRowsForDates
+, bulkCardOccurrenceCount
+, totalBulkOccurrenceCount as sumOccurrenceCounts
+, formatCompactDateList
 , leaveDatesForItem
 , LEAVE_HALF_DAY_FIRST_DISPLAY
 , LEAVE_HALF_DAY_SECOND_DISPLAY
@@ -952,6 +958,13 @@ function mountScheduleCalendarInstance(container) {
        duplicate and is left exactly as-is. */
     '<form class="msc-bulk-form" autocomplete="off">' +
     '<div class="msc-bulk-rows"></div>' +
+    /* Submission-wide occurrence summary (REQ-CAL-BULK-DATES-001,
+       2026-08-03) — "N task rows / M occurrences", live-updated on every
+       date/time-frame change across every card (updateBulkCreateButtonGate
+       below). role="status" so a screen-reader user gets the same running
+       total a sighted user sees, without an intrusive alert on every
+       keystroke. */
+    '<p class="msc-bulk-occurrence-summary" role="status"></p>' +
     '<button type="button" class="msc-btn msc-btn-ghost msc-bulk-add-row-btn">+ Add another task</button>' +
     '</form>' +
     '</div>' +
@@ -1354,6 +1367,7 @@ function mountScheduleCalendarInstance(container) {
   var bulkCreateBtn = container.querySelector('.msc-bulk-create-btn');
   var bulkCancelBtn = container.querySelector('.msc-bulk-cancel-btn');
   var bulkPopupStatusEl = container.querySelector('.msc-bulk-popup-status');
+  var bulkOccurrenceSummaryEl = container.querySelector('.msc-bulk-occurrence-summary');
   if (bulkFormEl) { bulkFormEl.addEventListener('submit', function (e) { e.preventDefault(); }); }
 
   /* ── Month "+N more" date-specific popup refs (Step 8/9,
@@ -2556,12 +2570,35 @@ function mountScheduleCalendarInstance(container) {
         backend's own per-row date_required check both catch at submit
         time. */
   var MAX_BULK_TASK_ROWS = 30; // mirrors backend/config.py MAX_BULK_TASK_ROWS
+  /* Mirrors backend/routers/member_schedules.py MAX_TASK_OCCURRENCES_PER_SUBMISSION
+     (REQ-CAL-BULK-DATES-001, 2026-08-03) — an early, non-authoritative
+     frontend check only; the backend's own check_occurrence_limit() is
+     unchanged and remains the sole authoritative gate (approved design
+     §9). This constant is NOT the same value-by-coincidence as
+     MAX_TIME_FRAMES_PER_TASK above — see that constant's own history for
+     why these two 30s are independent, never-derived-from-each-other
+     limits. */
+  var MAX_TASK_OCCURRENCES_PER_SUBMISSION = 30;
   var bulkRowSeq = 0;
   var bulkSubmitInFlight = false;
 
   function bulkRowFieldElement(rowEl, field) {
     if (!rowEl) { return null; }
-    if (field === 'date') { return rowEl.querySelector('.msc-bulk-row-date'); }
+    if (field === 'date') {
+      /* REQ-CAL-BULK-DATES-001 (2026-08-03) — mode-aware: the single
+         .msc-bulk-row-date input is the right error-anchor element only
+         in single mode (unchanged); range/multiple mode have no one
+         field that represents "the date" the way a plain date input
+         does, so this anchors a date-related error to the first
+         relevant visible input in that mode's own panel instead —
+         start-date for range, the add-date input for multiple — so
+         setFieldError() always highlights something the user can
+         actually see, never a hidden field. */
+      var mode = bulkRowDateMode(rowEl);
+      if (mode === 'range') { return rowEl.querySelector('.msc-bulk-row-range-start'); }
+      if (mode === 'multiple') { return rowEl.querySelector('.msc-bulk-multi-date-input'); }
+      return rowEl.querySelector('.msc-bulk-row-date');
+    }
     if (field === 'title') { return rowEl.querySelector('.msc-bulk-row-title'); }
     if (field === 'start') { return rowEl.querySelector('.msc-bulk-row-start'); }
     if (field === 'end') { return rowEl.querySelector('.msc-bulk-row-end'); }
@@ -2574,8 +2611,21 @@ function mountScheduleCalendarInstance(container) {
     return bulkRowsEl ? Array.prototype.slice.call(bulkRowsEl.querySelectorAll('.msc-bulk-row')) : [];
   }
 
-  function getBulkRowByNumber(rowNumber) {
-    return getBulkRows()[rowNumber - 1] || null;
+  /* REQ-CAL-BULK-DATES-001 (2026-08-03) — resolves a backend-reported 1-
+     indexed `row` number back to the DOM card it came from. Before this
+     feature, one submitted array position always equaled one visible
+     .msc-bulk-row (so `getBulkRows()[rowNumber-1]` was correct); now a
+     single card can expand into several submitted positions (one per
+     generated date), so `positionMap` — built fresh by
+     performBulkSubmit() for the exact array it just sent — is the only
+     reliable source of truth. Message TEXT itself is deliberately left
+     exactly as the backend already produces it (still "Row N"/"Task N,
+     time frame M" using the flat array position, per approved design
+     §13 — "unchanged... each generated date is just another row in the
+     existing per-row error contract"); only the DOM element an error
+     visually attaches to is resolved through this map. */
+  function bulkRowFromPositionMap(positionMap, rowNumber) {
+    return (positionMap && positionMap[rowNumber - 1]) || null;
   }
 
   /* First row's Date value/element — used only as the representative
@@ -2610,6 +2660,27 @@ function mountScheduleCalendarInstance(container) {
     updateBulkAddButtonState();
   }
 
+  /* Monday..Sunday weekday chips, in this fixed display order, each
+     data-weekday carrying the native Date.getDay() value that
+     expandTaskDates() (core.js) already expects (0=Sun..6=Sat) — the same
+     convention DEFAULT_RANGE_WEEKDAYS uses, so a chip's data-weekday can be
+     read straight into the `weekdays` array with no translation step.
+     Mon-Fri default checked, Sat/Sun default unchecked, per approved
+     decisions #3/#4. */
+  var BULK_WEEKDAY_CHIPS = [
+    { weekday: 1, label: 'Mon' }, { weekday: 2, label: 'Tue' }, { weekday: 3, label: 'Wed' },
+    { weekday: 4, label: 'Thu' }, { weekday: 5, label: 'Fri' },
+    { weekday: 6, label: 'Sat' }, { weekday: 0, label: 'Sun' }
+  ];
+
+  function bulkWeekdayChipsMarkup() {
+    return BULK_WEEKDAY_CHIPS.map(function (chip) {
+      var pressed = DEFAULT_RANGE_WEEKDAYS.indexOf(chip.weekday) !== -1;
+      return '<button type="button" class="msc-bulk-weekday-chip" data-weekday="' + chip.weekday + '" ' +
+        'aria-pressed="' + (pressed ? 'true' : 'false') + '">' + chip.label + '</button>';
+    }).join('');
+  }
+
   function bulkRowMarkup(dateValue) {
     bulkRowSeq += 1;
     var dateAttr = dateValue ? ' value="' + escapeHtml(dateValue) + '"' : '';
@@ -2623,7 +2694,43 @@ function mountScheduleCalendarInstance(container) {
          responsive behavior already defined for the Task/Leave forms) —
          no second grid/breakpoint rule is defined for Bulk Tasks. */
       '<div class="msc-bulk-row-fields msc-form-grid">' +
+      /* ── Date-selection mode (REQ-CAL-BULK-DATES-001, 2026-08-03) — a
+         real <fieldset>/<legend> (never a div-only custom widget with no
+         accessible name), matching this form's existing field-labelling
+         convention. Default mode is always "single", preserving existing
+         behavior byte-for-byte for a card that never touches the new
+         mode selector at all — the plain .msc-bulk-row-date input below
+         is untouched, same class name, same required attribute, same
+         add-row date-seeding source element. */
+      '<fieldset class="msc-bulk-date-mode-fieldset msc-form-full">' +
+      '<legend>Dates</legend>' +
+      '<label class="msc-bulk-date-mode-select-label">Date selection' +
+      '<select class="msc-bulk-row-date-mode">' +
+      '<option value="single" selected>Single date</option>' +
+      '<option value="range">Date range</option>' +
+      '<option value="multiple">Multiple dates</option>' +
+      '</select>' +
+      '</label>' +
+      '<div class="msc-bulk-date-mode-panel msc-bulk-date-mode-panel--single">' +
       '<label>Date<input type="date" class="msc-bulk-row-date"' + dateAttr + ' required /></label>' +
+      '</div>' +
+      '<div class="msc-bulk-date-mode-panel msc-bulk-date-mode-panel--range" hidden>' +
+      '<label>Start date<input type="date" class="msc-bulk-row-range-start" /></label>' +
+      '<label>End date<input type="date" class="msc-bulk-row-range-end" /></label>' +
+      '<div class="msc-bulk-weekday-chips" role="group" aria-label="Days of the week to include">' +
+      bulkWeekdayChipsMarkup() +
+      '</div>' +
+      '<p class="msc-bulk-date-preview" role="status"></p>' +
+      '<p class="msc-bulk-date-warning" role="alert" hidden></p>' +
+      '</div>' +
+      '<div class="msc-bulk-date-mode-panel msc-bulk-date-mode-panel--multiple" hidden>' +
+      '<label>Add a date<input type="date" class="msc-bulk-multi-date-input" /></label>' +
+      '<button type="button" class="msc-btn msc-btn-ghost msc-bulk-multi-date-add-btn">Add date</button>' +
+      '<div class="msc-bulk-multi-date-chips"></div>' +
+      '<p class="msc-bulk-date-preview" role="status"></p>' +
+      '<p class="msc-bulk-date-warning" role="alert" hidden></p>' +
+      '</div>' +
+      '</fieldset>' +
       '<label>Task title<input type="text" class="msc-bulk-row-title" maxlength="120" placeholder="e.g. Prepare weekly report" /></label>' +
       '<label>Priority<select class="msc-bulk-row-priority">' +
       '<option value="High">High</option>' +
@@ -2736,6 +2843,261 @@ function mountScheduleCalendarInstance(container) {
     return frames;
   }
 
+  /* ── Bulk Tasks multi-date expansion (REQ-CAL-BULK-DATES-001,
+     2026-08-03) — one .msc-bulk-row card can now generate its task
+     definition across several dates: single (unchanged), a weekday-
+     filtered date range, or a manually picked set of individual dates.
+     The DOM row remains the sole source of truth (this file's existing
+     convention — see the module header note above bulkRowMarkup) for
+     every one of these three modes; nothing here is mirrored into a
+     parallel JS state object. All date-list generation itself is
+     delegated to the pure, independently-tested expandTaskDates()
+     (core.js) — no date-arithmetic is duplicated here. */
+
+  function bulkRowDateModeEl(rowEl) { return rowEl.querySelector('.msc-bulk-row-date-mode'); }
+  function bulkRowDateMode(rowEl) {
+    var el = bulkRowDateModeEl(rowEl);
+    return el ? el.value : 'single';
+  }
+
+  function bulkRowDateModePanel(rowEl, mode) {
+    return rowEl.querySelector('.msc-bulk-date-mode-panel--' + mode);
+  }
+
+  /* Shows exactly the active mode's panel, hides the other two — never a
+     partial/ambiguous visible state. Does not clear any field's value
+     when switching (switching modes and back must not silently discard
+     what the user already entered in the other panel). */
+  function renderBulkRowDateModePanels(rowEl) {
+    ['single', 'range', 'multiple'].forEach(function (mode) {
+      var panelEl = bulkRowDateModePanel(rowEl, mode);
+      if (panelEl) { panelEl.hidden = (bulkRowDateMode(rowEl) !== mode); }
+    });
+  }
+
+  function bulkRowWeekdayChips(rowEl) {
+    return Array.prototype.slice.call(rowEl.querySelectorAll('.msc-bulk-weekday-chip'));
+  }
+
+  /* Reads the currently-pressed weekday chips as an array of
+     Date.getDay() values (0=Sun..6=Sat) — the exact shape
+     expandTaskDates()'s `weekdays` param expects. Always returns a real
+     array (possibly empty, when every chip is unpressed), never
+     undefined, so range mode's "omitted -> default Mon-Fri" fallback in
+     expandTaskDates() is never accidentally triggered by an unrelated
+     falsy check here — an intentionally empty selection must surface
+     expandTaskDates()'s own 'no_weekdays_selected' error, not silently
+     default back to Mon-Fri. */
+  function bulkRowSelectedWeekdays(rowEl) {
+    return bulkRowWeekdayChips(rowEl)
+      .filter(function (chip) { return chip.getAttribute('aria-pressed') === 'true'; })
+      .map(function (chip) { return parseInt(chip.getAttribute('data-weekday'), 10); });
+  }
+
+  function bulkRowMultiDateChipsEl(rowEl) { return rowEl.querySelector('.msc-bulk-multi-date-chips'); }
+
+  /* The multiple-dates picker's own selected-date state — one visible
+     chip per date, each carrying its own value in data-date. Reading this
+     back out (bulkRowSelectedDates) is a plain DOM query, matching the
+     "DOM is the state" convention already used for every other Bulk row
+     field. */
+  function bulkRowSelectedDates(rowEl) {
+    var chipsEl = bulkRowMultiDateChipsEl(rowEl);
+    if (!chipsEl) { return []; }
+    return Array.prototype.slice.call(chipsEl.querySelectorAll('.msc-bulk-date-chip'))
+      .map(function (chipEl) { return chipEl.getAttribute('data-date'); });
+  }
+
+  function bulkDateChipMarkup(dateStr) {
+    var dt = parseDateStr(dateStr);
+    var label = isNaN(dt.getTime()) ? dateStr : (pad(dt.getDate()) + ' ' + MONTH_NAMES[dt.getMonth()].slice(0, 3));
+    return '<span class="msc-bulk-date-chip" data-date="' + escapeHtml(dateStr) + '">' +
+      '<span class="msc-bulk-date-chip-label">' + escapeHtml(label) + '</span>' +
+      '<button type="button" class="msc-bulk-date-chip-remove" aria-label="Remove ' + escapeHtml(dateStr) + '">&times;</button>' +
+      '</span>';
+  }
+
+  /* Adding a date already present in this card's selection is a silent
+     no-op (approved design §6.3 — this is input hygiene within ONE task
+     definition, never a cross-task duplicate-detection concern; see
+     bulkRowGeneratedDates()/expandTaskDates()'s own separate, unrelated
+     dedup for what actually reaches the payload). */
+  function addBulkRowSelectedDate(rowEl, dateStr) {
+    if (!dateStr || !isValidDateStr(dateStr)) { return; }
+    var chipsEl = bulkRowMultiDateChipsEl(rowEl);
+    if (!chipsEl) { return; }
+    if (bulkRowSelectedDates(rowEl).indexOf(dateStr) !== -1) { return; }
+    chipsEl.insertAdjacentHTML('beforeend', bulkDateChipMarkup(dateStr));
+    var newChip = chipsEl.lastElementChild;
+    var removeBtn = newChip ? newChip.querySelector('.msc-bulk-date-chip-remove') : null;
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        newChip.parentNode.removeChild(newChip);
+        renderBulkRowDatePreview(rowEl);
+        updateBulkCreateButtonGate();
+      });
+    }
+  }
+
+  /* Calls the pure expandTaskDates() (core.js) with this row's current
+     mode/inputs — the single place any Bulk row turns its own DOM state
+     into a generated-date list. Never mutates the DOM; callers decide
+     what to do with the result (render a preview, build payload rows,
+     etc). */
+  function bulkRowGeneratedDates(rowEl) {
+    var mode = bulkRowDateMode(rowEl);
+    if (mode === 'range') {
+      var startEl = rowEl.querySelector('.msc-bulk-row-range-start');
+      var endEl = rowEl.querySelector('.msc-bulk-row-range-end');
+      return expandTaskDates({
+        mode: 'range',
+        rangeStart: startEl ? startEl.value : '',
+        rangeEnd: endEl ? endEl.value : '',
+        weekdays: bulkRowSelectedWeekdays(rowEl)
+      });
+    }
+    if (mode === 'multiple') {
+      return expandTaskDates({ mode: 'multiple', selectedDates: bulkRowSelectedDates(rowEl) });
+    }
+    var dateEl = bulkRowFieldElement(rowEl, 'date');
+    return expandTaskDates({ mode: 'single', singleDate: dateEl ? dateEl.value : '' });
+  }
+
+  /* This row's own occurrence count — generated date count × this row's
+     resolved time-frame count (Phase 10: an untimed task or a single
+     start/end pair both count as exactly 1; N time_frames counts as N).
+     A row with a still-unresolved date selection (validation errors, or
+     entirely blank) contributes 0 — it cannot yet generate any real
+     payload row, so it must not inflate the combined total. */
+  function bulkRowOccurrenceCount(rowEl) {
+    if (isBulkRowBlank(rowEl)) { return 0; }
+    var expansion = bulkRowGeneratedDates(rowEl);
+    if (expansion.errors.length) { return 0; }
+    var frameCount = collectBulkRowTimeFrames(rowEl).length;
+    return bulkCardOccurrenceCount(expansion.dates.length, frameCount); // core.js, pure/tested
+  }
+
+  /* Sum of every nonblank row's own occurrence count — delegates the
+     actual Σ(dates × frames) arithmetic to core.js's pure, independently
+     tested totalBulkOccurrenceCount (imported above as
+     sumOccurrenceCounts to avoid shadowing this DOM-reading wrapper's own
+     name) — the exact formula the backend's own check_occurrence_limit()
+     already applies (approved design §9/§10, unchanged
+     MAX_TASK_OCCURRENCES_PER_SUBMISSION = 30). */
+  function totalBulkOccurrenceCount() {
+    var counts = getBulkRows()
+      .filter(function (rowEl) { return !isBulkRowBlank(rowEl); })
+      .map(bulkRowOccurrenceCount);
+    return sumOccurrenceCounts(counts);
+  }
+
+  /* Renders the count/preview/warning for whichever mode panel is
+     currently active on this row — the single place range mode's and
+     multiple-dates mode's preview elements are ever written to. Called
+     on every relevant input change (wireBulkRowDateModeEvents below) and
+     whenever the row's mode itself changes. */
+  function renderBulkRowDatePreview(rowEl) {
+    var mode = bulkRowDateMode(rowEl);
+    if (mode !== 'range' && mode !== 'multiple') { return; }
+    var panelEl = bulkRowDateModePanel(rowEl, mode);
+    if (!panelEl) { return; }
+    var previewEl = panelEl.querySelector('.msc-bulk-date-preview');
+    var warningEl = panelEl.querySelector('.msc-bulk-date-warning');
+    var expansion = bulkRowGeneratedDates(rowEl);
+
+    if (expansion.errors.length) {
+      if (previewEl) { previewEl.textContent = ''; }
+      if (warningEl) { warningEl.textContent = expansion.errors[0].message; warningEl.hidden = false; }
+      return;
+    }
+    if (previewEl) {
+      var count = expansion.dates.length;
+      previewEl.textContent = count + (count === 1 ? ' date selected: ' : ' dates selected: ') + formatCompactDateList(expansion.dates);
+    }
+    var frameCount = collectBulkRowTimeFrames(rowEl).length;
+    var rowOccurrences = bulkCardOccurrenceCount(expansion.dates.length, frameCount);
+    if (rowOccurrences > MAX_TASK_OCCURRENCES_PER_SUBMISSION) {
+      if (warningEl) {
+        warningEl.textContent = 'This task would create ' + rowOccurrences + ' occurrences, which is more than the ' +
+          MAX_TASK_OCCURRENCES_PER_SUBMISSION + ' allowed in one submission. Reduce the date range, weekdays, or time frames.';
+        warningEl.hidden = false;
+      }
+    } else if (warningEl) {
+      warningEl.textContent = '';
+      warningEl.hidden = true;
+    }
+  }
+
+  /* Wires the date-mode selector, weekday chips, and multi-date add
+     control for one row — called once, at row creation, alongside
+     wireBulkRowEvents() below. Every handler re-renders this row's own
+     preview and refreshes the submission-wide occurrence gate, so the
+     Create button and its live summary text are always in sync with
+     whatever the user just changed, on any card. */
+  function wireBulkRowDateModeEvents(rowEl) {
+    var modeEl = bulkRowDateModeEl(rowEl);
+    if (modeEl) {
+      modeEl.addEventListener('change', function () {
+        renderBulkRowDateModePanels(rowEl);
+        clearFieldError(bulkRowFieldElement(rowEl, 'date'));
+        rowEl.classList.remove('msc-bulk-row-error', 'msc-bulk-row-duplicate-warning');
+        renderBulkRowDatePreview(rowEl);
+        refreshBulkDuplicateHints();
+        updateBulkCreateButtonGate();
+      });
+    }
+
+    var rangeStartEl = rowEl.querySelector('.msc-bulk-row-range-start');
+    var rangeEndEl = rowEl.querySelector('.msc-bulk-row-range-end');
+    [rangeStartEl, rangeEndEl].forEach(function (el) {
+      if (!el) { return; }
+      el.addEventListener('input', function () {
+        renderBulkRowDatePreview(rowEl);
+        refreshBulkDuplicateHints();
+        updateBulkCreateButtonGate();
+      });
+    });
+
+    bulkRowWeekdayChips(rowEl).forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var pressed = chip.getAttribute('aria-pressed') === 'true';
+        chip.setAttribute('aria-pressed', pressed ? 'false' : 'true');
+        renderBulkRowDatePreview(rowEl);
+        refreshBulkDuplicateHints();
+        updateBulkCreateButtonGate();
+      });
+    });
+
+    var multiDateInputEl = rowEl.querySelector('.msc-bulk-multi-date-input');
+    var multiDateAddBtn = rowEl.querySelector('.msc-bulk-multi-date-add-btn');
+    if (multiDateAddBtn) {
+      multiDateAddBtn.addEventListener('click', function () {
+        if (!multiDateInputEl || !multiDateInputEl.value) { return; }
+        addBulkRowSelectedDate(rowEl, multiDateInputEl.value);
+        multiDateInputEl.value = '';
+        renderBulkRowDatePreview(rowEl);
+        refreshBulkDuplicateHints();
+        updateBulkCreateButtonGate();
+        multiDateInputEl.focus();
+      });
+    }
+    // Wires the "Remove <date>" button on every chip already present at
+    // row-creation time (there are none yet for a freshly-created row —
+    // addBulkRowSelectedDate() above wires each chip it creates itself —
+    // this loop exists only for symmetry/defensiveness, a no-op today).
+    bulkRowMultiDateChipsEl(rowEl) && Array.prototype.slice.call(
+      bulkRowMultiDateChipsEl(rowEl).querySelectorAll('.msc-bulk-date-chip-remove')
+    ).forEach(function (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        var chipEl = removeBtn.parentNode;
+        chipEl.parentNode.removeChild(chipEl);
+        renderBulkRowDatePreview(rowEl);
+        refreshBulkDuplicateHints();
+        updateBulkCreateButtonGate();
+      });
+    });
+  }
+
   function wireBulkRowEvents(rowEl) {
     var removeBtn = rowEl.querySelector('.msc-bulk-row-remove');
     if (removeBtn) { removeBtn.addEventListener('click', function () { removeBulkRow(rowEl); }); }
@@ -2774,8 +3136,10 @@ function mountScheduleCalendarInstance(container) {
     var rows = getBulkRows();
     var newRow = rows[rows.length - 1];
     wireBulkRowEvents(newRow);
+    wireBulkRowDateModeEvents(newRow);
     renderBulkRowNumbers();
     applyRowLeaveGate(newRow);
+    updateBulkCreateButtonGate();
     return newRow;
   }
 
@@ -2814,20 +3178,43 @@ function mountScheduleCalendarInstance(container) {
      Toggles that row's own inline note and returns whether it is
      currently blocked; updateBulkCreateButtonGate() below aggregates
      across every row to decide whether submission is allowed at all. */
+  /* REQ-CAL-BULK-DATES-001 (2026-08-03) extension — a range/multiple-dates
+     row can now generate several dates; this checks EVERY generated date
+     (not just one), so a row is flagged blocked if any single generated
+     date falls on active Full-Day/Multi-Day leave. Single mode is
+     byte-for-byte unchanged (bulkRowGeneratedDates() for 'single' mode
+     always yields exactly the one date the old direct dateEl.value check
+     already read). An unresolved/errored date selection is never itself
+     treated as "leave-blocked" — that is a distinct error surfaced by
+     bulkRowFieldErrors()/renderBulkRowDatePreview() instead. */
   function applyRowLeaveGate(rowEl) {
-    var dateEl = bulkRowFieldElement(rowEl, 'date');
     var noteEl = rowEl.querySelector('.msc-bulk-leave-blocked-note');
-    var blocked = !!(dateEl && dateEl.value && isDateFullyLeaveBlocked(dateEl.value));
+    var expansion = bulkRowGeneratedDates(rowEl);
+    var blocked = !expansion.errors.length && expansion.dates.some(function (d) { return isDateFullyLeaveBlocked(d); });
     if (noteEl) { noteEl.hidden = !blocked; }
     rowEl.classList.toggle('msc-bulk-row-leave-blocked', blocked);
     return blocked;
   }
 
   function updateBulkCreateButtonGate() {
-    var anyBlocked = getBulkRows().reduce(function (blocked, rowEl) {
+    var rows = getBulkRows();
+    var anyBlocked = rows.reduce(function (blocked, rowEl) {
       return applyRowLeaveGate(rowEl) || blocked;
     }, false);
-    if (bulkCreateBtn) { bulkCreateBtn.disabled = anyBlocked; }
+    rows.forEach(renderBulkRowDatePreview);
+    var totalOccurrences = totalBulkOccurrenceCount();
+    var overLimit = totalOccurrences > MAX_TASK_OCCURRENCES_PER_SUBMISSION;
+    if (bulkOccurrenceSummaryEl) {
+      var nonblankRowCount = rows.filter(function (rowEl) { return !isBulkRowBlank(rowEl); }).length;
+      var summary = nonblankRowCount + (nonblankRowCount === 1 ? ' task row' : ' task rows') +
+        ' • ' + totalOccurrences + (totalOccurrences === 1 ? ' occurrence' : ' occurrences');
+      if (overLimit) {
+        summary += ' — exceeds the ' + MAX_TASK_OCCURRENCES_PER_SUBMISSION + ' allowed. Reduce dates or time frames.';
+      }
+      bulkOccurrenceSummaryEl.textContent = summary;
+      bulkOccurrenceSummaryEl.classList.toggle('msc-bulk-occurrence-summary--over-limit', overLimit);
+    }
+    if (bulkCreateBtn) { bulkCreateBtn.disabled = anyBlocked || overLimit; }
   }
 
   function clearBulkFormErrors() {
@@ -2880,13 +3267,22 @@ function mountScheduleCalendarInstance(container) {
      finds (Step 17: "does not replace backend validation"). */
   function bulkRowFieldErrors(rowEl) {
     var errors = [];
-    var dateVal = bulkRowFieldElement(rowEl, 'date').value;
-    if (!dateVal) {
-      /* CONFIRMED ADD-ROW DATE RULE rule 6 — never invented; a row that
-         reaches submit with no Date (its own, or copied blank from the
-         row before it) is a plain required-field error, exactly like a
-         missing title. */
-      errors.push({ field: 'date', message: 'Choose a date for this task.' });
+    /* REQ-CAL-BULK-DATES-001 (2026-08-03) — date validation now delegates
+       to bulkRowGeneratedDates()/expandTaskDates() for every mode,
+       including 'single'. This is a strict superset of the prior
+       behavior: in single mode expandTaskDates({mode:'single',
+       singleDate: dateEl.value}) returns exactly the same
+       date_required error for an empty/invalid date that the old
+       `if (!dateVal)` check produced (CONFIRMED ADD-ROW DATE RULE rule 6
+       — a row with no Date is a plain required-field error, exactly like
+       a missing title), so single-mode behavior is unchanged
+       byte-for-byte; range/multiple mode now surface their own
+       structured errors (empty range, inverted range, no weekdays
+       selected, no dates selected, invalid date) through this exact same
+       path instead of a generic "Choose a date" message. */
+    var dateExpansion = bulkRowGeneratedDates(rowEl);
+    if (dateExpansion.errors.length) {
+      errors.push({ field: 'date', message: dateExpansion.errors[0].message });
     }
     var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
     if (!title) {
@@ -2934,6 +3330,22 @@ function mountScheduleCalendarInstance(container) {
   }
 
   function bulkDuplicateKey(rowEl) {
+    /* REQ-CAL-BULK-DATES-001 (2026-08-03) — this early, non-blocking hint
+       can only ever compare ONE date per row (mirrors the backend's own
+       per-row-date key exactly as before). A range/multiple-dates row
+       generates several dates, so there is no single meaningful "this
+       row's date" to key on any more — rather than key on an arbitrary
+       one of those generated dates (which would produce a misleading
+       hint that only ever caught one of several real collisions), such a
+       row is deliberately given a unique, never-grouping key here. This
+       does not weaken real duplicate protection in any way: the
+       backend's authoritative per-generated-date duplicate check
+       (performBulkSubmit -> POST .../bulk) still runs unchanged against
+       every expanded row regardless of what this purely-cosmetic hint
+       shows. */
+    if (bulkRowDateMode(rowEl) !== 'single') {
+      return 'multi-date-row:' + (rowEl.getAttribute('data-bulk-row-seq') || '');
+    }
     var date = bulkRowFieldElement(rowEl, 'date').value || '';
     var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim().toLowerCase();
     var start = bulkRowFieldElement(rowEl, 'start').value || '';
@@ -2969,12 +3381,19 @@ function mountScheduleCalendarInstance(container) {
     });
   }
 
-  function rowElToPayloadRow(rowEl) {
-    var date = bulkRowFieldElement(rowEl, 'date').value;
+  /* Every field EXCEPT `date` — title/priority/notes/time-frame(s) —
+     entered once per card and copied verbatim to every generated date
+     (approved design §6.4/§8). Read only once per row, never re-read per
+     generated date, so every payload row this card produces is
+     guaranteed field-identical apart from `date` (approved design §8
+     item 2 / test-plan condition 4). Byte-for-byte the same field-
+     building logic the pre-existing rowElToPayloadRow always used — only
+     `date` itself has been factored out, since it is now the one field
+     that legitimately varies per generated row. */
+  function bulkRowSharedFields(rowEl) {
     var title = (bulkRowFieldElement(rowEl, 'title').value || '').trim();
     var notes = (bulkRowFieldElement(rowEl, 'notes').value || '').trim();
     var row = {
-      date: date ? date : null,
       title: title,
       priority: bulkRowFieldElement(rowEl, 'priority').value,
       notes: notes ? notes : null
@@ -2997,6 +3416,28 @@ function mountScheduleCalendarInstance(container) {
       });
     }
     return row;
+  }
+
+  /* REQ-CAL-BULK-DATES-001 (2026-08-03) — the payload-generation entry
+     point for ONE .msc-bulk-row card: expand its date-selection mode into
+     a list of dates (bulkRowGeneratedDates -> the pure, tested
+     expandTaskDates() in core.js), then produce one existing
+     BulkTaskRowIn-shaped object per generated date, sharing every other
+     field verbatim (bulkRowSharedFields above). A single-date-mode card
+     always produces exactly one row here — byte-for-byte the same object
+     shape the old rowElToPayloadRow always built for that case (approved
+     design §8 item 3 — single-date-mode behavior is unchanged).
+     Never sends any date-mode metadata (mode/weekdays/etc.) to the
+     backend — only the plain, existing per-row fields the endpoint has
+     always accepted. Returns { rows, errors } — errors is the exact
+     structured list from expandTaskDates(); callers must surface those
+     inline and exclude this card from the submission entirely, never
+     silently drop it with zero explanation. */
+  function rowElToPayloadRows(rowEl) {
+    var expansion = bulkRowGeneratedDates(rowEl);
+    if (expansion.errors.length) { return { rows: [], errors: expansion.errors }; }
+    var shared = bulkRowSharedFields(rowEl);
+    return { rows: buildBulkPayloadRowsForDates(shared, expansion.dates), errors: [] }; // core.js, pure/tested
   }
 
   /* Step 15 (full-day-leave-blocks-create task, 2026-07-23; per-row gating
@@ -3048,7 +3489,7 @@ function mountScheduleCalendarInstance(container) {
     return frameEl.querySelector(field === 'end' ? '.msc-time-frame-end' : '.msc-time-frame-start');
   }
 
-  function applyBulkRowErrors(errorList) {
+  function applyBulkRowErrors(errorList, positionMap) {
     var firstFieldEl = null;
     (errorList || []).forEach(function (e) {
       if (e.row == null) {
@@ -3063,7 +3504,7 @@ function mountScheduleCalendarInstance(container) {
         showToast({ type: 'error', title: title, message: e.message });
         return;
       }
-      var rowEl = getBulkRowByNumber(e.row);
+      var rowEl = bulkRowFromPositionMap(positionMap, e.row);
       if (!rowEl) { return; }
       rowEl.classList.add('msc-bulk-row-error');
       /* FRAME-LEVEL ERROR CONTEXT (2026-07-27) — e.time_frame_index set
@@ -3152,12 +3593,12 @@ function mountScheduleCalendarInstance(container) {
      batch with confirm_duplicates=true — the backend revalidates
      everything again inside its own transaction; this never trusts the
      warnings shown here as still current. */
-  function showBulkDuplicateConfirmation(warnings) {
+  function showBulkDuplicateConfirmation(warnings, positionMap) {
     getBulkRows().forEach(function (rowEl) { rowEl.classList.remove('msc-bulk-row-duplicate-warning'); });
     var firstRowEl = null;
     (warnings || []).forEach(function (w) {
       (w.rows || []).forEach(function (rowNumber) {
-        var rowEl = getBulkRowByNumber(rowNumber);
+        var rowEl = bulkRowFromPositionMap(positionMap, rowNumber);
         if (rowEl) {
           rowEl.classList.add('msc-bulk-row-duplicate-warning');
           if (!firstRowEl) { firstRowEl = rowEl; }
@@ -3187,19 +3628,70 @@ function mountScheduleCalendarInstance(container) {
   /* The one place that actually calls the bulk endpoint — used both by
      the initial submit (confirmDuplicates=false) and the duplicate-
      confirmation dialog's "Create tasks anyway" (confirmDuplicates=true).
-     Every row currently in the DOM is sent, in order, INCLUDING blank
-     ones — row numbers in every backend response are 1-indexed positions
-     in this same array, so they always match exactly what the user sees
-     as "Row N" regardless of which rows are blank (Step 5/18). */
+     Every row currently in the DOM contributes at least one entry, in
+     card order, INCLUDING blank ones — this preserves the pre-existing
+     one-entry-per-DOM-row invariant every backend row number depends on.
+     REQ-CAL-BULK-DATES-001 (2026-08-03): a NONBLANK card whose date mode
+     is range/multiple can now contribute MORE than one entry (one per
+     generated date, in ascending date order — approved design §8 item
+     3), so `positionMap` (parallel to `tasks`, built fresh on every call)
+     is what `applyBulkRowErrors`/`showBulkDuplicateConfirmation` use to
+     resolve a backend-reported array position back to the right DOM
+     card — plain array-index parity with getBulkRows() no longer holds
+     once any card has expanded to 2+ dates. */
+  function bulkRowRawSingleDateValue(rowEl) {
+    // Only single mode has one plain date value to fall back to for a
+    // blank row; a blank range/multiple-mode card contributes date:null,
+    // matching the pre-existing "an entirely blank row still submits one
+    // row, date possibly null" behavior exactly.
+    if (bulkRowDateMode(rowEl) !== 'single') { return null; }
+    var dateEl = rowEl.querySelector('.msc-bulk-row-date');
+    var val = dateEl ? dateEl.value : '';
+    return val ? val : null;
+  }
+
   function performBulkSubmit(confirmDuplicates, confirmationFingerprint) {
-    var tasks = getBulkRows().map(rowElToPayloadRow);
+    var tasks = [];
+    var positionMap = [];
+    getBulkRows().forEach(function (rowEl) {
+      if (isBulkRowBlank(rowEl)) {
+        var blankShared = bulkRowSharedFields(rowEl);
+        var blankRow = { date: bulkRowRawSingleDateValue(rowEl) };
+        Object.keys(blankShared).forEach(function (key) { blankRow[key] = blankShared[key]; });
+        tasks.push(blankRow);
+        positionMap.push(rowEl);
+        return;
+      }
+      var expansion = rowElToPayloadRows(rowEl);
+      /* A nonblank card reaching here has already passed the pre-submit
+         bulkRowFieldErrors() gate (zero date-selection errors) — this
+         fallback only guards a stale/race edge case (DOM changed between
+         that gate check and this call), and still contributes exactly
+         one row rather than silently dropping the card and
+         desynchronizing every later row's number. */
+      if (expansion.errors.length) {
+        var fallbackShared = bulkRowSharedFields(rowEl);
+        var fallbackRow = { date: bulkRowRawSingleDateValue(rowEl) };
+        Object.keys(fallbackShared).forEach(function (key) { fallbackRow[key] = fallbackShared[key]; });
+        tasks.push(fallbackRow);
+        positionMap.push(rowEl);
+        return;
+      }
+      expansion.rows.forEach(function (payloadRow) {
+        tasks.push(payloadRow);
+        positionMap.push(rowEl);
+      });
+    });
     /* No top-level common `date` any more — every row carries its own
        (CONFIRMED ADD-ROW DATE RULE, 2026-07-24); the backend validates
        and stores each row against its own date (backend/schemas.py
        BulkTaskRowIn.date). confirmation_fingerprint (2026-07-27, LUNCH-BREAK
        AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION) is only ever attached
        when resubmitting after a schedule_confirmation_required response —
-       see the catch handler below. */
+       see the catch handler below. No date-mode metadata (mode/weekdays/
+       selectedDates) is ever included — only the plain, existing per-row
+       fields the endpoint has always accepted (approved design §8
+       item 4). */
     var payload = { tasks: tasks, confirm_duplicates: !!confirmDuplicates };
     if (confirmationFingerprint) { payload.confirmation_fingerprint = confirmationFingerprint; }
     return apiRequest('POST', apiBase + '/bulk', payload).then(function (result) {
@@ -3229,9 +3721,9 @@ function mountScheduleCalendarInstance(container) {
     }).catch(function (err) {
       if (err.code === 'bulk_validation_failed') {
         clearBulkFormErrors();
-        applyBulkRowErrors(err.errors);
+        applyBulkRowErrors(err.errors, positionMap);
       } else if (err.code === 'bulk_duplicate_confirmation_required') {
-        showBulkDuplicateConfirmation(err.warnings);
+        showBulkDuplicateConfirmation(err.warnings, positionMap);
       } else if (err.code === 'schedule_confirmation_required') {
         /* LUNCH-BREAK AND DIFFERENT-TITLE TASK-OVERLAP CONFIRMATION
            (2026-07-27) — independent bypass token from confirm_duplicates
@@ -3306,6 +3798,28 @@ function mountScheduleCalendarInstance(container) {
         }
       });
       if (hasError) { focusFirstInvalid(bulkFormEl); return; }
+
+      /* REQ-CAL-BULK-DATES-001 (2026-08-03) — combined generated-
+         occurrence pre-submit block (approved design §9/§10, Phase 10).
+         Every nonblank card has already been validated error-free above,
+         so this is purely a magnitude check: Σ(generated dates × that
+         card's own resolved time-frame count) across every card. This is
+         an EARLY, non-authoritative check only — it never replaces the
+         backend's own unchanged check_occurrence_limit() (still the sole
+         authoritative gate for a client that bypasses this, e.g. a
+         direct API call); it exists solely so a submission that would
+         obviously be rejected server-side never even reaches the
+         network. Zero requests are sent when this fires. */
+      var totalOccurrences = totalBulkOccurrenceCount();
+      if (totalOccurrences > MAX_TASK_OCCURRENCES_PER_SUBMISSION) {
+        showToast({
+          type: 'error',
+          title: 'Too many task times',
+          message: 'This submission would create ' + totalOccurrences + ' occurrences, which is more than the ' +
+            MAX_TASK_OCCURRENCES_PER_SUBMISSION + ' allowed. Reduce the date ranges, weekdays, multiple dates, or time frames.'
+        });
+        return;
+      }
 
       bulkSubmitInFlight = true;
       setButtonBusy(bulkCreateBtn, true, { busyLabel: 'Creating…' });

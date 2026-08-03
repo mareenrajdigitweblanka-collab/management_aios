@@ -143,6 +143,162 @@ export function isValidDateStr(s) {
   var d = parseDateStr(s);
   return !isNaN(d.getTime());
 }
+
+/* Bulk Tasks multi-date expansion (REQ-CAL-BULK-DATES-001, 2026-08-03) —
+   Monday=1 .. Sunday=0/7 is NOT used here; this codebase's existing
+   convention (parseDateStr/expandWeekdaysClientSide above) is native
+   Date.getDay(): 0=Sunday .. 6=Saturday. DEFAULT_RANGE_WEEKDAYS mirrors the
+   approved business decision (Monday-Friday selected by default; weekends
+   selectable but off by default) using that same convention. */
+export var DEFAULT_RANGE_WEEKDAYS = [1, 2, 3, 4, 5]; // Mon..Fri, Date.getDay() values
+
+/* expandTaskDates({ mode, singleDate, rangeStart, rangeEnd, weekdays,
+   selectedDates }) -> { dates: string[], errors: [{code, message}] }
+
+   Pure — no DOM access, no network call, no global/current-date dependency,
+   no mutation of any input (weekdays/selectedDates arrays are only ever
+   read via .filter()/.indexOf(), never assigned into). Deterministic: the
+   same input always produces the same output. Reuses this file's existing
+   local-calendar-day date handling (parseDateStr/toDateStr, both already
+   used by expandWeekdaysClientSide above) rather than introducing a second
+   timezone-handling approach — dates are always constructed via
+   `new Date(dateStr + 'T00:00:00')` and always read back via local getters
+   (.getFullYear()/.getMonth()/.getDate()/.getDay()), never mixed with UTC
+   getters/setters, so there is no timezone-conversion drift regardless of
+   the browser's local timezone.
+
+   Every failure path returns a structured {code, message} entry — never a
+   thrown exception, and never a silently empty `dates` array with no
+   explanation attached. */
+export function expandTaskDates(params) {
+  params = params || {};
+
+  if (params.mode === 'single') {
+    if (!params.singleDate || !isValidDateStr(params.singleDate)) {
+      return { dates: [], errors: [{ code: 'date_required', message: 'Choose a date.' }] };
+    }
+    return { dates: [params.singleDate], errors: [] };
+  }
+
+  if (params.mode === 'range') {
+    var errors = [];
+    var start = params.rangeStart;
+    var end = params.rangeEnd;
+    if (!start || !isValidDateStr(start)) { errors.push({ code: 'start_date_required', message: 'Choose a start date.' }); }
+    if (!end || !isValidDateStr(end)) { errors.push({ code: 'end_date_required', message: 'Choose an end date.' }); }
+    if (errors.length) { return { dates: [], errors: errors }; }
+    if (start > end) {
+      return { dates: [], errors: [{ code: 'range_inverted', message: 'End date must not be before start date.' }] };
+    }
+    // Distinguish "weekdays omitted entirely" (undefined/null -> default
+    // Mon-Fri) from "weekdays explicitly passed as an empty array" (every
+    // weekday chip unchecked -> a real, reportable error) — a `.length`
+    // truthiness check alone cannot tell these two cases apart, since an
+    // empty array is falsy either way.
+    var weekdaySet = (params.weekdays === undefined || params.weekdays === null) ? DEFAULT_RANGE_WEEKDAYS : params.weekdays;
+    if (!weekdaySet.length) {
+      return { dates: [], errors: [{ code: 'no_weekdays_selected', message: 'Select at least one day of the week.' }] };
+    }
+    var out = [];
+    var cur = parseDateStr(start);
+    var endDate = parseDateStr(end);
+    while (cur <= endDate) {
+      if (weekdaySet.indexOf(cur.getDay()) !== -1) { out.push(toDateStr(cur)); }
+      cur.setDate(cur.getDate() + 1);
+    }
+    if (out.length === 0) {
+      return {
+        dates: [],
+        errors: [{
+          code: 'empty_range',
+          message: 'This range and weekday selection produces no dates. Adjust the range or include a weekend day.'
+        }]
+      };
+    }
+    return { dates: out, errors: [] }; // already ascending — built by forward iteration; unique by construction (one calendar-day visit each)
+  }
+
+  if (params.mode === 'multiple') {
+    var selected = params.selectedDates || [];
+    var invalid = selected.filter(function (d) { return !isValidDateStr(d); });
+    if (invalid.length) {
+      return { dates: [], errors: [{ code: 'invalid_date_in_list', message: 'One or more selected dates is invalid.' }] };
+    }
+    var unique = selected.filter(function (d, i) { return selected.indexOf(d) === i; }).slice().sort();
+    if (unique.length === 0) {
+      return { dates: [], errors: [{ code: 'no_dates_selected', message: 'Add at least one date.' }] };
+    }
+    return { dates: unique, errors: [] };
+  }
+
+  return { dates: [], errors: [{ code: 'invalid_mode', message: 'Choose a date selection mode.' }] };
+}
+
+/* Bulk Tasks multi-date payload/occurrence helpers (REQ-CAL-BULK-DATES-001,
+   2026-08-03) — pure, DOM-free, so the actual decision logic driving one
+   task-definition card's expansion into several BulkTaskRowIn-shaped
+   payload rows is independently testable without mounting
+   calendar/instance.js (which has no DOM-level test coverage anywhere in
+   this repository — see calendar/instance.js's own module header note;
+   this file's existing pure/DOM-free helpers, e.g. classifyTimeFrameSet
+   and frontendToMultiFramePayload above, are exactly this same
+   "extract the logic, leave the DOM wiring untested" pattern). */
+
+/* Builds one payload row per already-resolved date, copying every OTHER
+   field verbatim from `sharedFields` (title/priority/notes/start+end or
+   time_frames) — never re-reading or varying it per date, so every row
+   this produces is guaranteed field-identical apart from `date` (approved
+   design §8 item 2). No date-mode metadata (mode/weekdays/selectedDates)
+   is ever included in the output — only plain fields the existing
+   BulkTaskCreateRequest.tasks[] contract already accepts. Does not mutate
+   `sharedFields` or `dates`. */
+export function buildBulkPayloadRowsForDates(sharedFields, dates) {
+  var fields = sharedFields || {};
+  return (dates || []).map(function (d) {
+    var row = { date: d };
+    Object.keys(fields).forEach(function (key) { row[key] = fields[key]; });
+    return row;
+  });
+}
+
+/* One task definition's own occurrence count: generated date count x
+   resolved time-frame count for that card (Phase 10 — an untimed task or
+   a single start/end pair both count as exactly 1 occurrence per date; N
+   time_frames counts as N). frameCount is clamped to a minimum of 1 so a
+   caller that (incorrectly) passes 0 never produces a negative or
+   nonsensical result. */
+export function bulkCardOccurrenceCount(dateCount, frameCount) {
+  var dates = dateCount || 0;
+  var frames = frameCount && frameCount > 0 ? frameCount : 1;
+  return dates * frames;
+}
+
+/* Sums every card's own occurrence count — the exact Σ(dates x frames)
+   formula the backend's own check_occurrence_limit() already applies
+   (approved design §9/§10). Pure; does not mutate its input. */
+export function totalBulkOccurrenceCount(cardOccurrenceCounts) {
+  return (cardOccurrenceCounts || []).reduce(function (sum, n) { return sum + (n || 0); }, 0);
+}
+
+/* "10 Aug, 11 Aug, 12 Aug, 13 Aug, 14 Aug + 12 more dates" — shows up to
+   `maxInline` dates (default 5, matching the approved design's own
+   example), then collapses the remainder rather than rendering an
+   unbounded list. Display formatting only — never changes what is
+   actually submitted (buildBulkPayloadRowsForDates above is the only
+   payload source of truth). Does not mutate `dateStrs`. */
+export function formatCompactDateList(dateStrs, maxInline) {
+  var cap = maxInline || 5;
+  var list = dateStrs || [];
+  var shown = list.slice(0, cap).map(function (d) {
+    var dt = parseDateStr(d);
+    return pad(dt.getDate()) + ' ' + MONTH_NAMES[dt.getMonth()].slice(0, 3);
+  });
+  var remaining = list.length - shown.length;
+  var text = shown.join(', ');
+  if (remaining > 0) { text += (text ? ' ' : '') + '+ ' + remaining + ' more date' + (remaining === 1 ? '' : 's'); }
+  return text;
+}
+
 export function timeToMinutes(t) {
   if (!t) return 0;
   var parts = String(t).split(':');
