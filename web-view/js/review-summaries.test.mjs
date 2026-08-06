@@ -104,6 +104,22 @@ function findByTag(root, tagName) {
   return null;
 }
 
+/* REQ-CAL-REV-UX-005 — the card metadata block is now dt/dd pairs
+   (label + value each their own element, never one combined "Label:
+   value" text run) rather than a single labeled span. Finds the value
+   element for a given label by walking each .review-summaries-card-meta-
+   row and matching its own .review-summaries-card-meta-label text. */
+function findMetaValue(root, label) {
+  var rows = findAllByClass(root, 'review-summaries-card-meta-row');
+  for (var i = 0; i < rows.length; i++) {
+    var dt = findByClass(rows[i], 'review-summaries-card-meta-label');
+    if (dt && dt.textContent === label) {
+      return findByClass(rows[i], 'review-summaries-card-meta-value');
+    }
+  }
+  return null;
+}
+
 var AUTHORIZED = { token: 'test-only-frontend-token', memberKey: 'mayurika' };
 var ARUN_AUTHORIZED = { token: 'test-only-frontend-token-arun', memberKey: 'arun' };
 var CALENDAR_AUTH_CHANGED_EVENT_NAME = 'management-aios:calendar-auth-changed';
@@ -601,7 +617,7 @@ test('owned + editable record shows Edit; a card from another reviewer does not'
   assert.equal(findAllByClass(mountEl, 'review-summaries-delete-btn').length, 0, 'no Delete button exists anywhere any more');
 });
 
-test('owned but no-longer-editable record shows the locked message and no Edit button', async (t) => {
+test('owned but no-longer-editable record shows the Read-only badge, the locked message, and no Edit button', async (t) => {
   var locked = fakeSummaryRecord({ id: 'sum-locked', reviewer_member_key: 'mayurika', summary_text: 'Mine, but expired.', can_edit: false });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [locked], total: 1, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
@@ -613,11 +629,13 @@ test('owned but no-longer-editable record shows the locked message and no Edit b
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   assert.equal(findByClass(mountEl, 'review-summaries-edit-btn'), null, 'no Edit button once the edit window has closed');
-  var statusEl = findByClass(mountEl, 'review-summaries-card-edit-status');
-  assert.equal(statusEl.textContent, 'Editing period ended. This review summary is now read-only.');
+  var badge = findByClass(mountEl, 'review-summaries-card-status-badge');
+  assert.match(badge.textContent, /Read-only$/);
+  var statusEl = findByClass(mountEl, 'review-summaries-card-status-message');
+  assert.equal(statusEl.textContent, 'Read-only — the same-day editing window has ended.');
 });
 
-test('owned + editable record shows the "Editable until 11:59 PM today." status line', async (t) => {
+test('owned + editable record shows the Editable today badge and its Asia/Colombo message', async (t) => {
   var own = fakeSummaryRecord({ id: 'sum-editable', reviewer_member_key: 'mayurika', can_edit: true });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [own], total: 1, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
@@ -628,12 +646,16 @@ test('owned + editable record shows the "Editable until 11:59 PM today." status 
   api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var statusEl = findByClass(mountEl, 'review-summaries-card-edit-status');
-  assert.equal(statusEl.textContent, 'Editable until 11:59 PM today.');
-  assert.ok(findByClass(mountEl, 'review-summaries-edit-btn'), 'Edit button still renders alongside the status line');
+  var badge = findByClass(mountEl, 'review-summaries-card-status-badge');
+  assert.match(badge.textContent, /Editable today$/);
+  var statusEl = findByClass(mountEl, 'review-summaries-card-status-message');
+  assert.equal(statusEl.textContent, 'Editable today until 11:59 PM (Asia/Colombo).');
+  assert.match(statusEl.textContent, /11:59 PM/);
+  assert.match(statusEl.textContent, /Asia\/Colombo/);
+  assert.ok(findByClass(mountEl, 'review-summaries-edit-btn'), 'Edit button still renders alongside the status message');
 });
 
-test('a card from another reviewer never shows an edit-status line, editable or locked', async (t) => {
+test('a card from another reviewer shows a Read-only badge and the other-reviewer explanation, never an Edit button', async (t) => {
   var other = fakeSummaryRecord({ id: 'sum-other', reviewer_member_key: 'arun', can_edit: false });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [other], total: 1, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
@@ -644,7 +666,32 @@ test('a card from another reviewer never shows an edit-status line, editable or 
   api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  assert.equal(findByClass(mountEl, 'review-summaries-card-edit-status'), null, 'a non-owned card gets no status line at all — unchanged read-only rendering');
+  var badge = findByClass(mountEl, 'review-summaries-card-status-badge');
+  assert.match(badge.textContent, /Read-only$/);
+  var statusEl = findByClass(mountEl, 'review-summaries-card-status-message');
+  assert.equal(statusEl.textContent, 'Read-only — only the reviewer who created this summary can edit it.');
+  assert.equal(findByClass(mountEl, 'review-summaries-edit-btn'), null);
+  assert.ok(!/Admin/i.test(statusEl.textContent), 'must never imply an Admin override exists');
+});
+
+test('exactly one status badge renders per card, for owned-editable, owned-locked, and other-reviewer alike', async (t) => {
+  var owned = fakeSummaryRecord({ id: 'sum-a', reviewer_member_key: 'mayurika', can_edit: true });
+  var locked = fakeSummaryRecord({ id: 'sum-b', reviewer_member_key: 'mayurika', can_edit: false });
+  var other = fakeSummaryRecord({ id: 'sum-c', reviewer_member_key: 'arun', can_edit: false });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [owned, locked, other], total: 3, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var cards = findAllByClass(mountEl, 'review-summaries-card');
+  assert.equal(cards.length, 3);
+  cards.forEach(function (card) {
+    assert.equal(findAllByClass(card, 'review-summaries-card-status-badge').length, 1, 'exactly one badge per card');
+  });
 });
 
 test('no Delete button ever renders, for any card, owned or not', async (t) => {
@@ -718,13 +765,10 @@ test('each card shows reviewed employee, reviewer display name, reviewer role, a
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   var employeeEl = findByClass(mountEl, 'review-summaries-card-employee');
-  var reviewedByEl = findByClass(mountEl, 'review-summaries-card-reviewed-by');
-  var roleEl = findByClass(mountEl, 'review-summaries-card-reviewer-role');
-  var dateEl = findByClass(mountEl, 'review-summaries-card-date');
   assert.equal(employeeEl.textContent, 'Reviewed employee: Jane Employee (Janie)');
-  assert.equal(reviewedByEl.textContent, 'Reviewed by: Suman');
-  assert.equal(roleEl.textContent, 'Reviewer role: Recruiting Officer');
-  assert.equal(dateEl.textContent, 'Meeting date: 2026-08-04');
+  assert.equal(findMetaValue(mountEl, 'Reviewed by').textContent, 'Suman');
+  assert.equal(findMetaValue(mountEl, 'Reviewer role').textContent, 'Recruiting Officer');
+  assert.equal(findMetaValue(mountEl, 'Meeting date').textContent, '2026-08-04');
 });
 
 test('Paraparan-authored card shows the Auditor role, sourced from the member registry', async (t) => {
@@ -738,10 +782,8 @@ test('Paraparan-authored card shows the Auditor role, sourced from the member re
   api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var reviewedByEl = findByClass(mountEl, 'review-summaries-card-reviewed-by');
-  var roleEl = findByClass(mountEl, 'review-summaries-card-reviewer-role');
-  assert.equal(reviewedByEl.textContent, 'Reviewed by: Paraparan');
-  assert.equal(roleEl.textContent, 'Reviewer role: Auditor');
+  assert.equal(findMetaValue(mountEl, 'Reviewed by').textContent, 'Paraparan');
+  assert.equal(findMetaValue(mountEl, 'Reviewer role').textContent, 'Auditor');
 });
 
 test('an unrecognized reviewer_member_key resolves to Unknown/Unknown, never a fabricated value', async (t) => {
@@ -755,10 +797,64 @@ test('an unrecognized reviewer_member_key resolves to Unknown/Unknown, never a f
   api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var reviewedByEl = findByClass(mountEl, 'review-summaries-card-reviewed-by');
-  var roleEl = findByClass(mountEl, 'review-summaries-card-reviewer-role');
-  assert.equal(reviewedByEl.textContent, 'Reviewed by: Unknown');
-  assert.equal(roleEl.textContent, 'Reviewer role: Unknown');
+  assert.equal(findMetaValue(mountEl, 'Reviewed by').textContent, 'Unknown');
+  assert.equal(findMetaValue(mountEl, 'Reviewer role').textContent, 'Unknown');
+});
+
+test('a "Review summary" label appears above the summary text', async (t) => {
+  var record = fakeSummaryRecord({});
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var label = findByClass(mountEl, 'review-summaries-card-summary-label');
+  assert.equal(label.textContent, 'Review summary');
+});
+
+test('card footer shows Created and Updated timestamps from the existing created_at/updated_at fields', async (t) => {
+  var record = fakeSummaryRecord({ created_at: '2026-08-01T04:30:00Z', updated_at: '2026-08-01T09:15:00Z' });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var footer = findByClass(mountEl, 'review-summaries-card-footer');
+  assert.match(footer.allText(), /Created:/);
+  assert.match(footer.allText(), /Updated:/);
+  // No new backend field — reuses the same created_at/updated_at values
+  // already present on every fakeSummaryRecord/real API response.
+  assert.match(footer.allText(), /2026-08-01/);
+});
+
+test('the secondary "Updated" label appears (with an accessible explanation) only when updated_at differs from created_at, never as the primary badge', async (t) => {
+  var edited = fakeSummaryRecord({ id: 'sum-edited', created_at: '2026-08-01T09:00:00Z', updated_at: '2026-08-01T10:00:00Z' });
+  var untouched = fakeSummaryRecord({ id: 'sum-untouched', reviewer_member_key: 'arun', created_at: '2026-08-01T09:00:00Z', updated_at: '2026-08-01T09:00:00Z' });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [edited, untouched], total: 2, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var updatedLabels = findAllByClass(mountEl, 'review-summaries-card-updated-label');
+  assert.equal(updatedLabels.length, 1, 'only the edited record gets the secondary label');
+  assert.equal(updatedLabels[0].textContent, 'Updated');
+  assert.match(updatedLabels[0].getAttribute('aria-label') || '', /edited since it was created/i);
+  // The status badge stays the primary state indicator either way — it
+  // never itself contains the word "Updated".
+  var badges = findAllByClass(mountEl, 'review-summaries-card-status-badge');
+  badges.forEach(function (b) { assert.equal(b.textContent.indexOf('Updated'), -1); });
 });
 
 test('no reviewer display name/role is ever present in the request body sent to the server', async (t) => {
@@ -1773,6 +1869,108 @@ test('a successful export resets exportInFlight and re-enables the button afterw
   assert.equal(api.exportButtonEl.disabled, false);
 });
 
+// ── PDF progress UX (REQ-CAL-REV-UX-005) ────────────────────────────
+
+test('clicking Download PDF immediately changes the button text to "Preparing PDF…" and disables it', async (t) => {
+  var resolveExport;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return new Promise(function (resolve) { resolveExport = resolve; });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-progress-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var downloadPromise = api.downloadReviewSummariesPdf();
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.exportButtonEl.textContent, 'Preparing PDF…');
+  assert.equal(api.exportButtonEl.disabled, true);
+
+  resolveExport(pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' }));
+  await downloadPromise;
+});
+
+test('an accessible "Preparing your PDF…" status appears in an aria-live=polite region while the export is in flight', async (t) => {
+  var resolveExport;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return new Promise(function (resolve) { resolveExport = resolve; });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-progress-2' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var downloadPromise = api.downloadReviewSummariesPdf();
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var statusEl = findByClass(mountEl, 'review-summaries-export-status');
+  assert.ok(statusEl, 'an accessible status element must exist near the export button');
+  assert.equal(statusEl.getAttribute('aria-live'), 'polite');
+  assert.equal(statusEl.hidden, false);
+  assert.match(statusEl.textContent, /Preparing your PDF/);
+  assert.match(statusEl.textContent, /browser save window may take a few seconds/);
+
+  resolveExport(pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' }));
+  await downloadPromise;
+
+  // Cleared once the request settles, regardless of outcome.
+  assert.equal(statusEl.hidden, true);
+  assert.equal(statusEl.textContent, '');
+});
+
+test('a successful export shows the browser-save explanation and restores "Download PDF"', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-progress-3' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  // PDF_SUCCESS_MESSAGE (the exact string passed to showToast() below) is
+  // asserted directly in the dedicated wording test — this test proves
+  // the DOM-level outcome of a successful export: the button restores and
+  // re-enables, and the in-flight status clears.
+  assert.equal(api.exportButtonEl.textContent, 'Download PDF');
+  assert.equal(api.exportButtonEl.disabled, false);
+  var statusEl = findByClass(mountEl, 'review-summaries-export-status');
+  assert.equal(statusEl.hidden, true);
+});
+
+test('the approved PDF-progress copy matches exactly: preparing / success / generic-failure', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.PDF_PREPARING_MESSAGE, 'Preparing your PDF. The browser save window may take a few seconds to open.');
+  assert.equal(mod.PDF_SUCCESS_MESSAGE, 'PDF ready. Your browser may ask where to save it or save it automatically.');
+  assert.equal(mod.PDF_GENERIC_FAILURE_MESSAGE, 'The PDF could not be prepared. Please try again.');
+  // Never claims this app itself controls where the browser saves the file.
+  assert.match(mod.PDF_SUCCESS_MESSAGE, /may ask where to save it or save it automatically/);
+  // Never a backend detail/stack trace/status code in the generic failure.
+  assert.ok(!/traceback|exception|stack|\b[45]\d\d\b/i.test(mod.PDF_GENERIC_FAILURE_MESSAGE));
+});
+
 test('a 404 empty-result export shows no Blob/download and keeps the selected employee and filters', async (t) => {
   var fetchMock = makeFetchMock(function (url) {
     if (String(url).indexOf('/export/pdf') !== -1) {
@@ -1821,7 +2019,7 @@ test('a 401 during export uses the existing authorization-failure behavior (work
   assert.equal(api.state.selectedStaff, null, 'a 401 fully resets the workspace, same as every other request');
 });
 
-test('a generic export failure shows a safe error and never a Blob/download', async (t) => {
+test('a generic export failure shows the safe "could not be prepared" message, never a Blob/download, and clears the loading state', async (t) => {
   var fetchMock = makeFetchMock(function (url) {
     if (String(url).indexOf('/export/pdf') !== -1) {
       return pdfBlobResponse(500, {});
@@ -1840,6 +2038,12 @@ test('a generic export failure shows a safe error and never a Blob/download', as
 
   assert.equal(globals.objectUrlCalls.created.length, 0);
   assert.equal(api.state.exportInFlight, false);
+  assert.equal(api.exportButtonEl.disabled, false, 'the button must re-enable after a failure, not stay stuck loading');
+  assert.equal(api.exportButtonEl.textContent, 'Download PDF');
+  var statusEl = findByClass(mountEl, 'review-summaries-export-status');
+  assert.equal(statusEl.hidden, true, 'the preparing status must clear after a failure');
+  // Exact wording (PDF_GENERIC_FAILURE_MESSAGE) is asserted directly in
+  // the dedicated wording test above.
 });
 
 test('no PDF bytes or Blob are ever written to localStorage by an export', async (t) => {

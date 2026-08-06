@@ -35,6 +35,41 @@
    review_summary_edit_locked rejection as the real enforcement (see
    exitEditModeOnLockedResponse in the form submit handler below).
 
+   REQ-CAL-REV-UX-005 (2026-08-06) professional UI/UX refresh — frontend
+   presentation only, no functional/authorization/edit-lock/no-delete/PDF-
+   content change of any kind:
+     - Every card now shows exactly one status badge ("Editable today" /
+       "Read-only") plus an explanatory message — reviewSummaryStatusInfo()
+       below is the single source of truth for that badge/message pair,
+       covering all three cases (owned+editable, owned+locked, other
+       reviewer) so the badge and the message can never disagree. Reading
+       every reviewer's own card (not just the authenticated reviewer's)
+       is unchanged — only the read-only cards now ALSO get a badge/
+       message, where before they got neither (REQ-CAL-REV-LOCK-004 had
+       only ever shown status text on the owner's own card).
+     - Card layout is now header (employee + badge) / metadata (Reviewed
+       by, Reviewer role, Meeting date, each its own labeled row) /
+       summary (labeled "Review summary") / status message / Edit action /
+       footer (Created/Updated, from the created_at/updated_at fields the
+       backend already returns — no new backend field).
+     - The former ambiguous "Edited" pill is now a secondary "Updated"
+       label with an aria-label explanation, never the primary state
+       badge.
+     - Reviewer/From/To/Download PDF now live in one
+       .review-summaries-toolbar so Download PDF stays visually
+       associated with the filters it applies to (desktop: one row;
+       narrow: Reviewer full-width, From/To paired, Download PDF full-
+       width — review-summaries.css).
+     - downloadReviewSummariesPdf() reuses ui/loading.js's existing
+       setButtonBusy() (same spinner/disabled/aria-busy convention every
+       other busy button in this app already uses) for the button's own
+       "Preparing PDF…" state, plus a small aria-live="polite" status
+       paragraph next to the button for the longer explanatory sentence.
+       The PDF endpoint, its query parameters, its response handling
+       (401/404/blob), and the filename logic are all completely
+       unchanged — only what the user sees while waiting/after finishing
+       is new.
+
    Reviewer display name/role are resolved client-side via
    member-registry.js's MEMBER_REGISTRY, from each record's own
    reviewer_member_key — the API returns that key unchanged and nothing
@@ -55,7 +90,7 @@
 
 import { STAFF_REVIEW_SUMMARIES_API_BASE } from './config.js';
 import { STAFF_API_BASE } from './staff-data.js';
-import { getColomboTodayStr } from './calendar/core.js';
+import { getColomboTodayStr, formatTaskTimestamp } from './calendar/core.js';
 import {
   ensureAuthorized,
   handleUnauthorizedResponse,
@@ -71,6 +106,19 @@ import { showToast } from './ui/toast.js';
 var SUMMARY_MAX_LENGTH = 10000;
 var STAFF_SEARCH_DEBOUNCE_MS = 300;
 var SUMMARY_PREVIEW_LENGTH = 400;
+
+/* REQ-CAL-REV-UX-005 — approved PDF-progress copy, exported as named
+   constants (not inlined at each call site) so the exact wording is
+   directly, deterministically testable on its own — independent of
+   ui/toast.js's rendering pipeline, which this app's hand-rolled test DOM
+   stand-in cannot reliably re-target across multiple tests in one run
+   (its notification region is a module-level singleton bound to whichever
+   fake document created it first). Behavior is unchanged either way —
+   these are the literal strings already passed to showExportStatus()/
+   showToast() below. */
+export var PDF_PREPARING_MESSAGE = 'Preparing your PDF. The browser save window may take a few seconds to open.';
+export var PDF_SUCCESS_MESSAGE = 'PDF ready. Your browser may ask where to save it or save it automatically.';
+export var PDF_GENERIC_FAILURE_MESSAGE = 'The PDF could not be prepared. Please try again.';
 
 /* Fixed display order for the reviewer filter dropdown — matches
    backend/config.py's VALID_MEMBER_KEYS order (the canonical Management
@@ -298,6 +346,38 @@ export function isOwnedRecord(record, authenticatedMemberKey) {
   return !!(record && authenticatedMemberKey && record.reviewer_member_key === authenticatedMemberKey);
 }
 
+/* REQ-CAL-REV-UX-005 — single source of truth for a card's status badge
+   text/variant and its explanatory message, covering all three approved
+   cases. Never recomputes eligibility itself — reads record.can_edit
+   (backend-derived, REQ-CAL-REV-LOCK-004) and isOwnedRecord() only, so the
+   displayed wording can never drift from what the backend actually
+   enforces. Pure and exported so the exact approved copy is directly
+   testable without mounting the full workspace. */
+export function reviewSummaryStatusInfo(record, authenticatedMemberKey) {
+  if (!isOwnedRecord(record, authenticatedMemberKey)) {
+    return {
+      owned: false,
+      badgeText: 'Read-only',
+      badgeVariant: 'readonly',
+      message: 'Read-only — only the reviewer who created this summary can edit it.'
+    };
+  }
+  if (record.can_edit) {
+    return {
+      owned: true,
+      badgeText: 'Editable today',
+      badgeVariant: 'editable',
+      message: 'Editable today until 11:59 PM (Asia/Colombo).'
+    };
+  }
+  return {
+    owned: true,
+    badgeText: 'Read-only',
+    badgeVariant: 'readonly',
+    message: 'Read-only — the same-day editing window has ended.'
+  };
+}
+
 /* "Authorized as: Mayurika — HR" — entry is a resolveMember() result
    ({displayName, role}); null/undefined renders the not-yet-authorized
    copy so this function is always safe to call. */
@@ -487,7 +567,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
   // ── Reviewed-staff selector ──────────────────────────────────────
   var staffPanel = el('div', 'review-summaries-panel review-summaries-staff-panel');
   var staffPanelTitle = el('h5', 'review-summaries-step-title');
-  staffPanelTitle.textContent = '1. Select staff member';
+  staffPanelTitle.textContent = '1. Select employee';
   var staffField = el('div', 'review-summaries-field');
   var staffSearchWrap = el('div', 'review-summaries-search-wrap');
   var staffSearchInput = el('input', 'review-summaries-staff-search');
@@ -614,7 +694,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
   // ── Create / edit form ───────────────────────────────────────────
   var formPanel = el('div', 'review-summaries-panel review-summaries-form-panel');
   var formPanelTitle = el('h5', 'review-summaries-step-title');
-  formPanelTitle.textContent = '2. Write summary';
+  formPanelTitle.textContent = '2. Add review summary';
   var formPlaceholder = el('p', 'review-summaries-form-placeholder');
   formPlaceholder.textContent = 'Select a staff member above to write a summary.';
 
@@ -772,7 +852,12 @@ export function mountReviewSummariesWorkspace(mountEl) {
   var historyPanelTitle = el('h5', 'review-summaries-step-title');
   historyPanelTitle.textContent = '3. Review history';
 
-  var filtersEl = el('div', 'review-summaries-filters');
+  /* REQ-CAL-REV-UX-005 — Reviewer/From/To/Download PDF now share one
+     toolbar container (review-summaries.css) so Download PDF reads as
+     visually associated with the filters it applies to, rather than as
+     an unrelated block below them. Desktop: one row. Narrow: Reviewer
+     full-width, From/To paired, Download PDF full-width. */
+  var toolbarEl = el('div', 'review-summaries-toolbar');
 
   var reviewerFilterGroup = el('div', 'review-summaries-filter-field');
   var reviewerFilterLabel = el('label', 'review-summaries-label');
@@ -808,9 +893,9 @@ export function mountReviewSummariesWorkspace(mountEl) {
   dateToGroup.appendChild(dateToLabel);
   dateToGroup.appendChild(dateToInput);
 
-  filtersEl.appendChild(reviewerFilterGroup);
-  filtersEl.appendChild(dateFromGroup);
-  filtersEl.appendChild(dateToGroup);
+  toolbarEl.appendChild(reviewerFilterGroup);
+  toolbarEl.appendChild(dateFromGroup);
+  toolbarEl.appendChild(dateToGroup);
 
   /* Reviewer-filter / date-filter change (technical design §7) — clears
      stale detail/edit state (a card being edited under the old filter set
@@ -836,10 +921,28 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
   // ── PDF export (REQ-CAL-REV-PDF-003) — one page-level button near the
   //    Review History filters, never one button per record. ──────────────
-  var exportActionsEl = el('div', 'review-summaries-export-actions');
+  var exportGroupEl = el('div', 'review-summaries-toolbar-export');
   var exportBtn = el('button', 'msc-btn msc-btn-secondary review-summaries-export-btn');
   exportBtn.type = 'button';
   exportBtn.textContent = 'Download PDF';
+
+  /* REQ-CAL-REV-UX-005 — accessible in-flight/outcome status, distinct
+     from the button's own busy label (which only ever shows short text).
+     aria-live="polite" so assistive tech announces each state change
+     without stealing focus; hidden (blank) when there is nothing to say,
+     matching every other conditionally-shown element in this module. */
+  var exportStatusEl = el('p', 'review-summaries-export-status');
+  exportStatusEl.setAttribute('aria-live', 'polite');
+  exportStatusEl.hidden = true;
+
+  function showExportStatus(text) {
+    exportStatusEl.textContent = text;
+    exportStatusEl.hidden = false;
+  }
+  function clearExportStatus() {
+    exportStatusEl.textContent = '';
+    exportStatusEl.hidden = true;
+  }
 
   function updateExportButtonState() {
     var hasStaff = !!state.selectedStaff;
@@ -856,7 +959,10 @@ export function mountReviewSummariesWorkspace(mountEl) {
      workspace makes. Never sends the token, reviewer display name,
      employee display name, or summary text in the URL — only
      reviewed_staff_id, the current reviewer scope, and the current dates
-     (buildExportQuery). */
+     (buildExportQuery). Endpoint, query parameters, and response handling
+     are byte-for-byte unchanged from REQ-CAL-REV-PDF-003 — REQ-CAL-REV-
+     UX-005 only adds the setButtonBusy()/showExportStatus() presentation
+     calls around this same request. */
   function downloadReviewSummariesPdf() {
     if (state.exportInFlight || !state.selectedStaff) { return; }
     if (currentAccess() === 'unauthorized') { return; }
@@ -864,6 +970,8 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
     state.exportInFlight = true;
     updateExportButtonState();
+    setButtonBusy(exportBtn, true, { busyLabel: 'Preparing PDF…' });
+    showExportStatus(PDF_PREPARING_MESSAGE);
 
     var query = buildExportQuery({
       includeAllReviewers: !state.reviewerFilter,
@@ -920,7 +1028,13 @@ export function mountReviewSummariesWorkspace(mountEl) {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
-      showToast({ type: 'success', title: 'PDF downloaded', message: result.filename });
+      // Approved copy (REQ-CAL-REV-UX-005) — never claims this app
+      // controls the browser's save location, only that the file itself
+      // is ready.
+      showToast({
+        type: 'success', title: 'PDF ready',
+        message: PDF_SUCCESS_MESSAGE
+      });
     }).catch(function (err) {
       if (err && err.code === 'auth_cancelled') { return; }
       if (err && err.code === 'auth_required') { return; } // reactToAuthChange() already handles the gate
@@ -928,56 +1042,106 @@ export function mountReviewSummariesWorkspace(mountEl) {
         showToast({ type: 'error', title: 'No matching records', message: 'No review summaries match the selected filters.', persistent: false });
         return;
       }
-      var mapped = mapApiError(err);
-      showToast({ type: 'error', title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+      // OTHER FAILURE (REQ-CAL-REV-UX-005) — one safe, generic message
+      // regardless of underlying cause; never a backend detail/stack
+      // trace, and deliberately not routed through mapApiError() (whose
+      // generic wording differs from this feature's approved copy).
+      showToast({
+        type: 'error', title: 'PDF not prepared',
+        message: PDF_GENERIC_FAILURE_MESSAGE, persistent: false
+      });
     }).then(function () {
       state.exportInFlight = false;
+      setButtonBusy(exportBtn, false);
+      clearExportStatus();
       updateExportButtonState();
     });
   }
 
   exportBtn.addEventListener('click', downloadReviewSummariesPdf);
-  exportActionsEl.appendChild(exportBtn);
+  exportGroupEl.appendChild(exportBtn);
+  exportGroupEl.appendChild(exportStatusEl);
+  toolbarEl.appendChild(exportGroupEl);
   updateExportButtonState();
 
   var historyEl = el('div', 'review-summaries-history');
   historyPanel.appendChild(historyPanelTitle);
-  historyPanel.appendChild(filtersEl);
-  historyPanel.appendChild(exportActionsEl);
+  historyPanel.appendChild(toolbarEl);
   historyPanel.appendChild(historyEl);
+
+  /* REQ-CAL-REV-UX-005 — one shared "label + value" row builder for the
+     card metadata block, so Reviewed by / Reviewer role / Meeting date
+     always read as distinct, clearly-labeled fields (never one combined
+     sentence like the prior "Reviewed by: X" single-text-node form). */
+  function metaRow(label, value, valueClassName) {
+    var row = el('div', 'review-summaries-card-meta-row');
+    var dt = el('dt', 'review-summaries-card-meta-label');
+    dt.textContent = label;
+    var dd = el('dd', valueClassName || 'review-summaries-card-meta-value');
+    dd.textContent = value;
+    row.appendChild(dt);
+    row.appendChild(dd);
+    return row;
+  }
 
   function renderHistoryCard(record) {
     var authenticatedMemberKey = getStoredMemberKey();
     var reviewerEntry = resolveMember(record.reviewer_member_key);
+    var statusInfo = reviewSummaryStatusInfo(record, authenticatedMemberKey);
     var card = el('div', 'review-summaries-card');
 
-    var employeeEl = el('div', 'review-summaries-card-employee');
+    // ── Header: employee name + exactly one status badge, aligned
+    //    separately (Phase 4 CARD HEADER) ──────────────────────────────
+    var headerEl = el('div', 'review-summaries-card-header');
+    var employeeEl = el('h6', 'review-summaries-card-employee');
     employeeEl.textContent = 'Reviewed employee: ' + reviewedEmployeeLabel(record);
-    card.appendChild(employeeEl);
+    headerEl.appendChild(employeeEl);
 
-    var reviewerRow = el('div', 'review-summaries-card-reviewer');
-    var reviewedByEl = el('span', 'review-summaries-card-reviewed-by');
-    reviewedByEl.textContent = 'Reviewed by: ' + reviewerEntry.displayName;
-    var reviewerRoleEl = el('span', 'review-summaries-card-reviewer-role');
-    reviewerRoleEl.textContent = 'Reviewer role: ' + reviewerEntry.role;
-    reviewerRow.appendChild(reviewedByEl);
-    reviewerRow.appendChild(reviewerRoleEl);
-    card.appendChild(reviewerRow);
+    var badgeEl = el(
+      'span',
+      'review-summaries-card-status-badge review-summaries-card-status-badge--' + statusInfo.badgeVariant
+    );
+    var badgeIconEl = el('span', 'review-summaries-card-status-badge-icon');
+    badgeIconEl.setAttribute('aria-hidden', 'true');
+    // A shape, not only a color, distinguishes the two badge variants
+    // (Phase 8 — "no information depends only on ... color") — on top of
+    // the badge text itself already differing ("Editable today" vs
+    // "Read-only").
+    badgeIconEl.textContent = statusInfo.badgeVariant === 'editable' ? '●' : '○';
+    badgeEl.appendChild(badgeIconEl);
+    badgeEl.appendChild(document.createTextNode(statusInfo.badgeText));
+    headerEl.appendChild(badgeEl);
 
-    var head = el('div', 'review-summaries-card-head');
-    var dateEl = el('span', 'review-summaries-card-date');
-    dateEl.textContent = 'Meeting date: ' + record.meeting_date;
-    head.appendChild(dateEl);
+    // Secondary "Updated" label (replaces the prior ambiguous "Edited"
+    // pill) — never the primary state badge, carries its own accessible
+    // explanation via aria-label so its meaning doesn't depend on the
+    // adjacent "Updated" text alone.
     if (record.updated_at && record.created_at && record.updated_at !== record.created_at) {
-      var editedEl = el('span', 'review-summaries-card-edited');
-      editedEl.textContent = 'Edited';
-      head.appendChild(editedEl);
+      var updatedEl = el('span', 'review-summaries-card-updated-label');
+      updatedEl.textContent = 'Updated';
+      updatedEl.setAttribute('aria-label', 'Updated — this summary has been edited since it was created.');
+      headerEl.appendChild(updatedEl);
     }
-    card.appendChild(head);
+    card.appendChild(headerEl);
+
+    // ── Metadata: Reviewed by / Reviewer role / Meeting date, each its
+    //    own labeled row (Phase 4 REVIEW METADATA) ─────────────────────
+    var metaEl = el('dl', 'review-summaries-card-meta');
+    metaEl.appendChild(metaRow('Reviewed by', reviewerEntry.displayName));
+    metaEl.appendChild(metaRow('Reviewer role', reviewerEntry.role));
+    metaEl.appendChild(metaRow('Meeting date', record.meeting_date, 'review-summaries-card-meta-value review-summaries-card-date'));
+    card.appendChild(metaEl);
+
+    // ── Summary content: labeled, safe plain text (Phase 4 SUMMARY
+    //    CONTENT) ───────────────────────────────────────────────────────
+    var summaryEl = el('div', 'review-summaries-card-summary');
+    var summaryLabelEl = el('p', 'review-summaries-card-summary-label');
+    summaryLabelEl.textContent = 'Review summary';
+    summaryEl.appendChild(summaryLabelEl);
 
     var preview = summaryPreview(record.summary_text);
     var textNode = renderSummaryText(preview.truncated ? preview.preview : record.summary_text);
-    card.appendChild(textNode);
+    summaryEl.appendChild(textNode);
 
     if (preview.truncated) {
       var expanded = false;
@@ -993,48 +1157,65 @@ export function mountReviewSummariesWorkspace(mountEl) {
         toggleTextBtn.textContent = expanded ? 'Show less' : 'Show more';
         toggleTextBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       });
-      card.appendChild(toggleTextBtn);
+      summaryEl.appendChild(toggleTextBtn);
     }
+    card.appendChild(summaryEl);
 
-    /* Edit-window status + Edit button render ONLY for a card owned by
-       the currently authenticated reviewer (isOwnedRecord) — evaluated
-       per card, on every render, never once per panel (technical design
-       §5.3/§2.8). A non-owned card still renders fully (read-only) — it
-       simply gets no status line and no mutation controls, exactly as
-       before (REQ-CAL-REV-LOCK-004's "OTHER REVIEWER: no Edit control;
-       read-only card" — unchanged from the prior shared-read behavior).
+    // ── Status message (Phase 5) — shown on EVERY card now, not only the
+    //    owner's own (REQ-CAL-REV-LOCK-004 only ever showed this on an
+    //    owned card; the other-reviewer explanation is new presentation,
+    //    not a new permission). Wording/eligibility come entirely from
+    //    reviewSummaryStatusInfo() above — never recomputed here. ───────
+    var statusMessageEl = el('p', 'review-summaries-card-status-message');
+    if (!statusInfo.owned) {
+      statusMessageEl.classList.add('review-summaries-card-status-message--other');
+    } else if (!record.can_edit) {
+      statusMessageEl.classList.add('review-summaries-card-status-message--locked');
+    }
+    statusMessageEl.textContent = statusInfo.message;
+    card.appendChild(statusMessageEl);
+
+    /* Edit button renders ONLY for a card owned by the currently
+       authenticated reviewer AND still within its own edit window
+       (technical design §5.3/§2.8 / REQ-CAL-REV-LOCK-004). A non-owned
+       or locked card still renders fully (read-only) — it simply gets no
+       mutation control, communicated above via the status badge/message.
 
        There is no Delete control anywhere in this workspace any more
        (REQ-CAL-REV-LOCK-004, 2026-08-06) — no user may delete a Review
        Summary; the backend's DELETE route only ever rejects with 409
        now, so no frontend code path is left that could still call it. */
-    if (isOwnedRecord(record, authenticatedMemberKey)) {
-      var statusEl = el('p', 'review-summaries-card-edit-status');
-      if (record.can_edit) {
-        statusEl.textContent = 'Editable until 11:59 PM today.';
-        card.appendChild(statusEl);
-
-        var actions = el('div', 'review-summaries-card-actions');
-        var editBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-edit-btn');
-        editBtn.type = 'button';
-        editBtn.textContent = 'Edit';
-        editBtn.addEventListener('click', function () {
-          state.editingId = record.id;
-          dateInput.value = record.meeting_date;
-          summaryTextarea.value = record.summary_text;
-          counterEl.textContent = summaryCounterText(record.summary_text);
-          saveBtn.textContent = 'Save Changes';
-          cancelEditBtn.hidden = false;
-          summaryTextarea.focus();
-        });
-        actions.appendChild(editBtn);
-        card.appendChild(actions);
-      } else {
-        statusEl.textContent = 'Editing period ended. This review summary is now read-only.';
-        statusEl.classList.add('review-summaries-card-edit-locked');
-        card.appendChild(statusEl);
-      }
+    if (statusInfo.owned && record.can_edit) {
+      var actions = el('div', 'review-summaries-card-actions');
+      var editBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-edit-btn');
+      editBtn.type = 'button';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', function () {
+        state.editingId = record.id;
+        dateInput.value = record.meeting_date;
+        summaryTextarea.value = record.summary_text;
+        counterEl.textContent = summaryCounterText(record.summary_text);
+        saveBtn.textContent = 'Save Changes';
+        cancelEditBtn.hidden = false;
+        summaryTextarea.focus();
+      });
+      actions.appendChild(editBtn);
+      card.appendChild(actions);
     }
+
+    // ── Footer: Created/Updated timestamps (Phase 4 CARD FOOTER) — both
+    //    fields are already returned by the existing API response (no
+    //    backend change); reuses calendar/core.js's existing Asia/
+    //    Colombo timestamp formatter rather than adding a second one. ──
+    var footerEl = el('div', 'review-summaries-card-footer');
+    var createdEl = el('span', 'review-summaries-card-footer-created');
+    createdEl.textContent = 'Created: ' + formatTaskTimestamp(record.created_at);
+    var updatedFooterEl = el('span', 'review-summaries-card-footer-updated');
+    updatedFooterEl.textContent = 'Updated: ' + formatTaskTimestamp(record.updated_at);
+    footerEl.appendChild(createdEl);
+    footerEl.appendChild(updatedFooterEl);
+    card.appendChild(footerEl);
+
     return card;
   }
 
