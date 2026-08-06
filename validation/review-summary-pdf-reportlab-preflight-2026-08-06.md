@@ -8,6 +8,8 @@ requirement-id: REQ-CAL-REV-PDF-003
 
 # Gate A — ReportLab Pre-Implementation Dependency Preflight (2026-08-06)
 
+> **Correction (2026-08-06, same-day, round 4):** Documentation-only — no dependency was installed, no code was modified, neither `pyproject.toml` nor `backend/requirements.txt` was touched producing this correction. Two corrections to the original evidence recorded above: (1) the "Multi-page generation result" section's claim that paragraph/line-break structure was "confirmed present ... not silently dropped or collapsed" overstated what this preflight's assertions actually checked (specific fabricated substring presence via `pypdf.extract_text()`, not paragraph/line-break preservation or visual layout) — corrected to state precisely what was and was not verified; visual clipping and final report layout were not assessed during Gate A. (2) The "Gate B authorized" and "One next step" sections stated the pin belongs in `backend/requirements.txt` alone — corrected to identify `pyproject.toml` as the confirmed canonical production/Vercel dependency source (per `validation/member-schedule-vercel-function-crash-check-2026-07-10.md`), with `backend/requirements.txt` updated in the same Gate B change for local dev/test parity. Gate A's underlying result (PASS, `reportlab==5.0.0`, all byte/page-count/signature figures) is unchanged by this correction.
+
 ## Requirement ID
 
 REQ-CAL-REV-PDF-003.
@@ -31,7 +33,7 @@ application code for the PDF export feature is written.
 
 Gate A only. No application endpoint, PDF-generation module, or route was
 implemented. No file under `backend/` was modified. `backend/requirements.txt`
-was not touched. No PostgreSQL connection was made. No deployment of any kind
+was not touched, and neither was `pyproject.toml`. No PostgreSQL connection was made. No deployment of any kind
 occurred. No production employee, reviewer, or summary data was used at any
 point — every value in the synthetic test data below is fabricated
 ("Test Employee", "Test Reviewer", "Test Role", invented dates, invented
@@ -133,7 +135,7 @@ No real employee, reviewer, or summary record — and no data read from `managem
 | Extracted text contains "Management AIOS" | Yes |
 | Extracted text contains "Test Reviewer" | Yes |
 
-Paragraphs and the explicit line break in the fabricated long summary were confirmed present in the extracted text of the multi-page output (not silently dropped or collapsed) — consistent with the approved design's §6 requirement to preserve paragraph/line-break structure via `\n`→`<br/>` conversion before constructing each `Paragraph`.
+**Corrected wording (round 4 — precise scope of what was actually checked):** the fabricated long summary's paragraph breaks and explicit mid-paragraph line break were converted to `<br/>` markup, per the approved design's §6 requirement, and this input was accepted by `Paragraph`/`SimpleDocTemplate.build()` without error — generation did not fail or raise on that input. This preflight's actual assertions checked only that the specific fabricated substrings `"Management AIOS"`/`"Test Employee"`/`"Test Reviewer"` appear in `pypdf`'s `extract_text()` output — **not** that paragraph structure or the explicit line break were themselves preserved as distinct, separately-verifiable output. **Visual clipping and final report layout were not assessed during Gate A.** Whether the rendered page actually shows the paragraph break and line break as a reader would expect (as opposed to merely not crashing on that input) is a **Gate B test / Gate C browser-PDF-viewer walkthrough** concern, not something Gate A's page-count-and-substring assertions can establish. Gate A proves local dependency installation and basic PDF-generation compatibility only.
 
 **Test-only parser used for page-count verification:** `pypdf==6.14.2`, installed into the same throwaway environment only. This is explicitly a **test-only tool for this preflight** — it is not part of the application's PDF-generation design (which produces PDFs, never parses them), was never added to `backend/requirements.txt`, and is not treated as an application dependency of any kind.
 
@@ -174,7 +176,11 @@ No process held the throwaway environment open at cleanup time; deletion succeed
 
 ## Gate B authorized
 
-**YES.** Gate A's four required checks (candidate version installs cleanly, single-page synthetic PDF valid, multi-page synthetic PDF valid with the required page-count/signature/text assertions, exact version and environment evidence recorded) all passed. Implementation (Gate B) may proceed using the exact verified version: `reportlab==5.0.0`.
+**Gate A: PASS, unchanged.** Gate A's four required checks (candidate version installs cleanly, single-page synthetic PDF valid, multi-page synthetic PDF valid with the required page-count/signature/text assertions, exact version and environment evidence recorded) all passed. The exact verified version, `reportlab==5.0.0`, is confirmed.
+
+**Gate B operational authorization (round 4 wording — three conditions, not yet all met):** Gate B implementation should begin only once (1) this documentation correction (the present file, the companion handover, and the two updated design documents) is committed and reviewed; (2) the dependency-source truth is aligned across all four documents — confirmed in this correction: `pyproject.toml` is the canonical production/Vercel dependency source, `backend/requirements.txt` is the required local-parity file, both take the identical exact pin; (3) `origin/main` actually contains this Gate A evidence (not merely a local commit) — **not yet true as of this correction**, since this correction has not been pushed. Gate B implementation is not begun by this correction.
+
+**Where the pin belongs, once Gate B begins:** `pyproject.toml`'s `[project.dependencies]` array — repository inspection (`validation/member-schedule-vercel-function-crash-check-2026-07-10.md`) confirms `pyproject.toml`, not `backend/requirements.txt` alone, is the file Vercel actually reads for production dependency installation, following a prior production crash caused by exactly that misunderstanding. `backend/requirements.txt` must also receive the identical pin in the same change, since it remains actively required for local dev/test parity (evidenced separately, not stale) — both files must carry the same exact version. Full reasoning: `docs/2026-08-06_review-summary-pdf-export-technical-design.md` §5.6 "Production dependency-source evidence."
 
 ## Gate C still required
 
@@ -197,4 +203,4 @@ This reconciles `docs/2026-08-06_review-summary-pdf-export-technical-design.md` 
 
 ## One next step
 
-Begin Gate B: pin `reportlab==5.0.0` in `backend/requirements.txt`, implement the in-memory PDF-generation module and the authenticated `/export/pdf` endpoint per the approved technical design, and run the full Gate B automated test suite (tests 1-53) plus existing regression suites — only after that, proceed to Gate C.
+Begin Gate B: pin `reportlab==5.0.0` in `pyproject.toml`'s `[project.dependencies]` array (the confirmed canonical production/Vercel dependency source) and in `backend/requirements.txt` (evidenced as required for local dev/test parity, kept in sync), implement the in-memory PDF-generation module and the authenticated `/export/pdf` endpoint per the approved technical design, and run the full Gate B automated test suite (tests 1-53, including the dual-file version-drift check) plus existing regression suites — only after that, proceed to Gate C.

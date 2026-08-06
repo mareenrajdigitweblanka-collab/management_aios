@@ -3,7 +3,7 @@ name: review-summary-pdf-reportlab-preflight-handover
 type: handover
 scope: management_aios — Employee Review Summary PDF export, Gate A (REQ-CAL-REV-PDF-003)
 created: 2026-08-06
-status: Gate A PASS — Gate B authorized; Gate C still required
+status: Gate A PASS (reportlab==5.0.0); Gate B operational authorization pending this correction's review + push to origin/main; Gate C still required
 owner: builder (Mareenraj)
 reviewer: pending
 ---
@@ -47,7 +47,7 @@ No file under `backend/` (other than the two design documents above, which live 
 - **Candidate version selected**: via a live PyPI JSON-API query (not from memory or the design's own illustrative examples), filtered to non-prerelease, non-yanked releases. Selected: `reportlab==5.0.0` (released 2026-06-18, most recent qualifying release; universal `py3-none-any` wheel, `requires_python >=3.9,<4`).
 - **Installation**: succeeded in the throwaway environment. Exact versions: `reportlab 5.0.0`, `pillow 12.3.0` (transitive dependency; platform-specific wheel — flagged as a Gate C watch item), `charset-normalizer 3.4.9` (transitive dependency).
 - **Synthetic single-page PDF**: 2,207 bytes, valid `%PDF-` signature, 1 page (`pypdf==6.14.2`, test-only), fabricated heading/employee text confirmed present in extracted text.
-- **Synthetic multi-page PDF**: 3,966 bytes, valid `%PDF-` signature, 2 pages, fabricated heading/reviewer text confirmed present, paragraph/line-break structure preserved.
+- **Synthetic multi-page PDF**: 3,966 bytes, valid `%PDF-` signature, 2 pages, fabricated heading/reviewer text confirmed present. **Corrected (round 4)**: paragraph/line-break *input* (converted to `<br/>` markup per §6) was accepted by generation without error — this is not the same claim as paragraph/line-break structure being verified as preserved in the rendered output, which this preflight's substring-presence assertions did not check. Visual clipping and final report layout were not assessed during Gate A; that belongs to Gate B tests and the Gate C browser/PDF-viewer walkthrough.
 - **Cleanup**: both generated PDFs, the temporary test script, and the throwaway virtual environment were all deleted after evidence capture. Confirmed via directory listing (empty) and `git status --short` (only the pre-existing unrelated untracked roster file present).
 - **Gate A verdict**: PASS.
 
@@ -61,7 +61,7 @@ No file under `backend/` (other than the two design documents above, which live 
 ## 6. Verified this session
 
 - `reportlab==5.0.0` installs cleanly in a clean Python 3.14.4 virtual environment.
-- Single-page and multi-page synthetic PDF generation both succeed, with correct page counts, valid PDF signatures, and preserved paragraph/line-break structure.
+- Single-page and multi-page synthetic PDF generation both succeed, with correct page counts, valid PDF signatures, and paragraph/line-break *input* accepted by generation without error. Paragraph/line-break structure in the rendered output, visual clipping, and final report layout were **not** assessed by Gate A — this preflight proves local dependency and basic generation compatibility only; visual/layout validation is Gate B/Gate C's job.
 - Zero footprint left in the tracked repository — no stray PDF, script, or dependency; `backend/requirements.txt` unchanged; no application file changed.
 
 ## 7. Reviewer routing
@@ -80,4 +80,10 @@ Nothing was installed into any project-tracked environment, and nothing was depl
 
 ## 10. One next step
 
-Begin Gate B: add the pin `reportlab==5.0.0` to `backend/requirements.txt`, implement `backend/review_summary_pdf_export.py` and the `/export/pdf` route per the approved technical design (§5.1-§5.5), declared before `GET /{summary_id}` in source order, and run the full Gate B test suite (53 tests) plus existing regression suites before proceeding to Gate C.
+Begin Gate B: add the pin `reportlab==5.0.0` to `pyproject.toml`'s `[project.dependencies]` array (the confirmed canonical production/Vercel dependency source — `validation/member-schedule-vercel-function-crash-check-2026-07-10.md`) and to `backend/requirements.txt` in the same change (evidenced as required for local dev/test parity, kept in sync — see technical design §5.6 "Production dependency-source evidence"), implement `backend/review_summary_pdf_export.py` and the `/export/pdf` route per the approved technical design (§5.1-§5.5), declared before `GET /{summary_id}` in source order, and run the full Gate B test suite (53 tests, including the dual-file version-drift check) plus existing regression suites before proceeding to Gate C.
+
+## 11. Correction — 2026-08-06 (round 4)
+
+Documentation-only — no dependency was installed, no code was modified, neither `pyproject.toml` nor `backend/requirements.txt` was touched producing this correction. Two corrections applied above: (1) §4/§6's paragraph/line-break claims were overstated relative to what this preflight's assertions actually checked (specific fabricated substring presence, not paragraph/line-break preservation or visual layout) — corrected in place. (2) §10's "One next step" stated the pin belongs in `backend/requirements.txt` alone — corrected to identify `pyproject.toml` as the confirmed canonical production/Vercel dependency source, following repository evidence (a prior production crash proved Vercel does not install via `backend/requirements.txt`'s root `-r` reference), with `backend/requirements.txt` updated in the same Gate B change for local dev/test parity. Gate A's underlying PASS verdict and `reportlab==5.0.0` result are unchanged.
+
+**Gate B operational authorization (three conditions, not yet all met):** Gate A remains PASS. Gate B implementation should begin only once (1) this documentation correction is committed and reviewed; (2) dependency-source truth is aligned across all affected documents — confirmed by this correction; (3) `origin/main` actually contains this Gate A evidence, not merely a local commit — **not yet true**, since neither the original Gate A evidence commit nor this correction has been pushed as of this document. Gate B implementation is not begun by this correction, and no application code, `pyproject.toml` edit, or `backend/requirements.txt` edit occurs here.
