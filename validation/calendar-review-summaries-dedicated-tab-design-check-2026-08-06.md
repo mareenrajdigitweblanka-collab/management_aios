@@ -11,6 +11,8 @@ requirement-id: REQ-CAL-REV-TAB-002
 > **Correction (2026-08-06, same-day, round 1):** The original version of this check did not flag that the technical design's original wording ("4 of 5 mounts removed," "near the removed Mayurika mount") was ambiguous and could be read as reusing Mayurika's panel as the dedicated panel. The requirement and technical design documents have both been corrected (see their own correction notes) to state explicitly that all 5 existing mounts are removed (0 remaining) and the dedicated panel is newly created and independent. This check was updated accordingly — see "Mount-count and independence correction assessment" below.
 >
 > **Correction (2026-08-06, same-day, round 2):** The technical design's round-1 `reviewer_display_label` proposal (one opaque combined string, sourced from `backend/config.py` `MEMBER_LABELS`) did not guarantee a visible reviewer role for every member, since Paraparan's label carries no role suffix. The technical design now resolves reviewer display name and role client-side via a new frontend `MEMBER_REGISTRY` (§6.2), rendered as two separate fields, with no backend field added. This check is updated accordingly — see "Reviewer identity/queryability assessment" (revised) below. The mandatory five-person review-gate wording in "Owner / reviewer" / "One next step" is also corrected.
+>
+> **Correction (2026-08-06, same-day, round 3):** The technical design's §7 state-clearing table originally specified that a 401/authorization failure and leaving the dedicated tab should each only partially clear workspace state — both were corrected to fully reset the workspace (employee selection, history, edit/draft state, both filters), identically to a genuine token change, via one central `resetWorkspaceState()` (replacing the prior `clearWorkspaceState()` name referenced below). This check's "State model assessment" section is updated accordingly.
 
 ## Purpose
 
@@ -106,9 +108,10 @@ Design review only. No code was written, no migration was run, no database was q
 - Unknown-key fallback ("Unknown"/"Unknown") is specified for any `reviewer_member_key` not among the 5 known keys — never a fabricated name or role (technical design §6.2).
 - No reviewer display identity is written to `management_aios.staff_review_summaries` or any other table (technical design §6.4, §10) — confirmed no schema/migration change accompanies this design.
 
-## State model assessment
+## State model assessment (revised, round 3)
 
-- All four required invariants (no stale employee history, no leaked edit state, no draft restored under a different token, stale responses ignored) map to reused, already-proven mechanisms in `review-summaries.js` (`historyRequestId`, `CALENDAR_AUTH_CHANGED_EVENT` listener, `clearWorkspaceState()`) rather than new state-management primitives — reduces implementation risk.
+- All required invariants (no stale employee/history across any reset, no leaked edit/draft state, no employee selection restored across a 401/token-change/tab-leave, stale responses ignored, 404/owner-only denial never treated as an authentication failure) map to one central, reused mechanism in `review-summaries.js`: `resetWorkspaceState()` plus `historyRequestId`/`CALENDAR_AUTH_CHANGED_EVENT` — not new state-management primitives, and not multiple parallel reset paths.
+- A 401/authorization failure and leaving the dedicated tab are now confirmed to fully reset the workspace (technical design §7, corrected round 3) — the same function used for a genuine token change, rather than each maintaining its own narrower partial-clear logic.
 
 ## Files-touched assessment
 
@@ -130,9 +133,10 @@ This check PASSES if and only if:
 - 0 application/database files were touched producing the requirement, design, or this check;
 - the protected path was never opened;
 - 0 remaining ambiguity about mount reuse — member-panel mounts = 0, dedicated-panel mounts = 1, total = 1, stated explicitly in both the requirement and technical design (see "Mount-count and independence correction assessment" above);
-- reviewer display name and role are guaranteed as two separate, always-populated fields for all 5 members with 0 database duplication and 0 fabricated values (see "Reviewer identity/queryability assessment" above).
+- reviewer display name and role are guaranteed as two separate, always-populated fields for all 5 members with 0 database duplication and 0 fabricated values (see "Reviewer identity/queryability assessment" above);
+- a 401/authorization failure and leaving the dedicated tab each fully reset the workspace (employee selection, history, edit/draft state, both filters), identically to a genuine token change, via one central reset function — 0 remaining partial-clear paths (see "State model assessment" above).
 
-All seven conditions are met.
+All eight conditions are met.
 
 **Result: PASS.**
 
