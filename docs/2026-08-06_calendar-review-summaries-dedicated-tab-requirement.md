@@ -9,6 +9,8 @@ requirement-id: REQ-CAL-REV-TAB-002
 
 # Requirement — Management AIOS Calendar Review Summaries Dedicated Tab (2026-08-06)
 
+> **Correction (2026-08-06, same-day):** This requirement is corrected to remove an ambiguity in the original wording ("consolidates 5 mounts into 1") that could be read as reusing Mayurika's existing mount as the dedicated panel. It does not. All 5 existing member-panel mounts — including Mayurika's — are removed completely (final embedded count: 0). The dedicated panel is a new, independent panel (final dedicated count: 1). The 32 approved decisions below are unchanged in substance; only surrounding wording is tightened. See the companion technical design §1/§3/§5/§9/§10 and the validation doc for the corrected design detail.
+
 ## Metadata (per CLAUDE.md §11.3 — Requirement Documentation Governance)
 
 | Field | Value |
@@ -17,14 +19,14 @@ requirement-id: REQ-CAL-REV-TAB-002
 | Start Date | 2026-08-06 |
 | Expected Deadline | Not yet set |
 | User / Stakeholder | All authenticated Management Team members who conduct or read staff review-meeting summaries (Mayurika, Suman, Arun, Rajiv, Paraparan) |
-| Company Value Contribution | Consolidates 5 duplicated Review Summaries mounts into 1 workspace, and moves review history from private-per-tab to shared-read-across-reviewers with reviewer-owned write — addressing the management file/decision disorganization domain named in CLAUDE.md §1/§4 |
+| Company Value Contribution | Removes all 5 duplicated per-member Review Summaries mounts (0 remaining) and replaces them with 1 new, independent dedicated workspace — not a reuse or repurposing of any existing member panel — and moves review history from private-per-tab to shared-read-across-reviewers with reviewer-owned write — addressing the management file/decision disorganization domain named in CLAUDE.md §1/§4 |
 | MVP Submission Date | Not yet set |
 | Project Owner | Mareenraj (builder) |
 | Status | READY FOR TECHNICAL DESIGN — no open business parameters remain; all 31 decisions below are approved as stated |
 
 ## 1. Purpose
 
-REQ-CAL-REV-001 (2026-08-03) built Staff Review Summaries as 5 identical mounts, one embedded in each Management Team member's tab panel (Mayurika, Suman, Arun, Rajiv, Paraparan), with the reviewer identity tied to a per-instance `data-member-key` and, after its 2026-08-03 shared-read revision, backend reads open to all authenticated reviewers while writes stay owner-scoped. This requirement consolidates those 5 mounts into one dedicated sidebar tab, so there is exactly one Review Summaries workspace, reachable by every authenticated Management Team member regardless of which of the 5 member tabs they'd otherwise be looking at.
+REQ-CAL-REV-001 (2026-08-03) built Staff Review Summaries as 5 identical mounts, one embedded in each Management Team member's tab panel (Mayurika, Suman, Arun, Rajiv, Paraparan), with the reviewer identity tied to a per-instance `data-member-key` and, after its 2026-08-03 shared-read revision, backend reads open to all authenticated reviewers while writes stay owner-scoped. This requirement removes all 5 of those mounts completely — including Mayurika's — and replaces them with one new, independent dedicated sidebar tab and content panel that is not nested inside, dependent on, or a repurposing of any existing member panel's DOM parent, identity, or ownership. Exactly one Review Summaries workspace results (final embedded-mount count: 0; final dedicated-mount count: 1), reachable by every authenticated Management Team member regardless of which of the 5 member tabs they'd otherwise be looking at, with reviewer identity always derived from the authenticated Calendar token rather than from any tab.
 
 ## 2. Business question
 
@@ -55,14 +57,14 @@ This is a UI/technical requirement, not an HR/business-domain claim under CLAUDE
 3. Add immediately after Data: **Review Summaries**.
 4. Required order: STAFF › Data › Review Summaries.
 5. Remove Review Summaries completely from the 5 member panels (Mayurika, Suman, Arun, Rajiv, Paraparan).
-6. Exactly one Review Summaries workspace must remain.
+6. Exactly one Review Summaries workspace must remain — a new, independent panel and sidebar tab with its own panel ID, its own sidebar navigation item, and its own activation path. It is never a repurposed or renamed version of any existing member panel (including Mayurika's), never nested inside a member panel's DOM subtree, and never dependent on which member tab (if any) was previously selected.
 
 ### 5.2 Visibility and authorization
 
 7. The Review Summaries navigation item remains visible without a token.
 8. Opening it without a valid token shows "Authorize this browser".
 9. Every authenticated Management Team member may open the dedicated tab.
-10. The authenticated Calendar token always determines the reviewer/creator.
+10. The authenticated Calendar token always determines the reviewer/creator, and only the token — never the Mayurika panel, any other member panel, the selected reviewer filter, the selected employee, or the browser request body.
 11. No reviewer selector may determine creation ownership.
 
 ### 5.3 Employee selection
@@ -116,7 +118,7 @@ This is a UI/technical requirement, not an HR/business-domain claim under CLAUDE
 
 - `docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md` — companion technical design.
 - `validation/calendar-review-summaries-dedicated-tab-design-check-2026-08-06.md` — consistency check between this requirement and the technical design.
-- `docs/2026-08-03_calendar-review-summaries-requirement.md`, `docs/2026-08-03_calendar-review-summaries-technical-design.md` — REQ-CAL-REV-001, the existing 5-mount implementation being consolidated.
+- `docs/2026-08-03_calendar-review-summaries-requirement.md`, `docs/2026-08-03_calendar-review-summaries-technical-design.md` — REQ-CAL-REV-001, the existing 5-mount implementation being replaced (all 5 mounts removed, 0 remaining) by the single independent dedicated tab specified in this requirement.
 
 ## 8. Protected path confirmation
 

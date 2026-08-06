@@ -9,6 +9,8 @@ requirement-id: REQ-CAL-REV-TAB-002
 
 # Technical Design — Management AIOS Calendar Review Summaries Dedicated Tab (2026-08-06)
 
+> **Correction (2026-08-06, same-day):** The original version of this document stated "4 of 5 mounts removed" and described placing the new panel "near the removed Mayurika mount," which was ambiguous and could be read as reusing Mayurika's existing panel as the dedicated panel. It does not. This corrected version states explicitly: **all 5 existing member-panel mounts are removed (final embedded count: 0)**, and the dedicated panel is a **new, independent panel (final dedicated count: 1)** with its own panel ID, sidebar nav item, and activation path — never nested inside, parented by, or derived from Mayurika's (or any other member's) panel. See §1, §3.1, §5, §9, §10, §11 for the corrected text.
+
 ## 0. Requirement metadata / source
 
 | Field | Value |
@@ -23,9 +25,9 @@ This is a design document only. No application code, migration, or database obje
 
 ## 1. Architecture overview
 
-The existing Staff Review Summaries feature (REQ-CAL-REV-001) is a working, tested slice: one backend router (`backend/routers/staff_review_summaries.py`), one table (`management_aios.staff_review_summaries`), and one frontend module (`web-view/js/review-summaries.js`) mounted 5 times. This design does **not** rebuild that slice — it (a) collapses the 5 frontend mounts into 1, (b) redefines "reviewer identity" in the UI from "which tab you're in" to "who the token says you are," (c) adds one small, additive, opt-in backend read parameter so the dedicated tab can show all reviewers' summaries for one employee by default, and (d) adds one additive response field so history cards can show a reviewer's name and role without duplicating that registry anywhere new.
+The existing Staff Review Summaries feature (REQ-CAL-REV-001) is a working, tested slice: one backend router (`backend/routers/staff_review_summaries.py`), one table (`management_aios.staff_review_summaries`), and one frontend module (`web-view/js/review-summaries.js`) mounted 5 times. This design does **not** rebuild that slice — it (a) **removes all 5 existing frontend mounts completely (including Mayurika's) and creates exactly 1 new, independent dedicated-panel mount** — final embedded-mount count: 0; final dedicated-mount count: 1; total: 1 — (b) redefines "reviewer identity" in the UI from "which tab you're in" to "who the token says you are, and only the token," (c) adds one small, additive, opt-in backend read parameter so the dedicated tab can show all reviewers' summaries for one employee by default, and (d) adds one additive response field so history cards can show a reviewer's name and role without duplicating that registry anywhere new.
 
-No table, migration, or existing route contract changes. No existing test's asserted behavior changes.
+No table, migration, or existing route contract changes. No existing test's asserted behavior changes. **The dedicated panel does not reuse, repurpose, or inherit any part of Mayurika's (or any other member's) existing panel — it is a new sibling panel with its own DOM parent, own panel ID, own sidebar nav item, and own activation path (§3.1, §5).**
 
 ## 2. Current-state discovery (Phases 3–4)
 
@@ -42,6 +44,8 @@ All five are identical markup blocks in `web-view/index.html`, each `<div class=
 | Paraparan | `#tab-paraparan` | `index.html:1687` | `paraparan` |
 
 Instantiation is a single loop, not 5 hand calls: `initReviewSummaries()` (`review-summaries.js:1017-1022`) does `document.querySelectorAll('.review-summaries-instance')` and calls `mountReviewSummariesForMember(mountEl, mountEl.getAttribute('data-member-key'))` per node, called once from `app.js:27` inside `boot()`.
+
+**All 5 of these mounts are removed by this design — Mayurika's included.** None is reused, repurposed, or kept as the DOM parent of the dedicated panel. See §5 and §9/§10 for the corrected removal and creation design.
 
 ### 2.2 Sidebar heading and Staff Data nav item
 
@@ -128,8 +132,30 @@ Auth: `get_verified_member` returns a bare `member_key` string only (`calendar_a
 
 - `data-tab="staff-data"` is kept as-is — only its visible label changes, so the existing panel id (`#tab-staff-data`) and any other code keyed on `data-tab="staff-data"` is untouched.
 - New button `data-tab="review-summaries"` requires **no JS registration** — `navigation.js:16-17` re-queries `.app-nav-btn`/`.tab-panel` at boot; any element matching those selectors is auto-wired.
-- A new panel `<div class="tab-panel" id="tab-review-summaries" role="tabpanel">…</div>` is added once to `<main class="tab-main">`; DOM order relative to other panels does not matter (`navigation.js` matches by id, not position) — placing it near the removed Mayurika mount is the most readable location.
+- A new panel `<div class="tab-panel" id="tab-review-summaries" role="tabpanel">…</div>` is added once to `<main class="tab-main">`, as an **independent sibling** of the other `.tab-panel` elements (`#tab-mayurika-hr`, `#tab-suman-recruitment`, `#tab-arun-implementation`, `#tab-rajiv-blocked`, `#tab-paraparan`, `#tab-staff-data`) — it has **no DOM-parent relationship to, and does not nest inside, any of those panels, including `#tab-mayurika-hr`**. DOM order relative to other panels does not matter (`navigation.js` matches strictly by `id`/`data-tab`, not position); it may be placed anywhere convenient inside `<main class="tab-main">` (e.g. immediately after `#tab-staff-data`, mirroring the sidebar order), but its physical location carries no functional meaning and does not imply reuse of any removed mount's location.
 - Required order (Data, then Review Summaries) is satisfied by source order of the two `<button>` elements inside the same `.app-sidebar-group` — `navigation.js` does not reorder buttons.
+
+### 3.1a Dedicated panel specification (corrects §B ambiguity)
+
+| Property | Value |
+|---|---|
+| Panel ID | `#tab-review-summaries` (new, not `#tab-mayurika-hr`) |
+| Sidebar nav item | New `<button data-tab="review-summaries">`, immediately after the Data button (§3.1) |
+| Activation path | Generic `navigation.js:19-28` `activatePanel('review-summaries')` — the same shared mechanism every other tab already uses; no special-cased routing |
+| Dependency on selected member tab | None — the panel activates and renders identically regardless of which (or whether any) member tab was previously active |
+| Review Summary mounts inside this panel | Exactly 1 |
+
+**Expected mount count after implementation:**
+
+| Location | Mount count |
+|---|---|
+| Mayurika panel (`#tab-mayurika-hr`) | 0 |
+| Suman panel (`#tab-suman-recruitment`) | 0 |
+| Arun panel (`#tab-arun-implementation`) | 0 |
+| Rajiv panel (`#tab-rajiv-blocked`) | 0 |
+| Paraparan panel (`#tab-paraparan`) | 0 |
+| **Dedicated panel (`#tab-review-summaries`)** | **1** |
+| **Total** | **1** |
 
 ### 3.2 Mobile
 
@@ -186,7 +212,19 @@ Purely additive: new optional parameter (default preserves old behavior exactly)
 
 ## 5. Dedicated workspace design (Phase 6)
 
-One workspace, one frontend module instance (`mountReviewSummariesForMember` becomes `mountReviewSummariesWorkspace()` — no `memberKey` parameter; identity comes only from `getStoredMemberKey()` at call time), with these states:
+One workspace, one frontend module instance (`mountReviewSummariesForMember` becomes `mountReviewSummariesWorkspace()` — no `memberKey` parameter; identity comes only from `getStoredMemberKey()` at call time), mounted exactly once inside the new, independent `#tab-review-summaries` panel (§3.1a) — never inside `#tab-mayurika-hr` or any other member panel.
+
+### 5.0 Reviewer identity — source of truth (corrects §C ambiguity)
+
+The current reviewer is derived **only** from `getStoredMemberKey()` — the validated Calendar token held in the browser. It is explicitly **not** derived from, and must never be derived from:
+
+- the Mayurika panel (or its former mount);
+- any other member panel;
+- the selected reviewer filter (that filter narrows what is *displayed*, it never supplies who is *creating*);
+- the selected employee (`reviewed_staff_id` identifies who was reviewed, never who is reviewing);
+- the browser request body (unchanged existing backend rule, §2.9 — `StaffReviewSummaryCreate` has no `reviewer_member_key` field at all).
+
+This is the single identity source for every state below.
 
 ### 5.1 UNAUTHORIZED
 - Tab remains visible and clickable (nav item never hidden/disabled).
@@ -199,15 +237,25 @@ One workspace, one frontend module instance (`mountReviewSummariesForMember` bec
 - Show "Include inactive" toggle.
 - Show no history.
 - Show an explicit instruction ("Select a staff member to see their review history") — this empty-state copy already exists in the current module (§2 discovery, item 11 of the frontend report) and is reused as-is.
+- **No history/list request fires in this state under any circumstance (corrects §D ambiguity)** — the fetch is gated entirely on `state.selectedStaff` being set; there is no code path that issues `GET /api/staff-review-summaries` before an employee is selected.
 
 ### 5.3 AUTHORIZED — employee selected
-- Show selected reviewed employee (name).
-- Show reviewer filter, defaulting to **All reviewers** (maps to `include_all_reviewers=true` — §4).
+- Show selected reviewed employee (name); `reviewed_staff_id = staff.id` from the staff-search result (§2.7, unchanged).
+- Show reviewer filter, defaulting to **All reviewers**.
 - Show From/To date filters.
-- Fetch and show all active summaries for that employee across all reviewers by default.
 - Allow creation, always under the current token identity (`POST` body never includes a reviewer field — unchanged, §2.9).
 - Show owner controls (Edit/Delete) only on cards where `record.reviewer_member_key === getStoredMemberKey()` — **evaluated per card**, not once per panel (this is the §2.8 redesign).
 - Other reviewers' cards render fully but with no Edit/Delete controls.
+
+**Default scope — "All reviewers" (corrects §E ambiguity):**
+- Frontend request: `GET /api/staff-review-summaries?reviewed_staff_id=<uuid>&include_all_reviewers=true` (`reviewer_member_key` omitted).
+- `reviewed_staff_id` is always required for this request — enforced both by the UI (no request fires without a selection, §5.2) and by the backend 422 rule (§4).
+- Returns active summaries from every reviewer for that employee (soft-deleted rows excluded, per §4/§2.9, unchanged).
+
+**Specific reviewer filter (corrects §F ambiguity):**
+- Frontend request: `GET /api/staff-review-summaries?reviewed_staff_id=<uuid>&reviewer_member_key=<selected reviewer>` — `include_all_reviewers` is **not** also sent (the backend rejects the combination with 422, §4; the frontend never constructs a request that sends both).
+- Narrows the returned rows to that one reviewer's active summaries for the selected employee.
+- Ownership/edit-ability of each returned card is unaffected by which filter produced it — every card's Edit/Delete visibility is still decided solely by comparing that card's own `reviewer_member_key` to `getStoredMemberKey()` (§2.8, §5.0); a specific-reviewer filter does not itself grant write access to that reviewer's records.
 
 ### 5.4 EDIT MODE
 - Enterable only from a card the current token owns.
@@ -225,7 +273,9 @@ Summary: <summary_text>
 Created/updated: <created_at> / <updated_at, when different from created_at>
 ```
 
-**Reviewer name and role source: `reviewer_display_label`, the new additive backend field (§4), derived from `backend/config.py:90-102` `MEMBER_LABELS`.** This is the single authoritative registry already combining name + role as one string ("Mayurika — HR"). Confirmed by search: no frontend `MEMBER_LABELS`-equivalent exists today — the frontend only ever receives *its own* authenticated member's `displayLabel`, via `/api/calendar-auth/verify` (`calendar/auth.js:129`), never another reviewer's. Building a second, frontend-side copy of the 5-entry label map would duplicate the registry CLAUDE.md and this repo's own conventions warn against; returning the already-computed label from the backend (which already owns and uses this exact map) avoids that duplication entirely. "Reviewer role" is not a separate field from "reviewer name" in this registry — the requirement's "Reviewed by: `<name>` — `<role>`" format is satisfied directly by rendering `reviewer_display_label` as one string, since every existing label already follows that exact `Name — Role` shape.
+**Reviewer name and role source: `reviewer_display_label`, the new additive backend field (§4), derived from `backend/config.py:90-102` `MEMBER_LABELS`.** This is the single authoritative registry already combining name + role as one string ("Mayurika — HR"). Confirmed by search: no frontend `MEMBER_LABELS`-equivalent exists today — the frontend only ever receives *its own* authenticated member's `displayLabel`, via `/api/calendar-auth/verify` (`calendar/auth.js:129`), never another reviewer's. Building a second, frontend-side copy of the 5-entry label map would duplicate the registry CLAUDE.md and this repo's own conventions warn against; returning the already-computed label from the backend (which already owns and uses this exact map) avoids that duplication entirely.
+
+**Exact field format (corrects §G ambiguity):** `reviewer_display_label` is a single string, copied verbatim from `MEMBER_LABELS[record.reviewer_member_key]` with no reformatting, splitting, or reparsing. For 4 of the 5 members that string already has the shape `<reviewer display name> — <reviewer role>` (e.g. `"Mayurika — HR"`, `"Suman — Recruiting Officer"`). **`reviewer_display_label` is deliberately kept as one opaque string, not split into separate `reviewer_name`/`reviewer_role` fields**, because `MEMBER_LABELS["paraparan"] = "Paraparan"` (`config.py:90-102`) has no role suffix at all — Paraparan's designation is explicitly noted in that same file as "currently unresolved between sources" (External Auditor vs. Accountant), so no backend or frontend code may split the string or invent a role value for Paraparan. Splitting would require parsing on the `" — "` separator, which is absent for Paraparan and would either throw, silently populate an empty role, or require a fabricated placeholder — none acceptable. The requirement's "Reviewed by: `<name>` — `<role>`" card format (§5.7 of the requirement) is satisfied by rendering the single `reviewer_display_label` string as-is on the "Reviewed by" line; no reviewer identity data is added to the database in either design.
 
 ## 7. State-clearing design (Phase 8)
 
@@ -256,7 +306,7 @@ This matches the existing backend authorization matrix from REQ-CAL-REV-001 exac
 
 | File | Change |
 |---|---|
-| `web-view/index.html` | Sidebar heading Data→Staff, Staff Data→Data label, new Review Summaries nav button + panel; remove 5 embedded mounts, add 1 |
+| `web-view/index.html` | Sidebar heading Data→Staff, Staff Data→Data label, new Review Summaries nav button + panel; **remove all 5 embedded mounts (Mayurika, Suman, Arun, Rajiv, Paraparan — 0 remaining), add exactly 1 new, independent `#tab-review-summaries` panel that does not reuse `#tab-mayurika-hr` or any other existing panel** (§3.1a) |
 | `web-view/js/review-summaries.js` | Single-instance mount (`memberKey` param removed from the mount function), per-card ownership check replacing per-panel `reviewSummaryAccessDecision`, reviewer filter + "All reviewers" default wiring, `reviewer_display_label` rendering, state-clearing triggers (§7) |
 | `web-view/js/app.js` | `initReviewSummaries()` call site updated for single-mount signature (loop over `.review-summaries-instance` becomes a single call, or the one remaining container is queried directly) |
 | `web-view/js/config.js` | No change expected — `STAFF_REVIEW_SUMMARIES_API_BASE` (if already added by REQ-CAL-REV-001) is reused as-is |
@@ -277,65 +327,98 @@ This matches the existing backend authorization matrix from REQ-CAL-REV-001 exac
 - Existing UPDATE/DELETE ownership logic (`_get_owned_summary_or_404`) — unchanged.
 - Existing single-reviewer LIST default behavior when `include_all_reviewers` is omitted — unchanged (§4).
 
-**Consolidation removal candidates** (code to delete once 5 mounts become 1, confirmed safe by discovery): 4 of the 5 `<h3>Review Summaries</h3>` + `.review-summaries-instance` blocks in `index.html`; the `querySelectorAll` mount loop collapses to a single mount call; the per-panel `reviewSummaryAccessDecision`'s `read_only`-by-tab branch (superseded by per-card ownership, §5.3); the `msc:close-toolbar-popovers` listener's old "member changed" role (repurposed, not deleted, §7).
+**Removal list (corrects §A/§B ambiguity — "4 of 5" was wrong; it is all 5):** **all 5** `<h3>Review Summaries</h3>` + `.review-summaries-instance` blocks in `index.html` are deleted, **including Mayurika's** — no member panel keeps an embedded mount, and no member panel's existing mount location, container, or identity is reused as the dedicated panel. The `querySelectorAll` mount loop collapses to a single mount call targeting the new, independent `#tab-review-summaries` panel (§3.1a) created fresh for this feature. Also removed/superseded: the per-panel `reviewSummaryAccessDecision`'s `read_only`-by-tab branch (superseded by per-card ownership, §5.3); the `msc:close-toolbar-popovers` listener's old "member changed" role (repurposed, not deleted, §7).
 
-## 11. Test plan (Phase 9) — 40 numbered binary tests
+**Final mount count (repeated from §3.1a for emphasis): member-panel mounts = 0; dedicated-panel mounts = 1; total = 1.**
 
-### Navigation (5)
-1. Sidebar heading reads "Staff".
-2. Staff Data label reads "Data".
-3. Review Summaries appears immediately after Data in the sidebar.
-4. Exactly one Review Summaries navigation item exists in the DOM.
-5. Zero Review Summary mounts remain inside the 5 member panels.
+## 11. Test plan (Phase 9) — 48 numbered binary tests (corrects §I ambiguity)
 
-### Authorization (5)
-6. Tab is visible and clickable without a token.
-7. No-token state shows "Authorize this browser".
-8. A valid token identifies the creator on a new record.
-9. A create request cannot select reviewer ownership (body-supplied `reviewer_member_key` is ignored/rejected).
-10. A missing or invalid token cannot read or mutate any record.
+The original 40-test plan collapsed all 5 mount-removals into a single test and did not explicitly test dedicated-panel independence or token-driven reviewer recalculation as standalone items. This revision expands those into the 18 explicitly required test items (mapped in the table after §11's Regression list) and folds them into a fuller 48-test plan without removing any prior coverage.
+
+### Navigation and mount removal / independence (12)
+1. Zero Review Summary mounts remain in the Mayurika panel.
+2. Zero Review Summary mounts remain in the Suman panel.
+3. Zero Review Summary mounts remain in the Arun panel.
+4. Zero Review Summary mounts remain in the Rajiv panel.
+5. Zero Review Summary mounts remain in the Paraparan panel.
+6. Exactly one dedicated Review Summary mount exists (inside `#tab-review-summaries`).
+7. Sidebar heading reads "Staff".
+8. Staff Data label reads "Data".
+9. Review Summaries appears immediately after Data in the sidebar.
+10. Exactly one Review Summaries navigation item exists in the DOM.
+11. The dedicated panel activates independently from member panels — its `data-tab`/panel id pairing (`review-summaries` / `#tab-review-summaries`) is not nested inside, and does not depend on, any member panel's DOM subtree or activation state.
+12. Switching between member panels does not change the dedicated workspace's reviewer identity, selected employee, or filter state (the workspace's state is untouched by unrelated panel activations).
+
+### Authorization (6)
+13. Tab is visible and clickable without a token.
+14. No-token state shows "Authorize this browser".
+15. A valid token identifies the creator on a new record.
+16. A create request cannot select reviewer ownership (body-supplied `reviewer_member_key` is ignored/rejected).
+17. A missing or invalid token cannot read or mutate any record.
+18. A token change (different member authorizes in the same browser) changes the authenticated reviewer identity used for ownership checks and new-record creation.
 
 ### Employee and filters (8)
-11. Nothing loads before an employee is selected.
-12. Staff search selects `reviewed_staff_id` correctly.
-13. "Include inactive" behavior is preserved.
-14. Reviewer filter defaults to "All reviewers" on employee selection.
-15. `include_all_reviewers=true` returns records from multiple reviewers for one employee.
-16. A specific reviewer filter narrows results to that reviewer only.
-17. From/To date filters work together and with the reviewer filter.
-18. Soft-deleted records remain hidden in every filter combination.
+19. No history/list request fires before an employee is selected.
+20. Staff search selects `reviewed_staff_id` correctly.
+21. "Include inactive" behavior is preserved.
+22. Reviewer filter defaults to "All reviewers" on employee selection.
+23. `include_all_reviewers=true` (with `reviewer_member_key` omitted) returns records from multiple reviewers for one employee.
+24. A specific reviewer filter (`reviewer_member_key=<x>`, `include_all_reviewers` not sent) narrows results to that reviewer only.
+25. From/To date filters work together and with the reviewer filter.
+26. Soft-deleted records remain hidden in every filter combination.
 
 ### Ownership (7)
-19. Owner may create a record.
-20. Owner may edit their own record.
-21. Owner may delete their own record.
-22. A non-owner reviewer may read another reviewer's active record.
-23. A non-owner reviewer sees no Edit/Delete control on that record.
-24. A cross-reviewer `PUT` returns 404.
-25. A cross-reviewer `DELETE` returns 404.
+27. Owner may create a record.
+28. Owner may edit their own record.
+29. Owner may delete their own record.
+30. A non-owner reviewer may read another reviewer's active record.
+31. Owner controls (Edit/Delete) appear only on records owned by the authenticated reviewer — never on another reviewer's record, regardless of which filter surfaced it.
+32. A cross-reviewer `PUT` returns 404.
+33. A cross-reviewer `DELETE` returns 404.
 
 ### Display (4)
-26. Each card shows the reviewed employee.
-27. Each card shows the reviewer (`reviewer_display_label`).
-28. Each card shows the reviewer's role (embedded in `reviewer_display_label`, e.g. "— HR").
-29. Each card shows the meeting date.
+34. Each card shows the reviewed employee.
+35. Each card shows the reviewer (`reviewer_display_label`).
+36. Each card shows the reviewer's role (embedded in `reviewer_display_label`, e.g. "— HR"; absent only for Paraparan, per §6).
+37. Each card shows the meeting date.
 
 ### State (4)
-30. Employee change clears history, edit state, and any draft.
-31. Reviewer-filter change clears stale detail/edit state.
-32. Token change recalculates ownership on every visible card.
-33. A stale in-flight response (superseded by a newer request) is ignored, never rendered.
+38. Employee change clears history, edit state, and any draft.
+39. Reviewer-filter change clears stale detail/edit state.
+40. Token change recalculates ownership on every visible card.
+41. A stale in-flight response (superseded by a newer request) is ignored, never rendered.
 
 ### Regression (7)
-34. Data tab still opens and functions.
-35. All 5 member panels still work correctly with Review Summaries removed.
-36. Tasks continue to work.
-37. Leave continues to work.
-38. Calendar navigation continues to work.
-39. Existing pre-migration records remain queryable and unchanged.
-40. No schema or migration change occurred.
+42. Data tab still opens and functions.
+43. All 5 member panels remain usable after mount removal.
+44. Tasks continue to work.
+45. Leave continues to work.
+46. Calendar navigation continues to work.
+47. Existing pre-migration records remain queryable and unchanged.
+48. No schema or migration change occurred.
 
-**Total: 40 — meets or exceeds the required minimum of 30 (per the REQ-CAL-REV-001 precedent of a ≥30 threshold).**
+**Total: 48 — meets or exceeds the required minimum of 30, and explicitly includes all 18 required test items from this correction task:**
+
+| Required item (task Phase I) | Satisfied by test # |
+|---|---|
+| 1. Zero mounts — Mayurika | 1 |
+| 2. Zero mounts — Suman | 2 |
+| 3. Zero mounts — Arun | 3 |
+| 4. Zero mounts — Rajiv | 4 |
+| 5. Zero mounts — Paraparan | 5 |
+| 6. Exactly one dedicated mount | 6 |
+| 7. Dedicated panel activates independently | 11 |
+| 8. Switching member panels doesn't change dedicated workspace reviewer | 12 |
+| 9. Token change changes authenticated reviewer | 18 |
+| 10. Employee selection controls `reviewed_staff_id` | 20 |
+| 11. No history request before employee selection | 19 |
+| 12. All-reviewer default works after employee selection | 23 |
+| 13. Specific reviewer filter works | 24 |
+| 14. Each card shows employee, reviewer, reviewer role | 34, 35, 36 |
+| 15. Owner controls appear only on owned records | 31 |
+| 16. Existing member tabs remain usable after mount removal | 43 |
+| 17. Data tab still opens | 42 |
+| 18. No schema or migration change | 48 |
 
 ### Regression suites to re-run (not new tests)
 - Backend: `test_calendar_auth.py`, `test_calendar_mutation_authorization.py`, `test_member_leave.py`, `test_staff_review_summaries.py` (existing 31 cases — must remain green unmodified except the new `include_all_reviewers` additions).
@@ -358,12 +441,15 @@ This design PASSES readiness for the next phase if and only if:
 - 0 unresolved contradictions between this design and REQ-CAL-REV-TAB-002's 31 approved decisions (validation doc confirms this);
 - the all-reviewers API change is additive and the one identified existing test governing default LIST behavior remains unaffected (§4 confirms — new branch only, old branch untouched);
 - the authorization matrix has 0 blank cells (§8 confirms 6 columns × 3 identity rows, fully filled);
-- the proposed test count is ≥ 30 (§11 confirms 40);
+- the proposed test count is ≥ 30 (§11 confirms 48);
 - 0 application code, migration, or database files were touched producing this design (confirmed);
-- the protected path was never opened (confirmed).
+- the protected path was never opened (confirmed);
+- the final mount counts are stated explicitly and unambiguously, with 0 implication that any member panel's mount is reused or repurposed as the dedicated panel (§3.1a/§9/§10 confirm: member-panel mounts = 0, dedicated-panel mounts = 1, total = 1).
 
-All six conditions are met.
+All seven conditions are met.
 
 ## 14. One next step
 
-Route this design to the relevant Management Team member(s)/domain owner(s) for review per CLAUDE.md §18 (this crosses HR/Mayurika, Recruitment/Suman, and Implementation/Arun tab surfaces, plus the Admin Manager/Rajiv and Auditor/Paraparan tabs whose embedded mounts are being removed) before any implementation branch is opened.
+Route this design to the relevant Management Team member(s)/domain owner(s) for review per CLAUDE.md §18 (this crosses HR/Mayurika, Recruitment/Suman, and Implementation/Arun tab surfaces, plus the Admin Manager/Rajiv and Auditor/Paraparan tabs whose embedded mounts are all being removed — 0 remaining, per §9/§10).
+
+**Branch-strategy correction (§H):** implementation branch strategy is not defined by this design and must follow the repository owner's explicit instruction at implementation start. This design does not assume `main` or any feature branch.

@@ -8,6 +8,8 @@ requirement-id: REQ-CAL-REV-TAB-002
 
 # Design Consistency Check — Calendar Review Summaries Dedicated Tab (2026-08-06)
 
+> **Correction (2026-08-06, same-day):** The original version of this check did not flag that the technical design's original wording ("4 of 5 mounts removed," "near the removed Mayurika mount") was ambiguous and could be read as reusing Mayurika's panel as the dedicated panel. The requirement and technical design documents have both been corrected (see their own correction notes) to state explicitly that all 5 existing mounts are removed (0 remaining) and the dedicated panel is newly created and independent. This check is updated accordingly — see the new "Mount-count and independence correction assessment" section below.
+
 ## Purpose
 
 Confirm that `docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md` contains no contradiction with any of the 31 approved decisions in `docs/2026-08-06_calendar-review-summaries-dedicated-tab-requirement.md`, and that the design is internally consistent with the existing REQ-CAL-REV-001 backend contract it builds on.
@@ -81,6 +83,18 @@ Design review only. No code was written, no migration was run, no database was q
 - Requiring `reviewed_staff_id` when `include_all_reviewers=true` prevents an unscoped全-reviewer, all-employee scan, matching decision #16 ("nothing displayed until employee selected").
 - One authoritative backend query is used (per the task's explicit instruction to avoid browser-side merge of multiple requests) — confirmed: the design's single `GET` with `include_all_reviewers=true` is the only new server round-trip; no frontend-side merge of per-reviewer requests is proposed anywhere in the technical design.
 
+## Mount-count and independence correction assessment
+
+| Check | Result | Evidence |
+|---|---|---|
+| Member-panel mounts after implementation | 0 (all 5 — Mayurika, Suman, Arun, Rajiv, Paraparan — removed) | Technical design §3.1a, §9, §10 |
+| Dedicated-panel mounts after implementation | 1, inside new `#tab-review-summaries` | Technical design §3.1a |
+| Total mounts | 1 | Technical design §3.1a |
+| Dedicated panel reuses Mayurika's (or any other member's) panel ID, DOM parent, or ownership? | No — confirmed new, independent panel with its own ID and no DOM-parent relationship to any member panel | Technical design §1, §3.1, §3.1a |
+| Reviewer identity in the dedicated workspace derived from any member panel, reviewer filter, selected employee, or request body? | No — derived only from `getStoredMemberKey()` (the validated Calendar token) | Technical design §5.0 |
+
+**Result: the ambiguity is corrected. 0 remaining statements in either document imply mount reuse or panel repurposing.**
+
 ## Reviewer identity/queryability assessment
 
 - `reviewer_display_label` is sourced from the single existing backend registry (`backend/config.py:90-102` `MEMBER_LABELS`), not duplicated into the database or into a new frontend copy — confirmed by discovery finding no existing frontend-side member-label map beyond the authenticated user's own `displayLabel`.
@@ -98,8 +112,8 @@ Design review only. No code was written, no migration was run, no database was q
 
 ## Test plan assessment
 
-- 40 proposed tests, exceeding the 30-test minimum referenced in this task and matching the REQ-CAL-REV-001 precedent threshold.
-- Covers all 7 required categories (navigation, authorization, employee/filters, ownership, display, state, regression) named in the task's Phase 9.
+- 48 proposed tests (revised from the original 40 to explicitly enumerate all 5 per-panel mount-removal checks and dedicated-panel-independence checks separately, per the correction task's Phase I), exceeding the 30-test minimum referenced in this task and matching the REQ-CAL-REV-001 precedent threshold.
+- Covers all 7 required categories (navigation, authorization, employee/filters, ownership, display, state, regression) named in the task's Phase 9, plus the 18 explicitly required correction-task test items (technical design §11 mapping table).
 
 ## PASS / AMBER / FAIL rule
 
@@ -108,9 +122,10 @@ This check PASSES if and only if:
 - 0 contradictions exist against the existing REQ-CAL-REV-001 backend contract;
 - the additive API change leaves the one identified existing default-behavior test unaffected;
 - 0 application/database files were touched producing the requirement, design, or this check;
-- the protected path was never opened.
+- the protected path was never opened;
+- 0 remaining ambiguity about mount reuse — member-panel mounts = 0, dedicated-panel mounts = 1, total = 1, stated explicitly in both the requirement and technical design (see "Mount-count and independence correction assessment" above).
 
-All five conditions are met.
+All six conditions are met.
 
 **Result: PASS.**
 
@@ -129,4 +144,6 @@ Same as `docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-desig
 
 ## One next step
 
-Circulate this design to Mayurika (HR/feature domain owner) and to Suman, Arun, Rajiv, and Paraparan (as owners of the 4 other tabs losing their embedded mount) for review and sign-off before an implementation branch is opened.
+Circulate this design to Mayurika (HR/feature domain owner, whose tab also loses its embedded mount — 0 remaining, same as the other 4) and to Suman, Arun, Rajiv, and Paraparan (as owners of the other 4 tabs losing their embedded mount) for review and sign-off.
+
+**Branch-strategy correction:** implementation branch strategy is not defined by this design and must follow the repository owner's explicit instruction at implementation start.
