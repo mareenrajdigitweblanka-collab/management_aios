@@ -1197,29 +1197,22 @@ export function mountReviewSummariesWorkspace(mountEl) {
     }
     card.appendChild(summaryEl);
 
-    // ── Status message (Phase 5) — shown on EVERY card now, not only the
-    //    owner's own (REQ-CAL-REV-LOCK-004 only ever showed this on an
-    //    owned card; the other-reviewer explanation is new presentation,
-    //    not a new permission). Wording/eligibility come entirely from
-    //    reviewSummaryStatusInfo() above — never recomputed here. ───────
-    var statusMessageEl = el('p', 'review-summaries-card-status-message');
-    if (!statusInfo.owned) {
-      statusMessageEl.classList.add('review-summaries-card-status-message--other');
-    } else if (!record.can_edit) {
-      statusMessageEl.classList.add('review-summaries-card-status-message--locked');
-    }
-    statusMessageEl.textContent = statusInfo.message;
-    card.appendChild(statusMessageEl);
-
-    // MD-only additional line (REQ-CAL-REV-MD-READ-006, 2026-08-06) — never
-    // replaces statusMessageEl above, which still shows the record's own
-    // owner/edit-lock truth unchanged for every viewer. This is purely an
-    // extra explanation of MD's OWN access level, shown on every card since
-    // isOwnedRecord is always false for MD (MD never owns a summary).
-    if (isReadOnlyMember(authenticatedMemberKey)) {
-      var mdNoticeEl = el('p', 'review-summaries-card-status-message review-summaries-card-md-notice');
-      mdNoticeEl.textContent = 'Read-only — MD has viewing access only.';
-      card.appendChild(mdNoticeEl);
+    // ── Status message — shown only for the AUTHENTICATED REVIEWER'S OWN
+    //    card (editable or locked), explaining the badge (a same-day
+    //    deadline, or why the window closed). The other-reviewer/MD
+    //    "read-only" explanation is deliberately NOT rendered any more —
+    //    the badge above already says "Read-only" on its own, and a
+    //    restated explanatory line under every non-owned card added no
+    //    information (UI copy trim, requested 2026-08-06). Wording for the
+    //    owned case still comes entirely from reviewSummaryStatusInfo()
+    //    above — never recomputed here. ─────────────────────────────────
+    if (statusInfo.owned) {
+      var statusMessageEl = el('p', 'review-summaries-card-status-message');
+      if (!record.can_edit) {
+        statusMessageEl.classList.add('review-summaries-card-status-message--locked');
+      }
+      statusMessageEl.textContent = statusInfo.message;
+      card.appendChild(statusMessageEl);
     }
 
     /* Edit button renders ONLY for a card owned by the currently

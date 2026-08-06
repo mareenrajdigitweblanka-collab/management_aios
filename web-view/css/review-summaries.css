@@ -558,13 +558,15 @@
   gap: var(--space-2);
 }
 
-/* ── Status message (REQ-CAL-REV-UX-005 Phase 5) — shown on EVERY card
-   now (owned or not), one level more prominent than the prior small
-   .review-summaries-card-edit-status text so "editable" and "locked"
-   states are no longer easy to miss (Observed UX Problems #1/#3). Text
-   itself already carries the full meaning (contrast-safe on both light
-   and dark backgrounds) — color is a reinforcement, never the only
-   signal. ── */
+/* ── Status message (REQ-CAL-REV-UX-005 Phase 5) — shown only on the
+   authenticated reviewer's OWN card (editable or locked), explaining the
+   badge above it. The other-reviewer/MD restated "read-only" line and its
+   --other/.review-summaries-card-md-notice variants were removed
+   (2026-08-06 UI copy trim) — the "Read-only" badge alone is sufficient
+   there, and a repeated explanatory line under every non-owned card added
+   no information. Text itself already carries the full meaning
+   (contrast-safe on both light and dark backgrounds) — color is a
+   reinforcement, never the only signal. ── */
 .review-summaries-card-status-message {
   font-size: var(--font-xs);
   color: var(--text-secondary);
@@ -579,17 +581,6 @@
   color: var(--amber);
   background: var(--amber-bg);
   border-color: #fde68a;
-}
-
-.review-summaries-card-status-message--other {
-  color: var(--muted);
-}
-
-/* MD-only extra card line (REQ-CAL-REV-MD-READ-006, 2026-08-06) — appended
-   below the existing status message (unchanged), never replacing it. */
-.review-summaries-card-md-notice {
-  margin-top: var(--space-1);
-  color: var(--muted);
 }
 
 /* ── Footer: Created/Updated timestamps (Phase 4 CARD FOOTER) —

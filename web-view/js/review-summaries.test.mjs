@@ -655,7 +655,7 @@ test('owned + editable record shows the Editable today badge and its Asia/Colomb
   assert.ok(findByClass(mountEl, 'review-summaries-edit-btn'), 'Edit button still renders alongside the status message');
 });
 
-test('a card from another reviewer shows a Read-only badge and the other-reviewer explanation, never an Edit button', async (t) => {
+test('a card from another reviewer shows only the Read-only badge (no restated explanatory message), never an Edit button', async (t) => {
   var other = fakeSummaryRecord({ id: 'sum-other', reviewer_member_key: 'arun', can_edit: false });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [other], total: 1, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
@@ -668,10 +668,10 @@ test('a card from another reviewer shows a Read-only badge and the other-reviewe
 
   var badge = findByClass(mountEl, 'review-summaries-card-status-badge');
   assert.match(badge.textContent, /Read-only$/);
-  var statusEl = findByClass(mountEl, 'review-summaries-card-status-message');
-  assert.equal(statusEl.textContent, 'Read-only — only the reviewer who created this summary can edit it.');
+  // No restated explanatory message renders for a non-owned card any more
+  // (UI copy trim, 2026-08-06) — the "Read-only" badge alone is sufficient.
+  assert.equal(findByClass(mountEl, 'review-summaries-card-status-message'), null);
   assert.equal(findByClass(mountEl, 'review-summaries-edit-btn'), null);
-  assert.ok(!/Admin/i.test(statusEl.textContent), 'must never imply an Admin override exists');
 });
 
 test('exactly one status badge renders per card, for owned-editable, owned-locked, and other-reviewer alike', async (t) => {
@@ -2280,9 +2280,14 @@ test('MD never gets an Edit button on any card — no summary is ever owned by "
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   assert.equal(findByClass(mountEl, 'review-summaries-edit-btn'), null, 'MD must never see an Edit control');
-  var mdNotice = findByClass(mountEl, 'review-summaries-card-md-notice');
-  assert.ok(mdNotice, 'each card should carry the MD-only viewing-access explanation');
-  assert.equal(mdNotice.textContent, 'Read-only — MD has viewing access only.');
+  // The per-card MD-only explanatory line (and the generic other-reviewer
+  // status message) are both removed as of 2026-08-06 — the "Read-only"
+  // badge alone conveys the state; no restated text renders for MD, who
+  // never owns any record.
+  assert.equal(findByClass(mountEl, 'review-summaries-card-md-notice'), null);
+  assert.equal(findByClass(mountEl, 'review-summaries-card-status-message'), null);
+  var badge = findByClass(mountEl, 'review-summaries-card-status-badge');
+  assert.match(badge.textContent, /Read-only$/);
 });
 
 test('MD can still download a PDF using the existing authorized fetch pattern', async (t) => {
