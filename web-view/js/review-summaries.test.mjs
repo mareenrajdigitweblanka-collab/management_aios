@@ -804,8 +804,8 @@ test('reviewer-filter change clears stale edit state', async (t) => {
   assert.equal(api.state.editingId, null, 'edit state must not survive a reviewer-filter change');
 });
 
-test('leaving the dedicated tab (panel-switch event) clears edit state but preserves the employee selection and loaded history', async (t) => {
-  var record = fakeSummaryRecord({ id: 'sum-1', reviewer_member_key: 'mayurika', summary_text: 'Still here.' });
+test('leaving the dedicated tab (panel-switch event) fully resets the workspace — employee, history, edit state, and reviewer filter', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-1', reviewer_member_key: 'mayurika', summary_text: 'Should not survive leaving.' });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
   t.after(globals.restore);
@@ -814,20 +814,68 @@ test('leaving the dedicated tab (panel-switch event) clears edit state but prese
   var api = mod.mountReviewSummariesWorkspace(mountEl);
   api.selectStaff(fakeStaffRecord({ id: 'staff-1' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.setReviewerFilter('arun');
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
   var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
-  editBtn.click();
-  assert.equal(api.state.editingId, 'sum-1');
+  if (editBtn) { editBtn.click(); }
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'Unsaved draft — must not survive.';
 
   // navigation.js dispatches this exact event on every activatePanel() call
-  // — including switching to a DIFFERENT member's tab. Unlike the old
-  // 5-mount model, this workspace's identity does not depend on which
-  // panel is active, so the employee selection must NOT be lost.
+  // — including leaving #tab-review-summaries for a different tab. Per the
+  // approved design (corrected 2026-08-06), this must fully reset the
+  // workspace, exactly like a genuine identity change.
   globals.document.dispatchEvent({ type: 'msc:close-toolbar-popovers' });
 
+  assert.equal(api.state.selectedStaff, null, 'employee selection must be cleared when leaving the tab');
   assert.equal(api.state.editingId, null, 'edit state must be cleared when leaving the tab');
-  assert.ok(api.state.selectedStaff, 'the employee selection must survive switching to a different member panel');
+  assert.equal(textarea.value, '', 'unsaved draft must be cleared when leaving the tab');
+  assert.equal(api.state.reviewerFilter, '', 'reviewer filter must reset to All reviewers when leaving the tab');
+  var reviewerSelect = findByClass(mountEl, 'review-summaries-reviewer-select');
+  assert.equal(reviewerSelect.value, '');
   var historyEl = findByClass(mountEl, 'review-summaries-history');
-  assert.match(historyEl.allText(), /Still here/, 'previously loaded history must remain visible');
+  assert.ok(!/Should not survive/.test(historyEl.allText()), 'previously loaded history must not remain visible');
+  assert.match(historyEl.allText(), /Select a staff member/, 'returning later must prompt for a fresh employee selection');
+});
+
+test('returning to the tab after leaving sends zero history requests until a new employee is selected', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-1', reviewer_member_key: 'mayurika' });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  globals.document.dispatchEvent({ type: 'msc:close-toolbar-popovers' }); // leave
+  var callsAfterLeave = fetchMock.calls.length;
+  globals.document.dispatchEvent({ type: 'msc:close-toolbar-popovers' }); // "return" (re-activation dispatches the same event)
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(fetchMock.calls.length, callsAfterLeave, 'no history request should fire merely from returning to the tab, with no employee selected yet');
+});
+
+test('a valid token remains stored after ordinary tab navigation (leaving is not an authorization event)', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  globals.document.dispatchEvent({ type: 'msc:close-toolbar-popovers' });
+
+  assert.equal(
+    JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1')).token,
+    'test-only-frontend-token',
+    'the stored token must be untouched by ordinary navigation'
+  );
+  assert.equal(api.accessDecision(), 'authorized');
 });
 
 test('switching member panels does not change the authenticated reviewer identity', async (t) => {
@@ -845,7 +893,7 @@ test('switching member panels does not change the authenticated reviewer identit
   assert.equal(label.textContent, 'Authorized as: Mayurika — HR');
 });
 
-test('token change (a different member authorizes) clears the employee selection and recalculates ownership on every visible card', async (t) => {
+test('token change (a different member authorizes) clears the previous employee/history and does not auto-reload it under the new identity', async (t) => {
   var mayurikaRecord = fakeSummaryRecord({ id: 'sum-mayu', reviewer_member_key: 'mayurika' });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [mayurikaRecord], total: 1, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
@@ -857,6 +905,7 @@ test('token change (a different member authorizes) clears the employee selection
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
   assert.ok(findByClass(mountEl, 'review-summaries-edit-btn'), 'mayurika should own this card before the token change');
   assert.ok(api.state.selectedStaff);
+  var callsBeforeChange = fetchMock.calls.length;
 
   globals.window.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
     version: 1, token: 'arun-token', verifiedMemberKey: 'arun', verifiedAt: '2026-08-06T00:00:00.000Z'
@@ -865,11 +914,14 @@ test('token change (a different member authorizes) clears the employee selection
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   assert.equal(api.state.selectedStaff, null, 'a genuine token change clears the employee selection');
+  var historyEl = findByClass(mountEl, 'review-summaries-history');
+  assert.match(historyEl.allText(), /Select a staff member/, 'no employee history from before the change should remain visible');
+  assert.equal(fetchMock.calls.length, callsBeforeChange, 'the new identity must not automatically re-fetch the old employee\'s history');
   var label = findByClass(mountEl, 'review-summaries-authorized-as');
   assert.equal(label.textContent, 'Authorized as: Arun — Implementation Officer');
 });
 
-test('a 401 mid-session clears history/edit state but keeps the employee selection so re-authorizing resumes the same view', async (t) => {
+test('a 401 mid-session fully resets the workspace — employee, history, edit state, and draft — exactly like a genuine token change', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(401, { detail: 'Invalid token.' }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
   t.after(globals.restore);
@@ -879,10 +931,149 @@ test('a 401 mid-session clears history/edit state but keeps the employee selecti
   api.selectStaff(fakeStaffRecord({ id: 'staff-uuid-9b' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  assert.equal(globals.window.localStorage.getItem('management_aios_calendar_auth_v1'), null);
+  assert.equal(globals.window.localStorage.getItem('management_aios_calendar_auth_v1'), null, 'the existing auth mechanism must have cleared the token');
   assert.equal(api.accessDecision(), 'unauthorized');
   assert.equal(findByClass(mountEl, 'review-summaries-unauthorized').hidden, false);
-  assert.ok(api.state.selectedStaff, 'the employee selection must be preserved across a 401 clear, unlike a genuine token change');
+  assert.equal(api.state.selectedStaff, null, '401 must clear the selected employee');
+  assert.equal(api.state.editingId, null, '401 must clear edit state');
+  var historyEl = findByClass(mountEl, 'review-summaries-history');
+  assert.equal(historyEl.textContent, '', '401 must clear loaded history — the history panel is hidden while unauthorized, but its content must not linger');
+});
+
+test('a 401 while a draft is unsaved clears that draft', async (t) => {
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (options.method === 'GET' || !options.method) { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); }
+    return jsonResponse(401, { detail: 'Invalid token.' });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-uuid-9c' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'Unsaved draft — must not survive a 401.';
+
+  // Trigger the 401 via a mutation attempt (simulates an expired token
+  // discovered mid-session, not just on the initial list fetch).
+  textarea.dispatchEvent({ type: 'input' });
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.accessDecision(), 'unauthorized');
+  assert.equal(textarea.value, '', 'the unsaved draft must be cleared once a 401 is discovered');
+});
+
+test('a 401 invalidates a stale in-flight history response — it never repopulates the now-cleared state', async (t) => {
+  var resolveGet;
+  var fetchMock = makeFetchMock(function () {
+    return new Promise(function (resolve) { resolveGet = resolve; });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-uuid-9d' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  // Simulate the 401 arriving via the shared auth event BEFORE the
+  // in-flight GET above resolves (e.g. another request on the page
+  // discovered the expired token first).
+  globals.window.localStorage.removeItem('management_aios_calendar_auth_v1');
+  globals.document.dispatchEvent({ type: CALENDAR_AUTH_CHANGED_EVENT_NAME });
+
+  var staleRecord = fakeSummaryRecord({ id: 'sum-stale', summary_text: 'STALE — must never appear after a 401.' });
+  resolveGet(jsonResponse(200, { records: [staleRecord], total: 1, limit: 50, offset: 0 }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.state.selectedStaff, null);
+  var historyEl = findByClass(mountEl, 'review-summaries-history');
+  assert.ok(!/STALE/.test(historyEl.allText()), 'a response that resolves after a 401 reset must never repopulate the cleared workspace');
+});
+
+test('a 404 (cross-reviewer/nonexistent record) does not clear the valid token', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-404', reviewer_member_key: 'mayurika' });
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (options.method === 'PUT') { return jsonResponse(404, { detail: 'Review summary not found.' }); }
+    return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-404' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
+  editBtn.click();
+  var form = findByTag(mountEl, 'FORM');
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(
+    JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1')).token,
+    'test-only-frontend-token',
+    'a 404 must never clear the stored token'
+  );
+  assert.equal(api.accessDecision(), 'authorized', 'the workspace must remain authorized after a 404');
+});
+
+test('an owner-only mutation denial (a 404 on PUT for a record the token no longer owns) does not clear the valid token', async (t) => {
+  // Backend design: cross-reviewer/owner-only denial and "record not
+  // found" are the SAME non-disclosing 404 (backend/routers/
+  // staff_review_summaries.py's _get_owned_summary_or_404) — there is no
+  // separate 403/owner-denial status code to distinguish. This test
+  // exercises that denial via the PUT path (edit form submit), which —
+  // unlike Delete — does not require driving confirmDestructive() (a
+  // documented coverage boundary of this test harness).
+  var record = fakeSummaryRecord({ id: 'sum-owner-denied', reviewer_member_key: 'mayurika' });
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (options.method === 'PUT') { return jsonResponse(404, { detail: 'Review summary not found.' }); }
+    return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-owner-denied' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
+  editBtn.click();
+  var form = findByTag(mountEl, 'FORM');
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(
+    JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1')).token,
+    'test-only-frontend-token',
+    'an owner-only mutation denial must never clear the stored token'
+  );
+  assert.equal(api.accessDecision(), 'authorized');
+});
+
+test('clicking Delete alone (before confirmation) never touches the stored token', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-del-token', reviewer_member_key: 'mayurika' });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-del-token' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  var deleteBtn = findByClass(mountEl, 'review-summaries-delete-btn');
+  deleteBtn.click();
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(
+    JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1')).token,
+    'test-only-frontend-token'
+  );
+  assert.equal(api.accessDecision(), 'authorized');
 });
 
 test('stale in-flight response is ignored — a slower earlier request never overwrites a newer selection', async (t) => {

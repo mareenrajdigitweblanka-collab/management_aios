@@ -3,7 +3,7 @@ name: calendar-review-summaries-dedicated-tab-implementation-handover
 type: handover
 scope: management_aios Calendar — Staff Review Summaries dedicated tab (REQ-CAL-REV-TAB-002)
 created: 2026-08-06
-status: AMBER — implemented directly on local main per explicit user authorization, all automated tests pass with zero regressions (638 backend/636 passed with 2 pre-existing unrelated failures; 237/237 frontend), not pushed/deployed pending review, no real-browser walkthrough performed (no browser automation tool available).
+status: AMBER — implemented directly on local main per explicit user authorization, all automated tests pass with zero regressions (638 backend/636 passed with 2 pre-existing unrelated failures; 260/260 frontend), not pushed/deployed pending review, no real-browser walkthrough performed (no browser automation tool available). State-clearing deviations (401/tab-leave preserving employee selection) reported and corrected same-day — see §13. Automated navigation-structure test coverage added — see §13.
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending — see §7 routing
 ---
@@ -44,8 +44,9 @@ No file under `member-aios/mayurika-hr/staff-data/` (protected) was opened or to
 - `include_all_reviewers` and `reviewer_member_key` are mutually exclusive by construction in both `buildListQuery()` (frontend) and the backend route (422 if both supplied) — do not relax this.
 - Reviewer display name/role come from `member-registry.js`'s `MEMBER_REGISTRY`, resolved client-side from `record.reviewer_member_key`. Do not add a `reviewer_display_label`/`reviewer_display_name`/`reviewer_role` field to the backend response or database — this was deliberately reassessed and dropped during design (technical design §4/§6.3).
 - Paraparan's role is `"Auditor"` in `MEMBER_REGISTRY` — this is a frontend-only display decision, not a resolution of the `backend/config.py` `MEMBER_LABELS["paraparan"]` registry-data gap. Do not silently "fix" `config.py` to match without a separate, explicit task — CLAUDE.md's source-discipline rules apply to that HR/business-fact question.
-- Token-change vs. 401-clear are distinguished by checking `getStoredMemberKey()` at the moment `CALENDAR_AUTH_CHANGED_EVENT` fires: non-null → genuine token change → full reset (including employee selection); null → 401 clear → keep the employee selection. Do not collapse these back into one reset path.
-- `msc:close-toolbar-popovers` (fired by `navigation.js` on every panel activation) now only clears in-progress edit state/draft and aborts a pending staff search — it deliberately does NOT clear the employee selection or loaded history any more, since this workspace's data no longer depends on which panel is active.
+- **Corrected §13**: a 401 and a genuine token change are now treated IDENTICALLY — both call the same central `resetWorkspaceState()` unconditionally via `reactToAuthChange()`. Do not reintroduce a null-vs-real-key branch that preserves employee selection on a 401.
+- **Corrected §13**: `msc:close-toolbar-popovers` (fired by `navigation.js` on every panel activation, including leaving `#tab-review-summaries`) now calls the same central `resetWorkspaceState()` — full reset, including the employee selection, loaded history, and both filters. Do not reintroduce a partial reset (edit-state-only) for this event.
+- `resetWorkspaceState()` (`web-view/js/review-summaries.js`) is the ONE reusable reset function — used by employee selection, token change, 401, and leaving the tab. Do not add a second, parallel reset path for any future trigger; extend this one function instead.
 
 ## 5. How to extend tests
 
@@ -53,11 +54,12 @@ Backend: add cases to `backend/tests/test_staff_review_summaries.py`, reusing `s
 
 Frontend: add cases to `web-view/js/review-summaries.test.mjs` using `review-summaries-test-dom.mjs` (unchanged by this rewrite) + `installFakeBrowserGlobals({storedAuth, fetchImpl})` + a fresh cache-busted `import('./review-summaries.js?...')` per test — same convention as before. New helpers available: `fakeStaffRecord()`/`fakeSummaryRecord()` factory functions at the top of the test file, and the mounted API's `setReviewerFilter(value)` helper for driving the reviewer filter without simulating a raw `<select>` change event (a direct-DOM-event test is also included as a sanity check that the wiring itself works).
 
-## 6. Verified this session
+## 6. Verified this session (updated after §13's correction round)
 
 - Baseline (before any code change): full backend suite → 628 total, 626 passed, 2 pre-existing failures (see §9); `review-summaries.test.mjs` → 53/53; full Calendar frontend suite → 179/179.
-- Full suite (after implementation): `test_staff_review_summaries.py` targeted → 58/58; full backend suite → 638 total, 636 passed, same 2 pre-existing failures unchanged; `review-summaries.test.mjs` (rewritten) → 58/58; full Calendar frontend suite → 179/179 (zero regression); combined frontend run → 237/237.
-- Static markup verification (grep): 0 `review-summaries-instance` matches in `index.html`; exactly 1 `id="reviewSummariesWorkspace"`, 1 `data-tab="review-summaries"`, 1 `id="tab-review-summaries"`; all 5 `.msc-instance` (Task/Leave/Calendar) mounts confirmed still present.
+- Full suite (after the original implementation): `test_staff_review_summaries.py` targeted → 58/58; full backend suite → 638 total, 636 passed, same 2 pre-existing failures unchanged; `review-summaries.test.mjs` (rewritten) → 58/58; full Calendar frontend suite → 179/179 (zero regression); combined frontend run → 237/237.
+- Full suite (after the §13 state-clearing correction round): `test_staff_review_summaries.py` targeted → 58/58 (unchanged, no backend file touched); full backend suite → 638 total, 636 passed, same 2 pre-existing failures unchanged; `review-summaries.test.mjs` (extended again) → 65/65; `navigation-structure.test.mjs` (new) → 16/16; full Calendar frontend suite → 179/179 (zero regression); combined frontend run → 260/260.
+- Navigation/mount structure is now verified by a committed automated test (`web-view/js/navigation-structure.test.mjs`, 16 tests), superseding the original session's grep-only verification.
 
 ## 7. Reviewer routing
 
@@ -67,7 +69,8 @@ Per CLAUDE.md §18 and the approved design's §14 review-gate correction: busine
 
 - Committed locally on `main` but **not pushed** to `origin/main` this session — explicit instruction: do not push until the user reviews the final implementation report.
 - No live browser walkthrough was performed (no browser automation tool available in this environment) — coverage is HTTP-level (backend `TestClient`) and DOM-stand-in-level (frontend), matching this repo's established pattern for every prior Calendar feature.
-- No automated test harness exists in this repo for `index.html` markup structure (navigation heading/order, mount counts) — those items were verified by direct static grep, not by an automated test, since no `navigation.test.mjs`-style precedent exists to extend.
+- ~~No automated test harness exists in this repo for `index.html` markup structure~~ — **resolved in §13**: `navigation-structure.test.mjs` now provides real automated coverage.
+- `docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md` §7's state-clearing table still describes the pre-correction behavior (401/tab-leave preserving employee selection) — out of scope to edit this round (only the two evidence files and the implementation were in scope); this handover and its companion validation report are the authoritative record of the current, corrected behavior.
 
 ## 9. Baseline failures (pre-existing, unrelated, unchanged)
 
@@ -84,4 +87,28 @@ See `git log` on `main` for this session's exact commit hash(es) — reported in
 
 ## 12. One next step
 
-Review this handover and the implementation evidence report; if approved, push local `main` to `origin/main` (no force-push) and, separately, arrange a real-browser session to complete the walkthrough this session's tooling could not perform.
+~~Review this handover and the implementation evidence report; if approved, push local `main`...~~ **Superseded — see §13.** Two reported state-clearing deviations were corrected same-day, and automated navigation-structure test coverage was added.
+
+## 13. State-clearing correction round — 2026-08-06 (same-day follow-up)
+
+Full detail: `validation/calendar-review-summaries-dedicated-tab-implementation-check-2026-08-06.md`, "Correction — 2026-08-06 (state-clearing round 2)" section.
+
+**Reported deviations**: the original implementation report stated a 401 preserves the selected employee, and leaving the dedicated tab preserves the selected employee and loaded history.
+
+**Root cause**: both behaviors were deliberate implementation choices matching `docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md` §7 exactly as it read at the time (that table explicitly specified this "keep the selection" behavior) — not a coding defect against that document. This session's instruction established that the intended approved behavior is stricter: full clearing on all three triggers (authorization failure, token invalidation, leaving the tab).
+
+**Fix**: replaced the prior three-way split (`clearWorkspaceState()`/`clearEmployeeDependentState()`/`onLeaveOrPanelSwitch()`'s partial logic) with one reusable `resetWorkspaceState()` in `web-view/js/review-summaries.js`, used by every trigger — employee selection, token change, 401, and leaving the tab. A 401 and a genuine token change are now handled identically. Leaving the tab now fully resets the workspace instead of only clearing edit state. The stored Calendar token is never touched by this function — only `handleUnauthorizedResponse()` clears it, only on a real 401 (confirmed by test: a 404 and an owner-only mutation denial never clear the token).
+
+**New test file**: `web-view/js/navigation-structure.test.mjs` (16 tests) — parses the real `index.html` source (line-anchored top-level `.tab-panel` extraction) to prove sidebar heading/order, mount counts, and non-nesting as committed, repeatable coverage, replacing the original session's grep-only verification.
+
+**Files changed this round**: `web-view/js/review-summaries.js`, `web-view/js/review-summaries.test.mjs` (65 tests, was 58), `web-view/js/navigation-structure.test.mjs` (new, 16 tests), plus this handover and its companion validation report. No backend file, schema, model, or migration was touched.
+
+**Tests**: `test_staff_review_summaries.py` unchanged 58/58; full backend suite unchanged 638 total/636 passed (same 2 pre-existing failures); `review-summaries.test.mjs` 58 → 65; `navigation-structure.test.mjs` 0 → 16 (new); full Calendar frontend suite unchanged 179/179; combined frontend 237 → 260.
+
+**Production data safety**: 0 database writes, 0 records changed — no database connection was used this round.
+
+**Status**: AMBER — committed locally on `main`, not pushed, not deployed. All automated coverage passes; no real-browser walkthrough was performed this round (same tooling limitation documented throughout this feature's evidence trail).
+
+## 14. One next step
+
+Review this handover and the corrected implementation evidence report; if approved, push local `main` to `origin/main` (no force-push) and, separately, arrange a real-browser session to complete the walkthrough this session's tooling could not perform.

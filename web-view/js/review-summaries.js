@@ -409,9 +409,10 @@ export function mountReviewSummariesWorkspace(mountEl) {
     staffResultsEl.hidden = false;
   }
 
-  /* Shared by the "Change" button below and clearEmployeeSelection() —
-     resets the staff-selector UI back to its pre-selection state without
-     touching filters or edit state. */
+  /* Shared by resetWorkspaceState() (the single central reset, defined
+     below) — resets the staff-selector UI back to its pre-selection
+     state. Never called on its own to "partially" clear state; every
+     caller that needs to deselect goes through resetWorkspaceState(). */
   function deselectStaff() {
     state.selectedStaff = null;
     selectedStaffEl.hidden = true;
@@ -422,18 +423,12 @@ export function mountReviewSummariesWorkspace(mountEl) {
     staffResultsEl.textContent = '';
   }
 
-  /* Employee change (technical design §7) — clears history, edit state,
-     and any in-flight/stale history request; a NEW employee always starts
-     from a clean slate, never inheriting the previous selection's loaded
-     cards or an open edit form. */
-  function clearEmployeeDependentState() {
-    exitEditMode();
-    state.historyRequestId += 1;
-    historyEl.textContent = '';
-  }
-
   function selectStaff(staff) {
-    clearEmployeeDependentState();
+    // A fresh employee always starts from the exact same clean baseline —
+    // reviewer filter back to "All reviewers", date filters cleared, no
+    // inherited history/edit/draft state from whichever employee (if any)
+    // was previously selected (Phase 3 correction, 2026-08-06).
+    resetWorkspaceState();
     state.selectedStaff = staff;
     staffResultsEl.hidden = true;
     staffSearchInput.value = '';
@@ -443,10 +438,8 @@ export function mountReviewSummariesWorkspace(mountEl) {
     changeBtn.type = 'button';
     changeBtn.textContent = 'Change';
     changeBtn.addEventListener('click', function () {
-      clearEmployeeDependentState();
-      deselectStaff();
+      resetWorkspaceState();
       staffSearchInput.focus();
-      updateFormVisibility();
       renderHistory();
     });
     selectedStaffEl.appendChild(nameEl);
@@ -884,12 +877,37 @@ export function mountReviewSummariesWorkspace(mountEl) {
     return mode;
   }
 
-  /* Full reset — token CHANGE (a new/different member successfully
-     authorized), not a 401 clear (see reactToAuthChange below, which
-     keeps the employee selection on a 401). Clears everything: identity-
-     dependent history, edit/draft state, and the staff selection itself
-     (technical design §7: "Token change | everything"). */
-  function clearWorkspaceState() {
+  /* THE single, reusable state reset (Phase 3 correction, 2026-08-06 —
+     replaces the prior clearWorkspaceState()/clearEmployeeDependentState()/
+     onLeaveOrPanelSwitch() split, which left two paths — a 401 and
+     leaving the tab — only partially clearing state). Every trigger that
+     must reset this workspace goes through this ONE function: a fresh
+     employee selection, a genuine token change, a 401/authorization
+     failure, and leaving the dedicated tab. Clears:
+       - the selected employee (deselectStaff — UUID + display state);
+       - loaded history (historyEl content);
+       - edit/draft/delete-related state (exitEditMode — editingId, draft
+         summary/date text, field errors; any card DOM holding expanded-
+         summary/delete-confirmation state is itself destroyed the next
+         time history re-renders, since cards are always rebuilt from
+         scratch, never patched in place);
+       - the reviewer filter, reset to '' ("All reviewers");
+       - both date filters;
+       - any pending staff-search request (aborted, not just abandoned);
+       - the stale-response guard (historyRequestId bumped), so a
+         slower, already-in-flight request from before this reset can
+         never repopulate the just-cleared state once it resolves.
+     Deliberately never touches the stored Calendar token itself — token
+     clearing is always handleUnauthorizedResponse()'s job (calendar/
+     auth.js), invoked only by reviewSummariesApiRequest() on a real 401
+     (never by this function, and never for a 404 or an owner-only
+     mutation denial, which are unrelated error classes entirely). Does
+     not itself decide what to render next — every call site below still
+     calls renderHistory()/renderAccessGate() explicitly afterward, since
+     that decision differs by context (e.g. an auth-change call site also
+     needs to re-run the access gate; a plain employee-selection call site
+     does not). */
+  function resetWorkspaceState() {
     if (state.staffSearchAbort) { state.staffSearchAbort.abort(); state.staffSearchAbort = null; }
     state.historyRequestId += 1;
     deselectStaff();
@@ -904,43 +922,34 @@ export function mountReviewSummariesWorkspace(mountEl) {
     historyEl.textContent = '';
   }
 
-  /* CALENDAR_AUTH_CHANGED_EVENT fires for two distinct situations that
-     this workspace must react to differently (technical design §7):
-       - a 401 mid-session (handleUnauthorizedResponse clears the stored
-         token to null BEFORE dispatching) -> getStoredMemberKey() is now
-         null -> keep the employee selection, clear only history/edit
-         state, so re-authorizing resumes the same view.
-       - a successful first-time authorize OR Change Token (a NEW valid
-         token is stored BEFORE dispatching) -> getStoredMemberKey() is
-         now a real member key -> full reset, including the employee
-         selection — the identity behind any in-progress work has changed. */
+  /* CALENDAR_AUTH_CHANGED_EVENT fires for two situations — a 401 mid-
+     session (handleUnauthorizedResponse clears the stored token to null
+     BEFORE dispatching) and a successful first-time authorize/Change
+     Token (a NEW valid token is stored BEFORE dispatching). Both are now
+     treated identically (Phase 4/6 correction, 2026-08-06): a full
+     resetWorkspaceState() every time, regardless of which situation this
+     is — an authorization failure must clear the workspace exactly like a
+     genuine identity change, not preserve the previous employee selection
+     for later. */
   function reactToAuthChange() {
-    var newMemberKey = getStoredMemberKey();
-    if (newMemberKey) {
-      clearWorkspaceState();
-    } else {
-      exitEditMode();
-      state.historyRequestId += 1;
-      historyEl.textContent = '';
-    }
+    resetWorkspaceState();
     updateAuthorizedAsLabel();
     var mode = renderAccessGate();
     if (mode !== 'unauthorized') { renderHistory(); }
   }
 
   /* navigation.js's 'msc:close-toolbar-popovers' fires on every panel
-     activation (including activating this one) — repurposed here
-     (technical design §7) as the "leaving the dedicated tab" signal.
-     Unlike REQ-CAL-REV-001's 5-mount model (where this event was a
-     "sidebar member changed" proxy requiring a full reset), a single,
-     member-independent workspace only needs to discard in-progress edit
-     state/unsaved drafts and abort any pending staff search on this
-     signal — the employee selection and loaded history remain valid and
-     are deliberately preserved, since neither depends on which panel is
-     currently active. */
+     activation (including activating this one) — the "leaving the
+     dedicated tab" signal (technical design §7, as corrected 2026-08-06).
+     A full resetWorkspaceState() so returning to this tab later always
+     starts from a clean baseline: no employee selected, no history
+     visible, reviewer filter back to "All reviewers", date filters
+     cleared — never the previous visit's stale selection. Does not touch
+     the stored Calendar token — ordinary navigation is not an
+     authorization event. */
   function onLeaveOrPanelSwitch() {
-    if (state.staffSearchAbort) { state.staffSearchAbort.abort(); state.staffSearchAbort = null; }
-    exitEditMode();
+    resetWorkspaceState();
+    renderHistory();
   }
 
   document.addEventListener('msc:close-toolbar-popovers', onLeaveOrPanelSwitch);
@@ -960,6 +969,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
     updateAuthorizedAsLabel: updateAuthorizedAsLabel,
     reactToAuthChange: reactToAuthChange,
     onLeaveOrPanelSwitch: onLeaveOrPanelSwitch,
+    resetWorkspaceState: resetWorkspaceState,
     accessDecision: currentAccess,
     setReviewerFilter: function (value) {
       state.reviewerFilter = value;
