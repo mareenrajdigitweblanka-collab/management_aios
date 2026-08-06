@@ -9,6 +9,8 @@ requirement-id: REQ-CAL-REV-PDF-003
 
 # Requirement — Management AIOS Employee Review Summary PDF Export (2026-08-06)
 
+> **Correction (2026-08-06, same-day, round 1):** Two corrections to the original approved decisions, both documentation-only — no application code was implemented, no dependency was installed. (1) Decision 24's filename-exclusion list did not classify the employee display name itself, which the approved filename pattern (decision 22) explicitly includes — the filename is not PII-free; it contains one identifiable field (the employee's display name) by deliberate, approved design. §5.8 below is corrected to state this plainly and to itemize every field that must never appear in the filename. (2) No approved decision previously stated what happens when a filtered export matches zero active records — the companion technical design had independently proposed "still generate a PDF saying no records match," which is corrected here: **no PDF is generated for an empty result.** New §5.10 records the approved empty-result decisions. See the companion technical design's own correction note for the implementation-level detail (route status code, frontend handling).
+
 ## Metadata (per CLAUDE.md §11.3 — Requirement Documentation Governance)
 
 | Field | Value |
@@ -20,7 +22,7 @@ requirement-id: REQ-CAL-REV-PDF-003
 | Company Value Contribution | Lets a Management Team member export the currently filtered Review Summary history for one employee as a portable, offline-readable record — addressing the management file/decision disorganization domain named in CLAUDE.md §1/§4, and reusing the dedicated Review Summaries workspace (REQ-CAL-REV-TAB-002) rather than duplicating its filter/read logic |
 | MVP Submission Date | Not yet set |
 | Project Owner | Mareenraj (builder) |
-| Status | READY FOR TECHNICAL DESIGN — no open business parameters remain; all decisions below are approved as stated |
+| Status | READY FOR TECHNICAL DESIGN — no open business parameters remain; all 38 decisions below are approved as stated (corrected, round 1, 2026-08-06 — see correction note above) |
 
 ## 1. Purpose
 
@@ -90,22 +92,44 @@ This is a UI/technical requirement, not an HR/business-domain claim under CLAUDE
 20. No logo or elaborate company branding is required.
 21. No Tamil-specific or general multilingual font guarantee is required.
 
-### 5.8 Filename
+### 5.8 Filename (corrected, round 1 — filename privacy classification)
 
 22. Filename pattern: `review-summaries_<sanitized-employee-name>_<YYYY-MM-DD>.pdf`.
 23. Unsafe filename characters are removed or replaced.
-24. The filename never includes: token, summary text, reviewer names, NIC, personal contact information, or record UUIDs.
+24. **Filename privacy classification**: the employee display name embedded in the filename (decision 22) is identifiable information — the filename is not, and is not claimed to be, free of all personally identifying content. Its inclusion is a deliberate, explicit decision by the requirement owner, made for the practical benefit of a human-readable downloaded file, not an oversight. Filename sanitization (decision 23) is still required so that identifiable name never introduces an unsafe character into the filesystem path.
+
+    The following must never enter the filename, under any circumstance:
+    - NIC
+    - authentication token
+    - summary text
+    - reviewer name
+    - reviewer role
+    - personal email address
+    - phone number
+    - staff UUID
+    - summary record UUID
+    - any other raw database ID
+
+25. **Practical limitation (documented, not solved by new tracking)**: once downloaded, the filename — including the identifiable employee name — may remain visible in the user's operating-system Downloads folder listing, browser download history, or OS recent-file history, for as long as that user's own device retains it. This is a property of every file a browser downloads to a local device and is not specific to this export. **This limitation is not addressed by adding download tracking, an audit trail, or any server-side retention of the exported file** — decisions 28-33 below (no tracking, no audit record, no permanent server copy) remain in force exactly as approved; the responsibility for what happens to a file after it reaches the user's own device is outside this application's control and outside the scope of this requirement.
 
 ### 5.9 Save and retention
 
-25. Clicking Download PDF triggers a browser download/save interaction.
-26. Whether the browser shows a Save As location prompt or uses its configured Downloads folder is entirely the browser's own decision — the application must never claim it can force a destination picker in every browser.
-27. No download is tracked.
-28. No audit record of any export is created.
-29. The PDF is never saved to PostgreSQL.
-30. No permanent server-side PDF file is retained.
-31. PDF content is never saved in `localStorage` or `sessionStorage`.
-32. Generated PDFs are never committed to Git.
+26. Clicking Download PDF triggers a browser download/save interaction.
+27. Whether the browser shows a Save As location prompt or uses its configured Downloads folder is entirely the browser's own decision — the application must never claim it can force a destination picker in every browser.
+28. No download is tracked.
+29. No audit record of any export is created.
+30. The PDF is never saved to PostgreSQL.
+31. No permanent server-side PDF file is retained.
+32. PDF content is never saved in `localStorage` or `sessionStorage`.
+33. Generated PDFs are never committed to Git.
+
+### 5.10 Empty-result behavior (new, round 1 correction — 2026-08-06)
+
+34. When the current employee selection and filters match zero active Review Summary records, **no PDF is generated** — the export must never produce a blank or misleading PDF document for an empty result.
+35. No Blob is created and no browser download is triggered for an empty result.
+36. The UI shows: **"No review summaries match the selected filters."**
+37. The selected employee and the currently applied filters are retained (not cleared) when an export resolves to zero matching records, so the user can adjust the filters and try again without re-selecting the employee.
+38. The exact backend response used to signal this case is a technical design decision, not a business decision — the companion technical design must choose one status code consistent with this router's own existing conventions and document the reasoning; the requirement's only binding rule is decisions 34-37 above.
 
 ## 6. Out of scope / explicitly not changed this session
 

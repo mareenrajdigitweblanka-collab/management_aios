@@ -9,6 +9,8 @@ requirement-id: REQ-CAL-REV-PDF-003
 
 # Technical Design — Management AIOS Employee Review Summary PDF Export (2026-08-06)
 
+> **Correction (2026-08-06, same-day, round 1):** Four corrections to this document, all documentation-only — no application code, dependency, or database object was created, executed, installed, or queried producing this correction. (1) §9's original "empty result still produces a PDF" behavior is corrected: **no PDF is generated for zero matching records** — the route now returns 404 (§5.4, §11, reasoning below), matching the requirement's new §5.10 decisions. (2) §5.1's routing-collision avoidance is strengthened with an explicit, additional source-order safeguard (declare the export route before `/{summary_id}` in the router file) on top of the existing two-segment-path structural fix — defense in depth, not a replacement. (3) New §5.6 records a mandatory ReportLab deployment-validation gate — `reportlab` remains the selected candidate library, but its production compatibility is explicitly unverified until a Vercel preview deployment proves it, with a documented fallback (stop and return to technical review — never silently substitute frontend generation or another library). (4) §7's filename-privacy control is corrected to state plainly that the filename is not free of identifiable information — see the requirement's own §5.8 correction. §16's test plan is expanded from 42 to 56 tests and §15's PASS rule gains three new conditions. See the companion validation report's own correction note for the full traceability update.
+
 ## 0. Requirement metadata / source
 
 | Field | Value |
@@ -121,7 +123,13 @@ GET /api/staff-review-summaries/export/pdf
     &date_to=<date>                      (optional)
 ```
 
-**Deliberately `/export/pdf` (two path segments), not `/export.pdf` (one segment).** The existing router already registers `GET /{summary_id}` (`staff_review_summaries.py:315`), a single-path-segment route with `summary_id: UUID`. A new single-segment literal route (`/export.pdf`) would be shape-ambiguous with `/{summary_id}` — depending on registration order, a request to `/export.pdf` could be captured by the `{summary_id}` route first and rejected with a 422 UUID-parse error before ever reaching the export handler, a routing hazard that is easy to introduce and easy to miss in review. `/export/pdf` has a different path shape (two segments) than `/{summary_id}` (one segment) and cannot collide with it under any registration order — no route-ordering discipline is required to keep this safe.
+**Deliberately `/export/pdf` (two path segments), not `/export.pdf` (one segment).** The existing router already registers `GET /{summary_id}` (`staff_review_summaries.py:315`), a single-path-segment route with `summary_id: UUID`. A new single-segment literal route (`/export.pdf`) would be shape-ambiguous with `/{summary_id}` — depending on registration order, a request to `/export.pdf` could be captured by the `{summary_id}` route first and rejected with a 422 UUID-parse error before ever reaching the export handler, a routing hazard that is easy to introduce and easy to miss in review. `/export/pdf` has a different path shape (two segments) than `/{summary_id}` (one segment) and cannot collide with it under any registration order — no route-ordering discipline is required to keep this safe, on its own.
+
+**Route-declaration-order safeguard (corrected, round 1 — defense in depth).** Even though the two-segment path shape is structurally sufficient on its own (FastAPI/Starlette match by path shape, not solely by registration order, for genuinely disjoint shapes), the export route **must still be declared in `backend/routers/staff_review_summaries.py`'s source file before** the existing `@router.get("/{summary_id}")` route (`:315`). This is required for two independent reasons, not one:
+1. It establishes an explicit, auditable convention for this router — any *future* single-segment literal route added to this file (a real, plausible mistake, since `/export.pdf` was the task's own original "potential contract" example) is protected by source order the moment it is added, rather than depending on every future author re-deriving the two-segment-shape reasoning from scratch.
+2. It costs nothing — the handler functions have no execution-order dependency on each other, so placing `export_staff_review_summaries_pdf` immediately above `get_staff_review_summary` (`:315`) in the file is a pure, zero-risk reordering.
+
+This does not change the final route path (`/export/pdf` remains correct and is not altered by this correction) — it adds one additional, explicit safeguard on top of the structural one, per this task's own instruction not to change the path "unless repository inspection proves a non-conflicting alternative is safer" (no such alternative was found or needed; the existing choice already avoids the collision, and this correction only hardens the surrounding practice).
 
 ### 5.2 Shared filter-building function (Phase 5's "exact filter reuse" requirement)
 
@@ -193,6 +201,14 @@ def export_staff_review_summaries_pdf(
     rows = query.order_by(
         StaffReviewSummary.meeting_date.desc(), StaffReviewSummary.created_at.desc()
     ).all()
+    if not rows:
+        # Corrected, round 1 (2026-08-06) — requirement §5.10 decisions 34-37:
+        # no PDF for a zero-record match. See the reasoning note below this
+        # code block for why 404, not 422, was chosen.
+        raise HTTPException(
+            status_code=404,
+            detail="No review summaries match the selected filters.",
+        )
     records = [_to_out(record, db) for record in rows]      # reused unchanged
 
     reviewer_scope_label = (
@@ -216,12 +232,42 @@ def export_staff_review_summaries_pdf(
     )
 ```
 
+**Empty-result status code — 404, not 422 (corrected, round 1 — reasoning).** This router already uses both codes for distinct, well-established meanings that this design deliberately does not blur:
+- **422** is used exclusively for a malformed/invalid *request* on this router — an unknown `reviewer_member_key` (`_valid_reviewer_member_key_or_422`), `date_from > date_to`, a `reviewed_staff_id` that does not resolve to an existing staff row (`_reviewed_staff_or_422`), and the `include_all_reviewers`/`reviewer_member_key` mutual-exclusivity violation. In every one of these cases, the request itself is wrong.
+- **404** is used for "authenticated, well-formed request, but nothing here for you" — `_get_active_summary_or_404`, `_get_owned_summary_or_404`. The request is valid; there is simply no matching record to return.
+
+A zero-record export (valid employee, valid filters, zero active rows happen to match) is a well-formed request that legitimately resolves to nothing — the same shape of case 404 already covers elsewhere on this exact router, not a client input error. Using 422 here would misrepresent a syntactically and semantically valid query as a bad request, which is not true. **Note on the closest existing runtime precedent in this codebase**: the weekly-schedule `.xlsx` export (`member_schedules.py:2135-2141`) instead returns `200` with a JSON `{"empty": true, ...}` body when no rows match, distinguished by the frontend on `Content-Type`. That is a real, different, and reasonable convention already in this repository — but it was not chosen here, per this task's explicit instruction to select between 404 and 422 specifically; 404 was picked as the closer semantic fit to *this specific router's* own existing 404 usage (non-disclosing "nothing matches" pattern), not by claiming the 200+JSON convention doesn't exist elsewhere in the codebase.
+
+The response body is a standard `HTTPException(404, detail=...)` — identical shape to every other 404 on this router — so the frontend's existing generic-error-mapping infrastructure requires no new response-parsing branch, only a route-specific interpretation of a 404 it already knows how to catch (§8/§11 below).
+
 - No `db.add`/`db.commit` anywhere in this path — read-only, matching the existing xlsx export's own documented read-only guarantee (`xlsx_export.py:11-14`).
 - `reviewer_scope_label` for the backend's own filename/PDF-body text is resolved from `backend/config.py`'s `MEMBER_LABELS` (already the case everywhere reviewer text is shown server-side today) — **not** from `web-view/js/member-registry.js`'s frontend-only `MEMBER_REGISTRY`, since the backend has no access to frontend modules; this means the PDF body's reviewer-scope line and each card's reviewer name/role are resolved independently on each side (backend for the scope summary line, unchanged `member_key` passthrough for per-record reviewer identity — see §6) — both already exist today and neither is new.
 
 ### 5.5 `include_all_reviewers` vs. `reviewer_member_key` on the export route
 
 Same mutual-exclusivity rule as LIST (422 if both supplied), enforced inside `_build_review_summary_query` (§5.2) — the export route does not re-implement this check separately, so the two routes can never disagree about when it applies.
+
+## 5.6 ReportLab deployment-validation gate (new, round 1 correction — 2026-08-06)
+
+`reportlab` remains the **selected candidate library** (§3, §5.3) on first-principles grounds — pure Python, no system binary dependency, the same profile as this repository's already-adopted `openpyxl`. This section corrects an overstatement in the original design: §3/§14 already flagged that no `vercel.json` or deployment/runtime config exists in this repository to confirm compatibility, but did not previously state a hard gate blocking production use until that confirmation happens. This section makes that gate explicit and mandatory.
+
+**`reportlab` must not be described or treated as production-compatible until every one of the following passes, in order:**
+
+1. **Version-pinned dependency.** `backend/requirements.txt` pins an exact or minimum-plus-compatible-release version (e.g. `reportlab==4.x.y` or `reportlab~=4.x`, matching this file's existing pinning style for `fastapi>=0.110` etc.) — never an unpinned bare `reportlab` line, so a future transitive upgrade cannot silently change generation behavior.
+2. **Clean local install.** `pip install -r backend/requirements.txt` succeeds in a fresh virtual environment (no pre-existing cache or system-level `reportlab` install masking a real failure).
+3. **Synthetic multi-page PDF generation.** A test calls `build_review_summary_pdf()` (§5.3) with **synthetic, non-production, invented test data** (fabricated employee label, fabricated reviewer labels, fabricated summary text of a length engineered to force at least 2 pages) and asserts the result is a valid, well-formed, multi-page PDF. **This test must never load, query, or reference real employee, reviewer, or summary data from `management_aios.staff_review_summaries` or any other production table** — it is a pure unit test of the generation function against constructed fixtures, mirroring how `backend/xlsx_export.py`'s own existing tests already exercise `build_weekly_schedule_workbook()` with fixture rows, not live data.
+4. **Vercel preview deployment install.** The pinned dependency installs successfully as part of a Vercel preview build for the branch/PR containing this change — a distinct check from step 2, since a serverless build environment can differ from a local developer machine (available system libraries, Python version, build-time memory limits).
+5. **Preview function startup.** The backend's serverless function(s) start successfully in that preview deployment with `reportlab` imported — an import-time failure (e.g. a missing transitive C-extension wheel for the target platform) must surface here, before any request is made.
+6. **Preview export returns `application/pdf`.** A real HTTP request against the preview deployment's `/api/staff-review-summaries/export/pdf` (with a valid preview-environment token and a non-empty result) returns `Content-Type: application/pdf` with a well-formed PDF body.
+7. **Bundle size and execution time within the active Vercel project's limits.** The deployed function's cold bundle size and this route's observed execution time (from step 6's request) are confirmed to sit within whatever limits the active Vercel project/plan currently enforces — this design does not assume a specific numeric limit, since that is a property of the deployment account/plan, not of this codebase; whoever performs this gate must read the actual current limits from the Vercel project settings at gate time, not from a number hard-coded into this document.
+8. **Production deployment is blocked if either the preview build or the synthetic export fails.** Steps 1-7 are a hard sequential gate, not independent advisory checks — failure at any step stops progress to production for this feature, with no exception.
+
+**Fallback rule (mandatory).** If `reportlab` cannot be built, imported, or run successfully in the actual Vercel runtime (any failure at gate steps 4-7 above): **stop, and return to technical review.** Do **not**:
+- silently fall back to Option B (frontend PDF generation) — that option was already rejected in §4 for reasons independent of `reportlab`'s runtime compatibility (a new frontend dependency, pagination/filter-consistency risk), and a `reportlab` runtime failure does not change that reasoning;
+- silently substitute a different backend PDF library (`weasyprint`, `wkhtmltopdf`, `fpdf`, or any other) without a new technical review — each has its own compatibility profile that has not been evaluated, and swapping libraries silently would re-introduce exactly the unverified-compatibility risk this gate exists to catch;
+- claim any degree of "production ready" status for the PDF export feature while any gate step above is unresolved.
+
+This gate is a precondition for implementation sign-off, not something this design session can complete itself — no dependency was installed, no Vercel preview was deployed, and no synthetic PDF was generated while producing this design (§14 confirms).
 
 ## 6. PDF content contract (Phase 9 detail)
 
@@ -260,6 +306,7 @@ Updated: <updated_at>          (always shown, even when equal to created_at — 
 No sensitive values in error traces | On a generation failure, the route catches and re-raises as a generic 500 with no employee/summary detail in the response body (§10); FastAPI's default exception behavior in production config does not echo stack traces to the client — unchanged from every other route on this backend. |
 | Temporary in-memory generation only | `build_review_summary_pdf()` builds directly into a `BytesIO`, never a temp file on disk. |
 | Sanitized `Content-Disposition` filename | §9. |
+| **Filename privacy classification (corrected, round 1)** | The filename is **not** free of identifiable information — it deliberately includes the employee's display name (requirement decision 22), an explicit, approved decision, not an oversight. §7's other rows (no NIC, no token, no summary text, no reviewer name/role, no email/phone, no UUIDs of any kind) describe everything the filename must exclude; the employee display name is the one identifiable field the requirement owner explicitly approved for inclusion. This does not weaken any other control in this table. |
 | Generic PDF metadata title | `"Management AIOS Employee Review Summary"` only (§5.3) — never the employee's name. |
 
 ## 8. Download destination design (Phase 6)
@@ -268,8 +315,10 @@ No sensitive values in error traces | On a generation failure, the route catches
 
 1. User clicks **Download PDF** (a direct click-handler invocation — preserves user-activation state for any progressive branch, §8.2).
 2. Frontend calls `reviewSummariesApiRequest()` (the existing authenticated fetch wrapper, unchanged) against `/export/pdf?...`, requesting the current employee + current filters.
-3. On success, `res.blob()` → `URL.createObjectURL(blob)` → a temporary `<a download="...">` element → `.click()` → `document.body.removeChild()` → `URL.revokeObjectURL()` — the exact same five-step sequence `downloadWeeklySchedule()` already uses (`instance.js:1899-1906`), applied to the new PDF response instead of the existing `.xlsx` response.
-4. Whether the browser then shows a Save As location prompt or silently places the file in its configured Downloads folder is **entirely the browser's own setting** — this application never claims otherwise anywhere in its UI copy (decision 26-28).
+3. **Corrected, round 1 — response branches on status before touching the Blob path at all**: if the response is `404` with the export route's specific detail text, the handler does **not** call `res.blob()`, does **not** create an object URL, and does **not** click a download anchor — it shows the toast **"No review summaries match the selected filters."** and leaves `state.selectedStaff`, the reviewer filter, and both date filters exactly as they were (no call to `resetWorkspaceState()` or any part of it — this is not an authorization event and not an employee change). Only on a `200` response does the handler proceed to `res.blob()` → `URL.createObjectURL(blob)` → a temporary `<a download="...">` element → `.click()` → `document.body.removeChild()` → `URL.revokeObjectURL()` — the same five-step sequence `downloadWeeklySchedule()` already uses (`instance.js:1899-1906`), applied to the new PDF response instead of the existing `.xlsx` response.
+4. Whether the browser then shows a Save As location prompt or silently places the file in its configured Downloads folder is **entirely the browser's own setting** — this application never claims otherwise anywhere in its UI copy (decision 27-29).
+
+This mirrors the existing weekly-schedule export's own established pattern of branching on the response *before* assuming a binary body — `downloadWeeklySchedule()` already inspects `Content-Type` to distinguish its `{"empty": true, ...}` JSON case from its `.xlsx` binary case (`instance.js:1882-1884`) before ever calling `.blob()`. This design's 404-vs-200 branch is the same discipline applied to a status-code distinction instead of a `Content-Type` distinction — not a new pattern invented for this feature.
 
 **Optional progressive enhancement (not required to satisfy any approved decision, listed only because Phase 6 asks for it to be considered):**
 
@@ -331,7 +380,7 @@ Unaffected by this design, confirmed by inspection:
 | State | Behavior |
 |---|---|
 | No employee selected | Download PDF button is disabled (or hidden — implementation discretion within "disabled or unavailable," decision 4); no request is ever sent; the existing "Select a staff member to see their review history" copy already covers the instruction requirement. |
-| No matching records | The backend still returns a valid PDF (this is a valid, authorized, zero-record export, not a client error) whose body states plainly: **"No review summaries match the selected filters."** — never a blank/misleading document that looks like a generation failure. The frontend still triggers the same download; no separate empty-state branch is needed client-side beyond what already prevents the button from being enabled with no employee selected. |
+| No matching records (corrected, round 1 — no PDF, requirement §5.10) | The backend returns **404** with `detail: "No review summaries match the selected filters."` (§5.4 — reasoning: this router's own 404 already means "well-formed request, nothing matches," distinct from its 422 = "malformed request") — **no PDF bytes are generated or returned.** The frontend (§8) inspects the response status before touching the Blob path: on this specific 404, it shows the toast **"No review summaries match the selected filters."**, triggers no Blob creation and no download, and retains the selected employee and both filters unchanged (requirement decision 37) so the user can adjust filters and retry without re-selecting the employee. |
 | Invalid date range (`date_from > date_to`) | 422 from the shared filter function (§5.2), identical to LIST's existing rule — the frontend must block the export request client-side using the same validation state that already disables/warns on the date inputs elsewhere in this workspace, and must surface the export-specific 422 via the existing `mapApiError`/toast pattern if the request is somehow still sent. |
 | Unauthorized (missing/invalid token) | Identical to every other route on this router — `Depends(get_verified_member)` rejects before any query runs; the frontend's existing `reviewSummariesApiRequest()` 401 handling (`handleUnauthorizedResponse()` → `resetWorkspaceState()`) applies unchanged; no PDF bytes are ever returned. |
 | Generation failure (unexpected exception inside `build_review_summary_pdf`) | The route catches the exception, returns a generic 500 with no employee/summary content in the response body (matching §7's log-exposure and error-trace controls) — the frontend maps this through the existing `mapApiError`/toast pattern with a generic user-safe message ("Could not generate the PDF. Try again.") and never surfaces exception detail. No temporary file is ever created in this path (nothing is written to disk at any point in `build_review_summary_pdf`, so there is nothing to clean up on failure). |
@@ -340,9 +389,9 @@ Unaffected by this design, confirmed by inspection:
 
 | File | Change |
 |---|---|
-| `backend/routers/staff_review_summaries.py` | Extract `_build_review_summary_query` from `list_staff_review_summaries` (behavior-preserving refactor); add new `GET /export/pdf` route (§5.1/§5.4) |
+| `backend/routers/staff_review_summaries.py` | Extract `_build_review_summary_query` from `list_staff_review_summaries` (behavior-preserving refactor); add new `GET /export/pdf` route, **declared before** the existing `GET /{summary_id}` route in source order (§5.1, corrected round 1 — defense-in-depth route-ordering safeguard); route returns 404 for a zero-record match (§5.4, corrected round 1) |
 | `backend/review_summary_pdf_export.py` (**new**) | `build_review_summary_pdf()`, `build_review_summary_pdf_filename()`, reviewer-label resolution helper — mirrors `backend/xlsx_export.py`'s existing module shape |
-| `backend/requirements.txt` | Add `reportlab` (pure-Python PDF library — **not installed this session**, per this task's explicit instruction; recorded here as the one dependency this design would require at implementation time) |
+| `backend/requirements.txt` | Add a **version-pinned** `reportlab` line (e.g. `reportlab~=4.x`, §5.6 gate step 1 — pure-Python PDF library, **not installed this session**, per this task's explicit instruction; production compatibility remains unverified until the full §5.6 deployment-validation gate passes) |
 | `web-view/js/review-summaries.js` | Add one "Download PDF" button near the Review History filters (§ "3. Review history" panel); wire it to a new `downloadReviewSummariesPdf()` function following `downloadWeeklySchedule()`'s existing Blob-download pattern; button enabled/disabled state driven by `state.selectedStaff` |
 | `web-view/css/review-summaries.css` | Small addition for the new button's placement/styling within the existing filters row |
 | `backend/tests/test_staff_review_summaries.py` | New tests for `/export/pdf` (§ test plan below); existing tests unmodified (the LIST extraction is behavior-preserving) |
@@ -362,16 +411,16 @@ Unaffected by this design, confirmed by inspection:
 ## 14. Known limitations
 
 1. No live browser walkthrough was performed in this design session (no browser automation tool available in this environment), consistent with prior Calendar-auth and REQ-CAL-REV-TAB-002 design work in this repo.
-2. **Runtime/library-compatibility gap (§3)**: no `vercel.json` or other deployment/runtime configuration file exists in this repository to confirm `reportlab`'s compatibility (package size, cold-start time, any serverless function limit) against the actual hosting environment. `reportlab` is recommended on first-principles grounds (pure Python, no system binary dependency, same profile as the already-adopted `openpyxl`) but this is the one open technical follow-up before implementation begins — confirm against the actual deployment target.
+2. **Runtime/library-compatibility gap (§3), formalized as a mandatory gate (corrected, round 1 — §5.6)**: no `vercel.json` or other deployment/runtime configuration file exists in this repository to confirm `reportlab`'s compatibility (package size, cold-start time, any serverless function limit) against the actual hosting environment. `reportlab` remains the selected candidate on first-principles grounds (pure Python, no system binary dependency, same profile as the already-adopted `openpyxl`), but §5.6's eight-step deployment-validation gate (version pinning → clean install → synthetic multi-page PDF test → Vercel preview install → preview startup → preview `application/pdf` response → bundle size/execution time within plan limits → production blocked on any failure) must pass in full before any claim of production compatibility is made. The fallback rule (§5.6) is explicit: a gate failure returns to technical review, never a silent switch to frontend generation or another library.
 3. The exact DOM/CSS placement of the Download PDF button is described functionally (§8, §12) but not pixel-specified — implementation retains normal front-end layout discretion within the stated functional requirement ("near the Review History filters").
 4. This design was produced without a live database connection (none was needed — no schema change is proposed) and without running any test suite (no code was changed this session).
 5. The optional `showSaveFilePicker` progressive enhancement (§8) is explicitly out of scope for the PASS condition below — if implementation chooses to add it, it should be treated as a separate, additive, browser-feature-detected branch, not a requirement.
 
 ## 15. Approval / status
 
-**Status: READY FOR TECHNICAL AND QUERYABILITY REVIEW.**
+**Status: READY FOR TECHNICAL AND QUERYABILITY REVIEW (corrected, round 1 — 2026-08-06).**
 
-### Numeric pass/fail rule
+### Numeric pass/fail rule (corrected, round 1 — three conditions added)
 
 This design PASSES readiness for the next phase if and only if:
 - 0 unresolved contradictions between this design and REQ-CAL-REV-PDF-003's approved decisions (validation doc confirms this);
@@ -380,12 +429,15 @@ This design PASSES readiness for the next phase if and only if:
 - the protected path was never opened, and the unrelated staff-roster validation file was never opened (confirmed);
 - 0 production writes are introduced by the new route (confirmed — read-only, no `db.add`/`db.commit`);
 - 0 permanent server-side file, audit record, or database row is created by an export (confirmed — §7);
-- the proposed test count is ≥ 30 (§16 confirms 42);
-- the routing-collision risk against the existing `/{summary_id}` route is explicitly resolved, not left implicit (§5.1 confirms — two-segment path chosen specifically to avoid it).
+- the proposed test count is ≥ 30 (§16 confirms 56);
+- the routing-collision risk against the existing `/{summary_id}` route is explicitly resolved, not left implicit, with an additional source-order safeguard beyond the structural path-shape fix (§5.1 confirms);
+- **the filename privacy classification states plainly that the embedded employee name is identifiable information, explicitly approved for inclusion, not claimed to be PII-free (§7, requirement §5.8 confirm);**
+- **no PDF is generated for a zero-record match — the route returns 404 and the frontend triggers no Blob/download for that response (§5.4, §8, §11 confirm);**
+- **`reportlab` production compatibility is stated as unverified until the full §5.6 deployment-validation gate passes — no claim of production readiness for the library is made anywhere in this document (§5.6, §14 confirm).**
 
-All eight conditions are met.
+All eleven conditions are met.
 
-## 16. Test plan (Phase 11) — 42 numbered tests
+## 16. Test plan (Phase 11) — 56 numbered tests (corrected, round 1 — was 42; test 38 rewritten, 14 tests added)
 
 ### Authorization (5)
 1. Missing token cannot export.
@@ -433,25 +485,52 @@ All eight conditions are met.
 35. Multiple records render across the document.
 36. A long summary spans pages without clipping.
 37. Paragraphs and line breaks in the summary text are preserved in the PDF body.
-38. Zero matching records still produces a valid PDF stating "No review summaries match the selected filters." — never a misleading blank document.
+38. **Corrected, round 1**: zero matching authorized records return `404` with no PDF bytes generated — never a blank or misleading PDF document (see tests 43-45 for the full frontend/backend split of this behavior).
 39. A generation failure returns a generic error with no employee/summary content exposed, and leaves no temporary file behind.
 40. The existing `GET /api/staff-review-summaries` (LIST) route's existing test suite passes unmodified after the `_build_review_summary_query` extraction (behavior-preserving refactor confirmed).
 41. `GET /api/staff-review-summaries/export/pdf` does not collide with `GET /api/staff-review-summaries/{summary_id}` — a request to the export path never gets routed to the detail-by-id handler (confirms §5.1's routing-collision fix).
 42. No schema or migration change occurs; 0 production database writes occur across the full test run for this feature.
 
+### Route ordering and empty-result correction (new, round 1 — 6)
+43. `GET /export/pdf` is declared before `GET /{summary_id}` in `staff_review_summaries.py`'s source, and reaches the export handler (fixed route wins over the dynamic summary route) — confirms §5.1's source-order safeguard, in addition to test 41's structural path-shape confirmation.
+44. A request to `/export/pdf` is never parsed as `summary_id = "export"` (i.e. the `{summary_id}` route's `UUID` validator never fires for this path).
+45. Existing UUID-based detail routes (`GET /{summary_id}` with a real UUID) continue to work unaffected by the new route's addition.
+46. An invalid `summary_id` on the existing detail route (`GET /{summary_id}` with a non-UUID segment other than `export`) retains its current behavior (422 UUID-parse error) — confirms the new route did not change any existing route's validation.
+47. The generated OpenAPI schema includes the `/export/pdf` path exactly once, with no duplicate or ambiguous path entry.
+48. Zero matching authorized records: the backend returns 404 with the exact detail text, and 0 bytes of PDF content are present in the response body.
+
+### Empty-result frontend handling (new, round 1 — 3)
+49. On receiving the export route's specific 404, the frontend shows the toast "No review summaries match the selected filters." and no other message.
+50. No `Blob`, no `URL.createObjectURL`, and no download-anchor click occurs when the export route returns that 404.
+51. After that 404, `state.selectedStaff`, the reviewer filter, and both date filters remain exactly as they were before the export attempt (no `resetWorkspaceState()` call, no employee deselection).
+
+### Filename privacy (new, round 1 — 2)
+52. The employee display name appears in the sanitized filename and nowhere else in the response (not in headers, not in the PDF's internal metadata Title, which stays the generic string per §5.3).
+53. None of NIC, token, summary text, reviewer name, reviewer role, personal email, phone number, staff UUID, summary UUID, or any other database ID ever appears in the generated filename (expands test 27 into the requirement's full itemized list, requirement §5.8 decision 24).
+
+### ReportLab deployment-validation gate (new, round 1 — 6)
+54. The pinned `reportlab` version installs successfully in a clean test/CI virtual environment (§5.6 gate step 1-2).
+55. `build_review_summary_pdf()` generates a valid single-page PDF from synthetic (non-production) fixture data (§5.6 gate step 3).
+56. `build_review_summary_pdf()` generates a valid multi-page PDF from synthetic (non-production) fixture data engineered to exceed one page (§5.6 gate step 3), and the generated bytes begin with the standard PDF signature (`%PDF-`).
+
+**Deployment-gate-only checks (documented as acceptance-gate steps, not unit tests — §5.6 gate steps 4-8, not independently numbered above since they require an actual Vercel preview deployment, which cannot run inside this repository's own automated test suite):**
+- Vercel preview build installs the pinned `reportlab` dependency successfully and the preview function starts.
+- A real request against the preview deployment's `/export/pdf` returns `Content-Type: application/pdf`.
+- Production deployment for this feature is blocked if the preview build, preview startup, or preview export check fails — this is a release-process gate, enforced by whoever performs the deployment, not by an automated test in this repository.
+
 ### Regression suites to re-run (not new tests)
 - Backend: `backend/tests/test_staff_review_summaries.py` (existing suite, confirming the LIST extraction is behavior-preserving), `test_calendar_auth.py`, `test_calendar_mutation_authorization.py`.
 - Frontend: `web-view/js/review-summaries.test.mjs` (existing suite), `web-view/js/navigation-structure.test.mjs`.
 
-**Total: 42 — meets the required minimum of 30 (matching the task's own enumerated Phase 11 list) and the REQ-CAL-REV-TAB-002 precedent threshold.**
+**Total: 56 (42 original + 14 new: route-ordering/empty-result 6, empty-result frontend handling 3, filename privacy 2, ReportLab deployment gate 6) — was 42. Test 38 is corrected in place (no PDF for an empty result, replacing the prior "still generate a PDF" behavior); its count does not change. Covers every item in this task's own Phase 7 instruction. Meets the ≥30 minimum with margin.**
 
 ## 17. Review gate and next step
 
-- **Business requirement approval**: completed — by the repository owner/user (this session's REQ-CAL-REV-PDF-003 approval).
-- **Technical review**: required for the new route, the `_build_review_summary_query` extraction, and the `reportlab` dependency choice (§14 item 2 — runtime-compatibility confirmation is the one open follow-up).
+- **Business requirement approval**: completed — by the repository owner/user (this session's REQ-CAL-REV-PDF-003 approval, including its round-1 correction).
+- **Technical review**: required for the new route, the `_build_review_summary_query` extraction, the route-declaration-order safeguard (§5.1), the empty-result 404 design (§5.4), and the `reportlab` dependency choice — **specifically gated on §5.6's deployment-validation gate passing before any production-compatibility claim is made; this is the one open follow-up, formalized as a mandatory gate rather than an advisory note (corrected, round 1).**
 - **Queryability review**: not applicable in the REQ-CAL-REV-TAB-002 sense (no new reviewer-identity terminology decision is introduced here — §6 reuses the already-approved Paraparan="Auditor" decision verbatim).
 - **Additional domain-member consultation** (Mayurika, Suman, Arun, Rajiv, Paraparan individually): optional, unless separately requested by the repository owner — not a mandatory implementation gate, consistent with CLAUDE.md §18 and REQ-CAL-REV-TAB-002's own review-gate correction.
 
 **Branch strategy**: not defined by this design and must follow the repository owner's explicit instruction at implementation start. This design does not assume `main` or any feature branch, and no branch was created while producing this design.
 
-**One next step**: technical review of this design (§15's numeric pass/fail rule, all eight conditions met) — specifically confirming `reportlab`'s compatibility against the actual hosting/deployment runtime (§14 item 2) — before implementation begins.
+**One next step**: technical review of this corrected design (§15's numeric pass/fail rule, all eleven conditions met) — specifically running §5.6's full ReportLab deployment-validation gate (version pin → clean install → synthetic PDF test → Vercel preview install/startup/export → bundle-size/execution-time check) — before implementation begins or any production-compatibility claim is made.
