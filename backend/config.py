@@ -332,3 +332,79 @@ def load_calendar_auth_token_hashes(environ=None):
         )
 
     return hashes
+
+
+# ── MD read-only Review Summary authorization (REQ-CAL-REV-MD-READ-006,
+# 2026-08-06) ─────────────────────────────────────────────────────────────
+# MD is a separate, additive, READ-ONLY Review Summary viewer identity — NOT
+# a Management Team member. Deliberately kept OUT of VALID_MEMBER_KEYS,
+# CALENDAR_AUTH_TOKEN_ENV_VARS, and MEMBER_DIRECTORY/MEMBER_LABELS above:
+# those three structures are what member_schedules.py/member_leave.py's
+# _validate_member_key and require_matching_member(...) use to decide
+# whether a token may own/mutate a Task, Leave record, or become a
+# reviewer_member_key on a Review Summary (including the DB CHECK
+# constraint on that column — backend/models.py). Keeping "md" out of all
+# three means MD can never pass any of those checks — there is no per-route
+# bypass to maintain and no risk of MD acquiring an owned Task/Leave slot
+# via require_matching_member's own-key match.
+#
+# MD's token is verified through the exact same single comparison loop the
+# five Management Team tokens already use (see
+# backend/routers/calendar_auth.py validate_calendar_auth_token) — never a
+# second, parallel token resolver. The only difference is that MD's env var
+# is OPTIONAL: load_md_review_summary_token_hash below never raises, unlike
+# load_calendar_auth_token_hashes above, so an unset/placeholder MD token
+# never crashes startup and never affects the five existing members.
+MD_MEMBER_KEY = "md"
+MD_DISPLAY_LABEL = "MD — Read-only"
+
+MD_CALENDAR_AUTH_TOKEN_ENV_VAR = "CALENDAR_AUTH_TOKEN_HASH_MD"
+
+# Recognized placeholder values that must never be accepted as a real
+# configured hash, even if a deployment forgets to replace them. Both forms
+# this project has used for placeholder documentation are covered.
+_MD_TOKEN_PLACEHOLDER_VALUES = frozenset(
+    {"set_a_real_token_hash_here", "<set-in-deployment-environment>", "set-in-deployment-environment"}
+)
+
+
+def load_md_review_summary_token_hash(environ=None):
+    """Optional-config loader for MD's single read-only Review Summary
+    token hash. Unlike load_calendar_auth_token_hashes (which raises
+    RuntimeError — fails closed at STARTUP — when any of the five required
+    hashes is missing/invalid), this function never raises: it returns None
+    whenever CALENDAR_AUTH_TOKEN_HASH_MD is absent, blank, a known
+    placeholder value, or not a 64-character SHA-256 hex digest. None means
+    "MD authorization is unavailable" — every MD-token request then fails
+    closed with 401 (validate_calendar_auth_token never treats "MD not
+    configured" as "no auth required"); the backend never crashes at
+    startup over this, and the five existing member tokens — validated
+    exclusively by load_calendar_auth_token_hashes above — are completely
+    unaffected either way.
+
+    `environ` defaults to os.environ; tests pass an isolated mapping (see
+    backend/tests/calendar_auth_test_support.py) — production secrets are
+    never read by, or needed for, any test."""
+    source = os.environ if environ is None else environ
+    raw = (source.get(MD_CALENDAR_AUTH_TOKEN_ENV_VAR) or "").strip()
+    if not raw:
+        return None
+    normalized = raw.lower()
+    if normalized in _MD_TOKEN_PLACEHOLDER_VALUES:
+        return None
+    if not _looks_like_sha256_hex_digest(normalized):
+        return None
+    return normalized
+
+
+def member_display_label(member_key: str) -> str:
+    """The one place that resolves a verified member_key to a safe display
+    label, for both the five Management Team members (MEMBER_LABELS) and
+    MD (MD_DISPLAY_LABEL) — used by
+    backend/routers/calendar_auth.py's /verify endpoint and
+    require_matching_member so neither ever does a raw MEMBER_LABELS[...]
+    lookup that would KeyError for "md". Never raises for any member_key
+    that validate_calendar_auth_token could actually return."""
+    if member_key == MD_MEMBER_KEY:
+        return MD_DISPLAY_LABEL
+    return MEMBER_LABELS[member_key]

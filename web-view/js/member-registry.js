@@ -28,15 +28,38 @@
    {displayName: 'Unknown', role: 'Unknown'} — never a fabricated or
    guessed value, never a thrown error. Not reachable today (the backend's
    VALID_MEMBER_KEYS is fixed at exactly these 5 keys) but guards against
-   future data drift. */
+   future data drift.
+
+   MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) — an AUTHENTICATION display
+   identity, not a Review Summary reviewer: MD is included below purely so
+   the "Authorized as" banners (this workspace's own, and the topbar
+   indicator via calendar/auth.js's labelForMemberKey) can render "MD —
+   Read-only" through the exact same resolveMember()/authorizedAsLabelText
+   path every other member already uses, rather than inventing a second
+   label format just for MD. MD is deliberately NEVER added to
+   REVIEWER_FILTER_ORDER (review-summaries.js) — that is a SEPARATE list of
+   who may be selected/shown as a record's reviewer, and MD can never be
+   one (the backend rejects MD on CREATE and the database's own CHECK
+   constraint doesn't permit it). These are two intentionally separate
+   registries for two different purposes — display identity vs. reviewer
+   selection — not an accidental duplication. */
+
+export var MD_MEMBER_KEY = 'md';
 
 export var MEMBER_REGISTRY = {
   mayurika: { displayName: 'Mayurika', role: 'HR' },
   suman: { displayName: 'Suman', role: 'Recruiting Officer' },
   arun: { displayName: 'Arun', role: 'Implementation Officer' },
   rajiv: { displayName: 'Rajiv', role: 'Admin Manager' },
-  paraparan: { displayName: 'Paraparan', role: 'Auditor' }
+  paraparan: { displayName: 'Paraparan', role: 'Auditor' },
+  md: { displayName: 'MD', role: 'Read-only' }
 };
+
+// Derived, not a second hand-typed literal — always byte-for-byte
+// "<displayName> — <role>" for MD, matching authorizedAsLabelText()'s own
+// combination format (review-summaries.js) so both surfaces can never
+// drift apart.
+export var MD_DISPLAY_LABEL = MEMBER_REGISTRY.md.displayName + ' — ' + MEMBER_REGISTRY.md.role;
 
 var UNKNOWN_ENTRY = { displayName: 'Unknown', role: 'Unknown' };
 
@@ -49,4 +72,13 @@ export function resolveMember(memberKey) {
   if (!memberKey) { return UNKNOWN_ENTRY; }
   var entry = MEMBER_REGISTRY[memberKey];
   return entry || UNKNOWN_ENTRY;
+}
+
+/* UI-only convenience — NOT the authorization boundary. The backend is
+   always the real enforcement (CREATE/UPDATE return 403 for MD regardless
+   of what any frontend renders — see backend/routers/
+   staff_review_summaries.py _reject_md_write). Used to hide the Review
+   Summary creation form and show a read-only notice instead. */
+export function isReadOnlyMember(memberKey) {
+  return memberKey === MD_MEMBER_KEY;
 }

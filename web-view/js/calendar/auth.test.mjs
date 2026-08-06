@@ -1093,3 +1093,47 @@ test('the toggle is present and functional in both Authorize this browser and Ch
     fake.restore();
   }
 });
+
+// ── MD read-only banner (REQ-CAL-REV-MD-READ-006, 2026-08-06) ──────────
+// MD has no .msc-instance Calendar tab at all (by design — MD gets no
+// Task/Leave/Calendar mutation UI), so labelForMemberKey's usual DOM
+// lookup would always miss for "md". These tests confirm the special
+// case renders "MD — Read-only" anyway, using the same
+// member-registry.js entry review-summaries.js's own banner reads.
+
+test('the topbar indicator shows "Authorized as: MD — Read-only" with no .msc-instance markup mounted for md', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    var indicator = mountIndicatorMarkup(fake.document);
+    globalThis.fetch = fakeFetchJson(200, { memberKey: 'md', displayLabel: 'MD — Read-only' });
+    var auth = await freshAuthModule();
+    auth.initCalendarAuthIndicator();
+
+    var pending = auth.ensureAuthorized();
+    fake.document.getElementById('calendar-auth-token-input').value = 'md-token';
+    findByClass(fake.document, 'calendar-auth-submit').click();
+    await pending;
+
+    assert.equal(auth.getStoredMemberKey(), 'md');
+    assert.equal(indicator.root.hidden, false);
+    assert.equal(indicator.label.textContent, 'Authorized as: MD — Read-only');
+  } finally {
+    fake.restore();
+  }
+});
+
+test('labelForMemberKey("md") returns the special-cased label directly, never falling back to the raw key', async () => {
+  var fake = installFakeBrowserGlobals();
+  try {
+    // Deliberately mounts .msc-instance markup for the five real members
+    // only — never for "md" — to prove the DOM query is never reached
+    // for MD (a query for [data-member-key="md"] would miss and fall
+    // back to the raw key, "md", without the special case).
+    mountCalendarInstanceMarkup(fake.document, 'mayurika', 'Mayurika — HR');
+    var auth = await freshAuthModule();
+    assert.equal(auth.labelForMemberKey('md'), 'MD — Read-only');
+    assert.equal(auth.labelForMemberKey('mayurika'), 'Mayurika — HR');
+  } finally {
+    fake.restore();
+  }
+});

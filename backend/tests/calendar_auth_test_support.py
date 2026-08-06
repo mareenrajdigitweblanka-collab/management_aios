@@ -26,7 +26,11 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.config import CALENDAR_AUTH_TOKEN_ENV_VARS
+from backend.config import (
+    CALENDAR_AUTH_TOKEN_ENV_VARS,
+    MD_CALENDAR_AUTH_TOKEN_ENV_VAR,
+    MD_MEMBER_KEY,
+)
 from backend.database import Base
 
 TEST_TOKENS = {
@@ -37,32 +41,50 @@ TEST_TOKENS = {
     "paraparan": "test-only-token-paraparan-never-a-real-secret",
 }
 
+# MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) — kept as a separate constant,
+# not merged into TEST_TOKENS above: MD is not a Management Team member and
+# its env var is OPTIONAL (see backend/config.py
+# load_md_review_summary_token_hash), unlike the five mandatory
+# CALENDAR_AUTH_TOKEN_ENV_VARS entries TEST_TOKENS mirrors. test_token_env
+# only includes it when a test explicitly opts in via include_md=True, so
+# every pre-existing call site (patched_calendar_auth_env(),
+# test_token_env()) is byte-for-byte unaffected by MD's addition.
+MD_TEST_TOKEN = "test-only-token-md-never-a-real-secret"
+
 
 def sha256_hex(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def test_token_env(extra_overrides=None) -> dict:
+def test_token_env(extra_overrides=None, include_md=False) -> dict:
     """The full CALENDAR_AUTH_TOKEN_HASH_* -> hash mapping for TEST_TOKENS,
     optionally overridden per-variable (e.g. to inject a malformed or
     duplicate value for a single member in a specific test) — production
-    secrets are never read by, or needed for, any test using this."""
+    secrets are never read by, or needed for, any test using this.
+
+    include_md=True additionally sets CALENDAR_AUTH_TOKEN_HASH_MD to
+    MD_TEST_TOKEN's hash — omitted by default so every existing five-member
+    test is unaffected by MD's optional env var existing at all."""
     env = {
         env_var: sha256_hex(TEST_TOKENS[member_key])
         for member_key, env_var in CALENDAR_AUTH_TOKEN_ENV_VARS.items()
     }
+    if include_md:
+        env[MD_CALENDAR_AUTH_TOKEN_ENV_VAR] = sha256_hex(MD_TEST_TOKEN)
     if extra_overrides:
         env.update(extra_overrides)
     return env
 
 
 @contextmanager
-def patched_calendar_auth_env(extra_overrides=None):
-    with mock.patch.dict("os.environ", test_token_env(extra_overrides), clear=False):
+def patched_calendar_auth_env(extra_overrides=None, include_md=False):
+    with mock.patch.dict("os.environ", test_token_env(extra_overrides, include_md), clear=False):
         yield
 
 
 def bearer_header(member_key: str) -> dict:
+    if member_key == MD_MEMBER_KEY:
+        return {"Authorization": "Bearer " + MD_TEST_TOKEN}
     return {"Authorization": "Bearer " + TEST_TOKENS[member_key]}
 
 

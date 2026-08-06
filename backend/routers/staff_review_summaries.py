@@ -84,6 +84,25 @@ REQ-CAL-REV-LOCK-004 (2026-08-06) — No-Delete and Same-Day Edit Lock:
   - Zero schema/database changes — see backend/models.py (unmodified) and
     docs/2026-08-06_review-summary-no-delete-same-day-edit-technical-
     design.md.
+
+REQ-CAL-REV-MD-READ-006 (2026-08-06) — MD Read-Only Review Summary
+Authorization:
+  - MD (backend/config.py MD_MEMBER_KEY = "md") is a separate, additive
+    read-only identity — NOT a Management Team member, NOT in
+    VALID_MEMBER_KEYS, and never a valid reviewer_member_key (the DB CHECK
+    constraint on that column still only allows the original five keys).
+  - LIST, DETAIL, and PDF export required NO code change here: all three
+    already grant "any authenticated Management Team member" shared read
+    access with no owner filter (2026-08-03 revised business rule) or, for
+    LIST/PDF-export's optional reviewer filter, validate against
+    VALID_MEMBER_KEYS unchanged — MD simply becomes one more identity that
+    Depends(get_verified_member) can successfully resolve.
+  - CREATE and UPDATE explicitly reject MD FIRST, before any other
+    validation or database access, via _reject_md_write below — see that
+    function's own docstring for why this is 403, not the usual
+    non-disclosing 404.
+  - DELETE needed no change: it already rejects every caller identically
+    with 409, regardless of identity (REQ-CAL-REV-LOCK-004).
 """
 
 from datetime import date as date_type, datetime, time as time_type, timezone
@@ -97,7 +116,7 @@ from sqlalchemy.orm import Session
 
 from zoneinfo import ZoneInfo
 
-from backend.config import SCHEDULE_TIMEZONE, VALID_MEMBER_KEYS
+from backend.config import MD_MEMBER_KEY, SCHEDULE_TIMEZONE, VALID_MEMBER_KEYS
 from backend.database import get_db
 from backend.models import StaffDashboardRecord, StaffReviewSummary
 from backend.review_summary_pdf_export import (
@@ -128,6 +147,31 @@ def _set_no_store(response: Response) -> None:
     for this feature (no existing route in this backend sets an explicit
     cache header; see the technical design's privacy-controls section)."""
     response.headers["Cache-Control"] = "no-store"
+
+
+def _reject_md_write(acting_member: str) -> None:
+    """REQ-CAL-REV-MD-READ-006 (2026-08-06) — MD is a read-only Review
+    Summary viewer and must never create or update a record. Called FIRST,
+    before any other validation or database access, by both CREATE and
+    UPDATE below, so MD is rejected before mutation rather than relying
+    only on the incidental fact that _get_owned_summary_or_404 would also
+    404 for MD (no summary is ever owned by "md" — the DB CHECK constraint
+    on reviewer_member_key doesn't even permit it). 403 (not 404) is used
+    deliberately here — unlike the non-disclosing cross-reviewer 404 on
+    UPDATE, there is nothing to avoid disclosing: MD's read-only status is
+    already public (the topbar banner shows it), so a clear, typed 403
+    mirrors this codebase's own require_matching_member convention
+    (backend/routers/calendar_auth.py) for "you are authenticated, but not
+    authorized to do this," rather than the ownership-hiding 404."""
+    if acting_member == MD_MEMBER_KEY:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "review_summary_read_only_member",
+                "message": "MD has read-only Review Summary access and cannot create or edit records.",
+                "actingMember": acting_member,
+            },
+        )
 
 
 def _reviewed_staff_or_422(db: Session, reviewed_staff_id: UUID) -> StaffDashboardRecord:
@@ -282,8 +326,13 @@ def create_staff_review_summary(
     is not declared on StaffReviewSummaryCreate at all, so a client cannot
     send it, spoof it, or override it regardless of request body content.
     Multiple summaries for the same reviewer+staff+date are allowed — no
-    uniqueness constraint (approved requirement §7)."""
+    uniqueness constraint (approved requirement §7).
+
+    REQ-CAL-REV-MD-READ-006: MD is rejected first, before the
+    reviewed_staff_id lookup and before any database write — see
+    _reject_md_write."""
     _set_no_store(response)
+    _reject_md_write(acting_member)
     _reviewed_staff_or_422(db, payload.reviewed_staff_id)
 
     now = datetime.now(timezone.utc)
@@ -561,8 +610,14 @@ def update_staff_review_summary(
     rejected with 409, never a silent no-op and never a 200. No request
     field can ever reach reviewer_member_key/created_at/an edit deadline —
     StaffReviewSummaryUpdate (backend/schemas.py) has no such fields, so
-    there is nothing here to strip; the schema itself is the enforcement."""
+    there is nothing here to strip; the schema itself is the enforcement.
+
+    REQ-CAL-REV-MD-READ-006: MD is rejected first, before the owned-summary
+    lookup — see _reject_md_write. This is defense in depth on top of the
+    fact that _get_owned_summary_or_404 would also 404 for MD regardless
+    (no summary can ever be owned by "md")."""
     _set_no_store(response)
+    _reject_md_write(acting_member)
     record = _get_owned_summary_or_404(db, summary_id, acting_member)
 
     if not _can_edit_review_summary(record.created_at):

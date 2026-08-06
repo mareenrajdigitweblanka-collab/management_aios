@@ -86,7 +86,20 @@
    Built via createElement/appendChild with direct element references
    (never innerHTML for user-authored text) — same convention as
    calendar/auth.js — so this module stays testable with the existing
-   hand-rolled DOM stand-in (review-summaries-test-dom.mjs). */
+   hand-rolled DOM stand-in (review-summaries-test-dom.mjs).
+
+   REQ-CAL-REV-MD-READ-006 (2026-08-06) — MD read-only access: MD
+   authenticates through the exact same token flow as every other member
+   (calendar/auth.js) and reaches 'authorized' access here unchanged — the
+   two-state model above is NOT modified. isReadOnlyMember() (member-
+   registry.js) is a purely presentational, ADDITIONAL check layered on
+   top: it hides the create/edit form (showing a read-only notice instead)
+   and adds one extra explanatory line per history card. It changes no
+   fetch, no request payload, and no access-state transition. The real
+   enforcement is always the backend's 403 on CREATE/UPDATE — this module
+   never assumes otherwise. Since isOwnedRecord() already returns false for
+   every record when the authenticated key is "md" (no summary is ever
+   owned by "md"), Edit never renders for MD without any extra code here. */
 
 import { STAFF_REVIEW_SUMMARIES_API_BASE } from './config.js';
 import { STAFF_API_BASE } from './staff-data.js';
@@ -97,7 +110,7 @@ import {
   getStoredMemberKey,
   CALENDAR_AUTH_CHANGED_EVENT
 } from './calendar/auth.js';
-import { resolveMember } from './member-registry.js';
+import { resolveMember, isReadOnlyMember } from './member-registry.js';
 import { classifyHttpStatus, mapApiError } from './ui/error-mapper.js';
 import { setButtonBusy, showInlineLoading } from './ui/loading.js';
 import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from './ui/form-feedback.js';
@@ -122,7 +135,16 @@ export var PDF_GENERIC_FAILURE_MESSAGE = 'The PDF could not be prepared. Please 
 
 /* Fixed display order for the reviewer filter dropdown — matches
    backend/config.py's VALID_MEMBER_KEYS order (the canonical Management
-   Team member ordering used throughout this repo's sidebar/config). */
+   Team member ordering used throughout this repo's sidebar/config).
+
+   MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) is deliberately NEVER added
+   here — MD is an authenticated VIEWER, not a reviewer, and can never
+   become one (the backend rejects MD on CREATE; the database's own CHECK
+   constraint on reviewer_member_key doesn't permit "md" either). This is a
+   separate list from member-registry.js's MEMBER_REGISTRY (which DOES
+   include an "md" display-only entry for the "Authorized as" banner) by
+   design — see that file's own comment for why the two registries serve
+   different purposes and must not be merged. */
 var REVIEWER_FILTER_ORDER = ['mayurika', 'suman', 'arun', 'rajiv', 'paraparan'];
 
 // ── Pure helpers (exported for direct testing — no DOM involved) ───────
@@ -698,6 +720,16 @@ export function mountReviewSummariesWorkspace(mountEl) {
   var formPlaceholder = el('p', 'review-summaries-form-placeholder');
   formPlaceholder.textContent = 'Select a staff member above to write a summary.';
 
+  // MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) — shown in place of the
+  // creation form/placeholder for a read-only authenticated identity.
+  // Purely presentational: the real enforcement is the backend's own 403
+  // on CREATE/UPDATE (backend/routers/staff_review_summaries.py
+  // _reject_md_write) — this notice only explains why the form never
+  // appears, so a read-only viewer isn't left wondering.
+  var readOnlyNoticeEl = el('p', 'review-summaries-readonly-notice');
+  readOnlyNoticeEl.textContent = 'Read-only access — MD can view and download Review Summaries but cannot create or edit them.';
+  readOnlyNoticeEl.hidden = true;
+
   var form = el('form', 'review-summaries-form');
   form.setAttribute('novalidate', 'novalidate');
   form.hidden = true;
@@ -751,13 +783,17 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
   formPanel.appendChild(formPanelTitle);
   formPanel.appendChild(formPlaceholder);
+  formPanel.appendChild(readOnlyNoticeEl);
   formPanel.appendChild(form);
 
   /* The form is only shown once a staff member is chosen. */
   function updateFormVisibility() {
+    var readOnly = isReadOnlyMember(getStoredMemberKey());
     var hasStaff = !!state.selectedStaff;
-    form.hidden = !hasStaff;
-    formPlaceholder.hidden = hasStaff;
+    formPanelTitle.hidden = readOnly;
+    readOnlyNoticeEl.hidden = !readOnly;
+    form.hidden = readOnly || !hasStaff;
+    formPlaceholder.hidden = readOnly || hasStaff;
   }
   updateFormVisibility();
 
@@ -1174,6 +1210,17 @@ export function mountReviewSummariesWorkspace(mountEl) {
     }
     statusMessageEl.textContent = statusInfo.message;
     card.appendChild(statusMessageEl);
+
+    // MD-only additional line (REQ-CAL-REV-MD-READ-006, 2026-08-06) — never
+    // replaces statusMessageEl above, which still shows the record's own
+    // owner/edit-lock truth unchanged for every viewer. This is purely an
+    // extra explanation of MD's OWN access level, shown on every card since
+    // isOwnedRecord is always false for MD (MD never owns a summary).
+    if (isReadOnlyMember(authenticatedMemberKey)) {
+      var mdNoticeEl = el('p', 'review-summaries-card-status-message review-summaries-card-md-notice');
+      mdNoticeEl.textContent = 'Read-only — MD has viewing access only.';
+      card.appendChild(mdNoticeEl);
+    }
 
     /* Edit button renders ONLY for a card owned by the currently
        authenticated reviewer AND still within its own edit window

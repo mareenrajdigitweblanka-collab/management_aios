@@ -17,6 +17,18 @@ any part of the hashing/comparison.
 require_matching_member is the single shared cross-member guard every
 mutation route calls, before any database access, to compare the verified
 acting member against the route's own {member_key} path segment.
+
+MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) is a separate, read-only, non-
+Management-Team identity resolved by this SAME validate_calendar_auth_token
+function (see backend/config.py's load_md_review_summary_token_hash for its
+own, optional, never-crashes-startup config loader). MD is deliberately
+never added to VALID_MEMBER_KEYS/CALENDAR_AUTH_TOKEN_ENV_VARS, so
+require_matching_member and every {member_key}-scoped Task/Leave route
+reject it exactly like any other non-member — MD's only backend capability
+is the explicit read allowance in
+backend/routers/staff_review_summaries.py (LIST/DETAIL/PDF export already
+work for any authenticated identity; CREATE/UPDATE explicitly 403 when
+acting_member == "md").
 """
 
 import hashlib
@@ -25,7 +37,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from backend.config import MEMBER_LABELS, load_calendar_auth_token_hashes
+from backend.config import (
+    MD_MEMBER_KEY,
+    load_calendar_auth_token_hashes,
+    load_md_review_summary_token_hash,
+    member_display_label,
+)
 
 router = APIRouter(prefix="/api/calendar-auth", tags=["calendar-auth"])
 
@@ -66,7 +83,7 @@ def validate_calendar_auth_token(authorization: Optional[str]) -> str:
         raise HTTPException(status_code=401, detail="Missing bearer token.")
 
     try:
-        configured_hashes = load_calendar_auth_token_hashes()
+        configured_hashes = dict(load_calendar_auth_token_hashes())
     except RuntimeError:
         # Fail closed — a misconfigured backend must never accept ANY
         # token as valid. Startup validation (backend/main.py lifespan)
@@ -75,14 +92,29 @@ def validate_calendar_auth_token(authorization: Optional[str]) -> str:
         # somehow still reaches here despite that.
         raise HTTPException(status_code=401, detail="Calendar authorization is not available.")
 
+    # MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) — folded into this SAME
+    # comparison dict, never a second/parallel resolver. Optional: absent/
+    # placeholder/malformed simply means MD has no entry this request, so
+    # any MD-token candidate falls through to the "no match" 401 below,
+    # exactly like an unconfigured member would. Also refuses to add MD if
+    # its hash happens to collide with any of the five real members' hashes
+    # — a collision would make the loop below ambiguous about which member
+    # a matching token actually belongs to; in that case MD is silently
+    # left unavailable (fails closed) rather than crashing or guessing.
+    md_hash = load_md_review_summary_token_hash()
+    if md_hash is not None and md_hash not in configured_hashes.values():
+        configured_hashes[MD_MEMBER_KEY] = md_hash
+
     candidate_hash = _hash_token(token)
 
-    # Compares against EVERY configured member hash with
-    # hmac.compare_digest, with no early return on the first match — an
-    # early-exit loop would let response timing hint at which member's
-    # hash the candidate token is closest to. Hash uniqueness is already
-    # enforced by load_calendar_auth_token_hashes, so at most one match is
-    # ever possible here.
+    # Compares against EVERY configured member hash (five Management Team
+    # members plus, when configured, MD) with hmac.compare_digest, with no
+    # early return on the first match — an early-exit loop would let
+    # response timing hint at which member's hash the candidate token is
+    # closest to. Hash uniqueness among the five is already enforced by
+    # load_calendar_auth_token_hashes, and MD is only ever added above when
+    # its hash doesn't collide with one of those five, so at most one match
+    # is ever possible here.
     matched_member: Optional[str] = None
     for member_key, configured_hash in configured_hashes.items():
         if hmac.compare_digest(candidate_hash, configured_hash):
@@ -121,8 +153,8 @@ def require_matching_member(route_member_key: str, acting_member: str) -> None:
             detail={
                 "error": "cross_member_mutation_denied",
                 "message": (
-                    "You are authorized as " + MEMBER_LABELS[acting_member]
-                    + ". You can view " + MEMBER_LABELS[route_member_key]
+                    "You are authorized as " + member_display_label(acting_member)
+                    + ". You can view " + member_display_label(route_member_key)
                     + "'s schedule, but you can only manage your own Tasks and Leave."
                 ),
                 "actingMember": acting_member,
@@ -139,4 +171,4 @@ def verify_calendar_auth_token(member_key: str = Depends(get_verified_member)) -
     than re-implementing any comparison. Returns only a member key and a
     safe display label — never the token, never a hash, never any other
     member's information."""
-    return {"memberKey": member_key, "displayLabel": MEMBER_LABELS[member_key]}
+    return {"memberKey": member_key, "displayLabel": member_display_label(member_key)}

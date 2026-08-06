@@ -224,6 +224,20 @@
   text-align: center;
 }
 
+/* MD read-only notice (REQ-CAL-REV-MD-READ-006, 2026-08-06) — shown in
+   place of the creation form/placeholder above; same dashed-border
+   treatment, not italic, since this is a fixed access-level statement
+   rather than a transient "pick a staff member" prompt. */
+.review-summaries-readonly-notice {
+  color: var(--muted);
+  font-size: var(--font-sm);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
 .review-summaries-form-actions {
   display: flex;
   align-items: center;
@@ -568,6 +582,13 @@
 }
 
 .review-summaries-card-status-message--other {
+  color: var(--muted);
+}
+
+/* MD-only extra card line (REQ-CAL-REV-MD-READ-006, 2026-08-06) — appended
+   below the existing status message (unchanged), never replacing it. */
+.review-summaries-card-md-notice {
+  margin-top: var(--space-1);
   color: var(--muted);
 }
 

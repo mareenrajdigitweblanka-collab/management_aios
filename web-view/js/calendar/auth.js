@@ -31,6 +31,7 @@ import { setButtonBusy } from '../ui/loading.js';
 import { lockBodyScroll, unlockBodyScroll } from '../ui/scroll-lock.js';
 import { showToast } from '../ui/toast.js';
 import { CALENDAR_AUTH_API_BASE } from '../config.js';
+import { MD_DISPLAY_LABEL, MD_MEMBER_KEY } from '../member-registry.js';
 
 var STORAGE_KEY = 'management_aios_calendar_auth_v1';
 var STORAGE_VERSION = 1;
@@ -130,9 +131,18 @@ function dispatchAuthChanged() {
    key if the DOM lookup ever fails (e.g. in a test harness with no
    calendar markup mounted). Exported so instance.js can build the same
    dynamic cross-member copy (crossMemberAlertCopy below) for the backend-
-   403 fallback path, using the identical label source. */
+   403 fallback path, using the identical label source.
+
+   MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) is special-cased FIRST, before
+   the DOM lookup: MD has no .msc-instance Calendar tab at all (by design —
+   MD gets no Task/Leave/Calendar mutation UI), so the DOM query would
+   always miss and fall back to the raw "md" key. MD_DISPLAY_LABEL comes
+   from the same member-registry.js entry review-summaries.js's own
+   "Authorized as" line uses, so the topbar banner and the Review Summaries
+   workspace banner can never show two different strings for MD. */
 export function labelForMemberKey(memberKey) {
   if (!memberKey) { return null; }
+  if (memberKey === MD_MEMBER_KEY) { return MD_DISPLAY_LABEL; }
   var el = document.querySelector('.msc-instance[data-member-key="' + memberKey + '"]');
   var label = el && el.getAttribute('data-member-label');
   return label || memberKey;

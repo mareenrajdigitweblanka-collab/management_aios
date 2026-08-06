@@ -156,9 +156,19 @@ class ReviewerIdentityResolutionTestCase(unittest.TestCase):
         """Phase 5 — 'add a consistency test against the frontend registry
         where practical.' Parses web-view/js/member-registry.js's own
         MEMBER_REGISTRY object textually (no JS runtime available from a
-        Python test) and confirms every one of its 5 entries' displayName/
-        role matches this backend resolver's output exactly, so the two
-        registries cannot silently drift apart."""
+        Python test) and confirms every one of its 5 REVIEWER entries'
+        displayName/role matches this backend resolver's output exactly,
+        so the two registries cannot silently drift apart.
+
+        "md" (REQ-CAL-REV-MD-READ-006, 2026-08-06) is deliberately excluded
+        from this parity check: it is a frontend-only AUTHENTICATION
+        display identity, never a reviewer — backend/config.py's
+        MEMBER_DIRECTORY intentionally has no "md" entry (see
+        test_member_directory_has_exactly_five_known_entries above), so
+        resolve_reviewer("md") correctly returns UNKNOWN_REVIEWER, which
+        would never match the frontend's "MD"/"Read-only" display pair.
+        See test_frontend_registry_includes_md_as_display_only_entry below
+        for MD's own, separate assertion."""
         import re
         from pathlib import Path
 
@@ -171,11 +181,36 @@ class ReviewerIdentityResolutionTestCase(unittest.TestCase):
             r"(\w+):\s*\{\s*displayName:\s*'([^']*)',\s*role:\s*'([^']*)'\s*\}"
         )
         frontend_entries = {key: (name, role) for key, name, role in entry_re.findall(text)}
-        self.assertEqual(len(frontend_entries), 5, "expected exactly 5 frontend registry entries")
-        for member_key, (display_name, role) in frontend_entries.items():
+        reviewer_entries = {
+            key: value for key, value in frontend_entries.items() if key != "md"
+        }
+        self.assertEqual(len(reviewer_entries), 5, "expected exactly 5 frontend reviewer registry entries")
+        for member_key, (display_name, role) in reviewer_entries.items():
             backend_entry = resolve_reviewer(member_key)
             self.assertEqual(backend_entry["displayName"], display_name, member_key)
             self.assertEqual(backend_entry["role"], role, member_key)
+
+    def test_frontend_registry_includes_md_as_display_only_entry(self):
+        """MD (REQ-CAL-REV-MD-READ-006, 2026-08-06) must be present in the
+        frontend registry as {displayName: 'MD', role: 'Read-only'} — the
+        exact pair "Authorized as: MD — Read-only" is built from — but must
+        NOT exist in the backend's own MEMBER_DIRECTORY/reviewer registry
+        (asserted separately above)."""
+        import re
+        from pathlib import Path
+
+        registry_path = (
+            Path(__file__).resolve().parents[2]
+            / "web-view" / "js" / "member-registry.js"
+        )
+        text = registry_path.read_text(encoding="utf-8")
+        entry_re = re.compile(
+            r"(\w+):\s*\{\s*displayName:\s*'([^']*)',\s*role:\s*'([^']*)'\s*\}"
+        )
+        frontend_entries = {key: (name, role) for key, name, role in entry_re.findall(text)}
+        self.assertIn("md", frontend_entries)
+        self.assertEqual(frontend_entries["md"], ("MD", "Read-only"))
+        self.assertNotIn("md", MEMBER_DIRECTORY)
 
 
 class FilenameSanitizationTestCase(unittest.TestCase):

@@ -2197,3 +2197,163 @@ test('leaving and returning to the dedicated tab recreates exactly one valid, di
   assert.equal(buttons.length, 1, 'exactly one Download PDF button remains after leaving and returning');
   assert.equal(buttons[0].disabled, true, 'disabled again until a fresh employee is selected');
 });
+
+// ── MD read-only access (REQ-CAL-REV-MD-READ-006, 2026-08-06) ──────────
+// MD authenticates through the exact same token flow as every other
+// member (calendar/auth.js) and reaches 'authorized' access here
+// unchanged — these tests exercise the ADDITIONAL, purely presentational
+// isReadOnlyMember() gating this module layers on top (hide create/edit
+// form, show a notice, exclude "md" from the reviewer filter). Same-day
+// edit lock, 401 handling, and tab-leave state clearing are unchanged by
+// this feature and already covered by the tests above for every member.
+
+var MD_AUTHORIZED = { token: 'test-only-frontend-token-md', memberKey: 'md' };
+
+test('MD banner reads "Authorized as: MD — Read-only"', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: MD_AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesWorkspace(mountEl);
+  var label = findByClass(mountEl, 'review-summaries-authorized-as');
+  assert.equal(label.hidden, false);
+  assert.equal(label.textContent, 'Authorized as: MD — Read-only');
+});
+
+test('MD reaches authorized access — staff/history panels visible, same as any other member', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: MD_AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  assert.equal(api.accessDecision(), 'authorized');
+  assert.equal(findByClass(mountEl, 'review-summaries-unauthorized').hidden, true);
+  assert.equal(findByClass(mountEl, 'review-summaries-staff-panel').hidden, false);
+  assert.equal(findByClass(mountEl, 'review-summaries-history-panel').hidden, false);
+});
+
+test('MD never appears as a reviewer-filter choice', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: MD_AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesWorkspace(mountEl);
+  var select = findByClass(mountEl, 'review-summaries-reviewer-select');
+  var values = select._children.map(function (opt) { return opt.value; });
+  assert.deepEqual(values, ['', 'mayurika', 'suman', 'arun', 'rajiv', 'paraparan']);
+  assert.ok(!values.includes('md'), 'md must never be a selectable reviewer-filter value');
+});
+
+test('MD sees the read-only notice instead of the Add/Edit form, even after selecting an employee', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: MD_AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  var formPanel = findByClass(mountEl, 'review-summaries-form-panel');
+  var form = findByClass(formPanel, 'review-summaries-form');
+  var notice = findByClass(formPanel, 'review-summaries-readonly-notice');
+  assert.equal(form.hidden, true, 'the create/edit form must be hidden before an employee is selected');
+  assert.equal(notice.hidden, false);
+  assert.equal(notice.textContent, 'Read-only access — MD can view and download Review Summaries but cannot create or edit them.');
+
+  api.selectStaff(fakeStaffRecord({ id: 'staff-md-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(form.hidden, true, 'selecting an employee must not reveal the form for a read-only member');
+  assert.equal(notice.hidden, false);
+});
+
+test('MD never gets an Edit button on any card — no summary is ever owned by "md"', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-md-1', reviewer_member_key: 'mayurika', can_edit: false });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: MD_AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-md-2' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(findByClass(mountEl, 'review-summaries-edit-btn'), null, 'MD must never see an Edit control');
+  var mdNotice = findByClass(mountEl, 'review-summaries-card-md-notice');
+  assert.ok(mdNotice, 'each card should carry the MD-only viewing-access explanation');
+  assert.equal(mdNotice.textContent, 'Read-only — MD has viewing access only.');
+});
+
+test('MD can still download a PDF using the existing authorized fetch pattern', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="Review_Summary_Test_2026-08-06.pdf"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: MD_AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-md-3' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var exportBtn = findByClass(mountEl, 'review-summaries-export-btn');
+  assert.ok(exportBtn, 'Download PDF button must render for MD');
+  await api.downloadReviewSummariesPdf();
+
+  var pdfCall = fetchMock.calls.filter(function (c) { return String(c.url).indexOf('/export/pdf') !== -1; })[0];
+  assert.ok(pdfCall, 'the export request must actually be sent');
+  assert.equal(pdfCall.options.headers.Authorization, 'Bearer ' + MD_AUTHORIZED.token);
+});
+
+test('token change from a normal member to MD switches the form to the read-only notice', async (t) => {
+  var mayurikaRecord = fakeSummaryRecord({ id: 'sum-swap-1', reviewer_member_key: 'mayurika' });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [mayurikaRecord], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-swap-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var formPanel = findByClass(mountEl, 'review-summaries-form-panel');
+  var form = findByClass(formPanel, 'review-summaries-form');
+  var notice = findByClass(formPanel, 'review-summaries-readonly-notice');
+  assert.equal(notice.hidden, true, 'a normal member must not see the read-only notice');
+
+  globals.window.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
+    version: 1, token: MD_AUTHORIZED.token, verifiedMemberKey: 'md', verifiedAt: '2026-08-06T00:00:00.000Z'
+  }));
+  globals.document.dispatchEvent({ type: CALENDAR_AUTH_CHANGED_EVENT_NAME });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.state.selectedStaff, null, 'a genuine token change clears the employee selection');
+  assert.equal(notice.hidden, false, 'MD must see the read-only notice after the token change');
+  var label = findByClass(mountEl, 'review-summaries-authorized-as');
+  assert.equal(label.textContent, 'Authorized as: MD — Read-only');
+});
+
+test('token change from MD to a normal member restores the create form', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: MD_AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesWorkspace(mountEl);
+
+  var formPanel = findByClass(mountEl, 'review-summaries-form-panel');
+  var notice = findByClass(formPanel, 'review-summaries-readonly-notice');
+  assert.equal(notice.hidden, false);
+
+  globals.window.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
+    version: 1, token: AUTHORIZED.token, verifiedMemberKey: 'mayurika', verifiedAt: '2026-08-06T00:00:00.000Z'
+  }));
+  globals.document.dispatchEvent({ type: CALENDAR_AUTH_CHANGED_EVENT_NAME });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(notice.hidden, true, 'a normal member must not see the read-only notice after the token change');
+});
