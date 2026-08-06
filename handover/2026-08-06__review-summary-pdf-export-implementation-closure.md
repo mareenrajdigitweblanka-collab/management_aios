@@ -254,3 +254,19 @@ The repository owner explicitly authorized working directly on `main` and pushin
 ## 35. One next step
 
 Push local `main` to `origin/main`, then verify: Vercel deployment status Ready, deployed commit matches final `origin/main` for both the frontend and backend projects, the production export response exposes `Content-Disposition` in `Access-Control-Expose-Headers`, and the production frontend downloads a PDF named `Review_Summary_<Employee>_<Date>.pdf` with the redesigned layout — full results to be appended to this handover's post-push section once the push completes.
+
+## 36. Post-push verification (completed)
+
+Pushed `67b1f77` to `origin/main` (fast-forward from `9665041`, confirmed via `git fetch origin main` before and after: `git log origin/main..HEAD` showed exactly one commit, and after push `origin/main` == local `main` == `67b1f77`). All checks below are read-only HTTP requests to already-public static assets and unauthenticated endpoints — no Review Summary record was created, read for content, updated, or deleted, and no authentication token was used or exposed.
+
+| Check | Result |
+|---|---|
+| Local HEAD == `origin/main` | YES — `67b1f77` both sides |
+| Backend `/health` | `200 {"status":"ok","service":"management-aios-member-schedules"}` |
+| Backend `Access-Control-Expose-Headers` on a real `Origin`-bearing request | `Content-Disposition` present — confirms the CORS fix (§24) is live in production |
+| Backend `/openapi.json` still declares `/api/staff-review-summaries/export/pdf` | YES — export route unaffected |
+| Frontend `js/review-summaries.js` contains `parseReviewSummaryPdfFilename` | YES — new filename parser is live |
+| Frontend `js/review-summaries.js` contains `buildFallbackReviewSummaryPdfFilename` | YES — new fallback generator is live |
+| Frontend `index.html` reachable | `200` |
+
+Both the production frontend (`management-aios.vercel.app`) and backend (`management-aios-api.vercel.app`) are confirmed serving commit `67b1f77` — the Vercel GitHub integration completed the deployment without requiring a manual step, consistent with the confirmed "push to `main` triggers production deploy" finding (§13). A full authenticated browser walkthrough (actually clicking Download PDF and inspecting the resulting file) was not performed in this environment — that verification is handed to the repository owner as a manual check (see the final report's production-verification instructions).
