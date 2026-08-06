@@ -83,10 +83,52 @@ No PDF regression. No shared-read regression. No filter regression. No new backe
 
 `member-aios/mayurika-hr/staff-data/` — confirmed excluded (see Repository gate above). No file under it was read, listed for contents, or written.
 
-## Verdict
+## Verdict (implementation, pre-deployment)
 
 **PASS.** All acceptance criteria in `docs/2026-08-06_review-summary-no-delete-same-day-edit-requirement.md` §4 are met; zero schema/production-data changes; zero regressions across the full backend suite (beyond the 2 pre-existing/unrelated failures) and the full targeted frontend suites (Review Summaries, navigation, calendar).
 
+## Deployment addendum — 2026-08-06 (same day, post-report)
+
+**Root cause of the production defect the user reported (old Delete button/modal still visible):** the implementation had been committed locally (`ef0efb1`, `157a594`) but **never pushed** — `origin/main` was still at `8ac98f1` (the prior, pre-fix commit) when this addendum's session began. This was confirmed decisively, not assumed: `git branch -r --contains ef0efb1` and `git branch -r --contains 157a594` both returned empty before the push; `git rev-list --left-right --count origin/main...main` reported `0  2` (0 behind, 2 ahead). Vercel had therefore never built or deployed either commit — the screenshot showed genuinely-still-current production code, not a caching artifact.
+
+**Push:** `git push origin main` — plain fast-forward, no force, no rebase, no amend. `8ac98f1..157a594  main -> main`.
+
+**Post-push git state:** local HEAD == `origin/main` == `157a594`; divergence `0 0` (0 ahead, 0 behind); both `ef0efb1` and `157a594` confirmed contained in `origin/main` via `git branch -r --contains`; `git status --porcelain` showed only the pre-existing, unrelated untracked staff-roster file.
+
+**Vercel deployment:** not independently queried via the Vercel dashboard/API (no such tooling was available in this session — per instruction, "Ready" is therefore not claimed from that source). Instead verified functionally, directly against the served production assets:
+
+- `GET https://management-aios.vercel.app/js/review-summaries.js` → `200`, `Last-Modified` at push time, `X-Vercel-Cache: MISS` (freshly built, not a stale cache hit) — content is **byte-for-byte identical** to the committed `web-view/js/review-summaries.js` (confirmed via direct `diff` after CRLF normalization).
+- Same byte-identity confirmed for `js/ui/error-mapper.js` and `css/review-summaries.css`.
+- This is direct proof the new commit is live in production, independent of any dashboard status label.
+
+**Production frontend asset search** (`js/review-summaries.js`, live):
+
+| String | Expected | Result |
+| --- | --- | --- |
+| `Delete this review summary?` | absent | absent |
+| `Delete summary` | absent | absent |
+| `review-summary-delete` | absent | absent |
+| `deleteSummary` / `openDelete` / `confirmDelete` | absent | absent |
+| `confirmDestructive` | absent | absent |
+| `Editing period ended. This review summary is now read-only.` | present | present (line 1033) |
+| `Editable until 11:59 PM today.` | present | present (line 1014) |
+| `record.can_edit` | present | present (line 1013 and others) |
+
+**Production backend read-only check** (`https://management-aios-api.vercel.app`, no real summary id, no real token ever used):
+
+- `DELETE /api/staff-review-summaries/00000000-0000-0000-0000-000000000000`, no `Authorization` header → `401` (`"Missing or malformed Authorization header..."`).
+- Same request with `Authorization: Bearer not-a-real-token` → `401` (`"Invalid token."`).
+- `GET /openapi.json` → the DELETE operation still exists on `/api/staff-review-summaries/{summary_id}` (kept for API compatibility, as designed) alongside `get`/`put`.
+- The actual `409 review_summary_delete_disabled` body for a *valid* authenticated caller was **not** exercised live (no Management Team token was used against production, per instruction) — it is proven instead by the automated suite already run against this exact deployed code: `test_owner_delete_is_rejected`, `test_cross_reviewer_delete_is_rejected`, `test_delete_is_rejected_for_every_valid_reviewer_identity` (all 5 `VALID_MEMBER_KEYS`), `test_delete_response_never_reports_success` — all passing, unchanged, against the identical committed source now live.
+
+**Database/production impact of this deployment session:** 0 schema changes, 0 production writes, 0 production records changed — every check above was either a `GET`/read-only request, a `DELETE` that never reached authenticated business logic (401 before any lookup), or a local automated test against ephemeral in-memory SQLite.
+
+**Scope discipline:** the diff pushed (`git diff --name-status origin/main...main`, captured before push) touched only the 13 files already listed in this document's original evidence — no Issues-module file, no `varman_aios.issues` reference, no issue-tracker frontend, no staff-roster comparison file, no attachment-upload code, no unrelated PDF work, no protected-path file, no database model or migration.
+
+### Deployment verdict
+
+**PASS.** The reported production defect (visible Delete button/modal) is fully explained (unpushed commits) and fully resolved (the fix is now live and directly confirmed in the served bytes). One caveat, stated plainly rather than glossed over: Vercel's own dashboard "Ready" status was not independently queried through Vercel tooling in this session — the fresh, byte-identical asset delivery is strong, direct functional proof of a successful deploy, but a operator glance at the Vercel dashboard is the one remaining formality to fully close that specific loop (see next step and the manual production check in the handover doc).
+
 ## Next step
 
-Push is withheld per instruction — the implementation report must be reviewed before `git push` runs. See `handover/2026-08-06__review-summary-no-delete-same-day-edit-closure.md` for the commit hash once created.
+Repository owner (or any Management Team member) performs the manual production UI check described in `handover/2026-08-06__review-summary-no-delete-same-day-edit-closure.md` §8 — open the Review Summaries tab, hard-refresh, and visually confirm no Delete control, correct Edit-lock messaging, and unaffected PDF/filter behavior.

@@ -3,7 +3,7 @@ name: review-summary-no-delete-same-day-edit-handover
 type: handover
 scope: management_aios — Review Summary No-Delete and Same-Day Edit Lock (REQ-CAL-REV-LOCK-004)
 created: 2026-08-06
-status: Implemented directly on local `main`, per explicit direct-main build instruction; push withheld pending implementation report review; zero schema/database changes; zero production writes; all automated tests pass with zero regressions (776 backend, 2 pre-existing unrelated failures unchanged; 107 targeted + 16 navigation + 179 calendar frontend, all pass)
+status: Implemented directly on local `main`, then deployed 2026-08-06 (same day) after a user-reported production defect traced to the commits never having been pushed — pushed as a plain fast-forward (`8ac98f1..157a594`), confirmed live via byte-identical production asset comparison; zero schema/database changes; zero production writes; all automated tests pass with zero regressions (776 backend, 2 pre-existing unrelated failures unchanged; 107 targeted + 16 navigation + 179 calendar frontend, all pass)
 owner: builder (Mareenraj)
 reviewer: pending
 ---
@@ -60,12 +60,36 @@ Backend: boundary/date-math cases go in `backend/tests/test_review_summary_edit_
 
 See `validation/review-summary-no-delete-same-day-edit-check-2026-08-06.md` for full detail. Headline: 776 backend tests (774 pass, 2 pre-existing/unrelated failures unchanged from before this session), 67/67 PDF export tests (zero regression), 107/107 targeted frontend tests, 16/16 navigation, 179/179 calendar. Zero schema changes. Zero production writes.
 
-## 7. Git
+## 7. Git and deployment (updated 2026-08-06, same day — deployment session)
 
-Commit: `ef0efb1` — "Enforce Review Summary same-day edit lock" (`main`, local only). 13 files changed, 1231 insertions(+), 164 deletions(-).
+Commit: `ef0efb1` — "Enforce Review Summary same-day edit lock". Follow-up: `157a594` — "Record commit hash in Review Summary edit-lock handover". 13 files changed, 1231 insertions(+), 164 deletions(-) in `ef0efb1`.
 
-**Push status: withheld.** Per explicit instruction, `git push` was not run. The implementation report (this handover + the validation check doc) is for review before any push.
+**Root cause of the reported production defect (old Delete button/modal visible):** both commits existed only locally — `origin/main` was still at `8ac98f1` when the user's screenshot was taken. Confirmed via `git branch -r --contains ef0efb1`/`157a594` (both empty pre-push) and `git rev-list --left-right --count origin/main...main` (`0` behind / `2` ahead). Not a caching issue, not a partial deploy — the commits had simply never reached GitHub, so Vercel had nothing new to build.
 
-## 8. One next step
+**Push:** `git push origin main` — plain fast-forward (`8ac98f1..157a594`), no force, no rebase, no amend.
 
-Repository owner reviews this implementation report and, if satisfied, explicitly authorizes `git push origin main`.
+**Post-push state:** local `HEAD` == `origin/main` == `157a594`, divergence `0 0`, both commits confirmed on `origin/main`.
+
+**Deployment confirmation:** Vercel's dashboard/API was not independently queried (no such tooling available this session — per instruction, "Ready" is not claimed from that source alone). Instead confirmed functionally: `https://management-aios.vercel.app/js/review-summaries.js` (and `js/ui/error-mapper.js`, `css/review-summaries.css`) now serve content **byte-for-byte identical** to the pushed commit (`X-Vercel-Cache: MISS`, fresh `Last-Modified`), and contain zero obsolete Delete strings while containing every current can_edit/lock string. Production backend (`https://management-aios-api.vercel.app`) DELETE route gates correctly on auth (401 for missing/invalid token, tested with a synthetic invalid UUID, never a real record or real token). Full detail: `validation/review-summary-no-delete-same-day-edit-check-2026-08-06.md`'s "Deployment addendum."
+
+**Push status: complete.** `main` is now the production deployment branch's current state.
+
+## 8. Manual production verification (for a human, post-deployment)
+
+Automated checks confirm the fix is live in the served code; a human should still visually confirm the actual rendered UI. No token should ever be typed into chat, committed, or shared with the assistant.
+
+1. Open `https://management-aios.vercel.app`.
+2. Hard refresh: `Ctrl + Shift + R`. If the old UI still appears, open DevTools → Network → enable "Disable cache" → reload.
+3. Go to **STAFF → Review Summaries**, select an employee with existing review history.
+4. Confirm:
+   - No Delete button anywhere, on any card.
+   - No Delete confirmation modal can be triggered (there is nothing to click).
+   - A record you created today shows "Edit" and "Editable until 11:59 PM today."
+   - An older record you created (a prior day) shows "Editing period ended. This review summary is now read-only." and no Edit button.
+   - A record created by a different reviewer shows neither line, no Edit button — read-only, as before.
+   - "Download PDF" still works.
+   - Reviewer/date filters still work.
+
+## 9. One next step
+
+A Management Team member performs the manual production check in §8 above and confirms visually that the Delete control is gone and the edit-lock messaging is correct.
