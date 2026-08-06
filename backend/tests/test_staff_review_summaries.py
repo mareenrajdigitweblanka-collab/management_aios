@@ -15,6 +15,7 @@ Run with: python -m unittest backend.tests.test_staff_review_summaries
 import unittest
 from datetime import date, datetime, timedelta, timezone
 from io import BytesIO
+from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
@@ -28,6 +29,8 @@ from backend.tests.calendar_auth_test_support import (
     make_sqlite_engine_and_session_factory,
     patched_calendar_auth_env,
 )
+
+_COLOMBO_TZ = ZoneInfo("Asia/Colombo")
 
 
 class StaffReviewSummariesTestCase(unittest.TestCase):
@@ -91,11 +94,16 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         return staff_id
 
     def seed_summary(self, reviewer_member_key="mayurika", reviewed_staff_id=None,
-                      meeting_date=None, summary_text="Seed summary text."):
+                      meeting_date=None, summary_text="Seed summary text.", created_at=None):
         if reviewed_staff_id is None:
             reviewed_staff_id = self.seed_staff()
         session = self.make_session()
-        now = datetime.now(timezone.utc)
+        # REQ-CAL-REV-LOCK-004: created_at defaults to real "now" (as
+        # before this feature) so every pre-existing test that never
+        # passes created_at keeps seeding an always-editable-today record.
+        # Passing created_at explicitly is how the lock tests below seed a
+        # deliberately yesterday/older record.
+        now = created_at if created_at is not None else datetime.now(timezone.utc)
         record = StaffReviewSummary(
             reviewer_member_key=reviewer_member_key,
             reviewed_staff_id=reviewed_staff_id,
@@ -124,6 +132,20 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         count = session.query(StaffReviewSummary).count()
         session.close()
         return count
+
+    def soft_delete_summary_directly(self, summary_id):
+        """REQ-CAL-REV-LOCK-004 (2026-08-06): the DELETE endpoint itself no
+        longer soft-deletes anything (delete_staff_review_summary always
+        rejects with 409, unconditionally). Every fixture below that still
+        needs an ALREADY-soft-deleted row (to prove such rows stay hidden
+        — approved business rule §10/§17) must therefore write deleted_at
+        directly via the ORM, bypassing the API exactly like the seed_*
+        helpers above already bypass it for created_at/updated_at."""
+        session = self.make_session()
+        record = session.get(StaffReviewSummary, summary_id)
+        record.deleted_at = datetime.now(timezone.utc)
+        session.commit()
+        session.close()
 
     # ── 1-2: StaffRecordOut / Staff API compatibility ─────────────────
 
@@ -476,9 +498,12 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         self.assertEqual(detail_a_from_b.status_code, 200)
         self.assertEqual(detail_a_from_b.json()["reviewer_member_key"], "mayurika")
 
-        # Cross-reviewer update/delete on the same shared-staff summaries
-        # also return the non-disclosing 404 (not a 403 that would leak
-        # existence), and never mutate the other reviewer's row.
+        # Cross-reviewer update still returns the non-disclosing 404 (not
+        # a 403 that would leak existence), and never mutates the other
+        # reviewer's row. Delete (REQ-CAL-REV-LOCK-004) is rejected for
+        # everyone unconditionally now — 409, not a 404 — see
+        # test_delete_is_rejected_for_every_valid_reviewer_identity above
+        # for the dedicated coverage of that rule.
         update_resp = self.client.put(
             "/api/staff-review-summaries/" + str(summary_b_id),
             json={"summary_text": "Hijack attempt."},
@@ -489,7 +514,7 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
             "/api/staff-review-summaries/" + str(summary_a_id),
             headers=bearer_header("arun"),
         )
-        self.assertEqual(delete_resp.status_code, 404)
+        self.assertEqual(delete_resp.status_code, 409)
 
         record_a = self.load_summary(summary_a_id)
         record_b = self.load_summary(summary_b_id)
@@ -527,11 +552,12 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
 
     def test_deleted_detail_returns_404_even_for_the_owner(self):
         """PHASE 5.10 — a soft-deleted summary is 404 for everyone,
-        including its own owner, not just for other reviewers."""
+        including its own owner, not just for other reviewers. deleted_at
+        is set directly (REQ-CAL-REV-LOCK-004 — the DELETE endpoint no
+        longer performs a soft delete at all; see
+        soft_delete_summary_directly's docstring)."""
         summary_id, _ = self.seed_summary(reviewer_member_key="arun")
-        self.client.delete(
-            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
-        )
+        self.soft_delete_summary_directly(summary_id)
         resp = self.client.get(
             "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
         )
@@ -640,6 +666,188 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         record = self.load_summary(summary_id)
         self.assertEqual(record.summary_text, "Original text.")
 
+    # ── Same-day edit lock (REQ-CAL-REV-LOCK-004, 2026-08-06) ──────────
+    # HTTP-level authorization/lock coverage — real-clock created_at
+    # (defaults to "now", i.e. always today) vs. an explicit yesterday
+    # timestamp. Pure date-boundary math (23:59:58/23:59:59/00:00:00 exact
+    # second cases) is covered separately and deterministically in
+    # backend/tests/test_review_summary_edit_lock.py, which injects
+    # `today` directly rather than depending on the real wall clock.
+
+    def _seed_yesterday_summary(self, reviewer_member_key="mayurika"):
+        yesterday_colombo = datetime.now(timezone.utc).astimezone(_COLOMBO_TZ) - timedelta(days=1)
+        # Comfortably inside yesterday's Colombo calendar date regardless
+        # of what second "now" happens to be.
+        created_at = yesterday_colombo.replace(hour=12, minute=0, second=0, microsecond=0)
+        return self.seed_summary(
+            reviewer_member_key=reviewer_member_key,
+            summary_text="Yesterday's original text.",
+            created_at=created_at.astimezone(timezone.utc),
+        )
+
+    def test_1_creator_edits_during_creation_day(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Same-day edit."},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["can_edit"])
+
+    def test_2_creator_cannot_edit_after_midnight(self):
+        summary_id, _ = self._seed_yesterday_summary(reviewer_member_key="mayurika")
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Too-late edit attempt."},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json()["error"], "review_summary_edit_locked")
+        record = self.load_summary(summary_id)
+        self.assertEqual(record.summary_text, "Yesterday's original text.")
+
+    def test_3_non_owner_cannot_edit_during_creation_day(self):
+        # Non-ownership is still checked FIRST (unchanged 404), before the
+        # day-lock ever runs — a same-day record from a different reviewer
+        # is still just a non-disclosing 404, not a 409.
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Hijack attempt."},
+            headers=bearer_header("suman"),
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_4_no_admin_override_exists(self):
+        # This app's member set has no "Admin" role — every VALID_MEMBER_KEYS
+        # identity other than the creator gets the same non-disclosing 404
+        # a cross-reviewer gets; there is no elevated key that bypasses
+        # either the ownership check or the day-lock.
+        from backend.config import VALID_MEMBER_KEYS
+
+        summary_id, _ = self._seed_yesterday_summary(reviewer_member_key="mayurika")
+        for member_key in VALID_MEMBER_KEYS:
+            if member_key == "mayurika":
+                continue
+            resp = self.client.put(
+                "/api/staff-review-summaries/" + str(summary_id),
+                json={"summary_text": "Override attempt."},
+                headers=bearer_header(member_key),
+            )
+            self.assertEqual(resp.status_code, 404, "no override for " + member_key)
+
+    def test_5_missing_token_cannot_edit(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "No token."},
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_6_invalid_token_cannot_edit(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Bad token."},
+            headers={"Authorization": "Bearer not-a-real-token"},
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_7_request_cannot_alter_reviewer_ownership(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Attempted ownership spoof.", "reviewer_member_key": "arun"},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["reviewer_member_key"], "mayurika")
+        record = self.load_summary(summary_id)
+        self.assertEqual(record.reviewer_member_key, "mayurika")
+
+    def test_8_request_cannot_alter_created_at(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        original = self.load_summary(summary_id)
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Attempted created_at spoof.", "created_at": "2000-01-01T00:00:00Z"},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        record = self.load_summary(summary_id)
+        self.assertEqual(record.created_at, original.created_at)
+
+    def test_9_request_cannot_supply_an_edit_deadline(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Attempted deadline spoof.", "edit_deadline": "2099-01-01T00:00:00Z"},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        # edit_deadline in the response is always server-derived from
+        # created_at (today's own 23:59:59 Colombo) — never the spoofed
+        # request value.
+        self.assertNotIn("2099", resp.json()["edit_deadline"])
+
+    def test_can_edit_and_edit_deadline_are_present_on_list_and_detail_too(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        list_resp = self.client.get(
+            "/api/staff-review-summaries", headers=bearer_header("mayurika")
+        )
+        self.assertTrue(list_resp.json()["records"][0]["can_edit"])
+        self.assertIsNotNone(list_resp.json()["records"][0]["edit_deadline"])
+        detail_resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        self.assertTrue(detail_resp.json()["can_edit"])
+
+    def test_can_edit_is_false_for_a_shared_read_by_a_non_owner(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        detail_resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
+        )
+        self.assertEqual(detail_resp.status_code, 200)
+        self.assertFalse(detail_resp.json()["can_edit"])
+
+    def test_can_edit_is_false_for_the_owner_once_the_creation_day_has_passed(self):
+        summary_id, _ = self._seed_yesterday_summary(reviewer_member_key="mayurika")
+        detail_resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        self.assertFalse(detail_resp.json()["can_edit"])
+
+    def test_meeting_date_does_not_affect_can_edit_or_the_lock(self):
+        # meeting_date is yesterday but created_at is today — creator edit
+        # succeeds and can_edit is true, matching Phase 9 case 6.
+        staff_a = self.seed_staff(source_record_key="staff-meeting-date-case-6")
+        summary_id, _ = self.seed_summary(
+            reviewer_member_key="mayurika", reviewed_staff_id=staff_a,
+            meeting_date=self.today - timedelta(days=1),
+        )
+        resp = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Still editable — created today."},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        # meeting_date is today but created_at is yesterday — creator edit
+        # fails, matching Phase 9 case 7.
+        locked_id, _ = self._seed_yesterday_summary(reviewer_member_key="mayurika")
+        session = self.make_session()
+        record = session.get(StaffReviewSummary, locked_id)
+        record.meeting_date = self.today
+        session.commit()
+        session.close()
+        locked_resp = self.client.put(
+            "/api/staff-review-summaries/" + str(locked_id),
+            json={"summary_text": "Should still be locked."},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(locked_resp.status_code, 409)
+
     def test_blank_summary_rejected(self):
         staff_id = self.seed_staff()
         resp = self.client.post(
@@ -730,33 +938,113 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         # at the storage layer; safe rendering is a frontend concern.
         self.assertEqual(detail.json()["summary_text"], text)
 
-    # ── 29-32: Delete / soft-delete semantics ──────────────────────────
+    # ── 29-32: Delete prohibition (REQ-CAL-REV-LOCK-004, 2026-08-06) ────
+    # No user may delete a Review Summary any more — DELETE now rejects
+    # EVERY caller identically (creator, any other reviewer, an
+    # "Admin"-equivalent — this app has no admin role, but the rejection
+    # is unconditional regardless of identity) with 409
+    # review_summary_delete_disabled, never a 200/204, never a row
+    # mutation. See backend/routers/staff_review_summaries.py
+    # delete_staff_review_summary's docstring for the full rationale.
 
-    def test_owner_soft_delete_succeeds(self):
+    def test_owner_delete_is_rejected(self):
         summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
         resp = self.client.delete(
             "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
         )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json(), {"id": str(summary_id), "deleted": True})
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json()["error"], "review_summary_delete_disabled")
         record = self.load_summary(summary_id)
         self.assertIsNotNone(record)  # row still physically present
-        self.assertIsNotNone(record.deleted_at)
+        self.assertIsNone(record.deleted_at)
 
-    def test_cross_reviewer_delete_returns_404(self):
+    def test_cross_reviewer_delete_is_rejected(self):
         summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
         resp = self.client.delete(
             "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("suman")
         )
-        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json()["error"], "review_summary_delete_disabled")
         record = self.load_summary(summary_id)
         self.assertIsNone(record.deleted_at)
 
-    def test_deleted_record_excluded_from_list_and_detail(self):
+    def test_delete_is_rejected_for_every_valid_reviewer_identity(self):
+        """No "Admin" role exists in this app's member set — this proves
+        the rejection is truly unconditional (not merely "not the
+        creator") by trying every single valid VALID_MEMBER_KEYS identity
+        against one record, including its own creator."""
+        from backend.config import VALID_MEMBER_KEYS
+
         summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
-        self.client.delete(
+        for member_key in VALID_MEMBER_KEYS:
+            resp = self.client.delete(
+                "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header(member_key)
+            )
+            self.assertEqual(resp.status_code, 409, "delete must be rejected for " + member_key)
+        record = self.load_summary(summary_id)
+        self.assertIsNone(record.deleted_at)
+
+    def test_delete_nonexistent_id_is_also_rejected_not_404(self):
+        """The rejection never depends on record existence — it happens
+        before any database lookup — so an unknown id gets the same 409,
+        never a 404 (which would at least confirm "this id does not
+        exist", a distinction the approved rule does not require)."""
+        resp = self.client.delete(
+            "/api/staff-review-summaries/00000000-0000-0000-0000-000000000000",
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json()["error"], "review_summary_delete_disabled")
+
+    def test_delete_missing_token_returns_401_not_409(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.delete("/api/staff-review-summaries/" + str(summary_id))
+        self.assertEqual(resp.status_code, 401)
+        record = self.load_summary(summary_id)
+        self.assertIsNone(record.deleted_at)
+
+    def test_delete_invalid_token_returns_401_not_409(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_id),
+            headers={"Authorization": "Bearer not-a-real-token"},
+        )
+        self.assertEqual(resp.status_code, 401)
+        record = self.load_summary(summary_id)
+        self.assertIsNone(record.deleted_at)
+
+    def test_delete_response_never_reports_success(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.delete(
             "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
         )
+        self.assertNotIn(resp.status_code, (200, 202, 204))
+        self.assertNotEqual(resp.json().get("deleted"), True)
+
+    def test_previously_soft_deleted_row_stays_hidden_after_the_delete_prohibition(self):
+        """A row soft-deleted before this feature (or seeded directly, per
+        soft_delete_summary_directly's docstring) must remain invisible —
+        the delete PROHIBITION does not restore it, and it is still
+        excluded from list/detail exactly as before."""
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        self.soft_delete_summary_directly(summary_id)
+        detail_resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        self.assertEqual(detail_resp.status_code, 404)
+        # A DELETE attempt on that same (already-hidden) id is still
+        # rejected with 409, never a 404 that would disclose its
+        # soft-deleted existence, and never restores it.
+        delete_resp = self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        self.assertEqual(delete_resp.status_code, 409)
+        record = self.load_summary(summary_id)
+        self.assertIsNotNone(record.deleted_at)
+
+    def test_deleted_record_excluded_from_list_and_detail(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        self.soft_delete_summary_directly(summary_id)
         list_resp = self.client.get(
             "/api/staff-review-summaries", headers=bearer_header("mayurika")
         )
@@ -772,9 +1060,7 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         ?reviewer_member_key= list nor the shared detail route ever
         surfaces it once deleted_at is set."""
         summary_id, _ = self.seed_summary(reviewer_member_key="arun")
-        self.client.delete(
-            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
-        )
+        self.soft_delete_summary_directly(summary_id)
         list_resp = self.client.get(
             "/api/staff-review-summaries",
             params={"reviewer_member_key": "arun"},
@@ -906,9 +1192,7 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
     def test_all_reviewer_query_excludes_deleted_records(self):
         staff_id = self.seed_staff(source_record_key="staff-all-deleted")
         summary_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
-        self.client.delete(
-            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
-        )
+        self.soft_delete_summary_directly(summary_id)
         resp = self.client.get(
             "/api/staff-review-summaries",
             params={"include_all_reviewers": "true", "reviewed_staff_id": str(staff_id)},
@@ -1148,7 +1432,7 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         summary_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
                                            summary_text="ToBeDeleted")
         self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id, summary_text="Stays")
-        self.client.delete("/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika"))
+        self.soft_delete_summary_directly(summary_id)
         resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
         text = "\n".join(p.extract_text() or "" for p in PdfReader(BytesIO(resp.content)).pages)
         self.assertIn("Stays", text)
@@ -1267,15 +1551,19 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
 
     def test_export_addition_leaves_delete_ownership_unchanged(self):
+        """Delete is rejected identically for a cross-reviewer and for the
+        owner alike (REQ-CAL-REV-LOCK-004 superseded the prior owner-only
+        soft-delete rule this test originally exercised) — both now 409,
+        never a 200."""
         summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
         cross_delete = self.client.delete(
             "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
         )
-        self.assertEqual(cross_delete.status_code, 404)
+        self.assertEqual(cross_delete.status_code, 409)
         owner_delete = self.client.delete(
             "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
         )
-        self.assertEqual(owner_delete.status_code, 200)
+        self.assertEqual(owner_delete.status_code, 409)
 
     # ── 34-36: Regression — existing Task/Leave/auth behavior untouched ──
 

@@ -423,8 +423,8 @@
 /* "Show more"/"Show less" toggle for a truncated history-card summary
    (2026-08-03 UX fix — production feedback: a long summary previously
    rendered as one unbroken wall of text). Sits between the text and the
-   Edit/Delete actions row, sized down from the standard .msc-btn so it
-   doesn't compete visually with those primary actions. */
+   edit-status/actions row below, sized down from the standard .msc-btn so
+   it doesn't compete visually with those primary actions. */
 .review-summaries-toggle-text-btn {
   align-self: flex-start;
   padding: 4px 10px;
@@ -434,6 +434,21 @@
 .review-summaries-card-actions {
   display: flex;
   gap: var(--space-2);
+}
+
+/* Same-day edit lock status line (REQ-CAL-REV-LOCK-004, 2026-08-06) —
+   shown only on the current reviewer's own card, directly above the Edit
+   button (still editable) or in its place (locked). No Delete-equivalent
+   class exists any more — the Delete control was removed entirely, not
+   merely hidden. */
+.review-summaries-card-edit-status {
+  font-size: var(--font-2xs);
+  color: var(--muted);
+  margin: 0;
+}
+
+.review-summaries-card-edit-status.review-summaries-card-edit-locked {
+  color: var(--warning, var(--muted));
 }
 
 .review-summaries-empty {

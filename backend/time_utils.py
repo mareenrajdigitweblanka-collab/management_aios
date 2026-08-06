@@ -44,6 +44,18 @@ def colombo_today() -> date_type:
     return datetime.now(timezone.utc).astimezone(COLOMBO).date()
 
 
+def colombo_date_of(moment: datetime) -> date_type:
+    """Converts an aware (or naive-assumed-UTC) datetime — typically a
+    stored created_at — to its Asia/Colombo calendar date. Used by
+    REQ-CAL-REV-LOCK-004 (Review Summary same-day edit lock,
+    backend/routers/staff_review_summaries.py) to compare a record's
+    creation date against colombo_today() without duplicating the
+    UTC-assumption/astimezone logic colombo_today() already has."""
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(COLOMBO).date()
+
+
 def derive_task_outcome(
     event_date: date_type,
     outcome: Optional[str],

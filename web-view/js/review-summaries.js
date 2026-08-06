@@ -18,10 +18,22 @@
      - 'authorized'   — a valid token is stored. Every authenticated
        Management Team member may search staff, read every reviewer's
        active summaries for a selected employee, and create their own
-       summaries. Edit/Delete are decided PER RECORD (isOwnedRecord below),
-       not per panel — only the record's own reviewer_member_key, compared
-       against the current token's member key, controls whether Edit/
-       Delete render for that one card.
+       summaries. Edit is decided PER RECORD (isOwnedRecord + the
+       backend-derived record.can_edit below), not per panel — only the
+       record's own reviewer_member_key/can_edit controls whether Edit
+       renders for that one card. Delete does not exist anywhere in this
+       UI any more (REQ-CAL-REV-LOCK-004, 2026-08-06 — no user may delete
+       a Review Summary; see renderHistoryCard below).
+
+   REQ-CAL-REV-LOCK-004 (2026-08-06) same-day edit lock: the backend is
+   authoritative — every record returned by list/detail already carries a
+   server-derived `can_edit` boolean (true only for the record's own
+   creator, and only through 23:59:59 Asia/Colombo on its own created_at
+   date). This module never recomputes that decision from a browser clock;
+   it only reads record.can_edit to decide whether to show the Edit
+   button, and every PUT still relies on the backend's own 409
+   review_summary_edit_locked rejection as the real enforcement (see
+   exitEditModeOnLockedResponse in the form submit handler below).
 
    Reviewer display name/role are resolved client-side via
    member-registry.js's MEMBER_REGISTRY, from each record's own
@@ -54,7 +66,6 @@ import { resolveMember } from './member-registry.js';
 import { classifyHttpStatus, mapApiError } from './ui/error-mapper.js';
 import { setButtonBusy, showInlineLoading } from './ui/loading.js';
 import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from './ui/form-feedback.js';
-import { confirmDestructive } from './ui/dialog.js';
 import { showToast } from './ui/toast.js';
 
 var SUMMARY_MAX_LENGTH = 10000;
@@ -322,9 +333,20 @@ function reviewSummariesApiRequest(pathAndQuery, options) {
       throw err;
     }
     if (!res.ok) {
-      return res.json().catch(function () { return {}; }).then(function () {
-        var err = new Error('Request failed.');
-        err.code = classifyHttpStatus(res.status);
+      return res.json().catch(function () { return {}; }).then(function (body) {
+        var err;
+        // REQ-CAL-REV-LOCK-004 (2026-08-06) — same convention
+        // calendar/instance.js's apiRequest already uses for
+        // outcome_locked/outcome_recorded_immutable: read the backend's
+        // own typed `error` field when present, rather than only ever
+        // falling back to a generic status-code classification.
+        if (body && (body.error === 'review_summary_edit_locked' || body.error === 'review_summary_delete_disabled')) {
+          err = new Error(body.message || 'Request failed.');
+          err.code = body.error;
+        } else {
+          err = new Error('Request failed.');
+          err.code = classifyHttpStatus(res.status);
+        }
         err.status = res.status;
         throw err;
       });
@@ -727,6 +749,19 @@ export function mountReviewSummariesWorkspace(mountEl) {
       renderHistory();
     }).catch(function (err) {
       setButtonBusy(saveBtn, false);
+      // REQ-CAL-REV-LOCK-004 (2026-08-06) — the creation-day edit window
+      // can close between when this card was last rendered and when the
+      // user actually submits (e.g. the popup was left open across the
+      // Colombo midnight boundary, same class of case
+      // calendar/instance.js's Task Outcome flow already documents for
+      // outcome_locked). Exit edit mode and re-fetch so the card
+      // re-renders with its now-current, backend-authoritative can_edit
+      // state — never leaves the form stuck open against a record that
+      // can no longer be saved.
+      if (err && err.code === 'review_summary_edit_locked') {
+        exitEditMode();
+        renderHistory();
+      }
       var mapped = mapApiError(err);
       showToast({ type: 'error', title: mapped.title, message: mapped.message, persistent: mapped.persistent });
     });
@@ -961,55 +996,44 @@ export function mountReviewSummariesWorkspace(mountEl) {
       card.appendChild(toggleTextBtn);
     }
 
-    /* Edit/Delete render ONLY when this specific card is owned by the
-       currently authenticated reviewer (isOwnedRecord) — evaluated per
-       card, on every render, never once per panel (technical design
+    /* Edit-window status + Edit button render ONLY for a card owned by
+       the currently authenticated reviewer (isOwnedRecord) — evaluated
+       per card, on every render, never once per panel (technical design
        §5.3/§2.8). A non-owned card still renders fully (read-only) — it
-       simply gets no mutation controls. */
+       simply gets no status line and no mutation controls, exactly as
+       before (REQ-CAL-REV-LOCK-004's "OTHER REVIEWER: no Edit control;
+       read-only card" — unchanged from the prior shared-read behavior).
+
+       There is no Delete control anywhere in this workspace any more
+       (REQ-CAL-REV-LOCK-004, 2026-08-06) — no user may delete a Review
+       Summary; the backend's DELETE route only ever rejects with 409
+       now, so no frontend code path is left that could still call it. */
     if (isOwnedRecord(record, authenticatedMemberKey)) {
-      var actions = el('div', 'review-summaries-card-actions');
-      var editBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-edit-btn');
-      editBtn.type = 'button';
-      editBtn.textContent = 'Edit';
-      editBtn.addEventListener('click', function () {
-        state.editingId = record.id;
-        dateInput.value = record.meeting_date;
-        summaryTextarea.value = record.summary_text;
-        counterEl.textContent = summaryCounterText(record.summary_text);
-        saveBtn.textContent = 'Save Changes';
-        cancelEditBtn.hidden = false;
-        summaryTextarea.focus();
-      });
+      var statusEl = el('p', 'review-summaries-card-edit-status');
+      if (record.can_edit) {
+        statusEl.textContent = 'Editable until 11:59 PM today.';
+        card.appendChild(statusEl);
 
-      var deleteBtn = el('button', 'msc-btn msc-btn-danger review-summaries-delete-btn');
-      deleteBtn.type = 'button';
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', function () {
-        confirmDestructive({
-          title: 'Delete this review summary?',
-          message: 'This cannot be undone from this workspace. The summary for ' +
-            reviewedEmployeeLabel(record) + ' on ' + record.meeting_date + ' will be removed.',
-          confirmLabel: 'Delete summary',
-          trigger: deleteBtn,
-          onConfirm: function () {
-            return guardedRequest('/' + record.id, { method: 'DELETE' })
-              .then(function () {
-                showToast({ type: 'success', title: 'Summary deleted', message: '' });
-                renderHistory();
-                return true;
-              })
-              .catch(function (err) {
-                var mapped = mapApiError(err);
-                showToast({ type: 'error', title: mapped.title, message: mapped.message, persistent: mapped.persistent });
-                return false;
-              });
-          }
+        var actions = el('div', 'review-summaries-card-actions');
+        var editBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-edit-btn');
+        editBtn.type = 'button';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function () {
+          state.editingId = record.id;
+          dateInput.value = record.meeting_date;
+          summaryTextarea.value = record.summary_text;
+          counterEl.textContent = summaryCounterText(record.summary_text);
+          saveBtn.textContent = 'Save Changes';
+          cancelEditBtn.hidden = false;
+          summaryTextarea.focus();
         });
-      });
-
-      actions.appendChild(editBtn);
-      actions.appendChild(deleteBtn);
-      card.appendChild(actions);
+        actions.appendChild(editBtn);
+        card.appendChild(actions);
+      } else {
+        statusEl.textContent = 'Editing period ended. This review summary is now read-only.';
+        statusEl.classList.add('review-summaries-card-edit-locked');
+        card.appendChild(statusEl);
+      }
     }
     return card;
   }

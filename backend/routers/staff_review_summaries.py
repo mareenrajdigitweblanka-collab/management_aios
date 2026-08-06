@@ -3,14 +3,17 @@ Review Meeting Summaries).
 
 Management Team members conduct review meetings about company staff (who
 may be a non-management staff member or another Management Team member).
-Each summary is authored, updated, and soft-deleted only by the reviewer
-who created it — never by the reviewed staff member — but, as of the
-2026-08-03 revised business rule, every authenticated Management Team
-member may READ summaries created by other Management Team members. Only
-the owning reviewer may create records under their identity, update their
-own summaries, or delete their own summaries. Public users, invalid
-tokens, and ordinary reviewed staff without a Management Team token still
-have no access at all — see get_verified_member below.
+Each summary is authored by, and — through the end of its own creation day
+only (REQ-CAL-REV-LOCK-004, 2026-08-06) — updated by the reviewer who
+created it, never by the reviewed staff member. As of the 2026-08-03
+revised business rule, every authenticated Management Team member may READ
+summaries created by other Management Team members. Only the owning
+reviewer may create records under their identity or update their own
+summaries while their own edit window is still open; NO ONE may delete a
+Review Summary at all any more (REQ-CAL-REV-LOCK-004 superseded the prior
+owner-soft-delete rule — see delete_staff_review_summary below). Public
+users, invalid tokens, and ordinary reviewed staff without a Management
+Team token still have no access at all — see get_verified_member below.
 
 Structural difference from backend/routers/member_leave.py: these routes
 carry NO {member_key} URL path segment — the acting identity is always
@@ -28,12 +31,15 @@ scoping rules:
   - DETAIL is scoped to id + deleted_at IS NULL only — no owner filter at
     all — since any authenticated member may open any active summary by
     id (see _get_active_summary_or_404).
-  - UPDATE/DELETE remain scoped to id + reviewer_member_key = acting
-    member + deleted_at IS NULL, mirroring backend/routers/member_leave.py's
+  - UPDATE remains scoped to id + reviewer_member_key = acting member +
+    deleted_at IS NULL, mirroring backend/routers/member_leave.py's
     _get_active_record_or_404 pattern exactly (see
-    _get_owned_summary_or_404) — cross-reviewer update/delete still
-    returns a non-disclosing 404 (never 403), since a 403 would confirm
-    the record's existence/ownership to a non-owner.
+    _get_owned_summary_or_404) — cross-reviewer update still returns a
+    non-disclosing 404 (never 403), since a 403 would confirm the
+    record's existence/ownership to a non-owner. DELETE (REQ-CAL-REV-
+    LOCK-004, 2026-08-06) no longer has any scoping at all — it rejects
+    every caller identically without ever looking a record up; see
+    delete_staff_review_summary below.
 
 All five routes require a valid Calendar member token
 (Depends(get_verified_member)) — including GET, a deliberate divergence
@@ -54,13 +60,38 @@ can default to showing every reviewer's active summaries for one employee.
 No other route or existing LIST behavior changed. See
 docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md
 §4.
+
+REQ-CAL-REV-LOCK-004 (2026-08-06) — No-Delete and Same-Day Edit Lock:
+  - DELETE is permanently disabled for every caller — creator, any other
+    reviewer, alike — see delete_staff_review_summary below. The route is
+    kept (for API/URL compatibility) but never mutates a row; it always
+    returns 409 review_summary_delete_disabled once authentication
+    passes. No frontend Delete control exists any more either
+    (web-view/js/review-summaries.js).
+  - UPDATE keeps its existing owner-only 404 gate (_get_owned_summary_or_404,
+    unchanged) and ADDS a same-Asia/Colombo-calendar-day lock on top: the
+    owning reviewer may only edit while colombo_date_of(record.created_at)
+    equals colombo_today() — i.e. through 23:59:59 Asia/Colombo on the
+    record's own creation date, permanently read-only from 00:00:00 the
+    next Colombo day. meeting_date never affects this — only created_at
+    does (approved business rule). See _can_edit_review_summary below.
+  - Every read route (create/list/detail) now additionally returns a
+    server-derived can_edit boolean (and an edit_deadline timestamp) on
+    each record via _to_out — computed fresh on every read, never stored,
+    reusing the exact same _can_edit_review_summary the UPDATE route's own
+    enforcement uses, so the displayed affordance and the enforced rule
+    can never disagree.
+  - Zero schema/database changes — see backend/models.py (unmodified) and
+    docs/2026-08-06_review-summary-no-delete-same-day-edit-technical-
+    design.md.
 """
 
-from datetime import date as date_type, datetime, timezone
+from datetime import date as date_type, datetime, time as time_type, timezone
 from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -81,6 +112,7 @@ from backend.schemas import (
     StaffReviewSummaryOut,
     StaffReviewSummaryUpdate,
 )
+from backend.time_utils import colombo_date_of, colombo_today
 
 _COLOMBO = ZoneInfo(SCHEDULE_TIMEZONE)
 
@@ -122,8 +154,10 @@ def _reviewed_staff_or_422(db: Session, reviewed_staff_id: UUID) -> StaffDashboa
 def _get_owned_summary_or_404(
     db: Session, summary_id: UUID, acting_member: str
 ) -> StaffReviewSummary:
-    """Used only by the write routes (update/delete). Single combined
-    query — id + owner + deleted_at IS NULL all in one filter call — so a
+    """Used only by the UPDATE route (REQ-CAL-REV-LOCK-004, 2026-08-06:
+    DELETE no longer looks up or owns any record at all — see
+    delete_staff_review_summary below). Single combined query — id + owner
+    + deleted_at IS NULL all in one filter call — so a
     nonexistent id, a soft-deleted id, and an id belonging to a different
     reviewer are indistinguishable by construction. This is what makes the
     404 non-disclosing: there is no separate "look up by id, then check
@@ -162,6 +196,32 @@ def _get_active_summary_or_404(db: Session, summary_id: UUID) -> StaffReviewSumm
     return record
 
 
+def _review_summary_edit_deadline(created_at: datetime) -> datetime:
+    """23:59:59 Asia/Colombo on created_at's own Colombo calendar date —
+    the human-readable cutoff (approved business rule §5/§6). Informational
+    only: returned on every record regardless of whether that instant has
+    already passed, so a caller can always see when its own edit window
+    closed/closes. Never persisted (backend/models.py has no such
+    column)."""
+    creation_date = colombo_date_of(created_at)
+    return datetime.combine(creation_date, time_type(23, 59, 59), tzinfo=_COLOMBO)
+
+
+def _can_edit_review_summary(created_at: datetime, today: Optional[date_type] = None) -> bool:
+    """The sole edit-eligibility rule (REQ-CAL-REV-LOCK-004): true only
+    while Asia/Colombo "today" is exactly created_at's own Colombo
+    calendar date — never before (a future/anomalous created_at fails
+    closed here too, since today != a later date is simply not-equal, the
+    same as any other non-match) and never after. meeting_date plays no
+    part in this decision at all. `today` is optional and injectable
+    (mirrors time_utils.derive_task_outcome's identical pattern) purely so
+    boundary tests stay deterministic — production callers always omit it
+    and get colombo_today()."""
+    if today is None:
+        today = colombo_today()
+    return colombo_date_of(created_at) == today
+
+
 def _valid_reviewer_member_key_or_422(reviewer_member_key: str) -> str:
     """Validates an explicitly-supplied ?reviewer_member_key= against the
     same VALID_MEMBER_KEYS tuple backend/routers/member_leave.py validates
@@ -178,16 +238,24 @@ def _valid_reviewer_member_key_or_422(reviewer_member_key: str) -> str:
     return reviewer_member_key
 
 
-def _to_out(record: StaffReviewSummary, db: Session) -> StaffReviewSummaryOut:
+def _to_out(record: StaffReviewSummary, db: Session, acting_member: str) -> StaffReviewSummaryOut:
     """Live-joins to staff_dashboard_records for display name fields — no
     reviewed_staff_name_snapshot column exists (approved technical design
     §5), so history always shows the staff member's current name, not a
-    name captured at review time."""
+    name captured at review time.
+
+    REQ-CAL-REV-LOCK-004: can_edit/edit_deadline are computed here, fresh
+    on every call — never stored — so every read route (create/list/
+    detail) shows the exact same, currently-true answer. can_edit is only
+    ever true for acting_member == record.reviewer_member_key (the
+    record's own creator); a non-owner reading a shared record always
+    gets can_edit=False, matching "OTHER REVIEWER: no Edit control"."""
     staff = (
         db.query(StaffDashboardRecord)
         .filter(StaffDashboardRecord.id == record.reviewed_staff_id)
         .first()
     )
+    is_owner = record.reviewer_member_key == acting_member
     return StaffReviewSummaryOut(
         id=record.id,
         reviewer_member_key=record.reviewer_member_key,
@@ -198,6 +266,8 @@ def _to_out(record: StaffReviewSummary, db: Session) -> StaffReviewSummaryOut:
         summary_text=record.summary_text,
         created_at=record.created_at,
         updated_at=record.updated_at,
+        can_edit=is_owner and _can_edit_review_summary(record.created_at),
+        edit_deadline=_review_summary_edit_deadline(record.created_at),
     )
 
 
@@ -228,7 +298,7 @@ def create_staff_review_summary(
     db.add(record)
     db.commit()
     db.refresh(record)
-    return _to_out(record, db)
+    return _to_out(record, db, acting_member)
 
 
 def _build_review_summary_query(
@@ -340,7 +410,7 @@ def list_staff_review_summaries(
     )
 
     return StaffReviewSummaryListResponse(
-        records=[_to_out(record, db) for record in rows],
+        records=[_to_out(record, db, acting_member) for record in rows],
         total=total,
         limit=limit,
         offset=offset,
@@ -466,7 +536,7 @@ def get_staff_review_summary(
     to filter the lookup; see _get_active_summary_or_404."""
     _set_no_store(response)
     record = _get_active_summary_or_404(db, summary_id)
-    return _to_out(record, db)
+    return _to_out(record, db, acting_member)
 
 
 @router.put("/{summary_id}", response_model=StaffReviewSummaryOut)
@@ -481,9 +551,28 @@ def update_staff_review_summary(
     has no such field) — Phase 1 has no requirement for reassigning who
     was reviewed. created_at is never touched; updated_at is refreshed on
     every successful update, mirroring member_leave.py's identical
-    pattern."""
+    pattern.
+
+    REQ-CAL-REV-LOCK-004 (2026-08-06): the pre-existing owner-only 404 gate
+    (_get_owned_summary_or_404) still runs FIRST and is unchanged — a
+    cross-reviewer or nonexistent id is still a non-disclosing 404, exactly
+    as before. Only once ownership is confirmed does the new same-Colombo-
+    calendar-day check run; a locked (owned but not-today) record is
+    rejected with 409, never a silent no-op and never a 200. No request
+    field can ever reach reviewer_member_key/created_at/an edit deadline —
+    StaffReviewSummaryUpdate (backend/schemas.py) has no such fields, so
+    there is nothing here to strip; the schema itself is the enforcement."""
     _set_no_store(response)
     record = _get_owned_summary_or_404(db, summary_id, acting_member)
+
+    if not _can_edit_review_summary(record.created_at):
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": "review_summary_edit_locked",
+                "message": "Editing period ended. This review summary is now read-only.",
+            },
+        )
 
     update_data = payload.model_dump(exclude_unset=True)
     if "meeting_date" in update_data:
@@ -495,23 +584,34 @@ def update_staff_review_summary(
 
     db.commit()
     db.refresh(record)
-    return _to_out(record, db)
+    return _to_out(record, db, acting_member)
 
 
-@router.delete("/{summary_id}", status_code=200)
+@router.delete("/{summary_id}", status_code=409)
 def delete_staff_review_summary(
     summary_id: UUID,
     response: Response,
-    db: Session = Depends(get_db),
     acting_member: str = Depends(get_verified_member),
 ):
-    """Soft delete only — sets deleted_at, never issues a hard DELETE.
-    Repeating this call on an already-deleted (or nonexistent, or
-    cross-reviewer) id returns 404, matching the existing
-    member_leave.py delete convention."""
+    """REQ-CAL-REV-LOCK-004 (2026-08-06): No user may delete a Review
+    Summary — the approved business rule is a blanket prohibition, not an
+    ownership rule, so this now rejects EVERY caller identically (the
+    record's own creator, any other reviewer alike), with no lookup, no
+    owner check, and no row touched at all. The route is kept only for API
+    URL compatibility (a client that still POSTs a DELETE gets a clear,
+    typed rejection instead of a 404/405) — Depends(get_verified_member)
+    still gates it, so a missing/invalid token is still 401 before this
+    body ever runs (same as every other route on this router). 409 (not
+    403) mirrors this codebase's own established convention for "this
+    mutation is permanently blocked by a business rule" — see
+    backend/routers/member_schedules.py's delete_member_schedule_event
+    (409 outcome_recorded_immutable) for the identical precedent. Never
+    returns 200/204; never sets deleted_at; never calls db.commit()."""
     _set_no_store(response)
-    record = _get_owned_summary_or_404(db, summary_id, acting_member)
-
-    record.deleted_at = datetime.now(timezone.utc)
-    db.commit()
-    return {"id": str(record.id), "deleted": True}
+    return JSONResponse(
+        status_code=409,
+        content={
+            "error": "review_summary_delete_disabled",
+            "message": "Review summaries can't be deleted. This record is permanent.",
+        },
+    )

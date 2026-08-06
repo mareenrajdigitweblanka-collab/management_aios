@@ -905,6 +905,16 @@ class StaffReviewSummaryOut(BaseModel):
     summary_text: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    # REQ-CAL-REV-LOCK-004 (2026-08-06) — derived server-side on every
+    # read from (reviewer_member_key, created_at) vs. the authoritative
+    # Asia/Colombo clock; never stored, never client-supplied. can_edit is
+    # true only for the record's own creator, and only through 23:59:59
+    # Asia/Colombo on created_at's own calendar date. edit_deadline is
+    # informational (that same cutoff instant) and is populated even when
+    # can_edit is already false. Both are additive/backward-compatible —
+    # no existing field's meaning changes.
+    can_edit: bool = False
+    edit_deadline: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

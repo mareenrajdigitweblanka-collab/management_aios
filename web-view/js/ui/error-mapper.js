@@ -52,6 +52,29 @@ var KNOWN_ERRORS = {
     message: 'An outcome has already been recorded for this task, so its date can’t be changed and it can’t be deleted.',
     persistent: true
   },
+  /* REQ-CAL-REV-LOCK-004 (2026-08-06) — Review Summary no-delete/same-day
+     edit lock. review_summary_edit_locked: the creator's own edit window
+     (through 23:59:59 Asia/Colombo on the record's created_at date) has
+     closed — approved copy, word-for-word identical to the backend's own
+     message (backend/routers/staff_review_summaries.py) and to the
+     locked-state copy rendered directly on a card in review-summaries.js.
+     review_summary_delete_disabled: defensive-only — no UI path in this
+     app ever sends a DELETE any more (the Delete button was removed
+     entirely), but the mapping still exists so this error class is never
+     silently swallowed as 'unknown' if a request somehow reached the
+     route anyway. */
+  review_summary_edit_locked: {
+    type: 'error',
+    title: 'Editing period ended',
+    message: 'Editing period ended. This review summary is now read-only.',
+    persistent: true
+  },
+  review_summary_delete_disabled: {
+    type: 'error',
+    title: 'This record can’t be deleted',
+    message: 'Review summaries can’t be deleted. This record is permanent.',
+    persistent: true
+  },
   same_task_time_required: {
     type: 'error',
     title: 'Task time required',

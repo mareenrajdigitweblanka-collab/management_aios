@@ -6,10 +6,19 @@
    `memberKey` compared against the authenticated token). That model no
    longer exists: this workspace is mounted exactly once, independent of
    any member panel, with only two access states ('authorized' /
-   'unauthorized') and per-RECORD ownership (isOwnedRecord) deciding
-   Edit/Delete visibility instead of per-PANEL mode. Every test below
-   drives the new mountReviewSummariesWorkspace(mountEl) API (no memberKey
-   parameter).
+   'unauthorized') and per-RECORD ownership (isOwnedRecord) deciding Edit
+   visibility instead of per-PANEL mode. Every test below drives the new
+   mountReviewSummariesWorkspace(mountEl) API (no memberKey parameter).
+
+   REQ-CAL-REV-LOCK-004 (2026-08-06, same-day edit lock/no-delete) update:
+   fakeSummaryRecord now carries a `can_edit` field (defaulting to true —
+   owned by mayurika, still within its own edit window), since the backend
+   is authoritative for edit eligibility and this module only ever reads
+   record.can_edit, never recomputes it from a browser clock — see the
+   dedicated can_edit/locked-status tests below. Delete no longer exists
+   anywhere in this UI (the control was removed, not merely hidden behind
+   a confirmation dialog) — the prior confirmDestructive() coverage-
+   boundary note this file used to carry no longer applies.
 
    This repo has no npm dependencies and jsdom could not be installed in
    this environment (same constraint as calendar/auth.test.mjs) —
@@ -18,11 +27,6 @@
    existing small hand-rolled stand-in (./review-summaries-test-dom.mjs,
    unchanged by this rewrite) is enough to exercise its real code paths
    end-to-end.
-
-   Coverage boundary, stated plainly (mirrors the prior suite's own note):
-   the full confirmDestructive() dialog interaction (ui/dialog.js) is not
-   driven end-to-end here — only that clicking Delete does not send the
-   DELETE request immediately (confirmation is required first).
 
    Markup-level items (sidebar heading/order, mount counts inside
    web-view/index.html) are NOT covered by this file — this repo has no
@@ -118,7 +122,15 @@ function fakeSummaryRecord(overrides) {
     meeting_date: '2026-08-01',
     summary_text: 'A review discussion.',
     created_at: '2026-08-01T09:00:00Z',
-    updated_at: '2026-08-01T09:00:00Z'
+    updated_at: '2026-08-01T09:00:00Z',
+    // REQ-CAL-REV-LOCK-004 (2026-08-06) — the backend is authoritative
+    // for edit eligibility; this module never recomputes it from a
+    // browser clock (see review-summaries.js's own header note). Tests
+    // below set can_edit explicitly wherever the locked/other-reviewer
+    // state is what's under test; this default matches the common
+    // "owned by mayurika, still within its own edit window" case.
+    can_edit: true,
+    edit_deadline: '2026-08-01T23:59:59+05:30'
   }, overrides || {});
 }
 
@@ -570,9 +582,9 @@ test('include inactive toggle omits staff_status=Active from the staff search re
   assert.ok(!String(staffCalls[staffCalls.length - 1].url).includes('staff_status=Active'));
 });
 
-test('owned record shows Edit/Delete; a card from another reviewer does not', async (t) => {
-  var own = fakeSummaryRecord({ id: 'sum-own', reviewer_member_key: 'mayurika', summary_text: 'Mine.' });
-  var other = fakeSummaryRecord({ id: 'sum-other', reviewer_member_key: 'arun', summary_text: 'Arun\'s summary.' });
+test('owned + editable record shows Edit; a card from another reviewer does not', async (t) => {
+  var own = fakeSummaryRecord({ id: 'sum-own', reviewer_member_key: 'mayurika', summary_text: 'Mine.', can_edit: true });
+  var other = fakeSummaryRecord({ id: 'sum-other', reviewer_member_key: 'arun', summary_text: 'Arun\'s summary.', can_edit: false });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [own, other], total: 2, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
   t.after(globals.restore);
@@ -585,9 +597,91 @@ test('owned record shows Edit/Delete; a card from another reviewer does not', as
   var cards = findAllByClass(mountEl, 'review-summaries-card');
   assert.equal(cards.length, 2, 'both cards should render — the read-only one is not hidden');
   var editButtons = findAllByClass(mountEl, 'review-summaries-edit-btn');
-  var deleteButtons = findAllByClass(mountEl, 'review-summaries-delete-btn');
-  assert.equal(editButtons.length, 1, 'exactly one Edit button should render — only for the owned card');
-  assert.equal(deleteButtons.length, 1, 'exactly one Delete button should render — only for the owned card');
+  assert.equal(editButtons.length, 1, 'exactly one Edit button should render — only for the owned, still-editable card');
+  assert.equal(findAllByClass(mountEl, 'review-summaries-delete-btn').length, 0, 'no Delete button exists anywhere any more');
+});
+
+test('owned but no-longer-editable record shows the locked message and no Edit button', async (t) => {
+  var locked = fakeSummaryRecord({ id: 'sum-locked', reviewer_member_key: 'mayurika', summary_text: 'Mine, but expired.', can_edit: false });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [locked], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(findByClass(mountEl, 'review-summaries-edit-btn'), null, 'no Edit button once the edit window has closed');
+  var statusEl = findByClass(mountEl, 'review-summaries-card-edit-status');
+  assert.equal(statusEl.textContent, 'Editing period ended. This review summary is now read-only.');
+});
+
+test('owned + editable record shows the "Editable until 11:59 PM today." status line', async (t) => {
+  var own = fakeSummaryRecord({ id: 'sum-editable', reviewer_member_key: 'mayurika', can_edit: true });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [own], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var statusEl = findByClass(mountEl, 'review-summaries-card-edit-status');
+  assert.equal(statusEl.textContent, 'Editable until 11:59 PM today.');
+  assert.ok(findByClass(mountEl, 'review-summaries-edit-btn'), 'Edit button still renders alongside the status line');
+});
+
+test('a card from another reviewer never shows an edit-status line, editable or locked', async (t) => {
+  var other = fakeSummaryRecord({ id: 'sum-other', reviewer_member_key: 'arun', can_edit: false });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [other], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(findByClass(mountEl, 'review-summaries-card-edit-status'), null, 'a non-owned card gets no status line at all — unchanged read-only rendering');
+});
+
+test('no Delete button ever renders, for any card, owned or not', async (t) => {
+  var own = fakeSummaryRecord({ id: 'sum-own', reviewer_member_key: 'mayurika', can_edit: true });
+  var lockedOwn = fakeSummaryRecord({ id: 'sum-locked', reviewer_member_key: 'mayurika', can_edit: false });
+  var other = fakeSummaryRecord({ id: 'sum-other', reviewer_member_key: 'arun', can_edit: false });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [own, lockedOwn, other], total: 3, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(findAllByClass(mountEl, 'review-summaries-delete-btn').length, 0);
+  assert.equal(findAllByClass(mountEl, 'review-summaries-card').length, 3);
+});
+
+test('no DELETE request is ever emitted by this module (no code path left that sends one)', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-1', reviewer_member_key: 'mayurika', can_edit: true });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
+  editBtn.click();
+  var form = findByTag(mountEl, 'FORM');
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var deleteCalls = fetchMock.calls.filter(function (c) { return c.options.method === 'DELETE'; });
+  assert.equal(deleteCalls.length, 0);
 });
 
 test('non-owned card still renders its full summary text (read-only records still open)', async (t) => {
@@ -765,10 +859,21 @@ test('edit flow prefills the form from an owned record and submits a PUT to the 
   assert.equal(Object.prototype.hasOwnProperty.call(putBody, 'reviewed_staff_id'), false);
 });
 
-test('delete button does not send DELETE immediately — confirmation is required first', async (t) => {
-  var record = fakeSummaryRecord({ id: 'sum-del-1', reviewer_member_key: 'mayurika' });
+// ── REQ-CAL-REV-LOCK-004 (2026-08-06) — same-day edit lock ──────────────
+
+test('a backend 409 review_summary_edit_locked response exits edit mode and clears the draft', async (t) => {
+  // Simulates the edit window closing between render and submit (e.g. the
+  // form was left open across the Colombo midnight boundary) — the
+  // backend is authoritative and rejects with 409, and this module must
+  // exit edit mode safely rather than leaving the form stuck open against
+  // a record it can no longer save.
+  var record = fakeSummaryRecord({ id: 'sum-expired', reviewer_member_key: 'mayurika', can_edit: true, summary_text: 'Original text.' });
+  var putCallCount = 0;
   var fetchMock = makeFetchMock(function (url, options) {
-    if (options.method === 'DELETE') { return jsonResponse(200, { id: record.id, deleted: true }); }
+    if (options.method === 'PUT') {
+      putCallCount += 1;
+      return jsonResponse(409, { error: 'review_summary_edit_locked', message: 'Editing period ended. This review summary is now read-only.' });
+    }
     return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 });
   });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
@@ -776,15 +881,53 @@ test('delete button does not send DELETE immediately — confirmation is require
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesWorkspace(mountEl);
-  api.selectStaff(fakeStaffRecord({ id: 'staff-uuid-8' }));
+  api.selectStaff(fakeStaffRecord({ id: 'staff-expired' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-  var deleteBtn = findByClass(mountEl, 'review-summaries-delete-btn');
-  var deleteCallsBefore = fetchMock.calls.filter(function (c) { return c.options.method === 'DELETE'; }).length;
-  deleteBtn.click();
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
+  editBtn.click();
+  assert.equal(api.state.editingId, 'sum-expired');
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'A change that will never be saved.';
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  var deleteCallsAfter = fetchMock.calls.filter(function (c) { return c.options.method === 'DELETE'; }).length;
-  assert.equal(deleteCallsAfter, deleteCallsBefore);
+
+  assert.equal(putCallCount, 1);
+  assert.equal(api.state.editingId, null, 'edit mode must be exited once the backend reports the window closed');
+  assert.equal(textarea.value, '', 'the now-unsaveable draft must be cleared');
+});
+
+test('browser clock manipulation cannot force a successful update — the PUT body never carries a client time or deadline', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-clock', reviewer_member_key: 'mayurika', can_edit: true });
+  var putBody = null;
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (options.method === 'PUT') {
+      putBody = JSON.parse(options.body);
+      return jsonResponse(200, Object.assign({}, record, putBody));
+    }
+    return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-clock' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
+  editBtn.click();
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'Edited under a manipulated clock.';
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  // meeting_date/summary_text only — no created_at, edit_deadline, or any
+  // other time field the browser could have fabricated; enforcement lives
+  // entirely server-side against the backend's own authoritative clock.
+  assert.equal(Object.keys(putBody).sort().join(','), 'meeting_date,summary_text');
 });
 
 test('empty state before staff selection', async (t) => {
@@ -1156,27 +1299,6 @@ test('an owner-only mutation denial (a 404 on PUT for a record the token no long
     JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1')).token,
     'test-only-frontend-token',
     'an owner-only mutation denial must never clear the stored token'
-  );
-  assert.equal(api.accessDecision(), 'authorized');
-});
-
-test('clicking Delete alone (before confirmation) never touches the stored token', async (t) => {
-  var record = fakeSummaryRecord({ id: 'sum-del-token', reviewer_member_key: 'mayurika' });
-  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
-  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
-  t.after(globals.restore);
-  var mod = await freshReviewSummariesModule();
-  var mountEl = globals.document.createElement('div');
-  var api = mod.mountReviewSummariesWorkspace(mountEl);
-  api.selectStaff(fakeStaffRecord({ id: 'staff-del-token' }));
-  await new Promise(function (resolve) { setTimeout(resolve, 0); });
-  var deleteBtn = findByClass(mountEl, 'review-summaries-delete-btn');
-  deleteBtn.click();
-  await new Promise(function (resolve) { setTimeout(resolve, 0); });
-
-  assert.equal(
-    JSON.parse(globals.window.localStorage.getItem('management_aios_calendar_auth_v1')).token,
-    'test-only-frontend-token'
   );
   assert.equal(api.accessDecision(), 'authorized');
 });
