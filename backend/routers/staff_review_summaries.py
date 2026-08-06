@@ -46,6 +46,14 @@ Source contract: docs/2026-08-03_calendar-review-summaries-requirement.md
 and docs/2026-08-03_calendar-review-summaries-technical-design.md.
 REQ-CAL-REV-001 shared-read/owner-write revision:
 validation/calendar-review-summaries-technical-design-check-2026-08-03.md.
+
+REQ-CAL-REV-TAB-002 (2026-08-06) additive change: LIST gained one opt-in
+?include_all_reviewers=true parameter (requires reviewed_staff_id, mutually
+exclusive with reviewer_member_key) so the dedicated Review Summaries tab
+can default to showing every reviewer's active summaries for one employee.
+No other route or existing LIST behavior changed. See
+docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md
+§4.
 """
 
 from datetime import date as date_type, datetime, timezone
@@ -221,6 +229,7 @@ def list_staff_review_summaries(
     reviewed_staff_id: Optional[UUID] = Query(default=None),
     date_from: Optional[date_type] = Query(default=None),
     date_to: Optional[date_type] = Query(default=None),
+    include_all_reviewers: bool = Query(default=False),
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -236,20 +245,47 @@ def list_staff_review_summaries(
     valid token is still always required (Depends(get_verified_member)).
     Ordered meeting_date DESC, created_at DESC (approved requirement
     §6/§9), the exact reverse-direction mirror of member_leave.py's
-    asc(start_date), asc(created_at)."""
-    _set_no_store(response)
+    asc(start_date), asc(created_at).
 
-    selected_reviewer = acting_member
-    if reviewer_member_key is not None:
-        selected_reviewer = _valid_reviewer_member_key_or_422(reviewer_member_key)
+    include_all_reviewers=true (REQ-CAL-REV-TAB-002, 2026-08-06 — dedicated
+    tab's "All reviewers" default) is a strictly separate, additive branch:
+    when true, reviewed_staff_id is required (422 otherwise — prevents an
+    unscoped every-reviewer/every-employee scan) and reviewer_member_key
+    must be omitted (422 if both are supplied — the two parameters express
+    mutually exclusive UI states). The query then drops the
+    reviewer_member_key filter entirely and returns every reviewer's active
+    summaries for that one employee. When include_all_reviewers is omitted
+    or false (its default), this entire branch is inert and the
+    single-reviewer behavior above is byte-for-byte unchanged — including
+    the omitted-reviewer_member_key-defaults-to-self case."""
+    _set_no_store(response)
 
     if date_from is not None and date_to is not None and date_from > date_to:
         raise HTTPException(status_code=422, detail="date_from must not be after date_to.")
 
-    query = db.query(StaffReviewSummary).filter(
-        StaffReviewSummary.reviewer_member_key == selected_reviewer,
-        StaffReviewSummary.deleted_at.is_(None),
-    )
+    if include_all_reviewers:
+        if reviewed_staff_id is None:
+            raise HTTPException(
+                status_code=422,
+                detail="reviewed_staff_id is required when include_all_reviewers=true.",
+            )
+        if reviewer_member_key is not None:
+            raise HTTPException(
+                status_code=422,
+                detail="reviewer_member_key and include_all_reviewers are mutually exclusive.",
+            )
+        query = db.query(StaffReviewSummary).filter(
+            StaffReviewSummary.deleted_at.is_(None),
+        )
+    else:
+        selected_reviewer = acting_member
+        if reviewer_member_key is not None:
+            selected_reviewer = _valid_reviewer_member_key_or_422(reviewer_member_key)
+        query = db.query(StaffReviewSummary).filter(
+            StaffReviewSummary.reviewer_member_key == selected_reviewer,
+            StaffReviewSummary.deleted_at.is_(None),
+        )
+
     if reviewed_staff_id is not None:
         query = query.filter(StaffReviewSummary.reviewed_staff_id == reviewed_staff_id)
     if date_from is not None:

@@ -833,6 +833,164 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         )
         self.assertEqual(over_max_resp.status_code, 422)
 
+    # ── include_all_reviewers (REQ-CAL-REV-TAB-002, 2026-08-06) ─────────
+    # Of the 18 required cases for this correction round, items 1
+    # (test_reviewer_member_key_omitted_defaults_to_authenticated_reviewer)
+    # and 11-18 (test_mayurika_reads_arun_list/test_arun_reads_mayurika_list
+    # for the specific-reviewer branch, test_public_list_returns_401,
+    # test_invalid_token_list_returns_401,
+    # test_reviewer_identity_is_server_derived,
+    # test_cross_reviewer_update_returns_404,
+    # test_cross_reviewer_delete_returns_404,
+    # test_cross_reviewer_detail_is_readable,
+    # test_pagination_default_and_maximum_behavior) are already covered
+    # above and re-run unmodified by this same test run. The 10 tests below
+    # cover items 2-10 — the genuinely new include_all_reviewers behavior.
+
+    def test_include_all_reviewers_requires_reviewed_staff_id(self):
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"include_all_reviewers": "true"},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    def test_include_all_reviewers_rejects_reviewer_member_key_combination(self):
+        staff_id = self.seed_staff()
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={
+                "include_all_reviewers": "true",
+                "reviewed_staff_id": str(staff_id),
+                "reviewer_member_key": "arun",
+            },
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    def test_all_reviewer_query_returns_records_from_multiple_reviewers_for_one_employee(self):
+        staff_id = self.seed_staff(source_record_key="staff-all-reviewers")
+        summary_a_id, _ = self.seed_summary(
+            reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+            summary_text="Mayurika's summary.",
+        )
+        summary_b_id, _ = self.seed_summary(
+            reviewer_member_key="arun", reviewed_staff_id=staff_id,
+            summary_text="Arun's summary.",
+        )
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"include_all_reviewers": "true", "reviewed_staff_id": str(staff_id)},
+            headers=bearer_header("suman"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        ids = set(r["id"] for r in resp.json()["records"])
+        self.assertEqual(ids, {str(summary_a_id), str(summary_b_id)})
+
+    def test_all_reviewer_query_excludes_records_for_another_employee(self):
+        staff_a = self.seed_staff(source_record_key="staff-all-a")
+        staff_b = self.seed_staff(source_record_key="staff-all-b")
+        summary_a_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_a)
+        self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_b)
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"include_all_reviewers": "true", "reviewed_staff_id": str(staff_a)},
+            headers=bearer_header("suman"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(summary_a_id)])
+
+    def test_all_reviewer_query_excludes_deleted_records(self):
+        staff_id = self.seed_staff(source_record_key="staff-all-deleted")
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"include_all_reviewers": "true", "reviewed_staff_id": str(staff_id)},
+            headers=bearer_header("suman"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["records"], [])
+
+    def test_all_reviewer_query_respects_date_from(self):
+        staff_id = self.seed_staff(source_record_key="staff-all-datefrom")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=10))
+        in_range_id, _ = self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id,
+                                            meeting_date=self.today)
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={
+                "include_all_reviewers": "true", "reviewed_staff_id": str(staff_id),
+                "date_from": str(self.today - timedelta(days=1)),
+            },
+            headers=bearer_header("suman"),
+        )
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(in_range_id)])
+
+    def test_all_reviewer_query_respects_date_to(self):
+        staff_id = self.seed_staff(source_record_key="staff-all-dateto")
+        in_range_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                                            meeting_date=self.today - timedelta(days=10))
+        self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id,
+                           meeting_date=self.today)
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={
+                "include_all_reviewers": "true", "reviewed_staff_id": str(staff_id),
+                "date_to": str(self.today - timedelta(days=1)),
+            },
+            headers=bearer_header("suman"),
+        )
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(in_range_id)])
+
+    def test_all_reviewer_query_respects_both_dates(self):
+        staff_id = self.seed_staff(source_record_key="staff-all-bothdates")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=20))
+        in_range_id, _ = self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id,
+                                            meeting_date=self.today - timedelta(days=5))
+        self.seed_summary(reviewer_member_key="rajiv", reviewed_staff_id=staff_id,
+                           meeting_date=self.today)
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={
+                "include_all_reviewers": "true", "reviewed_staff_id": str(staff_id),
+                "date_from": str(self.today - timedelta(days=10)),
+                "date_to": str(self.today - timedelta(days=1)),
+            },
+            headers=bearer_header("suman"),
+        )
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(in_range_id)])
+
+    def test_all_reviewer_ordering_remains_correct(self):
+        staff_id = self.seed_staff(source_record_key="staff-all-order")
+        older_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                                         meeting_date=self.today - timedelta(days=5))
+        newer_id, _ = self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id,
+                                         meeting_date=self.today)
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"include_all_reviewers": "true", "reviewed_staff_id": str(staff_id)},
+            headers=bearer_header("suman"),
+        )
+        ids = [r["id"] for r in resp.json()["records"]]
+        self.assertEqual(ids, [str(newer_id), str(older_id)])
+
+    def test_all_reviewer_query_still_requires_a_valid_token(self):
+        staff_id = self.seed_staff(source_record_key="staff-all-notoken")
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"include_all_reviewers": "true", "reviewed_staff_id": str(staff_id)},
+        )
+        self.assertEqual(resp.status_code, 401)
+
     # ── 34-36: Regression — existing Task/Leave/auth behavior untouched ──
 
     def test_existing_task_api_regression(self):

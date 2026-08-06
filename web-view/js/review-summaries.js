@@ -1,41 +1,45 @@
-/* review-summaries.js — Staff Review Summaries workspace (REQ-CAL-REV-001).
+/* review-summaries.js — Staff Review Summaries dedicated workspace
+   (REQ-CAL-REV-TAB-002, 2026-08-06 — replaces REQ-CAL-REV-001's 5
+   per-member-panel mounts with one independent workspace).
 
-   Management Team members conduct review meetings about company staff
-   (who may be a non-management staff member or another Management Team
-   member) and save reviewer-owned summaries. As of the 2026-08-03 revised
-   business rule, every authenticated Management Team member may READ
-   summaries created by other Management Team members; only the creating
-   reviewer may create records under their own identity, update their own
-   summaries, or soft-delete their own summaries — mounted once per member
-   tab-panel, but note the underlying read/write authorization is always
-   driven by whichever member's Calendar token is currently authorized in
-   THIS browser (browser-wide, not per-tab — see calendar/auth.js), never
-   by which tab the widget happens to be rendered under.
+   Mounted exactly once, inside the new independent #tab-review-summaries
+   panel (web-view/index.html) — never inside any Management Team member
+   panel. There is no per-tab `memberKey` any more: the current reviewer is
+   derived ONLY from the browser-wide Calendar token
+   (calendar/auth.js's getStoredMemberKey()) — never from a reviewer
+   filter selection, the selected reviewed employee, or the request body.
 
-   Three access modes, computed by reviewSummaryAccessDecision() below:
-     - 'own'          — the panel's own member (memberKey) IS the
-                         authenticated reviewer. Full create/view/edit/
-                         delete.
-     - 'read_only'     — a DIFFERENT, valid reviewer is authenticated.
-                         History/detail viewing only; no create/update/
-                         delete.
-     - 'unauthorized'  — no token stored in this browser at all. Nothing
-                         is readable or writable until authorized.
+   Two access states (replacing the old 5-mount own/read_only/unauthorized
+   trio, which existed to compare "this panel's member" against the
+   authenticated member — a comparison that no longer applies once there is
+   only one, member-independent panel):
+     - 'unauthorized' — no token stored in this browser. Nothing is
+       readable or writable until authorized.
+     - 'authorized'   — a valid token is stored. Every authenticated
+       Management Team member may search staff, read every reviewer's
+       active summaries for a selected employee, and create their own
+       summaries. Edit/Delete are decided PER RECORD (isOwnedRecord below),
+       not per panel — only the record's own reviewer_member_key, compared
+       against the current token's member key, controls whether Edit/
+       Delete render for that one card.
 
-   Key divergence from calendar/instance.js's apiRequest/leaveApiRequest:
-   those attach the Authorization header only on non-GET requests (Task/
-   Leave viewing is public). Every Staff Review Summaries request —
-   including GET — requires a token, since review content is private to
-   the Management Team as a whole (never public, never visible to the
-   reviewed staff member). reviewSummariesApiRequest() below is therefore
-   its own fetch wrapper, not a reuse of apiRequest/leaveApiRequest.
+   Reviewer display name/role are resolved client-side via
+   member-registry.js's MEMBER_REGISTRY, from each record's own
+   reviewer_member_key — the API returns that key unchanged and nothing
+   else; no reviewer_display_label field exists on the response (see
+   backend/routers/staff_review_summaries.py/schemas.py, deliberately
+   unmodified — REQ-CAL-REV-TAB-002 technical design §4/§6.3).
 
-   Self-contained (own fetch wrapper, own DOM building) — mirrors
-   staff-data.js's "own STAFF_API_BASE, own helpers" self-containment
-   note. Built via createElement/appendChild with direct element
-   references (never innerHTML for user-authored text), matching
-   calendar/auth.js's convention, so this module stays testable with a
-   small hand-rolled DOM stand-in (see review-summaries-test-dom.mjs). */
+   Same fetch-wrapper rationale as REQ-CAL-REV-001: every Staff Review
+   Summaries request — including GET — requires a token, so
+   reviewSummariesApiRequest() below is its own wrapper, never a reuse of
+   calendar/instance.js's apiRequest/leaveApiRequest (which attach the
+   Authorization header only on non-GET requests).
+
+   Built via createElement/appendChild with direct element references
+   (never innerHTML for user-authored text) — same convention as
+   calendar/auth.js — so this module stays testable with the existing
+   hand-rolled DOM stand-in (review-summaries-test-dom.mjs). */
 
 import { STAFF_REVIEW_SUMMARIES_API_BASE } from './config.js';
 import { STAFF_API_BASE } from './staff-data.js';
@@ -44,11 +48,11 @@ import {
   ensureAuthorized,
   handleUnauthorizedResponse,
   getStoredMemberKey,
-  labelForMemberKey,
   CALENDAR_AUTH_CHANGED_EVENT
 } from './calendar/auth.js';
+import { resolveMember } from './member-registry.js';
 import { classifyHttpStatus, mapApiError } from './ui/error-mapper.js';
-import { setButtonBusy, renderSkeletonRows, showInlineLoading } from './ui/loading.js';
+import { setButtonBusy, showInlineLoading } from './ui/loading.js';
 import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from './ui/form-feedback.js';
 import { confirmDestructive } from './ui/dialog.js';
 import { showToast } from './ui/toast.js';
@@ -57,22 +61,27 @@ var SUMMARY_MAX_LENGTH = 10000;
 var STAFF_SEARCH_DEBOUNCE_MS = 300;
 var SUMMARY_PREVIEW_LENGTH = 400;
 
+/* Fixed display order for the reviewer filter dropdown — matches
+   backend/config.py's VALID_MEMBER_KEYS order (the canonical Management
+   Team member ordering used throughout this repo's sidebar/config). */
+var REVIEWER_FILTER_ORDER = ['mayurika', 'suman', 'arun', 'rajiv', 'paraparan'];
+
 // ── Pure helpers (exported for direct testing — no DOM involved) ───────
 
-/* Builds the GET list query string. Only ever includes params that are
-   actually set — an unset reviewerMemberKey/reviewed_staff_id/date_from/
-   date_to is simply omitted, matching buildStaffQuery's (staff-data.js)
-   existing shape. reviewerMemberKey maps to the backend's
-   ?reviewer_member_key= (backend/routers/staff_review_summaries.py,
-   2026-08-03 revised business rule) — the "selected reviewer" whose
-   history is being read, which may be the authenticated reviewer
-   themselves (own mode) or a different, valid reviewer (read-only mode).
-   Placed first in the query string per PHASE 8's example shape; existing
-   callers that never pass it are byte-for-byte unaffected. */
+/* Builds the GET list query string. reviewerMemberKey and
+   includeAllReviewers are mutually exclusive by construction here — if
+   includeAllReviewers is truthy, reviewer_member_key is never appended,
+   regardless of what reviewerMemberKey was also passed (callers below
+   never pass both together, but this function enforces the rule itself
+   rather than trusting every call site). */
 export function buildListQuery(filters) {
   filters = filters || {};
   var params = [];
-  if (filters.reviewerMemberKey) { params.push('reviewer_member_key=' + encodeURIComponent(filters.reviewerMemberKey)); }
+  if (filters.includeAllReviewers) {
+    params.push('include_all_reviewers=true');
+  } else if (filters.reviewerMemberKey) {
+    params.push('reviewer_member_key=' + encodeURIComponent(filters.reviewerMemberKey));
+  }
   if (filters.reviewedStaffId) { params.push('reviewed_staff_id=' + encodeURIComponent(filters.reviewedStaffId)); }
   if (filters.dateFrom) { params.push('date_from=' + encodeURIComponent(filters.dateFrom)); }
   if (filters.dateTo) { params.push('date_to=' + encodeURIComponent(filters.dateTo)); }
@@ -111,14 +120,11 @@ export function isSummaryCounterWarning(raw) {
   return length > SUMMARY_MAX_LENGTH * 0.95;
 }
 
-/* History-card long-summary truncation (2026-08-03 UX fix — production
-   feedback: a long summary rendered as one unbroken wall of text with no
-   way to collapse it). Word-boundary-aware so a preview never cuts a
-   word in half — only backs off to the last space when doing so doesn't
-   throw away more than 40% of the preview (a summary with no spaces
-   before maxLength, e.g. one extremely long token, still gets a hard cut
-   rather than no truncation at all). Pure/exported for direct testing;
-   the DOM-facing expand/collapse toggle lives in renderHistoryCard. */
+/* History-card long-summary truncation — word-boundary-aware so a preview
+   never cuts a word in half — only backs off to the last space when doing
+   so doesn't throw away more than 40% of the preview. Pure/exported for
+   direct testing; the DOM-facing expand/collapse toggle lives in
+   renderHistoryCard. */
 export function summaryPreview(text, maxLength) {
   maxLength = maxLength || SUMMARY_PREVIEW_LENGTH;
   var full = String(text == null ? '' : text);
@@ -142,84 +148,48 @@ export function staffOptionLabel(staff) {
   return name;
 }
 
-/* The single most important piece of this widget's copy: Calendar auth is
-   browser-wide, not per-tab (calendar/auth.js), so a Review Summaries block
-   mounted under "Suman's" tab does NOT mean the summaries shown there
-   belong to Suman — they belong to whichever member's token is currently
-   authorized in this browser. This heading is the only on-screen signal of
-   that fact, so it must never read as a static "My Review Summaries" with
-   no reviewer named — a user sitting on one member's tab while a different
-   member's token is stored must be able to see, at a glance, whose data
-   they are about to view or edit. `authorizedLabel` is the already-resolved
-   display label (labelForMemberKey(getStoredMemberKey())) or null/empty
-   when no token is stored yet. Used for 'own' mode (the panel's own member
-   IS the authenticated reviewer) and 'unauthorized' mode; see
-   reviewSummariesReadOnlyHeadingText below for 'read_only' mode's own
-   heading. */
-export function reviewSummariesHeadingText(authorizedLabel) {
-  if (!authorizedLabel) { return 'My Review Summaries — not yet authorized on this browser'; }
-  return 'My Review Summaries — Authorized as: ' + authorizedLabel;
+/* Same shape as staffOptionLabel, but reading a history record's own
+   reviewed_staff_full_name/reviewed_staff_calling_name (live-joined by the
+   backend at read time, backend/routers/staff_review_summaries.py
+   _to_out()) rather than a staff-search result object — used for each
+   card's "Reviewed employee" field. */
+export function reviewedEmployeeLabel(record) {
+  if (!record) { return ''; }
+  var name = record.reviewed_staff_full_name || record.reviewed_staff_calling_name || 'Unknown staff record';
+  if (
+    record.reviewed_staff_calling_name &&
+    record.reviewed_staff_calling_name !== record.reviewed_staff_full_name
+  ) {
+    return name + ' (' + record.reviewed_staff_calling_name + ')';
+  }
+  return name;
 }
 
-/* PHASE 7 heading for 'read_only' mode — names the SELECTED reviewer
-   (whose history is being viewed), never the authenticated member (that
-   is shown separately by authorizedAsLabelText below, so both identities
-   stay visibly distinct on screen at once). reviewerLabel is an
-   already-resolved display label (labelForMemberKey(memberKey)). */
-export function reviewSummariesReadOnlyHeadingText(reviewerLabel) {
-  return 'Viewing ' + reviewerLabel + "'s Review Summaries — read only";
+/* Two access states only (corrects the old 5-mount own/read_only/
+   unauthorized model — there is no more "selected reviewer panel" to
+   compare against, since this workspace is not mounted per member). A
+   valid token is either present ('authorized') or it is not
+   ('unauthorized'); per-record ownership (isOwnedRecord below) decides
+   Edit/Delete visibility separately, on every rendered card. */
+export function workspaceAccessDecision(authenticatedMemberKey) {
+  return authenticatedMemberKey ? 'authorized' : 'unauthorized';
 }
 
-/* PHASE 7's second required display line — "Authorized as <authenticated
-   member>" — kept as its own pure function/element so it renders
-   identically regardless of which heading variant is showing above it. */
-export function authorizedAsLabelText(authorizedLabel) {
-  return 'Authorized as: ' + authorizedLabel;
+/* Per-record ownership check — the reviewer identity source of truth
+   (technical design §5.0): compares ONLY the record's own
+   reviewer_member_key against the currently authenticated token's member
+   key. Never derived from a reviewer filter selection, the selected
+   employee, or any other signal. */
+export function isOwnedRecord(record, authenticatedMemberKey) {
+  return !!(record && authenticatedMemberKey && record.reviewer_member_key === authenticatedMemberKey);
 }
 
-/* Authorization-context decision (REQ-CAL-REV-001, 2026-08-03 revised
-   business rule: shared read / owner-only write). One pure decision
-   function reused by every mounted instance (guardReviewSummaryAccess
-   below is the impure wrapper that supplies the two arguments from real
-   DOM/storage state):
-
-   - authenticatedMemberKey is falsy (no token stored yet in this browser
-     at all) -> 'unauthorized'. Nothing is readable or writable — the
-     caller must authorize before this panel will fetch or render
-     anything (see the dedicated "Authorize this browser" prompt in
-     mountReviewSummariesForMember).
-   - authenticatedMemberKey === selectedReviewerMemberKey (this panel's
-     own member IS the authenticated reviewer) -> 'own'. Full create/
-     view/edit/delete.
-   - Any other authenticatedMemberKey -> 'read_only'. A DIFFERENT, valid
-     reviewer is authenticated — history/detail viewing is allowed
-     (2026-08-03 revised rule), but create/update/delete remain blocked;
-     see guardedWriteRequest below. */
-export function reviewSummaryAccessDecision(params) {
-  params = params || {};
-  var authenticatedMemberKey = params.authenticatedMemberKey;
-  var selectedReviewerMemberKey = params.selectedReviewerMemberKey;
-  if (!authenticatedMemberKey) { return 'unauthorized'; }
-  return authenticatedMemberKey === selectedReviewerMemberKey ? 'own' : 'read_only';
-}
-
-/* Approved copy for the REACTIVE warning shown only when a prohibited
-   mutation is actually attempted against a read-only (or unauthorized)
-   panel — e.g. through stale in-memory state after an access-mode change.
-   Deliberately NOT rendered as a persistent on-screen banner merely
-   because another reviewer's history is being viewed (PHASE 7: "Do not
-   display the red cross-member error merely because another reviewer's
-   history is being viewed") — mountReviewSummariesForMember below only
-   calls this from guardedWriteRequest's rejection path, via showToast,
-   mirroring calendar/auth.js's showCrossMemberAlert pattern for the
-   equivalent Calendar cross-member case. actingLabel/targetLabel are
-   already-resolved display labels (never raw member keys). */
-export function reviewSummariesReadOnlyBlockedCopy(actingLabel, targetLabel) {
-  return {
-    title: "You can't edit " + targetLabel + "'s Review Summaries.",
-    message: 'You are authorized as ' + actingLabel + '. You can view ' + targetLabel +
-      "'s review summaries, but only " + targetLabel + ' can create, edit, or delete them.'
-  };
+/* "Authorized as: Mayurika — HR" — entry is a resolveMember() result
+   ({displayName, role}); null/undefined renders the not-yet-authorized
+   copy so this function is always safe to call. */
+export function authorizedAsLabelText(entry) {
+  if (!entry) { return 'Not yet authorized on this browser.'; }
+  return 'Authorized as: ' + entry.displayName + ' — ' + entry.role;
 }
 
 // ── Fetch wrapper — every request (including GET) is authenticated ─────
@@ -235,7 +205,7 @@ function reviewSummariesApiRequest(pathAndQuery, options) {
       body: options.body ? JSON.stringify(options.body) : undefined,
       cache: 'no-store'
     });
-  }, function (err) {
+  }, function () {
     // ensureAuthorized() rejected (dialog cancelled) — surface as
     // auth_cancelled, never send the request at all.
     var e = new Error('Authorization required.');
@@ -256,7 +226,6 @@ function reviewSummariesApiRequest(pathAndQuery, options) {
         throw err;
       });
     }
-    if (res.status === 200 && options.method === 'DELETE') { return res.json(); }
     return res.json();
   }).catch(function (err) {
     if (!err.code) { err.code = 'network'; }
@@ -304,145 +273,72 @@ function renderSummaryText(text) {
   return node;
 }
 
-/* One mounted instance per member tab-panel. `memberKey` is the tab's
-   own member — the "selected sidebar member" in the approved
-   authorization-context fix (REQ-CAL-REV-001, 2026-08-03 follow-up).
-   The owning reviewer is still always whoever's token is currently
-   authorized in this browser (see the module header note) — `memberKey`
-   is never treated as authorization proof by itself — but this panel's
-   workspace (list/create/view/edit/delete) is now gated on the two
-   matching: see reviewSummaryAccessDecision()/guardReviewSummaryAccess()
-   below. Previously `memberKey` was captured but never compared against
-   anything, which was the defect: every one of the 5 mounted instances
-   rendered and fetched identically regardless of which tab it lived in,
-   so switching sidebar panels never changed what was visible. */
-export function mountReviewSummariesForMember(mountEl, memberKey) {
+/* Mounted exactly once (initReviewSummaries below), inside the new
+   independent #tab-review-summaries panel — never per member. */
+export function mountReviewSummariesWorkspace(mountEl) {
   if (!mountEl) { return null; }
 
   var state = {
     selectedStaff: null,
     includeInactive: false,
+    reviewerFilter: '', // '' = All reviewers (include_all_reviewers=true)
     dateFrom: '',
     dateTo: '',
     editingId: null,
     staffSearchAbort: null,
-    // PHASE 9 stale-request guard — bumped on every new history fetch AND
-    // on every clearWorkspaceState() (panel switch / token change), so a
-    // slow in-flight request that resolves AFTER a switch never injects
-    // its (now-stale) results into a panel that has since moved on.
+    // Stale-request guard — bumped on every new history fetch AND on
+    // every reset, so a slow in-flight request that resolves after a
+    // newer one has superseded it never overwrites the current view.
     historyRequestId: 0
   };
 
   mountEl.textContent = '';
 
-  // ── Authorization gate (selected sidebar member vs. authenticated
-  //    reviewer) — computes one of three access modes on every call:
-  //    'own' | 'read_only' | 'unauthorized' (reviewSummaryAccessDecision
-  //    above). ──────────────────────────────────────────────────────
-  function guardReviewSummaryAccess() {
-    return reviewSummaryAccessDecision({
-      authenticatedMemberKey: getStoredMemberKey(),
-      selectedReviewerMemberKey: memberKey
-    });
+  function currentAccess() {
+    return workspaceAccessDecision(getStoredMemberKey());
   }
 
-  /* The ONLY path any list/detail READ request may travel — allowed for
-     BOTH 'own' and 'read_only' (2026-08-03 revised business rule: shared
-     read access); rejects synchronously only for 'unauthorized', before
-     ensureAuthorized() or fetch() is ever reached. */
-  function guardedReadRequest(pathAndQuery, options) {
-    if (guardReviewSummaryAccess() === 'unauthorized') {
-      var err = new Error('Authorization required to view Review Summaries.');
-      err.code = 'unauthorized_read_blocked';
+  /* The ONLY path any request (read or write) may travel — every fetch
+     call site below goes through this wrapper, so nothing is ever sent
+     while unauthorized, regardless of which code path triggers it.
+     Per-record write ownership (Edit/Delete) is enforced by button
+     visibility (renderHistoryCard) plus the backend's own non-disclosing
+     404 (technical design §5.0/§8) — this wrapper only gates on "is a
+     token present at all," matching the two-state access model above. */
+  function guardedRequest(pathAndQuery, options) {
+    if (currentAccess() === 'unauthorized') {
+      var err = new Error('Authorization required.');
+      err.code = 'unauthorized_blocked';
       return Promise.reject(err);
     }
     return reviewSummariesApiRequest(pathAndQuery, options);
   }
 
-  /* The ONLY path any create/update/delete request may travel — every
-     call site below (form submit, delete) goes through this wrapper
-     instead of calling reviewSummariesApiRequest directly, so a
-     read-only or unauthorized panel can never send a mutation no matter
-     which code path triggers it (a real click, a test calling the
-     returned API object directly, stale in-memory edit state left over
-     from an 'own' panel that has since become 'read_only', etc.). Rejects
-     synchronously before ensureAuthorized() or fetch() is ever reached —
-     the stored token is never touched, and only 'read_only' surfaces the
-     reactive red warning (PHASE 9: "block before API request; show the
-     red authorization warning; preserve the valid token") — 'unauthorized'
-     has no other-reviewer identity to name in that warning, so it is
-     rejected silently (the caller's own error-mapping already renders a
-     generic message, and the panel itself is not interactive in that
-     mode to begin with). */
-  function guardedWriteRequest(pathAndQuery, options) {
-    var mode = guardReviewSummaryAccess();
-    if (mode === 'own') {
-      return reviewSummariesApiRequest(pathAndQuery, options);
-    }
-    var err = new Error('Review summary mutation blocked.');
-    err.code = 'mutation_blocked';
-    if (mode === 'read_only') {
-      var copy = reviewSummariesReadOnlyBlockedCopy(
-        labelForMemberKey(getStoredMemberKey()), labelForMemberKey(memberKey)
-      );
-      showToast({ type: 'error', title: copy.title, message: copy.message, persistent: true });
-    }
-    return Promise.reject(err);
-  }
-
   // ── Header ─────────────────────────────────────────────────────
   var headerEl = el('div', 'review-summaries-header');
-  var heading = el('h4', 'review-summaries-heading');
 
   var authorizedAsEl = el('p', 'review-summaries-authorized-as');
   authorizedAsEl.hidden = true;
 
-  var readOnlyNoteEl = el('p', 'review-summaries-readonly-note');
-  readOnlyNoteEl.hidden = true;
-
-  /* Mode-aware heading/authorized-as refresh only — does NOT touch
-     panel visibility (renderAccessGate below owns that) so it stays safe
-     to call from anywhere (e.g. right after ensureAuthorized() resolves
-     inside a request) without accidentally re-showing/hiding panels out
-     of step with the actual access mode. */
-  function updateHeading() {
-    var mode = guardReviewSummaryAccess();
-    var authorizedLabel = labelForMemberKey(getStoredMemberKey());
-    var reviewerLabel = labelForMemberKey(memberKey);
-    if (mode === 'read_only') {
-      heading.textContent = reviewSummariesReadOnlyHeadingText(reviewerLabel);
-      readOnlyNoteEl.textContent =
-        'Read-only — only ' + reviewerLabel + ' can create, edit, or delete these summaries.';
-      readOnlyNoteEl.hidden = false;
-    } else {
-      heading.textContent = reviewSummariesHeadingText(authorizedLabel);
-      readOnlyNoteEl.hidden = true;
-    }
-    if (mode === 'unauthorized') {
-      authorizedAsEl.hidden = true;
-    } else {
-      authorizedAsEl.textContent = authorizedAsLabelText(authorizedLabel);
-      authorizedAsEl.hidden = false;
-    }
+  function updateAuthorizedAsLabel() {
+    var memberKey = getStoredMemberKey();
+    if (!memberKey) { authorizedAsEl.hidden = true; return; }
+    authorizedAsEl.textContent = authorizedAsLabelText(resolveMember(memberKey));
+    authorizedAsEl.hidden = false;
   }
-  updateHeading();
+  updateAuthorizedAsLabel();
 
   var subheading = el('p', 'review-summaries-subheading');
   subheading.textContent =
     'Readable by every authenticated Management Team member. Only the reviewer who ' +
-    'created a summary can create, edit, or delete it — not necessarily the member this ' +
-    'tab is named after. The reviewed staff member has no access.';
-  headerEl.appendChild(heading);
+    'created a summary can edit or delete it. The reviewed staff member has no access.';
   headerEl.appendChild(authorizedAsEl);
-  headerEl.appendChild(readOnlyNoteEl);
   headerEl.appendChild(subheading);
 
   // ── Unauthorized prompt — shown INSTEAD of the staff/form/history
-  //    panels whenever guardReviewSummaryAccess() returns 'unauthorized'
-  //    (PHASE 6: "Requires authorization before reading"). Offers the
-  //    same ensureAuthorized() flow every mutation elsewhere in the app
-  //    already uses (calendar/auth.js) — a cancelled/failed attempt
-  //    leaves this panel exactly as it was (still unauthorized). ───────
+  //    panels whenever currentAccess() returns 'unauthorized'. The nav
+  //    item itself always stays visible/clickable (index.html); this is
+  //    the in-panel gate. ──────────────────────────────────────────────
   var unauthorizedEl = el('div', 'review-summaries-unauthorized');
   unauthorizedEl.setAttribute('role', 'alert');
   unauthorizedEl.hidden = true;
@@ -513,10 +409,9 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     staffResultsEl.hidden = false;
   }
 
-  /* Shared by the "Change" button below and clearWorkspaceState() (state
-     isolation, PHASE 7) — resets the staff-selector UI back to its
-     pre-selection state without touching anything else (date filters,
-     edit mode). */
+  /* Shared by the "Change" button below and clearEmployeeSelection() —
+     resets the staff-selector UI back to its pre-selection state without
+     touching filters or edit state. */
   function deselectStaff() {
     state.selectedStaff = null;
     selectedStaffEl.hidden = true;
@@ -527,7 +422,18 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     staffResultsEl.textContent = '';
   }
 
+  /* Employee change (technical design §7) — clears history, edit state,
+     and any in-flight/stale history request; a NEW employee always starts
+     from a clean slate, never inheriting the previous selection's loaded
+     cards or an open edit form. */
+  function clearEmployeeDependentState() {
+    exitEditMode();
+    state.historyRequestId += 1;
+    historyEl.textContent = '';
+  }
+
   function selectStaff(staff) {
+    clearEmployeeDependentState();
     state.selectedStaff = staff;
     staffResultsEl.hidden = true;
     staffSearchInput.value = '';
@@ -537,6 +443,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     changeBtn.type = 'button';
     changeBtn.textContent = 'Change';
     changeBtn.addEventListener('click', function () {
+      clearEmployeeDependentState();
       deselectStaff();
       staffSearchInput.focus();
       updateFormVisibility();
@@ -556,11 +463,6 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     if (state.staffSearchAbort) { state.staffSearchAbort.abort(); }
     var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     state.staffSearchAbort = controller;
-    // Immediate feedback the moment the request is sent — the actual
-    // network round-trip can take a couple of seconds, and with nothing
-    // shown in that window the search reads as broken/unresponsive
-    // rather than "working." showInlineLoading matches the same visual
-    // language already used for the history list's own loading state.
     showInlineLoading(staffResultsEl, 'Searching…');
     staffResultsEl.hidden = false;
     var requestToken = controller;
@@ -648,10 +550,7 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   formPanel.appendChild(formPlaceholder);
   formPanel.appendChild(form);
 
-  /* The form is only shown once a staff member is chosen — an editable-
-     looking form with no context for what it's editing reads as
-     confusing/half-finished; a clear placeholder instead makes the
-     required order of operations (pick staff, then write) obvious. */
+  /* The form is only shown once a staff member is chosen. */
   function updateFormVisibility() {
     var hasStaff = !!state.selectedStaff;
     form.hidden = !hasStaff;
@@ -659,6 +558,10 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   }
   updateFormVisibility();
 
+  /* Edit mode / unsaved-draft clearing — called on: Cancel edit, employee
+     change, reviewer-filter change, date-filter change, token change, and
+     leaving the dedicated tab (technical design §7). Never silently
+     merges a stale draft into a new context. */
   function exitEditMode() {
     state.editingId = null;
     saveBtn.textContent = 'Save Summary';
@@ -689,16 +592,20 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
       return;
     }
 
-    setButtonBusy(saveBtn, true, { busyLabel: state.editingId ? 'Saving…' : 'Saving…' });
+    setButtonBusy(saveBtn, true, { busyLabel: 'Saving…' });
 
     var request;
     if (state.editingId) {
-      request = guardedWriteRequest('/' + state.editingId, {
+      request = guardedRequest('/' + state.editingId, {
         method: 'PUT',
         body: { meeting_date: dateInput.value, summary_text: validation.trimmed }
       });
     } else {
-      request = guardedWriteRequest('', {
+      // reviewed_staff_id, meeting_date, summary_text only — the browser
+      // never sends reviewer_member_key (technical design §5.3/§2.9); the
+      // create schema has no such field, so ownership is always
+      // server-derived from the token regardless of request contents.
+      request = guardedRequest('', {
         method: 'POST',
         body: {
           reviewed_staff_id: state.selectedStaff.id,
@@ -724,12 +631,31 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     });
   });
 
-  // ── History (datewise) ───────────────────────────────────────────
+  // ── Filters + history ────────────────────────────────────────────
   var historyPanel = el('div', 'review-summaries-panel review-summaries-history-panel');
   var historyPanelTitle = el('h5', 'review-summaries-step-title');
   historyPanelTitle.textContent = '3. Review history';
 
   var filtersEl = el('div', 'review-summaries-filters');
+
+  var reviewerFilterGroup = el('div', 'review-summaries-filter-field');
+  var reviewerFilterLabel = el('label', 'review-summaries-label');
+  reviewerFilterLabel.textContent = 'Reviewer';
+  var reviewerFilterSelect = el('select', 'review-summaries-reviewer-select');
+  var allReviewersOption = el('option');
+  allReviewersOption.value = '';
+  allReviewersOption.textContent = 'All reviewers';
+  reviewerFilterSelect.appendChild(allReviewersOption);
+  REVIEWER_FILTER_ORDER.forEach(function (memberKey) {
+    var entry = resolveMember(memberKey);
+    var option = el('option');
+    option.value = memberKey;
+    option.textContent = entry.displayName;
+    reviewerFilterSelect.appendChild(option);
+  });
+  reviewerFilterGroup.appendChild(reviewerFilterLabel);
+  reviewerFilterGroup.appendChild(reviewerFilterSelect);
+
   var dateFromGroup = el('div', 'review-summaries-filter-field');
   var dateFromLabel = el('label', 'review-summaries-label');
   dateFromLabel.textContent = 'From';
@@ -746,11 +672,28 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   dateToGroup.appendChild(dateToLabel);
   dateToGroup.appendChild(dateToInput);
 
+  filtersEl.appendChild(reviewerFilterGroup);
   filtersEl.appendChild(dateFromGroup);
   filtersEl.appendChild(dateToGroup);
 
-  dateFromInput.addEventListener('change', function () { state.dateFrom = dateFromInput.value; renderHistory(); });
-  dateToInput.addEventListener('change', function () { state.dateTo = dateToInput.value; renderHistory(); });
+  /* Reviewer-filter / date-filter change (technical design §7) — clears
+     stale detail/edit state (a card being edited under the old filter set
+     may no longer even be in view) and re-fetches. */
+  reviewerFilterSelect.addEventListener('change', function () {
+    state.reviewerFilter = reviewerFilterSelect.value;
+    exitEditMode();
+    renderHistory();
+  });
+  dateFromInput.addEventListener('change', function () {
+    state.dateFrom = dateFromInput.value;
+    exitEditMode();
+    renderHistory();
+  });
+  dateToInput.addEventListener('change', function () {
+    state.dateTo = dateToInput.value;
+    exitEditMode();
+    renderHistory();
+  });
 
   var historyEl = el('div', 'review-summaries-history');
   historyPanel.appendChild(historyPanelTitle);
@@ -758,10 +701,26 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   historyPanel.appendChild(historyEl);
 
   function renderHistoryCard(record) {
+    var authenticatedMemberKey = getStoredMemberKey();
+    var reviewerEntry = resolveMember(record.reviewer_member_key);
     var card = el('div', 'review-summaries-card');
+
+    var employeeEl = el('div', 'review-summaries-card-employee');
+    employeeEl.textContent = 'Reviewed employee: ' + reviewedEmployeeLabel(record);
+    card.appendChild(employeeEl);
+
+    var reviewerRow = el('div', 'review-summaries-card-reviewer');
+    var reviewedByEl = el('span', 'review-summaries-card-reviewed-by');
+    reviewedByEl.textContent = 'Reviewed by: ' + reviewerEntry.displayName;
+    var reviewerRoleEl = el('span', 'review-summaries-card-reviewer-role');
+    reviewerRoleEl.textContent = 'Reviewer role: ' + reviewerEntry.role;
+    reviewerRow.appendChild(reviewedByEl);
+    reviewerRow.appendChild(reviewerRoleEl);
+    card.appendChild(reviewerRow);
+
     var head = el('div', 'review-summaries-card-head');
     var dateEl = el('span', 'review-summaries-card-date');
-    dateEl.textContent = record.meeting_date;
+    dateEl.textContent = 'Meeting date: ' + record.meeting_date;
     head.appendChild(dateEl);
     if (record.updated_at && record.created_at && record.updated_at !== record.created_at) {
       var editedEl = el('span', 'review-summaries-card-edited');
@@ -791,14 +750,12 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
       card.appendChild(toggleTextBtn);
     }
 
-    // Edit/Delete are only ever rendered for an 'own' panel — read-only
-    // panels never get a button that could trigger a write (PHASE 7:
-    // "hide Edit"/"hide Delete"). guardedWriteRequest below is the
-    // second, independent layer that still blocks a mutation even if
-    // stale in-memory state somehow retained a reference to one of these
-    // handlers (PHASE 9's stale-state requirement) — this visibility
-    // check is a UX convenience on top of that, not a substitute for it.
-    if (guardReviewSummaryAccess() === 'own') {
+    /* Edit/Delete render ONLY when this specific card is owned by the
+       currently authenticated reviewer (isOwnedRecord) — evaluated per
+       card, on every render, never once per panel (technical design
+       §5.3/§2.8). A non-owned card still renders fully (read-only) — it
+       simply gets no mutation controls. */
+    if (isOwnedRecord(record, authenticatedMemberKey)) {
       var actions = el('div', 'review-summaries-card-actions');
       var editBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-edit-btn');
       editBtn.type = 'button';
@@ -820,11 +777,11 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
         confirmDestructive({
           title: 'Delete this review summary?',
           message: 'This cannot be undone from this workspace. The summary for ' +
-            staffOptionLabel(state.selectedStaff) + ' on ' + record.meeting_date + ' will be removed.',
+            reviewedEmployeeLabel(record) + ' on ' + record.meeting_date + ' will be removed.',
           confirmLabel: 'Delete summary',
           trigger: deleteBtn,
           onConfirm: function () {
-            return guardedWriteRequest('/' + record.id, { method: 'DELETE' })
+            return guardedRequest('/' + record.id, { method: 'DELETE' })
               .then(function () {
                 showToast({ type: 'success', title: 'Summary deleted', message: '' });
                 renderHistory();
@@ -847,18 +804,11 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   }
 
   function renderHistory() {
-    updateHeading();
-    // Gate re-checked on every render (not just at mount) — a staff
-    // selection or filter change could otherwise slip past a mode change
-    // introduced since mount (e.g. a token change mid-session).
-    // 'unauthorized' panels never reach the fetch below — nothing is
-    // readable until authorized (PHASE 6) — returning here also avoids
-    // showing a stale "Loading…" state that would never resolve into
-    // real data. 'own' and 'read_only' both proceed identically from
-    // here on — the only difference is which reviewer_member_key the
-    // query below is scoped to (always memberKey, this panel's own
-    // selected reviewer, whether that's the authenticated member or not).
-    if (guardReviewSummaryAccess() === 'unauthorized') { return; }
+    updateAuthorizedAsLabel();
+    // 'unauthorized' never fetches — nothing is readable until authorized
+    // (decision #16/#18-19). Returning here also avoids showing a stale
+    // "Loading…" state that would never resolve into real data.
+    if (currentAccess() === 'unauthorized') { return; }
     historyEl.textContent = '';
     if (!state.selectedStaff) {
       var promptEl = el('div', 'review-summaries-empty');
@@ -868,20 +818,20 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     }
     showInlineLoading(historyEl, 'Loading review history…');
     var query = buildListQuery({
-      reviewerMemberKey: memberKey,
+      includeAllReviewers: !state.reviewerFilter,
+      reviewerMemberKey: state.reviewerFilter || null,
       reviewedStaffId: state.selectedStaff.id,
       dateFrom: state.dateFrom,
       dateTo: state.dateTo
     });
-    // PHASE 9 stale-request guard — this request's own id is captured
-    // now; if a newer renderHistory() call (or a clearWorkspaceState()
-    // panel switch) has bumped state.historyRequestId by the time this
-    // resolves, the result is discarded rather than rendered.
+    // Stale-request guard — this request's own id is captured now; if a
+    // newer renderHistory() call has bumped state.historyRequestId by the
+    // time this resolves, the result is discarded rather than rendered.
     state.historyRequestId += 1;
     var requestId = state.historyRequestId;
-    guardedReadRequest('?' + query).then(function (body) {
+    guardedRequest('?' + query).then(function (body) {
       if (requestId !== state.historyRequestId) { return; }
-      updateHeading(); // the ensureAuthorized() call inside the request above may have just resolved a first-time authorization or a token change — refresh the label now that it's current.
+      updateAuthorizedAsLabel(); // the ensureAuthorized() call inside the request above may have just resolved a first-time authorization — refresh the label now that it's current.
       historyEl.textContent = '';
       if (!body.records.length) {
         var empty = el('div', 'review-summaries-empty');
@@ -895,12 +845,10 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     }).catch(function (err) {
       if (requestId !== state.historyRequestId) { return; }
       // auth_required (401): handleUnauthorizedResponse() already fired
-      // CALENDAR_AUTH_CHANGED_EVENT synchronously (calendar/auth.js),
-      // which reevaluateAccess()'s listener (below) already used to
-      // clear this panel's state and re-render the correct
-      // own/read_only/unauthorized view — rendering the generic error
-      // box here on top of that would stomp the just-recovered UI with a
-      // stale "Request failed" message.
+      // CALENDAR_AUTH_CHANGED_EVENT synchronously, which this module's own
+      // listener (below) already used to update the access gate —
+      // rendering the generic error box here on top of that would stomp
+      // the just-recovered UI with a stale "Request failed" message.
       if (err && err.code === 'auth_required') { return; }
       historyEl.textContent = '';
       var mapped = mapApiError(err);
@@ -917,39 +865,11 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     });
   }
 
-  // ── State isolation (PHASE 9, REQ-CAL-REV-001 shared-read revision) —
-  //    every field a stale selection/edit/filter could leak through,
-  //    reset in one place so both a sidebar-panel switch and a token
-  //    change clear the same complete set. Also invalidates any in-flight
-  //    history request (state.historyRequestId) so a slow response that
-  //    resolves after this call can never render into the new panel/mode
-  //    it was not fetched for. ─────────────────────────────────────────
-  function clearWorkspaceState() {
-    if (state.staffSearchAbort) { state.staffSearchAbort.abort(); state.staffSearchAbort = null; }
-    state.historyRequestId += 1;
-    deselectStaff();
-    state.dateFrom = '';
-    state.dateTo = '';
-    dateFromInput.value = '';
-    dateToInput.value = '';
-    exitEditMode();
-    updateFormVisibility();
-    historyEl.textContent = '';
-  }
-
   /* Shows/hides the unauthorized prompt vs. the staff/form/history panels
-     per guardReviewSummaryAccess(); within an authorized panel, further
-     hides the Write Summary section (formPanel) for 'read_only' (PHASE 7:
-     "hide Write Summary section"). Returns the resolved mode so callers
-     can decide whether to fetch (reevaluateAccess below skips
-     renderHistory() only for 'unauthorized'). Does not itself clear
-     state — callers that need a full reset call clearWorkspaceState()
-     first (see reevaluateAccess() below); renderHistory()'s own
-     per-render check deliberately leaves already-loaded state alone
-     (re-rendering mid-session should not wipe what's on screen only to
-     redraw it). */
+     per currentAccess(). Returns the resolved mode so callers can decide
+     whether to fetch. Does not itself clear state. */
   function renderAccessGate() {
-    var mode = guardReviewSummaryAccess();
+    var mode = currentAccess();
     if (mode === 'unauthorized') {
       unauthorizedEl.hidden = false;
       staffPanel.hidden = true;
@@ -959,35 +879,72 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
     }
     unauthorizedEl.hidden = true;
     staffPanel.hidden = false;
+    formPanel.hidden = false;
     historyPanel.hidden = false;
-    // 'own' shows the full Write Summary section (its own inner
-    // form/placeholder toggle, updateFormVisibility, is unaffected by
-    // this); 'read_only' hides the entire section, title included.
-    formPanel.hidden = (mode === 'read_only');
     return mode;
   }
 
-  /* The single reactive entry point for anything that can change WHICH
-     reviewer/panel-pairing is now in effect — a sidebar-panel switch
-     (navigation.js's 'msc:close-toolbar-popovers', fired on every
-     activatePanel() call) or a token change (calendar/auth.js's
-     CALENDAR_AUTH_CHANGED_EVENT, fired on a successful authorize/change-
-     token verify AND on a 401-triggered clear). Always clears state
-     first (PHASE 9 — "on sidebar-member change"/"on token change" both
-     require a full clear), then re-renders the gate, then — only when
-     now readable ('own' or 'read_only') — reloads history for whatever's
-     left selected (nothing, immediately after a clear, so this never
-     re-fetches stale data; it simply leaves the "select a staff member"
-     placeholder showing). */
-  function reevaluateAccess() {
-    clearWorkspaceState();
-    updateHeading();
+  /* Full reset — token CHANGE (a new/different member successfully
+     authorized), not a 401 clear (see reactToAuthChange below, which
+     keeps the employee selection on a 401). Clears everything: identity-
+     dependent history, edit/draft state, and the staff selection itself
+     (technical design §7: "Token change | everything"). */
+  function clearWorkspaceState() {
+    if (state.staffSearchAbort) { state.staffSearchAbort.abort(); state.staffSearchAbort = null; }
+    state.historyRequestId += 1;
+    deselectStaff();
+    state.reviewerFilter = '';
+    reviewerFilterSelect.value = '';
+    state.dateFrom = '';
+    state.dateTo = '';
+    dateFromInput.value = '';
+    dateToInput.value = '';
+    exitEditMode();
+    updateFormVisibility();
+    historyEl.textContent = '';
+  }
+
+  /* CALENDAR_AUTH_CHANGED_EVENT fires for two distinct situations that
+     this workspace must react to differently (technical design §7):
+       - a 401 mid-session (handleUnauthorizedResponse clears the stored
+         token to null BEFORE dispatching) -> getStoredMemberKey() is now
+         null -> keep the employee selection, clear only history/edit
+         state, so re-authorizing resumes the same view.
+       - a successful first-time authorize OR Change Token (a NEW valid
+         token is stored BEFORE dispatching) -> getStoredMemberKey() is
+         now a real member key -> full reset, including the employee
+         selection — the identity behind any in-progress work has changed. */
+  function reactToAuthChange() {
+    var newMemberKey = getStoredMemberKey();
+    if (newMemberKey) {
+      clearWorkspaceState();
+    } else {
+      exitEditMode();
+      state.historyRequestId += 1;
+      historyEl.textContent = '';
+    }
+    updateAuthorizedAsLabel();
     var mode = renderAccessGate();
     if (mode !== 'unauthorized') { renderHistory(); }
   }
 
-  document.addEventListener('msc:close-toolbar-popovers', reevaluateAccess);
-  document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, reevaluateAccess);
+  /* navigation.js's 'msc:close-toolbar-popovers' fires on every panel
+     activation (including activating this one) — repurposed here
+     (technical design §7) as the "leaving the dedicated tab" signal.
+     Unlike REQ-CAL-REV-001's 5-mount model (where this event was a
+     "sidebar member changed" proxy requiring a full reset), a single,
+     member-independent workspace only needs to discard in-progress edit
+     state/unsaved drafts and abort any pending staff search on this
+     signal — the employee selection and loaded history remain valid and
+     are deliberately preserved, since neither depends on which panel is
+     currently active. */
+  function onLeaveOrPanelSwitch() {
+    if (state.staffSearchAbort) { state.staffSearchAbort.abort(); state.staffSearchAbort = null; }
+    exitEditMode();
+  }
+
+  document.addEventListener('msc:close-toolbar-popovers', onLeaveOrPanelSwitch);
+  document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, reactToAuthChange);
 
   mountEl.appendChild(headerEl);
   mountEl.appendChild(staffPanel);
@@ -1000,23 +957,28 @@ export function mountReviewSummariesForMember(mountEl, memberKey) {
   return {
     selectStaff: selectStaff,
     renderHistory: renderHistory,
-    updateHeading: updateHeading,
-    reevaluateAccess: reevaluateAccess,
-    accessDecision: guardReviewSummaryAccess,
+    updateAuthorizedAsLabel: updateAuthorizedAsLabel,
+    reactToAuthChange: reactToAuthChange,
+    onLeaveOrPanelSwitch: onLeaveOrPanelSwitch,
+    accessDecision: currentAccess,
+    setReviewerFilter: function (value) {
+      state.reviewerFilter = value;
+      reviewerFilterSelect.value = value;
+      exitEditMode();
+      renderHistory();
+    },
     state: state
   };
 }
 
-/* Called once at app boot (web-view/js/app.js). Mounts one instance per
-   .review-summaries-instance element (one per member tab-panel, added in
-   web-view/index.html) — idempotent, safe to call once. Not itself unit
-   tested (same documented coverage boundary as
+/* Called once at app boot (web-view/js/app.js). Mounts exactly one
+   instance into #reviewSummariesWorkspace (web-view/index.html, inside
+   the independent #tab-review-summaries panel) — idempotent, safe to call
+   once. Not itself unit tested (same documented coverage boundary as
    calendar/instance.js/initAllScheduleCalendars — see calendar/
-   auth.test.mjs's header note); mountReviewSummariesForMember above is
+   auth.test.mjs's header note); mountReviewSummariesWorkspace above is
    the exported, directly-testable unit. */
 export function initReviewSummaries() {
-  var mounts = document.querySelectorAll('.review-summaries-instance');
-  mounts.forEach(function (mountEl) {
-    mountReviewSummariesForMember(mountEl, mountEl.getAttribute('data-member-key'));
-  });
+  var mountEl = document.getElementById('reviewSummariesWorkspace');
+  mountReviewSummariesWorkspace(mountEl);
 }

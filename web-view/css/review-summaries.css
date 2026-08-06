@@ -1,8 +1,11 @@
-/* review-summaries.css — Staff Review Summaries workspace (REQ-CAL-REV-001).
-   Uses the existing design tokens (tokens.css) rather than introducing a
-   second color/spacing language. */
+/* review-summaries.css — Staff Review Summaries dedicated workspace
+   (REQ-CAL-REV-001, restructured into one independent tab by
+   REQ-CAL-REV-TAB-002, 2026-08-06 — .review-summaries-instance renamed to
+   .review-summaries-workspace, one mount instead of five). Uses the
+   existing design tokens (tokens.css) rather than introducing a second
+   color/spacing language. */
 
-.review-summaries-instance {
+.review-summaries-workspace {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -28,9 +31,9 @@
    conflicting selector individually — `!important` is the standard, safe
    pattern for a `[hidden]` override (same reasoning Bootstrap/Tailwind
    use for their own `.hidden`/`.d-none` utilities); scoped to
-   `.review-summaries-instance` so it cannot affect any other part of the
+   `.review-summaries-workspace` so it cannot affect any other part of the
    app. */
-.review-summaries-instance [hidden] {
+.review-summaries-workspace [hidden] {
   display: none !important;
 }
 
@@ -59,25 +62,6 @@
   font-size: var(--font-sm);
   color: var(--muted);
   margin: 0;
-}
-
-/* Read-only note (REQ-CAL-REV-001 shared-read revision, 2026-08-03) —
-   shown only while viewing another reviewer's history. Deliberately
-   uses the neutral --status-info-* tokens (already used by
-   .msc-api-status--info and staff-data.css), NOT the red --blocked
-   pairing below — read-only access is expected, everyday behavior under
-   the revised business rule, not an authorization failure, so it must
-   never read as an error (see PHASE 7: "Do not display the red
-   cross-member error merely because another reviewer's history is being
-   viewed"). */
-.review-summaries-readonly-note {
-  color: var(--status-info-text);
-  background: var(--status-info-bg);
-  border: 1px solid var(--status-info-border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
-  margin-top: var(--space-2);
-  font-size: var(--font-sm);
 }
 
 /* Unauthorized prompt (PHASE 6: "Requires authorization before reading")
@@ -177,6 +161,7 @@
 .review-summaries-date-input,
 .review-summaries-date-from,
 .review-summaries-date-to,
+.review-summaries-reviewer-select,
 .review-summaries-textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -192,6 +177,7 @@
 .review-summaries-date-input:focus,
 .review-summaries-date-from:focus,
 .review-summaries-date-to:focus,
+.review-summaries-reviewer-select:focus,
 .review-summaries-textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -370,6 +356,24 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+/* Reviewed employee / reviewer identity fields (REQ-CAL-REV-TAB-002,
+   2026-08-06) — every card shows these as separate, always-populated
+   fields, never a single combined string, so the reviewer's role is
+   guaranteed visible for every Management Team member. */
+.review-summaries-card-employee {
+  font-weight: 600;
+  color: var(--text);
+  font-size: var(--font-sm);
+}
+
+.review-summaries-card-reviewer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
 }
 
 .review-summaries-card-head {
