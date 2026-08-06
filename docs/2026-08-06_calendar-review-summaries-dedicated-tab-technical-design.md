@@ -9,7 +9,9 @@ requirement-id: REQ-CAL-REV-TAB-002
 
 # Technical Design — Management AIOS Calendar Review Summaries Dedicated Tab (2026-08-06)
 
-> **Correction (2026-08-06, same-day):** The original version of this document stated "4 of 5 mounts removed" and described placing the new panel "near the removed Mayurika mount," which was ambiguous and could be read as reusing Mayurika's existing panel as the dedicated panel. It does not. This corrected version states explicitly: **all 5 existing member-panel mounts are removed (final embedded count: 0)**, and the dedicated panel is a **new, independent panel (final dedicated count: 1)** with its own panel ID, sidebar nav item, and activation path — never nested inside, parented by, or derived from Mayurika's (or any other member's) panel. See §1, §3.1, §5, §9, §10, §11 for the corrected text.
+> **Correction (2026-08-06, same-day, round 1):** The original version of this document stated "4 of 5 mounts removed" and described placing the new panel "near the removed Mayurika mount," which was ambiguous and could be read as reusing Mayurika's existing panel as the dedicated panel. It does not. This corrected version states explicitly: **all 5 existing member-panel mounts are removed (final embedded count: 0)**, and the dedicated panel is a **new, independent panel (final dedicated count: 1)** with its own panel ID, sidebar nav item, and activation path — never nested inside, parented by, or derived from Mayurika's (or any other member's) panel. See §1, §3.1, §5, §9, §10, §11 for the corrected text.
+>
+> **Correction (2026-08-06, same-day, round 2):** The round-1 correction's `reviewer_display_label` proposal (one opaque combined string) did not guarantee a visible reviewer role, since `MEMBER_LABELS["paraparan"]` has no role suffix. This round replaces `reviewer_display_label` entirely: the design now resolves reviewer display name and role client-side from the existing `reviewer_member_key` field via a small frontend Management Team registry, rendered as two separate visible fields ("Reviewed by" / "Reviewer role"). No backend schema change is needed for this. See §1, §4, §6, §9, §10, §11 for the corrected text. The mandatory five-person sign-off gate in the original §14/validation "next step" is also corrected — see §14.
 
 ## 0. Requirement metadata / source
 
@@ -25,7 +27,7 @@ This is a design document only. No application code, migration, or database obje
 
 ## 1. Architecture overview
 
-The existing Staff Review Summaries feature (REQ-CAL-REV-001) is a working, tested slice: one backend router (`backend/routers/staff_review_summaries.py`), one table (`management_aios.staff_review_summaries`), and one frontend module (`web-view/js/review-summaries.js`) mounted 5 times. This design does **not** rebuild that slice — it (a) **removes all 5 existing frontend mounts completely (including Mayurika's) and creates exactly 1 new, independent dedicated-panel mount** — final embedded-mount count: 0; final dedicated-mount count: 1; total: 1 — (b) redefines "reviewer identity" in the UI from "which tab you're in" to "who the token says you are, and only the token," (c) adds one small, additive, opt-in backend read parameter so the dedicated tab can show all reviewers' summaries for one employee by default, and (d) adds one additive response field so history cards can show a reviewer's name and role without duplicating that registry anywhere new.
+The existing Staff Review Summaries feature (REQ-CAL-REV-001) is a working, tested slice: one backend router (`backend/routers/staff_review_summaries.py`), one table (`management_aios.staff_review_summaries`), and one frontend module (`web-view/js/review-summaries.js`) mounted 5 times. This design does **not** rebuild that slice — it (a) **removes all 5 existing frontend mounts completely (including Mayurika's) and creates exactly 1 new, independent dedicated-panel mount** — final embedded-mount count: 0; final dedicated-mount count: 1; total: 1 — (b) redefines "reviewer identity" in the UI from "which tab you're in" to "who the token says you are, and only the token," (c) adds one small, additive, opt-in backend read parameter so the dedicated tab can show all reviewers' summaries for one employee by default, and (d) resolves each history card's reviewer display name and role **client-side**, from the already-returned `reviewer_member_key` field, via a small new frontend Management Team registry — no backend schema change, no new database column, and no reviewer identity duplicated into `staff_review_summaries` (§6).
 
 No table, migration, or existing route contract changes. No existing test's asserted behavior changes. **The dedicated panel does not reuse, repurpose, or inherit any part of Mayurika's (or any other member's) existing panel — it is a new sibling panel with its own DOM parent, own panel ID, own sidebar nav item, and own activation path (§3.1, §5).**
 
@@ -202,9 +204,9 @@ else:
 - A valid Calendar token (`Depends(get_verified_member)`) is still required in all cases — `include_all_reviewers` widens *whose rows* are returned, never *who* may call the route.
 - Pagination (`limit`/`offset`, default 50 / max 500) is unchanged and applies to the widened result set the same way it applies today.
 
-### Reviewer display label — additive response field
+### Reviewer display field — reassessed and dropped (corrects round-1 §G ambiguity)
 
-`StaffReviewSummaryOut` (`schemas.py`) gains one new, purely computed field: `reviewer_display_label: str`, populated in `_to_out()` (`staff_review_summaries.py:164-184`) from the existing backend `MEMBER_LABELS` dict (`config.py:90-102`) — the same registry `calendar_auth.py:134-142` already uses for the `/api/calendar-auth/verify` response. This is additive to the response body only: **no new database column, no frontend duplicate copy of `MEMBER_LABELS`.** Phase 7 (§7 below) depends on this field.
+Round 1 proposed an additive `reviewer_display_label: str` field on `StaffReviewSummaryOut`. **This round drops that proposal.** `StaffReviewSummaryOut` already returns `reviewer_member_key` unchanged (`_to_out()`, `staff_review_summaries.py:164-184`, confirmed present since REQ-CAL-REV-001) — that key alone is sufficient for the client to resolve a display name and role via the frontend registry defined in §6. **No backend schema or response-field change is required for reviewer identity display at all** — the only backend change this design still requires is `include_all_reviewers` (above). This is a strict reduction in implementation surface versus round 1, made possible because name/role resolution moved entirely to the client (§6).
 
 ### Backward compatibility
 
@@ -261,21 +263,57 @@ This is the single identity source for every state below.
 - Enterable only from a card the current token owns.
 - Any of: employee change, reviewer-filter change, token change, or navigating away from the tab clears edit state immediately (see §6).
 
-## 6. Queryability / history-card design (Phase 7)
+## 6. Queryability / history-card design (Phase 7) — corrected reviewer identity design (round 2)
 
-Every card renders, per the requirement's §5.7 exact field list:
+Every card renders, per the requirement's §5.7 exact field list, as **separate visible fields, not one combined string**:
 
 ```
 Reviewed employee: <staff full_name / calling_name — existing live join, StaffReviewSummaryOut.reviewed_staff_full_name / reviewed_staff_calling_name, unchanged>
-Reviewed by: <reviewer_display_label> — e.g. "Mayurika — HR"
+Reviewed by: <reviewer display name>
+Reviewer role: <reviewer role>
 Meeting date: <meeting_date>
 Summary: <summary_text>
 Created/updated: <created_at> / <updated_at, when different from created_at>
 ```
 
-**Reviewer name and role source: `reviewer_display_label`, the new additive backend field (§4), derived from `backend/config.py:90-102` `MEMBER_LABELS`.** This is the single authoritative registry already combining name + role as one string ("Mayurika — HR"). Confirmed by search: no frontend `MEMBER_LABELS`-equivalent exists today — the frontend only ever receives *its own* authenticated member's `displayLabel`, via `/api/calendar-auth/verify` (`calendar/auth.js:129`), never another reviewer's. Building a second, frontend-side copy of the 5-entry label map would duplicate the registry CLAUDE.md and this repo's own conventions warn against; returning the already-computed label from the backend (which already owns and uses this exact map) avoids that duplication entirely.
+### 6.1 Evidence: no single existing "member registry" object exists today
 
-**Exact field format (corrects §G ambiguity):** `reviewer_display_label` is a single string, copied verbatim from `MEMBER_LABELS[record.reviewer_member_key]` with no reformatting, splitting, or reparsing. For 4 of the 5 members that string already has the shape `<reviewer display name> — <reviewer role>` (e.g. `"Mayurika — HR"`, `"Suman — Recruiting Officer"`). **`reviewer_display_label` is deliberately kept as one opaque string, not split into separate `reviewer_name`/`reviewer_role` fields**, because `MEMBER_LABELS["paraparan"] = "Paraparan"` (`config.py:90-102`) has no role suffix at all — Paraparan's designation is explicitly noted in that same file as "currently unresolved between sources" (External Auditor vs. Accountant), so no backend or frontend code may split the string or invent a role value for Paraparan. Splitting would require parsing on the `" — "` separator, which is absent for Paraparan and would either throw, silently populate an empty role, or require a fabricated placeholder — none acceptable. The requirement's "Reviewed by: `<name>` — `<role>`" card format (§5.7 of the requirement) is satisfied by rendering the single `reviewer_display_label` string as-is on the "Reviewed by" line; no reviewer identity data is added to the database in either design.
+Repository search (this session) confirms role/name text for the 5 Management Team members is currently **scattered across 3 independent, mutually-inconsistent locations**, none of which is a reusable JS object:
+
+| Location | Form | Mayurika | Suman | Arun | Rajiv | Paraparan |
+|---|---|---|---|---|---|---|
+| `backend/config.py:90-102` `MEMBER_LABELS` | one combined string per key, used by `/api/calendar-auth/verify` (the "token UI") | `"Mayurika — HR"` | `"Suman — Recruiting Officer"` | `"Arun — Implementation Officer"` | `"Rajiv — Admin Manager"` | `"Paraparan"` (**no role**) |
+| `web-view/index.html` sidebar nav (`app-nav-btn-label`/`app-nav-btn-sub`, lines ~156-203) | separate short name/role spans, raw HTML | `Mayurika` / `HR` | `Suman` / `Recruitment` | `Arun` / `Implementation` | `Rajiv` / `Admin` | `Paraparan` / `Auditor` |
+| `web-view/index.html` member-tab headers (e.g. `:1663`) | combined `<h2>Name — Role</h2>`, raw HTML | — | — | — | — | `Paraparan — Auditor` (`index.html:1663`, comment at `:1656`: *"Role displayed as 'Auditor' per the confirmed task requirement"*) |
+
+No JS constant or module anywhere in `web-view/js/**` currently unifies these into `{displayName, role}` pairs (confirmed by search for `MEMBER_LABELS`/`MEMBER_ROLES`/`memberRegistry`-style identifiers — none found outside a code comment in `calendar/auth.js:129` referencing the *backend's* map).
+
+### 6.2 Chosen registry and role resolution
+
+**A new, small frontend module (e.g. `web-view/js/member-registry.js`) is introduced, containing only values that already exist verbatim elsewhere in this repository — no new or invented data:**
+
+```js
+export const MEMBER_REGISTRY = {
+  mayurika:  { displayName: "Mayurika",  role: "HR" },
+  suman:     { displayName: "Suman",     role: "Recruiting Officer" },
+  arun:      { displayName: "Arun",      role: "Implementation Officer" },
+  rajiv:     { displayName: "Rajiv",     role: "Admin Manager" },
+  paraparan: { displayName: "Paraparan", role: "Auditor" },
+};
+```
+
+- `displayName` for all 5, and `role` for Mayurika/Suman/Arun/Rajiv, are taken directly from splitting `backend/config.py:90-102` `MEMBER_LABELS[key]` on `" — "` — the same values already surfaced to users today via `/api/calendar-auth/verify`'s `displayLabel` (the existing "token UI").
+- **Paraparan's `role: "Auditor"` is a deliberate exception**, per this task's explicit instruction to use the approved "Auditor" terminology. It is sourced from `web-view/index.html`'s own sidebar nav sub-label (`Auditor`, line ~203) and member-tab header (`Paraparan — Auditor`, `:1663`, itself flagged in-repo as "per the confirmed task requirement," `:1656`) — **not fabricated**, since this exact value already appears twice in the current codebase. `backend/config.py:90-102`'s `MEMBER_LABELS["paraparan"] = "Paraparan"` remains unchanged and still carries no role, because the underlying designation dispute (External Auditor vs. Accountant, `config.py:95-98`) is a separate, still-open HR/source-register question — this frontend registry entry is a **display-terminology decision**, not a resolution of that open dispute, and does not touch `config.py`.
+- **This is a documented registry-data gap, not silently patched over**: `backend/config.py`'s `MEMBER_LABELS` is inconsistent with the frontend's own established "Auditor" terminology for Paraparan. This gap is flagged here as a legitimate follow-up (harmonize `config.py:101` to `"Paraparan — Auditor"`, or an equivalent fix) — out of scope for this design, since this task forbids modifying application code.
+- **Unknown-key fallback**: if `record.reviewer_member_key` is ever not one of the 5 keys in `MEMBER_REGISTRY` (a defensive case — not reachable today since `VALID_MEMBER_KEYS` is fixed at exactly these 5, but guards against future data drift), the UI renders `displayName = "Unknown"` and `role = "Unknown"` — never a fabricated or guessed value, and never a thrown error.
+
+### 6.3 Why not a backend field (§4 reassessment)
+
+No repository evidence supports adding a backend display field: `reviewer_member_key` is already returned on every record (unchanged since REQ-CAL-REV-001), and the client already needs a local registry regardless (because the "Auditor" terminology decision for Paraparan is a frontend-only fact not present in `backend/config.py`, §6.2). Adding a redundant backend field would either (a) duplicate the same data the client already resolves itself, or (b) require the backend to also special-case Paraparan's role — spreading one small decision across two layers instead of one. The minimal design keeps `reviewer_member_key` as the only identity data the API returns, and resolves display purely client-side.
+
+### 6.4 No database duplication
+
+Reviewer display name and role are never written to `management_aios.staff_review_summaries` or any other table — `MEMBER_REGISTRY` is a static, in-memory frontend constant, resolved at render time from `reviewer_member_key`, exactly as `reviewed_staff_full_name`/`reviewed_staff_calling_name` are resolved at request time via the existing live join to `staff_dashboard_records` (§2.9, unchanged) rather than stored redundantly.
 
 ## 7. State-clearing design (Phase 8)
 
@@ -307,14 +345,14 @@ This matches the existing backend authorization matrix from REQ-CAL-REV-001 exac
 | File | Change |
 |---|---|
 | `web-view/index.html` | Sidebar heading Data→Staff, Staff Data→Data label, new Review Summaries nav button + panel; **remove all 5 embedded mounts (Mayurika, Suman, Arun, Rajiv, Paraparan — 0 remaining), add exactly 1 new, independent `#tab-review-summaries` panel that does not reuse `#tab-mayurika-hr` or any other existing panel** (§3.1a) |
-| `web-view/js/review-summaries.js` | Single-instance mount (`memberKey` param removed from the mount function), per-card ownership check replacing per-panel `reviewSummaryAccessDecision`, reviewer filter + "All reviewers" default wiring, `reviewer_display_label` rendering, state-clearing triggers (§7) |
+| `web-view/js/review-summaries.js` | Single-instance mount (`memberKey` param removed from the mount function), per-card ownership check replacing per-panel `reviewSummaryAccessDecision`, reviewer filter + "All reviewers" default wiring, reviewer name/role rendering via `MEMBER_REGISTRY` (§6, resolved from `record.reviewer_member_key`), state-clearing triggers (§7) |
+| `web-view/js/member-registry.js` (**new**) | New small module exporting `MEMBER_REGISTRY` (§6.2) — display name + role per member key, values sourced from existing `backend/config.py` `MEMBER_LABELS` and existing `index.html` sidebar/tab-header text, not invented |
 | `web-view/js/app.js` | `initReviewSummaries()` call site updated for single-mount signature (loop over `.review-summaries-instance` becomes a single call, or the one remaining container is queried directly) |
 | `web-view/js/config.js` | No change expected — `STAFF_REVIEW_SUMMARIES_API_BASE` (if already added by REQ-CAL-REV-001) is reused as-is |
-| `web-view/css/review-summaries.css` (or wherever REQ-CAL-REV-001 placed it) | Layout adjustments for a full dedicated panel vs. an embedded card; reviewer-filter and "All reviewers" control styling |
-| `backend/routers/staff_review_summaries.py` | Add `include_all_reviewers` query param + branch (§4); add `reviewer_display_label` to `_to_out()` |
-| `backend/schemas.py` | Add `reviewer_display_label: str` to `StaffReviewSummaryOut` |
+| `web-view/css/review-summaries.css` (or wherever REQ-CAL-REV-001 placed it) | Layout adjustments for a full dedicated panel vs. an embedded card; reviewer-filter and "All reviewers" control styling; two-line "Reviewed by" / "Reviewer role" card fields |
+| `backend/routers/staff_review_summaries.py` | Add `include_all_reviewers` query param + branch only (§4) — **no `_to_out()` change** (§4 reassessment, §6.3) |
 | `backend/tests/test_staff_review_summaries.py` | New tests for `include_all_reviewers` (§11); existing tests unmodified |
-| `web-view/js/review-summaries.test.mjs` / `review-summaries-test-dom.mjs` | Rewrite the multi-instance/cross-member-panel test cases (e.g. "suman token, viewing mayurika's panel") that encoded the old 5-mount model; add single-workspace, all-reviewers, and per-card-ownership cases |
+| `web-view/js/review-summaries.test.mjs` / `review-summaries-test-dom.mjs` | Rewrite the multi-instance/cross-member-panel test cases (e.g. "suman token, viewing mayurika's panel") that encoded the old 5-mount model; add single-workspace, all-reviewers, per-card-ownership, and `MEMBER_REGISTRY` resolution cases |
 | `web-view/js/navigation.js` | Likely unchanged — auto-wires new nav button/panel via existing `querySelectorAll` (§3.1); verify only |
 
 ## 10. Files not to change
@@ -323,9 +361,11 @@ This matches the existing backend authorization matrix from REQ-CAL-REV-001 exac
 - `management_aios.staff_review_summaries` schema/migrations — no column added, no migration file created.
 - `management_aios.staff_dashboard_records` — untouched; `id` continues as the reviewed-staff identifier.
 - `backend/routers/calendar_auth.py` — token verification and `MEMBER_LABELS` sourcing are reused as-is, not modified.
-- `backend/config.py` — `MEMBER_LABELS`/`VALID_MEMBER_KEYS` are read, not edited.
+- `backend/config.py` — `MEMBER_LABELS`/`VALID_MEMBER_KEYS` are read, not edited. (The Paraparan-role harmonization noted in §6.2 is a documented follow-up, explicitly out of scope here.)
+- `backend/schemas.py` — **no change** (round-1's proposed `reviewer_display_label` field is dropped, §4/§6.3); `StaffReviewSummaryOut` is unmodified.
 - Existing UPDATE/DELETE ownership logic (`_get_owned_summary_or_404`) — unchanged.
 - Existing single-reviewer LIST default behavior when `include_all_reviewers` is omitted — unchanged (§4).
+- No reviewer display name/role column is added to `management_aios.staff_review_summaries` or any other table (§6.4).
 
 **Removal list (corrects §A/§B ambiguity — "4 of 5" was wrong; it is all 5):** **all 5** `<h3>Review Summaries</h3>` + `.review-summaries-instance` blocks in `index.html` are deleted, **including Mayurika's** — no member panel keeps an embedded mount, and no member panel's existing mount location, container, or identity is reused as the dedicated panel. The `querySelectorAll` mount loop collapses to a single mount call targeting the new, independent `#tab-review-summaries` panel (§3.1a) created fresh for this feature. Also removed/superseded: the per-panel `reviewSummaryAccessDecision`'s `read_only`-by-tab branch (superseded by per-card ownership, §5.3); the `msc:close-toolbar-popovers` listener's old "member changed" role (repurposed, not deleted, §7).
 
@@ -376,30 +416,34 @@ The original 40-test plan collapsed all 5 mount-removals into a single test and 
 32. A cross-reviewer `PUT` returns 404.
 33. A cross-reviewer `DELETE` returns 404.
 
-### Display (4)
+### Display and reviewer identity resolution (8 — expanded, corrects round-1 Phase G test gap)
 34. Each card shows the reviewed employee.
-35. Each card shows the reviewer (`reviewer_display_label`).
-36. Each card shows the reviewer's role (embedded in `reviewer_display_label`, e.g. "— HR"; absent only for Paraparan, per §6).
+35. Each card shows the reviewer display name, as its own visible field.
+36. Each card shows the reviewer role, as its own visible field — never embedded inside a combined string.
 37. Each card shows the meeting date.
+38. Reviewer display name and role resolve from `record.reviewer_member_key` via `MEMBER_REGISTRY` (§6.2) — not from any backend response field added for this purpose.
+39. Paraparan's card resolves to role "Auditor", sourced from `MEMBER_REGISTRY` (§6.2).
+40. An unrecognized `reviewer_member_key` (not one of the 5 known keys) renders `displayName = "Unknown"` and `role = "Unknown"` — never a fabricated value, never a thrown error.
+41. No reviewer display name or role is present in `management_aios.staff_review_summaries` or any other table (confirms §6.4 and §10 — no migration, no new column).
 
 ### State (4)
-38. Employee change clears history, edit state, and any draft.
-39. Reviewer-filter change clears stale detail/edit state.
-40. Token change recalculates ownership on every visible card.
-41. A stale in-flight response (superseded by a newer request) is ignored, never rendered.
+42. Employee change clears history, edit state, and any draft.
+43. Reviewer-filter change clears stale detail/edit state.
+44. Token change recalculates ownership on every visible card.
+45. A stale in-flight response (superseded by a newer request) is ignored, never rendered.
 
 ### Regression (7)
-42. Data tab still opens and functions.
-43. All 5 member panels remain usable after mount removal.
-44. Tasks continue to work.
-45. Leave continues to work.
-46. Calendar navigation continues to work.
-47. Existing pre-migration records remain queryable and unchanged.
-48. No schema or migration change occurred.
+46. Data tab still opens and functions.
+47. All 5 member panels remain usable after mount removal.
+48. Tasks continue to work.
+49. Leave continues to work.
+50. Calendar navigation continues to work.
+51. Existing pre-migration records remain queryable and unchanged.
+52. No schema or migration change occurred.
 
-**Total: 48 — meets or exceeds the required minimum of 30, and explicitly includes all 18 required test items from this correction task:**
+**Total: 52 — meets or exceeds the required minimum of 30, and explicitly includes all 18 mount/independence test items from the prior correction round plus all 10 reviewer-identity test items from this round:**
 
-| Required item (task Phase I) | Satisfied by test # |
+| Required item (prior correction round — mount/independence) | Satisfied by test # |
 |---|---|
 | 1. Zero mounts — Mayurika | 1 |
 | 2. Zero mounts — Suman | 2 |
@@ -416,9 +460,22 @@ The original 40-test plan collapsed all 5 mount-removals into a single test and 
 | 13. Specific reviewer filter works | 24 |
 | 14. Each card shows employee, reviewer, reviewer role | 34, 35, 36 |
 | 15. Owner controls appear only on owned records | 31 |
-| 16. Existing member tabs remain usable after mount removal | 43 |
-| 17. Data tab still opens | 42 |
-| 18. No schema or migration change | 48 |
+| 16. Existing member tabs remain usable after mount removal | 47 |
+| 17. Data tab still opens | 46 |
+| 18. No schema or migration change | 52 |
+
+| Required item (this correction round — reviewer role display) | Satisfied by test # |
+|---|---|
+| 1. Every history card shows reviewed employee | 34 |
+| 2. Every history card shows reviewer display name | 35 |
+| 3. Every history card shows reviewer role | 36 |
+| 4. Reviewer display name and role resolve from `reviewer_member_key` | 38 |
+| 5. Paraparan resolves to the approved Auditor role | 39 |
+| 6. Unknown reviewer keys do not fabricate a name or role | 40 |
+| 7. No reviewer display identity is stored in the database | 41 |
+| 8. All-reviewer and specific-reviewer filters still work | 23, 24 |
+| 9. Owner-only update/delete remains unchanged | 27, 28, 29, 32, 33 |
+| 10. Zero member-panel mounts and one dedicated mount remain required | 1, 2, 3, 4, 5, 6 |
 
 ### Regression suites to re-run (not new tests)
 - Backend: `test_calendar_auth.py`, `test_calendar_mutation_authorization.py`, `test_member_leave.py`, `test_staff_review_summaries.py` (existing 31 cases — must remain green unmodified except the new `include_all_reviewers` additions).
@@ -430,6 +487,7 @@ The original 40-test plan collapsed all 5 mount-removals into a single test and 
 2. The exact DOM/CSS structure of the new dedicated panel (card layout, filter bar composition) is described functionally (§5–§7) but not pixel-specified — implementation retains normal front-end layout discretion within the stated functional requirements.
 3. `review-summaries.test.mjs`'s existing multi-instance/cross-member test cases require rewriting, not just extension — flagged explicitly in §9 so this isn't discovered mid-implementation as unplanned scope.
 4. This design was produced without a live database connection (none was needed — no schema change is proposed) and without re-running the existing test suite (no code was changed this session).
+5. **Registry-data gap (§6.2)**: `backend/config.py:101` `MEMBER_LABELS["paraparan"]` still carries no role, while the frontend's new `MEMBER_REGISTRY` (§6.2) and this repo's own existing sidebar/tab-header markup both already use "Auditor." This is a pre-existing inconsistency this design documents but does not fix (fixing it is a `backend/config.py` edit, out of scope — no application code was modified producing this design).
 
 ## 13. Approval / status
 
@@ -441,15 +499,23 @@ This design PASSES readiness for the next phase if and only if:
 - 0 unresolved contradictions between this design and REQ-CAL-REV-TAB-002's 31 approved decisions (validation doc confirms this);
 - the all-reviewers API change is additive and the one identified existing test governing default LIST behavior remains unaffected (§4 confirms — new branch only, old branch untouched);
 - the authorization matrix has 0 blank cells (§8 confirms 6 columns × 3 identity rows, fully filled);
-- the proposed test count is ≥ 30 (§11 confirms 48);
+- the proposed test count is ≥ 30 (§11 confirms 52);
 - 0 application code, migration, or database files were touched producing this design (confirmed);
 - the protected path was never opened (confirmed);
-- the final mount counts are stated explicitly and unambiguously, with 0 implication that any member panel's mount is reused or repurposed as the dedicated panel (§3.1a/§9/§10 confirm: member-panel mounts = 0, dedicated-panel mounts = 1, total = 1).
+- the final mount counts are stated explicitly and unambiguously, with 0 implication that any member panel's mount is reused or repurposed as the dedicated panel (§3.1a/§9/§10 confirm: member-panel mounts = 0, dedicated-panel mounts = 1, total = 1);
+- reviewer display name and reviewer role are guaranteed as two separate, always-populated visible fields for all 5 members (including Paraparan), resolved client-side with 0 database duplication and 0 fabricated values (§6 confirms).
 
-All seven conditions are met.
+All eight conditions are met.
 
-## 14. One next step
+## 14. Review gate and next step (corrected, round 2 — Phase 5)
 
-Route this design to the relevant Management Team member(s)/domain owner(s) for review per CLAUDE.md §18 (this crosses HR/Mayurika, Recruitment/Suman, and Implementation/Arun tab surfaces, plus the Admin Manager/Rajiv and Auditor/Paraparan tabs whose embedded mounts are all being removed — 0 remaining, per §9/§10).
+**Review-gate correction:** the prior wording implying a mandatory five-person Management Team sign-off gate before implementation is replaced with the following, so this is not read as inventing a Mayurika-only or five-person approval requirement:
 
-**Branch-strategy correction (§H):** implementation branch strategy is not defined by this design and must follow the repository owner's explicit instruction at implementation start. This design does not assume `main` or any feature branch.
+- **Business requirement approval**: completed — by the repository owner/user (this session's REQ-CAL-REV-TAB-002 approval and its two correction rounds).
+- **Technical review**: required for the API (`include_all_reviewers`) and navigation (sidebar/panel restructure) implementation, per normal engineering review practice.
+- **Queryability review**: required specifically for the reviewer/reviewed-employee display and filtering design (§5–§8), given the terminology decision documented in §6.2 (Paraparan's "Auditor" role) and the registry-data gap it flags in `backend/config.py`.
+- **Additional domain-member consultation** (Mayurika, Suman, Arun, Rajiv, Paraparan individually): optional, unless separately requested by the repository owner — not a mandatory implementation gate.
+
+**Branch-strategy (retained, §H):** implementation branch strategy is not defined by this design and must follow the repository owner's explicit instruction at implementation start. This design does not assume `main` or any feature branch, and no branch was created while producing this design.
+
+**One next step:** technical and queryability review of this corrected design (§13's numeric pass/fail rule, all eight conditions met) before implementation begins.

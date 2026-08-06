@@ -9,7 +9,9 @@ requirement-id: REQ-CAL-REV-TAB-002
 
 # Requirement — Management AIOS Calendar Review Summaries Dedicated Tab (2026-08-06)
 
-> **Correction (2026-08-06, same-day):** This requirement is corrected to remove an ambiguity in the original wording ("consolidates 5 mounts into 1") that could be read as reusing Mayurika's existing mount as the dedicated panel. It does not. All 5 existing member-panel mounts — including Mayurika's — are removed completely (final embedded count: 0). The dedicated panel is a new, independent panel (final dedicated count: 1). The 32 approved decisions below are unchanged in substance; only surrounding wording is tightened. See the companion technical design §1/§3/§5/§9/§10 and the validation doc for the corrected design detail.
+> **Correction (2026-08-06, same-day, round 1):** This requirement is corrected to remove an ambiguity in the original wording ("consolidates 5 mounts into 1") that could be read as reusing Mayurika's existing mount as the dedicated panel. It does not. All 5 existing member-panel mounts — including Mayurika's — are removed completely (final embedded count: 0). The dedicated panel is a new, independent panel (final dedicated count: 1). The 32 approved decisions below are unchanged in substance; only surrounding wording is tightened. See the companion technical design §1/§3/§5/§9/§10 and the validation doc for the corrected design detail.
+>
+> **Correction (2026-08-06, same-day, round 2):** Decision 27 below already required "Reviewed by" and "Reviewer role" as two separate visible fields — that decision is unchanged. The companion technical design's round-1 implementation approach (one opaque `reviewer_display_label` string) risked not satisfying decision 27 for Paraparan and has been corrected to resolve both fields client-side from `reviewer_member_key`, with no database or schema change. See the companion technical design §6 and the validation doc for the corrected detail.
 
 ## Metadata (per CLAUDE.md §11.3 — Requirement Documentation Governance)
 

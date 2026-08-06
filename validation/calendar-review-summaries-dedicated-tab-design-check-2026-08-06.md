@@ -8,7 +8,9 @@ requirement-id: REQ-CAL-REV-TAB-002
 
 # Design Consistency Check — Calendar Review Summaries Dedicated Tab (2026-08-06)
 
-> **Correction (2026-08-06, same-day):** The original version of this check did not flag that the technical design's original wording ("4 of 5 mounts removed," "near the removed Mayurika mount") was ambiguous and could be read as reusing Mayurika's panel as the dedicated panel. The requirement and technical design documents have both been corrected (see their own correction notes) to state explicitly that all 5 existing mounts are removed (0 remaining) and the dedicated panel is newly created and independent. This check is updated accordingly — see the new "Mount-count and independence correction assessment" section below.
+> **Correction (2026-08-06, same-day, round 1):** The original version of this check did not flag that the technical design's original wording ("4 of 5 mounts removed," "near the removed Mayurika mount") was ambiguous and could be read as reusing Mayurika's panel as the dedicated panel. The requirement and technical design documents have both been corrected (see their own correction notes) to state explicitly that all 5 existing mounts are removed (0 remaining) and the dedicated panel is newly created and independent. This check was updated accordingly — see "Mount-count and independence correction assessment" below.
+>
+> **Correction (2026-08-06, same-day, round 2):** The technical design's round-1 `reviewer_display_label` proposal (one opaque combined string, sourced from `backend/config.py` `MEMBER_LABELS`) did not guarantee a visible reviewer role for every member, since Paraparan's label carries no role suffix. The technical design now resolves reviewer display name and role client-side via a new frontend `MEMBER_REGISTRY` (§6.2), rendered as two separate fields, with no backend field added. This check is updated accordingly — see "Reviewer identity/queryability assessment" (revised) below. The mandatory five-person review-gate wording in "Owner / reviewer" / "One next step" is also corrected.
 
 ## Purpose
 
@@ -95,10 +97,14 @@ Design review only. No code was written, no migration was run, no database was q
 
 **Result: the ambiguity is corrected. 0 remaining statements in either document imply mount reuse or panel repurposing.**
 
-## Reviewer identity/queryability assessment
+## Reviewer identity/queryability assessment (revised, round 2)
 
-- `reviewer_display_label` is sourced from the single existing backend registry (`backend/config.py:90-102` `MEMBER_LABELS`), not duplicated into the database or into a new frontend copy — confirmed by discovery finding no existing frontend-side member-label map beyond the authenticated user's own `displayLabel`.
-- This satisfies the "Reviewed by: `<name>` — `<role>`" card format directly, since every existing label already follows that exact shape.
+- The round-1 `reviewer_display_label` field is dropped (technical design §4/§6.3) — no backend schema or response-field change remains for reviewer identity display; `reviewer_member_key` alone (already returned, unchanged since REQ-CAL-REV-001) is sufficient.
+- Reviewer display name and role now resolve client-side via a new `MEMBER_REGISTRY` constant (technical design §6.2), rendered as two separate, always-populated visible fields ("Reviewed by" / "Reviewer role") — satisfying the requirement's card format without relying on a combined-string parse.
+- Evidence check: repository search confirmed no single existing frontend JS registry unifies member name+role today — values were scattered across `backend/config.py` `MEMBER_LABELS` (combined string, no role for Paraparan), the sidebar nav markup (separate short name/role spans, Paraparan's role already "Auditor"), and Paraparan's own tab header (`"Paraparan — Auditor"`). `MEMBER_REGISTRY` consolidates these into one place using only values that already existed somewhere in the repository — none fabricated.
+- Paraparan's role is explicitly set to "Auditor," matching the task's directive and the frontend's own pre-existing terminology (`index.html` sidebar sub-label and tab header) — not sourced from `backend/config.py`'s still-role-less `MEMBER_LABELS["paraparan"]`. This is documented as a registry-data gap in `backend/config.py` (technical design §6.2, §12 item 5), not silently resolved there.
+- Unknown-key fallback ("Unknown"/"Unknown") is specified for any `reviewer_member_key` not among the 5 known keys — never a fabricated name or role (technical design §6.2).
+- No reviewer display identity is written to `management_aios.staff_review_summaries` or any other table (technical design §6.4, §10) — confirmed no schema/migration change accompanies this design.
 
 ## State model assessment
 
@@ -112,8 +118,8 @@ Design review only. No code was written, no migration was run, no database was q
 
 ## Test plan assessment
 
-- 48 proposed tests (revised from the original 40 to explicitly enumerate all 5 per-panel mount-removal checks and dedicated-panel-independence checks separately, per the correction task's Phase I), exceeding the 30-test minimum referenced in this task and matching the REQ-CAL-REV-001 precedent threshold.
-- Covers all 7 required categories (navigation, authorization, employee/filters, ownership, display, state, regression) named in the task's Phase 9, plus the 18 explicitly required correction-task test items (technical design §11 mapping table).
+- 52 proposed tests (revised from 40 → 48 in round 1 to explicitly enumerate all 5 per-panel mount-removal and dedicated-panel-independence checks, then 48 → 52 in round 2 to add 4 new reviewer-identity-resolution tests), exceeding the 30-test minimum referenced in this task and matching the REQ-CAL-REV-001 precedent threshold.
+- Covers all 7 required categories (navigation, authorization, employee/filters, ownership, display, state, regression), the 18 mount/independence test items from round 1, and the 10 reviewer-role-display test items from round 2 (technical design §11 mapping tables).
 
 ## PASS / AMBER / FAIL rule
 
@@ -123,27 +129,32 @@ This check PASSES if and only if:
 - the additive API change leaves the one identified existing default-behavior test unaffected;
 - 0 application/database files were touched producing the requirement, design, or this check;
 - the protected path was never opened;
-- 0 remaining ambiguity about mount reuse — member-panel mounts = 0, dedicated-panel mounts = 1, total = 1, stated explicitly in both the requirement and technical design (see "Mount-count and independence correction assessment" above).
+- 0 remaining ambiguity about mount reuse — member-panel mounts = 0, dedicated-panel mounts = 1, total = 1, stated explicitly in both the requirement and technical design (see "Mount-count and independence correction assessment" above);
+- reviewer display name and role are guaranteed as two separate, always-populated fields for all 5 members with 0 database duplication and 0 fabricated values (see "Reviewer identity/queryability assessment" above).
 
-All six conditions are met.
+All seven conditions are met.
 
 **Result: PASS.**
 
-## Owner / reviewer
+## Owner / reviewer (corrected, round 2 — review-gate)
 
 - Prepared by: Mareenraj (builder).
-- Review routing (per CLAUDE.md §18): this design touches Mayurika's, Suman's, Arun's, Rajiv's, and Paraparan's tab surfaces (mount removal) and the shared Review Summaries feature itself — route to each affected Management Team member for their own tab's regression sign-off, with Mayurika as HR domain owner for the overall Review Summaries feature (continuing REQ-CAL-REV-001's ownership).
+- **Review-gate correction:** the prior wording implying a mandatory five-person Management Team sign-off gate is replaced. Review responsibilities are:
+  - **Business requirement approval**: completed — by the repository owner/user.
+  - **Technical review**: required for the API (`include_all_reviewers`) and navigation implementation.
+  - **Queryability review**: required for the reviewer/reviewed-employee display and filtering design, including the `MEMBER_REGISTRY` terminology decision (technical design §6.2).
+  - **Additional domain-member consultation** (Mayurika, Suman, Arun, Rajiv, Paraparan individually): optional, unless separately requested — not a mandatory implementation gate.
 
 ## Status
 
-READY FOR MANAGEMENT TEAM REVIEW — not yet implemented, not yet deployed.
+READY FOR TECHNICAL AND QUERYABILITY REVIEW — not yet implemented, not yet deployed.
 
 ## Limitations
 
-Same as `docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md` §12 — no live browser walkthrough, no live database query (none needed, no schema change proposed), no code executed this session.
+Same as `docs/2026-08-06_calendar-review-summaries-dedicated-tab-technical-design.md` §12 — no live browser walkthrough, no live database query (none needed, no schema change proposed), no code executed this session, plus the `backend/config.py` Paraparan-role registry-data gap documented there (item 5).
 
 ## One next step
 
-Circulate this design to Mayurika (HR/feature domain owner, whose tab also loses its embedded mount — 0 remaining, same as the other 4) and to Suman, Arun, Rajiv, and Paraparan (as owners of the other 4 tabs losing their embedded mount) for review and sign-off.
+Technical and queryability review of this corrected design (PASS rule above, all seven conditions met) before implementation begins. Additional domain-member consultation remains available on request but is not a precondition.
 
 **Branch-strategy correction:** implementation branch strategy is not defined by this design and must follow the repository owner's explicit instruction at implementation start.
