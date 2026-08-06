@@ -3,7 +3,7 @@ name: review-summary-pdf-export-technical-design
 type: technical-design-document
 created: 2026-08-06
 created-by: Mareenraj (builder)
-status: READY FOR TECHNICAL AND QUERYABILITY REVIEW — not yet implemented
+status: Gate A PASSED (reportlab==5.0.0 verified, 2026-08-06) — Gate B authorized, not yet started; not yet implemented, not yet deployed
 requirement-id: REQ-CAL-REV-PDF-003
 ---
 
@@ -12,6 +12,8 @@ requirement-id: REQ-CAL-REV-PDF-003
 > **Correction (2026-08-06, same-day, round 1):** Four corrections to this document, all documentation-only — no application code, dependency, or database object was created, executed, installed, or queried producing this correction. (1) §9's original "empty result still produces a PDF" behavior is corrected: **no PDF is generated for zero matching records** — the route now returns 404 (§5.4, §11, reasoning below), matching the requirement's new §5.10 decisions. (2) §5.1's routing-collision avoidance is strengthened with an explicit, additional source-order safeguard (declare the export route before `/{summary_id}` in the router file) on top of the existing two-segment-path structural fix — defense in depth, not a replacement. (3) New §5.6 records a mandatory ReportLab deployment-validation gate — `reportlab` remains the selected candidate library, but its production compatibility is explicitly unverified until a Vercel preview deployment proves it, with a documented fallback (stop and return to technical review — never silently substitute frontend generation or another library). (4) §7's filename-privacy control is corrected to state plainly that the filename is not free of identifiable information — see the requirement's own §5.8 correction. §16's test plan is expanded from 42 to 56 tests and §15's PASS rule gains three new conditions. See the companion validation report's own correction note for the full traceability update.
 >
 > **Correction (2026-08-06, same-day, round 2):** Two further corrections, both documentation-only — `backend/requirements.txt` was not modified, no dependency was installed, and no Vercel preview was deployed producing this correction. (1) Round 1's §5.6 stated the `reportlab` dependency pin as its *first* gate step and used illustrative version strings (`reportlab==4.x.y`, `reportlab~=4.x`) that read as an already-selected version — this is corrected: **no version is pinned, named, or implied as selected anywhere in this document.** §5.6 is restructured into three explicit sequential stages — **Gate A** (pre-implementation dependency preflight, in a throwaway environment, producing the verified exact version), **Gate B** (implementation, which applies that exact pin to `backend/requirements.txt` for the first time), **Gate C** (Vercel preview validation, only once Gate B's endpoint exists) — with an explicit "Final dependency-pin rule" stating the exact-pin requirement and rejecting unbounded/range specifiers as the implementation form. (2) Round 1's "One next step" and PASS-rule wording implied the full gate, including preview validation, would run "before implementation begins" — this mis-sequenced Gate C ahead of Gate B; it is corrected to state Gate A runs first (before implementation), Gate B second (implementation itself), and Gate C third (preview, only once an endpoint exists to preview). §16's test plan is reorganized into PREFLIGHT CHECKS / IMPLEMENTATION TESTS / PREVIEW TESTS categories (57 numbered checks, plus a 12-item non-numbered Gate C checklist) and §15's PASS rule gains two further conditions (thirteen total). See the companion validation report's own round-2 correction note for the full traceability update.
+>
+> **Update (2026-08-06, same-day, round 3 — not a correction, an execution record):** Gate A (§5.6) has now actually been run and **PASSED**. Full evidence: `validation/review-summary-pdf-reportlab-preflight-2026-08-06.md`; handover: `handover/2026-08-06__review-summary-pdf-reportlab-preflight-closure.md`. The verified exact version is **`reportlab==5.0.0`** — recorded in §5.6's new "Gate A result" box and in the "Final dependency-pin rule," and reflected in §12's `backend/requirements.txt` row and test 54. `backend/requirements.txt` itself remains unmodified — this document is the only place the version is currently recorded; Gate B applies the pin to that file for the first time. Gate B is authorized to begin using this exact version. Gate C remains fully unrun.
 
 ## 0. Requirement metadata / source
 
@@ -249,15 +251,28 @@ The response body is a standard `HTTPException(404, detail=...)` — identical s
 
 Same mutual-exclusivity rule as LIST (422 if both supplied), enforced inside `_build_review_summary_query` (§5.2) — the export route does not re-implement this check separately, so the two routes can never disagree about when it applies.
 
-## 5.6 ReportLab deployment-validation gate (corrected, round 2 — 2026-08-06 — gate sequencing and dependency pin)
+## 5.6 ReportLab deployment-validation gate (updated, round 3 — 2026-08-06 — Gate A PASS recorded)
 
-`reportlab` remains the **selected candidate library** (§3, §5.3) on first-principles grounds — pure Python, no system binary dependency, the same profile as this repository's already-adopted `openpyxl`. **Round 1** of this correction made the gate explicit and mandatory but stated the dependency pin as its *first* step, using illustrative version strings (`reportlab==4.x.y`, `reportlab~=4.x`) that read as if a specific version had already been selected. **Round 2 corrects this**: no version may be pinned, named, or implied as selected until a preflight installation has actually verified it works. The gate is restructured into three explicit, sequential stages — Gate A (pre-implementation), Gate B (implementation), Gate C (Vercel preview) — matching the natural dependency order: you cannot preview-deploy an endpoint that does not yet exist, and you should not implement against a library version nobody has confirmed installs and runs.
+`reportlab` remains the **selected candidate library** (§3, §5.3) on first-principles grounds — pure Python, no system binary dependency, the same profile as this repository's already-adopted `openpyxl`. **Round 1** of this correction made the gate explicit and mandatory but stated the dependency pin as its *first* step, using illustrative version strings (`reportlab==4.x.y`, `reportlab~=4.x`) that read as if a specific version had already been selected. **Round 2 corrected this**: no version was pinned, named, or implied as selected until a preflight installation had actually verified it works. **Round 3 records that Gate A has now run and passed** — see "Gate A result (2026-08-06)" immediately below.
 
-**`reportlab` must not be described or treated as production-compatible until Gate C passes. No specific version string is approved for use in `backend/requirements.txt` by this document — the exact version is Gate A's output, not this document's input.**
+**`reportlab` must not be described or treated as production-compatible until Gate C passes.** Gate A's result below establishes the exact version Gate B is authorized to pin — it does not itself authorize deployment or a production-compatibility claim.
 
-### Gate A — pre-implementation dependency preflight
+### Gate A result (2026-08-06)
 
-Performed **before** any application code for this feature is written. Confirms a candidate `reportlab` version actually installs and generates valid PDFs, independent of this repository's own dependency file.
+**PASS.** Full evidence: `validation/review-summary-pdf-reportlab-preflight-2026-08-06.md`; handover: `handover/2026-08-06__review-summary-pdf-reportlab-preflight-closure.md`.
+
+- **Exact verified version: `reportlab==5.0.0`** — selected via a live PyPI JSON-API query (not from memory or from this document's own prior illustrative examples), filtered to non-prerelease, non-yanked releases; the most recent qualifying release, uploaded 2026-06-18. Ships a universal `py3-none-any` wheel (`requires_python >=3.9,<4`), consistent with this repository's own declared floor (`pyproject.toml`: `requires-python = ">=3.12"`).
+- Installed cleanly in a throwaway environment (Windows 10, Python 3.14.4) outside all tracked repository content. Transitive dependencies resolved: `pillow==12.3.0`, `charset-normalizer==3.4.9`.
+- Synthetic single-page PDF: 2,207 bytes, valid `%PDF-` signature, 1 page. Synthetic multi-page PDF: 3,966 bytes, valid `%PDF-` signature, 2 pages. Both generated from entirely fabricated data ("Test Employee", "Test Reviewer", invented dates/text) — no production data of any kind.
+- `backend/requirements.txt` was **not** modified by Gate A — this document is the only place `reportlab==5.0.0` is currently recorded. **Gate B applies this exact pin to `backend/requirements.txt` for the first time.**
+- **Gate C watch item**: `pillow`'s wheel here (`cp314-win_amd64`) is platform/interpreter-specific — its availability as a prebuilt wheel on the actual Vercel runtime target (a different OS/Python-version combination) is unconfirmed by Gate A and must be watched at Gate C.
+- Exact Vercel Python interpreter version remains undeclared in this repository (no `runtime.txt`, `.python-version`, or `vercel.json` pythonVersion field) — Gate A validated the local environment only, consistent with its own scope; full Vercel runtime compatibility remains unverified until Gate C.
+
+**This result authorizes Gate B (implementation) using `reportlab==5.0.0`, and only that version, unless a future re-run of Gate A verifies a different one.**
+
+### Gate A — pre-implementation dependency preflight (executed 2026-08-06 — PASS, see "Gate A result" above)
+
+Performed **before** any application code for this feature is written. Confirms a candidate `reportlab` version actually installs and generates valid PDFs, independent of this repository's own dependency file. This subsection describes the general procedure; the actual executed result (exact version, environment, byte/page counts) is recorded in the "Gate A result (2026-08-06)" box above and in full in `validation/review-summary-pdf-reportlab-preflight-2026-08-06.md`.
 
 **Allowed:**
 - Create a temporary clean virtual environment **outside tracked repository assets**, or in a confirmed git-ignored temporary path — never inside `backend/` in a way that could be accidentally committed.
@@ -318,13 +333,13 @@ If `reportlab` fails Gate A (will not install or will not generate a valid synth
 - silently substitute a different backend PDF library (`weasyprint`, `wkhtmltopdf`, `fpdf`, or any other) without a new technical review — each has its own compatibility profile that has not been evaluated, and swapping libraries silently would re-introduce exactly the unverified-compatibility risk this gate exists to catch;
 - claim any degree of "production ready" status for the PDF export feature while any gate above is unresolved or has failed.
 
-### Final dependency-pin rule (corrected, round 2)
+### Final dependency-pin rule (updated, round 3 — verified version recorded)
 
 1. Gate A's preflight selects a candidate `reportlab` version and verifies it installs cleanly and generates valid single-page and multi-page synthetic PDFs.
 2. The candidate must install successfully in a clean Python environment matching this project's supported runtime as closely as practical (matching Python version, matching OS family where feasible).
 3. Synthetic single-page and multi-page PDF generation, and a valid `%PDF-` signature, must all pass in that same preflight.
 4. Only then — in Gate B — is the exact successful version pinned: `reportlab==<verified-version>`, using the literal version number Gate A actually verified.
-5. **No version may be selected or claimed anywhere in this repository's tracked documentation or dependency files until Gate A has actually run and produced that verified number.** This document does not itself state a version, illustrative or otherwise, for that reason.
+5. Gate A has now run (2026-08-06) and verified **`reportlab==5.0.0`** — see "Gate A result" above. This is the only version Gate B is authorized to pin, unless a future re-run of Gate A verifies a different one.
 6. An unbounded or open-ended dependency specifier is never the approved implementation form — none of `reportlab`, `reportlab>=4`, or a bare compatible-release specifier (e.g. `~=4.x`) may be what actually lands in `backend/requirements.txt`. A syntactically valid compatible-release expression may be used *only* to explain pin syntax in prose (as this rule itself does, describing the *shape* `package==version` takes), never as a stand-in for the real, Gate-A-verified exact pin.
 
 This gate is a precondition for implementation sign-off, not something this design session can complete itself — no dependency was installed, no synthetic PDF was generated, and no Vercel preview was deployed while producing this design or this correction (§14 confirms). `backend/requirements.txt` itself was not modified by this correction, per this task's explicit instruction.
@@ -451,7 +466,7 @@ Unaffected by this design, confirmed by inspection:
 |---|---|
 | `backend/routers/staff_review_summaries.py` | Extract `_build_review_summary_query` from `list_staff_review_summaries` (behavior-preserving refactor); add new `GET /export/pdf` route, **declared before** the existing `GET /{summary_id}` route in source order (§5.1, corrected round 1 — defense-in-depth route-ordering safeguard); route returns 404 for a zero-record match (§5.4, corrected round 1) |
 | `backend/review_summary_pdf_export.py` (**new**) | `build_review_summary_pdf()`, `build_review_summary_pdf_filename()`, reviewer-label resolution helper — mirrors `backend/xlsx_export.py`'s existing module shape |
-| `backend/requirements.txt` | **In Gate B only** (§5.6), add an exact-pinned `reportlab==<verified-version>` line, using the literal version Gate A's preflight actually verified — never a range or illustrative version string. Pure-Python PDF library; **not installed and this file not modified this session or this correction round**, per this task's explicit instruction; production compatibility remains unverified until Gate C passes |
+| `backend/requirements.txt` | **In Gate B only** (§5.6), add the exact-pinned line `reportlab==5.0.0` — the version Gate A's preflight verified on 2026-08-06 (`validation/review-summary-pdf-reportlab-preflight-2026-08-06.md`), never a range or illustrative version string. Pure-Python PDF library; **not installed and this file not modified by Gate A or any prior correction round**, per this task's explicit instruction; production compatibility remains unverified until Gate C passes |
 | `web-view/js/review-summaries.js` | Add one "Download PDF" button near the Review History filters (§ "3. Review history" panel); wire it to a new `downloadReviewSummariesPdf()` function following `downloadWeeklySchedule()`'s existing Blob-download pattern; button enabled/disabled state driven by `state.selectedStaff` |
 | `web-view/css/review-summaries.css` | Small addition for the new button's placement/styling within the existing filters row |
 | `backend/tests/test_staff_review_summaries.py` | New tests for `/export/pdf` (§ test plan below); existing tests unmodified (the LIST extraction is behavior-preserving) |
@@ -478,7 +493,7 @@ Unaffected by this design, confirmed by inspection:
 
 ## 15. Approval / status
 
-**Status: READY FOR TECHNICAL AND QUERYABILITY REVIEW (corrected, round 2 — 2026-08-06).**
+**Status: Gate A PASSED — `reportlab==5.0.0` verified (2026-08-06, `validation/review-summary-pdf-reportlab-preflight-2026-08-06.md`) — Gate B authorized, not yet started (updated, round 3).**
 
 ### Numeric pass/fail rule (corrected, round 2 — dependency-pin and gate-sequencing conditions restated)
 
@@ -571,7 +586,7 @@ All thirteen conditions are met.
 53. None of NIC, token, summary text, reviewer name, reviewer role, personal email, phone number, staff UUID, summary UUID, or any other database ID ever appears in the generated filename (expands test 27 into the requirement's full itemized list, requirement §5.8 decision 24).
 
 ### PREFLIGHT CHECKS — Gate A, run before implementation begins (4, renumbered from round 1's 6; corrected, round 2)
-54. A clean virtual environment (outside tracked repository assets) installs the candidate `reportlab` version selected for preflight (§5.6 Gate A) — this check has no bearing on `backend/requirements.txt`, which is not touched until Gate B.
+54. A clean virtual environment (outside tracked repository assets) installs the candidate `reportlab` version selected for preflight (§5.6 Gate A) — **executed and PASSED 2026-08-06 with `reportlab==5.0.0`**, `validation/review-summary-pdf-reportlab-preflight-2026-08-06.md` — this check has no bearing on `backend/requirements.txt`, which is not touched until Gate B.
 55. `build_review_summary_pdf()` (as it will be implemented in Gate B) generates a valid single-page PDF when exercised against synthetic, non-production fixture data (§5.6 Gate A).
 56. `build_review_summary_pdf()` generates a valid multi-page PDF from synthetic, non-production fixture data engineered to exceed one page (§5.6 Gate A), without clipping.
 57. The generated bytes from both checks above begin with the standard PDF signature (`%PDF-`).
@@ -604,10 +619,10 @@ Tests 1-53 above (Authorization, Filters, Content, File safety, Layout and regre
 ## 17. Review gate and next step
 
 - **Business requirement approval**: completed — by the repository owner/user (this session's REQ-CAL-REV-PDF-003 approval, including its round-1 and round-2 corrections).
-- **Technical review**: required for the new route, the `_build_review_summary_query` extraction, the route-declaration-order safeguard (§5.1), the empty-result 404 design (§5.4), and the `reportlab` dependency choice — **specifically gated on Gate A (pre-implementation preflight) passing before implementation begins, and on Gate C (Vercel preview) passing before any production-compatibility claim is made; this is the one open follow-up, sequenced as three explicit stages rather than a single advisory note (corrected, round 2).**
+- **Technical review**: required for the new route, the `_build_review_summary_query` extraction, the route-declaration-order safeguard (§5.1), the empty-result 404 design (§5.4), and the `reportlab` dependency choice — **Gate A (pre-implementation preflight) has now passed (2026-08-06, `validation/review-summary-pdf-reportlab-preflight-2026-08-06.md`), verifying `reportlab==5.0.0`; Gate C (Vercel preview) remains the one open follow-up and must pass before any production-compatibility claim is made (updated, round 3).**
 - **Queryability review**: not applicable in the REQ-CAL-REV-TAB-002 sense (no new reviewer-identity terminology decision is introduced here — §6 reuses the already-approved Paraparan="Auditor" decision verbatim).
 - **Additional domain-member consultation** (Mayurika, Suman, Arun, Rajiv, Paraparan individually): optional, unless separately requested by the repository owner — not a mandatory implementation gate, consistent with CLAUDE.md §18 and REQ-CAL-REV-TAB-002's own review-gate correction.
 
 **Branch strategy**: not defined by this design and must follow the repository owner's explicit instruction at implementation start. This design does not assume `main` or any feature branch, and no branch was created while producing this design.
 
-**One next step**: run §5.6's Gate A (pre-implementation dependency preflight — clean throwaway environment, candidate `reportlab` version, synthetic single-/multi-page PDF generation, `%PDF-` signature check) and record its exact verified version. Gate A's PASS is the precondition for beginning implementation (Gate B); Gate C (Vercel preview validation) follows only once Gate B produces a working endpoint, and only Gate C's PASS authorizes any production-compatibility claim or production deployment.
+**One next step**: begin Gate B — pin `reportlab==5.0.0` (the Gate-A-verified exact version) in `backend/requirements.txt`, implement `backend/review_summary_pdf_export.py` and the `/export/pdf` route per §5.1-§5.5, and run the full Gate B test suite (53 tests) plus existing regression suites. Gate C (Vercel preview validation) follows only once Gate B produces a working endpoint, and only Gate C's PASS authorizes any production-compatibility claim or production deployment.
