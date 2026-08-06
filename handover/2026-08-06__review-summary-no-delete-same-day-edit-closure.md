@@ -62,7 +62,7 @@ See `validation/review-summary-no-delete-same-day-edit-check-2026-08-06.md` for 
 
 ## 7. Git
 
-Commit: `Enforce Review Summary same-day edit lock` — see `git log -1` on `main` for the hash (filled in at commit time; this handover document is written before the commit that includes it, matching this repo's own documented convention of listing files "created by/for" a change).
+Commit: `ef0efb1` — "Enforce Review Summary same-day edit lock" (`main`, local only). 13 files changed, 1231 insertions(+), 164 deletions(-).
 
 **Push status: withheld.** Per explicit instruction, `git push` was not run. The implementation report (this handover + the validation check doc) is for review before any push.
 
