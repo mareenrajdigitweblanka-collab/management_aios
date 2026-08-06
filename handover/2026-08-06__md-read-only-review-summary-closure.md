@@ -87,7 +87,7 @@ web-view/js/review-summaries.js
 web-view/js/review-summaries.test.mjs
 ```
 
-Commit message: `Add MD read-only Review Summary access`. Commit hash recorded in a same-day follow-up commit to this file (matching this repo's own established convention — see `157a594 Record commit hash in Review Summary edit-lock handover`).
+Commit: `238f909` — "Add MD read-only Review Summary access". 17 files changed, 1584 insertions(+), 32 deletions(-).
 
 **Push status: NOT pushed.** Per explicit instruction, this implementation report must be reviewed before any push.
 
