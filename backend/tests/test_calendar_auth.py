@@ -254,5 +254,27 @@ class CorsPreflightTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class CorsExposeHeadersTests(unittest.TestCase):
+    """REQ-CAL-REV-PDF-003-FIX-02 — proven root cause of the production
+    "review-summaries.pdf" filename defect: Content-Disposition was not in
+    CORSMiddleware's expose_headers, so the cross-origin frontend's
+    res.headers.get('Content-Disposition') always returned null even
+    though the header was present on the wire. Access-Control-Expose-
+    Headers is only set by Starlette on the actual response, not on an
+    OPTIONS preflight — so this exercises a real GET with an Origin
+    header, not client.options(...)."""
+
+    def test_actual_response_exposes_content_disposition_header(self):
+        with patched_calendar_auth_env():
+            with TestClient(app) as client:
+                response = client.get(
+                    "/health",
+                    headers={"Origin": "https://management-aios.vercel.app"},
+                )
+        self.assertEqual(response.status_code, 200)
+        exposed = response.headers.get("access-control-expose-headers", "")
+        self.assertIn("content-disposition", exposed.lower())
+
+
 if __name__ == "__main__":
     unittest.main()

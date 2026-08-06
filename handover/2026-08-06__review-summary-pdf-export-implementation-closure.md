@@ -3,7 +3,7 @@ name: review-summary-pdf-export-implementation-handover
 type: handover
 scope: management_aios — Employee Review Summary PDF export, Gate B implementation (REQ-CAL-REV-PDF-003)
 created: 2026-08-06
-status: REQ-CAL-REV-PDF-003-FIX-01 — missing production button root-caused to unpushed commits (no code defect); repository owner authorized direct push to origin/main (triggers production deploy); all automated tests pass with zero regressions (723 backend/721 passed with 2 pre-existing unrelated failures; 283/283 frontend, was 279, +4 production-hardening tests) — see §§16-22
+status: REQ-CAL-REV-PDF-003-FIX-02 — filename defect root-caused to missing CORS expose_headers (Content-Disposition), fixed; PDF layout redesigned to management-report style with numbered records, confidentiality footer, and page numbering; repository owner authorized direct push to origin/main (triggers production deploy); all automated tests pass with zero regressions (743 backend/741 passed with 2 pre-existing unrelated failures; 297/297 frontend, was 283, +14 new tests) — see §§23-35
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending
 ---
@@ -178,6 +178,79 @@ Exactly one button, correctly placed immediately after the filters and before hi
 
 The repository owner explicitly authorized pushing the verified fix directly to `origin/main` for this task, acknowledging that push triggers the production Vercel deployment (confirmed §13). No feature branch was created, per instruction.
 
-## 22. One next step
+## 22. One next step (superseded — see REQ-CAL-REV-PDF-003-FIX-02 below)
 
-Push local `main` to `origin/main`, then verify: Vercel deployment status Ready, deployed commit matches final `origin/main`, production frontend/backend both serve the PDF feature, no startup/dependency error — full results to be appended to this handover's post-push section once the push completes.
+Superseded: the filename and layout defects addressed in FIX-02 below were reported after this push. See FIX-02's own "One next step."
+
+---
+
+# REQ-CAL-REV-PDF-003-FIX-02 — Filename Defect and Management-Friendly Layout Redesign
+
+## 23. What this fix task was
+
+Two defects reported from a production screenshot after the FIX-01 push: (1) the browser Save As dialog showed the literal fallback string `review-summaries.pdf` instead of an employee-name/date-based filename; (2) the generated PDF was structurally valid but visually plain (weak heading hierarchy, unstructured employee/filter details, no clear per-record sections, timestamps at the same weight as content, no confidentiality footer, no page numbering). Fixed directly on local `main`, per explicit instruction, with push to `origin/main` gated on all tests passing.
+
+## 24. Root cause (filename defect) — exactly one, proven
+
+**CORS `expose_headers` missing `Content-Disposition`.** The frontend's exact header-read code fell back to the literal string `'review-summaries.pdf'` whenever `res.headers.get('Content-Disposition')` returned `null` — which is exactly what happens on a cross-origin `fetch()` response when the response header isn't in the browser's small CORS-safelisted set and the server hasn't explicitly exposed it via `Access-Control-Expose-Headers`. A repository-wide search confirmed `expose_headers` was absent from `backend/main.py`'s `CORSMiddleware` call (Starlette default: `[]`). The header was present on the wire the entire time — the backend's filename-generation logic was never the defect. This is root cause #3 of the task's own 7-candidate list; no other candidate was spuriously "fixed."
+
+## 25. Files changed in this fix
+
+| File | Change |
+|---|---|
+| `backend/main.py` | Added `expose_headers=["Content-Disposition"]` to the existing `CORSMiddleware` call — the one-line fix for the proven root cause. No other CORS setting changed |
+| `backend/review_summary_pdf_export.py` | Filename generation rewritten: `Review_Summary_<Sanitized_Employee_Name>_<YYYY-MM-DD>.pdf` (was `review-summaries_<name>_<date>.pdf`); spaces now become underscores (was: preserved); empty-after-sanitization fallback is now `Employee` (was: `employee`); new `build_content_disposition_header()` emits both `filename="..."` (ASCII-transliterated) and `filename*=UTF-8''...` (percent-encoded, true UTF-8) per RFC 5987/6266; new `reviewer_scope_label_for()` returns the combined "Name — Role" scope label; full PDF layout redesign (see §27) |
+| `backend/routers/staff_review_summaries.py` | Export route now calls `build_content_disposition_header()`/`reviewer_scope_label_for()` (were `build_review_summary_pdf_filename()`/a bare `resolve_reviewer(...)["displayName"]`); response headers set directly, unchanged authorization/filtering behavior |
+| `backend/tests/test_review_summary_pdf_export.py` | Filename-format tests rewritten for the new format; new `ContentDispositionHeaderTestCase` (5 tests); new `reviewer_scope_label_for` test; new `PdfLayoutRedesignTestCase` (10 tests: numbering, footer, page numbers, all 4 date-scope phrasings, employee-details section) |
+| `backend/tests/test_calendar_auth.py` | New `CorsExposeHeadersTests` — a real `GET /health` with an `Origin` header (not an OPTIONS preflight) confirming `Access-Control-Expose-Headers` includes `Content-Disposition` |
+| `web-view/js/review-summaries.js` | New `parseReviewSummaryPdfFilename()` (prefers `filename*=UTF-8''`, falls back to `filename="..."`, then a generated fallback) and `buildFallbackReviewSummaryPdfFilename()`; `downloadReviewSummariesPdf()`'s inline 2-line regex/fallback replaced with a call to the new parser — no other behavior in that function changed |
+| `web-view/js/review-summaries.test.mjs` | 14 new tests: filename-parser unit tests (UTF-8 preference, percent-decoding, hostile-header sanitization, extension guarantee, malformed-header fallback), fallback-filename unit tests, end-to-end anchor-`download` assertions (UTF-8 preferred, missing-header fallback, token-never-in-filename) |
+
+No file under `member-aios/mayurika-hr/staff-data/` (protected) was opened or touched. No database model, schema, or migration file changed. `validation/staff-roster-employee-number-vs-staff-code-cross-system-comparison-2026-08-06.md` (unrelated) was not opened, modified, or staged.
+
+## 26. Authoritative pattern — do not duplicate
+
+- The filename is generated **once**, server-side, by `build_review_summary_pdf_filename()`/`build_content_disposition_header()` (`review_summary_pdf_export.py`). The frontend's `parseReviewSummaryPdfFilename()` reads whichever form the server sent; its own generated-fallback path (`buildFallbackReviewSummaryPdfFilename()`) is a last resort for a genuinely unusable header, not a second authoritative filename generator — do not let the two drift into different sanitization rules without updating both.
+- `expose_headers` on `CORSMiddleware` is the single mechanism controlling which response headers cross-origin JavaScript can read. If a future feature adds another header the frontend needs to read from a `fetch()` response, it must be added to this same list — do not assume `allow_headers` (a request-header setting) has any effect on response-header visibility.
+- Reviewer scope for the PDF is now `reviewer_scope_label_for(member_key)` ("Name — Role"), not a bare `resolve_reviewer(...)["displayName"]`. Do not reintroduce the bare-name form for this specific label.
+- The record-heading block (`_record_heading_band` + meeting date + reviewer line + "Review Summary:" label) is deliberately the *only* part of each record wrapped in `KeepTogether`; the summary body and "Record information" line are plain `Paragraph` flowables so long content can still paginate. Do not wrap an entire record (heading + full summary body) in `KeepTogether`/a `Table` — this reproduces the `LayoutError` hit and fixed during this task's own smoke-testing.
+- `_NumberedCanvas` (the "Page X of Y" mechanism) is the standard ReportLab deferred-page-state recipe — do not replace it with a per-page running counter (which cannot know the true total until generation finishes).
+
+## 27. New PDF structure (detail)
+
+Title "Management AIOS" / subtitle "Employee Review Summary"; boxed employee-details section (Reviewed employee, Total review records, Generated); boxed export-scope section (Reviewer scope as "Name — Role" or "All reviewers"; Date scope as one of 4 exact phrasings — "From X to Y" / "From X onward" / "Up to Y" / "All available dates"); each record as a shaded "Review N" banner, Meeting date, "Reviewed by: X · Reviewer role: Y", "Review Summary:" label, full summary body, and a smaller/muted "Record information: Created ... · Updated ..." line; every page footer shows "Confidential — Management Team Use" and "Page X of Y"; a running header appears on every page after the first.
+
+## 28. Verified this session
+
+- Baseline before this fix (post-FIX-01): full backend suite 723 total/721 passed/2 pre-existing failures; `review-summaries.test.mjs` 88/88; combined frontend 283/283.
+- After this fix: `test_review_summary_pdf_export.py` 67/67 (+19); `test_calendar_auth.py` 18/19 pass (+1 new passing test; the 1 failure is the same pre-existing, unrelated `test_missing_variable_fails_closed`, reconfirmed present on the unmodified tree via `git stash`); `test_staff_review_summaries.py` 88/88 (unchanged); full backend suite 743 total/741 passed/same 2 pre-existing failures (`test_missing_variable_fails_closed`, `test_pending_task_no_outcome` — both independently reconfirmed on the unmodified tree via `git stash` before concluding they were pre-existing); `review-summaries.test.mjs` 102/102 (+14); `navigation-structure.test.mjs` 16/16 (unchanged); Calendar frontend 179/179 (unchanged); combined frontend 297/297.
+- 9 fabricated-data PDFs generated, rendered to PNG at 150 DPI via PyMuPDF (fitz) 1.28.0, and visually inspected as rendered images before every PDF and PNG was deleted — full scenario table in the companion validation report's FIX-02 section.
+- A `LayoutError` was hit once during smoke-testing (before the formal test suite was written) when an entire record, including its summary body, was wrapped in a single-row `Table`; fixed by restructuring so only the short, bounded heading block uses `KeepTogether`/`Table`, and the summary body is a plain `Paragraph` — re-verified with a 3-page forced-multi-page smoke test before writing the formal `test_long_fabricated_content_generates_multiple_pages`-style assertions.
+
+## 29. Database/schema changes
+
+**0.**
+
+## 30. Production writes
+
+**0.** No PostgreSQL connection was made. No production Review Summary record was created, read for content, updated, or deleted.
+
+## 31. Production records changed
+
+**0.**
+
+## 32. Protected path excluded
+
+`member-aios/mayurika-hr/staff-data/` was not opened or modified.
+
+## 33. Unrelated roster file excluded
+
+`validation/staff-roster-employee-number-vs-staff-code-cross-system-comparison-2026-08-06.md` was not opened, modified, deleted, staged, or committed.
+
+## 34. Push authorization
+
+The repository owner explicitly authorized working directly on `main` and pushing the verified fix to `origin/main` for this task, acknowledging that push triggers the production Vercel deployment. No feature branch was created, per instruction.
+
+## 35. One next step
+
+Push local `main` to `origin/main`, then verify: Vercel deployment status Ready, deployed commit matches final `origin/main` for both the frontend and backend projects, the production export response exposes `Content-Disposition` in `Access-Control-Expose-Headers`, and the production frontend downloads a PDF named `Review_Summary_<Employee>_<Date>.pdf` with the redesigned layout — full results to be appended to this handover's post-push section once the push completes.

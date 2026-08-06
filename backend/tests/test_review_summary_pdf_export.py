@@ -26,9 +26,11 @@ from pypdf import PdfReader
 
 from backend.config import MEMBER_DIRECTORY, MEMBER_LABELS
 from backend.review_summary_pdf_export import (
+    build_content_disposition_header,
     build_review_summary_pdf,
     build_review_summary_pdf_filename,
     resolve_reviewer,
+    reviewer_scope_label_for,
 )
 
 
@@ -177,57 +179,74 @@ class ReviewerIdentityResolutionTestCase(unittest.TestCase):
 
 
 class FilenameSanitizationTestCase(unittest.TestCase):
-    """Phase 10 — filename generation. Every case here is a fabricated
-    employee display name, never real staff data."""
+    """REQ-CAL-REV-PDF-003-FIX-02 — filename generation. Every case here is
+    a fabricated employee display name, never real staff data. Format:
+    Review_Summary_<Sanitized_Employee_Name>_<YYYY-MM-DD>.pdf"""
 
     def _sanitized(self, name):
         full = build_review_summary_pdf_filename(name, date(2026, 8, 6))
         # Strip the fixed prefix/suffix to isolate just the sanitized
         # employee-name component under test.
-        return full[len("review-summaries_"):-len("_2026-08-06.pdf")]
+        return full[len("Review_Summary_"):-len("_2026-08-06.pdf")]
 
     def test_normal_name_is_sanitized_correctly(self):
         result = self._sanitized("Test Employee")
-        self.assertEqual(result, "Test Employee")
+        self.assertEqual(result, "Test_Employee")
 
     def test_filename_pattern_is_exact(self):
-        full = build_review_summary_pdf_filename("Test Employee", date(2026, 8, 6))
-        self.assertEqual(full, "review-summaries_Test Employee_2026-08-06.pdf")
+        full = build_review_summary_pdf_filename("Mareenraj Robinsan Selvarajah", date(2026, 8, 6))
+        self.assertEqual(full, "Review_Summary_Mareenraj_Robinsan_Selvarajah_2026-08-06.pdf")
 
-    def test_spaces_are_preserved_not_unsafe(self):
-        self.assertIn(" ", self._sanitized("Test Employee Two"))
+    def test_spaces_become_underscores(self):
+        result = self._sanitized("Test Employee Two")
+        self.assertEqual(result, "Test_Employee_Two")
+        self.assertNotIn(" ", result)
 
     def test_apostrophe_is_removed(self):
         result = self._sanitized("Test O'Brien")
         self.assertNotIn("'", result)
 
-    def test_forward_slash_is_replaced(self):
+    def test_forward_slash_is_removed(self):
         result = self._sanitized("Test/Employee")
         self.assertNotIn("/", result)
 
-    def test_backslash_is_replaced(self):
+    def test_backslash_is_removed(self):
         result = self._sanitized("Test\\Employee")
         self.assertNotIn("\\", result)
 
-    def test_colon_is_replaced(self):
-        result = self._sanitized("Test:Employee")
-        self.assertNotIn(":", result)
+    def test_colon_and_reserved_characters_are_removed(self):
+        result = self._sanitized("Test:Employee*Two?<>|")
+        for ch in (":", "*", "?", "<", ">", "|"):
+            self.assertNotIn(ch, result)
 
-    def test_control_characters_are_removed(self):
+    def test_cr_lf_header_injection_is_blocked(self):
         result = self._sanitized("Test\r\nEmployee\t")
         self.assertNotIn("\r", result)
         self.assertNotIn("\n", result)
         self.assertNotIn("\t", result)
+        full = build_review_summary_pdf_filename("Test\r\nEmployee", date(2026, 8, 6))
+        self.assertNotIn("\r", full)
+        self.assertNotIn("\n", full)
 
-    def test_repeated_punctuation_is_collapsed(self):
+    def test_repeated_underscores_collapse(self):
         result = self._sanitized("Test////Employee")
-        self.assertNotIn("//", result)
-        self.assertNotIn("--", result)
+        self.assertNotIn("__", result)
 
-    def test_non_ascii_characters_do_not_crash_and_produce_safe_output(self):
+    def test_empty_sanitized_name_uses_employee_fallback(self):
+        full = build_review_summary_pdf_filename("////\\\\::::", date(2026, 8, 6))
+        self.assertEqual(full, "Review_Summary_Employee_2026-08-06.pdf")
+
+    def test_exactly_one_pdf_extension(self):
+        full = build_review_summary_pdf_filename("Test.pdf Employee.PDF", date(2026, 8, 6))
+        self.assertEqual(full.lower().count(".pdf"), 1)
+        self.assertTrue(full.endswith(".pdf"))
+
+    def test_date_uses_iso_format(self):
+        full = build_review_summary_pdf_filename("Test Employee", date(2026, 3, 4))
+        self.assertIn("_2026-03-04.pdf", full)
+
+    def test_non_ascii_characters_do_not_crash_and_produce_safe_ascii_filename(self):
         result = self._sanitized("Tëst Émployée")
-        # Non-ASCII is transliterated away for filename safety only — the
-        # PDF body (tested separately) still shows the original name.
         for ch in result:
             self.assertLess(ord(ch), 128)
 
@@ -241,14 +260,41 @@ class FilenameSanitizationTestCase(unittest.TestCase):
         self.assertNotIn("\r", result)
         self.assertNotIn("\n", result)
 
-    def test_empty_after_sanitization_falls_back_safely(self):
-        result = self._sanitized("////\\\\::::")
-        self.assertEqual(result, "employee")
-
     def test_forbidden_fields_never_appear_in_filename(self):
-        full = build_review_summary_pdf_filename("Test Employee", date(2026, 8, 6))
-        for forbidden in ("NIC", "@", "token", "summary", str(1234567890)):
-            self.assertNotIn(forbidden, full)
+        # Checked against the sanitized employee-name component only — the
+        # fixed "Review_Summary_" prefix legitimately contains "Summary".
+        result = self._sanitized("Test Employee")
+        for forbidden in ("NIC", "@", "token", "role", str(1234567890)):
+            self.assertNotIn(forbidden, result)
+
+
+class ContentDispositionHeaderTestCase(unittest.TestCase):
+    """REQ-CAL-REV-PDF-003-FIX-02 — the combined Content-Disposition value:
+    both an ASCII-safe filename= and an RFC 5987/6266 filename*=UTF-8''."""
+
+    def test_contains_attachment(self):
+        value = build_content_disposition_header("Test Employee", date(2026, 8, 6))
+        self.assertTrue(value.startswith("attachment;"))
+
+    def test_filename_form_present(self):
+        value = build_content_disposition_header("Test Employee", date(2026, 8, 6))
+        self.assertIn('filename="Review_Summary_Test_Employee_2026-08-06.pdf"', value)
+
+    def test_filename_star_utf8_form_present(self):
+        value = build_content_disposition_header("Test Employee", date(2026, 8, 6))
+        self.assertIn("filename*=UTF-8''", value)
+
+    def test_filename_star_preserves_non_ascii_via_percent_encoding(self):
+        value = build_content_disposition_header("José García", date(2026, 8, 6))
+        self.assertIn("%C3%A9", value)  # é
+        self.assertIn("%C3%AD", value)  # í
+        # The ASCII filename= form still exists and is transliterated.
+        self.assertIn('filename="Review_Summary_Jose_Garcia_2026-08-06.pdf"', value)
+
+    def test_cr_lf_can_never_appear_literally_in_the_header_value(self):
+        value = build_content_disposition_header("Test\r\nEmployee", date(2026, 8, 6))
+        self.assertNotIn("\r", value)
+        self.assertNotIn("\n", value)
 
 
 class PdfGenerationContentTestCase(unittest.TestCase):
@@ -352,12 +398,22 @@ class PdfGenerationContentTestCase(unittest.TestCase):
         self.assertIn("All reviewers", text)
 
     def test_filter_scope_included_specific_reviewer(self):
+        scope_label = reviewer_scope_label_for("mayurika")
         pdf_bytes = build_review_summary_pdf(
-            "Test Employee", "Mayurika", None, None,
+            "Test Employee", scope_label, None, None,
             datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
         )
         text = _extract_text(pdf_bytes)
-        self.assertIn("Reviewer scope: Mayurika", text)
+        self.assertIn("Reviewer scope", text)
+        self.assertIn(scope_label, text)
+        self.assertIn("—", scope_label)
+
+    def test_reviewer_scope_label_for_combines_name_and_role(self):
+        label = reviewer_scope_label_for("mayurika")
+        entry = MEMBER_DIRECTORY["mayurika"]
+        self.assertIn(entry["displayName"], label)
+        self.assertIn(entry["role"], label)
+        self.assertIn("—", label)
 
     def test_date_scope_included_when_supplied(self):
         pdf_bytes = build_review_summary_pdf(
@@ -452,6 +508,116 @@ class PdfGenerationContentTestCase(unittest.TestCase):
         finally:
             builtins.open = original_open
         self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
+
+
+class PdfLayoutRedesignTestCase(unittest.TestCase):
+    """REQ-CAL-REV-PDF-003-FIX-02 — management-friendly layout: numbered
+    records, confidentiality footer, page numbering, and date-scope
+    phrasing. All record content below is fabricated test data."""
+
+    def test_records_are_numbered_sequentially(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0),
+            [_fabricated_record(), _fabricated_record(), _fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Review 1", text)
+        self.assertIn("Review 2", text)
+        self.assertIn("Review 3", text)
+
+    def test_confidentiality_footer_present(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Confidential", text)
+        self.assertIn("Management Team Use", text)
+
+    def test_page_number_footer_present_single_page(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Page 1 of 1", text)
+
+    def test_page_number_footer_present_multi_page(self):
+        long_text = "Fabricated multi-page filler sentence. " * 400
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0),
+            [_fabricated_record(summary_text=long_text)],
+        )
+        reader = PdfReader(BytesIO(pdf_bytes))
+        total_pages = len(reader.pages)
+        self.assertGreaterEqual(total_pages, 2)
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Page 1 of " + str(total_pages), text)
+        self.assertIn("Page " + str(total_pages) + " of " + str(total_pages), text)
+
+    def test_meeting_date_and_reviewer_line_present(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0),
+            [_fabricated_record(meeting_date=date(2026, 5, 1))],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Meeting date: 2026-05-01", text)
+        self.assertIn("Reviewed by:", text)
+
+    def test_record_information_line_present(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Record information", text)
+
+    def test_date_scope_both_dates_supplied(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", date(2026, 1, 1), date(2026, 1, 31),
+            datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("From 2026-01-01 to 2026-01-31", text)
+
+    def test_date_scope_from_only(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", date(2026, 1, 1), None,
+            datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("From 2026-01-01 onward", text)
+
+    def test_date_scope_to_only(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, date(2026, 1, 31),
+            datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Up to 2026-01-31", text)
+
+    def test_date_scope_none_supplied(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0), [_fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("All available dates", text)
+
+    def test_employee_details_section_present(self):
+        pdf_bytes = build_review_summary_pdf(
+            "Test Employee", "All reviewers", None, None,
+            datetime(2026, 8, 6, 12, 0),
+            [_fabricated_record(), _fabricated_record()],
+        )
+        text = _extract_text(pdf_bytes)
+        self.assertIn("Reviewed employee", text)
+        self.assertIn("Total review records", text)
+        self.assertIn("2", text)
+        self.assertIn("Generated", text)
 
 
 if __name__ == "__main__":

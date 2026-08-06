@@ -70,9 +70,9 @@ from backend.config import SCHEDULE_TIMEZONE, VALID_MEMBER_KEYS
 from backend.database import get_db
 from backend.models import StaffDashboardRecord, StaffReviewSummary
 from backend.review_summary_pdf_export import (
+    build_content_disposition_header,
     build_review_summary_pdf,
-    build_review_summary_pdf_filename,
-    resolve_reviewer,
+    reviewer_scope_label_for,
 )
 from backend.routers.calendar_auth import get_verified_member
 from backend.schemas import (
@@ -424,9 +424,11 @@ def export_staff_review_summaries_pdf(
     if include_all_reviewers:
         reviewer_scope_label = "All reviewers"
     elif reviewer_member_key is not None:
-        reviewer_scope_label = resolve_reviewer(reviewer_member_key)["displayName"]
+        # "Mayurika — HR" (Phase 7, FIX-02) — the full "Name — Role" form
+        # for a specific-reviewer scope line, not just the bare name.
+        reviewer_scope_label = reviewer_scope_label_for(reviewer_member_key)
     else:
-        reviewer_scope_label = resolve_reviewer(acting_member)["displayName"]
+        reviewer_scope_label = reviewer_scope_label_for(acting_member)
 
     employee_label = staff.full_name or staff.calling_name or "Unknown staff record"
     generated_at_local = datetime.now(timezone.utc).astimezone(_COLOMBO)
@@ -439,13 +441,13 @@ def export_staff_review_summaries_pdf(
         generated_at_local=generated_at_local,
         records=records,
     )
-    filename = build_review_summary_pdf_filename(employee_label, date_type.today())
+    content_disposition = build_content_disposition_header(employee_label, date_type.today())
 
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": 'attachment; filename="' + filename + '"',
+            "Content-Disposition": content_disposition,
             "Cache-Control": "no-store",
         },
     )

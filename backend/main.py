@@ -52,6 +52,20 @@ app = FastAPI(title="Management AIOS — Member Schedule API", lifespan=lifespan
 # safe. allow_headers now includes Authorization alongside the pre-existing
 # Content-Type so the browser's CORS preflight (OPTIONS) for a mutation
 # request carrying that header succeeds.
+#
+# expose_headers=["Content-Disposition"] (REQ-CAL-REV-PDF-003-FIX-02,
+# 2026-08-06) — proven root cause of the production "review-summaries.pdf"
+# filename defect: the frontend (management-aios.vercel.app) and backend
+# (management-aios-api.vercel.app) are different origins, and a browser's
+# fetch() Response.headers only exposes a small CORS-safelisted set of
+# response headers to JavaScript by default (Cache-Control, Content-
+# Language, Content-Length, Content-Type, Expires, Last-Modified, Pragma).
+# Content-Disposition is not in that list, so res.headers.get('Content-
+# Disposition') silently returned null even though the header was present
+# on the wire — this single missing entry, not the filename-generation
+# logic itself, was the entire defect. Only this one header is exposed;
+# every other CORS setting (origins, methods, allow_headers, credentials)
+# is unchanged.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -59,6 +73,7 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Disposition"],
 )
 
 app.include_router(member_schedules_router)

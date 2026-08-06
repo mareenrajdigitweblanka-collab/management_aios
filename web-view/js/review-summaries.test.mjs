@@ -261,6 +261,111 @@ test('reviewedEmployeeLabel reads a history record\'s own reviewed_staff fields,
   assert.equal(sameName, 'Same Name');
 });
 
+/* REQ-CAL-REV-PDF-003-FIX-02 — parseReviewSummaryPdfFilename /
+   buildFallbackReviewSummaryPdfFilename unit tests. Every name below is
+   fabricated test data, never a real employee. */
+
+test('parseReviewSummaryPdfFilename prefers filename*=UTF-8\'\' over filename=', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var header = 'attachment; filename="Review_Summary_Jose_Garcia_2026-08-06.pdf"; ' +
+    "filename*=UTF-8''Review_Summary_Jos%C3%A9_Garc%C3%ADa_2026-08-06.pdf";
+  var result = mod.parseReviewSummaryPdfFilename(header, 'Fallback Name', '2026-08-06');
+  assert.equal(result, 'Review_Summary_José_García_2026-08-06.pdf');
+});
+
+test('parseReviewSummaryPdfFilename falls back to filename= when filename* is absent', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var header = 'attachment; filename="Review_Summary_Test_Employee_2026-08-06.pdf"';
+  var result = mod.parseReviewSummaryPdfFilename(header, 'Fallback Name', '2026-08-06');
+  assert.equal(result, 'Review_Summary_Test_Employee_2026-08-06.pdf');
+});
+
+test('parseReviewSummaryPdfFilename decodes percent-encoded UTF-8 in filename*', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var header = "attachment; filename*=UTF-8''Review_Summary_Na%C3%AFve_2026-08-06.pdf";
+  var result = mod.parseReviewSummaryPdfFilename(header, 'Fallback Name', '2026-08-06');
+  assert.equal(result, 'Review_Summary_Naïve_2026-08-06.pdf');
+});
+
+test('parseReviewSummaryPdfFilename strips path separators and control characters from a hostile header value', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var header = 'attachment; filename="../../etc/evil\r\n.pdf"';
+  var result = mod.parseReviewSummaryPdfFilename(header, 'Fallback Name', '2026-08-06');
+  assert.ok(!result.includes('/'));
+  assert.ok(!result.includes('\\'));
+  assert.ok(!result.includes('\r'));
+  assert.ok(!result.includes('\n'));
+});
+
+test('parseReviewSummaryPdfFilename appends .pdf when the header value is missing the extension', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var header = 'attachment; filename="Review_Summary_Test_Employee_2026-08-06"';
+  var result = mod.parseReviewSummaryPdfFilename(header, 'Fallback Name', '2026-08-06');
+  assert.equal(result, 'Review_Summary_Test_Employee_2026-08-06.pdf');
+});
+
+test('parseReviewSummaryPdfFilename never duplicates the .pdf extension', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var header = 'attachment; filename="Review_Summary_Test_Employee_2026-08-06.pdf"';
+  var result = mod.parseReviewSummaryPdfFilename(header, 'Fallback Name', '2026-08-06');
+  assert.equal((result.match(/\.pdf/gi) || []).length, 1);
+});
+
+test('parseReviewSummaryPdfFilename returns a generated fallback when the header is empty', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var result = mod.parseReviewSummaryPdfFilename('', 'Test Employee', '2026-08-06');
+  assert.equal(result, 'Review_Summary_Test_Employee_2026-08-06.pdf');
+});
+
+test('parseReviewSummaryPdfFilename returns a generated fallback when the header is malformed', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var header = "attachment; filename*=UTF-8''%E0%A4%A"; // truncated percent-encoding, throws on decode
+  var result = mod.parseReviewSummaryPdfFilename(header, 'Test Employee', '2026-08-06');
+  assert.equal(result, 'Review_Summary_Test_Employee_2026-08-06.pdf');
+});
+
+test('buildFallbackReviewSummaryPdfFilename converts spaces to underscores and appends the date', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var result = mod.buildFallbackReviewSummaryPdfFilename('Test Employee Two', '2026-08-06');
+  assert.equal(result, 'Review_Summary_Test_Employee_Two_2026-08-06.pdf');
+});
+
+test('buildFallbackReviewSummaryPdfFilename sanitizes unsafe characters in the employee name', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var result = mod.buildFallbackReviewSummaryPdfFilename('Test/Employee:Two?', '2026-08-06');
+  assert.ok(!result.includes('/'));
+  assert.ok(!result.includes(':'));
+  assert.ok(!result.includes('?'));
+});
+
+test('buildFallbackReviewSummaryPdfFilename falls back to "Employee" when the name sanitizes to empty', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var result = mod.buildFallbackReviewSummaryPdfFilename('////\\\\::::', '2026-08-06');
+  assert.equal(result, 'Review_Summary_Employee_2026-08-06.pdf');
+});
+
 test('workspaceAccessDecision returns authorized/unauthorized (no more own/read_only)', async (t) => {
   var globals = installFakeBrowserGlobals();
   t.after(globals.restore);
@@ -1455,6 +1560,74 @@ test('a successful export creates a Blob download using the response filename an
   assert.equal(globals.objectUrlCalls.created[0].blob.size, 123);
   assert.equal(globals.objectUrlCalls.revoked.length, 1);
   assert.equal(globals.objectUrlCalls.revoked[0], globals.objectUrlCalls.created[0].url);
+});
+
+test('a successful export sets the anchor download attribute from filename*=UTF-8\'\', preferred over filename=', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, {
+        'content-disposition': 'attachment; filename="Review_Summary_Jose_Garcia_2026-08-06.pdf"; ' +
+          "filename*=UTF-8''Review_Summary_Jos%C3%A9_Garc%C3%ADa_2026-08-06.pdf"
+      }, { _fakeBlob: true, size: 42 });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-7' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  var anchors = globals.document._all.filter(function (el) { return el.tagName === 'A'; });
+  assert.equal(anchors.length, 1);
+  assert.equal(anchors[0].download, 'Review_Summary_José_García_2026-08-06.pdf');
+});
+
+test('a successful export falls back to a generated filename when Content-Disposition is missing', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, {}, { _fakeBlob: true, size: 7 });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-8', full_name: 'Fallback Employee' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  var anchors = globals.document._all.filter(function (el) { return el.tagName === 'A'; });
+  assert.equal(anchors.length, 1);
+  assert.match(anchors[0].download, /^Review_Summary_Fallback_Employee_\d{4}-\d{2}-\d{2}\.pdf$/);
+});
+
+test('the downloaded filename never contains the authorization token', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="Review_Summary_Test_Employee_2026-08-06.pdf"' }, { _fakeBlob: true, size: 7 });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-9' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  var anchors = globals.document._all.filter(function (el) { return el.tagName === 'A'; });
+  assert.ok(!anchors[0].download.includes(AUTHORIZED.token));
 });
 
 test('a successful export resets exportInFlight and re-enables the button afterward', async (t) => {

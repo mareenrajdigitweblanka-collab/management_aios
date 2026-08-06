@@ -177,6 +177,80 @@ export function staffOptionLabel(staff) {
   return name;
 }
 
+/* REQ-CAL-REV-PDF-003-FIX-02 — PDF export filename handling. The server
+   (backend/review_summary_pdf_export.py) sends an already-sanitized
+   filename in Content-Disposition; this client-side sanitization is a
+   defense-in-depth basename/control-character guard, not a duplicate of
+   the server's transliteration rules. */
+var UNSAFE_FALLBACK_CHARS_RE = /[\\/:*?"<>|\r\n\t\x00-\x1f]/g;
+var REPEATED_UNDERSCORE_RE = /_{2,}/g;
+var PDF_SUFFIX_RE = /\.pdf$/i;
+
+function sanitizeFallbackNameComponent(raw) {
+  var text = String(raw == null ? '' : raw);
+  text = text.replace(/\.\./g, '');
+  text = text.replace(/\\/g, '_').replace(/\//g, '_');
+  text = text.replace(UNSAFE_FALLBACK_CHARS_RE, '_');
+  text = text.replace(/['"]/g, '');
+  text = text.replace(/ /g, '_');
+  text = text.replace(PDF_SUFFIX_RE, '');
+  text = text.replace(REPEATED_UNDERSCORE_RE, '_');
+  text = text.replace(/^[_.]+|[_.]+$/g, '');
+  return text || 'Employee';
+}
+
+export function buildFallbackReviewSummaryPdfFilename(employeeDisplayName, dateStr) {
+  return 'Review_Summary_' + sanitizeFallbackNameComponent(employeeDisplayName) + '_' + dateStr + '.pdf';
+}
+
+function sanitizeDispositionFilenameValue(value) {
+  if (!value) { return ''; }
+  // Defends against a path-separator-bearing header value by taking only
+  // the basename, then strips control characters and stray quotes.
+  var text = String(value).split(/[\\/]/).pop();
+  text = text.replace(/[\r\n\t\x00-\x1f"]/g, '');
+  return text.trim();
+}
+
+function ensurePdfExtension(name) {
+  return PDF_SUFFIX_RE.test(name) ? name : name + '.pdf';
+}
+
+/* Prefers the RFC 5987/6266 filename*=UTF-8''<percent-encoded> form (set
+   by build_content_disposition_header in backend/review_summary_pdf_
+   export.py), falls back to the legacy filename="..." form, then to a
+   generated fallback only when the header is genuinely unusable. */
+export function parseReviewSummaryPdfFilename(dispositionHeader, fallbackEmployeeName, fallbackDateStr) {
+  var fallback = buildFallbackReviewSummaryPdfFilename(fallbackEmployeeName, fallbackDateStr);
+  var header = dispositionHeader || '';
+
+  var starMatch = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header);
+  if (starMatch) {
+    var rawStar = starMatch[1].trim().replace(/^["']|["']$/g, '');
+    try {
+      var decoded = decodeURIComponent(rawStar);
+      var cleanedStar = sanitizeDispositionFilenameValue(decoded);
+      if (cleanedStar) { return ensurePdfExtension(cleanedStar); }
+    } catch (e) {
+      // Malformed percent-encoding — fall through to filename= or fallback.
+    }
+  }
+
+  var quotedMatch = /filename\s*=\s*"([^"]*)"/i.exec(header);
+  if (quotedMatch) {
+    var cleanedQuoted = sanitizeDispositionFilenameValue(quotedMatch[1]);
+    if (cleanedQuoted) { return ensurePdfExtension(cleanedQuoted); }
+  }
+
+  var bareMatch = /filename\s*=\s*([^;]+)/i.exec(header);
+  if (bareMatch) {
+    var cleanedBare = sanitizeDispositionFilenameValue(bareMatch[1].trim());
+    if (cleanedBare) { return ensurePdfExtension(cleanedBare); }
+  }
+
+  return fallback;
+}
+
 /* Same shape as staffOptionLabel, but reading a history record's own
    reviewed_staff_full_name/reviewed_staff_calling_name (live-joined by the
    backend at read time, backend/routers/staff_review_summaries.py
@@ -796,8 +870,11 @@ export function mountReviewSummariesWorkspace(mountEl) {
         throw failErr;
       }
       var disposition = res.headers.get('Content-Disposition') || '';
-      var match = /filename="([^"]+)"/.exec(disposition);
-      var filename = match ? match[1] : 'review-summaries.pdf';
+      var filename = parseReviewSummaryPdfFilename(
+        disposition,
+        staffOptionLabel(state.selectedStaff),
+        getColomboTodayStr()
+      );
       return res.blob().then(function (blob) { return { blob: blob, filename: filename }; });
     }).then(function (result) {
       var blobUrl = URL.createObjectURL(result.blob);
