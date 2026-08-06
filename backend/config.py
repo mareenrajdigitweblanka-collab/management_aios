@@ -87,18 +87,52 @@ MAX_BULK_TASK_ROWS = 30
 # with no DST since 2006.
 SCHEDULE_TIMEZONE = "Asia/Colombo"
 
+# ── Management Team member identity — structured registry (REQ-CAL-REV-
+# PDF-003 Gate B correction, 2026-08-06) ─────────────────────────────────
+# The single authoritative backend structure for {displayName, role} per
+# member key. Replaces an isolated `if member_key == "paraparan": role =
+# "Auditor"` special case that had been added directly inside
+# backend/review_summary_pdf_export.py — any backend module that needs a
+# member's display name and role as separate fields (not the combined
+# string MEMBER_LABELS below provides) reads THIS registry, never
+# re-derives or independently invents its own copy.
+#
+# Paraparan's role here ("Auditor") is a DISPLAY-terminology decision only
+# — the same one already used by web-view/index.html's sidebar sub-label
+# and Paraparan's own tab header, and already mirrored into
+# web-view/js/member-registry.js. It is explicitly NOT a resolution of the
+# still-open External Auditor vs. Accountant designation dispute (see the
+# MEMBER_LABELS comment below and
+# member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md)
+# — that HR/business-fact question remains open and is untouched by this
+# registry.
+MEMBER_DIRECTORY = {
+    "mayurika": {"displayName": "Mayurika", "role": "HR"},
+    "suman": {"displayName": "Suman", "role": "Recruiting Officer"},
+    "arun": {"displayName": "Arun", "role": "Implementation Officer"},
+    "rajiv": {"displayName": "Rajiv", "role": "Admin Manager"},
+    "paraparan": {"displayName": "Paraparan", "role": "Auditor"},
+}
+
+# MEMBER_LABELS — preserved for full backward compatibility with every
+# existing consumer (backend/routers/calendar_auth.py's /verify endpoint,
+# member_schedules.py, member_leave.py, and their test suites). Derived
+# from MEMBER_DIRECTORY above — not a second, independently-maintained
+# role map — but every value is byte-for-byte identical to this constant's
+# own pre-2026-08-06 literal values, INCLUDING Paraparan's: the combined
+# label deliberately does NOT append "Auditor" here, because doing so
+# would silently imply the still-open External Auditor vs. Accountant
+# designation dispute (SRC-ARUN-CONF-001 vs. the HR-provided PDF) had been
+# resolved, which it has not. Only MEMBER_DIRECTORY's per-field role
+# carries the approved "Auditor" DISPLAY decision, for newer per-field
+# consumers (e.g. the Review Summary PDF export) built after that
+# distinction was made explicit.
 MEMBER_LABELS = {
-    "mayurika": "Mayurika — HR",
-    "suman": "Suman — Recruiting Officer",
-    "arun": "Arun — Implementation Officer",
-    "rajiv": "Rajiv — Admin Manager",
-    # Paraparan's designation is currently unresolved between sources
-    # (External Auditor per SRC-ARUN-CONF-001 vs. Accountant in the
-    # HR-provided PDF) — see
-    # member-aios/staff-data/evidence/paraparan-designation-review-2026-07-13.md.
-    # This label uses a neutral form pending that resolution; it is not a
-    # decision about which designation is correct.
-    "paraparan": "Paraparan",
+    key: (
+        entry["displayName"] if key == "paraparan"
+        else entry["displayName"] + " — " + entry["role"]
+    )
+    for key, entry in MEMBER_DIRECTORY.items()
 }
 
 # ── Staff Data dashboard constants (2026-07-13) ──────────────────────────

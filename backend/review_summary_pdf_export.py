@@ -11,15 +11,23 @@ This is a point-in-time export only. Nothing here writes to the database,
 and the generated file has no macros, external links, or upload/sync
 affordance — opening it never reaches back into Management AIOS.
 
-Reviewer identity source (approved technical design §6/§5.6 "Reviewer
-Identity Source Gate"): reviewer display name and role are resolved
-server-side from record.reviewer_member_key via resolve_reviewer(), which
-is built FROM backend/config.py's one existing MEMBER_LABELS registry — not
-a second, independently-invented reviewer registry. The browser never
+Reviewer identity source (corrected, Gate B verification, 2026-08-06):
+reviewer display name and role are resolved server-side from
+record.reviewer_member_key via resolve_reviewer(), which reads
+backend/config.py's one structured MEMBER_DIRECTORY registry — not a
+second, independently-invented reviewer registry, and not an isolated
+per-member-key conditional living in this module (a prior version of this
+file special-cased one specific member key's role directly here; that
+conditional has been removed and its value now lives in MEMBER_DIRECTORY,
+the one authoritative source). The browser never
 supplies reviewer display name or role for this export; only
 reviewer_member_key (an internal join key, never a display value) ever
 reaches this module, and only via the already-queried StaffReviewSummary
-rows the router passes in — never from a request parameter.
+rows the router passes in — never from a request parameter. This module
+reads only backend/config.py at import time; it never opens, parses, or
+otherwise depends on any frontend source file (web-view/js/member-
+registry.js) at runtime — the two are kept consistent only via a test-time
+check (backend/tests/test_review_summary_pdf_export.py).
 """
 
 import re
@@ -39,39 +47,24 @@ from reportlab.platypus import (
     Spacer,
 )
 
-from backend.config import MEMBER_LABELS
+from backend.config import MEMBER_DIRECTORY
 
 PDF_TITLE = "Management AIOS Employee Review Summary"
 
 UNKNOWN_REVIEWER = {"displayName": "Unknown", "role": "Unknown"}
 
-# Paraparan's role is a deliberate exception, mirroring
-# web-view/js/member-registry.js's own documented decision exactly (never
-# independently re-derived here) — sourced from index.html's pre-existing
-# sidebar sub-label / tab header, not from MEMBER_LABELS["paraparan"] (which
-# still carries no role, per the still-open External Auditor vs. Accountant
-# designation dispute — config.py:95-98). This is a display-terminology
-# decision, not a resolution of that dispute, and does not touch config.py.
-_PARAPARAN_ROLE_OVERRIDE = "Auditor"
-
 
 def _resolve_member_label(member_key: str):
-    """Splits backend/config.py's MEMBER_LABELS[key] ("Name — Role") into
-    {displayName, role} — the same source-of-truth value already used
-    everywhere reviewer text is shown server-side (e.g.
-    /api/calendar-auth/verify's displayLabel). Returns UNKNOWN_REVIEWER for
-    any key not in MEMBER_LABELS, never a fabricated value, never a raised
-    exception — mirrors member-registry.js's resolveMember() fallback
-    exactly."""
-    label = MEMBER_LABELS.get(member_key)
-    if label is None:
+    """Reads backend/config.py's MEMBER_DIRECTORY[key] directly —
+    {displayName, role} is already the registry's own shape, so no
+    string-splitting or per-key special case is needed here. Returns
+    UNKNOWN_REVIEWER for any key not in MEMBER_DIRECTORY, never a
+    fabricated value, never a raised exception — mirrors
+    member-registry.js's resolveMember() fallback exactly."""
+    entry = MEMBER_DIRECTORY.get(member_key)
+    if entry is None:
         return dict(UNKNOWN_REVIEWER)
-    if member_key == "paraparan":
-        return {"displayName": label, "role": _PARAPARAN_ROLE_OVERRIDE}
-    if " — " in label:
-        display_name, role = label.split(" — ", 1)
-        return {"displayName": display_name, "role": role}
-    return {"displayName": label, "role": UNKNOWN_REVIEWER["role"]}
+    return {"displayName": entry["displayName"], "role": entry["role"]}
 
 
 def resolve_reviewer(member_key: Optional[str]) -> dict:

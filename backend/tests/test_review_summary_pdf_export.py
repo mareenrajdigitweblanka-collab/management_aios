@@ -16,12 +16,15 @@ Run with: python -m unittest backend.tests.test_review_summary_pdf_export
 """
 
 import builtins
+import inspect
 import unittest
 from datetime import date, datetime, timezone
 from io import BytesIO
+from pathlib import Path
 
 from pypdf import PdfReader
 
+from backend.config import MEMBER_DIRECTORY, MEMBER_LABELS
 from backend.review_summary_pdf_export import (
     build_review_summary_pdf,
     build_review_summary_pdf_filename,
@@ -52,11 +55,65 @@ def _extract_text(pdf_bytes):
 
 
 class ReviewerIdentityResolutionTestCase(unittest.TestCase):
-    """Phase 5 — reviewer identity source gate. Confirms resolve_reviewer()
-    is built from the one existing backend registry (MEMBER_LABELS), never
-    trusts a browser-supplied value (it isn't even passed one — only
-    reviewer_member_key ever reaches this function), and the Paraparan
-    exception/unknown-key fallback match the approved design exactly."""
+    """Reviewer identity source gate (corrected, Gate B verification,
+    2026-08-06). Confirms resolve_reviewer() is built from the one
+    structured backend registry (config.MEMBER_DIRECTORY) — not an
+    isolated per-key special case (a prior version of
+    review_summary_pdf_export.py hardcoded `if member_key == "paraparan"`
+    directly; that special case is gone) — never trusts a browser-supplied
+    value (it isn't even passed one — only reviewer_member_key ever
+    reaches this function), and the Paraparan/unknown-key fallback match
+    the approved design exactly."""
+
+    def test_member_directory_has_exactly_five_known_entries(self):
+        self.assertEqual(
+            set(MEMBER_DIRECTORY.keys()),
+            {"mayurika", "suman", "arun", "rajiv", "paraparan"},
+        )
+
+    def test_member_directory_paraparan_role_is_auditor(self):
+        self.assertEqual(MEMBER_DIRECTORY["paraparan"]["role"], "Auditor")
+
+    def test_member_labels_unchanged_for_backward_compatibility(self):
+        """MEMBER_LABELS is now derived from MEMBER_DIRECTORY (config.py)
+        but every value must remain byte-for-byte identical to its
+        pre-2026-08-06 literal form — every existing consumer
+        (calendar_auth.py's /verify endpoint, member_schedules.py,
+        member_leave.py, and their test suites) depends on these exact
+        strings."""
+        self.assertEqual(MEMBER_LABELS["mayurika"], "Mayurika — HR")
+        self.assertEqual(MEMBER_LABELS["suman"], "Suman — Recruiting Officer")
+        self.assertEqual(MEMBER_LABELS["arun"], "Arun — Implementation Officer")
+        self.assertEqual(MEMBER_LABELS["rajiv"], "Rajiv — Admin Manager")
+
+    def test_member_labels_paraparan_still_carries_no_role_suffix(self):
+        """Deliberately NOT 'Paraparan — Auditor' — MEMBER_LABELS must
+        never silently imply the still-open External Auditor vs.
+        Accountant designation dispute has been resolved. Only
+        MEMBER_DIRECTORY carries the approved 'Auditor' DISPLAY role."""
+        self.assertEqual(MEMBER_LABELS["paraparan"], "Paraparan")
+
+    def test_resolve_reviewer_reads_member_directory_not_member_labels(self):
+        """Confirms resolve_reviewer()'s own module reads config.py's
+        MEMBER_DIRECTORY, not MEMBER_LABELS — this would fail if
+        review_summary_pdf_export.py's import were reverted to the old
+        MEMBER_LABELS-splitting approach."""
+        import backend.review_summary_pdf_export as pdf_export_module
+        source = inspect.getsource(pdf_export_module)
+        self.assertIn("MEMBER_DIRECTORY", source)
+
+    def test_no_hardcoded_per_key_special_case_in_pdf_export_module(self):
+        """Confirms the prior isolated special case
+        (`if member_key == "paraparan"`) is gone from
+        backend/review_summary_pdf_export.py's source — the only
+        acceptable per-member-key data now lives in
+        backend/config.py's MEMBER_DIRECTORY."""
+        module_path = (
+            Path(__file__).resolve().parents[2] / "backend" / "review_summary_pdf_export.py"
+        )
+        source = module_path.read_text(encoding="utf-8")
+        self.assertNotIn('== "paraparan"', source)
+        self.assertNotIn("_PARAPARAN_ROLE_OVERRIDE", source)
 
     def test_mayurika_resolves_name_and_role(self):
         entry = resolve_reviewer("mayurika")
