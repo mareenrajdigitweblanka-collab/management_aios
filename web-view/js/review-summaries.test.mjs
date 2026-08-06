@@ -1607,3 +1607,94 @@ test('a token change invalidates stale export state (workspace resets, export bu
   assert.equal(api.state.selectedStaff, null, 'stale employee selection is cleared on a token change');
   assert.equal(api.exportButtonEl.disabled, true, 'export button is disabled until a fresh employee is selected');
 });
+
+// ── REQ-CAL-REV-PDF-003-FIX-01 — additional production-hardening coverage ──
+
+test('duplicate clicks while an export is in flight send only one request', async (t) => {
+  var exportCallCount = 0;
+  var resolveExport;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      exportCallCount += 1;
+      return new Promise(function (resolve) { resolveExport = resolve; });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-14' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var firstCall = api.downloadReviewSummariesPdf();
+  assert.equal(api.exportButtonEl.disabled, true, 'button disables immediately once export starts');
+  var secondCallResult = api.downloadReviewSummariesPdf(); // should be a synchronous no-op — already in flight
+  assert.equal(secondCallResult, undefined, 'a second call while in flight is a no-op, not a second request');
+
+  // ensureAuthorized() resolves via a microtask before fetch() is actually
+  // called, so resolveExport is only assigned once that tick has run.
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  resolveExport(pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' }));
+  await firstCall;
+
+  assert.equal(exportCallCount, 1, 'exactly one export request was sent despite two calls');
+  assert.equal(api.exportButtonEl.disabled, false, 'button re-enables after the export settles');
+});
+
+test('the export button survives a history rerender (reviewer-filter change) as exactly one node', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-15' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  api.setReviewerFilter('arun');
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.setReviewerFilter('');
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var buttons = findAllByClass(mountEl, 'review-summaries-export-btn');
+  assert.equal(buttons.length, 1, 'still exactly one Download PDF button after repeated history rerenders');
+  assert.equal(buttons[0], api.exportButtonEl, 'the surviving button is the same node the API exposes');
+});
+
+test('switching between two employees keeps exactly one Download PDF button', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-16a' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-16b' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var buttons = findAllByClass(mountEl, 'review-summaries-export-btn');
+  assert.equal(buttons.length, 1, 'exactly one Download PDF button after switching employees');
+  assert.equal(api.state.selectedStaff.id, 'staff-export-16b');
+  assert.equal(api.exportButtonEl.disabled, false);
+});
+
+test('leaving and returning to the dedicated tab recreates exactly one valid, disabled-until-selection button', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-17' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  globals.document.dispatchEvent({ type: 'msc:close-toolbar-popovers' }); // leave
+  globals.document.dispatchEvent({ type: 'msc:close-toolbar-popovers' }); // return (same event, no separate signal)
+
+  var buttons = findAllByClass(mountEl, 'review-summaries-export-btn');
+  assert.equal(buttons.length, 1, 'exactly one Download PDF button remains after leaving and returning');
+  assert.equal(buttons[0].disabled, true, 'disabled again until a fresh employee is selected');
+});

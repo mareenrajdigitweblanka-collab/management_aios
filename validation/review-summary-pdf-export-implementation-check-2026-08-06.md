@@ -179,10 +179,121 @@ Unchanged and fully unrun. Gate B's completion (this report) authorizes only loc
 
 `validation/staff-roster-employee-number-vs-staff-code-cross-system-comparison-2026-08-06.md` was not opened, modified, deleted, or staged at any point in this session.
 
+## PASS / AMBER / FAIL (superseded by REQ-CAL-REV-PDF-003-FIX-01 below)
+
+**AMBER**, as of this Gate B verification round. Implementation was complete, fully tested locally with zero regressions (723 backend / 279 frontend, only the 2 pre-existing documented baseline failures present), and committed directly to local `main`, but not pushed pending a Gate C preview-deployment method. **This status is superseded by the REQ-CAL-REV-PDF-003-FIX-01 section below**, in which the repository owner explicitly authorized direct production deployment via push to `main` — see that section for the final outcome.
+
+## One next step (superseded by REQ-CAL-REV-PDF-003-FIX-01 below)
+
+Superseded — see REQ-CAL-REV-PDF-003-FIX-01's own "One next step."
+
+---
+
+# REQ-CAL-REV-PDF-003-FIX-01 — Missing production Download PDF button
+
+## Screenshot-observed defect
+
+A production screenshot showed the Management AIOS production frontend (`https://management-aios.vercel.app`), authorized as "Suman — Recruiting Officer," Review Summaries tab active, one employee selected, Review History visible with Reviewer/From/To filters and two review records — but **no Download PDF button visible anywhere near the filters**, contrary to the approved requirement (one page-level button in that exact location).
+
+## Root cause
+
+**#1 — Implementation commits never pushed.** `git branch -r --contains d018dc7` and `git branch -r --contains 4d49a1b` both returned empty — neither Gate B commit had ever reached `origin/main`. This is Case A of the diagnosis protocol (implementation commits present locally, absent from origin), not a code defect.
+
+**Evidence chain, each step independently confirmed:**
+1. `git diff --name-status origin/main...main` before this fix contained exactly the approved PDF implementation files — no unrelated or unexpected changes.
+2. Production frontend asset check: fetched `https://management-aios.vercel.app/index.html` → `./js/app.js` → `./js/review-summaries.js` (994 lines). Contains **zero** occurrences of `Download PDF`, `export/pdf`, or any export-related identifier. Byte-for-byte diff against `origin/main`'s current `web-view/js/review-summaries.js` (also 994 lines) returned **no differences** — production is running exactly what is on `origin/main` today, which simply predates the PDF feature.
+3. Production backend asset check: fetched `https://management-aios-api.vercel.app/openapi.json` — contains only `/api/staff-review-summaries` and `/api/staff-review-summaries/{summary_id}`; **no** `/export/pdf` path. A request to the export path with no token returned `404 {"detail":"Not Found"}` — FastAPI's generic route-not-found response, not this feature's own empty-result 404 (`"No review summaries match the selected filters."`), confirming the route itself does not exist in the deployed backend. `/health` returned `{"status":"ok",...}` — the backend is running fine, just on an older commit.
+
+**Conclusion: no code defect exists anywhere in the PDF export implementation.** The button, its click handler, the export query construction, the Blob download, and the object-URL cleanup are all present, correct, and already covered by the local automated test suite — they were simply never deployed.
+
+## Were implementation commits previously pushed?
+
+**No.** Confirmed by `git branch -r --contains` returning empty for both `d018dc7` and `4d49a1b`, and independently reconfirmed by the byte-identical production-vs-`origin/main` JS diff above.
+
+## Production frontend asset result
+
+**A — production asset does not contain the PDF implementation** (per Phase 5's classification). Fully explained by "commits never pushed," not a caching or stale-reference issue — the deployed asset matches `origin/main` exactly, with no drift.
+
+## Production backend route result
+
+- Export route deployed: **NO**.
+- Missing-token result: `404 {"detail":"Not Found"}` (generic FastAPI route-not-found — confirms the route does not exist, not an auth rejection).
+- Backend startup result: healthy (`/health` returns `200 {"status":"ok"}`) — the running backend is simply on an older, pre-PDF-feature commit.
+
+## Files changed in this fix
+
+| File | Change |
+|---|---|
+| `web-view/js/review-summaries.test.mjs` | 4 new production-hardening tests: duplicate-click guard sends exactly one request, button survives a history rerender as one node, switching employees keeps exactly one button, leaving/returning to the tab recreates exactly one valid button |
+
+**No application code changed** — `web-view/js/review-summaries.js`, `web-view/css/review-summaries.css`, `web-view/index.html`, and every backend file were inspected and confirmed already correct; none required a code change. This is a push-only fix for the underlying defect, plus additional test coverage given the production stakes.
+
+## Exact button placement (confirmed, local DOM dump)
+
+Verified by serving the actual repository frontend locally (`python -m http.server`) and capturing a real headless-Chrome DOM dump (no authentication, no production/test token used) — this is the literal DOM this application produces:
+
+```html
+<div class="review-summaries-filters"> ... Reviewer / From / To ... </div>
+<div class="review-summaries-export-actions">
+  <button class="msc-btn msc-btn-secondary review-summaries-export-btn" type="button" disabled="">Download PDF</button>
+</div>
+<div class="review-summaries-history"></div>
+```
+
+One button, immediately after the Reviewer/From/To filters and before the history list, inside the Review History panel — exactly the required placement. No console errors occurred during page load/module initialization.
+
+## Selected/no-selection behavior (confirmed by test, unchanged)
+
+- **Authorized + employee selected**: button visible, enabled (when the date range is valid).
+- **Authorized + no employee**: button remains visible, disabled (never `hidden`/`display:none` — toggled via the `disabled` attribute only).
+- **Unauthorized**: the entire Review History panel (including the button) is inside the existing authorization gate — no export request can be sent.
+- **Invalid date range**: disabled, no request.
+- **Export in progress**: disabled immediately on click; a second click while in flight is a synchronous no-op (confirmed by new test: exactly one fetch call despite two calls); returns to enabled once the export settles, regardless of success or failure.
+
+## Tests (updated totals)
+
+| Suite | Result |
+|---|---|
+| Dependency-pin (`test_dependency_pin_consistency.py`) | 7/7 (unchanged) |
+| PDF backend (`test_review_summary_pdf_export.py`) | 48/48 (unchanged) |
+| Review Summary backend (`test_staff_review_summaries.py`) | 88/88 (unchanged) |
+| Full backend suite | 723 total, 721 passed, 2 failed — same 2 pre-existing documented baseline failures only |
+| Review Summary frontend (`review-summaries.test.mjs`) | **88/88 (was 84; +4 new production-hardening tests)** |
+| Navigation structure | 16/16 (unchanged) |
+| Full Calendar frontend suite | 179/179 (unchanged, zero regression) |
+
+## Local browser result
+
+Authenticated local browser verification is **unavailable** in this environment (no safe non-production test token and no interactive browser tool for a full authenticated walkthrough) — per this task's own explicit fallback instruction, a production token was not used to work around this. In its place: (1) the full DOM-stand-in automated test suite (88/88) exercises the real rendering path end-to-end, including button creation, placement, enable/disable transitions, click handling, Blob download, and state-reset behavior; (2) a genuine local static-server + headless-Chrome DOM dump (no auth) independently confirmed the button's exact markup and placement in the real, unmodified `index.html`/`review-summaries.js`, with zero console errors.
+
+## Mobile/zoom result
+
+Not independently re-verified visually this round (no new CSS was written — `web-view/css/review-summaries.css`'s existing `.review-summaries-export-actions`/`.review-summaries-export-btn:disabled` rules, added and reasoned through during the original Gate B implementation, are unchanged). No global CSS regression risk, since no CSS file was touched in this fix.
+
+## Database/schema changes
+
+**0.**
+
+## Production writes
+
+**0.** No PostgreSQL connection was made. No production Review Summary record was created, read for content, updated, or deleted.
+
+## Production records changed
+
+**0.**
+
+## Protected path excluded
+
+`member-aios/mayurika-hr/staff-data/` was not opened or modified.
+
+## Unrelated roster file excluded
+
+`validation/staff-roster-employee-number-vs-staff-code-cross-system-comparison-2026-08-06.md` was not opened, modified, deleted, staged, or committed.
+
 ## PASS / AMBER / FAIL
 
-**AMBER.** Implementation is complete, fully tested locally with zero regressions (723 backend / 279 frontend, only the 2 pre-existing documented baseline failures present), and committed directly to local `main` per explicit user authorization for this session. The reviewer-identity technical defect found during this verification pass (hardcoded Paraparan special case) has been corrected to use one structured backend registry, with `MEMBER_LABELS` backward compatibility proven by test and by the full backend suite. Not PASS because: not yet pushed (confirmed `main` auto-deploys to production on push — pushing now is explicitly not authorized), and Gate C (Vercel preview validation) has not run and cannot run until a preview deployment method is approved (see "Safe Gate C method" above).
+**PASS**, contingent on a clean push and a successful, verified Vercel production deployment (recorded in the companion handover's post-push section). No code defect was found or needed; the root cause (commits never pushed) is fully resolved by pushing the already-correct, already-tested implementation.
 
 ## One next step
 
-Repository owner decision required: approve either (a) creation of a temporary preview branch from the current local `main` for a Vercel GitHub-integration preview deployment, or (b) a locally-authenticated Vercel CLI preview deployment (no `--prod`) — only then can Gate C run. Until one of those is approved, local `main` remains unpushed.
+Push local `main` (containing `d018dc7`, `4d49a1b`, and this fix's test-only commit) to `origin/main`, then verify the Vercel production deployment completes successfully and the button/route are live — full detail in the companion handover's post-push verification section.

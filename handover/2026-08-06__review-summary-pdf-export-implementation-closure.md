@@ -3,7 +3,7 @@ name: review-summary-pdf-export-implementation-handover
 type: handover
 scope: management_aios — Employee Review Summary PDF export, Gate B implementation (REQ-CAL-REV-PDF-003)
 created: 2026-08-06
-status: AMBER — implemented directly on local main per explicit user authorization, reviewer-identity technical defect found and corrected during final verification, all automated tests pass with zero regressions (723 backend/721 passed with 2 pre-existing unrelated failures; 279/279 frontend), main confirmed as the Vercel production branch (push auto-deploys), not pushed pending Gate C preview-method approval
+status: REQ-CAL-REV-PDF-003-FIX-01 — missing production button root-caused to unpushed commits (no code defect); repository owner authorized direct push to origin/main (triggers production deploy); all automated tests pass with zero regressions (723 backend/721 passed with 2 pre-existing unrelated failures; 283/283 frontend, was 279, +4 production-hardening tests) — see §§16-22
 owner: builder (Mareenraj), per explicit direct-main implementation authorization for this session
 reviewer: pending
 ---
@@ -118,6 +118,66 @@ Confirmed from in-repo evidence (`backend/README.md`, "Deploy to Vercel (connect
 4. Evidence commit — record actual Gate C results in new validation/handover files.
 5. Production approval — only after Gate C evidence is reviewed and approved does `main` get pushed; per §13, that push itself triggers production deployment (no separate manual step).
 
-## 15. One next step
+## 15. One next step (superseded — see REQ-CAL-REV-PDF-003-FIX-01 below)
 
-Repository owner decision required: approve either (a) a temporary preview branch for Vercel's GitHub-integration preview build, or (b) a locally-authenticated Vercel CLI preview deployment (no `--prod`). Only then can Gate C run; local `main` remains unpushed until Gate C passes and is reviewed.
+Superseded: the repository owner has since explicitly authorized direct production deployment via push to `main`, resolving the approval gate this section described.
+
+---
+
+# REQ-CAL-REV-PDF-003-FIX-01 — Missing Production Download PDF Button — Diagnosis and Push
+
+## 16. What this fix task was
+
+A production screenshot showed the Review Summaries workspace with an employee selected and Review History visible, but **no Download PDF button** anywhere near the Reviewer/From/To filters. Diagnosed per the standard protocol (repository gate → commit-presence check → production asset check → backend route check → root-cause classification) rather than assumed.
+
+## 17. Root cause
+
+**Implementation commits never pushed** (`d018dc7`, `4d49a1b` — both confirmed absent from `origin/main` via `git branch -r --contains`, empty result for both). Not a code defect:
+
+- Pending diff (`origin/main...main`) contained exactly the approved PDF implementation files, nothing else.
+- Production frontend's deployed `review-summaries.js` (994 lines) was fetched and diffed byte-for-byte against `origin/main`'s current version — **zero differences**. Contains no `Download PDF`/`export/pdf` reference at all.
+- Production backend's `openapi.json` was fetched — contains only the pre-existing `/api/staff-review-summaries` and `/api/staff-review-summaries/{summary_id}` paths; **no** `/export/pdf`. An unauthenticated request to that path returned FastAPI's generic `404 {"detail":"Not Found"}` (route does not exist), not this feature's own empty-result 404. `/health` confirmed the backend itself is healthy, just on an older commit.
+
+No token was used or exposed in any of these checks.
+
+## 18. Files changed in this fix
+
+| File | Change |
+|---|---|
+| `web-view/js/review-summaries.test.mjs` | 4 new tests: duplicate-click-while-in-flight sends exactly one request; button survives a history rerender as one node; switching employees keeps exactly one button; leaving/returning to the tab recreates exactly one valid button |
+
+No application code (`review-summaries.js`, `review-summaries.css`, `index.html`, any backend file) required a change — all were inspected and confirmed already correct. This is a push-only fix, with additional regression coverage added given the production stakes.
+
+## 19. Local DOM confirmation (no token used)
+
+Served the actual repository frontend locally and captured a real headless-Chrome DOM dump (unauthenticated — no production or test token used):
+
+```html
+<div class="review-summaries-filters"> ... Reviewer / From / To ... </div>
+<div class="review-summaries-export-actions">
+  <button class="msc-btn msc-btn-secondary review-summaries-export-btn" type="button" disabled="">Download PDF</button>
+</div>
+<div class="review-summaries-history"></div>
+```
+
+Exactly one button, correctly placed immediately after the filters and before history, inside the Review History panel. No console errors during page load or module init.
+
+## 20. Updated test totals
+
+| Suite | Result |
+|---|---|
+| Dependency-pin | 7/7 (unchanged) |
+| PDF backend | 48/48 (unchanged) |
+| Review Summary backend | 88/88 (unchanged) |
+| Full backend suite | 723 total, 721 passed, 2 failed — same 2 pre-existing documented baseline failures |
+| Review Summary frontend | **88/88 (was 84; +4)** |
+| Navigation structure | 16/16 (unchanged) |
+| Full Calendar frontend suite | 179/179 (unchanged) |
+
+## 21. Push authorization
+
+The repository owner explicitly authorized pushing the verified fix directly to `origin/main` for this task, acknowledging that push triggers the production Vercel deployment (confirmed §13). No feature branch was created, per instruction.
+
+## 22. One next step
+
+Push local `main` to `origin/main`, then verify: Vercel deployment status Ready, deployed commit matches final `origin/main`, production frontend/backend both serve the PDF feature, no startup/dependency error — full results to be appended to this handover's post-push section once the push completes.
