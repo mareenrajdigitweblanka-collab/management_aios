@@ -90,6 +90,35 @@ export function buildListQuery(filters) {
   return params.join('&');
 }
 
+/* PDF export query string (REQ-CAL-REV-PDF-003) — same reviewer-scope
+   mutual-exclusivity rule as buildListQuery, but never appends limit/offset
+   (the export is deliberately unpaginated — "the complete active Review
+   Summary history," never one page of it). Never includes a token,
+   reviewer display name, employee display name, or summary text — only
+   reviewed_staff_id (a UUID), an optional reviewer_member_key, and two
+   optional dates. */
+export function buildExportQuery(filters) {
+  filters = filters || {};
+  var params = [];
+  if (filters.includeAllReviewers) {
+    params.push('include_all_reviewers=true');
+  } else if (filters.reviewerMemberKey) {
+    params.push('reviewer_member_key=' + encodeURIComponent(filters.reviewerMemberKey));
+  }
+  if (filters.reviewedStaffId) { params.push('reviewed_staff_id=' + encodeURIComponent(filters.reviewedStaffId)); }
+  if (filters.dateFrom) { params.push('date_from=' + encodeURIComponent(filters.dateFrom)); }
+  if (filters.dateTo) { params.push('date_to=' + encodeURIComponent(filters.dateTo)); }
+  return params.join('&');
+}
+
+/* True when both dates are set and dateFrom is after dateTo — the same
+   invalid-range condition the backend itself rejects with 422 (date_from
+   must not be after date_to). ISO YYYY-MM-DD strings compare correctly
+   with a plain string comparison. */
+export function isInvalidDateRange(dateFrom, dateTo) {
+  return !!(dateFrom && dateTo && dateFrom > dateTo);
+}
+
 /* Trims and validates summary_text client-side, mirroring the backend's
    exact rule (StaffReviewSummaryCreate/Update in backend/schemas.py) so
    an invalid submission never reaches the network. Returns
@@ -289,7 +318,11 @@ export function mountReviewSummariesWorkspace(mountEl) {
     // Stale-request guard — bumped on every new history fetch AND on
     // every reset, so a slow in-flight request that resolves after a
     // newer one has superseded it never overwrites the current view.
-    historyRequestId: 0
+    historyRequestId: 0,
+    // PDF export in-flight guard (REQ-CAL-REV-PDF-003) — a plain-boolean
+    // duplicate-click guard, same pattern as calendar/instance.js's own
+    // exportInFlight for the weekly-schedule .xlsx download.
+    exportInFlight: false
   };
 
   mountEl.textContent = '';
@@ -447,6 +480,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
     selectedStaffEl.hidden = false;
     staffSearchInput.hidden = true;
     updateFormVisibility();
+    updateExportButtonState();
     renderHistory();
   }
 
@@ -675,22 +709,129 @@ export function mountReviewSummariesWorkspace(mountEl) {
   reviewerFilterSelect.addEventListener('change', function () {
     state.reviewerFilter = reviewerFilterSelect.value;
     exitEditMode();
+    updateExportButtonState();
     renderHistory();
   });
   dateFromInput.addEventListener('change', function () {
     state.dateFrom = dateFromInput.value;
     exitEditMode();
+    updateExportButtonState();
     renderHistory();
   });
   dateToInput.addEventListener('change', function () {
     state.dateTo = dateToInput.value;
     exitEditMode();
+    updateExportButtonState();
     renderHistory();
   });
+
+  // ── PDF export (REQ-CAL-REV-PDF-003) — one page-level button near the
+  //    Review History filters, never one button per record. ──────────────
+  var exportActionsEl = el('div', 'review-summaries-export-actions');
+  var exportBtn = el('button', 'msc-btn msc-btn-secondary review-summaries-export-btn');
+  exportBtn.type = 'button';
+  exportBtn.textContent = 'Download PDF';
+
+  function updateExportButtonState() {
+    var hasStaff = !!state.selectedStaff;
+    var hasToken = currentAccess() !== 'unauthorized';
+    var invalidRange = isInvalidDateRange(state.dateFrom, state.dateTo);
+    exportBtn.disabled = !hasStaff || !hasToken || invalidRange || state.exportInFlight;
+  }
+
+  /* PDF Blob download — deliberately its own fetch, not
+     reviewSummariesApiRequest() (which unconditionally calls res.json(),
+     wrong for a binary PDF body). Reuses the same ensureAuthorized()/
+     handleUnauthorizedResponse() authentication primitives so a missing/
+     invalid/expired token behaves identically to every other request this
+     workspace makes. Never sends the token, reviewer display name,
+     employee display name, or summary text in the URL — only
+     reviewed_staff_id, the current reviewer scope, and the current dates
+     (buildExportQuery). */
+  function downloadReviewSummariesPdf() {
+    if (state.exportInFlight || !state.selectedStaff) { return; }
+    if (currentAccess() === 'unauthorized') { return; }
+    if (isInvalidDateRange(state.dateFrom, state.dateTo)) { return; }
+
+    state.exportInFlight = true;
+    updateExportButtonState();
+
+    var query = buildExportQuery({
+      includeAllReviewers: !state.reviewerFilter,
+      reviewerMemberKey: state.reviewerFilter || null,
+      reviewedStaffId: state.selectedStaff.id,
+      dateFrom: state.dateFrom,
+      dateTo: state.dateTo
+    });
+
+    return ensureAuthorized().then(function (token) {
+      return fetch(STAFF_REVIEW_SUMMARIES_API_BASE + '/export/pdf?' + query, {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        cache: 'no-store'
+      });
+    }, function () {
+      var e = new Error('Authorization required.');
+      e.code = 'auth_cancelled';
+      throw e;
+    }).then(function (res) {
+      if (res.status === 401) {
+        handleUnauthorizedResponse();
+        var authErr = new Error('Authorization expired.');
+        authErr.code = 'auth_required';
+        throw authErr;
+      }
+      if (res.status === 404) {
+        // Empty-result 404 (requirement §5.10) — never a Blob/download for
+        // this response; selected employee and filters are left exactly
+        // as they were, so the user can adjust and retry.
+        var emptyErr = new Error('No review summaries match the selected filters.');
+        emptyErr.code = 'export_empty';
+        throw emptyErr;
+      }
+      if (!res.ok) {
+        var failErr = new Error('Export failed.');
+        failErr.code = classifyHttpStatus(res.status);
+        failErr.status = res.status;
+        throw failErr;
+      }
+      var disposition = res.headers.get('Content-Disposition') || '';
+      var match = /filename="([^"]+)"/.exec(disposition);
+      var filename = match ? match[1] : 'review-summaries.pdf';
+      return res.blob().then(function (blob) { return { blob: blob, filename: filename }; });
+    }).then(function (result) {
+      var blobUrl = URL.createObjectURL(result.blob);
+      var link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      showToast({ type: 'success', title: 'PDF downloaded', message: result.filename });
+    }).catch(function (err) {
+      if (err && err.code === 'auth_cancelled') { return; }
+      if (err && err.code === 'auth_required') { return; } // reactToAuthChange() already handles the gate
+      if (err && err.code === 'export_empty') {
+        showToast({ type: 'error', title: 'No matching records', message: 'No review summaries match the selected filters.', persistent: false });
+        return;
+      }
+      var mapped = mapApiError(err);
+      showToast({ type: 'error', title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+    }).then(function () {
+      state.exportInFlight = false;
+      updateExportButtonState();
+    });
+  }
+
+  exportBtn.addEventListener('click', downloadReviewSummariesPdf);
+  exportActionsEl.appendChild(exportBtn);
+  updateExportButtonState();
 
   var historyEl = el('div', 'review-summaries-history');
   historyPanel.appendChild(historyPanelTitle);
   historyPanel.appendChild(filtersEl);
+  historyPanel.appendChild(exportActionsEl);
   historyPanel.appendChild(historyEl);
 
   function renderHistoryCard(record) {
@@ -919,6 +1060,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
     dateToInput.value = '';
     exitEditMode();
     updateFormVisibility();
+    updateExportButtonState();
     historyEl.textContent = '';
   }
 
@@ -975,8 +1117,12 @@ export function mountReviewSummariesWorkspace(mountEl) {
       state.reviewerFilter = value;
       reviewerFilterSelect.value = value;
       exitEditMode();
+      updateExportButtonState();
       renderHistory();
     },
+    downloadReviewSummariesPdf: downloadReviewSummariesPdf,
+    exportButtonEl: exportBtn,
+    updateExportButtonState: updateExportButtonState,
     state: state
   };
 }

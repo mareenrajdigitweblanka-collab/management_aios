@@ -14,8 +14,10 @@ Run with: python -m unittest backend.tests.test_staff_review_summaries
 
 import unittest
 from datetime import date, datetime, timedelta, timezone
+from io import BytesIO
 
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 
 from backend.database import get_db
 from backend.main import app
@@ -990,6 +992,290 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
             params={"include_all_reviewers": "true", "reviewed_staff_id": str(staff_id)},
         )
         self.assertEqual(resp.status_code, 401)
+
+    # ── PDF export route (REQ-CAL-REV-PDF-003 Gate B) ─────────────────
+    # HTTP-level tests only — PDF content/filename/reviewer-identity
+    # coverage lives in backend/tests/test_review_summary_pdf_export.py,
+    # exercising the pure build_review_summary_pdf()/resolve_reviewer()
+    # functions directly, mirroring the existing xlsx_export.py/
+    # member_schedules.py test-file split.
+
+    def export_pdf(self, params, member_key="mayurika", omit_token=False):
+        headers = None if omit_token else bearer_header(member_key)
+        return self.client.get(
+            "/api/staff-review-summaries/export/pdf", params=params, headers=headers
+        )
+
+    # Authorization
+
+    def test_export_missing_token_returns_401(self):
+        staff_id = self.seed_staff(source_record_key="pdf-auth-1")
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"}, omit_token=True)
+        self.assertEqual(resp.status_code, 401)
+
+    def test_export_invalid_token_returns_401(self):
+        staff_id = self.seed_staff(source_record_key="pdf-auth-2")
+        resp = self.client.get(
+            "/api/staff-review-summaries/export/pdf",
+            params={"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"},
+            headers={"Authorization": "Bearer not-a-real-token"},
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_export_authenticated_shared_reader_can_export(self):
+        staff_id = self.seed_staff(source_record_key="pdf-auth-3")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.export_pdf(
+            {"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"}, member_key="suman",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_export_does_not_require_ownership_of_any_returned_record(self):
+        staff_id = self.seed_staff(source_record_key="pdf-auth-4")
+        self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id)
+        resp = self.export_pdf(
+            {"reviewed_staff_id": str(staff_id), "reviewer_member_key": "arun"}, member_key="rajiv",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_export_leaves_existing_owner_only_mutations_unchanged(self):
+        summary_id, staff_id = self.seed_summary(reviewer_member_key="mayurika")
+        cross_update = self.client.put(
+            "/api/staff-review-summaries/" + str(summary_id),
+            json={"summary_text": "Attempted cross-reviewer edit."},
+            headers=bearer_header("arun"),
+        )
+        self.assertEqual(cross_update.status_code, 404)
+
+    # Filters
+
+    def test_export_requires_reviewed_staff_id(self):
+        resp = self.export_pdf({"include_all_reviewers": "true"})
+        self.assertEqual(resp.status_code, 422)
+
+    def test_export_all_reviewers_includes_multiple_reviewers(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-all")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id, summary_text="A")
+        self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id, summary_text="B")
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertEqual(resp.status_code, 200)
+        reader = PdfReader(BytesIO(resp.content))
+        text = "\n".join(p.extract_text() or "" for p in reader.pages)
+        self.assertIn("Mayurika", text)
+        self.assertIn("Arun", text)
+
+    def test_export_specific_reviewer_includes_only_that_reviewer(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-specific")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id, summary_text="A")
+        self.seed_summary(reviewer_member_key="arun", reviewed_staff_id=staff_id, summary_text="B")
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "reviewer_member_key": "arun"})
+        self.assertEqual(resp.status_code, 200)
+        reader = PdfReader(BytesIO(resp.content))
+        text = "\n".join(p.extract_text() or "" for p in reader.pages)
+        self.assertIn("Arun", text)
+        self.assertNotIn("Mayurika", text)
+
+    def test_export_excludes_another_employee(self):
+        staff_a = self.seed_staff(source_record_key="pdf-filter-emp-a")
+        staff_b = self.seed_staff(source_record_key="pdf-filter-emp-b")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_a, summary_text="Employee A summary")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_b, summary_text="Employee B summary")
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_a), "include_all_reviewers": "true"})
+        reader = PdfReader(BytesIO(resp.content))
+        text = "\n".join(p.extract_text() or "" for p in reader.pages)
+        self.assertIn("Employee A summary", text)
+        self.assertNotIn("Employee B summary", text)
+
+    def test_export_date_from_works(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-datefrom")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=10), summary_text="Old")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today, summary_text="Recent")
+        resp = self.export_pdf({
+            "reviewed_staff_id": str(staff_id), "include_all_reviewers": "true",
+            "date_from": str(self.today - timedelta(days=1)),
+        })
+        text = "\n".join(p.extract_text() or "" for p in PdfReader(BytesIO(resp.content)).pages)
+        self.assertIn("Recent", text)
+        self.assertNotIn("Old", text)
+
+    def test_export_date_to_works(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-dateto")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=10), summary_text="Old")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today, summary_text="Recent")
+        resp = self.export_pdf({
+            "reviewed_staff_id": str(staff_id), "include_all_reviewers": "true",
+            "date_to": str(self.today - timedelta(days=1)),
+        })
+        text = "\n".join(p.extract_text() or "" for p in PdfReader(BytesIO(resp.content)).pages)
+        self.assertIn("Old", text)
+        self.assertNotIn("Recent", text)
+
+    def test_export_both_dates_work(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-bothdates")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=20), summary_text="TooOld")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=5), summary_text="InRange")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today, summary_text="TooNew")
+        resp = self.export_pdf({
+            "reviewed_staff_id": str(staff_id), "include_all_reviewers": "true",
+            "date_from": str(self.today - timedelta(days=10)),
+            "date_to": str(self.today - timedelta(days=1)),
+        })
+        text = "\n".join(p.extract_text() or "" for p in PdfReader(BytesIO(resp.content)).pages)
+        self.assertIn("InRange", text)
+        self.assertNotIn("TooOld", text)
+        self.assertNotIn("TooNew", text)
+
+    def test_export_no_dates_includes_complete_active_history(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-nodate")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today - timedelta(days=200), summary_text="Ancient")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                           meeting_date=self.today, summary_text="Current")
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        text = "\n".join(p.extract_text() or "" for p in PdfReader(BytesIO(resp.content)).pages)
+        self.assertIn("Ancient", text)
+        self.assertIn("Current", text)
+
+    def test_export_excludes_deleted_records(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-deleted")
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id,
+                                           summary_text="ToBeDeleted")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id, summary_text="Stays")
+        self.client.delete("/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika"))
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        text = "\n".join(p.extract_text() or "" for p in PdfReader(BytesIO(resp.content)).pages)
+        self.assertIn("Stays", text)
+        self.assertNotIn("ToBeDeleted", text)
+
+    def test_export_invalid_reviewer_mode_combination_fails(self):
+        staff_id = self.seed_staff(source_record_key="pdf-filter-invalidcombo")
+        resp = self.export_pdf({
+            "reviewed_staff_id": str(staff_id), "include_all_reviewers": "true", "reviewer_member_key": "arun",
+        })
+        self.assertEqual(resp.status_code, 422)
+
+    # Routing
+
+    def test_export_route_reaches_export_handler(self):
+        staff_id = self.seed_staff(source_record_key="pdf-route-1")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("content-type"), "application/pdf")
+
+    def test_export_path_is_not_interpreted_as_summary_id(self):
+        # A 422 UUID-parse error here would mean /{summary_id} captured
+        # the request instead of /export/pdf — confirms it did not.
+        staff_id = self.seed_staff(source_record_key="pdf-route-2")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertNotEqual(resp.status_code, 422)
+
+    def test_existing_uuid_detail_route_still_works(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_invalid_detail_id_retains_current_behavior(self):
+        resp = self.client.get(
+            "/api/staff-review-summaries/not-a-uuid", headers=bearer_header("mayurika")
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    def test_openapi_includes_export_route_exactly_once(self):
+        resp = self.client.get("/openapi.json")
+        self.assertEqual(resp.status_code, 200)
+        paths = resp.json()["paths"]
+        matching = [p for p in paths if p == "/api/staff-review-summaries/export/pdf"]
+        self.assertEqual(len(matching), 1)
+
+    # Response
+
+    def test_export_success_status_is_200(self):
+        staff_id = self.seed_staff(source_record_key="pdf-resp-1")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_export_content_disposition_is_attachment(self):
+        staff_id = self.seed_staff(source_record_key="pdf-resp-2")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertTrue(resp.headers.get("content-disposition", "").startswith("attachment;"))
+
+    def test_export_cache_control_includes_no_store(self):
+        staff_id = self.seed_staff(source_record_key="pdf-resp-3")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertIn("no-store", resp.headers.get("cache-control", ""))
+
+    def test_export_bytes_begin_with_pdf_signature(self):
+        staff_id = self.seed_staff(source_record_key="pdf-resp-4")
+        self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertTrue(resp.content.startswith(b"%PDF-"))
+
+    def test_export_empty_result_returns_404(self):
+        staff_id = self.seed_staff(source_record_key="pdf-resp-empty")
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.json()["detail"], "No review summaries match the selected filters.")
+
+    def test_export_empty_result_returns_no_pdf_bytes(self):
+        staff_id = self.seed_staff(source_record_key="pdf-resp-empty-2")
+        resp = self.export_pdf({"reviewed_staff_id": str(staff_id), "include_all_reviewers": "true"})
+        self.assertNotEqual(resp.headers.get("content-type"), "application/pdf")
+        self.assertFalse(resp.content.startswith(b"%PDF-"))
+
+    # Regression
+
+    def test_export_addition_leaves_list_filtering_unchanged(self):
+        staff_id = self.seed_staff(source_record_key="pdf-regression-list")
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika", reviewed_staff_id=staff_id)
+        resp = self.client.get(
+            "/api/staff-review-summaries",
+            params={"reviewed_staff_id": str(staff_id)},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual([r["id"] for r in resp.json()["records"]], [str(summary_id)])
+
+    def test_export_addition_leaves_create_ownership_unchanged(self):
+        staff_id = self.seed_staff(source_record_key="pdf-regression-create")
+        resp = self.client.post(
+            "/api/staff-review-summaries",
+            json={"reviewed_staff_id": str(staff_id), "meeting_date": str(self.today), "summary_text": "Regression check."},
+            headers=bearer_header("arun"),
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["reviewer_member_key"], "arun")
+
+    def test_export_addition_leaves_detail_shared_read_unchanged(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        resp = self.client.get(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("suman")
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_export_addition_leaves_delete_ownership_unchanged(self):
+        summary_id, _ = self.seed_summary(reviewer_member_key="mayurika")
+        cross_delete = self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("arun")
+        )
+        self.assertEqual(cross_delete.status_code, 404)
+        owner_delete = self.client.delete(
+            "/api/staff-review-summaries/" + str(summary_id), headers=bearer_header("mayurika")
+        )
+        self.assertEqual(owner_delete.status_code, 200)
 
     # ── 34-36: Regression — existing Task/Leave/auth behavior untouched ──
 

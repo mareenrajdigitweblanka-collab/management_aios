@@ -136,6 +136,19 @@
   gap: var(--space-4);
 }
 
+/* PDF export (REQ-CAL-REV-PDF-003) — one page-level button near the
+   filters row, never one per record. */
+.review-summaries-export-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+}
+
+.review-summaries-export-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .review-summaries-summary-label-row {
   display: flex;
   align-items: baseline;

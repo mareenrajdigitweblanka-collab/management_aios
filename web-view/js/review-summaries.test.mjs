@@ -1245,3 +1245,365 @@ test('a second, independently mounted workspace instance is unaffected by the fi
   var label = findByClass(mountEl, 'review-summaries-authorized-as');
   assert.equal(label.textContent, 'Authorized as: Arun — Implementation Officer');
 });
+
+// ── PDF export (REQ-CAL-REV-PDF-003) ────────────────────────────────
+
+function pdfBlobResponse(status, headers, blobValue) {
+  headers = headers || {};
+  return Promise.resolve({
+    ok: status >= 200 && status < 300,
+    status: status,
+    headers: { get: function (name) { return headers[name.toLowerCase()] || headers[name] || null; } },
+    blob: function () { return Promise.resolve(blobValue !== undefined ? blobValue : { _fakeBlob: true }); }
+  });
+}
+
+test('buildExportQuery composes reviewed_staff_id/all-reviewers/dates and never includes limit or offset', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var q = mod.buildExportQuery({ includeAllReviewers: true, reviewedStaffId: 'staff-x', dateFrom: '2026-01-01', dateTo: '2026-01-31' });
+  assert.equal(q, 'include_all_reviewers=true&reviewed_staff_id=staff-x&date_from=2026-01-01&date_to=2026-01-31');
+  assert.ok(!q.includes('limit'));
+  assert.ok(!q.includes('offset'));
+});
+
+test('buildExportQuery uses reviewer_member_key for a specific reviewer and omits include_all_reviewers', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var q = mod.buildExportQuery({ reviewerMemberKey: 'arun', reviewedStaffId: 'staff-x' });
+  assert.match(q, /reviewer_member_key=arun/);
+  assert.ok(!q.includes('include_all_reviewers'));
+});
+
+test('isInvalidDateRange flags dateFrom after dateTo and nothing else', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.isInvalidDateRange('2026-02-01', '2026-01-01'), true);
+  assert.equal(mod.isInvalidDateRange('2026-01-01', '2026-02-01'), false);
+  assert.equal(mod.isInvalidDateRange('2026-01-01', ''), false);
+  assert.equal(mod.isInvalidDateRange('', ''), false);
+});
+
+test('exactly one Download PDF button exists, near the filters', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesWorkspace(mountEl);
+  var buttons = findAllByClass(mountEl, 'review-summaries-export-btn');
+  assert.equal(buttons.length, 1);
+  assert.equal(buttons[0].textContent, 'Download PDF');
+});
+
+test('export button is disabled when no employee is selected', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  assert.equal(api.exportButtonEl.disabled, true);
+});
+
+test('export button is enabled once an employee is selected under a valid token', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.exportButtonEl.disabled, false);
+});
+
+test('export button is disabled without a valid token even with an employee selected', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ fetchImpl: fetchMock }); // no storedAuth
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  assert.equal(api.exportButtonEl.disabled, true);
+});
+
+test('export button is disabled when the current date range is invalid', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-2' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.exportButtonEl.disabled, false);
+
+  var dateFromInput = findByClass(mountEl, 'review-summaries-date-from');
+  var dateToInput = findByClass(mountEl, 'review-summaries-date-to');
+  dateFromInput.value = '2026-02-01';
+  dateFromInput.dispatchEvent({ type: 'change' });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  dateToInput.value = '2026-01-01';
+  dateToInput.dispatchEvent({ type: 'change' });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.exportButtonEl.disabled, true);
+});
+
+test('clicking Download PDF with All reviewers sends include_all_reviewers and no reviewer_member_key, never the token or employee name in the URL', async (t) => {
+  var lastExportUrl = null;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      lastExportUrl = String(url);
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="review-summaries_Test_2026-08-06.pdf"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-3', full_name: "Employee's Confidential Name" }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.ok(lastExportUrl, 'export request should have fired');
+  assert.match(lastExportUrl, /reviewed_staff_id=staff-export-3/);
+  assert.match(lastExportUrl, /include_all_reviewers=true/);
+  assert.ok(!lastExportUrl.includes('reviewer_member_key'));
+  assert.ok(!lastExportUrl.includes('token'), 'token must never appear in the export URL');
+  assert.ok(!lastExportUrl.includes('Confidential'), 'employee display name is not sent as request authority');
+});
+
+test('clicking Download PDF with a specific reviewer sends reviewer_member_key and omits include_all_reviewers', async (t) => {
+  var lastExportUrl = null;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      lastExportUrl = String(url);
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-4' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.setReviewerFilter('arun');
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.match(lastExportUrl, /reviewer_member_key=arun/);
+  assert.ok(!lastExportUrl.includes('include_all_reviewers'));
+});
+
+test('clicking Download PDF sends the current From/To date filters', async (t) => {
+  var lastExportUrl = null;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      lastExportUrl = String(url);
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-5' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  var dateFromInput = findByClass(mountEl, 'review-summaries-date-from');
+  var dateToInput = findByClass(mountEl, 'review-summaries-date-to');
+  dateFromInput.value = '2026-01-01';
+  dateFromInput.dispatchEvent({ type: 'change' });
+  dateToInput.value = '2026-01-31';
+  dateToInput.dispatchEvent({ type: 'change' });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.match(lastExportUrl, /date_from=2026-01-01/);
+  assert.match(lastExportUrl, /date_to=2026-01-31/);
+});
+
+test('a successful export creates a Blob download using the response filename and revokes the object URL', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="review-summaries_Test_Employee_2026-08-06.pdf"' }, { _fakeBlob: true, size: 123 });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-6' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.equal(globals.objectUrlCalls.created.length, 1);
+  assert.equal(globals.objectUrlCalls.created[0].blob.size, 123);
+  assert.equal(globals.objectUrlCalls.revoked.length, 1);
+  assert.equal(globals.objectUrlCalls.revoked[0], globals.objectUrlCalls.created[0].url);
+});
+
+test('a successful export resets exportInFlight and re-enables the button afterward', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-7' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.equal(api.state.exportInFlight, false);
+  assert.equal(api.exportButtonEl.disabled, false);
+});
+
+test('a 404 empty-result export shows no Blob/download and keeps the selected employee and filters', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return jsonResponse(404, { detail: 'No review summaries match the selected filters.' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-8' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.setReviewerFilter('arun');
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.equal(globals.objectUrlCalls.created.length, 0, 'no Blob/object URL for a 404');
+  assert.equal(api.state.selectedStaff.id, 'staff-export-8', 'employee selection retained after a 404');
+  assert.equal(api.state.reviewerFilter, 'arun', 'reviewer filter retained after a 404');
+});
+
+test('a 401 during export uses the existing authorization-failure behavior (workspace resets, token cleared)', async (t) => {
+  var exportCallCount = 0;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      exportCallCount += 1;
+      return pdfBlobResponse(401, {});
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-9' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.equal(exportCallCount, 1);
+  assert.equal(globals.localStorage.getItem('management_aios_calendar_auth_v1'), null, 'a 401 clears the stored token');
+  assert.equal(api.state.selectedStaff, null, 'a 401 fully resets the workspace, same as every other request');
+});
+
+test('a generic export failure shows a safe error and never a Blob/download', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(500, {});
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-10' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  assert.equal(globals.objectUrlCalls.created.length, 0);
+  assert.equal(api.state.exportInFlight, false);
+});
+
+test('no PDF bytes or Blob are ever written to localStorage by an export', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf') !== -1) {
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="x.pdf"' }, { _fakeBlob: true });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-11' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesPdf();
+
+  // Only the pre-seeded Calendar auth token key may exist — nothing
+  // export-related was ever written to localStorage.
+  var keys = Object.keys(globals.localStorage._store || {});
+  var suspicious = keys.filter(function (k) { return k !== 'management_aios_calendar_auth_v1'; });
+  assert.equal(suspicious.length, 0);
+});
+
+test('leaving the dedicated tab clears export state (employee deselected, button disabled)', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-12' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.exportButtonEl.disabled, false);
+
+  globals.document.dispatchEvent({ type: 'msc:close-toolbar-popovers' });
+
+  assert.equal(api.state.selectedStaff, null);
+  assert.equal(api.exportButtonEl.disabled, true);
+});
+
+test('a token change invalidates stale export state (workspace resets, export button disabled until re-selection)', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-13' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.exportButtonEl.disabled, false);
+
+  globals.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
+    version: 1, token: 'new-token', verifiedMemberKey: 'arun', verifiedAt: '2026-08-06T00:00:00.000Z'
+  }));
+  globals.document.dispatchEvent({ type: CALENDAR_AUTH_CHANGED_EVENT_NAME });
+
+  assert.equal(api.state.selectedStaff, null, 'stale employee selection is cleared on a token change');
+  assert.equal(api.exportButtonEl.disabled, true, 'export button is disabled until a fresh employee is selected');
+});

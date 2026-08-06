@@ -64,9 +64,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from backend.config import VALID_MEMBER_KEYS
+from zoneinfo import ZoneInfo
+
+from backend.config import SCHEDULE_TIMEZONE, VALID_MEMBER_KEYS
 from backend.database import get_db
 from backend.models import StaffDashboardRecord, StaffReviewSummary
+from backend.review_summary_pdf_export import (
+    build_review_summary_pdf,
+    build_review_summary_pdf_filename,
+    resolve_reviewer,
+)
 from backend.routers.calendar_auth import get_verified_member
 from backend.schemas import (
     StaffReviewSummaryCreate,
@@ -74,6 +81,8 @@ from backend.schemas import (
     StaffReviewSummaryOut,
     StaffReviewSummaryUpdate,
 )
+
+_COLOMBO = ZoneInfo(SCHEDULE_TIMEZONE)
 
 router = APIRouter(prefix="/api/staff-review-summaries", tags=["staff-review-summaries"])
 
@@ -222,6 +231,60 @@ def create_staff_review_summary(
     return _to_out(record, db)
 
 
+def _build_review_summary_query(
+    db: Session,
+    acting_member: str,
+    reviewer_member_key: Optional[str],
+    reviewed_staff_id: Optional[UUID],
+    date_from: Optional[date_type],
+    date_to: Optional[date_type],
+    include_all_reviewers: bool,
+):
+    """Shared filter-building logic (REQ-CAL-REV-PDF-003 §5.2) — extracted,
+    behavior-preserving, from list_staff_review_summaries's own inline
+    validation+query construction. Both the LIST route and the PDF export
+    route call this ONE function, so the two can never silently disagree
+    about which rows a given (acting_member, filter) combination returns.
+    Does not apply ordering, offset, or limit — callers add those
+    themselves (LIST paginates; export does not, per requirement decision
+    3/9 — "the complete active Review Summary history," never one page of
+    it)."""
+    if date_from is not None and date_to is not None and date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from must not be after date_to.")
+
+    if include_all_reviewers:
+        if reviewed_staff_id is None:
+            raise HTTPException(
+                status_code=422,
+                detail="reviewed_staff_id is required when include_all_reviewers=true.",
+            )
+        if reviewer_member_key is not None:
+            raise HTTPException(
+                status_code=422,
+                detail="reviewer_member_key and include_all_reviewers are mutually exclusive.",
+            )
+        query = db.query(StaffReviewSummary).filter(
+            StaffReviewSummary.deleted_at.is_(None),
+        )
+    else:
+        selected_reviewer = acting_member
+        if reviewer_member_key is not None:
+            selected_reviewer = _valid_reviewer_member_key_or_422(reviewer_member_key)
+        query = db.query(StaffReviewSummary).filter(
+            StaffReviewSummary.reviewer_member_key == selected_reviewer,
+            StaffReviewSummary.deleted_at.is_(None),
+        )
+
+    if reviewed_staff_id is not None:
+        query = query.filter(StaffReviewSummary.reviewed_staff_id == reviewed_staff_id)
+    if date_from is not None:
+        query = query.filter(StaffReviewSummary.meeting_date >= date_from)
+    if date_to is not None:
+        query = query.filter(StaffReviewSummary.meeting_date <= date_to)
+
+    return query
+
+
 @router.get("", response_model=StaffReviewSummaryListResponse)
 def list_staff_review_summaries(
     response: Response,
@@ -260,38 +323,10 @@ def list_staff_review_summaries(
     the omitted-reviewer_member_key-defaults-to-self case."""
     _set_no_store(response)
 
-    if date_from is not None and date_to is not None and date_from > date_to:
-        raise HTTPException(status_code=422, detail="date_from must not be after date_to.")
-
-    if include_all_reviewers:
-        if reviewed_staff_id is None:
-            raise HTTPException(
-                status_code=422,
-                detail="reviewed_staff_id is required when include_all_reviewers=true.",
-            )
-        if reviewer_member_key is not None:
-            raise HTTPException(
-                status_code=422,
-                detail="reviewer_member_key and include_all_reviewers are mutually exclusive.",
-            )
-        query = db.query(StaffReviewSummary).filter(
-            StaffReviewSummary.deleted_at.is_(None),
-        )
-    else:
-        selected_reviewer = acting_member
-        if reviewer_member_key is not None:
-            selected_reviewer = _valid_reviewer_member_key_or_422(reviewer_member_key)
-        query = db.query(StaffReviewSummary).filter(
-            StaffReviewSummary.reviewer_member_key == selected_reviewer,
-            StaffReviewSummary.deleted_at.is_(None),
-        )
-
-    if reviewed_staff_id is not None:
-        query = query.filter(StaffReviewSummary.reviewed_staff_id == reviewed_staff_id)
-    if date_from is not None:
-        query = query.filter(StaffReviewSummary.meeting_date >= date_from)
-    if date_to is not None:
-        query = query.filter(StaffReviewSummary.meeting_date <= date_to)
+    query = _build_review_summary_query(
+        db, acting_member, reviewer_member_key, reviewed_staff_id,
+        date_from, date_to, include_all_reviewers,
+    )
 
     total = query.with_entities(func.count(StaffReviewSummary.id)).scalar()
 
@@ -309,6 +344,110 @@ def list_staff_review_summaries(
         total=total,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.get("/export/pdf")
+def export_staff_review_summaries_pdf(
+    response: Response,
+    reviewed_staff_id: UUID = Query(...),
+    reviewer_member_key: Optional[str] = Query(default=None),
+    include_all_reviewers: bool = Query(default=False),
+    date_from: Optional[date_type] = Query(default=None),
+    date_to: Optional[date_type] = Query(default=None),
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Authorized Employee Review Summary PDF export (REQ-CAL-REV-PDF-003).
+
+    Declared here — before GET /{summary_id} below — so a request to
+    /export/pdf can never be captured by that dynamic route (which would
+    otherwise attempt to parse "export" as a UUID and reject it with 422
+    before this handler ever runs); this source-order placement is a
+    deliberate, documented safeguard (technical design §5.1), not
+    incidental. /export/pdf is also a two-path-segment literal, a distinct
+    shape from /{summary_id}'s single segment, so the two cannot collide
+    under any registration order — this placement is defense in depth on
+    top of that structural fact, not the only thing preventing collision.
+
+    Read-only: no db.add/db.commit anywhere in this path, matching
+    xlsx_export.py's own documented read-only guarantee. Reuses
+    _build_review_summary_query (§5.2) — the exact same filter/soft-delete/
+    authorization logic LIST already uses — so an export can never return a
+    record LIST would not also return for the same acting member and
+    filters. reviewed_staff_id is required here independent of the
+    include_all_reviewers-requires-reviewed_staff_id rule inside the shared
+    function, closing the gap where a specific-reviewer export could
+    otherwise omit it.
+
+    Zero matching active records -> 404 with a generic detail message, no
+    PDF bytes generated at all (requirement §5.10, corrected round 1) —
+    never a blank/misleading PDF.
+
+    Cache-Control on the success path is set directly on the Response
+    object this function returns (below), NOT via _set_no_store(response)
+    alone — when a route handler returns a Response instance directly (as
+    this one does, for the binary PDF body), FastAPI uses that returned
+    object as-is rather than merging headers set on the separately
+    injected `response` dependency. _set_no_store(response) is still
+    called for consistency with every other route on this router."""
+    _set_no_store(response)
+    staff = _reviewed_staff_or_422(db, reviewed_staff_id)
+
+    query = _build_review_summary_query(
+        db, acting_member, reviewer_member_key, reviewed_staff_id,
+        date_from, date_to, include_all_reviewers,
+    )
+    rows = (
+        query.order_by(
+            StaffReviewSummary.meeting_date.desc(), StaffReviewSummary.created_at.desc()
+        )
+        .all()
+    )
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail="No review summaries match the selected filters.",
+        )
+
+    records = [
+        {
+            "reviewer_member_key": row.reviewer_member_key,
+            "meeting_date": row.meeting_date,
+            "summary_text": row.summary_text,
+            "created_at": row.created_at,
+            "updated_at": row.updated_at,
+        }
+        for row in rows
+    ]
+
+    if include_all_reviewers:
+        reviewer_scope_label = "All reviewers"
+    elif reviewer_member_key is not None:
+        reviewer_scope_label = resolve_reviewer(reviewer_member_key)["displayName"]
+    else:
+        reviewer_scope_label = resolve_reviewer(acting_member)["displayName"]
+
+    employee_label = staff.full_name or staff.calling_name or "Unknown staff record"
+    generated_at_local = datetime.now(timezone.utc).astimezone(_COLOMBO)
+
+    pdf_bytes = build_review_summary_pdf(
+        reviewed_staff_label=employee_label,
+        reviewer_scope_label=reviewer_scope_label,
+        date_from=date_from,
+        date_to=date_to,
+        generated_at_local=generated_at_local,
+        records=records,
+    )
+    filename = build_review_summary_pdf_filename(employee_label, date_type.today())
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'attachment; filename="' + filename + '"',
+            "Cache-Control": "no-store",
+        },
     )
 
 

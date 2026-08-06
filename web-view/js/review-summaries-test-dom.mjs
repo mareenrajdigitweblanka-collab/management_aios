@@ -124,6 +124,15 @@ class FakeElement {
     return child;
   }
 
+  /* REQ-CAL-REV-PDF-003 — the PDF-download temporary <a> element is
+     appended then removed (document.body.removeChild(link)), the same
+     pattern the existing weekly-schedule .xlsx download already uses
+     (calendar/instance.js). */
+  removeChild(child) {
+    this._children = this._children.filter(function (c) { return c !== child; });
+    return child;
+  }
+
   insertAdjacentElement(_position, node) {
     this._afterend = this._afterend || [];
     this._afterend.push(node);
@@ -239,6 +248,7 @@ export function createFakeDocument() {
 export function createFakeLocalStorage(seed) {
   var store = Object.assign({}, seed || {});
   return {
+    _store: store,
     getItem: function (key) { return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null; },
     setItem: function (key, value) { store[key] = String(value); },
     removeItem: function (key) { delete store[key]; }
@@ -249,10 +259,42 @@ export function createFakeLocalStorage(seed) {
    already-verified Calendar token, so ensureAuthorized() resolves
    immediately without ever opening the token dialog (which would need
    trapTab/focus-trap DOM support this stand-in deliberately omits). */
+/* REQ-CAL-REV-PDF-003 — Node's built-in global URL class has no
+   createObjectURL/revokeObjectURL (those are browser Blob-URL APIs), so
+   the PDF download's URL.createObjectURL(blob)/URL.revokeObjectURL(url)
+   calls need an explicit stand-in here, tracked so tests can assert a
+   created object URL was actually revoked. */
+function installFakeObjectUrl() {
+  var calls = { created: [], revoked: [] };
+  var counter = 0;
+  var previousCreate = globalThis.URL && globalThis.URL.createObjectURL;
+  var previousRevoke = globalThis.URL && globalThis.URL.revokeObjectURL;
+  if (!globalThis.URL) { globalThis.URL = {}; }
+  globalThis.URL.createObjectURL = function (blob) {
+    counter += 1;
+    var url = 'blob:test-object-url-' + counter;
+    calls.created.push({ url: url, blob: blob });
+    return url;
+  };
+  globalThis.URL.revokeObjectURL = function (url) {
+    calls.revoked.push(url);
+  };
+  return {
+    calls: calls,
+    restore: function () {
+      if (previousCreate) { globalThis.URL.createObjectURL = previousCreate; }
+      else { delete globalThis.URL.createObjectURL; }
+      if (previousRevoke) { globalThis.URL.revokeObjectURL = previousRevoke; }
+      else { delete globalThis.URL.revokeObjectURL; }
+    }
+  };
+}
+
 export function installFakeBrowserGlobals(opts) {
   opts = opts || {};
   var previous = { document: globalThis.document, window: globalThis.window, fetch: globalThis.fetch };
   var fakeDocument = createFakeDocument();
+  var fakeObjectUrl = installFakeObjectUrl();
   var seed = {};
   if (opts.storedAuth) {
     seed.management_aios_calendar_auth_v1 = JSON.stringify({
@@ -275,10 +317,12 @@ export function installFakeBrowserGlobals(opts) {
     document: fakeDocument,
     window: fakeWindow,
     localStorage: fakeLocalStorage,
+    objectUrlCalls: fakeObjectUrl.calls,
     restore: function () {
       globalThis.document = previous.document;
       globalThis.window = previous.window;
       globalThis.fetch = previous.fetch;
+      fakeObjectUrl.restore();
     }
   };
 }
