@@ -1,0 +1,194 @@
+/* knowledge-management.css — Knowledge Management workspace, Company
+   Documents view (REQ-KM-001, first usable implementation, 2026-08-10).
+   Every rule is namespaced under .msc-km-* — this file adds no global
+   body/html/page-reset rule of any kind. Reuses existing design tokens
+   (tokens.css) and shared primitives (.member-header/.member-header-lede
+   from components.css) rather than inventing a second visual language —
+   same convention documented at the top of issues.css. */
+
+.msc-km-section-heading {
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 var(--space-3);
+}
+
+/* ── Toolbar (search + filters) ──
+   Same one-row-then-wrap pattern as .msc-issues-toolbar — stays on one
+   line at desktop widths, scrolls horizontally rather than wrapping until
+   the dedicated <768px breakpoint below switches it to a stacked column. */
+.msc-km-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  margin-bottom: var(--space-4);
+}
+
+.msc-km-filter-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.msc-km-filter-label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.msc-km-search-input {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  color: var(--text);
+  width: 220px;
+  max-width: 100%;
+}
+
+.msc-km-search-input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.msc-km-select {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  color: var(--text);
+  max-width: 180px;
+}
+
+.msc-km-select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.msc-km-count-pill {
+  margin-left: auto;
+  font-size: var(--font-xs);
+  color: var(--muted);
+  background: var(--surface-tint-3);
+  padding: 5px 10px;
+  border-radius: var(--pill-radius);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Empty state (Phase 12) ── */
+.msc-km-empty {
+  text-align: center;
+  padding: var(--space-7) 0;
+  color: var(--muted);
+  font-size: var(--font-sm);
+}
+
+/* ── Table ── */
+.msc-km-table-wrap {
+  overflow-x: auto;
+}
+
+.msc-km-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+  min-width: 760px;
+}
+
+.msc-km-table thead th {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 2px solid var(--border);
+  color: var(--muted);
+  font-size: var(--font-2xs);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+
+.msc-km-table tbody td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.msc-km-table tbody tr:hover {
+  background: var(--surface-tint-2);
+}
+
+.msc-km-title-cell {
+  font-weight: 700;
+  color: var(--text);
+  max-width: 320px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.msc-km-dash {
+  color: var(--muted);
+}
+
+/* ── Open Document action (Phase 11) — same visual weight as the Issues
+   "View Data" link (.msc-issues-data-link), independently namespaced. ── */
+.msc-km-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid #c7dbfb;
+  border-radius: var(--pill-radius);
+  padding: 4px 11px;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.msc-km-open-link:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .msc-km-toolbar {
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 768px) {
+  .msc-km-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .msc-km-filter-field {
+    justify-content: space-between;
+  }
+
+  .msc-km-search-input,
+  .msc-km-select {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+  }
+
+  .msc-km-count-pill {
+    margin-left: 0;
+  }
+}

@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./css/staff-data.css" />
   <link rel="stylesheet" href="./css/review-summaries.css" />
   <link rel="stylesheet" href="./css/issues.css" />
+  <link rel="stylesheet" href="./css/knowledge-management.css" />
 </head>
 
 <body>
@@ -236,6 +237,19 @@
             </svg>
           </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Issues</span></span>
+        </button>
+      </div>
+      <div class="app-sidebar-group">
+        <div class="app-sidebar-title">Knowledge</div>
+        <button type="button" class="app-nav-btn" data-tab="knowledge-management" title="Knowledge Management">
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 4.8A1.8 1.8 0 0 1 5.8 3H10v14H5.8A1.8 1.8 0 0 1 4 15.2z" />
+              <path d="M16 4.8A1.8 1.8 0 0 0 14.2 3H10v14h4.2a1.8 1.8 0 0 0 1.8-1.8z" />
+            </svg>
+          </span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Knowledge Management</span></span>
         </button>
       </div>
     </nav>
@@ -1680,6 +1694,29 @@
         data-tags="issues tickets management raised by domain status red amber green assign assigned"></div>
 
     </div><!-- /tab-issues -->
+
+
+    <!-- ══════════════════════════════════
+       TAB — KNOWLEDGE MANAGEMENT (REQ-KM-001, first usable implementation,
+       2026-08-10) — Company Documents view only. Deliberately narrow: no
+       upload, no PostgreSQL document table, no backend API, no Google
+       ownership verification, no version-history/audit-log/soft-delete
+       workflow. See
+       docs/knowledge-management-company-documents-requirement-2026-08-10.md.
+       One dedicated, independent panel — a sibling of Review Summaries and
+       Issues, never nested inside any Management Team member panel.
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-knowledge-management" role="tabpanel">
+
+      <div class="member-header">
+        <h2>Knowledge Management</h2>
+        <p class="member-header-lede">Find and open approved company documents from one centralized location.</p>
+      </div>
+
+      <div class="msc-km-workspace" id="knowledgeManagementWorkspace" data-searchable
+        data-tags="knowledge management company documents search team type google sheet doc"></div>
+
+    </div><!-- /tab-knowledge-management -->
 
 
     <!-- ══════════════════════════════════

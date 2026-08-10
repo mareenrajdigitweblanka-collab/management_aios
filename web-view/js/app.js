@@ -14,6 +14,7 @@ import { initStaffDataPilot } from './staff-data.js';
 import { initPlanningWarning } from './planning-warning.js';
 import { initReviewSummaries } from './review-summaries.js';
 import { initIssues } from './issues.js';
+import { initKnowledgeManagement } from './knowledge-management.js';
 
 function boot() {
   /* Each subsystem is idempotent to a single call and mounts its listeners /
@@ -29,6 +30,10 @@ function boot() {
   // REQ-ISSUES-UI-001 (2026-08-10) — Management Issues workspace,
   // frontend-only (no Issue-System backend integration yet).
   initIssues();
+  // REQ-KM-001 (2026-08-10) — Knowledge Management, Company Documents view
+  // only. Frontend-only, narrow first implementation — see
+  // docs/knowledge-management-company-documents-requirement-2026-08-10.md.
+  initKnowledgeManagement();
 }
 
 if (document.readyState === 'loading') {
