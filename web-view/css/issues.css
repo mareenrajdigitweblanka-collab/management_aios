@@ -67,18 +67,30 @@
   display: none;
 }
 
-/* ── Toolbar (filters + admin assignment controls) ── */
+/* ── Toolbar (filters + assignment controls) ──
+   Single row, matching the supplied reference sample — every filter/
+   assignment field stays on one line at desktop widths instead of
+   wrapping the assignment controls onto a second line. If the viewport
+   is too narrow to fit everything, the toolbar scrolls horizontally
+   (same overflow-x pattern the table already uses) rather than wrapping
+   — wrapping only kicks back in at the dedicated <768px breakpoint
+   below, where the whole toolbar switches to a stacked column layout
+   for touch-sized targets instead. */
 .msc-issues-toolbar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-4);
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px; /* keeps a horizontal scrollbar, when one appears, from crowding the controls above it */
 }
 
 .msc-issues-filter-field {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .msc-issues-filter-label {
@@ -95,6 +107,15 @@
   background: var(--surface);
   font-size: var(--font-sm);
   color: var(--text);
+  /* Native <select> elements size themselves to their widest OPTION, not
+     just the current selection — with 100+ real staff names in Raised By
+     (some very long) and 80+ real team values in Team, an unconstrained
+     select would balloon past 350px each and single-handedly break the
+     one-row toolbar layout. Capping width keeps every select a
+     consistent, compact size regardless of how long its longest option
+     happens to be; the browser clips the displayed (selected) text to
+     fit, which is standard/expected <select> behavior. */
+  max-width: 145px;
 }
 
 .msc-issues-select:focus-visible {
@@ -105,7 +126,7 @@
 .msc-issues-status-tabs {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .msc-issues-status-tab {
@@ -117,6 +138,8 @@
   font-weight: 700;
   cursor: pointer;
   color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .msc-issues-status-tab:focus-visible {
@@ -133,8 +156,9 @@
 .msc-issues-assign-toolbar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-4);
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: var(--space-3);
 }
 
 .msc-issues-select-all-label {
@@ -145,6 +169,14 @@
   font-weight: 700;
   color: var(--muted);
   cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Slightly more compact than the shared .msc-btn default (7px 14px) —
+   this button's own label is short ("Assign"), and the toolbar's one-row
+   layout benefits from every few px saved here. */
+.msc-issues-assign-btn {
+  padding: 6px 12px;
 }
 
 .msc-issues-checkbox {
@@ -163,9 +195,10 @@
   font-size: var(--font-xs);
   color: var(--muted);
   background: var(--surface-tint-3);
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: var(--pill-radius);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .msc-issues-assign-notice {
@@ -188,6 +221,7 @@
   padding: 5px 10px;
   border-radius: var(--pill-radius);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ── Demo-data banner (REQ-ISSUES-UI-001 correction, 2026-08-10) —
@@ -479,10 +513,6 @@
 @media (max-width: 1024px) {
   .msc-issues-toolbar {
     gap: var(--space-3);
-  }
-
-  .msc-issues-count-pill {
-    margin-left: 0;
   }
 }
 
