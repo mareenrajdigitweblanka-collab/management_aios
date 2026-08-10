@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="./css/calendar.css" />
   <link rel="stylesheet" href="./css/staff-data.css" />
   <link rel="stylesheet" href="./css/review-summaries.css" />
+  <link rel="stylesheet" href="./css/issues.css" />
 </head>
 
 <body>
@@ -225,6 +226,16 @@
             </svg>
           </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Review Summaries</span></span>
+        </button>
+        <button type="button" class="app-nav-btn" data-tab="issues" title="Issues">
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 3.3l7 3.9v5.6l-7 3.9-7-3.9V7.2z" />
+              <path d="M10 9.2v3.4M10 14.6h.01" />
+            </svg>
+          </span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Issues</span></span>
         </button>
       </div>
     </nav>
@@ -1648,6 +1659,27 @@
         data-tags="review summaries staff meeting reviewer history mayurika suman arun rajiv paraparan"></div>
 
     </div><!-- /tab-review-summaries -->
+
+
+    <!-- ══════════════════════════════════
+       TAB — ISSUES (REQ-ISSUES-UI-001, 2026-08-10) — frontend-only
+       Management Issues workspace. The Issue System remains the source of
+       truth; this tab has no backend integration yet (see
+       docs/2026-08-10_management-issues-frontend-requirement.md). One
+       dedicated, independent panel — a sibling of Review Summaries, not
+       nested inside any Management Team member panel.
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-issues" role="tabpanel">
+
+      <div class="member-header">
+        <h2>Issues</h2>
+        <p class="member-header-lede">View, filter and manage operational issues assigned through Management AIOS.</p>
+      </div>
+
+      <div class="msc-issues-workspace" id="issuesWorkspace" data-searchable
+        data-tags="issues tickets management raised by domain status red amber green assign assigned"></div>
+
+    </div><!-- /tab-issues -->
 
 
     <!-- ══════════════════════════════════
