@@ -83,23 +83,15 @@ export function isReadOnlyMember(memberKey) {
   return memberKey === MD_MEMBER_KEY;
 }
 
-/* REQ-ISSUES-UI-001 (2026-08-10) — Issues tab assignment-control gating.
-   Derives "Admin" purely from this registry's own role field (Rajiv's role
-   is 'Admin Manager', per CLAUDE.md §5/§3 and this same MEMBER_REGISTRY
-   entry) — never a hardcoded display-name comparison such as
-   `name === 'Rajiv'`, so a future registry change (a second Admin Manager,
-   a role rename) is reflected automatically with no call-site edit.
-
-   UI-only, exactly like isReadOnlyMember above — this hides/shows the
-   Issues tab's Select All / Assign To / Assign controls in the browser. It
-   is NOT an authorization boundary: there is no Issue-System assignment
-   API yet (REQ-ISSUES-UI-001 is frontend-only), and whenever that backend
-   endpoint is built it must independently re-check Admin authority from
-   the request's own verified identity — never trust that this function
-   was already called client-side. */
-var ADMIN_ROLE = 'Admin Manager';
-
-export function isAdminMemberKey(memberKey) {
-  var entry = MEMBER_REGISTRY[memberKey];
-  return !!entry && entry.role === ADMIN_ROLE;
-}
+/* REQ-ISSUES-UI-001 correction (2026-08-10) — a role-based
+   isAdminMemberKey(role === 'Admin Manager') function previously lived
+   here for Issues tab assignment-control gating. It was REMOVED after
+   business confirmation that assignment authority must be a single exact
+   identity (authenticated member_key === 'rajiv'), never a role-text
+   check — a role check would incorrectly grant assignment rights to any
+   future second "Admin Manager" the registry might ever gain. The
+   replacement (hasAssignmentAuthority) lives in web-view/js/issues.js,
+   scoped to that one feature rather than living here as a general-purpose
+   registry function, since it is not a generic identity classification
+   the way isReadOnlyMember (MD) is — it is a single-person Issues-only
+   business rule. Do not reintroduce a role-based admin check here. */

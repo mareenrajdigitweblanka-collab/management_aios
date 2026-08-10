@@ -1,27 +1,59 @@
 /* issues.js — Management AIOS Issues workspace (REQ-ISSUES-UI-001,
-   2026-08-10).
+   2026-08-10; corrected 2026-08-10 per confirmed business rules).
 
    Frontend-only. The Issue System remains the authoritative source of
    issue truth — this module never invents, persists, or writes issue
-   records anywhere. There is no Issue-System integration API yet, so the
-   production data adapter (createProductionIssuesAdapter below) always
-   resolves an empty issue list and never fabricates records to fill the
-   screen; assignment calls always resolve { status: 'pending_backend' }
-   and are never presented to the user as saved. See
+   records anywhere. There is no Issue-System integration API yet, so
+   assignment calls always resolve { status: 'pending_backend' } and are
+   never presented to the user as saved. See
    docs/2026-08-10_management-issues-frontend-requirement.md.
 
    Built from a supplied standalone reference HTML page (postage-daily-
    issues.html) for UX/interaction reference only — its hardcoded ISSUES
    array and in-memory `assignments` object are NOT reused as production
    truth; they may only ever appear as test/dev fixtures (see
-   issues.test.mjs). Two of that reference's shortcuts were deliberately
-   NOT carried over: (1) its misspelled hardcoded assignee names
-   ("Rajive"/"Maurika") — this module instead reads assignee identities
-   from member-registry.js's MEMBER_REGISTRY, the same authoritative
-   source Review Summaries already uses; (2) its "Admin" concept, which
-   the reference never defined at all — this module derives Admin status
-   from MEMBER_REGISTRY's own role field via isAdminMemberKey()
-   (member-registry.js), never a hardcoded display-name comparison.
+   issues.test.mjs).
+
+   CORRECTIONS applied 2026-08-10, after live-browser review of the
+   original implementation surfaced the reference sample's own sample
+   names/domains had leaked into what a reviewer would see as "the"
+   Raised By / Domain option lists (because the production adapter had no
+   real issue records to derive them from, the lists rendered empty —
+   which is correct, but made the underlying question "where SHOULD these
+   options come from" visible and worth answering properly rather than
+   deferring indefinitely):
+
+   1. Raised By is no longer derived only from whatever issue records
+      happen to be loaded — it is populated from the existing, real Staff
+      Data API (GET /api/staff, active staff only), reusing
+      staff-data.js's own STAFF_API_BASE host-detection constant rather
+      than inventing a second one (same reuse pattern review-summaries.js
+      already established for its own staff search).
+   2. "Domain" is renamed to "Team" (business concept correction) and its
+      options come from the same Staff Data API's
+      GET /api/staff/filter-options `teams` array — the live, actual set
+      of department/team values recorded in the system — never a
+      hardcoded Listing/PH/Postage/Pricing/Purchase list copied from the
+      reference sample. The issue record's own field is renamed from
+      `domain` to `team` throughout (a safe frontend-only rename — there
+      is no backend Issues API yet for this to desynchronize with).
+   3. Exactly 3 synthetic DEMO-ISSUE-0xx records are shown (never treated
+      as real issue truth — see the mandatory demo banner) so the
+      workspace is not permanently empty while the real Issue System
+      integration remains a separate, unapproved future requirement. Each
+      demo record's Raised By/Team values are bound to real values
+      pulled from the Staff Data API above, never fabricated names.
+   4. Assignment authority is now an EXACT identity check —
+      hasAssignmentAuthority(memberKey) — true only when the authenticated
+      member_key is literally 'rajiv'. This replaces a role-text check
+      (member-registry.js's now-removed isAdminMemberKey(),
+      role === 'Admin Manager') that a business review confirmed was the
+      wrong shape: a role check would incorrectly grant assignment rights
+      to any future second "Admin Manager" the registry might ever gain.
+      "Assign To" itself is UNCHANGED — it still lists only the 5
+      Management Team members from member-registry.js's MEMBER_REGISTRY
+      (never MD, never a general staff member), since that was already
+      correct and is a completely separate question from who MAY assign.
 
    Built via createElement/appendChild with textContent for every
    issue-authored field (never innerHTML for untrusted text) — same
@@ -35,7 +67,8 @@
    nested inside any Management Team member panel. */
 
 import { getStoredMemberKey, CALENDAR_AUTH_CHANGED_EVENT } from './calendar/auth.js';
-import { MEMBER_REGISTRY, MD_MEMBER_KEY, isAdminMemberKey } from './member-registry.js';
+import { MEMBER_REGISTRY, MD_MEMBER_KEY } from './member-registry.js';
+import { STAFF_API_BASE } from './staff-data.js';
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -45,10 +78,20 @@ var TRUNCATE_LENGTH = 320;
    summaries.js's own REVIEWER_FILTER_ORDER convention (a stable,
    documented order rather than trusting object-key iteration order).
    MD is deliberately excluded — MD is a read-only authentication display
-   identity (member-registry.js), never a Management issue assignee,
-   per REQ-ISSUES-UI-001 Phase 8. Approving MD as an assignee is out of
-   scope for this requirement and would need a separate, explicit one. */
+   identity (member-registry.js), never a Management issue assignee. This
+   list is UNCHANGED by the 2026-08-10 correction — "who may be assigned
+   to" was already correct; only "who may DO the assigning" changed. */
 export var ASSIGNEE_ORDER = ['mayurika', 'suman', 'arun', 'rajiv', 'paraparan'];
+
+/* REQ-ISSUES-UI-001 correction (2026-08-10) — assignment authority is a
+   single exact identity, never a role-text check (see module header).
+   Exported as a named constant, not inlined at each call site, so a test
+   can assert against it directly instead of a duplicated string literal. */
+export var ASSIGNMENT_AUTHORITY_MEMBER_KEY = 'rajiv';
+
+export function hasAssignmentAuthority(memberKey) {
+  return memberKey === ASSIGNMENT_AUTHORITY_MEMBER_KEY;
+}
 
 export var STATUS_FILTERS = [
   { value: 'all', label: 'All' },
@@ -67,8 +110,8 @@ function statusBadgeClass(status) {
 
 /* Solving status is a SEPARATE, assignment-only concept from the issue's
    own RED/AMBER/GREEN triage status (issue.status) — changing one never
-   writes the other (Phase 9 requirement). Kept only in the adapter's
-   in-memory assignment record, never on the issue object itself. */
+   writes the other. Kept only in the adapter's in-memory assignment
+   record, never on the issue object itself. */
 export var SOLVING_STATUS_OPTIONS = [
   { value: 'not-solved', label: 'Not Solved', badgeClass: 'msc-issues-badge-red' },
   { value: 'partially-solved', label: 'Partially Solved', badgeClass: 'msc-issues-badge-amber' },
@@ -79,16 +122,15 @@ export function solvingStatusOption(value) {
   return SOLVING_STATUS_OPTIONS.filter(function (s) { return s.value === value; })[0] || SOLVING_STATUS_OPTIONS[0];
 }
 
-/* Every column except Data is sortable, matching the supplied reference
-   page closely (Phase 15 requires at minimum Ticket ID/Raised By/Date
-   Raised/Status/Priority/Title — this covers those plus the remaining
-   short-value columns the reference also made sortable). */
+/* Every column except Data is sortable. "Domain" renamed to "Team"
+   (2026-08-10 correction) — both the visible label and the underlying
+   issue-record field key (team, not domain). */
 var TABLE_COLUMNS = [
   { key: 'ticketId', label: 'Ticket ID', sortable: true },
   { key: 'member', label: 'Member', sortable: true },
   { key: 'raisedBy', label: 'Raised By', sortable: true },
   { key: 'dateRaised', label: 'Date Raised', sortable: true },
-  { key: 'domain', label: 'Domain', sortable: true },
+  { key: 'team', label: 'Team', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
   { key: 'priority', label: 'Priority Score', sortable: true },
   { key: 'title', label: 'Title', sortable: true },
@@ -100,13 +142,9 @@ var TABLE_COLUMNS = [
   { key: 'dataLink', label: 'Data', sortable: false }
 ];
 
-// ── Pure helpers (exported for direct testing — no DOM involved) ──────────
+export var DEMO_BANNER_TEXT = 'Demo data — 3 temporary issues are shown while the Issue System connection is pending.';
 
-/* Never a hardcoded name comparison — derives Admin purely from
-   member-registry.js's own role field (see that file's own comment). */
-export function isAdminMember(memberKey) {
-  return isAdminMemberKey(memberKey);
-}
+// ── Pure helpers (exported for direct testing — no DOM involved) ──────────
 
 export function getAssigneeOptions() {
   return ASSIGNEE_ORDER
@@ -114,11 +152,15 @@ export function getAssigneeOptions() {
     .map(function (key) { return { memberKey: key, displayName: MEMBER_REGISTRY[key].displayName }; });
 }
 
-export function uniqueSortedValues(issues, field) {
+/* Dedupes + alphabetically sorts a plain array of strings, dropping any
+   falsy value — the one place this logic lives, reused for both the
+   Raised By (staff full_name) and Team (department_team) option lists,
+   whether they come from real issue records (uniqueSortedValues below)
+   or directly from the Staff Data API (createProductionStaffTeamSource). */
+export function uniqueSorted(values) {
   var seen = {};
   var out = [];
-  issues.forEach(function (issue) {
-    var v = issue[field];
+  (values || []).forEach(function (v) {
     if (!v || seen[v]) { return; }
     seen[v] = true;
     out.push(v);
@@ -127,11 +169,15 @@ export function uniqueSortedValues(issues, field) {
   return out;
 }
 
+export function uniqueSortedValues(issues, field) {
+  return uniqueSorted(issues.map(function (issue) { return issue[field]; }));
+}
+
 export function filterIssues(issues, filters) {
   filters = filters || {};
   return issues.filter(function (issue) {
     if (filters.raisedBy && filters.raisedBy !== 'all' && issue.raisedBy !== filters.raisedBy) { return false; }
-    if (filters.domain && filters.domain !== 'all' && issue.domain !== filters.domain) { return false; }
+    if (filters.team && filters.team !== 'all' && issue.team !== filters.team) { return false; }
     if (filters.status && filters.status !== 'all' && (issue.status || '').toUpperCase() !== filters.status) { return false; }
     return true;
   });
@@ -172,20 +218,144 @@ export function previewText(text) {
   return { truncated: true, preview: safe.slice(0, TRUNCATE_LENGTH) + '…' };
 }
 
+// ── Demo issue records (2026-08-10 correction) ─────────────────────────
+//
+// Exactly 3 synthetic records, per confirmed business rule — never real
+// issue truth (see DEMO_BANNER_TEXT above, always shown alongside them).
+// Ticket IDs, titles, and descriptions are entirely synthetic; only
+// Raised By and Team are bound to genuine values already loaded from the
+// Staff Data API (never fabricated names) — see
+// createProductionIssuesAdapter below, which is the only caller.
+
+var DEMO_TITLES = [
+  'Demo issue 1 — sample record for Issues workspace preview',
+  'Demo issue 2 — sample record for Issues workspace preview',
+  'Demo issue 3 — sample record for Issues workspace preview'
+];
+var DEMO_STATUSES = ['RED', 'AMBER', 'GREEN'];
+var DEMO_DESCRIPTION =
+  'This is a synthetic demonstration record, not a real reported issue. It exists only to preview ' +
+  'the Issues workspace layout while the Issue System backend connection is pending.';
+
+function pick(list, i) {
+  return list && list.length ? list[i % list.length] : '';
+}
+
+function padDemoNumber(n) {
+  return ('00' + n).slice(-3);
+}
+
+/* raisedByOptions/teamOptions are the real, already-loaded Staff Data
+   API values — never invented here. If either is empty, callers must not
+   reach this function at all (createProductionStaffTeamSource rejects
+   first — see below) rather than binding a demo record to a blank name. */
+export function buildDemoIssues(raisedByOptions, teamOptions) {
+  var todayStr = new Date().toISOString().slice(0, 10);
+  return [0, 1, 2].map(function (i) {
+    return {
+      ticketId: 'DEMO-ISSUE-' + padDemoNumber(i + 1),
+      member: '',
+      raisedBy: pick(raisedByOptions, i),
+      dateRaised: todayStr,
+      team: pick(teamOptions, i),
+      status: DEMO_STATUSES[i],
+      priority: '',
+      title: DEMO_TITLES[i],
+      description: DEMO_DESCRIPTION,
+      rootCause: '',
+      whatIsHappening: '',
+      documentGap: '',
+      fix: '',
+      dataLink: ''
+    };
+  });
+}
+
+// ── Staff/Team source (2026-08-10 correction) ──────────────────────────
+//
+// Reuses the existing, real, read-only Staff Data API — the same
+// STAFF_API_BASE host-detection constant staff-data.js already exports
+// and review-summaries.js already reuses for its own staff search — never
+// a second host-detection constant, never a hardcoded name/team list.
+
+function fetchActiveStaffNames() {
+  var params = ['limit=500', 'staff_status=Active'];
+  return fetch(STAFF_API_BASE + '?' + params.join('&')).then(function (res) {
+    if (!res.ok) { throw new Error('Staff lookup failed.'); }
+    return res.json();
+  }).then(function (body) {
+    var names = (body.records || []).map(function (r) { return r.full_name; });
+    return uniqueSorted(names);
+  });
+}
+
+function fetchTeamNames() {
+  return fetch(STAFF_API_BASE + '/filter-options').then(function (res) {
+    if (!res.ok) { throw new Error('Team lookup failed.'); }
+    return res.json();
+  }).then(function (body) {
+    return uniqueSorted(body.teams || []);
+  });
+}
+
+/* fetchOptions() resolves { raisedByOptions, teamOptions } — both real,
+   deduped, alphabetically sorted arrays of strings — or rejects with an
+   Error carrying `.staffTeamUnavailable = true` (network/HTTP failure, OR
+   a successful-but-empty response from either endpoint, which is treated
+   identically: safer to show "could not be loaded" than to ever bind a
+   demo record to an empty/fabricated value). */
+export function createProductionStaffTeamSource() {
+  return {
+    fetchOptions: function () {
+      return Promise.all([fetchActiveStaffNames(), fetchTeamNames()]).then(
+        function (results) {
+          var raisedByOptions = results[0];
+          var teamOptions = results[1];
+          if (!raisedByOptions.length || !teamOptions.length) {
+            var emptyErr = new Error('Staff/team options unavailable.');
+            emptyErr.staffTeamUnavailable = true;
+            throw emptyErr;
+          }
+          return { raisedByOptions: raisedByOptions, teamOptions: teamOptions };
+        },
+        function (err) {
+          var tagged = (err instanceof Error) ? err : new Error('Staff/team options unavailable.');
+          tagged.staffTeamUnavailable = true;
+          throw tagged;
+        }
+      );
+    }
+  };
+}
+
 // ── Data adapter ────────────────────────────────────────────────────────
 //
-// Replaceable by design (Phase 10) — mountIssuesWorkspace() takes an
-// adapter via opts.adapter; only the shape below matters to the rest of
-// this module. createProductionIssuesAdapter() is the default: it has no
-// backend Issue-System endpoint to call yet, so it is honest about that
-// rather than pretending. createInMemoryIssuesAdapter() is for tests/dev
-// fixtures only — never wired into app.js's production boot path.
+// Replaceable by design — mountIssuesWorkspace() takes an adapter via
+// opts.adapter; only the shape below matters to the rest of this module.
+// createProductionIssuesAdapter() is the default, wired into app.js's
+// production boot path (initIssues). createInMemoryIssuesAdapter() is for
+// tests/dev fixtures only.
 
-export function createProductionIssuesAdapter() {
+/* staffTeamSourceOverride is test-only (avoids a real network call in
+   issues.test.mjs) — production wiring (initIssues) always omits it,
+   defaulting to createProductionStaffTeamSource() above. */
+export function createProductionIssuesAdapter(staffTeamSourceOverride) {
+  var staffTeamSource = staffTeamSourceOverride || createProductionStaffTeamSource();
   return {
     fetchIssues: function () {
-      return Promise.resolve({ status: 'empty', issues: [] });
+      return staffTeamSource.fetchOptions().then(function (opts) {
+        return {
+          status: 'data',
+          issues: buildDemoIssues(opts.raisedByOptions, opts.teamOptions),
+          isDemo: true,
+          raisedByOptions: opts.raisedByOptions,
+          teamOptions: opts.teamOptions
+        };
+      });
     },
+    /* Backend assignment persistence remains explicitly out of scope
+       (per instruction) — always 'pending_backend', never a false
+       "saved" state, regardless of how many demo records are selected. */
     assignTickets: function () {
       return Promise.resolve({ status: 'pending_backend' });
     },
@@ -247,9 +417,9 @@ function dashOrText(container, value) {
 }
 
 /* Builds a truncate/expand field — same "Show more"/"Show less" pattern
-   as review-summaries.css's .review-summaries-toggle-text-btn (Phase 11:
-   More/Less). Appends directly to `container`. Empty/missing values
-   render as "—", never as an empty cell (Phase 6). */
+   as review-summaries.css's .review-summaries-toggle-text-btn. Appends
+   directly to `container`. Empty/missing values render as "—", never as
+   an empty cell. */
 function appendTruncatedField(container, value) {
   if (!value) {
     container.appendChild(textEl('span', 'msc-issues-dash', '—'));
@@ -285,21 +455,28 @@ function buildStatusBadge(status) {
 /* Mounted exactly once (initIssues below), inside the independent
    #tab-issues panel. opts:
      - adapter: data adapter (see above) — defaults to the production
-       (empty, no-backend) adapter.
+       (demo-data) adapter.
      - getAuthenticatedMemberKey: () => memberKey|null — defaults to
        calendar/auth.js's getStoredMemberKey(), the same browser-wide
        token identity Review Summaries already uses. Overridable for
-       tests so Admin/non-Admin/MD gating can be exercised deterministically. */
+       tests so assignment-authority/non-authority/MD gating can be
+       exercised deterministically.
+     - loadingMessage: initial loading-state text — defaults to
+       'Loading issues…'; initIssues() passes 'Loading staff and team
+       options…' for the real production wiring, since that path's
+       loading state really is waiting on the Staff Data API, not an
+       Issue System fetch. */
 export function mountIssuesWorkspace(mountEl, opts) {
   if (!mountEl) { return null; }
   opts = opts || {};
   var adapter = opts.adapter || createProductionIssuesAdapter();
   var getAuthenticatedMemberKey = opts.getAuthenticatedMemberKey || getStoredMemberKey;
+  var loadingMessage = opts.loadingMessage || 'Loading issues…';
 
   var state = {
     status: 'loading', // 'loading' | 'data' | 'empty' | 'error'
     issues: [],
-    filters: { raisedBy: 'all', domain: 'all', status: 'all' },
+    filters: { raisedBy: 'all', team: 'all', status: 'all' },
     sortKey: 'dateRaised',
     sortDir: 'desc',
     view: 'issues', // 'issues' | 'assigned'
@@ -307,10 +484,13 @@ export function mountIssuesWorkspace(mountEl, opts) {
     assigneeFilter: 'all',
     assignments: {},
     lastFilteredIds: [],
-    pendingBackendNotice: false
+    isDemo: false,
+    raisedByOptions: null,
+    teamOptions: null,
+    errorMessage: null
   };
 
-  function isAdmin() { return isAdminMember(getAuthenticatedMemberKey()); }
+  function canAssign() { return hasAssignmentAuthority(getAuthenticatedMemberKey()); }
 
   // ── Static shell (built once) ──────────────────────────────────────
 
@@ -349,7 +529,9 @@ export function mountIssuesWorkspace(mountEl, opts) {
 
   var toolbar = el('div', 'msc-issues-toolbar');
 
-  // Raised By
+  // Raised By — options come from state.raisedByOptions (real Staff Data
+  // API values) when available, else derived from the loaded issues
+  // (fallback for test/dev fixture adapters — see populateFilterOptions).
   var raisedByField = el('div', 'msc-issues-filter-field');
   var raisedByLabel = textEl('label', 'msc-issues-filter-label', 'Raised By');
   raisedByLabel.setAttribute('for', 'msc-issues-raised-by-filter');
@@ -358,14 +540,14 @@ export function mountIssuesWorkspace(mountEl, opts) {
   raisedByField.appendChild(raisedByLabel);
   raisedByField.appendChild(raisedBySelect);
 
-  // Domain
-  var domainField = el('div', 'msc-issues-filter-field');
-  var domainLabel = textEl('label', 'msc-issues-filter-label', 'Domain');
-  domainLabel.setAttribute('for', 'msc-issues-domain-filter');
-  var domainSelect = el('select', 'msc-issues-select');
-  domainSelect.id = 'msc-issues-domain-filter';
-  domainField.appendChild(domainLabel);
-  domainField.appendChild(domainSelect);
+  // Team (renamed from Domain, 2026-08-10 correction)
+  var teamField = el('div', 'msc-issues-filter-field');
+  var teamLabel = textEl('label', 'msc-issues-filter-label', 'Team');
+  teamLabel.setAttribute('for', 'msc-issues-team-filter');
+  var teamSelect = el('select', 'msc-issues-select');
+  teamSelect.id = 'msc-issues-team-filter';
+  teamField.appendChild(teamLabel);
+  teamField.appendChild(teamSelect);
 
   // Status
   var statusField = el('div', 'msc-issues-filter-field');
@@ -387,13 +569,13 @@ export function mountIssuesWorkspace(mountEl, opts) {
   statusField.appendChild(statusTabs);
 
   toolbar.appendChild(raisedByField);
-  toolbar.appendChild(domainField);
+  toolbar.appendChild(teamField);
   toolbar.appendChild(statusField);
 
-  // Admin-only assignment controls (Phase 5/8) — not rendered at all for
-  // a non-Admin authenticated member, and never rendered for MD (MD's
-  // role is 'Read-only', never 'Admin Manager', so isAdmin() is already
-  // false for MD with no MD-specific check needed).
+  // Assignment controls — rendered only for the exact identity confirmed
+  // in ASSIGNMENT_AUTHORITY_MEMBER_KEY (Rajiv), never for any other
+  // authenticated member (including any future second "Admin Manager"),
+  // never for MD, never when unauthenticated.
   var assignToolbar = null;
   var selectAllCheckbox = null;
   var assignToSelect = null;
@@ -401,7 +583,7 @@ export function mountIssuesWorkspace(mountEl, opts) {
   var selectedCountEl = null;
   var assignNoticeEl = null;
 
-  if (isAdmin()) {
+  if (canAssign()) {
     assignToolbar = el('div', 'msc-issues-assign-toolbar');
 
     var selectAllField = el('div', 'msc-issues-filter-field');
@@ -456,6 +638,15 @@ export function mountIssuesWorkspace(mountEl, opts) {
 
   issuesPanel.appendChild(toolbar);
   if (assignNoticeEl) { issuesPanel.appendChild(assignNoticeEl); }
+
+  // Demo-data banner (Phase 5) — visible, accessibly-styled, never small
+  // footer text. Shown only when the active adapter's result is flagged
+  // isDemo (the production adapter always sets this; test/dev fixture
+  // adapters never do).
+  var demoBannerEl = el('div', 'msc-issues-demo-banner');
+  demoBannerEl.setAttribute('role', 'note');
+  demoBannerEl.hidden = true;
+  issuesPanel.appendChild(demoBannerEl);
 
   var tableRegion = el('div', 'msc-issues-table-region');
   issuesPanel.appendChild(tableRegion);
@@ -524,7 +715,8 @@ export function mountIssuesWorkspace(mountEl, opts) {
     allOpt.value = 'all';
     allOpt.textContent = 'All';
     raisedBySelect.appendChild(allOpt);
-    uniqueSortedValues(state.issues, 'raisedBy').forEach(function (name) {
+    var raisedByValues = state.raisedByOptions || uniqueSortedValues(state.issues, 'raisedBy');
+    raisedByValues.forEach(function (name) {
       var opt = el('option', '');
       opt.value = name;
       opt.textContent = name;
@@ -532,27 +724,28 @@ export function mountIssuesWorkspace(mountEl, opts) {
     });
     raisedBySelect.value = currentRaisedBy || 'all';
 
-    var currentDomain = domainSelect.value;
-    domainSelect.textContent = '';
-    var allDomainOpt = el('option', '');
-    allDomainOpt.value = 'all';
-    allDomainOpt.textContent = 'All';
-    domainSelect.appendChild(allDomainOpt);
-    uniqueSortedValues(state.issues, 'domain').forEach(function (d) {
+    var currentTeam = teamSelect.value;
+    teamSelect.textContent = '';
+    var allTeamOpt = el('option', '');
+    allTeamOpt.value = 'all';
+    allTeamOpt.textContent = 'All';
+    teamSelect.appendChild(allTeamOpt);
+    var teamValues = state.teamOptions || uniqueSortedValues(state.issues, 'team');
+    teamValues.forEach(function (t) {
       var opt = el('option', '');
-      opt.value = d;
-      opt.textContent = d.charAt(0).toUpperCase() + d.slice(1);
-      domainSelect.appendChild(opt);
+      opt.value = t;
+      opt.textContent = t; // shown verbatim — real system team values, never re-cased/guessed
+      teamSelect.appendChild(opt);
     });
-    domainSelect.value = currentDomain || 'all';
+    teamSelect.value = currentTeam || 'all';
   }
 
   raisedBySelect.addEventListener('change', function () {
     state.filters.raisedBy = raisedBySelect.value;
     render();
   });
-  domainSelect.addEventListener('change', function () {
-    state.filters.domain = domainSelect.value;
+  teamSelect.addEventListener('change', function () {
+    state.filters.team = teamSelect.value;
     render();
   });
   STATUS_FILTERS.forEach(function (opt) {
@@ -572,7 +765,7 @@ export function mountIssuesWorkspace(mountEl, opts) {
     renderAssignedCards();
   });
 
-  // ── Assignment wiring (Admin only) ───────────────────────────────────
+  // ── Assignment wiring (assignment-authority member only) ─────────────
 
   function selectedCount() { return Object.keys(state.selectedTicketIds).length; }
 
@@ -716,7 +909,7 @@ export function mountIssuesWorkspace(mountEl, opts) {
         tr.appendChild(td);
         return;
       }
-      if (col.key === 'domain' || col.key === 'dateRaised') {
+      if (col.key === 'team' || col.key === 'dateRaised') {
         dashOrText(td, issue[col.key]);
         tr.appendChild(td);
         return;
@@ -729,10 +922,13 @@ export function mountIssuesWorkspace(mountEl, opts) {
   }
 
   function renderIssuesTable() {
+    demoBannerEl.hidden = !state.isDemo;
+    demoBannerEl.textContent = state.isDemo ? DEMO_BANNER_TEXT : '';
+
     tableRegion.textContent = '';
 
     if (state.status === 'loading') {
-      tableRegion.appendChild(textEl('div', 'msc-issues-loading', 'Loading issues…'));
+      tableRegion.appendChild(textEl('div', 'msc-issues-loading', loadingMessage));
       countPill.textContent = '';
       state.lastFilteredIds = [];
       updateAssignBar();
@@ -742,7 +938,7 @@ export function mountIssuesWorkspace(mountEl, opts) {
     if (state.status === 'error') {
       var errWrap = el('div', 'msc-issues-error');
       errWrap.setAttribute('role', 'alert');
-      errWrap.appendChild(textEl('p', '', 'Issues could not be loaded. Please try again.'));
+      errWrap.appendChild(textEl('p', '', state.errorMessage || 'Issues could not be loaded. Please try again.'));
       var retryBtn = el('button', 'msc-btn msc-btn-ghost msc-issues-retry-btn');
       retryBtn.type = 'button';
       retryBtn.textContent = 'Retry';
@@ -811,7 +1007,7 @@ export function mountIssuesWorkspace(mountEl, opts) {
     top.appendChild(textEl('span', 'msc-issues-ticket-id', issue.ticketId));
     top.appendChild(metaRow('Raised by', issue.raisedBy));
     top.appendChild(metaRow('Date raised', issue.dateRaised));
-    top.appendChild(metaRow('Domain', issue.domain));
+    top.appendChild(metaRow('Team', issue.team));
     card.appendChild(top);
 
     card.appendChild(textEl('h3', 'msc-issues-card-title', issue.title || ''));
@@ -892,15 +1088,23 @@ export function mountIssuesWorkspace(mountEl, opts) {
 
   function loadIssues() {
     state.status = 'loading';
+    state.errorMessage = null;
     renderIssuesTable();
     adapter.fetchIssues().then(function (result) {
       state.status = result.status;
       state.issues = result.issues || [];
+      state.isDemo = !!result.isDemo;
+      state.raisedByOptions = result.raisedByOptions || null;
+      state.teamOptions = result.teamOptions || null;
       state.assignments = adapter.listAssignments();
       render();
-    }, function () {
+    }, function (err) {
       state.status = 'error';
       state.issues = [];
+      state.isDemo = false;
+      state.errorMessage = (err && err.staffTeamUnavailable)
+        ? 'Staff/team options could not be loaded.'
+        : 'Issues could not be loaded. Please try again.';
       render();
     });
   }
@@ -916,15 +1120,17 @@ export function mountIssuesWorkspace(mountEl, opts) {
 
 /* Mounted once at app boot (web-view/js/app.js). Re-mounts from scratch on
    CALENDAR_AUTH_CHANGED_EVENT (calendar/auth.js) — the same browser-wide
-   token change Review Summaries already reacts to — so Admin gating (Phase
-   5/8) stays live if the Calendar token is changed while this tab is open,
-   instead of freezing whichever identity was authenticated at first mount. */
+   token change Review Summaries already reacts to — so assignment-
+   authority gating stays live if the Calendar token is changed while this
+   tab is open, instead of freezing whichever identity was authenticated
+   at first mount. loadingMessage matches this path's real behavior — it
+   is genuinely waiting on the Staff Data API before it can show anything. */
 export function initIssues() {
   var mountEl = document.getElementById('issuesWorkspace');
   if (!mountEl) { return null; }
-  var current = mountIssuesWorkspace(mountEl);
+  var current = mountIssuesWorkspace(mountEl, { loadingMessage: 'Loading staff and team options…' });
   document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, function () {
-    current = mountIssuesWorkspace(mountEl);
+    current = mountIssuesWorkspace(mountEl, { loadingMessage: 'Loading staff and team options…' });
   });
   return current;
 }

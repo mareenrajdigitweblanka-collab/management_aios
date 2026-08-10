@@ -3,9 +3,9 @@ name: management-issues-frontend-handover
 type: handover
 scope: management_aios — Management Issues Frontend Tab (REQ-ISSUES-UI-001)
 created: 2026-08-10
-status: Implemented directly on local `main`, all new/targeted tests pass, zero regressions, zero backend/database changes, zero production writes — committed locally, NOT pushed (awaiting review per instruction)
+status: Original implementation reviewed, pushed to origin/main (commit b956f0c). A follow-up correction (§10 below) applying confirmed business-rule changes is implemented and tested locally but NOT pushed — awaiting review per instruction.
 owner: builder (Mareenraj)
-reviewer: pending
+reviewer: pending (correction only — original implementation already reviewed and pushed)
 ---
 
 # Management Issues Frontend Tab — Implementation Handover — 2026-08-10
@@ -79,15 +79,67 @@ The pre-existing untracked file `validation/staff-roster-employee-number-vs-staf
 
 Commit: see final report for hash — "Add Management Issues frontend workspace".
 
-**Push status: NOT pushed.** Per explicit instruction, this implementation report must be reviewed before any push.
+**Push status: pushed.** Commit `b956f0c26a27c8909b87ba9aed20adf5f4fadfc5` was reviewed and pushed to `origin/main` (`5122d95..b956f0c`), then verified live in production (`https://management-aios.vercel.app`) — see the separate push-verification report from that turn for full post-push evidence.
 
-## 8. Known limitations (also in the validation doc §13)
+## 8. Known limitations (also in the validation doc §13, at the time of the original implementation)
 
-1. Admin gating reflects the identity at mount time; it does re-mount live on a Calendar token change (`CALENDAR_AUTH_CHANGED_EVENT`), but that specific path wasn't covered by a dedicated automated test.
-2. Solving Status editing on an Assigned Tickets card is not Admin-gated — a deliberate reading of an ambiguous requirement (the reference sample didn't gate it either), not an oversight.
+1. Admin gating reflected the identity at mount time; re-mounts live on a Calendar token change (`CALENDAR_AUTH_CHANGED_EVENT`), but that path wasn't covered by a dedicated automated test.
+2. Solving Status editing on an Assigned Tickets card is not gated to the assignment-authority member — a deliberate reading of an ambiguous requirement (the reference sample didn't gate it either), not an oversight. Still true after the §10 correction.
 3. No dedicated screen-reader pass; only structural ARIA attributes were verified.
-4. Production shows "No issues are available yet." until a backend integration requirement is separately approved.
+4. (Superseded by §10 — production no longer shows "No issues are available yet." by design; it now shows 3 clearly-labeled demo records sourced from real staff/team data.)
 
-## 9. One next step
+## 9. One next step (original implementation — completed)
 
-A reviewer reads this implementation report (this file plus the validation check) and, if satisfied, either approves pushing `main` to `origin` or requests changes. Separately: draft and approve the Issue-System backend integration requirement referenced in §10 of the requirement doc before any real data is wired into this tab.
+~~A reviewer reads this implementation report... and either approves pushing `main` to `origin` or requests changes.~~ Done — reviewed and pushed (see §7). Remaining: draft and approve the Issue-System backend integration requirement (still open — see §10.7 below).
+
+## 10. Correction — 2026-08-10 (confirmed business rules, post-deployment review)
+
+Full requirement: `docs/2026-08-10_management-issues-frontend-requirement.md` §11. Full evidence: `validation/management-issues-frontend-check-2026-08-10.md` §15. This section documents a SEPARATE, not-yet-pushed local commit on top of `b956f0c` — do not confuse the two.
+
+### 10.1 What changed
+
+Live-browser review of the pushed implementation surfaced that Raised By/Domain had no real system source (the production adapter had zero issue records, so both lists correctly rendered empty — but that made "where should these come from" worth resolving properly). Four confirmed corrections:
+
+1. Raised By now sourced from the real Staff Data API (`GET /api/staff`, active only).
+2. "Domain" renamed to "Team" (UI label + issue-record field); Team options come from `GET /api/staff/filter-options`'s `teams` array.
+3. Exactly 3 synthetic `DEMO-ISSUE-0xx` records shown (bound to real Raised By/Team values), with a mandatory visible demo banner, replacing the previous always-empty production state.
+4. Assignment authority is now `hasAssignmentAuthority(memberKey) === 'rajiv'` (exact identity), replacing the role-based `isAdminMemberKey()`/`role === 'Admin Manager'` check — a business review confirmed the role check was the wrong shape (a future second "Admin Manager" would have incorrectly gained assignment rights).
+
+### 10.2 Files modified (this correction)
+
+| File | Change |
+| --- | --- |
+| `web-view/js/issues.js` | Staff/Team API sourcing, `domain`→`team` rename, `hasAssignmentAuthority()`, demo data/banner, `loadingMessage` opt |
+| `web-view/css/issues.css` | `.msc-issues-demo-banner` |
+| `web-view/js/member-registry.js` | Removed `isAdminMemberKey()`/`ADMIN_ROLE` |
+| `web-view/js/issues.test.mjs` | Rewritten — 63 tests (was 49) |
+| `docs/2026-08-10_management-issues-frontend-requirement.md` | §11 added |
+| `validation/management-issues-frontend-check-2026-08-10.md` | §15 added |
+| `handover/2026-08-10__management-issues-frontend-closure.md` | This §10 |
+
+`web-view/index.html`, `web-view/js/app.js`, `web-view/js/issues-navigation-structure.test.mjs`: **unchanged** by this correction. Backend files changed: **0**. Database/migration files changed: **0**. `member-aios/mayurika-hr/staff-data/`: never opened. No real issue was created or assigned; assignment persistence remains explicitly out of scope (`assignTickets()`/`updateSolvingStatus()` still always resolve `pending_backend`).
+
+### 10.3 Authoritative pattern updates — do not duplicate
+
+- `hasAssignmentAuthority(memberKey)` (`issues.js`) is now the ONE assignment-authority check — an exact `=== 'rajiv'` comparison, never a role/name-text check. `member-registry.js`'s `isAdminMemberKey()` is gone; do not reintroduce a role-based variant anywhere in this codebase for this purpose.
+- `createProductionStaffTeamSource()` (`issues.js`) is the ONE place that calls the Staff Data API for Issues purposes — reuses `staff-data.js`'s `STAFF_API_BASE`, never a second host-detection constant. `createProductionIssuesAdapter(staffTeamSourceOverride)` is the ONE place that turns that into 3 demo issues (`buildDemoIssues()`) — do not hardcode staff/team values anywhere else in this module.
+- The issue record's field is `team`, not `domain`, everywhere now (data contract, `TABLE_COLUMNS`, filters, CSS ids). Do not reintroduce `domain` — it was a safe, complete rename since no backend Issues API exists yet.
+- `getAssigneeOptions()`/`ASSIGNEE_ORDER` (who may be ASSIGNED) is UNCHANGED and must stay separate from `hasAssignmentAuthority()` (who may DO the assigning) — these answer two different questions and must not be merged.
+
+### 10.4 How to extend tests (additions)
+
+- Staff/team-source tests mock `globalThis.fetch` directly (see `issues.test.mjs`'s "Staff/Team source" section) — never a real network call in the test suite.
+- Demo-data/production-adapter DOM tests use `mountWithProductionDemoAdapter(memberKey, names, teams)`, backed by `createFixtureStaffTeamSource()` — a fixture standing in for an already-resolved `fetchOptions()` result (dedup happens upstream of it; see the comment above the Team-source DOM test for why dedup is asserted at the pure-function level, not re-asserted at the DOM level).
+- Exact-identity authority tests assert both that the role string (`'Admin Manager'`) and the display name (`'Rajiv'`) independently fail — do not remove either half when adding new authority tests; both are the point.
+
+### 10.5 Verification summary (this correction)
+
+63/63 `issues.test.mjs` (was 49), 12/12 `issues-navigation-structure.test.mjs` (unchanged), 214/214 full `web-view/js/*.test.mjs` directory (was 200/200), 181/181 Calendar (unchanged). Live-browser verification against the REAL, read-only, publicly-reachable production Staff Data API (via a Playwright route proxy — no local backend started, no write, no deployment) confirmed 142 real active staff names and 81 real team values populate the filters correctly, exactly 3 demo issues render with the exact required banner copy, Rajiv sees the assignment toolbar with the correct 5-member Assign To list, and Mayurika sees none of it. Full detail: validation doc §15.
+
+### 10.6 Git (this correction — not yet pushed)
+
+See the final report for this turn for the exact commit hash, staged file list, and confirmation this correction was committed to local `main` only.
+
+### 10.7 One next step
+
+A reviewer reads this correction's report (this file's §10, plus validation doc §15) and, if satisfied, approves pushing this correction commit to `origin`. Separately, still open: draft and approve the actual Issue-System backend integration requirement (fetch/assign/solving-status-update endpoints) before any real data replaces the 3 demo records.

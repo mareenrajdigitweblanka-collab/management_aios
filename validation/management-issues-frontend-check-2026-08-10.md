@@ -118,6 +118,94 @@ No pre-existing test was modified. No pre-existing test's assertions changed.
 3. No screen-reader pass was performed; only structural ARIA attributes were verified.
 4. The production adapter always returns an empty issue list (by design, per §10 of the requirement doc) — this tab will show "No issues are available yet." in production until a backend integration requirement is separately approved and built.
 
-## 14. Verdict
+## 14. Verdict (original implementation, superseded — see §15)
 
 **PASS.** All in-scope UX behaviors from the supplied reference are reproduced without adopting its two production-unsafe shortcuts. Zero backend/database changes. Zero production writes. 61 new tests pass; 381 pre-existing tests remain green.
+
+## 15. Correction — 2026-08-10 (confirmed business rules)
+
+Requirement update: `docs/2026-08-10_management-issues-frontend-requirement.md` §11.
+
+### 15.1 Files modified (this correction)
+
+| File | Change |
+| --- | --- |
+| `web-view/js/issues.js` | Raised By/Team now sourced from the real Staff Data API (`GET /api/staff`, `GET /api/staff/filter-options`, via `staff-data.js`'s `STAFF_API_BASE`); `domain` field renamed to `team` throughout; new `hasAssignmentAuthority(memberKey)` exact-identity check (`=== 'rajiv'`) replaces the role-based check; new `buildDemoIssues()`/`createProductionStaffTeamSource()`/`createProductionIssuesAdapter(staffTeamSourceOverride)`; new demo banner wiring; new `loadingMessage` opt |
+| `web-view/css/issues.css` | Added `.msc-issues-demo-banner` (visible, accessibly-styled, not footer text) |
+| `web-view/js/member-registry.js` | Removed `isAdminMemberKey()`/`ADMIN_ROLE` entirely (superseded — see requirement §11.4) |
+| `web-view/js/issues.test.mjs` | Rewritten: 63 tests (was 49) |
+| `docs/2026-08-10_management-issues-frontend-requirement.md` | §11 correction section added |
+| `validation/management-issues-frontend-check-2026-08-10.md` | This §15 |
+| `handover/2026-08-10__management-issues-frontend-closure.md` | §correction section added |
+
+`web-view/index.html` and `web-view/js/app.js`: **unchanged** by this correction (already correct from the original implementation). `web-view/js/issues-navigation-structure.test.mjs`: unchanged, still 12/12 passing (no structural/navigation change).
+
+### 15.2 Raised By source
+
+`GET /api/staff?staff_status=Active&limit=500` (`web-view/js/staff-data.js`'s exported `STAFF_API_BASE`, same local/production host-detection constant `review-summaries.js` already reuses). Response `records[].full_name`, deduped + alphabetically sorted client-side (`uniqueSorted`). Verified live against the real deployed backend (`https://management-aios-api.vercel.app/api/staff`, read-only GET, no auth required, no data written) via a Playwright route proxy (see §15.6): **142 active staff records**, 142 unique names → 143 dropdown options including "All". No sample name (`Nandhi`/`Nivarnan`/`Sasi`/`Sathis`) appears anywhere in `issues.js` (source-text test).
+
+### 15.3 Team source
+
+`GET /api/staff/filter-options` → `teams` array (already `SELECT DISTINCT department_team ... ORDER BY department_team` server-side; deduped again client-side defensively). Verified live: **81 distinct team values currently in the system** → 82 dropdown options including "All". Visible UI label is "Team" (confirmed both in the automated DOM test and by reading the live label element in a real browser). No sample domain (`Listing`/`PH`/`Postage`/`Pricing`/`Purchase`) appears anywhere in `issues.js` (source-text test).
+
+**Known data-quality observation (not in scope to fix here):** the live `teams` array contains many near-duplicate variants from inconsistent historical data entry (e.g. `eBay`/`Ebay`/`EBay`/`EBAY`/`ebay` as five separate distinct values, `Automation Technical` appearing in at least 4 spelling/casing variants). This is real, existing Staff Data — the correction's instruction was to use the authoritative system source verbatim, not to normalize it; any cleanup is a Staff Data governance question, out of scope for this frontend-only Issues correction.
+
+### 15.4 Demo data
+
+Exactly 3 records: `DEMO-ISSUE-001` (RED), `DEMO-ISSUE-002` (AMBER), `DEMO-ISSUE-003` (GREEN). Each bound to a real value from the loaded Raised By/Team lists (`pick(list, i)`, cyclic index — never a blank/fabricated binding; if either list is empty, the whole fetch is treated as unavailable instead — see §15.5). Ticket IDs, titles, and descriptions are entirely synthetic placeholder text; no real confidential narrative, no real evidence link, no production database ID. Demo banner renders the exact required copy ("Demo data — 3 temporary issues are shown while the Issue System connection is pending.") in a visible, bordered, colored banner — never small footer text — confirmed present and correctly worded in both the automated test and a live browser screenshot.
+
+### 15.5 Loading order / failure handling
+
+- **Initial:** "Loading staff and team options…" (production wiring only, via `initIssues()`'s `loadingMessage` opt; other adapters keep the generic "Loading issues…" default — both variants tested).
+- **On success:** filters + 3 demo issues render, demo banner visible.
+- **On failure** (network/HTTP error from either Staff Data endpoint, OR a successful-but-empty response from either): "Staff/team options could not be loaded." with a working Retry button; demo issues and banner stay hidden — chosen as the safer of the two options the requirement offered ("may remain hidden until valid filter-source data exists"), since it never risks binding a demo record to a blank/fabricated value.
+
+### 15.6 Assignment authority — exact identity
+
+`hasAssignmentAuthority(memberKey)` returns `true` only for the literal string `'rajiv'`. Confirmed by direct unit tests that a memberKey equal to the *role text* (`'Admin Manager'`) or the *display name* (`'Rajiv'`, capitalized) both return `false` — proving the check cannot be fooled by either shape of "looks like Rajiv" text, only the exact `member_key`. Confirmed in the DOM: mounting with `getAuthenticatedMemberKey` returning `'Admin Manager'` or `'Rajiv'` renders no assignment controls; only the literal `'rajiv'` does. `member-registry.js`'s `isAdminMemberKey()` was removed entirely (not deprecated-in-place) so it cannot be accidentally reused elsewhere.
+
+"Assign To" (who may be assigned) is unchanged from the original implementation — still exactly `Mayurika, Suman, Arun, Rajiv, Paraparan` from `MEMBER_REGISTRY`, confirmed live against the real Staff Data-backed workspace (§15.7) — `["Choose…","Mayurika","Suman","Arun","Rajiv","Paraparan"]`, no MD, no misspellings.
+
+### 15.7 Live browser verification (this correction)
+
+Playwright (already installed from the previous session's scratchpad) drove real headless Chromium against `web-view/index.html` served locally via `python -m http.server`, with `page.route()` proxying only `http://127.0.0.1:8000/api/staff**` requests to the real, read-only, publicly-reachable production Staff Data API (`https://management-aios-api.vercel.app`) — no local backend started, no write of any kind, no deployment. A Calendar auth token was seeded directly into `localStorage` in the shape `calendar/auth.js` reads (`management_aios_calendar_auth_v1`) to simulate an authenticated Rajiv/Mayurika session without needing a running auth backend.
+
+Confirmed, with real production staff/team data:
+
+- Exactly 3 rows (`DEMO-ISSUE-001/002/003`).
+- Raised By: 143 options (142 real active staff names + "All").
+- Team: 82 options (81 real team values + "All"), label reads "Team".
+- Demo banner visible with exact required text.
+- Rajiv (`member_key: 'rajiv'`): Select All + Assign To present (1 each); Assign To options exactly `Choose…, Mayurika, Suman, Arun, Rajiv, Paraparan`.
+- Mayurika (`member_key: 'mayurika'`): Select All + Assign To both absent (0); still sees the same 3 demo issues (view/filter allowed, assignment not).
+- Team filter narrows 3 rows → 1 row correctly.
+- Both internal tabs work; Assigned Tickets visible / Issues hidden while on the Assigned Tickets tab, and vice versa (the earlier `[hidden]`-vs-`display:flex` fix from §10 holds under real data too).
+- No Issues-specific console error (only pre-existing, unrelated `ERR_CONNECTION_REFUSED` from other unproxied Calendar/Review-Summaries API calls to the not-running local backend).
+
+No real issue was created or assigned; Assign was not exercised against the live proxy in this pass (already covered deterministically by the automated fixture-adapter test in §15.9) to keep this browser check strictly read-only end to end.
+
+### 15.8 Local backend availability
+
+`backend/README.md` documents running the FastAPI backend locally, but it requires a real `DATABASE_URL` (Postgres credentials) not present in this environment — not attempted. Instead, §15.7's read-only proxy against the real deployed production API (`GET /api/staff*`, no auth required, confirmed via direct `curl`) gave a stronger and simpler verification than a local backend would have, without needing any credentials or local service.
+
+### 15.9 Automated test results (this correction)
+
+```text
+web-view/js/issues.test.mjs                    : 63 pass, 0 fail   (was 49; rewritten for the field rename, exact-identity auth, demo data, staff/team source)
+web-view/js/issues-navigation-structure.test.mjs: 12 pass, 0 fail  (unchanged)
+web-view/js/*.test.mjs (full directory)         : 214 pass, 0 fail (was 200; net +14 = 63+12 replacing the old 49+12)
+web-view/js/calendar/*.test.mjs                 : 181 pass, 0 fail (unchanged — regression check only)
+```
+
+Key new/changed coverage: staff source called with the correct URL/query (`staff_status=Active`, `limit=500`) and deduped+sorted result; team source called against `/filter-options` and deduped+sorted; empty-but-successful response treated as unavailable; exact-identity assignment-authority tests (role text alone fails, display name alone fails, only literal `'rajiv'` passes); demo-issue construction tests; demo banner presence/absence tests; source-text tests confirming no reference-sample name/team list and no `indexedDB` usage (in addition to the existing `localStorage`/`sessionStorage` checks).
+
+### 15.10 Known limitations (this correction, in addition to §13)
+
+1. The Staff Data API's `limit=500` cap (`backend/routers/staff.py`'s `MAX_LIMIT`) means Raised By would silently stop growing past 500 active staff — not a concern today (142 active), documented for future awareness.
+2. The live `teams` list's data-quality issues (§15.3) are surfaced verbatim in the Team filter — a real, pre-existing Staff Data governance issue, not something this frontend-only correction cleans up.
+3. Demo-issue Raised By/Team bindings use a fixed `pick(list, i)` (index 0/1/2 of the alphabetically-sorted list) — deterministic but not randomized; acceptable for a clearly-labeled demo, noted for completeness.
+4. Assign was not exercised against the live production-API-backed browser session in this pass (see §15.7) — covered instead by a deterministic automated test using a fixture staff/team source, which exercises the identical code path without depending on network timing during a live check.
+
+### 15.11 Verdict (supersedes §14)
+
+**PASS.** All confirmed business-rule corrections applied: real Staff Data-sourced Raised By/Team, Domain→Team rename, exactly 3 clearly-labeled demo issues bound to real values, exact-identity (`member_key === 'rajiv'`) assignment authority replacing the rejected role-based check. Zero backend/database changes. Zero production writes. Zero real issue records created or assigned. 63 new/rewritten Issues tests pass (was 49), 214/214 in the full `web-view/js` suite (was 200/200), 181/181 Calendar (unchanged).

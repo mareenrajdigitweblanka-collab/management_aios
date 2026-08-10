@@ -190,6 +190,24 @@
   white-space: nowrap;
 }
 
+/* ── Demo-data banner (REQ-ISSUES-UI-001 correction, 2026-08-10) —
+   visible, accessibly-styled notice that the 3 shown records are
+   synthetic, not real issue truth. Deliberately NOT small footer text:
+   full-width, bordered, same visual weight as the assignment-pending
+   notice below. ── */
+.msc-issues-demo-banner {
+  background: var(--warning-bg);
+  border: 1px solid #fde68a;
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--warning);
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ── State messages (loading / error / empty) ── */
 .msc-issues-loading,
 .msc-issues-empty {
