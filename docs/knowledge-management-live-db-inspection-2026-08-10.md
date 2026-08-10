@@ -4,6 +4,8 @@
 **Purpose:** Perform the live, read-only inspection of the actual Management AIOS PostgreSQL database that has been marked "NOT COMPLETED" throughout every prior REQ-KM-001/REQ-KM-CRUD-002 document, before the draft migration (`database/migrations/2026-08-10-create-knowledge-documents.sql`, still `DRAFT — NOT EXECUTED`) can be considered for execution.
 **Protected path:** `member-aios/mayurika-hr/staff-data/` was never opened, listed, or referenced.
 
+**UPDATE (same day, later):** §1–§15 below record Claude's own automated connector attempt and its result — **INSUFFICIENT ACCESS**. This historical record is preserved unedited below. A **user-performed manual live read-only inspection** (via Beekeeper Studio, directly against the real Management AIOS database) has since been completed and is recorded in §16 onward, which is now the **authoritative current status**. §14/§15's "NOT COMPLETED"/"OPEN"/"BLOCKED" wording describes Claude's own attempt specifically and is not erased — see §18 for the current, superseding status statement.
+
 ---
 
 ## 1. Repo / Design Gate (Phase 1)
@@ -130,6 +132,111 @@ Per the explicit standing instruction across every REQ-KM-001/REQ-KM-CRUD-002 do
 - **Migration execution this session: NO.**
 - **Database writes this session: 0.**
 
-## 15. One Next Step
+## 15. One Next Step (as recorded at the time of Claude's own attempt)
 
 A future session needs an actually authorized connector to the real Management AIOS Neon Postgres (the `claude.ai postgres`/Supabase-style connector referenced in every prior report, still unauthorized) — or a human running the draft migration's own §"Validation queries" section manually against that instance and reporting the results back — before duplicate-object clearance can move from OPEN to resolved.
+
+**This next step has since been satisfied by the manual inspection recorded below (§16).**
+
+---
+
+## 16. User-Performed Manual Live Read-Only Inspection (2026-08-10, same day)
+
+Automated connector inspection (§1–§15 above): **INSUFFICIENT ACCESS.**
+
+Subsequent user-performed manual live read-only inspection: **COMPLETED.**
+
+The user manually ran the approved read-only inspection in **Beekeeper Studio** directly against the real Management AIOS PostgreSQL database.
+
+| Field | Value |
+|---|---|
+| Live database | `order_management_copy` |
+| Live schema | `management_aios` |
+
+### 16.1 Live Object Inventory
+
+The `management_aios` schema currently contains exactly these application tables:
+
+1. `member_leave_records`
+2. `member_schedule_events`
+3. `staff_dashboard_records`
+4. `staff_review_summaries`
+
+No table or view named `knowledge_documents`, `knowledge_document_versions`, or `knowledge_document_audit_log` was found. The full `pg_class` inventory the user reviewed contained **11 objects total**: the 4 application tables above plus their associated index/primary-key objects.
+
+**This matches, exactly, the static evidence already recorded in `docs/knowledge-management-crud-design-2026-08-10.md` §1 and `docs/knowledge-management-discovery-2026-08-10.md`** (the same 4 `backend/models.py` ORM classes) — the live schema has not drifted from what the tracked repository code describes.
+
+### 16.2 Semantic Object Search
+
+Search terms used: `document`, `knowledge`, `repository`, `file`, `attachment`, `resource`, `source`, `link`, `url`, `drive`, `google`, `sheet`, `sop`, `policy`, `procedure`, `template`, `skill`, `version`, `revision`, `history`, `audit`, `archive`.
+
+Exactly one matching object was returned: **`staff_dashboard_records_source_record_key_key`** (object type `i` — an index). This is the automatically-generated unique-index object backing `StaffDashboardRecord.source_record_key`'s existing `unique=True` column (already known from static analysis, `backend/models.py`) — an index attached to an existing staff-record field, **not** a table, view, or document registry of any kind.
+
+**Classification: NO OVERLAP.**
+
+### 16.3 Semantic Column Search
+
+Live `management_aios` columns matching the search terms:
+
+- `member_leave_records.policy_source_id`
+- `member_schedule_events.source_scope`
+- `staff_dashboard_records.source_record_key`
+- `staff_dashboard_records.source_file`
+- `staff_dashboard_records.source_page`
+- `staff_dashboard_records.source_row_reference`
+- `staff_dashboard_records.source_hash`
+- `staff_dashboard_records.source_status`
+
+These are existing source/provenance fields attached to staff and calendar data — a leave record's policy citation, a schedule event's dashboard-testing/pilot/approved-live classification, and an imported staff row's provenance (which HR source file/page/hash it came from). None represent a centralized document registry, Knowledge Management metadata, document versions, document audit history, or general company-document source URLs — they describe where *other, unrelated* data came from, not documents themselves.
+
+**Classification: NO OVERLAP with REQ-KM-CRUD-002.**
+
+### 16.4 Duplicate-Object Existence — Confirmed Against the Real Database
+
+| Object | Status |
+|---|---|
+| `management_aios.knowledge_documents` | **DOES NOT EXIST** |
+| `management_aios.knowledge_document_versions` | **DOES NOT EXIST** |
+| `management_aios.knowledge_document_audit_log` | **DOES NOT EXIST** |
+
+Unlike §6 above (where "could not be checked" was the honest answer against the wrong database), this is now a genuine, direct finding against the real `management_aios` schema.
+
+### 16.5 Migration Collision Check — Resolved
+
+Revisiting §11's table with the new live evidence:
+
+| Check | Result (was) | Result (now) |
+|---|---|---|
+| Table-name collision | INSUFFICIENT ACCESS | **PASS** — none of the 3 proposed table names appears among the live schema's 4 tables |
+| Constraint-name collision | INSUFFICIENT ACCESS | **PASS** — the only live index/constraint surfaced by the semantic search (`staff_dashboard_records_source_record_key_key`) shares no name or prefix with anything in the draft migration |
+| Index-name collision | INSUFFICIENT ACCESS | **PASS** — same reasoning |
+| FK collision | INSUFFICIENT ACCESS | **PASS** — the draft's 2 new FKs reference only the newly-proposed `knowledge_documents` table, not any live table |
+| Data-type incompatibility | INSUFFICIENT ACCESS (static only) | **PASS** (static — the live inventory did not include column-level type data beyond what §16.3 lists, but nothing found conflicts) |
+| Naming-convention mismatch | PASS (static) | **PASS** (confirmed) |
+| Actor-ID mismatch | PASS (static) | **PASS** (confirmed) |
+| Existing source-of-truth conflict | INSUFFICIENT ACCESS | **PASS** — §16.3's 8 source/provenance columns are classified NO OVERLAP; nothing live claims to be a document/knowledge registry |
+
+### 16.6 Duplicate-Truth Verdict
+
+**Duplicate-object clearance: CLEAR.**
+
+**Semantic duplicate-truth result: NO EXISTING/PARALLEL DOCUMENT REGISTRY FOUND.**
+
+## 17. Final Live Inspection Verdict
+
+# **CLEAR FOR MANUAL MIGRATION TECHNICAL REVIEW**
+
+This means: no existing duplicate document truth was found; no conflicting live object exists; the draft architecture (`database/migrations/2026-08-10-create-knowledge-documents.sql`) remains appropriate. **The migration is still NOT authorized for execution** — this verdict clears it for technical review only, not for Claude or anyone to run automatically. It was not executed, and this report does not claim otherwise.
+
+## 18. Explicit Status Restatement — Current (supersedes §14 above)
+
+- Automated connector inspection: **INSUFFICIENT ACCESS** (unchanged historical fact, §1–§15).
+- User-performed manual live read-only inspection: **COMPLETED** (§16).
+- Duplicate-object clearance: **CLEAR**.
+- Migration execution this session: **NO.**
+- Database writes this session: **0.**
+- This report does **not** state "migration executed" or "migration approved for production" — clearance is a technical-review gate, not an execution authorization.
+
+## 19. One Next Step (current)
+
+Present `database/migrations/2026-08-10-create-knowledge-documents.sql` (still `DRAFT — NOT EXECUTED`, now paired with the final static migration review in `docs/knowledge-management-crud-design-2026-08-10.md` §10) to Arun/the user for manual technical review and, if approved, manual execution against `order_management_copy`'s `management_aios` schema — the user has stated they, not Claude, execute all database migrations.

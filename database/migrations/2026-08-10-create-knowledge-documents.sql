@@ -155,6 +155,21 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_knowledge_documents_active_source_url_norm
     ON management_aios.knowledge_documents (source_url_normalized)
     WHERE deleted_at IS NULL;
 
+-- RESTORE edge case (found during final migration review, 2026-08-10 —
+-- not a schema defect, an application-layer implication of this
+-- constraint worth documenting here where the constraint lives): if
+-- document A is soft-deleted, and a later document B is legitimately
+-- created reusing A's now-inactive source_url_normalized (allowed — A is
+-- excluded from this partial index while deleted_at IS NOT NULL), then
+-- restoring A afterward would violate this same index (A and B would
+-- both be active with the same source_url_normalized). The RESTORE route
+-- (design doc §5.6) MUST pre-check for this exact collision — the same
+-- shape of check CREATE/VERSION already perform — and return a clean
+-- 409, rather than let a caller see a raw constraint-violation error.
+-- The database constraint itself is correct and intentionally rejects
+-- this state either way; this note exists so the application-layer
+-- pre-check is not missed when the route is actually implemented.
+
 CREATE TABLE IF NOT EXISTS management_aios.knowledge_document_versions (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     document_id       UUID NOT NULL REFERENCES management_aios.knowledge_documents(id),
@@ -214,8 +229,18 @@ FROM pg_constraint
 WHERE conrelid = 'management_aios.knowledge_documents'::regclass
   AND contype = 'c';
 
--- 3. Both foreign keys exist.
-SELECT conname, pg_get_constraintdef(oid) AS definition
+-- 3. All three primary keys exist.
+SELECT conrelid::regclass AS table_name, conname, pg_get_constraintdef(oid) AS definition
+FROM pg_constraint
+WHERE conrelid IN (
+    'management_aios.knowledge_documents'::regclass,
+    'management_aios.knowledge_document_versions'::regclass,
+    'management_aios.knowledge_document_audit_log'::regclass
+)
+  AND contype = 'p';
+
+-- 4. Both foreign keys exist.
+SELECT conrelid::regclass AS table_name, conname, pg_get_constraintdef(oid) AS definition
 FROM pg_constraint
 WHERE conrelid IN (
     'management_aios.knowledge_document_versions'::regclass,
@@ -223,25 +248,39 @@ WHERE conrelid IN (
 )
   AND contype = 'f';
 
--- 4. All indexes exist, including the partial unique index on
---    source_url_normalized (expect 6 total: 3 plain + 1 unique partial +
---    2 FK-table indexes).
+-- 5. All indexes exist (expect 6 total: 3 plain + 1 unique partial + 2
+--    FK-table indexes), including the primary-key indexes Postgres
+--    creates automatically for each table's id column.
 SELECT indexname, indexdef
 FROM pg_indexes
 WHERE schemaname = 'management_aios'
   AND tablename IN ('knowledge_documents', 'knowledge_document_versions', 'knowledge_document_audit_log');
 
--- 5. Row counts (expected 0 immediately after this migration — per design
+-- 5a. The active-source-URL partial unique index specifically — confirm
+--     it is UNIQUE and scoped to WHERE deleted_at IS NULL (not a
+--     table-wide unique constraint). Expect exactly 1 row.
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE schemaname = 'management_aios'
+  AND tablename = 'knowledge_documents'
+  AND indexname = 'idx_knowledge_documents_active_source_url_normalized'
+  AND indexdef ILIKE '%UNIQUE%'
+  AND indexdef ILIKE '%WHERE%deleted_at IS NULL%';
+
+-- 6. Row counts (expected 0 immediately after this migration — per design
 --    doc §7 rule 4, the 3 existing frontend sample records are NEVER
---    auto-seeded by this or any migration).
+--    auto-seeded by this or any migration — confirms no sample/test data
+--    was inserted).
 SELECT count(*) AS knowledge_documents_row_count FROM management_aios.knowledge_documents;
 SELECT count(*) AS knowledge_document_versions_row_count FROM management_aios.knowledge_document_versions;
 SELECT count(*) AS knowledge_document_audit_log_row_count FROM management_aios.knowledge_document_audit_log;
 
--- 6. Confirm existing tables are unaffected by this migration (run before
+-- 7. Confirm existing tables are unaffected by this migration (run before
 --    and after; counts must match).
 SELECT count(*) AS existing_staff_review_summaries_count FROM management_aios.staff_review_summaries;
 SELECT count(*) AS existing_staff_dashboard_records_count FROM management_aios.staff_dashboard_records;
+SELECT count(*) AS existing_member_leave_records_count FROM management_aios.member_leave_records;
+SELECT count(*) AS existing_member_schedule_events_count FROM management_aios.member_schedule_events;
 
 -- ── Rollback (if ever needed) ──────────────────────────────────────────────
 -- Three distinct rollback concepts — do not conflate them:

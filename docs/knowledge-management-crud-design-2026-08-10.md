@@ -4,6 +4,8 @@
 **Builds on:** [docs/knowledge-management-discovery-2026-08-10.md](knowledge-management-discovery-2026-08-10.md) (REQ-KM-001 discovery, AMBER) and [docs/knowledge-management-company-documents-requirement-2026-08-10.md](knowledge-management-company-documents-requirement-2026-08-10.md) (REQ-KM-001 frontend-only first implementation, PASS, currently on `origin/main`).
 **Protected path:** `member-aios/mayurika-hr/staff-data/` was never opened, read, or referenced.
 
+**Live-DB status update (same day, later):** §1/§4 below record what was true when this document was written — Claude's own automated connector access was, and remains, INSUFFICIENT ACCESS. A **user-performed manual live inspection** (Beekeeper Studio, database `order_management_copy`, schema `management_aios`) has since completed and found no conflicting object — see [docs/knowledge-management-live-db-inspection-2026-08-10.md](knowledge-management-live-db-inspection-2026-08-10.md) §16 for the authoritative, current duplicate-truth status. §1/§4 here are preserved unedited as the historical record of Claude's own discovery attempt, not overwritten.
+
 ---
 
 ## 1. Live `management_aios` PostgreSQL Inspection — Status
@@ -399,7 +401,21 @@ def restore_knowledge_document(document_id, db, acting_member):
 
     Does not touch lifecycle_status/compliance_status — a restored
     document reappears in whatever Active/Archived and Pending/Completed
-    state it had at the moment it was deleted."""
+    state it had at the moment it was deleted.
+
+    COLLISION PRE-CHECK (found during final migration review, 2026-08-10):
+    before restoring, this route MUST check whether any OTHER currently
+    active document already holds this document's own source_url_
+    normalized — a legitimate scenario (a new document may reuse a
+    soft-deleted document's URL while the original stays deleted; see
+    database/migrations/2026-08-10-create-knowledge-documents.sql's note
+    at idx_knowledge_documents_active_source_url_normalized). If a
+    collision exists, reject with the SAME 409
+    knowledge_document_duplicate_source_url shape §5.1/§5.3 already use,
+    BEFORE attempting the update — never let a caller see a raw
+    unique-constraint-violation database error. The database constraint
+    itself is correct and would reject the invalid state regardless; this
+    pre-check exists purely to turn that into a clean, typed response."""
 ```
 
 ### 5.7 VIEW (list/detail/versions/audit-log)
@@ -463,3 +479,52 @@ No item in this table is an open question anymore — all were explicitly confir
 - No frontend file was modified — `web-view/js/knowledge-management.js`'s `APPROVED_DOCUMENTS` array is unchanged and still the live production data source. It was **not** seeded into any database table (§7 rule 4) and no automatic seeding is planned by this design.
 - No push occurred.
 - `member-aios/mayurika-hr/staff-data/` was never opened.
+
+---
+
+## 10. Final Static Migration Review (2026-08-10, after manual live-DB clearance)
+
+Performed after the user's manual live inspection (§ live-DB status note at the top of this document) confirmed no conflicting object exists. This is a **static** review only — the migration was read and reasoned about, never executed. Full 34-point checklist result:
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `CREATE TABLE` order/dependencies | PASS — `knowledge_documents` (parent) created before `knowledge_document_versions`/`knowledge_document_audit_log` (both FK to it) |
+| 2 | Schema qualification | PASS — every table, FK reference, and index is `management_aios.`-qualified |
+| 3 | UUID defaults | PASS — `gen_random_uuid()` on all 3 tables, `pgcrypto` extension created first, matching `staff_review_summaries`'s own convention exactly |
+| 4 | `TIMESTAMPTZ` usage | PASS — every timestamp column (`created_at`, `updated_at`, `deleted_at`, `occurred_at`) is `TIMESTAMPTZ` |
+| 5 | `NOT NULL` correctness | PASS — every required field is `NOT NULL`; every genuinely optional field (`job_role`, `document_category`, `creator`, `updated_by`, `change_note`, `detail`, the 3 soft-delete columns) is nullable |
+| 6 | `lifecycle_status` CHECK | PASS — `IN ('Active', 'Archived')`, matches §7 rule 7 exactly |
+| 7 | `compliance_status` CHECK | PASS — `IN ('Pending', 'Completed')` |
+| 8 | `google_ownership_status` CHECK | PASS — `IN ('Not Applicable', 'Not Verified', 'Verified')`, matches the locked §6 Option C design |
+| 9 | Google compliance/ownership gate constraint | PASS — logic verified by hand: violates only when `compliance_status='Completed' AND document_type` is a Google type `AND google_ownership_status != 'Verified'`; exactly the SRD §6/§17 rule |
+| 10 | `current_version` design | PASS (with note) — free-text `VARCHAR(20)`, no format-pattern CHECK; consistent with this schema's existing free-text fields (`team`, `document_category`) and the SRD's own flexible version-label examples; not a defect |
+| 11 | Normalized source URL design | PASS — `source_url_normalized VARCHAR(2048) NOT NULL`, computed application-side, matches §3.1 |
+| 12 | Active-source partial `UNIQUE` index | PASS — correct Postgres partial-unique-index syntax, `WHERE deleted_at IS NULL` |
+| 13 | Duplicate index/constraint names | PASS — every constraint/index name in this file is unique within it, and none collides with any of the 4 live tables' 11 `pg_class` objects the user's manual inspection surfaced (e.g. `staff_dashboard_records_source_record_key_key` shares no prefix with any `knowledge_document*`/`idx_knowledge_*` name here) |
+| 14 | Foreign keys | PASS — both child tables reference `management_aios.knowledge_documents(id)`, schema-qualified, unnamed/default-named (matching this repo's existing unnamed-FK convention) |
+| 15 | `ON DELETE` behavior | PASS, and a positive finding — no `ON DELETE` clause means `NO ACTION` (the Postgres default): since `knowledge_documents` rows are never hard-deleted by design, this is inert in normal operation, but it also means the database itself would BLOCK any accidental hard `DELETE` on a document that already has version/audit rows — a genuine defense-in-depth reinforcement of the "no hard delete" rule, not just an application-layer promise |
+| 16 | `created_by` | PASS — present on all 3 tables, `VARCHAR(80)`, matches `member_key` length/shape |
+| 17 | `updated_by` | PASS — present only on `knowledge_documents` (correctly absent from the two append-only tables, which are never updated) |
+| 18 | `deleted_by` | PASS — present only on `knowledge_documents` (correctly absent elsewhere — only the parent document can be soft-deleted) |
+| 19 | `delete_reason` pairing | PASS — enforced by `knowledge_documents_soft_delete_pairing_check`, same symmetric shape as this schema's existing `outcome_reason`/`half_day_period` pairing checks |
+| 20 | Soft-delete constraints | PASS — see #19 |
+| 21 | Archive vs. delete independence | PASS — `lifecycle_status` has no constraint linking it to `deleted_at`/`deleted_by`/`delete_reason`; a document can be archived, deleted, or both, independently |
+| 22 | Version append-only support | PASS (documented limitation, not a defect) — enforced by the absence of any application UPDATE/DELETE route, not a DB trigger/grant revocation; consistent with this repo having zero trigger precedent anywhere |
+| 23 | Audit append-only support | PASS (same documented limitation as #22) |
+| 24 | Snapshot data type | PASS — a single `detail JSONB` diff column (`{field: {from, to}}` shape) is used instead of separate `before_snapshot`/`after_snapshot` columns; functionally sufficient for the locked audit requirements (§7 rule 2) and space-efficient; `JSONB` has no prior precedent in this schema but is the standard, correct Postgres type for this shape of data — not a defect |
+| 25 | Indexes for expected queries | PASS — active-list, team filter, type filter, active-URL lookup, version history, and audit history all have a supporting index; title `ILIKE` search has none (already an accepted, documented limitation at current data volume — see `docs/knowledge-management-discovery-2026-08-10.md`) |
+| 26 | Restore behavior compatibility | **ADJUST — genuine edge case found and fixed this pass.** See the new note directly below `idx_knowledge_documents_active_source_url_normalized` in the migration file and the updated §5.6 above: restoring a soft-deleted document can collide with a newer active document that legitimately reused its normalized URL. The DB constraint is correct and would reject this either way; the fix applied is a **documentation-only** addition (an explicit pre-check requirement for the future RESTORE route implementation) — no schema change was needed. |
+| 27 | Nullable fields | PASS — see #5 |
+| 28 | Source URL length/type | PASS — `VARCHAR(2048)`, a generous, conventional URL-field length |
+| 29 | Version number representation | PASS — see #10 |
+| 30 | Comments documenting purpose/status | PASS — extensively commented throughout, matching `staff_review_summaries.sql`'s own documentation density |
+| 31 | Transaction safety | PASS — all 3 `CREATE TABLE`/index statements wrapped in one `BEGIN`/`COMMIT`, matching this repo's existing migration convention |
+| 32 | Rerun/idempotency behavior | PASS — every `CREATE` uses `IF NOT EXISTS`; the one known limitation (a partially-created table wouldn't gain a missing constraint on re-run) is identical to the existing `staff_review_summaries` migration's own limitation, not a regression |
+| 33 | Rollback/recovery considerations | PASS — 3-tier rollback section (no-op / feature-disablement / destructive, with explicit sign-off warnings), matching `staff_review_summaries.sql`'s structure |
+| 34 | Destructive-SQL check | PASS — every `CREATE` targets a new, non-colliding object name (confirmed against the user's live inventory, #13); the only `DROP` statements in the file are inside the commented-out rollback section and are not executable as part of a normal run |
+
+**Fixes applied this pass** (documentation only, no schema/logic change to any `CREATE TABLE`/`CREATE INDEX` statement):
+1. Post-migration validation queries split into explicit PK / FK / general-index / partial-unique-index-specific / row-count / existing-table-count checks (previously PK existence and the partial unique index were not individually isolated).
+2. A RESTORE-collision edge case (#26) documented at its source (the partial unique index) in the migration file, and folded into §5.6's route design above.
+
+**Migration verdict: READY FOR USER MANUAL EXECUTION REVIEW.** This means the migration is technically ready to be presented to a human for manual execution — it does **not** mean Claude may run it, and it was not run.

@@ -12,6 +12,8 @@ status: DESIGN-ONLY
 
 Design-finalization deliverable: lock the confirmed business rules onto the persistent CRUD design (Create/View/Update/Version/Archive/Soft-Delete/Restore/Audit) for Knowledge Management. Full report: [docs/knowledge-management-crud-design-2026-08-10.md](../docs/knowledge-management-crud-design-2026-08-10.md).
 
+**Status update (same day, later):** §D/§E/§F below record Claude's own automated-connector-only status at the time this file was written and are preserved unedited. A user-performed manual live inspection has since found **CLEAR** duplicate-object clearance — see [docs/knowledge-management-live-db-inspection-2026-08-10.md](../docs/knowledge-management-live-db-inspection-2026-08-10.md) §16–§18 and [validation/knowledge-management-live-db-inspection-check-2026-08-10.md](knowledge-management-live-db-inspection-check-2026-08-10.md) §M–§R for the current, authoritative status. A final static migration review (`docs/knowledge-management-crud-design-2026-08-10.md` §10) has also since completed: verdict **READY FOR USER MANUAL EXECUTION REVIEW** — technically ready to present for manual execution, not authorization for Claude (or anyone but the user) to run it.
+
 ## B. Protected Path
 
 `member-aios/mayurika-hr/staff-data/` was never opened, listed, read, or referenced.
