@@ -18,6 +18,7 @@ from backend.config import (
     load_calendar_auth_token_hashes,
 )
 from backend.routers.calendar_auth import router as calendar_auth_router
+from backend.routers.knowledge_documents import router as knowledge_documents_router
 from backend.routers.member_leave import router as member_leave_router
 from backend.routers.member_schedules import router as member_schedules_router
 from backend.routers.staff import router as staff_router
@@ -71,7 +72,10 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    # PATCH added (REQ-KM-CRUD-003) for the Knowledge Management metadata-
+    # update route (PATCH /api/knowledge-documents/{document_id}) — no
+    # other existing route uses PATCH, so this is additive only.
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     expose_headers=["Content-Disposition"],
 )
@@ -81,6 +85,7 @@ app.include_router(member_leave_router)
 app.include_router(staff_router)
 app.include_router(calendar_auth_router)
 app.include_router(staff_review_summaries_router)
+app.include_router(knowledge_documents_router)
 
 
 @app.get("/health", response_model=HealthResponse)

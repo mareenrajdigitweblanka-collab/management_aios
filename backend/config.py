@@ -408,3 +408,37 @@ def member_display_label(member_key: str) -> str:
     if member_key == MD_MEMBER_KEY:
         return MD_DISPLAY_LABEL
     return MEMBER_LABELS[member_key]
+
+
+# ── Knowledge Management (REQ-KM-CRUD-002/003) ───────────────────────────
+# Mirrors the CHECK constraints already applied by
+# database/migrations/2026-08-10-create-knowledge-documents.sql — kept as
+# an independently-maintained Python-side list, same accepted convention
+# as VALID_SCHEDULE_CATEGORIES/VALID_LEAVE_TYPES above vs. their own DB
+# CHECK constraint text in backend/models.py.
+
+VALID_KNOWLEDGE_DOCUMENT_TYPES = (
+    "Google Sheet", "Google Doc", "Google Drive File", "PDF",
+    "Word Document", "Excel File", "ZIP File", "Skill File",
+    "Image", "Video", "External URL", "Internal Documentation Link",
+)
+
+VALID_KNOWLEDGE_LIFECYCLE_STATUSES = ("Active", "Archived")
+
+VALID_KNOWLEDGE_COMPLIANCE_STATUSES = ("Pending", "Completed")
+
+# The three Google document types the compliance/ownership gate (design
+# doc §3.1's knowledge_documents_compliance_google_gate_check) applies to.
+KNOWLEDGE_GOOGLE_DOCUMENT_TYPES = ("Google Sheet", "Google Doc", "Google Drive File")
+
+# Client-settable subset only — 'Verified' is a legal DB value (extensible-
+# but-validated design, docs/knowledge-management-crud-design-2026-08-10.md
+# §6) but is deliberately EXCLUDED here: no request schema in
+# backend/schemas.py ever accepts it as input, so no route can ever write
+# it until a dedicated, future, real Google-verification feature exists.
+VALID_KNOWLEDGE_GOOGLE_OWNERSHIP_STATUSES_CLIENT_SETTABLE = ("Not Applicable", "Not Verified")
+
+KNOWLEDGE_DOCUMENT_AUDIT_ACTIONS = (
+    "create", "update_metadata", "create_version",
+    "archive", "unarchive", "soft_delete", "restore",
+)

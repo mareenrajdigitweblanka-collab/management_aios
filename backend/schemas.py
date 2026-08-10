@@ -924,3 +924,274 @@ class StaffReviewSummaryListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+# ── Knowledge Management (REQ-KM-CRUD-002/003) ───────────────────────────
+#
+# Request models never accept a system-owned field (id/created_at/
+# updated_at/created_by/updated_by/deleted_at/deleted_by/
+# source_url_normalized/current_version/lifecycle_status/compliance_status/
+# google_ownership_status at create time) — every one of those is either
+# server-derived from the verified actor token
+# (backend/routers/calendar_auth.py get_verified_member) or server-computed
+# (backend/routers/knowledge_document_logic.py normalize_source_url), per
+# REQ-KM-CRUD-002 rule 2/REQ-KM-CRUD-003 Phase 3. A client attempting to
+# send any of them has the value silently ignored by Pydantic, exactly as
+# StaffReviewSummaryCreate excludes reviewer_member_key above.
+
+from urllib.parse import urlsplit as _km_urlsplit  # noqa: E402 — grouped with this section, not the file-top imports, to keep the diff scoped to this addition
+
+from backend.config import (  # noqa: E402
+    VALID_KNOWLEDGE_COMPLIANCE_STATUSES,
+    VALID_KNOWLEDGE_DOCUMENT_TYPES,
+    VALID_KNOWLEDGE_LIFECYCLE_STATUSES,
+)
+
+
+def _validate_safe_http_url(value: str) -> str:
+    """Schema-layer input-shape check only (422 on a syntactically unsafe
+    URL) — distinct from, and not a duplicate of, the ONE shared
+    normalization/duplicate-detection algorithm in
+    backend/routers/knowledge_document_logic.py (Phase 4), which the
+    router calls separately. Rejects javascript:/data:/blank/unparsable
+    values; accepts only http:// and https://."""
+    try:
+        parsed = _km_urlsplit(value)
+    except ValueError:
+        raise ValueError("source_url must be a valid http(s) URL.")
+    if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+        raise ValueError("source_url must be a valid http(s) URL.")
+    return value
+
+
+class KnowledgeDocumentCreate(BaseModel):
+    """Request body for POST /api/knowledge-documents. Business metadata
+    only — lifecycle_status ('Active'), compliance_status ('Pending'), and
+    google_ownership_status (derived from document_type) are always
+    server-set at create time, never accepted here (design doc §5.1)."""
+
+    title: str = Field(..., min_length=1, max_length=200)
+    team: str = Field(..., min_length=1, max_length=120)
+    document_type: str
+    job_role: Optional[str] = Field(default=None, max_length=120)
+    document_category: Optional[str] = Field(default=None, max_length=120)
+    creator: Optional[str] = Field(default=None, max_length=200)
+    source_url: str = Field(..., max_length=2048)
+
+    @field_validator("title")
+    @classmethod
+    def trim_title(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("title must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @field_validator("team")
+    @classmethod
+    def trim_team(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("team must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @field_validator("document_type")
+    @classmethod
+    def validate_document_type(cls, value: str) -> str:
+        if value not in VALID_KNOWLEDGE_DOCUMENT_TYPES:
+            raise ValueError(f"document_type must be one of {VALID_KNOWLEDGE_DOCUMENT_TYPES}.")
+        return value
+
+    @field_validator("source_url")
+    @classmethod
+    def validate_source_url(cls, value: str) -> str:
+        return _validate_safe_http_url(value)
+
+
+class KnowledgeDocumentMetadataUpdate(BaseModel):
+    """Request body for PATCH /api/knowledge-documents/{document_id}
+    (metadata-only — REQ-KM-CRUD-003 Phase 8). change_description is
+    REQUIRED (rule: "Require: change_description"). source_url is declared
+    here ONLY so a client that sends it gets a clear, explicit rejection
+    (model_validator below) instructing them to use the Create Version
+    endpoint instead — design doc §7 rule 8/REQ-KM-CRUD-003 Phase 8
+    explicitly requires this be an explicit reject, not silent field
+    -dropping. google_ownership_status is never accepted here at all (no
+    field for it exists on this model) — 'Verified' can never reach this
+    route by any path."""
+
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    team: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    document_type: Optional[str] = None
+    job_role: Optional[str] = Field(default=None, max_length=120)
+    document_category: Optional[str] = Field(default=None, max_length=120)
+    creator: Optional[str] = Field(default=None, max_length=200)
+    lifecycle_status: Optional[str] = None
+    compliance_status: Optional[str] = None
+    change_description: str = Field(..., min_length=1, max_length=500)
+
+    # Present only to produce a clear rejection — see class docstring.
+    source_url: Optional[str] = Field(default=None, max_length=2048)
+
+    @field_validator("title")
+    @classmethod
+    def trim_title(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("title must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @field_validator("team")
+    @classmethod
+    def trim_team(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("team must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @field_validator("document_type")
+    @classmethod
+    def validate_document_type(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in VALID_KNOWLEDGE_DOCUMENT_TYPES:
+            raise ValueError(f"document_type must be one of {VALID_KNOWLEDGE_DOCUMENT_TYPES}.")
+        return value
+
+    @field_validator("lifecycle_status")
+    @classmethod
+    def validate_lifecycle_status(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in VALID_KNOWLEDGE_LIFECYCLE_STATUSES:
+            raise ValueError(f"lifecycle_status must be one of {VALID_KNOWLEDGE_LIFECYCLE_STATUSES}.")
+        return value
+
+    @field_validator("compliance_status")
+    @classmethod
+    def validate_compliance_status(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in VALID_KNOWLEDGE_COMPLIANCE_STATUSES:
+            raise ValueError(f"compliance_status must be one of {VALID_KNOWLEDGE_COMPLIANCE_STATUSES}.")
+        return value
+
+    @field_validator("change_description")
+    @classmethod
+    def trim_change_description(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("change_description must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @model_validator(mode="after")
+    def reject_source_url(self):
+        if self.source_url is not None:
+            raise ValueError(
+                "source_url cannot be changed through metadata update. "
+                "Use POST /api/knowledge-documents/{document_id}/versions instead."
+            )
+        return self
+
+
+class KnowledgeDocumentVersionCreate(BaseModel):
+    """Request body for POST /api/knowledge-documents/{document_id}/versions
+    (REQ-KM-CRUD-003 Phase 9). All three fields required."""
+
+    source_url: str = Field(..., max_length=2048)
+    version_label: str = Field(..., min_length=1, max_length=20)
+    change_description: str = Field(..., min_length=1, max_length=500)
+
+    @field_validator("source_url")
+    @classmethod
+    def validate_source_url(cls, value: str) -> str:
+        return _validate_safe_http_url(value)
+
+    @field_validator("version_label")
+    @classmethod
+    def trim_version_label(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("version_label must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @field_validator("change_description")
+    @classmethod
+    def trim_change_description(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("change_description must contain at least 1 non-whitespace character.")
+        return trimmed
+
+
+class KnowledgeDocumentDeleteRequest(BaseModel):
+    """Request body for DELETE /api/knowledge-documents/{document_id}
+    (REQ-KM-CRUD-003 Phase 11) — delete_reason is REQUIRED, matching
+    knowledge_documents_soft_delete_pairing_check (backend/models.py)."""
+
+    delete_reason: str = Field(..., min_length=1, max_length=500)
+
+    @field_validator("delete_reason")
+    @classmethod
+    def trim_delete_reason(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("delete_reason must contain at least 1 non-whitespace character.")
+        return trimmed
+
+
+class KnowledgeDocumentOut(BaseModel):
+    """Response shape for every non-history Knowledge Management route
+    (create/detail/list/metadata-update/version-create/archive/unarchive/
+    restore). Never returned for a soft-deleted record outside the
+    restore-collision context — every list/detail route filters those out
+    server-side. `warnings` (design doc §3 Phase 3) is populated only by
+    CREATE, when a same-title-different-URL match exists (rule 5) — every
+    other route returns an empty list."""
+
+    id: UUID
+    title: str
+    team: str
+    document_type: str
+    job_role: Optional[str] = None
+    document_category: Optional[str] = None
+    creator: Optional[str] = None
+    source_url: str
+    current_version: str
+    lifecycle_status: str
+    compliance_status: str
+    google_ownership_status: str
+    created_by: str
+    updated_by: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    warnings: List[str] = Field(default_factory=list)
+
+    model_config = {"from_attributes": True}
+
+
+class KnowledgeDocumentListResponse(BaseModel):
+    records: List[KnowledgeDocumentOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class KnowledgeDocumentVersionOut(BaseModel):
+    id: UUID
+    document_id: UUID
+    version_label: str
+    source_url: str
+    change_note: Optional[str] = None
+    created_by: str
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class KnowledgeDocumentAuditLogOut(BaseModel):
+    id: UUID
+    document_id: UUID
+    action: str
+    actor_member_key: str
+    detail: Optional[dict] = None
+    occurred_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}

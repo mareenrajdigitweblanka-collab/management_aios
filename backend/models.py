@@ -55,7 +55,9 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
+    JSON,
     String,
     Text,
     Time,
@@ -408,3 +410,188 @@ class StaffReviewSummary(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class KnowledgeDocument(Base):
+    """SQLAlchemy ORM model for management_aios.knowledge_documents
+    (REQ-KM-CRUD-002/003). Mirrors
+    database/migrations/2026-08-10-create-knowledge-documents.sql exactly —
+    same "Python mapping only, SQL file is DDL truth" convention as every
+    other model above. That migration has already been executed against
+    the live database (validation/knowledge-management-migration-execution-
+    check-2026-08-10.md) — this class does NOT create or alter that table;
+    Base.metadata.create_all() is never called against production anywhere
+    in this codebase, only against an isolated in-memory SQLite database in
+    tests (backend/tests/calendar_auth_test_support.py).
+
+    Permission model (locked, REQ-KM-CRUD-002 rule 1): unlike
+    StaffReviewSummary's creator-only-update lock, ANY authenticated
+    Management Team member may create/edit/version/archive/soft-delete/
+    restore ANY document — there is no per-owner scoping column or check
+    anywhere for this table. Actor identity (created_by/updated_by/
+    deleted_by) is always server-derived from
+    backend/routers/calendar_auth.py's get_verified_member, never accepted
+    from a request body — see backend/routers/knowledge_documents.py.
+
+    google_ownership_status intentionally permits 'Verified' at the CHECK-
+    constraint level (extensible-but-validated design,
+    docs/knowledge-management-crud-design-2026-08-10.md §6) even though no
+    application code path ever writes it — enforcement of "no fake
+    ownership verification" is an application-layer guarantee
+    (KnowledgeDocumentMetadataUpdate never accepts 'Verified' as input),
+    not a database-layer one.
+
+    detail on KnowledgeDocumentAuditLog below is mapped as generic `JSON`
+    (not `postgresql.JSONB`, which the live column's DDL actually is) —
+    deliberate: JSON is understood by every dialect, including the SQLite
+    engine backend/tests/calendar_auth_test_support.py creates for tests,
+    while JSONB has no SQLite DDL-compilation fallback and would break
+    Base.metadata.create_all() there. This is a Python-mapping-only
+    choice — Postgres accepts and stores standard JSON text into a JSONB
+    column identically either way; the live column's physical type is
+    untouched."""
+
+    __tablename__ = "knowledge_documents"
+    __table_args__ = (
+        CheckConstraint(
+            "document_type IN ('Google Sheet', 'Google Doc', 'Google Drive File', "
+            "'PDF', 'Word Document', 'Excel File', 'ZIP File', 'Skill File', "
+            "'Image', 'Video', 'External URL', 'Internal Documentation Link')",
+            name="knowledge_documents_document_type_check",
+        ),
+        CheckConstraint(
+            "lifecycle_status IN ('Active', 'Archived')",
+            name="knowledge_documents_lifecycle_status_check",
+        ),
+        CheckConstraint(
+            "compliance_status IN ('Pending', 'Completed')",
+            name="knowledge_documents_compliance_status_check",
+        ),
+        CheckConstraint(
+            "google_ownership_status IN ('Not Applicable', 'Not Verified', 'Verified')",
+            name="knowledge_documents_google_ownership_status_check",
+        ),
+        CheckConstraint(
+            "compliance_status = 'Pending' "
+            "OR document_type NOT IN ('Google Sheet', 'Google Doc', 'Google Drive File') "
+            "OR google_ownership_status = 'Verified'",
+            name="knowledge_documents_compliance_google_gate_check",
+        ),
+        CheckConstraint(
+            "(deleted_at IS NULL AND deleted_by IS NULL AND delete_reason IS NULL) "
+            "OR (deleted_at IS NOT NULL AND deleted_by IS NOT NULL AND delete_reason IS NOT NULL)",
+            name="knowledge_documents_soft_delete_pairing_check",
+        ),
+        # Partial unique index — the primary duplicate-prevention control is
+        # the application-layer pre-check in knowledge_document_logic.py
+        # (returns a clean 409 before any write); this index is
+        # defense-in-depth, matching the already-executed live migration
+        # exactly. Declared for BOTH dialects (postgresql_where +
+        # sqlite_where) so tests against the in-memory SQLite database
+        # exercise genuinely partial-unique behavior too — without
+        # sqlite_where, SQLite would enforce a table-wide unique
+        # constraint instead, incorrectly blocking a soft-deleted
+        # document's URL from ever being reused by a later registration.
+        Index(
+            "idx_knowledge_documents_active_source_url_normalized",
+            "source_url_normalized",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+            sqlite_where=text("deleted_at IS NULL"),
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    title = Column(String(200), nullable=False)
+    team = Column(String(120), nullable=False)
+    document_type = Column(String(40), nullable=False)
+    job_role = Column(String(120), nullable=True)
+    document_category = Column(String(120), nullable=True)
+    creator = Column(String(200), nullable=True)
+
+    source_url = Column(String(2048), nullable=False)
+    # Computed server-side by knowledge_document_logic.normalize_source_url
+    # on every write — never client-supplied directly. See that module for
+    # the normalization algorithm.
+    source_url_normalized = Column(String(2048), nullable=False)
+    current_version = Column(String(20), nullable=False, server_default="1.0")
+
+    lifecycle_status = Column(String(20), nullable=False, server_default="Active")
+    compliance_status = Column(String(20), nullable=False, server_default="Pending")
+    google_ownership_status = Column(String(20), nullable=False, server_default="Not Applicable")
+
+    created_by = Column(String(80), nullable=False)
+    updated_by = Column(String(80), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+
+    # Soft-delete state — all three populated together or all three NULL
+    # together (knowledge_documents_soft_delete_pairing_check above).
+    # Cleared together on RESTORE; the historical fact of the deletion
+    # survives only in KnowledgeDocumentAuditLog, never here.
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(String(80), nullable=True)
+    delete_reason = Column(String(500), nullable=True)
+
+
+class KnowledgeDocumentVersion(Base):
+    """SQLAlchemy ORM model for management_aios.knowledge_document_versions.
+    Append-only by construction (REQ-KM-CRUD-002 rule 16) — no route in
+    backend/routers/knowledge_documents.py ever issues an UPDATE or DELETE
+    against this table; the only write path is
+    create_knowledge_document_version (POST .../versions), which inserts
+    exactly one row per call, plus the initial v1.0 row inserted atomically
+    by CREATE."""
+
+    __tablename__ = "knowledge_document_versions"
+    __table_args__ = ({"schema": "management_aios"},)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("management_aios.knowledge_documents.id"),
+        nullable=False,
+    )
+
+    version_label = Column(String(20), nullable=False)
+    source_url = Column(String(2048), nullable=False)
+    change_note = Column(String(500), nullable=True)
+
+    created_by = Column(String(80), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+
+
+class KnowledgeDocumentAuditLog(Base):
+    """SQLAlchemy ORM model for management_aios.knowledge_document_audit_log.
+    Immutable by construction (REQ-KM-CRUD-002 rule 17) — no route ever
+    issues an UPDATE or DELETE against this table; every mutating action on
+    a KnowledgeDocument (create/update_metadata/create_version/archive/
+    unarchive/soft_delete/restore) appends exactly one row here, in the
+    same transaction as the primary mutation, and never edits an existing
+    row afterward. `detail` is mapped as generic JSON — see the
+    KnowledgeDocument class docstring above for why."""
+
+    __tablename__ = "knowledge_document_audit_log"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('create', 'update_metadata', 'create_version', "
+            "'archive', 'unarchive', 'soft_delete', 'restore')",
+            name="knowledge_document_audit_log_action_check",
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("management_aios.knowledge_documents.id"),
+        nullable=False,
+    )
+
+    action = Column(String(30), nullable=False)
+    actor_member_key = Column(String(80), nullable=False)
+    detail = Column(JSON, nullable=True)
+
+    occurred_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
