@@ -13,6 +13,21 @@
   margin: 0 0 var(--space-3);
 }
 
+/* Informational, not an error — same status-info tone already used
+   elsewhere in this app (e.g. .staff-pilot-classification-label /
+   status-info tokens), never the warning/error color pair. */
+.msc-km-sample-notice {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--status-info-text, var(--muted));
+  background: var(--status-info-bg, var(--surface-tint-3));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  margin: 0 0 var(--space-4);
+  display: inline-block;
+}
+
 /* ── Toolbar (search + filters) ──
    Same one-row-then-wrap pattern as .msc-issues-toolbar — stays on one
    line at desktop widths, scrolls horizontally rather than wrapping until

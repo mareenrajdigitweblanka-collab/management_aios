@@ -196,6 +196,16 @@ test('13. unknown optional metadata safely renders as —', withEnv(async () => 
   dashes.forEach(function (d) { assert.equal(d, '—'); });
 }));
 
+test('13b. sample-data notice is visible and never implies an error (Phase 2, 2026-08-10)', withEnv(async () => {
+  var mod = await loadKmModule();
+  var { mountEl } = await mountWithFixtures();
+  var notice = mountEl.querySelector('.msc-km-sample-notice');
+  assert.ok(notice, 'the sample-data notice element should be rendered');
+  assert.equal(notice.textContent, mod.SAMPLE_DATA_NOTICE_TEXT);
+  assert.equal(notice.textContent, 'Sample documents — document records will be updated after interface review.');
+  assert.equal(notice.getAttribute('role'), 'note', 'role="note" (informational), never role="alert"');
+}));
+
 // ── SEARCH (14-18) ───────────────────────────────────────────────────────
 
 test('14. empty search returns all documents', withEnv(async () => {

@@ -6,6 +6,8 @@
 **Date:** 2026-08-10
 **Status:** Frontend-only, narrow first implementation. Not the full Knowledge Management SRD — see [docs/knowledge-management-discovery-2026-08-10.md](knowledge-management-discovery-2026-08-10.md) for the full-scope discovery and the six Phase-0 decisions still pending.
 
+**Temporary data status (updated 2026-08-10):** Per explicit user direction, the visual application is being shipped first; the 3 document records below are **temporary/sample visual records**, not final approved Knowledge Management truth. Business confirmation of their accuracy is deliberately deferred — the user will review the live interface and correct the real documents/metadata afterward. The UI itself now carries a visible notice to this effect (`SAMPLE_DATA_NOTICE_TEXT` in `web-view/js/knowledge-management.js`): "Sample documents — document records will be updated after interface review."
+
 ---
 
 ## 1. Business Requirement
@@ -149,4 +151,4 @@ The Action column's "Open Document" link opens `doc.sourceUrl` directly, with `t
 
 ## 13. One Next Step
 
-Arun (requester) reviews the 3 approved document candidates in §3 for business accuracy (title/team/creator wording) before this view is shown to the wider Management Team, and confirms whether additional company documents should be added to the registry in a follow-up task.
+The user reviews the deployed visual interface, then provides corrected/final document records and metadata to replace the 3 temporary/sample records in `APPROVED_DOCUMENTS` — per the explicit "ship first, correct after" direction, this is not blocking deployment.

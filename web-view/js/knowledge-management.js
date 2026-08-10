@@ -69,6 +69,14 @@ export var APPROVED_DOCUMENTS = [
 
 export var EMPTY_STATE_TEXT = 'No documents match your search or filters.';
 
+/* The 3 APPROVED_DOCUMENTS records are temporary/sample visual records for
+   this first implementation, NOT final approved Knowledge Management
+   truth (per explicit user direction, 2026-08-10: ship the visual
+   application first, correct the real records afterward). This notice
+   makes that status visible in the UI itself, not just in documentation —
+   never removed by a filter/search action, always shown above the table. */
+export var SAMPLE_DATA_NOTICE_TEXT = 'Sample documents — document records will be updated after interface review.';
+
 // ── Pure helpers (exported for direct testing — no DOM involved) ────────
 
 /* Dedupe + alphabetical sort of a plain array of strings, dropping falsy
@@ -175,6 +183,14 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
 
   var heading = textEl('h3', 'msc-km-section-heading', 'Company Documents');
   mountEl.appendChild(heading);
+
+  // Sample-data notice (Phase 2, 2026-08-10) — informational, not an error
+  // (role="note", not role="alert"); always visible above the toolbar,
+  // regardless of search/filter state.
+  var sampleNoticeEl = el('p', 'msc-km-sample-notice');
+  sampleNoticeEl.setAttribute('role', 'note');
+  sampleNoticeEl.textContent = SAMPLE_DATA_NOTICE_TEXT;
+  mountEl.appendChild(sampleNoticeEl);
 
   // ── Toolbar: search + Team filter + Document Type filter ────────────
   var toolbar = el('div', 'msc-km-toolbar');

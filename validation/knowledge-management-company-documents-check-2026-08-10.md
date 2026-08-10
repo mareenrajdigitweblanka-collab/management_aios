@@ -44,6 +44,8 @@ First usable, deliberately narrow implementation of Knowledge Management → Com
 
 Exactly 3 candidates found and used, all with evidence traced to specific lines in already-registered stakeholder documents. Full evidence table: [docs/knowledge-management-company-documents-requirement-2026-08-10.md](../docs/knowledge-management-company-documents-requirement-2026-08-10.md) §3. No metadata was invented; unproven optional fields render as `—`.
 
+**Temporary/sample status (2026-08-10 update):** per explicit user direction, these 3 records are treated as temporary/sample visual records, not final approved Knowledge Management truth — business-accuracy confirmation is deliberately deferred to after interface review, not a blocker to deployment. A visible, non-error-styled UI notice was added to `web-view/js/knowledge-management.js` (`SAMPLE_DATA_NOTICE_TEXT`, rendered via `.msc-km-sample-notice`, `role="note"`) so this status is visible in the running application itself, not only in documentation. No table redesign was made — the notice was inserted between the heading and toolbar without altering existing layout.
+
 ## F. Files Created
 
 - `web-view/js/knowledge-management.js`
