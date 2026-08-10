@@ -3,9 +3,9 @@ name: management-issues-frontend-handover
 type: handover
 scope: management_aios — Management Issues Frontend Tab (REQ-ISSUES-UI-001)
 created: 2026-08-10
-status: Original implementation reviewed, pushed to origin/main (commit b956f0c). A follow-up correction (§10 below) applying confirmed business-rule changes is implemented and tested locally but NOT pushed — awaiting review per instruction.
+status: Original implementation (b956f0c) and first correction (§10, 06b5aeb) both reviewed and pushed to origin/main. A second correction (§11 below — MD granted Issue assignment authority) is implemented and tested locally but NOT pushed — awaiting review per instruction.
 owner: builder (Mareenraj)
-reviewer: pending (correction only — original implementation already reviewed and pushed)
+reviewer: pending (second correction only — everything else already reviewed and pushed)
 ---
 
 # Management Issues Frontend Tab — Implementation Handover — 2026-08-10
@@ -136,10 +136,48 @@ Live-browser review of the pushed implementation surfaced that Raised By/Domain 
 
 63/63 `issues.test.mjs` (was 49), 12/12 `issues-navigation-structure.test.mjs` (unchanged), 214/214 full `web-view/js/*.test.mjs` directory (was 200/200), 181/181 Calendar (unchanged). Live-browser verification against the REAL, read-only, publicly-reachable production Staff Data API (via a Playwright route proxy — no local backend started, no write, no deployment) confirmed 142 real active staff names and 81 real team values populate the filters correctly, exactly 3 demo issues render with the exact required banner copy, Rajiv sees the assignment toolbar with the correct 5-member Assign To list, and Mayurika sees none of it. Full detail: validation doc §15.
 
-### 10.6 Git (this correction — not yet pushed)
+### 10.6 Git (this correction — pushed)
 
-See the final report for this turn for the exact commit hash, staged file list, and confirmation this correction was committed to local `main` only.
+Committed as `06b5aeb4662b8cb6b96f06f5953d1404a7318d9a` — "Use system staff and teams in Issues UI". Reviewed and pushed to `origin/main` (`b956f0c..06b5aeb`), then verified live in production. See the push-verification report from that turn for full post-push evidence.
 
-### 10.7 One next step
+### 10.7 One next step (completed)
 
-A reviewer reads this correction's report (this file's §10, plus validation doc §15) and, if satisfied, approves pushing this correction commit to `origin`. Separately, still open: draft and approve the actual Issue-System backend integration requirement (fetch/assign/solving-status-update endpoints) before any real data replaces the 3 demo records.
+~~A reviewer reads this correction's report... and, if satisfied, approves pushing.~~ Done — reviewed and pushed. See §11 below for the next correction on top of this one.
+
+## 11. Correction — 2026-08-10 (second correction, same day) — MD granted Issue assignment authority
+
+Full requirement: `docs/2026-08-10_management-issues-frontend-requirement.md` §12. Full evidence: `validation/management-issues-frontend-check-2026-08-10.md` §16. This section documents a SEPARATE, not-yet-pushed local commit on top of `06b5aeb` — do not confuse the two.
+
+### 11.1 What changed
+
+§10's Rajiv-only assignment rule is **superseded**: **Rajiv and MD may both assign Issues.** Every other Management Team member still may not. `ISSUE_ASSIGNMENT_AUTHORITY_KEYS = new Set(['rajiv', 'md'])` (`issues.js`) replaces the single-value `ASSIGNMENT_AUTHORITY_MEMBER_KEY = 'rajiv'` constant; `hasAssignmentAuthority()` now checks Set membership instead of `===` against one literal — still an exact-identity check, no role text, no display name, no substring matching.
+
+"Assign To" (who may be assigned) is **unchanged** — still exactly Mayurika, Suman, Arun, Rajiv, Paraparan. MD gaining assignment authority does not make MD an assignee — same "who may act" vs. "who may be acted upon" distinction §10 already established for Rajiv.
+
+**MD's Review Summary read-only status is completely unaffected** — `member-registry.js` and `review-summaries.js` have zero diff in this correction; confirmed by the full pre-existing `review-summaries.test.mjs` suite (MD-specific tests included) still passing unchanged.
+
+### 11.2 Files modified (this correction)
+
+| File | Change |
+| --- | --- |
+| `web-view/js/issues.js` | `ISSUE_ASSIGNMENT_AUTHORITY_KEYS` Set replaces the single-value constant; `hasAssignmentAuthority()` uses `.has()`; updated module/inline comments |
+| `web-view/js/issues.test.mjs` | +6 tests: MD granted authority, MD role/display-name-alone-fails, MD Assign → pending-backend + no-persistence, Assign To still excludes MD for both authority identities |
+
+`member-registry.js`, `web-view/index.html`, `web-view/js/app.js`, `web-view/js/issues-navigation-structure.test.mjs`: **unchanged**. Backend files changed: **0**. Database/migration files changed: **0**. `member-aios/mayurika-hr/staff-data/`: never opened. No real issue created or assigned; assignment persistence remains out of scope (`assignTickets()`/`updateSolvingStatus()` still always resolve `pending_backend`).
+
+### 11.3 Authoritative pattern updates — do not duplicate
+
+- `ISSUE_ASSIGNMENT_AUTHORITY_KEYS` (`issues.js`) is now the ONE assignment-authority allowlist. To add or remove someone from Issue assignment authority in the future, edit this Set — do not add a second check elsewhere, and do not switch back to a role/name-based check (see §10.3's original reasoning for why that shape was rejected; it applies equally to any future expansion).
+- MD's presence in `ISSUE_ASSIGNMENT_AUTHORITY_KEYS` is scoped to Issues only. Do not treat this as a precedent for widening MD's capability anywhere else (Review Summary CREATE/UPDATE/DELETE remain rejected for MD by the backend regardless of any frontend change — `_reject_md_write`, `backend/routers/staff_review_summaries.py`, untouched).
+
+### 11.4 Verification summary (this correction)
+
+69/69 `issues.test.mjs` (was 63), 12/12 `issues-navigation-structure.test.mjs` (unchanged), 220/220 full `web-view/js/*.test.mjs` directory (was 214/214, includes the full unchanged/passing `review-summaries.test.mjs` suite), 181/181 Calendar (unchanged). Verified locally in headless Chromium (via the same read-only Staff API proxy technique as §10) that both `rajiv` and `md` render Select All/Assign To/Assign with the identical correct 5-member Assign To list, and `mayurika` still renders none. Full detail: validation doc §16.
+
+### 11.5 Git (this correction — not yet pushed)
+
+See the final report for this turn for the exact commit hash and staged file list.
+
+### 11.6 One next step
+
+A reviewer reads this correction's report (this file's §11, plus validation doc §16) and, if satisfied, approves pushing this correction commit to `origin`. Separately, still open: draft and approve the actual Issue-System backend integration requirement before any real data replaces the 3 demo records.

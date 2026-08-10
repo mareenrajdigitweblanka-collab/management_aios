@@ -63,12 +63,12 @@ UX/interaction reference only: the standalone HTML page supplied in-conversation
 | No defined "Admin" concept (the reference assumed one implicit user) | Requirement explicitly forbids `if (name === "Rajiv")`-style hardcoding | Admin status is derived from `MEMBER_REGISTRY[key].role === 'Admin Manager'` (`isAdminMemberKey()`, `member-registry.js`) — a role read from the existing registry, not a name comparison |
 | Using `localStorage`/`sessionStorage` for anything | Not used by the reference for assignments (it explicitly avoids this), but flagged here as a hard rule for this build too | `issues.js` never references `localStorage`/`sessionStorage` anywhere (enforced by a source-text test) |
 
-## 6. Admin / MD rules
+## 6. Admin / MD rules (superseded — see §11 item 4, then §12; kept for history)
 
-- Admin-only controls (Select All, Assign To, Assign): rendered only when `isAdminMemberKey(getAuthenticatedMemberKey())` is true. Today that is Rajiv only (`MEMBER_REGISTRY.rajiv.role === 'Admin Manager'`), but the check is role-based, not name-based, so it tracks the registry automatically if it ever changes.
-- Non-Admin authenticated members may view and filter Issues and Assigned Tickets, but never see the assignment controls at all (not merely disabled).
-- MD (`MEMBER_REGISTRY.md`, role `'Read-only'`) is never an assignee and never sees assignment controls — this falls out of the same role check with no MD-specific carve-out required.
-- This is a **UI-only** gate. There is no backend assignment endpoint yet; when one is built, it must independently re-verify Admin authority from the request's own identity, exactly like `member-registry.js`'s own header comment already documents for `isReadOnlyMember()`.
+- ~~Admin-only controls (Select All, Assign To, Assign): rendered only when `isAdminMemberKey(getAuthenticatedMemberKey())` is true.~~ Superseded by §11 item 4 (exact-identity `hasAssignmentAuthority`, Rajiv only), then by §12 (allowlist widened to Rajiv + MD). `isAdminMemberKey()` no longer exists.
+- Non-Admin/non-authority authenticated members may view and filter Issues and Assigned Tickets, but never see the assignment controls at all (not merely disabled) — still true.
+- ~~MD is never an assignee and never sees assignment controls.~~ Partially superseded by §12: MD now sees assignment controls (assignment **authority**), but MD is still never an assignee (that half is unchanged — see §12's "who may act" vs. "who may be acted upon" distinction).
+- This is a **UI-only** gate — still true. There is no backend assignment endpoint yet; when one is built, it must independently re-verify authority from the request's own identity, exactly like `member-registry.js`'s own header comment already documents for `isReadOnlyMember()`.
 
 ## 7. Data contract
 
@@ -110,3 +110,12 @@ Live-browser review of the initial implementation surfaced that "Raised By" and 
 6. Loading state gains a variant: "Loading staff and team options…" for the real production wiring (waiting on the Staff Data API before any demo issue can be safely bound); "Loading issues…" remains the generic default for other adapters (e.g. test fixtures).
 7. New error variant: "Staff/team options could not be loaded." — shown when the Staff Data API fetch fails, or succeeds but returns an empty list (treated identically: never bind a demo record to a fabricated/blank value). The demo issues and banner stay hidden in this state.
 8. Assignment persistence remains explicitly out of scope (per instruction) — the production adapter's `assignTickets()`/`updateSolvingStatus()` still always resolve `{status: 'pending_backend'}`; clicking Assign on a demo issue never moves it into Assigned Tickets and never claims a save occurred.
+
+## 12. Correction — 2026-08-10 (second correction, same day) — MD granted Issue assignment authority
+
+§11 item 4's Rajiv-only assignment rule is **superseded**. Confirmed business rule: **Rajiv and MD may both assign Issues.** Every other Management Team member (Mayurika, Suman, Arun, Paraparan) still may not, and unauthenticated users still may not.
+
+- `hasAssignmentAuthority(memberKey)` (`issues.js`) is now an explicit allowlist, `ISSUE_ASSIGNMENT_AUTHORITY_KEYS = new Set(['rajiv', 'md'])`, rather than a single-value comparison — still an exact-identity check, never role text, never a display name, never substring matching. A memberKey equal to Rajiv's role (`'Admin Manager'`), MD's role (`'Read-only'`), or either display name (`'Rajiv'`, `'MD'`) still grants nothing — only the literal `member_key` values `'rajiv'`/`'md'` do.
+- **MD having assignment authority does not make MD an assignee.** "Assign To" (`getAssigneeOptions()`/`ASSIGNEE_ORDER`) is **unchanged** — still exactly `Mayurika, Suman, Arun, Rajiv, Paraparan` from `MEMBER_REGISTRY`. MD may assign an issue to one of those 5 people; MD itself can never be selected as the assignee. This is the same "who may act" vs. "who may be acted upon" distinction the original implementation already applied to Rajiv.
+- **MD's Review Summary read-only status is completely unaffected.** `member-registry.js`'s `isReadOnlyMember(memberKey)`/`MD_MEMBER_KEY` and `review-summaries.js`'s MD read-only gating (CREATE/UPDATE hidden, read-only notice shown) were not touched by this change — Issues assignment authority and Review Summary read-only status are two independent gates on two independent features, and widening one does not widen the other.
+- No backend, database, or persistence change — `assignTickets()`/`updateSolvingStatus()` still always resolve `pending_backend`; an MD-initiated Assign click shows the identical "Assignment connection pending — there is no Issue-System backend connected yet, so this selection was not saved." notice Rajiv already saw, and never writes to `localStorage`/`sessionStorage`/IndexedDB.

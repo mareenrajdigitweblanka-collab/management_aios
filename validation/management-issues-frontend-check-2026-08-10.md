@@ -206,6 +206,54 @@ Key new/changed coverage: staff source called with the correct URL/query (`staff
 3. Demo-issue Raised By/Team bindings use a fixed `pick(list, i)` (index 0/1/2 of the alphabetically-sorted list) — deterministic but not randomized; acceptable for a clearly-labeled demo, noted for completeness.
 4. Assign was not exercised against the live production-API-backed browser session in this pass (see §15.7) — covered instead by a deterministic automated test using a fixture staff/team source, which exercises the identical code path without depending on network timing during a live check.
 
-### 15.11 Verdict (supersedes §14)
+### 15.11 Verdict (superseded — see §16)
 
 **PASS.** All confirmed business-rule corrections applied: real Staff Data-sourced Raised By/Team, Domain→Team rename, exactly 3 clearly-labeled demo issues bound to real values, exact-identity (`member_key === 'rajiv'`) assignment authority replacing the rejected role-based check. Zero backend/database changes. Zero production writes. Zero real issue records created or assigned. 63 new/rewritten Issues tests pass (was 49), 214/214 in the full `web-view/js` suite (was 200/200), 181/181 Calendar (unchanged).
+
+## 16. Correction — 2026-08-10 (second correction, same day) — MD granted Issue assignment authority
+
+Requirement update: `docs/2026-08-10_management-issues-frontend-requirement.md` §12. This is a small, tightly-scoped follow-up to §15 — only the assignment-authority allowlist changed.
+
+### 16.1 Scope confirmed
+
+Frontend-only. `git diff --name-status` against the previously-pushed commit (`06b5aeb`) shows exactly 2 files: `web-view/js/issues.js`, `web-view/js/issues.test.mjs`. `member-registry.js` was **not** touched (not genuinely required — the new allowlist lives entirely in `issues.js`). No Review Summary file was touched. No backend/database/migration file was touched. `member-aios/mayurika-hr/staff-data/` was never opened.
+
+### 16.2 What changed
+
+`ISSUE_ASSIGNMENT_AUTHORITY_KEYS = new Set(['rajiv', 'md'])` replaces the single-value `ASSIGNMENT_AUTHORITY_MEMBER_KEY = 'rajiv'` constant; `hasAssignmentAuthority(memberKey)` now does `.has(memberKey)` against the Set instead of a `===` comparison against one literal. Still an exact-identity check — no role text, no display name, no substring matching anywhere in the implementation.
+
+"Assign To" (`getAssigneeOptions()`/`ASSIGNEE_ORDER`) is byte-for-byte unchanged — still exactly `Mayurika, Suman, Arun, Rajiv, Paraparan`. MD gaining assignment *authority* does not add MD to the assignee list; these remain two independent questions in the code (one gates which controls render via `canAssign()`, the other populates the `<select>` options), confirmed still independent by test.
+
+### 16.3 MD Review Summary regression check
+
+`member-registry.js` diff is empty (git confirms 0 changes to this file in this correction). `review-summaries.js` diff is empty. The full `review-summaries.test.mjs` suite (part of the 220-test `web-view/js/*.test.mjs` run below) passes unchanged, including its MD-specific read-only tests (create/edit form hidden, read-only notice shown, no Edit button ever renders for MD since no Review Summary is ever owned by "md", PDF download still works, token-change-to/from-MD tests). MD's Review Summary read-only status is provably untouched by this correction.
+
+### 16.4 Test results
+
+```text
+web-view/js/issues.test.mjs                    : 69 pass, 0 fail   (was 63; +6 for the rajiv+md allowlist, MD role/display-name-alone-fails tests, MD-Assign pending-backend + no-persistence tests, MD-in-Assign-To-still-absent tests)
+web-view/js/issues-navigation-structure.test.mjs: 12 pass, 0 fail  (unchanged — no navigation/structural change)
+web-view/js/*.test.mjs (full directory)         : 220 pass, 0 fail (was 214; net +6, includes the full review-summaries.test.mjs suite unchanged/passing — confirms no MD Review Summary regression)
+web-view/js/calendar/*.test.mjs                 : 181 pass, 0 fail (unchanged)
+```
+
+New/changed coverage specifically: `hasAssignmentAuthority('rajiv')`/`('md')` both true; every other registered key, `null`, `undefined` false; `MEMBER_REGISTRY.md.role` ("Read-only") and `MEMBER_REGISTRY.md.displayName` ("MD") alone both fail to grant authority (mirroring the existing Rajiv role/display-name-alone-fails tests); DOM tests confirming both `rajiv` and `md` render Select All/Assign To/Assign and every other identity (including a memberKey literally equal to `"Read-only"` or `"MD"`) does not; DOM tests confirming Assign To still excludes MD and still contains exactly the 5 Management Team members for both authority identities; an MD-initiated Assign click shows the identical "Assignment connection pending" notice and leaves `localStorage._store` byte-for-byte unchanged (explicit before/after snapshot comparison, not just an absence check).
+
+### 16.5 Live browser verification (this correction)
+
+Local `web-view/index.html` served via `python -m http.server`, with `page.route()` proxying only `http://127.0.0.1:8000/api/staff**` to the real, read-only, publicly-reachable production Staff Data API (same technique as §15.7 — no local backend started, no write, no deployment). Confirmed with real staff/team data:
+
+- `rajiv`: `selectAll=1 assignTo=1`, Assign To options `["Choose…","Mayurika","Suman","Arun","Rajiv","Paraparan"]`.
+- `md`: `selectAll=1 assignTo=1`, identical Assign To options — MD authority granted, MD still absent from the assignee list.
+- `mayurika`: `selectAll=0 assignTo=0` — no assignment controls, as before.
+
+A full production push/verification pass (equivalent to §15.7/§9's earlier live-production checks) was intentionally deferred to the post-approval push turn, per instruction ("Do not push until the report is reviewed") — this section's local verification is sufficient to confirm the code change behaves correctly before that review.
+
+### 16.6 Known limitations (in addition to §13/§15.10)
+
+1. As before (§15.10 item 4), the live production Staff API was reached read-only via a local proxy rather than a fully-deployed check, since this correction is not yet approved for push.
+2. The 3 demo issues, Raised By/Team sourcing, and the demo banner are all byte-for-byte unchanged by this correction — re-verified by the unchanged/passing subset of §15's tests, not re-described here.
+
+### 16.7 Verdict (supersedes §15.11)
+
+**PASS.** Assignment authority allowlist correctly widened to exactly `{rajiv, md}`, via an explicit Set-based exact-identity check — no role text, no display name, no substring matching. "Assign To" (who may be assigned) remains exactly the 5 Management Team members, MD still excluded. MD's Review Summary read-only status is provably unaffected (zero diff to `member-registry.js`/`review-summaries.js`, full existing MD Review Summary test suite still green). Zero backend/database changes. Zero production writes. Zero real issue records created or assigned. Zero assignment persistence anywhere. 69/69 `issues.test.mjs` (was 63), 220/220 full `web-view/js` suite (was 214), 181/181 Calendar (unchanged).

@@ -210,17 +210,19 @@ test('getAssigneeOptions: authoritative registry order, excludes MD, includes Pa
   assert.ok(options.every(function (o) { return o.memberKey !== MD_MEMBER_KEY; }));
 }));
 
-// ── Assignment authority — exact identity, not role, not display name ───
+// ── Assignment authority — exact identity allowlist, not role, not name ──
 
-test('hasAssignmentAuthority: true only for the literal member_key "rajiv"', withEnv(async function () {
+test('hasAssignmentAuthority: true for the literal member_keys "rajiv" and "md"', withEnv(async function () {
   var mod = await loadIssuesModule();
   assert.equal(mod.hasAssignmentAuthority('rajiv'), true);
-  assert.equal(mod.hasAssignmentAuthority(mod.ASSIGNMENT_AUTHORITY_MEMBER_KEY), true);
+  assert.equal(mod.hasAssignmentAuthority('md'), true);
+  assert.equal(mod.hasAssignmentAuthority(MD_MEMBER_KEY), true);
+  assert.deepEqual(Array.from(mod.ISSUE_ASSIGNMENT_AUTHORITY_KEYS).sort(), ['md', 'rajiv']);
 }));
 
-test('hasAssignmentAuthority: false for every other registered member, MD, unknown, and null/undefined', withEnv(async function () {
+test('hasAssignmentAuthority: false for every other registered member, unknown, and null/undefined', withEnv(async function () {
   var mod = await loadIssuesModule();
-  ['mayurika', 'suman', 'arun', 'paraparan', MD_MEMBER_KEY, 'nonexistent', null, undefined].forEach(function (key) {
+  ['mayurika', 'suman', 'arun', 'paraparan', 'nonexistent', null, undefined].forEach(function (key) {
     assert.equal(mod.hasAssignmentAuthority(key), false, 'expected false for ' + key);
   });
 }));
@@ -230,6 +232,15 @@ test('hasAssignmentAuthority: role text alone cannot grant authority ("Admin Man
   assert.equal(MEMBER_REGISTRY.rajiv.role, 'Admin Manager'); // sanity: this really is Rajiv's role string
   assert.equal(mod.hasAssignmentAuthority('Admin Manager'), false);
   assert.equal(mod.hasAssignmentAuthority(MEMBER_REGISTRY.rajiv.role), false);
+}));
+
+test('hasAssignmentAuthority: MD\'s role/read-only text alone cannot grant authority ("Read-only" is not the member_key "md")', withEnv(async function () {
+  var mod = await loadIssuesModule();
+  assert.equal(MEMBER_REGISTRY.md.role, 'Read-only'); // sanity: this really is MD's role string
+  assert.equal(mod.hasAssignmentAuthority('Read-only'), false);
+  assert.equal(mod.hasAssignmentAuthority(MEMBER_REGISTRY.md.role), false);
+  assert.equal(mod.hasAssignmentAuthority(MEMBER_REGISTRY.md.displayName), false); // "MD" (display) is not "md" (key) — same string here only by coincidence of case; assert the exact-match rule directly below
+  assert.equal(mod.hasAssignmentAuthority('MD'), false);
 }));
 
 test('hasAssignmentAuthority: display name alone cannot grant authority ("Rajiv" is not the member_key "rajiv")', withEnv(async function () {
@@ -485,16 +496,18 @@ test('DOM: the real production wiring (initIssues\'s loadingMessage) shows "Load
   assert.equal(mountEl.querySelector('.msc-issues-loading'), null);
 }));
 
-// ── DOM: assignment authority gating ─────────────────────────────────────
+// ── DOM: assignment authority gating (rajiv, md) ─────────────────────────
 
-test('DOM: Rajiv (member_key "rajiv") sees Select All / Assign To / Assign controls', withEnv(async function () {
-  var ctx = await mountWithFixtures('rajiv');
-  assert.ok(ctx.mountEl.querySelector('#msc-issues-select-all'));
-  assert.ok(ctx.mountEl.querySelector('#msc-issues-assign-to-select'));
-  assert.ok(ctx.mountEl.querySelector('.msc-issues-assign-btn'));
-}));
+['rajiv', 'md'].forEach(function (key) {
+  test('DOM: ' + key + ' (assignment authority) sees Select All / Assign To / Assign controls', withEnv(async function () {
+    var ctx = await mountWithFixtures(key);
+    assert.ok(ctx.mountEl.querySelector('#msc-issues-select-all'));
+    assert.ok(ctx.mountEl.querySelector('#msc-issues-assign-to-select'));
+    assert.ok(ctx.mountEl.querySelector('.msc-issues-assign-btn'));
+  }));
+});
 
-['mayurika', 'suman', 'arun', 'paraparan', MD_MEMBER_KEY, null].forEach(function (key) {
+['mayurika', 'suman', 'arun', 'paraparan', null].forEach(function (key) {
   test('DOM: ' + String(key) + ' receives no assignment controls', withEnv(async function () {
     var ctx = await mountWithFixtures(key);
     assert.equal(ctx.mountEl.querySelector('#msc-issues-select-all'), null);
@@ -508,20 +521,32 @@ test('DOM: a memberKey equal to the role text "Admin Manager" gets no assignment
   assert.equal(ctx.mountEl.querySelector('#msc-issues-select-all'), null);
 }));
 
+test('DOM: a memberKey equal to MD\'s role text "Read-only" gets no assignment controls (role/read-only text alone cannot grant)', withEnv(async function () {
+  var ctx = await mountWithFixtures('Read-only');
+  assert.equal(ctx.mountEl.querySelector('#msc-issues-select-all'), null);
+}));
+
 test('DOM: a memberKey equal to the display name "Rajiv" gets no assignment controls (display name alone cannot grant)', withEnv(async function () {
   var ctx = await mountWithFixtures('Rajiv');
   assert.equal(ctx.mountEl.querySelector('#msc-issues-select-all'), null);
 }));
 
-test('DOM: Assign To lists only the 5 Management Team members, in registry order, no MD, no misspellings', withEnv(async function () {
-  var ctx = await mountWithFixtures('rajiv');
-  var select = ctx.mountEl.querySelector('#msc-issues-assign-to-select');
-  var labels = select._children.slice(1).map(function (o) { return o.textContent; }); // skip "Choose…"
-  assert.deepEqual(labels, ['Mayurika', 'Suman', 'Arun', 'Rajiv', 'Paraparan']);
-  assert.ok(labels.indexOf('MD') === -1);
-  assert.ok(labels.indexOf('Rajive') === -1);
-  assert.ok(labels.indexOf('Maurika') === -1);
+test('DOM: a memberKey equal to MD\'s display label "MD" (uppercase, matching displayName) gets no assignment controls', withEnv(async function () {
+  var ctx = await mountWithFixtures('MD');
+  assert.equal(ctx.mountEl.querySelector('#msc-issues-select-all'), null);
 }));
+
+['rajiv', 'md'].forEach(function (key) {
+  test('DOM (' + key + '): Assign To lists only the 5 Management Team members, in registry order, no MD, no ordinary staff, no misspellings', withEnv(async function () {
+    var ctx = await mountWithFixtures(key);
+    var select = ctx.mountEl.querySelector('#msc-issues-assign-to-select');
+    var labels = select._children.slice(1).map(function (o) { return o.textContent; }); // skip "Choose…"
+    assert.deepEqual(labels, ['Mayurika', 'Suman', 'Arun', 'Rajiv', 'Paraparan']);
+    assert.ok(labels.indexOf('MD') === -1, 'MD must never appear as an assignee — assignment authority is a separate question from being an assignee');
+    assert.ok(labels.indexOf('Rajive') === -1);
+    assert.ok(labels.indexOf('Maurika') === -1);
+  }));
+});
 
 // ── DOM: general table/interaction regression (unchanged behavior) ──────
 
@@ -633,25 +658,41 @@ test('DOM: Assign (in-memory fixture adapter) assigns, clears selection, populat
   assert.equal(originalFixture.status, 'RED', 'the original fixture object must never be mutated');
 }));
 
-test('DOM: Assign (production/demo adapter) shows "Assignment connection pending" and never fabricates a saved assignment', withEnv(async function () {
-  var ctx = await mountWithProductionDemoAdapter('rajiv');
-  var cb = ctx.mountEl.querySelector('.msc-issues-checkbox[data-ticket-id="DEMO-ISSUE-001"]');
+['rajiv', 'md'].forEach(function (key) {
+  test('DOM (' + key + '): Assign (production/demo adapter) shows "Assignment connection pending" and never fabricates a saved assignment', withEnv(async function () {
+    var ctx = await mountWithProductionDemoAdapter(key);
+    var cb = ctx.mountEl.querySelector('.msc-issues-checkbox[data-ticket-id="DEMO-ISSUE-001"]');
+    cb.checked = true;
+    fire(cb, 'change');
+    var assignToSelect = ctx.mountEl.querySelector('#msc-issues-assign-to-select');
+    assignToSelect.value = 'suman';
+    fire(assignToSelect, 'change');
+    fire(ctx.mountEl.querySelector('.msc-issues-assign-btn'), 'click');
+    await flush();
+
+    var notice = ctx.mountEl.querySelector('.msc-issues-assign-notice');
+    assert.equal(notice.hidden, false);
+    assert.match(notice.textContent, /Assignment connection pending/);
+    assert.ok(!/saved/.test(notice.textContent) || /not saved/.test(notice.textContent), 'must never claim success');
+
+    fire(ctx.mountEl.querySelector('.msc-issues-view-tab[data-view="assigned"]'), 'click');
+    assert.equal(ctx.mountEl.querySelector('.msc-issues-card'), null);
+    assert.match(ctx.mountEl.querySelector('.msc-issues-empty').textContent, /No tickets are currently assigned/);
+  }));
+});
+
+test('DOM: no assignment persistence occurs anywhere (localStorage/sessionStorage untouched) after an MD-initiated Assign', withEnv(async function () {
+  var ctx = await mountWithProductionDemoAdapter('md');
+  var before = Object.assign({}, window.localStorage._store);
+  var cb = ctx.mountEl.querySelector('.msc-issues-checkbox[data-ticket-id="DEMO-ISSUE-002"]');
   cb.checked = true;
   fire(cb, 'change');
   var assignToSelect = ctx.mountEl.querySelector('#msc-issues-assign-to-select');
-  assignToSelect.value = 'suman';
+  assignToSelect.value = 'arun';
   fire(assignToSelect, 'change');
   fire(ctx.mountEl.querySelector('.msc-issues-assign-btn'), 'click');
   await flush();
-
-  var notice = ctx.mountEl.querySelector('.msc-issues-assign-notice');
-  assert.equal(notice.hidden, false);
-  assert.match(notice.textContent, /Assignment connection pending/);
-  assert.ok(!/saved/.test(notice.textContent) || /not saved/.test(notice.textContent), 'must never claim success');
-
-  fire(ctx.mountEl.querySelector('.msc-issues-view-tab[data-view="assigned"]'), 'click');
-  assert.equal(ctx.mountEl.querySelector('.msc-issues-card'), null);
-  assert.match(ctx.mountEl.querySelector('.msc-issues-empty').textContent, /No tickets are currently assigned/);
+  assert.deepEqual(window.localStorage._store, before, 'no localStorage key should be added/changed by an Assign click');
 }));
 
 test('DOM: solving status changes the card badge but never the issue\'s own triage status', withEnv(async function () {

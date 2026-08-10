@@ -1,5 +1,5 @@
 /* issues.js — Management AIOS Issues workspace (REQ-ISSUES-UI-001,
-   2026-08-10; corrected 2026-08-10 per confirmed business rules).
+   2026-08-10; corrected 2026-08-10 per confirmed business rules, twice).
 
    Frontend-only. The Issue System remains the authoritative source of
    issue truth — this module never invents, persists, or writes issue
@@ -43,9 +43,9 @@
       integration remains a separate, unapproved future requirement. Each
       demo record's Raised By/Team values are bound to real values
       pulled from the Staff Data API above, never fabricated names.
-   4. Assignment authority is now an EXACT identity check —
-      hasAssignmentAuthority(memberKey) — true only when the authenticated
-      member_key is literally 'rajiv'. This replaces a role-text check
+   4. Assignment authority is an EXACT-identity allowlist —
+      hasAssignmentAuthority(memberKey) — true only for member_keys in
+      ISSUE_ASSIGNMENT_AUTHORITY_KEYS. This replaces a role-text check
       (member-registry.js's now-removed isAdminMemberKey(),
       role === 'Admin Manager') that a business review confirmed was the
       wrong shape: a role check would incorrectly grant assignment rights
@@ -54,6 +54,17 @@
       Management Team members from member-registry.js's MEMBER_REGISTRY
       (never MD, never a general staff member), since that was already
       correct and is a completely separate question from who MAY assign.
+   5. SECOND correction (2026-08-10, same day): the allowlist was widened
+      from {'rajiv'} to {'rajiv', 'md'} — MD may now also assign Issues,
+      per a further confirmed business rule. This is an EXPLICIT allowlist
+      change, not a reintroduction of role/display-name/substring
+      matching — 'md' is added as its own exact literal, same as 'rajiv'.
+      MD having assignment AUTHORITY is unrelated to, and does not change,
+      MD's Review Summary read-only status (isReadOnlyMember/MD_MEMBER_KEY,
+      member-registry.js) — that is a completely different feature's gate.
+      MD also remains excluded from "Assign To" (ASSIGNEE_ORDER above) —
+      MD may assign an issue to one of the 5 Management Team members, but
+      MD is never itself a valid assignee.
 
    Built via createElement/appendChild with textContent for every
    issue-authored field (never innerHTML for untrusted text) — same
@@ -83,14 +94,25 @@ var TRUNCATE_LENGTH = 320;
    to" was already correct; only "who may DO the assigning" changed. */
 export var ASSIGNEE_ORDER = ['mayurika', 'suman', 'arun', 'rajiv', 'paraparan'];
 
-/* REQ-ISSUES-UI-001 correction (2026-08-10) — assignment authority is a
-   single exact identity, never a role-text check (see module header).
-   Exported as a named constant, not inlined at each call site, so a test
-   can assert against it directly instead of a duplicated string literal. */
-export var ASSIGNMENT_AUTHORITY_MEMBER_KEY = 'rajiv';
+/* REQ-ISSUES-UI-001 correction (2026-08-10, second correction) —
+   assignment authority is an explicit allowlist of exact identities,
+   never a role-text check, never a display-name check, never substring
+   matching (see module header). Rajiv and MD may both assign Issues;
+   every other Management Team member may not. Exported as a named
+   constant, not inlined at each call site, so a test can assert against
+   it directly instead of a duplicated literal.
+
+   MD having assignment AUTHORITY here is a completely separate question
+   from MD being an ASSIGNEE (getAssigneeOptions/ASSIGNEE_ORDER above) —
+   MD may assign an issue to one of the 5 Management Team members, but MD
+   itself is never a valid assignee. Also separate from, and does not
+   change, MD's read-only status for Review Summaries
+   (member-registry.js's isReadOnlyMember/MD_MEMBER_KEY) — that gate is
+   untouched by this constant. */
+export var ISSUE_ASSIGNMENT_AUTHORITY_KEYS = new Set(['rajiv', 'md']);
 
 export function hasAssignmentAuthority(memberKey) {
-  return memberKey === ASSIGNMENT_AUTHORITY_MEMBER_KEY;
+  return ISSUE_ASSIGNMENT_AUTHORITY_KEYS.has(memberKey);
 }
 
 export var STATUS_FILTERS = [
@@ -572,10 +594,12 @@ export function mountIssuesWorkspace(mountEl, opts) {
   toolbar.appendChild(teamField);
   toolbar.appendChild(statusField);
 
-  // Assignment controls — rendered only for the exact identity confirmed
-  // in ASSIGNMENT_AUTHORITY_MEMBER_KEY (Rajiv), never for any other
+  // Assignment controls — rendered only for the exact identities in
+  // ISSUE_ASSIGNMENT_AUTHORITY_KEYS (Rajiv, MD), never for any other
   // authenticated member (including any future second "Admin Manager"),
-  // never for MD, never when unauthenticated.
+  // never when unauthenticated. MD seeing these controls is unrelated to,
+  // and does not change, MD's separate read-only status for Review
+  // Summaries (member-registry.js's isReadOnlyMember).
   var assignToolbar = null;
   var selectAllCheckbox = null;
   var assignToSelect = null;
