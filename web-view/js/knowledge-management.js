@@ -1,6 +1,7 @@
 /* knowledge-management.js — Knowledge Management workspace, Company
    Documents view, wired to the real persistent backend CRUD API
-   (REQ-KM-UI-004, 2026-08-10).
+   (REQ-KM-UI-004, 2026-08-10; REQ-KM-UI-005, 2026-08-10 — Restore, real
+   detail GET, and stable filter options closed out below).
 
    REPLACES the REQ-KM-001 static APPROVED_DOCUMENTS registry entirely —
    there is now exactly one document-record truth: the backend API /
@@ -21,25 +22,24 @@
      POST   /api/knowledge-documents/{id}/archive               auth -> KnowledgeDocumentOut (409 if already Archived)
      POST   /api/knowledge-documents/{id}/unarchive              auth -> KnowledgeDocumentOut (409 if already Active)
      DELETE /api/knowledge-documents/{id}                     auth, {delete_reason} -> {id, deleted:true} (SOFT delete only)
-     POST   /api/knowledge-documents/{id}/restore               auth -> KnowledgeDocumentOut (404 if not deleted; 409 on URL collision) — API client exists (restoreKnowledgeDocument) but has NO UI entry point, see RESTORE section below.
+     POST   /api/knowledge-documents/{id}/restore               auth -> KnowledgeDocumentOut (404 if not deleted; 409 on URL collision)
      GET    /api/knowledge-documents/{id}/versions              auth -> [KnowledgeDocumentVersionOut] (append-only, no mutation route)
      GET    /api/knowledge-documents/{id}/audit                 auth -> [KnowledgeDocumentAuditLogOut] (immutable, no mutation route)
+     GET    /api/knowledge-documents/deleted                  auth -> [KnowledgeDocumentDeletedOut] (REQ-KM-UI-005 — soft-deleted documents only)
 
    KnowledgeDocumentOut has NO "description" field — Phase 8's requested
    detail-field list named one ("description") that the actual API does
    not return; per explicit instruction ("do not invent missing fields"),
    it is simply omitted from the Detail view, not fabricated.
 
-   RESTORE UI — BLOCKED (documented, not implemented): the backend has no
-   route to enumerate soft-deleted documents (LIST/DETAIL both exclude
-   deleted_at IS NOT NULL rows unconditionally; there is no
-   ?include_deleted= parameter). The only way to reach a specific deleted
-   document's id is if the frontend already held it from before deletion
-   — building that would mean inventing client-side deleted-record
-   storage, explicitly disallowed. See "RESTORE FRONTEND BLOCKED BY API
-   READ-VISIBILITY GAP" in
-   docs/knowledge-management-frontend-api-integration-2026-08-10.md.
-   Every other CRUD workflow this module supports is fully implemented.
+   RESTORE — RESOLVED (REQ-KM-UI-005): the backend now exposes GET
+   /api/knowledge-documents/deleted, so the frontend can enumerate
+   soft-deleted documents without any client-side deleted-record storage.
+   The Deleted Documents view (an internal toggle within this same panel,
+   not a new sidebar item) lists them and wires the existing
+   POST .../restore route behind a confirmation step. See the DELETED
+   VIEW / RESTORE section below. Every CRUD workflow this module supports
+   is now fully implemented — there is no longer a blocked workflow.
 
    Auth model: LIST/DETAIL are public reads (no token) — same shape as
    Task/Leave's own public-GET/protected-mutation split, NOT Review
@@ -76,6 +76,8 @@ export var EMPTY_STATE_TEXT = 'No company documents have been registered yet.';
 export var FILTERED_EMPTY_STATE_TEXT = 'No documents match your search or filters.';
 export var LOADING_TEXT = 'Loading documents...';
 export var ERROR_TEXT = 'Unable to load company documents.';
+export var EMPTY_DELETED_STATE_TEXT = 'No deleted documents.';
+export var RESTORE_COLLISION_TEXT = 'This document cannot be restored because another active document already uses the same source link.';
 
 var DOCUMENT_TYPE_OPTIONS = [
   'Google Sheet', 'Google Doc', 'Google Drive File', 'PDF',
@@ -230,11 +232,9 @@ export function softDeleteKnowledgeDocument(id, deleteReason) {
   return kmProtectedRequest('/' + id, { method: 'DELETE', body: { delete_reason: deleteReason } });
 }
 
-/* Exists for API-client completeness (Phase 4 asks for the client layer
-   to be centralized/complete) but has NO UI entry point anywhere in this
-   module — see the module docstring's RESTORE section. Available for a
-   future task once the backend exposes a way to discover deleted
-   documents. */
+/* Wired into the Deleted Documents view's Restore action (REQ-KM-UI-005
+   Phase 5) — no request body; actor identity is server-derived from the
+   Bearer token, never client-supplied. */
 export function restoreKnowledgeDocument(id) {
   return kmProtectedRequest('/' + id + '/restore', { method: 'POST' });
 }
@@ -245,6 +245,13 @@ export function listKnowledgeDocumentVersions(id) {
 
 export function listKnowledgeDocumentAuditLog(id) {
   return kmProtectedRequest('/' + id + '/audit');
+}
+
+/* REQ-KM-UI-005 Phase 3 — the mirror image of listKnowledgeDocuments:
+   returns ONLY soft-deleted documents. Auth-required (unlike public LIST/
+   DETAIL), matching the backend route's own Depends(get_verified_member). */
+export function listDeletedKnowledgeDocuments() {
+  return kmProtectedRequest('/deleted');
 }
 
 // ── DOM helpers ───────────────────────────────────────────────────────
@@ -295,8 +302,10 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     archive: archiveKnowledgeDocument,
     unarchive: unarchiveKnowledgeDocument,
     softDelete: softDeleteKnowledgeDocument,
+    restore: restoreKnowledgeDocument,
     listVersions: listKnowledgeDocumentVersions,
-    listAuditLog: listKnowledgeDocumentAuditLog
+    listAuditLog: listKnowledgeDocumentAuditLog,
+    listDeleted: listDeletedKnowledgeDocuments
   };
 
   var state = {
@@ -304,7 +313,23 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     documents: [],
     filters: { search: '', team: 'all', documentType: 'all', lifecycleStatus: 'all' },
     requestId: 0,
-    errorMessage: null
+    errorMessage: null,
+    // REQ-KM-UI-005 Phase 4 — internal view toggle, not a second sidebar item.
+    view: 'active', // 'active' | 'deleted'
+    deletedStatus: 'idle', // 'idle' | 'loading' | 'data' | 'empty' | 'error'
+    deletedDocuments: [],
+    deletedErrorMessage: null,
+    deletedRequestId: 0,
+    // REQ-KM-UI-005 Phase 7 — Team filter options, captured once from the
+    // most recent UNFILTERED (search='', team=all, documentType=all,
+    // lifecycleStatus=all) list response, never rebuilt from a filtered
+    // one. `complete` is false only if that response's own `total` proved
+    // it was truncated (more records exist than were returned) — see
+    // updateFilterOptionsBaseline(). Document Type does not need this: its
+    // options come from the fixed DOCUMENT_TYPE_OPTIONS enum below, which
+    // was already stable before this task (populated once at mount, never
+    // rebuilt from state.documents).
+    filterOptionsBaseline: { teams: [], captured: false, complete: false }
   };
 
   function currentAccess() {
@@ -321,6 +346,37 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   addBtn.textContent = '+ Add Document';
   headerRow.appendChild(addBtn);
   mountEl.appendChild(headerRow);
+
+  // ── Internal view toggle (Active / Deleted) — REQ-KM-UI-005 Phase 4.
+  //    NOT a new sidebar item: this is entirely within the existing
+  //    Knowledge Management panel, same tablist/tab/tabpanel pattern
+  //    issues.js already uses for its own Issues/Assigned Tickets toggle. ──
+  var viewTabs = el('div', 'msc-km-view-tabs');
+  viewTabs.setAttribute('role', 'tablist');
+  viewTabs.setAttribute('aria-label', 'Knowledge Management views');
+
+  var activeTabBtn = el('button', 'msc-km-view-tab');
+  activeTabBtn.type = 'button';
+  activeTabBtn.id = 'msc-km-view-tab-active';
+  activeTabBtn.setAttribute('role', 'tab');
+  activeTabBtn.setAttribute('aria-controls', 'msc-km-view-panel-active');
+  activeTabBtn.textContent = 'Active Documents';
+
+  var deletedTabBtn = el('button', 'msc-km-view-tab');
+  deletedTabBtn.type = 'button';
+  deletedTabBtn.id = 'msc-km-view-tab-deleted';
+  deletedTabBtn.setAttribute('role', 'tab');
+  deletedTabBtn.setAttribute('aria-controls', 'msc-km-view-panel-deleted');
+  deletedTabBtn.textContent = 'Deleted Documents';
+
+  viewTabs.appendChild(activeTabBtn);
+  viewTabs.appendChild(deletedTabBtn);
+  mountEl.appendChild(viewTabs);
+
+  var activeViewPanel = el('div', 'msc-km-view-panel');
+  activeViewPanel.id = 'msc-km-view-panel-active';
+  activeViewPanel.setAttribute('role', 'tabpanel');
+  activeViewPanel.setAttribute('aria-labelledby', 'msc-km-view-tab-active');
 
   // ── Toolbar: search + Team + Document Type + Lifecycle Status ───────
   var toolbar = el('div', 'msc-km-toolbar');
@@ -356,12 +412,12 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   lifecycleLabel.setAttribute('for', 'msc-km-lifecycle-filter');
   var lifecycleSelect = el('select', 'msc-km-select');
   lifecycleSelect.id = 'msc-km-lifecycle-filter';
-  var allLifecycleOpt = el('option', '');
+  var allLifecycleOpt = el('option', 'msc-km-select-option');
   allLifecycleOpt.value = 'all';
   allLifecycleOpt.textContent = 'All';
   lifecycleSelect.appendChild(allLifecycleOpt);
   LIFECYCLE_STATUS_OPTIONS.forEach(function (v) {
-    var opt = el('option', '');
+    var opt = el('option', 'msc-km-select-option');
     opt.value = v;
     opt.textContent = v;
     lifecycleSelect.appendChild(opt);
@@ -377,28 +433,41 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   var countPill = el('span', 'msc-km-count-pill');
   toolbar.appendChild(countPill);
 
-  mountEl.appendChild(toolbar);
+  activeViewPanel.appendChild(toolbar);
 
   var tableRegion = el('div', 'msc-km-table-region');
-  mountEl.appendChild(tableRegion);
+  activeViewPanel.appendChild(tableRegion);
+  mountEl.appendChild(activeViewPanel);
 
-  // ── Team filter options — populated from whatever the current result
-  //    set actually contains (server has no distinct-values endpoint) ──
+  // ── Deleted Documents view panel (REQ-KM-UI-005 Phase 4) — a separate,
+  //    read-mostly table fed by GET /api/knowledge-documents/deleted.
+  //    No Add/search/filter controls here — Restore is the only action. ──
+  var deletedViewPanel = el('div', 'msc-km-view-panel');
+  deletedViewPanel.id = 'msc-km-view-panel-deleted';
+  deletedViewPanel.setAttribute('role', 'tabpanel');
+  deletedViewPanel.setAttribute('aria-labelledby', 'msc-km-view-tab-deleted');
+  deletedViewPanel.hidden = true;
+
+  var deletedTableRegion = el('div', 'msc-km-table-region');
+  deletedViewPanel.appendChild(deletedTableRegion);
+  mountEl.appendChild(deletedViewPanel);
+
+  // ── Team filter options — captured once from the most recent UNFILTERED
+  //    list response (state.filterOptionsBaseline, REQ-KM-UI-005 Phase 7)
+  //    so selecting a Team/search never collapses the dropdown to just
+  //    that one value. Document Type's own options are the fixed
+  //    DOCUMENT_TYPE_OPTIONS enum below — already stable, unrelated to
+  //    this baseline. ──
   function populateTeamOptions() {
     var current = teamSelect.value || 'all';
-    var seen = {};
-    var values = [];
-    state.documents.forEach(function (d) {
-      if (d.team && !seen[d.team]) { seen[d.team] = true; values.push(d.team); }
-    });
-    values.sort(function (a, b) { return a.localeCompare(b); });
+    var values = state.filterOptionsBaseline.teams;
     teamSelect.textContent = '';
-    var allOpt = el('option', '');
+    var allOpt = el('option', 'msc-km-select-option');
     allOpt.value = 'all';
     allOpt.textContent = 'All';
     teamSelect.appendChild(allOpt);
     values.forEach(function (v) {
-      var opt = el('option', '');
+      var opt = el('option', 'msc-km-select-option');
       opt.value = v;
       opt.textContent = v;
       teamSelect.appendChild(opt);
@@ -406,12 +475,51 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     teamSelect.value = values.indexOf(current) !== -1 || current === 'all' ? current : 'all';
   }
 
-  var typeAllOpt = el('option', '');
+  function isUnfilteredFilters(filters) {
+    return !filters.search && filters.team === 'all' &&
+      filters.documentType === 'all' && filters.lifecycleStatus === 'all';
+  }
+
+  function distinctSortedTeams(records) {
+    var seen = {};
+    var values = [];
+    records.forEach(function (d) {
+      if (d.team && !seen[d.team]) { seen[d.team] = true; values.push(d.team); }
+    });
+    values.sort(function (a, b) { return a.localeCompare(b); });
+    return values;
+  }
+
+  /* Captures the Team filter baseline (Phase 7) from a successful LIST
+     response — but ONLY when that request was itself unfiltered
+     (isUnfilteredFilters), and only overwrites an already-`complete`
+     baseline with a fresh one that is ALSO complete. A truncated
+     unfiltered response (result.total > records actually returned) never
+     regresses a previously-established complete baseline — this repo's
+     hardcoded limit=200 (buildListQueryString) covers every realistic
+     document count today, so `complete` is expected to stay true; if this
+     Knowledge Management library ever exceeds 200 active documents,
+     `complete` will correctly flip to false and a dedicated distinct-
+     values endpoint would be the right follow-up (see docs). */
+  function updateFilterOptionsBaseline(result, filtersAtRequest) {
+    if (!isUnfilteredFilters(filtersAtRequest)) { return; }
+    var records = result.records || [];
+    var total = typeof result.total === 'number' ? result.total : records.length;
+    var complete = records.length >= total;
+    if (!complete && state.filterOptionsBaseline.captured) { return; }
+    state.filterOptionsBaseline = {
+      teams: distinctSortedTeams(records),
+      captured: true,
+      complete: complete
+    };
+  }
+
+  var typeAllOpt = el('option', 'msc-km-select-option');
   typeAllOpt.value = 'all';
   typeAllOpt.textContent = 'All';
   typeSelect.appendChild(typeAllOpt);
   DOCUMENT_TYPE_OPTIONS.forEach(function (v) {
-    var opt = el('option', '');
+    var opt = el('option', 'msc-km-select-option');
     opt.value = v;
     opt.textContent = v;
     typeSelect.appendChild(opt);
@@ -603,87 +711,140 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     container.appendChild(row);
   }
 
-  function openDetailModal(document, trigger) {
+  /* REQ-KM-UI-005 Phase 6 — calls the real GET /api/knowledge-documents/
+     {id} detail endpoint instead of reusing the already-fetched list row.
+     listRowDoc (the row from the table) is kept in closure scope for the
+     entire lifetime of this modal — "do not discard the existing list row
+     while loading" — and its title is shown as context throughout the
+     loading and error states, so the modal never goes contextless even if
+     the detail request is slow or fails. The success state renders ONLY
+     fields the canonical GET response actually returned (never anything
+     invented), and every action button below (Edit/Version/Archive/
+     Delete) is wired to that fresh canonical `record`, not the stale list
+     row — e.g. so the Archive/Unarchive label reflects the true current
+     lifecycle_status even if it changed since the list was last loaded. */
+  function openDetailModal(listRowDoc, trigger) {
     ensureModal().open('Document Details', function (body, close) {
-      var grid = el('div', 'msc-km-detail-grid');
-      detailRow(grid, 'Title', document.title);
-      detailRow(grid, 'Team', document.team);
-      detailRow(grid, 'Document Type', document.document_type);
-      detailRow(grid, 'Job Role', document.job_role);
-      detailRow(grid, 'Document Category', document.document_category);
-      detailRow(grid, 'Creator', document.creator);
-      detailRow(grid, 'Created By', document.created_by);
-      detailRow(grid, 'Current Version', document.current_version);
-      detailRow(grid, 'Lifecycle', document.lifecycle_status);
-      detailRow(grid, 'Compliance', document.compliance_status);
-      detailRow(grid, 'Google Ownership', document.google_ownership_status);
-      detailRow(grid, 'Created', formatTimestamp(document.created_at));
-      detailRow(grid, 'Updated', formatTimestamp(document.updated_at));
-      body.appendChild(grid);
+      var contextNote = textEl('p', 'msc-km-detail-context', listRowDoc.title);
+      body.appendChild(contextNote);
 
-      var linkRow = el('div', 'msc-km-detail-row');
-      linkRow.appendChild(textEl('span', 'msc-km-detail-label', 'Source'));
-      var linkValue = el('span', 'msc-km-detail-value');
-      if (isSafeHttpUrl(document.source_url)) {
-        var a = el('a', 'msc-km-open-link');
-        a.setAttribute('href', document.source_url);
-        a.setAttribute('target', '_blank');
-        a.setAttribute('rel', 'noopener noreferrer');
-        a.textContent = 'Open Document';
-        linkValue.appendChild(a);
-      } else {
-        dashOrText(linkValue, null);
+      var statusWrap = el('div', 'msc-km-detail-status-wrap');
+      body.appendChild(statusWrap);
+
+      function renderLoadingState() {
+        contextNote.hidden = false;
+        statusWrap.textContent = '';
+        statusWrap.appendChild(textEl('div', 'msc-km-loading', LOADING_TEXT));
       }
-      linkRow.appendChild(linkValue);
-      body.appendChild(linkRow);
 
-      var actions = el('div', 'msc-km-detail-actions');
-
-      var editBtn = el('button', 'msc-btn msc-btn-ghost');
-      editBtn.type = 'button';
-      editBtn.textContent = 'Edit Metadata';
-      editBtn.addEventListener('click', function () { openEditModal(document, trigger); });
-      actions.appendChild(editBtn);
-
-      var versionBtn = el('button', 'msc-btn msc-btn-ghost');
-      versionBtn.type = 'button';
-      versionBtn.textContent = 'Create New Version';
-      versionBtn.addEventListener('click', function () { openVersionModal(document, trigger); });
-      actions.appendChild(versionBtn);
-
-      var lifecycleBtn = el('button', 'msc-btn msc-btn-ghost');
-      lifecycleBtn.type = 'button';
-      if (document.lifecycle_status === 'Archived') {
-        lifecycleBtn.textContent = 'Unarchive';
-        lifecycleBtn.addEventListener('click', function () { handleUnarchive(document, trigger); });
-      } else {
-        lifecycleBtn.textContent = 'Archive';
-        lifecycleBtn.addEventListener('click', function () { handleArchive(document, trigger); });
+      function renderErrorState(err) {
+        contextNote.hidden = false;
+        statusWrap.textContent = '';
+        var errWrap = el('div', 'msc-km-error-state');
+        errWrap.setAttribute('role', 'alert');
+        var mapped = mapApiError(err);
+        errWrap.appendChild(textEl('p', '', mapped.message || ERROR_TEXT));
+        var retryBtn = el('button', 'msc-btn msc-btn-ghost');
+        retryBtn.type = 'button';
+        retryBtn.textContent = 'Retry';
+        retryBtn.addEventListener('click', load);
+        errWrap.appendChild(retryBtn);
+        statusWrap.appendChild(errWrap);
       }
-      actions.appendChild(lifecycleBtn);
 
-      var versionsBtn = el('button', 'msc-btn msc-btn-ghost');
-      versionsBtn.type = 'button';
-      versionsBtn.textContent = 'View Version History';
-      versionsBtn.addEventListener('click', function () { openVersionHistoryModal(document, trigger); });
-      actions.appendChild(versionsBtn);
+      function renderDetailState(record) {
+        // The grid below already shows Title as its own row — no need to
+        // keep the context line duplicating it once real detail loads.
+        contextNote.hidden = true;
+        statusWrap.textContent = '';
 
-      var auditBtn = el('button', 'msc-btn msc-btn-ghost');
-      auditBtn.type = 'button';
-      auditBtn.textContent = 'View Audit History';
-      auditBtn.addEventListener('click', function () { openAuditHistoryModal(document, trigger); });
-      actions.appendChild(auditBtn);
+        var grid = el('div', 'msc-km-detail-grid');
+        detailRow(grid, 'Title', record.title);
+        detailRow(grid, 'Team', record.team);
+        detailRow(grid, 'Document Type', record.document_type);
+        detailRow(grid, 'Job Role', record.job_role);
+        detailRow(grid, 'Document Category', record.document_category);
+        detailRow(grid, 'Creator', record.creator);
+        detailRow(grid, 'Created By', record.created_by);
+        detailRow(grid, 'Current Version', record.current_version);
+        detailRow(grid, 'Lifecycle', record.lifecycle_status);
+        detailRow(grid, 'Compliance', record.compliance_status);
+        detailRow(grid, 'Google Ownership', record.google_ownership_status);
+        detailRow(grid, 'Created', formatTimestamp(record.created_at));
+        detailRow(grid, 'Updated', formatTimestamp(record.updated_at));
+        statusWrap.appendChild(grid);
 
-      body.appendChild(actions);
+        var linkRow = el('div', 'msc-km-detail-row');
+        linkRow.appendChild(textEl('span', 'msc-km-detail-label', 'Source'));
+        var linkValue = el('span', 'msc-km-detail-value');
+        if (isSafeHttpUrl(record.source_url)) {
+          var a = el('a', 'msc-km-open-link');
+          a.setAttribute('href', record.source_url);
+          a.setAttribute('target', '_blank');
+          a.setAttribute('rel', 'noopener noreferrer');
+          a.textContent = 'Open Document';
+          linkValue.appendChild(a);
+        } else {
+          dashOrText(linkValue, null);
+        }
+        linkRow.appendChild(linkValue);
+        statusWrap.appendChild(linkRow);
 
-      // Secondary/more action area (Phase 12) — visually separated Delete.
-      var moreArea = el('div', 'msc-km-more-actions');
-      var deleteBtn = el('button', 'msc-btn msc-btn-danger msc-km-delete-btn');
-      deleteBtn.type = 'button';
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', function () { handleDelete(document, trigger); });
-      moreArea.appendChild(deleteBtn);
-      body.appendChild(moreArea);
+        var actions = el('div', 'msc-km-detail-actions');
+
+        var editBtn = el('button', 'msc-btn msc-btn-ghost');
+        editBtn.type = 'button';
+        editBtn.textContent = 'Edit Metadata';
+        editBtn.addEventListener('click', function () { openEditModal(record, trigger); });
+        actions.appendChild(editBtn);
+
+        var versionBtn = el('button', 'msc-btn msc-btn-ghost');
+        versionBtn.type = 'button';
+        versionBtn.textContent = 'Create New Version';
+        versionBtn.addEventListener('click', function () { openVersionModal(record, trigger); });
+        actions.appendChild(versionBtn);
+
+        var lifecycleBtn = el('button', 'msc-btn msc-btn-ghost');
+        lifecycleBtn.type = 'button';
+        if (record.lifecycle_status === 'Archived') {
+          lifecycleBtn.textContent = 'Unarchive';
+          lifecycleBtn.addEventListener('click', function () { handleUnarchive(record, trigger); });
+        } else {
+          lifecycleBtn.textContent = 'Archive';
+          lifecycleBtn.addEventListener('click', function () { handleArchive(record, trigger); });
+        }
+        actions.appendChild(lifecycleBtn);
+
+        var versionsBtn = el('button', 'msc-btn msc-btn-ghost');
+        versionsBtn.type = 'button';
+        versionsBtn.textContent = 'View Version History';
+        versionsBtn.addEventListener('click', function () { openVersionHistoryModal(record, trigger); });
+        actions.appendChild(versionsBtn);
+
+        var auditBtn = el('button', 'msc-btn msc-btn-ghost');
+        auditBtn.type = 'button';
+        auditBtn.textContent = 'View Audit History';
+        auditBtn.addEventListener('click', function () { openAuditHistoryModal(record, trigger); });
+        actions.appendChild(auditBtn);
+
+        statusWrap.appendChild(actions);
+
+        // Secondary/more action area (Phase 12) — visually separated Delete.
+        var moreArea = el('div', 'msc-km-more-actions');
+        var deleteBtn = el('button', 'msc-btn msc-btn-danger msc-km-delete-btn');
+        deleteBtn.type = 'button';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', function () { handleDelete(record, trigger); });
+        moreArea.appendChild(deleteBtn);
+        statusWrap.appendChild(moreArea);
+      }
+
+      function load() {
+        renderLoadingState();
+        api.detail(listRowDoc.id).then(renderDetailState, renderErrorState);
+      }
+
+      load();
     }, trigger);
   }
 
@@ -1109,10 +1270,17 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     state.errorMessage = null;
     renderTable();
     var requestId = ++state.requestId;
+    var filtersAtRequest = {
+      search: state.filters.search,
+      team: state.filters.team,
+      documentType: state.filters.documentType,
+      lifecycleStatus: state.filters.lifecycleStatus
+    };
     api.list(state.filters).then(function (result) {
       if (requestId !== state.requestId) { return; } // superseded by a newer request
       state.documents = result.records || [];
       state.status = state.documents.length ? 'data' : 'empty';
+      updateFilterOptionsBaseline(result, filtersAtRequest);
       populateTeamOptions();
       renderTable();
     }, function (err) {
@@ -1123,6 +1291,150 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
       renderTable();
     });
   }
+
+  // ── DELETED DOCUMENTS (REQ-KM-UI-005 Phase 4-5) ──────────────────────
+
+  function buildDeletedRow(doc) {
+    var tr = el('tr', '');
+
+    var titleTd = el('td', 'msc-km-title-cell');
+    titleTd.textContent = doc.title || '';
+    tr.appendChild(titleTd);
+
+    var teamTd = el('td', ''); dashOrText(teamTd, doc.team); tr.appendChild(teamTd);
+    var typeTd = el('td', ''); dashOrText(typeTd, doc.document_type); tr.appendChild(typeTd);
+    var creatorTd = el('td', ''); dashOrText(creatorTd, doc.creator); tr.appendChild(creatorTd);
+    var versionTd = el('td', ''); dashOrText(versionTd, doc.current_version); tr.appendChild(versionTd);
+    var deletedByTd = el('td', ''); dashOrText(deletedByTd, doc.deleted_by); tr.appendChild(deletedByTd);
+    var deletedAtTd = el('td', ''); dashOrText(deletedAtTd, formatTimestamp(doc.deleted_at)); tr.appendChild(deletedAtTd);
+    var reasonTd = el('td', ''); dashOrText(reasonTd, doc.delete_reason); tr.appendChild(reasonTd);
+
+    // Deliberately NO Edit Metadata / Create Version / Archive / Unarchive
+    // / Delete-again controls anywhere in this row (Phase 4 explicit
+    // instruction) — Restore is the only action a soft-deleted document
+    // ever exposes.
+    var actionTd = el('td', 'msc-km-actions-cell');
+    var restoreBtn = el('button', 'msc-btn msc-btn-primary msc-km-restore-btn');
+    restoreBtn.type = 'button';
+    restoreBtn.textContent = 'Restore';
+    restoreBtn.addEventListener('click', function () { handleRestore(doc, restoreBtn); });
+    actionTd.appendChild(restoreBtn);
+    tr.appendChild(actionTd);
+
+    return tr;
+  }
+
+  function renderDeletedTable() {
+    deletedTableRegion.textContent = '';
+
+    if (state.deletedStatus === 'loading') {
+      deletedTableRegion.appendChild(textEl('div', 'msc-km-loading', LOADING_TEXT));
+      return;
+    }
+
+    if (state.deletedStatus === 'error') {
+      var errWrap = el('div', 'msc-km-error-state');
+      errWrap.setAttribute('role', 'alert');
+      errWrap.appendChild(textEl('p', '', state.deletedErrorMessage || ERROR_TEXT));
+      var retryBtn = el('button', 'msc-btn msc-btn-ghost');
+      retryBtn.type = 'button';
+      retryBtn.textContent = 'Retry';
+      retryBtn.addEventListener('click', loadDeletedDocuments);
+      errWrap.appendChild(retryBtn);
+      deletedTableRegion.appendChild(errWrap);
+      return;
+    }
+
+    if (!state.deletedDocuments.length) {
+      deletedTableRegion.appendChild(textEl('div', 'msc-km-empty', EMPTY_DELETED_STATE_TEXT));
+      return;
+    }
+
+    var wrap = el('div', 'msc-km-table-wrap');
+    var table = el('table', 'msc-km-table');
+    var thead = el('thead', '');
+    var headerRowEl = el('tr', '');
+    ['Document Title', 'Team', 'Document Type', 'Creator', 'Version', 'Deleted By', 'Deleted At', 'Delete Reason', '']
+      .forEach(function (label) { headerRowEl.appendChild(textEl('th', '', label)); });
+    thead.appendChild(headerRowEl);
+    var tbody = el('tbody', '');
+    state.deletedDocuments.forEach(function (doc) { tbody.appendChild(buildDeletedRow(doc)); });
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    deletedTableRegion.appendChild(wrap);
+  }
+
+  /* api.listDeleted (kmProtectedRequest) calls ensureAuthorized() itself —
+     no separate auth gate needed here, same convention already used by
+     openVersionHistoryModal/openAuditHistoryModal's own protected calls. */
+  function loadDeletedDocuments() {
+    state.deletedStatus = 'loading';
+    state.deletedErrorMessage = null;
+    renderDeletedTable();
+    var requestId = ++state.deletedRequestId;
+    api.listDeleted().then(function (rows) {
+      if (requestId !== state.deletedRequestId) { return; }
+      state.deletedDocuments = rows || [];
+      state.deletedStatus = state.deletedDocuments.length ? 'data' : 'empty';
+      renderDeletedTable();
+    }, function (err) {
+      if (requestId !== state.deletedRequestId) { return; }
+      state.deletedStatus = 'error';
+      state.deletedDocuments = [];
+      state.deletedErrorMessage = mapApiError(err).message || ERROR_TEXT;
+      renderDeletedTable();
+    });
+  }
+
+  /* No client-side restore workaround of any kind — every render of the
+     Deleted Documents list, and every post-restore refresh, comes straight
+     from GET .../deleted; nothing about which documents are deleted is
+     ever cached, inferred, or reconstructed locally. */
+  function handleRestore(deletedDoc, trigger) {
+    confirmDestructive({
+      title: 'Restore this document?',
+      message: 'Restore this document to the active Knowledge Management library?',
+      confirmLabel: 'Restore',
+      confirmVariant: 'primary',
+      trigger: trigger,
+      onConfirm: function () {
+        return api.restore(deletedDoc.id).then(function () {
+          showToast({ type: 'success', title: 'Document restored', message: '"' + deletedDoc.title + '" is now active again.' });
+          loadDeletedDocuments();
+          loadDocuments();
+          return true;
+        }, function (err) {
+          if (err.code === 'knowledge_document_duplicate_source_url') {
+            // Restore-specific wording (Phase 5) — deliberately NOT the
+            // shared KNOWN_ERRORS message for this same error code (used
+            // by Create/Create Version, where "already uses this source
+            // URL" is the correct framing); here the actionable fact is
+            // that RESTORE specifically is blocked, not creation.
+            showToast({ type: 'error', title: 'Restore blocked', message: RESTORE_COLLISION_TEXT, persistent: true });
+            return false;
+          }
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+          return false;
+        });
+      }
+    });
+  }
+
+  function setActiveView(view) {
+    state.view = view;
+    activeTabBtn.classList.toggle('active', view === 'active');
+    activeTabBtn.setAttribute('aria-selected', view === 'active' ? 'true' : 'false');
+    deletedTabBtn.classList.toggle('active', view === 'deleted');
+    deletedTabBtn.setAttribute('aria-selected', view === 'deleted' ? 'true' : 'false');
+    activeViewPanel.hidden = view !== 'active';
+    deletedViewPanel.hidden = view !== 'deleted';
+    if (view === 'deleted') { loadDeletedDocuments(); }
+  }
+
+  activeTabBtn.addEventListener('click', function () { setActiveView('active'); });
+  deletedTabBtn.addEventListener('click', function () { setActiveView('deleted'); });
 
   var searchDebounceHandle = null;
   searchInput.addEventListener('input', function () {
@@ -1149,12 +1461,14 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     ensureAuthorized().then(function () { openCreateModal(); }, function () { /* dialog cancelled */ });
   });
 
+  setActiveView('active'); // sets initial aria state without a redundant deleted-view fetch
   loadDocuments();
 
   return {
     // Exposed for tests only — not used by production wiring.
     getState: function () { return state; },
-    reload: loadDocuments
+    reload: loadDocuments,
+    reloadDeleted: loadDeletedDocuments
   };
 }
 

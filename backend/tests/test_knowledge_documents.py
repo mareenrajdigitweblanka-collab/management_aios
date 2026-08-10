@@ -657,6 +657,66 @@ class HistoryTests(KnowledgeDocumentsTestCase):
                 self.assertNotIn("DELETE", r.methods)
 
 
+# ── DELETED LIST (55-60, REQ-KM-UI-005) ─────────────────────────────────────
+
+
+class DeletedListTests(KnowledgeDocumentsTestCase):
+    def test_55_unauthenticated_rejected(self):
+        response = self.client.get(f"{BASE}/deleted")
+        self.assertEqual(response.status_code, 401)
+
+    def test_56_authenticated_accepted(self):
+        response = self.client.get(f"{BASE}/deleted", headers=bearer_header("mayurika"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_57_only_deleted_records_returned(self):
+        deleted_id = self.seed_document(
+            title="Deleted One", source_url="https://example.com/deleted-one",
+            deleted_at=datetime.now(timezone.utc), deleted_by="mayurika", delete_reason="superseded",
+        )
+        self.seed_document(title="Still Active", source_url="https://example.com/still-active")
+        response = self.client.get(f"{BASE}/deleted", headers=bearer_header("mayurika"))
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(len(body), 1)
+        self.assertEqual(body[0]["id"], str(deleted_id))
+
+    def test_58_active_records_excluded(self):
+        self.seed_document(title="Active Only", source_url="https://example.com/active-only")
+        response = self.client.get(f"{BASE}/deleted", headers=bearer_header("mayurika"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
+
+    def test_59_deterministic_ordering(self):
+        earlier = datetime(2026, 8, 1, tzinfo=timezone.utc)
+        later = datetime(2026, 8, 5, tzinfo=timezone.utc)
+        first_id = self.seed_document(
+            title="Deleted Earlier", source_url="https://example.com/earlier",
+            deleted_at=earlier, deleted_by="mayurika", delete_reason="a",
+        )
+        second_id = self.seed_document(
+            title="Deleted Later", source_url="https://example.com/later",
+            deleted_at=later, deleted_by="mayurika", delete_reason="b",
+        )
+        response = self.client.get(f"{BASE}/deleted", headers=bearer_header("mayurika"))
+        ids = [row["id"] for row in response.json()]
+        # deleted_at DESC — most recently deleted first.
+        self.assertEqual(ids, [str(second_id), str(first_id)])
+
+    def test_60_no_mutation_occurs(self):
+        deleted_id = self.seed_document(
+            title="Untouched", source_url="https://example.com/untouched",
+            deleted_at=datetime.now(timezone.utc), deleted_by="mayurika", delete_reason="test",
+        )
+        before = self.get_document_row(deleted_id)
+        self.client.get(f"{BASE}/deleted", headers=bearer_header("mayurika"))
+        after = self.get_document_row(deleted_id)
+        self.assertEqual(before.deleted_at, after.deleted_at)
+        self.assertEqual(before.deleted_by, after.deleted_by)
+        self.assertEqual(before.delete_reason, after.delete_reason)
+        self.assertEqual(self.count_documents(), 1)
+
+
 # ── MD read-only enforcement (extra, beyond the required 54 — directly
 #    exercises the rule-1-derived MD exclusion documented in
 #    knowledge_documents.py's module docstring) ────────────────────────────

@@ -1137,6 +1137,32 @@ class KnowledgeDocumentDeleteRequest(BaseModel):
         return trimmed
 
 
+class KnowledgeDocumentDeletedOut(BaseModel):
+    """Response shape for GET /api/knowledge-documents/deleted
+    (REQ-KM-UI-005 Phase 3) — soft-deleted records only. Deliberately a
+    separate, narrower schema from KnowledgeDocumentOut rather than reusing
+    it with deleted_at/deleted_by/delete_reason bolted on: the Deleted
+    Documents UI (REQ-KM-UI-005 Phase 4) needs exactly these fields and no
+    others (no lifecycle_status/compliance_status/google_ownership_status/
+    warnings — none of those are meaningful for a soft-deleted row). All
+    three deletion fields are required (non-Optional): the
+    knowledge_documents_soft_delete_pairing_check CHECK constraint
+    (backend/models.py) guarantees they are always populated together for
+    any row where deleted_at IS NOT NULL."""
+
+    id: UUID
+    title: str
+    team: str
+    document_type: str
+    creator: Optional[str] = None
+    current_version: str
+    deleted_by: str
+    deleted_at: datetime
+    delete_reason: str
+
+    model_config = {"from_attributes": True}
+
+
 class KnowledgeDocumentOut(BaseModel):
     """Response shape for every non-history Knowledge Management route
     (create/detail/list/metadata-update/version-create/archive/unarchive/

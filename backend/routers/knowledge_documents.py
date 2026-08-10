@@ -1,5 +1,6 @@
 """Knowledge Management — Company Documents backend CRUD API
-(REQ-KM-CRUD-002 design, REQ-KM-CRUD-003 implementation).
+(REQ-KM-CRUD-002 design, REQ-KM-CRUD-003 implementation; REQ-KM-UI-005 added
+GET /deleted, the one new route below).
 
 Operates against management_aios.knowledge_documents,
 knowledge_document_versions, knowledge_document_audit_log — all three
@@ -43,6 +44,15 @@ delete information via audit records"), so filtering it out on the parent's
 current lifecycle state would defeat that purpose. LIST/DETAIL (the
 "current live business state" views) do filter on deleted_at — see
 _base_active_query / _get_active_document_or_404 below.
+
+GET /deleted (REQ-KM-UI-005) is the mirror image of LIST: it returns ONLY
+soft-deleted documents, using KnowledgeDocumentDeletedOut (a narrower schema
+carrying deleted_by/deleted_at/delete_reason, which KnowledgeDocumentOut
+does not). It requires a valid token (unlike public LIST/DETAIL) but does
+NOT call _reject_md_write — it is a read-only route, and MD is not excluded
+from any read route in this file (only writes). It is registered BEFORE
+"/{document_id}" specifically so the static path is never swallowed by the
+dynamic one — see that route's own docstring for the full explanation.
 """
 
 from datetime import datetime, timezone
@@ -62,6 +72,7 @@ from backend.routers.calendar_auth import get_verified_member
 from backend.schemas import (
     KnowledgeDocumentAuditLogOut,
     KnowledgeDocumentCreate,
+    KnowledgeDocumentDeletedOut,
     KnowledgeDocumentDeleteRequest,
     KnowledgeDocumentListResponse,
     KnowledgeDocumentMetadataUpdate,
@@ -235,6 +246,53 @@ def list_knowledge_documents(
         limit=limit,
         offset=offset,
     )
+
+
+# ── DELETED (REQ-KM-UI-005 Phase 3) ─────────────────────────────────────────
+
+
+@router.get("/deleted", response_model=List[KnowledgeDocumentDeletedOut])
+def list_deleted_knowledge_documents(
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Read-only mirror image of the default LIST route above: returns
+    ONLY soft-deleted documents (deleted_at IS NOT NULL), never an active
+    one. Exists so the frontend can enumerate what is available to
+    restore — the default LIST route deliberately never exposes deleted
+    rows (see its own docstring), so without this route there is no way
+    to discover a deleted document's id at all.
+
+    IMPORTANT ROUTE ORDER: this function is defined (and therefore
+    registered on `router`) BEFORE get_knowledge_document's
+    "/{document_id}" route below. FastAPI/Starlette matches routes in
+    registration order — if "/{document_id}" were registered first, a
+    request to GET /api/knowledge-documents/deleted would match it first
+    (with document_id="deleted") and fail UUID validation with a 422,
+    never reaching this handler. Registering the static "/deleted" path
+    first guarantees it is matched before the dynamic path is even tried.
+
+    Auth: any authenticated Management Team member (Depends(get_verified_
+    member), same as every other route in this file) — no _reject_md_write
+    call, matching the version/audit history GET routes below: this is a
+    read-only route, and rule 1's Management-Team-only restriction has
+    only ever been applied to WRITES in this router (MD is not rejected
+    from any GET route here). The permission rationale is the same one
+    that already permits any Management Team member to call RESTORE
+    itself (rule 1) — reading what is available to restore is a strict
+    subset of being allowed to restore it.
+
+    Never mutates anything — a plain SELECT, no db.add()/db.commit() call
+    anywhere in this function. Deterministic ordering: most-recently-
+    deleted first (deleted_at DESC), then id ascending as a stable
+    tiebreaker for two documents deleted in the same instant."""
+    rows = (
+        db.query(KnowledgeDocument)
+        .filter(KnowledgeDocument.deleted_at.isnot(None))
+        .order_by(KnowledgeDocument.deleted_at.desc(), asc(KnowledgeDocument.id))
+        .all()
+    )
+    return [KnowledgeDocumentDeletedOut.model_validate(r) for r in rows]
 
 
 # ── DETAIL ────────────────────────────────────────────────────────────────

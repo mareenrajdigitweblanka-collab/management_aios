@@ -87,6 +87,18 @@ var FIXTURE_DOC_2 = Object.assign({}, FIXTURE_DOC, {
   source_url: 'https://example.com/handbook.pdf', current_version: '2.0'
 });
 
+var DELETED_FIXTURE_DOC = {
+  id: 'fx-doc-deleted-1',
+  title: 'Old Onboarding Guide',
+  team: 'HR',
+  document_type: 'PDF',
+  creator: 'Alex Doe',
+  current_version: '1.0',
+  deleted_by: 'suman',
+  deleted_at: '2026-08-09T09:00:00Z',
+  delete_reason: 'Superseded by new guide'
+};
+
 function makeFixtureApi(overrides) {
   var base = {
     list: function () { return Promise.resolve({ records: [FIXTURE_DOC, FIXTURE_DOC_2], total: 2, limit: 200, offset: 0 }); },
@@ -97,8 +109,10 @@ function makeFixtureApi(overrides) {
     archive: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' })); },
     unarchive: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Active' })); },
     softDelete: function () { return Promise.resolve({ id: FIXTURE_DOC.id, deleted: true }); },
+    restore: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Active' })); },
     listVersions: function () { return Promise.resolve([{ id: 'v1', document_id: FIXTURE_DOC.id, version_label: '1.0', source_url: FIXTURE_DOC.source_url, change_note: null, created_by: 'mayurika', created_at: '2026-08-10T10:00:00Z' }]); },
-    listAuditLog: function () { return Promise.resolve([{ id: 'a1', document_id: FIXTURE_DOC.id, action: 'create', actor_member_key: 'mayurika', detail: null, occurred_at: '2026-08-10T10:00:00Z' }]); }
+    listAuditLog: function () { return Promise.resolve([{ id: 'a1', document_id: FIXTURE_DOC.id, action: 'create', actor_member_key: 'mayurika', detail: null, occurred_at: '2026-08-10T10:00:00Z' }]); },
+    listDeleted: function () { return Promise.resolve([]); }
   };
   return Object.assign(base, overrides || {});
 }
@@ -663,6 +677,7 @@ test('38. correct endpoint (unarchive called with document id)', withEnv(async (
   var archivedDoc = Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' });
   var { mountEl } = await mountWithFixture({
     list: function () { return Promise.resolve({ records: [archivedDoc], total: 1, limit: 200, offset: 0 }); },
+    detail: function () { return Promise.resolve(archivedDoc); },
     unarchive: function (id) { capturedId = id; return Promise.resolve(Object.assign({}, archivedDoc, { lifecycle_status: 'Active' })); }
   });
   fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
@@ -678,6 +693,7 @@ test('39. status refresh after unarchive', withEnv(async () => {
   var archivedDoc = Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' });
   var { mountEl } = await mountWithFixture({
     list: function () { listCalls += 1; return Promise.resolve({ records: [archivedDoc], total: 1, limit: 200, offset: 0 }); },
+    detail: function () { return Promise.resolve(archivedDoc); },
     unarchive: function () { return Promise.resolve(Object.assign({}, archivedDoc, { lifecycle_status: 'Active' })); }
   });
   fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
@@ -867,3 +883,453 @@ test('55. Knowledge Management nav exactly once', () => {
   var panelIds = topLevelPanels(html).map(function (p) { return p.id; });
   assert.equal(panelIds.filter(function (id) { return id === 'tab-knowledge-management'; }).length, 1);
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// REQ-KM-UI-005 — DELETED VIEW (56-64)
+// ══════════════════════════════════════════════════════════════════════
+
+test('56. Deleted Documents control exists', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var deletedTab = mountEl.querySelector('#msc-km-view-tab-deleted');
+  assert.ok(deletedTab);
+  assert.equal(deletedTab.textContent, 'Deleted Documents');
+}));
+
+test('57. clicking Deleted Documents loads the deleted endpoint', withEnv(async () => {
+  var listDeletedCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { listDeletedCalls += 1; return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  assert.equal(listDeletedCalls, 1);
+}));
+
+test('58. auth header attached to the deleted-list request', withEnv(async () => {
+  var capturedHeaders = null;
+  var mod = await loadKmModule();
+  var restoreFetch = globalThis.fetch;
+  globalThis.fetch = function (url, opts) {
+    capturedHeaders = opts.headers;
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve('[]'); } });
+  };
+  await mod.listDeletedKnowledgeDocuments();
+  globalThis.fetch = restoreFetch;
+  assert.equal(capturedHeaders.Authorization, 'Bearer test-token');
+}));
+
+test('59. deleted records render', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  var deletedPanel = mountEl.querySelector('#msc-km-view-panel-deleted');
+  assert.match(deletedPanel.allText(), /Old Onboarding Guide/);
+  assert.match(deletedPanel.allText(), /suman/);
+  assert.match(deletedPanel.allText(), /Superseded by new guide/);
+}));
+
+test('60. active rows are not mixed into the deleted view', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  var deletedPanel = mountEl.querySelector('#msc-km-view-panel-deleted');
+  assert.doesNotMatch(deletedPanel.allText(), /KPI Review Guide/);
+  assert.doesNotMatch(deletedPanel.allText(), /Onboarding Handbook/);
+}));
+
+test('61. deleted row has a Restore action', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  var restoreBtn = mountEl.querySelector('.msc-km-restore-btn');
+  assert.ok(restoreBtn);
+  assert.equal(restoreBtn.textContent, 'Restore');
+}));
+
+test('62. deleted row has no Edit Metadata control', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  var deletedPanel = mountEl.querySelector('#msc-km-view-panel-deleted');
+  var editButtons = Array.prototype.filter.call(deletedPanel.querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; });
+  assert.equal(editButtons.length, 0);
+}));
+
+test('63. deleted row has no Create Version control', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  var deletedPanel = mountEl.querySelector('#msc-km-view-panel-deleted');
+  var versionButtons = Array.prototype.filter.call(deletedPanel.querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Create New Version'; });
+  assert.equal(versionButtons.length, 0);
+}));
+
+test('64. deleted row has no Delete-again control', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  var deletedPanel = mountEl.querySelector('#msc-km-view-panel-deleted');
+  var deleteButtons = Array.prototype.filter.call(deletedPanel.querySelectorAll('.msc-btn'), function (b) { return /^Delete\b/.test(b.textContent); });
+  assert.equal(deleteButtons.length, 0);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// REQ-KM-UI-005 — RESTORE (65-71)
+// ══════════════════════════════════════════════════════════════════════
+
+test('65. restore requires confirmation before the API is called', withEnv(async () => {
+  var restoreCalled = false;
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); },
+    restore: function () { restoreCalled = true; return Promise.resolve({}); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  fire(mountEl.querySelector('.msc-km-restore-btn'), 'click');
+  await flush();
+  assert.equal(restoreCalled, false);
+  assert.ok(getDialogConfirmBtn());
+}));
+
+test('66. correct restore endpoint (called with document id after confirm)', withEnv(async () => {
+  var capturedId = null;
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); },
+    restore: function (id) { capturedId = id; return Promise.resolve({}); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  fire(mountEl.querySelector('.msc-km-restore-btn'), 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  assert.equal(capturedId, DELETED_FIXTURE_DOC.id);
+}));
+
+test('67. success removes the row from the Deleted Documents view', withEnv(async () => {
+  var deletedCallCount = 0;
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () {
+      deletedCallCount += 1;
+      return Promise.resolve(deletedCallCount === 1 ? [DELETED_FIXTURE_DOC] : []);
+    },
+    restore: function () { return Promise.resolve({}); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  fire(mountEl.querySelector('.msc-km-restore-btn'), 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  var deletedPanel = mountEl.querySelector('#msc-km-view-panel-deleted');
+  assert.doesNotMatch(deletedPanel.allText(), /Old Onboarding Guide/);
+}));
+
+test('68. success refreshes the active document list', withEnv(async () => {
+  var listCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function () { listCalls += 1; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); },
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); },
+    restore: function () { return Promise.resolve({}); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  fire(mountEl.querySelector('.msc-km-restore-btn'), 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  assert.equal(listCalls, 2); // initial mount + post-restore refresh
+}));
+
+test('69. success shows a success toast', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); },
+    restore: function () { return Promise.resolve({}); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  fire(mountEl.querySelector('.msc-km-restore-btn'), 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  assert.match(getToastRegion().allText(), /restored/i);
+}));
+
+test('70. restore 409 URL collision gets a clear, restore-specific message', withEnv(async () => {
+  var mod = await loadKmModule();
+  var err = new Error('An active document already uses this source URL.');
+  err.code = 'knowledge_document_duplicate_source_url';
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); },
+    restore: function () { return Promise.reject(err); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  fire(mountEl.querySelector('.msc-km-restore-btn'), 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  assert.match(getToastRegion().allText(), new RegExp(mod.RESTORE_COLLISION_TEXT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+}));
+
+test('71. no client-side restore workaround — deleted view always reflects the latest server response, not a locally cached list', withEnv(async () => {
+  var deletedCallCount = 0;
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () {
+      deletedCallCount += 1;
+      // Second call (triggered by re-clicking the tab) returns a DIFFERENT
+      // set than the first — if the view were caching client-side instead
+      // of always trusting the latest response, this second render would
+      // still show the first response's row.
+      return Promise.resolve(deletedCallCount === 1 ? [DELETED_FIXTURE_DOC] : []);
+    }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  assert.match(mountEl.querySelector('#msc-km-view-panel-deleted').allText(), /Old Onboarding Guide/);
+  fire(mountEl.querySelector('#msc-km-view-tab-active'), 'click');
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  assert.doesNotMatch(mountEl.querySelector('#msc-km-view-panel-deleted').allText(), /Old Onboarding Guide/);
+  assert.equal(deletedCallCount, 2);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// REQ-KM-UI-005 — DETAIL (72-76)
+// ══════════════════════════════════════════════════════════════════════
+
+test('72. View Details calls the real GET /{id} detail endpoint', withEnv(async () => {
+  var detailCalls = [];
+  var { mountEl } = await mountWithFixture({
+    detail: function (id) { detailCalls.push(id); return Promise.resolve(FIXTURE_DOC); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  assert.deepEqual(detailCalls, [FIXTURE_DOC.id]);
+}));
+
+test('73. detail loading state renders while the GET is in flight, list row title kept visible', withEnv(async () => {
+  var resolveDetail;
+  var { mountEl } = await mountWithFixture({
+    detail: function () { return new Promise(function (res) { resolveDetail = res; }); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.match(overlay.allText(), /Loading/);
+  // The triggering list row's title is not discarded while loading.
+  assert.match(overlay.allText(), /KPI Review Guide/);
+  resolveDetail(FIXTURE_DOC);
+}));
+
+test('74. canonical detail response renders (not the stale list row)', withEnv(async () => {
+  var canonicalRecord = Object.assign({}, FIXTURE_DOC, { creator: 'Canonical Creator From API' });
+  var { mountEl } = await mountWithFixture({
+    detail: function () { return Promise.resolve(canonicalRecord); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.match(overlay.allText(), /Canonical Creator From API/);
+}));
+
+test('75. detail error state renders on GET failure', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    detail: function () { return Promise.reject(new Error('boom')); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.ok(overlay.querySelector('.msc-km-error-state'));
+  // List row context (title) survives into the error state too.
+  assert.match(overlay.allText(), /KPI Review Guide/);
+}));
+
+test('76. detail retry works after a failed GET', withEnv(async () => {
+  var attempts = 0;
+  var { mountEl } = await mountWithFixture({
+    detail: function () {
+      attempts += 1;
+      if (attempts === 1) { return Promise.reject(new Error('boom')); }
+      return Promise.resolve(FIXTURE_DOC);
+    }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  var retryBtn = Array.prototype.filter.call(overlay.querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Retry'; })[0];
+  assert.ok(retryBtn);
+  fire(retryBtn, 'click');
+  await flush();
+  assert.equal(attempts, 2);
+  assert.match(overlay.allText(), /Edit Metadata/);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// REQ-KM-UI-005 — FILTER STABILITY (77-83)
+// ══════════════════════════════════════════════════════════════════════
+
+test('77. initial Team options captured from the unfiltered load', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.ok(optionTexts.indexOf('Management') !== -1);
+  assert.ok(optionTexts.indexOf('HR') !== -1);
+}));
+
+test('78. Team filtering does not collapse Team options', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) {
+      var records = filters.team && filters.team !== 'all'
+        ? [FIXTURE_DOC, FIXTURE_DOC_2].filter(function (d) { return d.team === filters.team; })
+        : [FIXTURE_DOC, FIXTURE_DOC_2];
+      return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
+    }
+  });
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  teamSelect.value = 'HR';
+  fire(teamSelect, 'change');
+  await flush();
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.ok(optionTexts.indexOf('Management') !== -1, 'Management must still be selectable after filtering to HR');
+  assert.ok(optionTexts.indexOf('HR') !== -1);
+}));
+
+test('79. search does not collapse Team options', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) {
+      var records = filters.search
+        ? [FIXTURE_DOC_2] // only the HR document matches this search
+        : [FIXTURE_DOC, FIXTURE_DOC_2];
+      return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
+    }
+  });
+  var searchInput = mountEl.querySelector('.msc-km-search-input');
+  searchInput.value = 'handbook';
+  fire(searchInput, 'input');
+  await new Promise(function (r) { setTimeout(r, 300); });
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.ok(optionTexts.indexOf('Management') !== -1, 'Management must remain even though search only matched an HR document');
+}));
+
+test('80. Document Type filtering does not collapse Type options', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) {
+      var records = filters.documentType && filters.documentType !== 'all'
+        ? [FIXTURE_DOC, FIXTURE_DOC_2].filter(function (d) { return d.document_type === filters.documentType; })
+        : [FIXTURE_DOC, FIXTURE_DOC_2];
+      return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
+    }
+  });
+  var typeSelect = mountEl.querySelector('#msc-km-type-filter');
+  typeSelect.value = 'PDF';
+  fire(typeSelect, 'change');
+  await flush();
+  var optionTexts = typeSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.ok(optionTexts.indexOf('Google Sheet') !== -1, 'Google Sheet must remain selectable after filtering to PDF');
+  assert.ok(optionTexts.indexOf('PDF') !== -1);
+}));
+
+test('81. search does not collapse Document Type options', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) {
+      var records = filters.search ? [FIXTURE_DOC_2] : [FIXTURE_DOC, FIXTURE_DOC_2];
+      return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
+    }
+  });
+  var searchInput = mountEl.querySelector('.msc-km-search-input');
+  searchInput.value = 'handbook';
+  fire(searchInput, 'input');
+  await new Promise(function (r) { setTimeout(r, 300); });
+  var typeSelect = mountEl.querySelector('#msc-km-type-filter');
+  var optionTexts = typeSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.ok(optionTexts.indexOf('Google Sheet') !== -1);
+}));
+
+test('82. switching directly between Team values works without reselecting All first', withEnv(async () => {
+  var capturedTeams = [];
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) { capturedTeams.push(filters.team); return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); }
+  });
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  teamSelect.value = 'HR';
+  fire(teamSelect, 'change');
+  await flush();
+  teamSelect.value = 'Management';
+  fire(teamSelect, 'change');
+  await flush();
+  assert.deepEqual(capturedTeams.slice(-2), ['HR', 'Management']);
+}));
+
+test('83. switching directly between Document Type values works without reselecting All first', withEnv(async () => {
+  var capturedTypes = [];
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) { capturedTypes.push(filters.documentType); return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); }
+  });
+  var typeSelect = mountEl.querySelector('#msc-km-type-filter');
+  typeSelect.value = 'PDF';
+  fire(typeSelect, 'change');
+  await flush();
+  typeSelect.value = 'Google Sheet';
+  fire(typeSelect, 'change');
+  await flush();
+  assert.deepEqual(capturedTypes.slice(-2), ['PDF', 'Google Sheet']);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// REQ-KM-UI-005 — SAFETY (84-87)
+// ══════════════════════════════════════════════════════════════════════
+
+test('84. no hard-delete UI anywhere, including the Deleted Documents view', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  assert.doesNotMatch(mountEl.allText().toLowerCase(), /permanent/);
+  assert.doesNotMatch(mountEl.allText().toLowerCase(), /hard delete/);
+}));
+
+test('85. no actor-spoof fields anywhere (created_by/deleted_by/restored_by/actor_member_key never user-enterable)', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    listDeleted: function () { return Promise.resolve([DELETED_FIXTURE_DOC]); }
+  });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var createForm = document.querySelector('.msc-km-form');
+  ['created_by', 'deleted_by', 'restored_by', 'actor_member_key'].forEach(function (field) {
+    assert.equal(createForm.querySelector('#msc-km-create-' + field), null);
+  });
+  fire(document.querySelector('.msc-modal-close'), 'click');
+  fire(mountEl.querySelector('#msc-km-view-tab-deleted'), 'click');
+  await flush();
+  var deletedPanel = mountEl.querySelector('#msc-km-view-panel-deleted');
+  // Restore is a single confirm-and-click action (Phase 5/8) — there is no
+  // input field of any kind in the Deleted Documents view for a user to
+  // type an actor-identity value into.
+  assert.equal(deletedPanel.querySelector('.msc-km-input'), null);
+}));
+
+test('86. static sample registry remains absent', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.equal(mod.APPROVED_DOCUMENTS, undefined);
+}));
+
+test('87. sample-data notice remains absent', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  assert.equal(mountEl.querySelector('.msc-km-sample-notice'), null);
+  assert.doesNotMatch(mountEl.allText(), /Sample documents/);
+}));
