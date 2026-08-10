@@ -1697,13 +1697,21 @@
 
 
     <!-- ══════════════════════════════════
-       TAB — KNOWLEDGE MANAGEMENT (REQ-KM-001, first usable implementation,
-       2026-08-10) — Company Documents view only. Deliberately narrow: no
-       upload, no PostgreSQL document table, no backend API, no Google
-       ownership verification, no version-history/audit-log/soft-delete
-       workflow. See
-       docs/knowledge-management-company-documents-requirement-2026-08-10.md.
-       One dedicated, independent panel — a sibling of Review Summaries and
+       TAB — KNOWLEDGE MANAGEMENT (REQ-KM-001 first usable frontend,
+       2026-08-10; REQ-KM-CRUD-002/003 persistent backend + REQ-KM-UI-004
+       frontend API integration, 2026-08-10) — Company Documents view,
+       now backed by the real persistent API
+       (backend/routers/knowledge_documents.py, management_aios.
+       knowledge_documents/knowledge_document_versions/
+       knowledge_document_audit_log). Create, edit metadata, create
+       version, archive/unarchive, soft delete, version history, and
+       audit history are all implemented — see
+       docs/knowledge-management-frontend-api-integration-2026-08-10.md.
+       Restore has no UI entry point yet (documented API read-visibility
+       gap — the backend has no route to enumerate soft-deleted
+       documents). No file upload, no Google ownership verification
+       (still BLOCKED pending real Google Drive credentials). One
+       dedicated, independent panel — a sibling of Review Summaries and
        Issues, never nested inside any Management Team member panel.
   ══════════════════════════════════ -->
     <div class="tab-panel" id="tab-knowledge-management" role="tabpanel">

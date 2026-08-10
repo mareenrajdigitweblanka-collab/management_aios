@@ -6,26 +6,23 @@
    from components.css) rather than inventing a second visual language —
    same convention documented at the top of issues.css. */
 
+/* .msc-km-sample-notice removed (REQ-KM-UI-004, 2026-08-10) — the static
+   sample registry and its notice are gone; real records carry no such
+   notice. See web-view/js/knowledge-management.js's module docstring. */
+
+.msc-km-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
 .msc-km-section-heading {
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--text);
-  margin: 0 0 var(--space-3);
-}
-
-/* Informational, not an error — same status-info tone already used
-   elsewhere in this app (e.g. .staff-pilot-classification-label /
-   status-info tokens), never the warning/error color pair. */
-.msc-km-sample-notice {
-  font-size: var(--font-xs);
-  font-weight: 600;
-  color: var(--status-info-text, var(--muted));
-  background: var(--status-info-bg, var(--surface-tint-3));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  margin: 0 0 var(--space-4);
-  display: inline-block;
+  margin: 0;
 }
 
 /* ── Toolbar (search + filters) ──
@@ -178,6 +175,194 @@
   border-color: var(--accent);
 }
 
+.msc-km-actions-cell {
+  white-space: nowrap;
+}
+
+.msc-km-view-btn {
+  margin-right: 6px;
+  padding: 4px 11px;
+  font-size: var(--font-xs);
+}
+
+/* ── Loading / error states (Phase 5) ── */
+.msc-km-loading {
+  text-align: center;
+  padding: var(--space-7) 0;
+  color: var(--muted);
+  font-size: var(--font-sm);
+}
+
+.msc-km-error-state {
+  text-align: center;
+  padding: var(--space-6) 0;
+  color: var(--error);
+  font-size: var(--font-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.msc-km-error {
+  color: var(--error);
+  font-size: var(--font-sm);
+}
+
+/* ── Modal forms (Create/Edit/Version/Delete) — reuses .msc-modal/
+   .msc-modal-form/.msc-modal-form-head/.msc-modal-close from
+   calendar.css verbatim; only the field/form layout below is new. ── */
+.msc-km-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.msc-km-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.msc-km-field-label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.msc-km-input {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  color: var(--text);
+  font-family: inherit;
+}
+
+textarea.msc-km-input {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.msc-km-input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.msc-km-readonly-note {
+  font-size: var(--font-sm);
+  color: var(--muted);
+  background: var(--surface-tint-3);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.msc-km-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.msc-km-delete-notice {
+  font-size: var(--font-sm);
+  color: var(--text);
+  background: var(--warning-bg);
+  border: 1px solid #fde68a;
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  line-height: 1.6;
+}
+
+/* ── Detail view ── */
+.msc-km-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.msc-km-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.msc-km-detail-label {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+
+.msc-km-detail-value {
+  font-size: var(--font-sm);
+  color: var(--text);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.msc-km-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-3);
+}
+
+/* Secondary/more action area (Phase 12) — visually separated from the
+   primary action row above so Delete never reads as equal-weight with
+   Edit/Version/Archive/History. */
+.msc-km-more-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+  border-top: 1px dashed var(--border);
+}
+
+/* ── Version / Audit history viewers (read-only, Phase 14-15) ── */
+.msc-km-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.msc-km-history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint-2);
+}
+
+.msc-km-history-version {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.msc-km-history-meta {
+  font-size: var(--font-xs);
+  color: var(--muted);
+}
+
+.msc-km-history-note {
+  flex-basis: 100%;
+  font-size: var(--font-sm);
+  color: var(--text);
+  margin: 0;
+}
+
 /* ── Responsive ── */
 @media (max-width: 1024px) {
   .msc-km-toolbar {
@@ -205,5 +390,19 @@
 
   .msc-km-count-pill {
     margin-left: 0;
+  }
+
+  .msc-km-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .msc-km-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .msc-km-detail-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

@@ -192,6 +192,38 @@ var KNOWN_ERRORS = {
     message: 'It may have already been removed or changed. Refresh and try again.',
     persistent: false
   },
+  /* Knowledge Management (REQ-KM-UI-004, 2026-08-10) — backend error
+     codes from backend/routers/knowledge_documents.py, word-for-word
+     matching the backend's own message where the backend supplies one
+     directly usable as-is (this feature's fetch wrapper reads
+     body.message for these three specific codes only — see
+     knowledge-management.js's kmProtectedRequest — never for any other
+     code, keeping this file's "never show raw backend text" rule intact
+     everywhere else). */
+  knowledge_document_duplicate_source_url: {
+    type: 'error',
+    title: 'This source is already registered',
+    message: 'An active document already uses this source URL.',
+    persistent: true
+  },
+  knowledge_document_already_archived: {
+    type: 'error',
+    title: 'Already archived',
+    message: 'This document is already archived.',
+    persistent: false
+  },
+  knowledge_document_already_active: {
+    type: 'error',
+    title: 'Already active',
+    message: 'This document is already active.',
+    persistent: false
+  },
+  knowledge_document_read_only_member: {
+    type: 'error',
+    title: 'Read-only access',
+    message: 'MD has read-only access and cannot create or edit Knowledge Management records.',
+    persistent: true
+  },
   network: {
     type: 'error',
     title: 'We couldn’t connect',

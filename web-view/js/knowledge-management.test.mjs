@@ -1,17 +1,30 @@
 /* knowledge-management.test.mjs — coverage for the Knowledge Management
-   Company Documents view (REQ-KM-001, first usable implementation,
-   2026-08-10).
+   Company Documents view wired to the real persistent backend CRUD API
+   (REQ-KM-UI-004, 2026-08-10).
 
-   Reuses review-summaries-test-dom.mjs's hand-rolled DOM stand-in as-is
-   (installFakeBrowserGlobals) — same convention as issues.test.mjs.
-   knowledge-management.js has no fetch/network calls, but the stand-in is
-   still used for every DOM-mount test for consistency with the rest of
-   this repo's test suite and because document.createElement must exist.
+   REPLACES the REQ-KM-001 test suite entirely — the static
+   APPROVED_DOCUMENTS registry and its sample notice this file used to
+   test no longer exist in the module (see knowledge-management.js's
+   module docstring). Tests 1-2 below assert that absence directly.
 
-   FIXTURE_DOCS below are TEST FIXTURES ONLY — never the real
-   APPROVED_DOCUMENTS production registry (except in the one test that
-   explicitly proves the production registry itself is well-formed and
-   wires up correctly).
+   Two testing tiers, matching this repo's existing issues.test.mjs
+   convention (production adapter vs. in-memory adapter tested
+   separately):
+     (A) DOM-mount tests inject a FIXTURE `api` object into
+         mountKnowledgeManagementWorkspace(mountEl, {api}) — exercises all
+         UI behavior (modals, validation, busy states, list refresh)
+         without ever calling the real fetch-backed exports.
+     (B) A handful of tests call the REAL exported API-client functions
+         (createKnowledgeDocument, updateKnowledgeDocumentMetadata, etc.)
+         directly, with global.fetch stubbed via
+         installFakeBrowserGlobals({fetchImpl}), to verify exact request
+         construction (method/path/body/Authorization header) and 401/403
+         handling — the one thing fixture injection can't cover.
+
+   Uses fastapi... no — pure frontend. Reuses
+   review-summaries-test-dom.mjs's hand-rolled DOM/localStorage/fetch
+   stand-in as-is (installFakeBrowserGlobals) — same convention as
+   issues.test.mjs/review-summaries.test.mjs.
 
    Run with: node --test *.test.mjs (from web-view/js/) */
 
@@ -31,68 +44,132 @@ function fire(elNode, type) {
   elNode.dispatchEvent({ type: type, target: elNode, preventDefault: function () {} });
 }
 
-function withEnv(testFn) {
+function flush() {
+  return new Promise(function (resolve) { setTimeout(resolve, 0); });
+}
+
+/* env.storedAuth pre-seeds an already-verified Calendar token so
+   ensureAuthorized() resolves immediately without opening the real token
+   dialog — every UI test below runs "as an authorized Management Team
+   member" unless a test explicitly omits it. */
+function withEnv(testFn, envOpts) {
   return async function (t) {
-    var env = installFakeBrowserGlobals();
+    var env = installFakeBrowserGlobals(envOpts || {
+      storedAuth: { token: 'test-token', memberKey: 'mayurika' }
+    });
     t.after(env.restore);
     await testFn(env);
   };
 }
 
-var FIXTURE_DOCS = [
-  {
-    id: 'fx-1', title: 'KPI Review Guide', team: 'Management', documentType: 'Google Sheet',
-    creator: 'Alex Doe', version: '1.0', status: 'Active',
-    sourceUrl: 'https://docs.google.com/spreadsheets/d/FIXTURE1/edit'
-  },
-  {
-    id: 'fx-2', title: 'Onboarding Handbook', team: 'HR', documentType: 'Google Doc',
-    creator: null, version: null, status: null,
-    sourceUrl: 'https://docs.google.com/document/d/FIXTURE2/edit'
-  },
-  {
-    id: 'fx-3', title: 'Website SOP Checklist', team: 'Website', documentType: 'PDF',
-    creator: 'Bee Cee', version: '2.1', status: 'Active',
-    sourceUrl: 'https://example.com/website-sop.pdf'
-  },
-  {
-    id: 'fx-4', title: '<img src=x onerror=alert(1)> Malicious Title', team: 'Management', documentType: 'Google Sheet',
-    creator: null, version: null, status: null,
-    sourceUrl: 'javascript:alert(1)'
-  }
-];
+var FIXTURE_DOC = {
+  id: 'fx-doc-1',
+  title: 'KPI Review Guide',
+  team: 'Management',
+  document_type: 'Google Sheet',
+  job_role: 'Analyst',
+  document_category: 'Reporting',
+  creator: 'Alex Doe',
+  source_url: 'https://docs.google.com/spreadsheets/d/FIXTURE1/edit',
+  current_version: '1.0',
+  lifecycle_status: 'Active',
+  compliance_status: 'Pending',
+  google_ownership_status: 'Not Verified',
+  created_by: 'mayurika',
+  updated_by: 'mayurika',
+  created_at: '2026-08-10T10:00:00Z',
+  updated_at: '2026-08-10T10:00:00Z',
+  warnings: []
+};
 
-function mountWithFixtures() {
+var FIXTURE_DOC_2 = Object.assign({}, FIXTURE_DOC, {
+  id: 'fx-doc-2', title: 'Onboarding Handbook', team: 'HR', document_type: 'PDF',
+  source_url: 'https://example.com/handbook.pdf', current_version: '2.0'
+});
+
+function makeFixtureApi(overrides) {
+  var base = {
+    list: function () { return Promise.resolve({ records: [FIXTURE_DOC, FIXTURE_DOC_2], total: 2, limit: 200, offset: 0 }); },
+    detail: function () { return Promise.resolve(FIXTURE_DOC); },
+    create: function () { return Promise.resolve(FIXTURE_DOC); },
+    updateMetadata: function () { return Promise.resolve(FIXTURE_DOC); },
+    createVersion: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { current_version: '2.0' })); },
+    archive: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' })); },
+    unarchive: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Active' })); },
+    softDelete: function () { return Promise.resolve({ id: FIXTURE_DOC.id, deleted: true }); },
+    listVersions: function () { return Promise.resolve([{ id: 'v1', document_id: FIXTURE_DOC.id, version_label: '1.0', source_url: FIXTURE_DOC.source_url, change_note: null, created_by: 'mayurika', created_at: '2026-08-10T10:00:00Z' }]); },
+    listAuditLog: function () { return Promise.resolve([{ id: 'a1', document_id: FIXTURE_DOC.id, action: 'create', actor_member_key: 'mayurika', detail: null, occurred_at: '2026-08-10T10:00:00Z' }]); }
+  };
+  return Object.assign(base, overrides || {});
+}
+
+function mountWithFixture(apiOverrides) {
   return loadKmModule().then(function (mod) {
     var mountEl = document.createElement('div');
-    var handle = mod.mountKnowledgeManagementWorkspace(mountEl, { documents: FIXTURE_DOCS });
-    return { mod: mod, mountEl: mountEl, handle: handle };
+    var api = makeFixtureApi(apiOverrides);
+    var handle = mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+    return flush().then(function () { return { mod: mod, mountEl: mountEl, api: api, handle: handle }; });
   });
 }
 
-function tableTexts(mountEl, className) {
-  return mountEl.querySelectorAll(className).map(function (n) { return n.textContent; });
+function q(mountEl, className) { return mountEl.querySelector(className); }
+function qAll(mountEl, className) { return mountEl.querySelectorAll(className); }
+
+/* ui/dialog.js's confirmDestructive() builds its overlay once (module-level
+   `dialogApi` singleton) and appends it to whichever `document` was active
+   the first time any test in this file triggers it. Since ui/dialog.js is
+   imported via an unversioned relative specifier, Node's ESM cache shares
+   ONE instance of it across every knowledge-management.js?test-instance=N
+   import — but installFakeBrowserGlobals() gives each test a brand-new
+   fake `document`, so only the very first test to open the dialog can find
+   its button via that test's own document.querySelector(). Every later
+   test reuses the exact same real button object (same singleton), just
+   unreachable via its own fresh document's bookkeeping — so this caches
+   the first successful lookup and falls back to it. */
+var sharedDialogConfirmBtn = null;
+function getDialogConfirmBtn() {
+  var btn = document.querySelector('.ui-dialog-confirm');
+  if (btn) { sharedDialogConfirmBtn = btn; }
+  return btn || sharedDialogConfirmBtn;
 }
 
+/* Same cross-test singleton issue as getDialogConfirmBtn() above, but for
+   ui/toast.js's module-level `regionEl` (lazily created once, reused by
+   every showToast() call for the life of the process). */
+var sharedToastRegion = null;
+function getToastRegion() {
+  var region = document.querySelector('.ui-toast-region');
+  if (region) { sharedToastRegion = region; }
+  return region || sharedToastRegion;
+}
+
+/* Primes the toast-region singleton (see comment above) under a throwaway
+   fake document, before any test() body runs — otherwise whichever test
+   happens to be the first in file order to trigger showToast() "wins" the
+   singleton for its own now-discarded document, and no later test could
+   ever populate the cache itself. Module top-level code (and top-level
+   await) runs to completion before node:test invokes any registered test
+   callback, so this ordering is safe. */
+var primeEnv = installFakeBrowserGlobals({ storedAuth: { token: 'prime', memberKey: 'mayurika' } });
+var primeToastMod = await import('./ui/toast.js');
+primeToastMod.showToast({ type: 'information', title: '', message: '' });
+sharedToastRegion = document.querySelector('.ui-toast-region');
+primeEnv.restore();
+
 // ── Static HTML structure (index.html) — same line-anchored technique as
-//    navigation-structure.test.mjs, duplicated locally (not imported —
-//    importing another *.test.mjs file would re-run its own tests). ──────
+//    navigation-structure.test.mjs, duplicated locally. ─────────────────
 
 var indexHtmlPath = fileURLToPath(new URL('../index.html', import.meta.url));
 var html = readFileSync(indexHtmlPath, 'utf8');
 
 var TOP_LEVEL_PANEL_RE = /^ {4}<div class="tab-panel[^"]*" id="([^"]+)"/gm;
-
 function topLevelPanels(source) {
   var panels = [];
   var match;
   TOP_LEVEL_PANEL_RE.lastIndex = 0;
-  while ((match = TOP_LEVEL_PANEL_RE.exec(source))) {
-    panels.push({ id: match[1], start: match.index });
-  }
+  while ((match = TOP_LEVEL_PANEL_RE.exec(source))) { panels.push({ id: match[1], start: match.index }); }
   return panels;
 }
-
 function panelSegments(source) {
   var panels = topLevelPanels(source);
   var segments = {};
@@ -102,308 +179,691 @@ function panelSegments(source) {
   });
   return segments;
 }
-
 var segments = panelSegments(html);
 
-// ── NAVIGATION (1-5) ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// DATA SOURCE (1-7)
+// ══════════════════════════════════════════════════════════════════════
 
-test('1. exactly one Knowledge Management sidebar item exists', () => {
-  var matches = html.match(/data-tab="knowledge-management"/g) || [];
-  assert.equal(matches.length, 1, 'data-tab="knowledge-management" should appear exactly once, on the nav button');
-  var navMatches = html.match(/<button[^>]*data-tab="knowledge-management"/g) || [];
-  assert.equal(navMatches.length, 1);
-});
+test('1. static sample registry absent', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.equal(mod.APPROVED_DOCUMENTS, undefined);
+}));
 
-test('2. exactly one Knowledge Management top-level panel exists', () => {
-  var matches = html.match(/id="tab-knowledge-management"/g) || [];
-  assert.equal(matches.length, 1);
-  var panelIds = topLevelPanels(html).map(function (p) { return p.id; });
-  assert.ok(panelIds.indexOf('tab-knowledge-management') !== -1, 'must be a top-level sibling panel');
-});
+test('2. sample notice absent', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.equal(mod.SAMPLE_DATA_NOTICE_TEXT, undefined);
+  var { mountEl } = await mountWithFixture();
+  assert.equal(mountEl.querySelector('.msc-km-sample-notice'), null);
+  assert.doesNotMatch(mountEl.allText(), /Sample documents/);
+}));
 
-test('3. generic navigation opens it — real .app-nav-btn wired to the matching tab-panel id', () => {
-  var btnMatch = /<button type="button" class="app-nav-btn" data-tab="knowledge-management" title="[^"]*">/.exec(html);
-  assert.ok(btnMatch, 'a .app-nav-btn with data-tab="knowledge-management" should exist — the same generic mechanism navigation.js already drives every other tab through');
-  var panelMatch = /<div class="tab-panel" id="tab-knowledge-management" role="tabpanel">/.exec(html);
-  assert.ok(panelMatch, 'the panel id must be "tab-" + the button\'s data-tab value, matching navigation.js\'s activatePanel() convention');
-});
+test('3. list calls API', withEnv(async () => {
+  var calls = 0;
+  await mountWithFixture({ list: function (filters) { calls += 1; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); } });
+  assert.equal(calls, 1);
+}));
 
-test('4. existing Issues navigation remains functional', () => {
+test('4. loading state', withEnv(async () => {
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var resolveList;
+  var api = makeFixtureApi({ list: function () { return new Promise(function (res) { resolveList = res; }); } });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  assert.match(mountEl.allText(), /Loading documents/);
+  resolveList({ records: [], total: 0, limit: 200, offset: 0 });
+}));
+
+test('5. zero-record empty state', withEnv(async () => {
+  var mod = await loadKmModule();
+  var { mountEl } = await mountWithFixture({ list: function () { return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); } });
+  assert.match(mountEl.allText(), new RegExp(mod.EMPTY_STATE_TEXT));
+}));
+
+test('6. API error state', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({ list: function () { return Promise.reject(new Error('boom')); } });
+  var errEl = q(mountEl, '.msc-km-error-state');
+  assert.ok(errEl);
+  // mapApiError() deliberately never surfaces a raw error message — an
+  // unrecognized error code always renders the generic KNOWN_ERRORS.unknown
+  // copy, never the literal Error('boom').message.
+  assert.match(errEl.allText(), /Try again\. If the problem continues, contact your system administrator\./);
+}));
+
+test('7. retry works', withEnv(async () => {
+  var attempts = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function () {
+      attempts += 1;
+      if (attempts === 1) { return Promise.reject(new Error('boom')); }
+      return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 });
+    }
+  });
+  var retryBtn = Array.prototype.filter.call(qAll(mountEl, '.msc-btn'), function (b) { return b.textContent === 'Retry'; })[0];
+  assert.ok(retryBtn);
+  fire(retryBtn, 'click');
+  await flush();
+  assert.equal(attempts, 2);
+  assert.match(mountEl.allText(), /KPI Review Guide/);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// LIST / FILTER (8-13)
+// ══════════════════════════════════════════════════════════════════════
+
+test('8. API records render', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var titles = qAll(mountEl, '.msc-km-title-cell').map(function (n) { return n.textContent; });
+  assert.deepEqual(titles.sort(), ['KPI Review Guide', 'Onboarding Handbook']);
+}));
+
+test('9. title search sends server-side search param', withEnv(async () => {
+  var mod = await loadKmModule();
+  var qs = mod.buildListQueryString({ search: 'kpi' });
+  assert.match(qs, /search=kpi/);
+  var captured = null;
+  var { mountEl } = await mountWithFixture({ list: function (filters) { captured = filters; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); } });
+  var searchInput = q(mountEl, '.msc-km-search-input');
+  searchInput.value = 'kpi';
+  fire(searchInput, 'input');
+  await new Promise(function (r) { setTimeout(r, 300); });
+  assert.equal(captured.search, 'kpi');
+}));
+
+test('10. Team filter sends server-side team param', withEnv(async () => {
+  var captured = null;
+  var { mountEl } = await mountWithFixture({ list: function (filters) { captured = filters; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); } });
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  teamSelect.value = 'HR';
+  fire(teamSelect, 'change');
+  await flush();
+  assert.equal(captured.team, 'HR');
+}));
+
+test('11. Document Type filter sends server-side document_type param', withEnv(async () => {
+  var captured = null;
+  var { mountEl } = await mountWithFixture({ list: function (filters) { captured = filters; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); } });
+  var typeSelect = mountEl.querySelector('#msc-km-type-filter');
+  typeSelect.value = 'PDF';
+  fire(typeSelect, 'change');
+  await flush();
+  assert.equal(captured.documentType, 'PDF');
+}));
+
+test('12. lifecycle filter sends server-side lifecycle_status param', withEnv(async () => {
+  var mod = await loadKmModule();
+  var qs = mod.buildListQueryString({ lifecycleStatus: 'Archived' });
+  assert.match(qs, /lifecycle_status=Archived/);
+  var captured = null;
+  var { mountEl } = await mountWithFixture({ list: function (filters) { captured = filters; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); } });
+  var lifecycleSelect = mountEl.querySelector('#msc-km-lifecycle-filter');
+  lifecycleSelect.value = 'Archived';
+  fire(lifecycleSelect, 'change');
+  await flush();
+  assert.equal(captured.lifecycleStatus, 'Archived');
+}));
+
+test('13. combined filters (search + team + type) all present in one request — AND semantics', withEnv(async () => {
+  var mod = await loadKmModule();
+  var qs = mod.buildListQueryString({ search: 'kpi', team: 'Management', documentType: 'Google Sheet' });
+  assert.match(qs, /search=kpi/);
+  assert.match(qs, /team=Management/);
+  assert.match(qs, /document_type=Google\+Sheet|document_type=Google%20Sheet/);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// CREATE (14-23)
+// ══════════════════════════════════════════════════════════════════════
+
+test('14. Add button exists', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var addBtn = q(mountEl, '.msc-km-add-btn');
+  assert.ok(addBtn);
+  assert.equal(addBtn.textContent, '+ Add Document');
+}));
+
+test('15. modal opens on Add click', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var addBtn = q(mountEl, '.msc-km-add-btn');
+  fire(addBtn, 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.ok(overlay);
+  assert.ok(overlay.classList.contains('show'));
+}));
+
+test('16. required validation blocks submit with no server call', withEnv(async () => {
+  var createCalled = false;
+  var { mountEl } = await mountWithFixture({ create: function () { createCalled = true; return Promise.resolve(FIXTURE_DOC); } });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  fire(form, 'submit');
+  await flush();
+  assert.equal(createCalled, false);
+}));
+
+test('17. server-owned fields absent from create form', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  ['id', 'created_by', 'updated_by', 'created_at', 'updated_at', 'lifecycle_status', 'compliance_status', 'google_ownership_status', 'current_version']
+    .forEach(function (field) {
+      assert.equal(form.querySelector('#msc-km-create-' + field), null, field + ' must not be an editable create field');
+    });
+}));
+
+test('18. POST payload correct (real API-client function)', withEnv(async (env) => {
+  var capturedBody = null;
+  env.fetchOverride = null;
+  var mod = await loadKmModule();
+  var restoreFetch = globalThis.fetch;
+  globalThis.fetch = function (url, opts) {
+    capturedBody = JSON.parse(opts.body);
+    return Promise.resolve({ ok: true, status: 201, text: function () { return Promise.resolve(JSON.stringify(FIXTURE_DOC)); } });
+  };
+  await mod.createKnowledgeDocument({ title: 'T', team: 'Team', document_type: 'PDF', source_url: 'https://example.com/x' });
+  globalThis.fetch = restoreFetch;
+  assert.deepEqual(capturedBody, { title: 'T', team: 'Team', document_type: 'PDF', source_url: 'https://example.com/x' });
+}));
+
+test('19. Authorization header attached to create request', withEnv(async () => {
+  var capturedHeaders = null;
+  var mod = await loadKmModule();
+  var restoreFetch = globalThis.fetch;
+  globalThis.fetch = function (url, opts) {
+    capturedHeaders = opts.headers;
+    return Promise.resolve({ ok: true, status: 201, text: function () { return Promise.resolve(JSON.stringify(FIXTURE_DOC)); } });
+  };
+  await mod.createKnowledgeDocument({ title: 'T', team: 'Team', document_type: 'PDF', source_url: 'https://example.com/x' });
+  globalThis.fetch = restoreFetch;
+  assert.equal(capturedHeaders.Authorization, 'Bearer test-token');
+}));
+
+test('20. duplicate-submit protection — Save disabled immediately on submit', withEnv(async () => {
+  var resolveCreate;
+  var { mountEl } = await mountWithFixture({ create: function () { return new Promise(function (res) { resolveCreate = res; }); } });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  form.querySelector('#msc-km-create-title').value = 'T';
+  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
+  fire(form, 'submit');
+  await flush();
+  var saveBtn = Array.prototype.filter.call(form.querySelectorAll('.msc-btn'), function (b) { return b.type === 'submit'; })[0];
+  assert.equal(saveBtn.disabled, true);
+  resolveCreate(FIXTURE_DOC);
+}));
+
+test('21. success updates UI (list refetched, modal closed)', withEnv(async () => {
+  var listCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function () { listCalls += 1; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); },
+    create: function () { return Promise.resolve(FIXTURE_DOC); }
+  });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  form.querySelector('#msc-km-create-title').value = 'T';
+  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
+  fire(form, 'submit');
+  await flush();
+  assert.equal(listCalls, 2); // initial mount + post-create refresh
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.equal(overlay.classList.contains('show'), false);
+}));
+
+test('22. 409 duplicate URL message shown on the URL field', withEnv(async () => {
+  var err = new Error('An active document already uses this source URL.');
+  err.code = 'knowledge_document_duplicate_source_url';
+  var { mountEl } = await mountWithFixture({ create: function () { return Promise.reject(err); } });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  form.querySelector('#msc-km-create-title').value = 'T';
+  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
+  fire(form, 'submit');
+  await flush();
+  // setFieldError() attaches the error <span> via insertAdjacentElement,
+  // which this hand-rolled test-dom tracks outside the normal
+  // parent/_children tree (see FakeElement.insertAdjacentElement) — so it
+  // must be located via the flat document-wide lookup, not form.allText().
+  var fieldError = document.querySelector('.ui-field-error');
+  assert.ok(fieldError);
+  assert.match(fieldError.allText(), /already uses this source URL/);
+}));
+
+test('23. warning response shown as a toast when create returns warnings', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    create: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { warnings: ['A document titled "X" with a different source URL already exists.'] })); }
+  });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  form.querySelector('#msc-km-create-title').value = 'T';
+  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
+  fire(form, 'submit');
+  await flush();
+  var toastRegion = getToastRegion();
+  assert.match(toastRegion.allText(), /different source URL already exists/);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// DETAIL (24-25)
+// ══════════════════════════════════════════════════════════════════════
+
+test('24. View Details button exists per row', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var viewBtns = qAll(mountEl, '.msc-km-view-btn');
+  assert.equal(viewBtns.length, 2);
+  assert.equal(viewBtns[0].textContent, 'View');
+}));
+
+test('25. persisted metadata renders in detail view', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  var text = overlay.allText();
+  ['KPI Review Guide', 'Management', 'Google Sheet', 'Analyst', 'Reporting', 'Alex Doe', 'mayurika', '1.0', 'Active', 'Pending', 'Not Verified']
+    .forEach(function (expected) { assert.match(text, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))); });
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// UPDATE (26-30)
+// ══════════════════════════════════════════════════════════════════════
+
+test('26. edit modal opens from detail', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var editBtn = Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0];
+  fire(editBtn, 'click');
+  await flush();
+  assert.ok(document.querySelector('#msc-km-edit-title'));
+}));
+
+test('27. correct PATCH payload', withEnv(async () => {
+  var captured = null;
+  var { mountEl } = await mountWithFixture({ updateMetadata: function (id, payload) { captured = { id: id, payload: payload }; return Promise.resolve(FIXTURE_DOC); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  document.querySelector('#msc-km-edit-change-description').value = 'Fixed a typo';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(captured.id, FIXTURE_DOC.id);
+  assert.equal(captured.payload.change_description, 'Fixed a typo');
+  assert.equal(captured.payload.title, FIXTURE_DOC.title);
+  assert.equal('source_url' in captured.payload, false);
+}));
+
+test('28. change description required', withEnv(async () => {
+  var called = false;
+  var { mountEl } = await mountWithFixture({ updateMetadata: function () { called = true; return Promise.resolve(FIXTURE_DOC); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(called, false);
+}));
+
+test('29. source URL not editable in edit form (read-only note instead)', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  assert.equal(form.querySelector('#msc-km-edit-source-url'), null);
+  var urlTypeFields = Array.prototype.filter.call(form.querySelectorAll('.msc-km-input'), function (f) { return f.type === 'url'; });
+  assert.equal(urlTypeFields.length, 0);
+  assert.match(form.allText(), /Create New Version/);
+}));
+
+test('30. success refreshes list after metadata update', withEnv(async () => {
+  var listCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function () { listCalls += 1; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); },
+    updateMetadata: function () { return Promise.resolve(FIXTURE_DOC); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  document.querySelector('#msc-km-edit-change-description').value = 'change';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(listCalls, 2);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// VERSION (31-34)
+// ══════════════════════════════════════════════════════════════════════
+
+test('31. version modal opens from detail', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var versionBtn = Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Create New Version'; })[0];
+  fire(versionBtn, 'click');
+  await flush();
+  assert.ok(document.querySelector('#msc-km-version-label'));
+}));
+
+test('32. correct endpoint (createVersion called with document id)', withEnv(async () => {
+  var capturedId = null;
+  var { mountEl } = await mountWithFixture({ createVersion: function (id) { capturedId = id; return Promise.resolve(Object.assign({}, FIXTURE_DOC, { current_version: '2.0' })); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Create New Version'; })[0], 'click');
+  await flush();
+  document.querySelector('#msc-km-version-url').value = 'https://example.com/new';
+  document.querySelector('#msc-km-version-label').value = '2.0';
+  document.querySelector('#msc-km-version-change-description').value = 'revised';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(capturedId, FIXTURE_DOC.id);
+}));
+
+test('33. correct payload (source_url + version_label + change_description)', withEnv(async () => {
+  var captured = null;
+  var { mountEl } = await mountWithFixture({ createVersion: function (id, payload) { captured = payload; return Promise.resolve(Object.assign({}, FIXTURE_DOC, { current_version: '2.0' })); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Create New Version'; })[0], 'click');
+  await flush();
+  document.querySelector('#msc-km-version-url').value = 'https://example.com/new';
+  document.querySelector('#msc-km-version-label').value = '2.0';
+  document.querySelector('#msc-km-version-change-description').value = 'revised';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.deepEqual(captured, { source_url: 'https://example.com/new', version_label: '2.0', change_description: 'revised' });
+}));
+
+test('34. new version appears (list refreshed after version create)', withEnv(async () => {
+  var listCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function () { listCalls += 1; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); },
+    createVersion: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { current_version: '2.0' })); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Create New Version'; })[0], 'click');
+  await flush();
+  document.querySelector('#msc-km-version-url').value = 'https://example.com/new';
+  document.querySelector('#msc-km-version-label').value = '2.0';
+  document.querySelector('#msc-km-version-change-description').value = 'revised';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(listCalls, 2);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// ARCHIVE (35-37)
+// ══════════════════════════════════════════════════════════════════════
+
+test('35. archive requires confirmation before the API is called', withEnv(async () => {
+  var archiveCalled = false;
+  var { mountEl } = await mountWithFixture({ archive: function () { archiveCalled = true; return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' })); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var archiveBtn = Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Archive'; })[0];
+  fire(archiveBtn, 'click');
+  await flush();
+  // confirmDestructive opens its own dialog — the archive API must not
+  // have been called yet, only after the user confirms.
+  assert.equal(archiveCalled, false);
+  var confirmBtn = getDialogConfirmBtn();
+  assert.ok(confirmBtn, 'the shared confirmation dialog\'s confirm button should be present');
+}));
+
+test('36. correct endpoint (archive called with document id after confirm)', withEnv(async () => {
+  var capturedId = null;
+  var { mountEl } = await mountWithFixture({ archive: function (id) { capturedId = id; return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' })); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Archive'; })[0], 'click');
+  await flush();
+  var confirmBtn = getDialogConfirmBtn();
+  fire(confirmBtn, 'click');
+  await flush();
+  assert.equal(capturedId, FIXTURE_DOC.id);
+}));
+
+test('37. status refresh after archive', withEnv(async () => {
+  var listCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function () { listCalls += 1; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); },
+    archive: function () { return Promise.resolve(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' })); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Archive'; })[0], 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  assert.equal(listCalls, 2);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// UNARCHIVE (38-39)
+// ══════════════════════════════════════════════════════════════════════
+
+test('38. correct endpoint (unarchive called with document id)', withEnv(async () => {
+  var capturedId = null;
+  var archivedDoc = Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' });
+  var { mountEl } = await mountWithFixture({
+    list: function () { return Promise.resolve({ records: [archivedDoc], total: 1, limit: 200, offset: 0 }); },
+    unarchive: function (id) { capturedId = id; return Promise.resolve(Object.assign({}, archivedDoc, { lifecycle_status: 'Active' })); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var unarchiveBtn = Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Unarchive'; })[0];
+  fire(unarchiveBtn, 'click');
+  await flush();
+  assert.equal(capturedId, FIXTURE_DOC.id);
+}));
+
+test('39. status refresh after unarchive', withEnv(async () => {
+  var listCalls = 0;
+  var archivedDoc = Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' });
+  var { mountEl } = await mountWithFixture({
+    list: function () { listCalls += 1; return Promise.resolve({ records: [archivedDoc], total: 1, limit: 200, offset: 0 }); },
+    unarchive: function () { return Promise.resolve(Object.assign({}, archivedDoc, { lifecycle_status: 'Active' })); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Unarchive'; })[0], 'click');
+  await flush();
+  assert.equal(listCalls, 2);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// DELETE (40-43)
+// ══════════════════════════════════════════════════════════════════════
+
+test('40. delete confirmation states it is not permanent', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Delete'; })[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.match(overlay.allText(), /NOT permanent deletion/);
+}));
+
+test('41. delete reason required', withEnv(async () => {
+  var called = false;
+  var { mountEl } = await mountWithFixture({ softDelete: function () { called = true; return Promise.resolve({ id: FIXTURE_DOC.id, deleted: true }); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Delete'; })[0], 'click');
+  await flush();
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(called, false);
+}));
+
+test('42. soft-delete endpoint called with id + reason', withEnv(async () => {
+  var captured = null;
+  var { mountEl } = await mountWithFixture({ softDelete: function (id, reason) { captured = { id: id, reason: reason }; return Promise.resolve({ id: id, deleted: true }); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Delete'; })[0], 'click');
+  await flush();
+  document.querySelector('#msc-km-delete-reason').value = 'Superseded by a new sheet';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(captured.id, FIXTURE_DOC.id);
+  assert.equal(captured.reason, 'Superseded by a new sheet');
+}));
+
+test('43. no hard-delete UI anywhere', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-modal-overlay') || document.body;
+  assert.doesNotMatch(mountEl.allText() + overlay.allText(), /permanent delete|hard delete/i);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// RESTORE (44)
+// ══════════════════════════════════════════════════════════════════════
+
+test('44. RESTORE FRONTEND BLOCKED BY API READ-VISIBILITY GAP — no restore UI entry point exists, client function exists for future use', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.equal(typeof mod.restoreKnowledgeDocument, 'function', 'the API client function exists for future use');
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-modal-overlay');
+  var restoreBtn = Array.prototype.filter.call(overlay.querySelectorAll('.msc-btn'), function (b) { return /restore/i.test(b.textContent); });
+  assert.equal(restoreBtn.length, 0, 'no Restore control should be wired anywhere in the UI');
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// HISTORY (45-47)
+// ══════════════════════════════════════════════════════════════════════
+
+test('45. versions viewer renders returned version rows', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'View Version History'; })[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-modal-overlay');
+  assert.match(overlay.allText(), /v1\.0/);
+}));
+
+test('46. audit viewer renders returned audit rows', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'View Audit History'; })[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-modal-overlay');
+  assert.match(overlay.allText(), /create/);
+  assert.match(overlay.allText(), /mayurika/);
+}));
+
+test('47. no history mutation controls (edit/delete) in either viewer', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'View Version History'; })[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-modal-overlay');
+  var mutButtons = Array.prototype.filter.call(overlay.querySelectorAll('.msc-btn'), function (b) { return /edit|delete/i.test(b.textContent); });
+  assert.equal(mutButtons.length, 0);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// SECURITY (48-51)
+// ══════════════════════════════════════════════════════════════════════
+
+test('48. no actor-spoof field on create form', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  assert.equal(form.querySelector('#msc-km-create-created-by'), null);
+  assert.equal(form.querySelector('#msc-km-create-actor'), null);
+}));
+
+test('49. unsafe source URL never opened / never rendered as a link', withEnv(async () => {
+  var unsafeDoc = Object.assign({}, FIXTURE_DOC, { source_url: 'javascript:alert(1)' });
+  var { mountEl } = await mountWithFixture({ list: function () { return Promise.resolve({ records: [unsafeDoc], total: 1, limit: 200, offset: 0 }); } });
+  var links = qAll(mountEl, '.msc-km-open-link');
+  assert.equal(links.length, 0);
+}));
+
+test('50. 401 state — expired token surfaces auth_required and clears storage', withEnv(async () => {
+  var mod = await loadKmModule();
+  var restoreFetch = globalThis.fetch;
+  globalThis.fetch = function () {
+    return Promise.resolve({ ok: false, status: 401, text: function () { return Promise.resolve(JSON.stringify({ error: 'unauthorized' })); } });
+  };
+  await assert.rejects(
+    mod.createKnowledgeDocument({ title: 'T', team: 'Team', document_type: 'PDF', source_url: 'https://example.com/x' }),
+    function (err) { return err.code === 'auth_required'; }
+  );
+  globalThis.fetch = restoreFetch;
+  assert.equal(globalThis.window.localStorage.getItem('management_aios_calendar_auth_v1'), null);
+}));
+
+test('51. 403 state — MD read-only rejection surfaces the backend error code', withEnv(async () => {
+  var mod = await loadKmModule();
+  var restoreFetch = globalThis.fetch;
+  globalThis.fetch = function () {
+    return Promise.resolve({
+      ok: false, status: 403,
+      text: function () {
+        return Promise.resolve(JSON.stringify({ error: 'knowledge_document_read_only_member', message: 'MD has read-only access and cannot create or edit Knowledge Management records.' }));
+      }
+    });
+  };
+  await assert.rejects(
+    mod.createKnowledgeDocument({ title: 'T', team: 'Team', document_type: 'PDF', source_url: 'https://example.com/x' }),
+    function (err) { return err.code === 'knowledge_document_read_only_member'; }
+  );
+  globalThis.fetch = restoreFetch;
+}, { storedAuth: { token: 'md-token', memberKey: 'md' } }));
+
+// ══════════════════════════════════════════════════════════════════════
+// REGRESSION (52-55)
+// ══════════════════════════════════════════════════════════════════════
+
+test('52. Issues navigation remains functional', () => {
   assert.equal((html.match(/data-tab="issues"/g) || []).length, 1);
   assert.equal((html.match(/id="tab-issues"/g) || []).length, 1);
   assert.ok(segments['tab-issues']);
   assert.match(segments['tab-issues'], /id="issuesWorkspace"/);
 });
 
-test('5. existing Review Summaries navigation remains functional', () => {
+test('53. Review Summaries navigation remains functional', () => {
   assert.equal((html.match(/data-tab="review-summaries"/g) || []).length, 1);
   assert.equal((html.match(/id="tab-review-summaries"/g) || []).length, 1);
   assert.ok(segments['tab-review-summaries']);
   assert.match(segments['tab-review-summaries'], /id="reviewSummariesWorkspace"/);
 });
 
-// ── DOCUMENT DISPLAY (6-13) ──────────────────────────────────────────────
-
-test('6. approved records render — production registry is well-formed and renders in full', withEnv(async () => {
-  var mod = await loadKmModule();
-  assert.ok(mod.APPROVED_DOCUMENTS.length >= 3, 'at least 3 approved documents should exist per Phase 3');
-  mod.APPROVED_DOCUMENTS.forEach(function (d) {
-    assert.ok(d.title && d.team && d.documentType && d.sourceUrl, 'every record must have title/team/documentType/sourceUrl evidence');
-  });
-  var mountEl = document.createElement('div');
-  mod.mountKnowledgeManagementWorkspace(mountEl);
-  var rows = tableTexts(mountEl, '.msc-km-title-cell');
-  assert.equal(rows.length, mod.APPROVED_DOCUMENTS.length);
-}));
-
-test('7. title renders', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var titles = tableTexts(mountEl, '.msc-km-title-cell');
-  assert.ok(titles.indexOf('KPI Review Guide') !== -1);
-}));
-
-test('8. team renders', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  assert.match(mountEl.allText(), /Management/);
-  assert.match(mountEl.allText(), /Website/);
-}));
-
-test('9. document type renders', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  assert.match(mountEl.allText(), /Google Sheet/);
-  assert.match(mountEl.allText(), /PDF/);
-}));
-
-test('10. creator renders', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  assert.match(mountEl.allText(), /Alex Doe/);
-}));
-
-test('11. version renders', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  assert.match(mountEl.allText(), /2\.1/);
-}));
-
-test('12. status renders', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  assert.match(mountEl.allText(), /Active/);
-}));
-
-test('13. unknown optional metadata safely renders as —', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var dashes = tableTexts(mountEl, '.msc-km-dash');
-  assert.ok(dashes.length > 0, 'fixture fx-2 has null creator/version/status — each must render as a dash, never blank');
-  dashes.forEach(function (d) { assert.equal(d, '—'); });
-}));
-
-test('13b. sample-data notice is visible and never implies an error (Phase 2, 2026-08-10)', withEnv(async () => {
-  var mod = await loadKmModule();
-  var { mountEl } = await mountWithFixtures();
-  var notice = mountEl.querySelector('.msc-km-sample-notice');
-  assert.ok(notice, 'the sample-data notice element should be rendered');
-  assert.equal(notice.textContent, mod.SAMPLE_DATA_NOTICE_TEXT);
-  assert.equal(notice.textContent, 'Sample documents — document records will be updated after interface review.');
-  assert.equal(notice.getAttribute('role'), 'note', 'role="note" (informational), never role="alert"');
-}));
-
-// ── SEARCH (14-18) ───────────────────────────────────────────────────────
-
-test('14. empty search returns all documents', withEnv(async () => {
-  var mod = await loadKmModule();
-  assert.equal(mod.searchByTitle(FIXTURE_DOCS, '').length, FIXTURE_DOCS.length);
-  assert.equal(mod.searchByTitle(FIXTURE_DOCS, '   ').length, FIXTURE_DOCS.length);
-}));
-
-test('15. exact title search', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.searchByTitle(FIXTURE_DOCS, 'KPI Review Guide');
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-1');
-}));
-
-test('16. partial title search', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.searchByTitle(FIXTURE_DOCS, 'onboard');
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-2');
-}));
-
-test('17. case-insensitive search', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.searchByTitle(FIXTURE_DOCS, 'KPI REVIEW guide');
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-1');
-}));
-
-test('18. no-match search produces empty state', withEnv(async () => {
-  var mod = await loadKmModule();
-  var { mountEl } = await mountWithFixtures();
-  var searchInput = mountEl.querySelector('.msc-km-search-input');
-  searchInput.value = 'no such document anywhere';
-  fire(searchInput, 'input');
-  var empty = mountEl.querySelector('.msc-km-empty');
-  assert.ok(empty, 'empty-state element should be rendered');
-  assert.equal(empty.textContent, mod.EMPTY_STATE_TEXT);
-  assert.equal(empty.textContent, 'No documents match your search or filters.');
-  assert.equal(tableTexts(mountEl, '.msc-km-title-cell').length, 0);
-}));
-
-// ── TEAM FILTER (19-20) ──────────────────────────────────────────────────
-
-test('19. team filter — All works', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.filterDocuments(FIXTURE_DOCS, { team: 'all' });
-  assert.equal(result.length, FIXTURE_DOCS.length);
-}));
-
-test('20. team filter — specific Team works', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.filterDocuments(FIXTURE_DOCS, { team: 'HR' });
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-2');
-}));
-
-// ── DOCUMENT TYPE FILTER (21-22) ─────────────────────────────────────────
-
-test('21. document type filter — All works', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.filterDocuments(FIXTURE_DOCS, { documentType: 'all' });
-  assert.equal(result.length, FIXTURE_DOCS.length);
-}));
-
-test('22. document type filter — specific Document Type works', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.filterDocuments(FIXTURE_DOCS, { documentType: 'PDF' });
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-3');
-}));
-
-// ── COMBINED FILTERING (23-26) ───────────────────────────────────────────
-
-test('23. search + team works', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.filterDocuments(FIXTURE_DOCS, { search: 'kpi', team: 'Management' });
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-1');
-}));
-
-test('24. search + type works', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.filterDocuments(FIXTURE_DOCS, { search: 'onboarding', documentType: 'Google Doc' });
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-2');
-}));
-
-test('25. team + type works', withEnv(async () => {
-  var mod = await loadKmModule();
-  // Both fx-1 and fx-4 are team=Management/documentType=Google Sheet.
-  var result = mod.filterDocuments(FIXTURE_DOCS, { team: 'Management', documentType: 'Google Sheet' });
-  assert.equal(result.length, 2);
-}));
-
-test('26. search + team + type works (all three conditions narrow to one)', withEnv(async () => {
-  var mod = await loadKmModule();
-  var result = mod.filterDocuments(FIXTURE_DOCS, { search: 'KPI', team: 'Management', documentType: 'Google Sheet' });
-  assert.equal(result.length, 1);
-  assert.equal(result[0].id, 'fx-1');
-}));
-
-// ── OPEN DOCUMENT (27-30) ────────────────────────────────────────────────
-
-test('27. Open Document link uses the correct URL', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var link = mountEl.querySelector('.msc-km-open-link');
-  assert.ok(link);
-  assert.equal(link.getAttribute('href'), 'https://docs.google.com/spreadsheets/d/FIXTURE1/edit');
-}));
-
-test('28. Open Document link uses target=_blank', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var link = mountEl.querySelector('.msc-km-open-link');
-  assert.equal(link.getAttribute('target'), '_blank');
-}));
-
-test('29. Open Document link rel contains noopener', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var link = mountEl.querySelector('.msc-km-open-link');
-  assert.match(link.getAttribute('rel'), /noopener/);
-}));
-
-test('30. Open Document link rel contains noreferrer', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var link = mountEl.querySelector('.msc-km-open-link');
-  assert.match(link.getAttribute('rel'), /noreferrer/);
-}));
-
-// ── SAFETY (31-35) ───────────────────────────────────────────────────────
-
-test('31. HTML-like document title renders as text, never interpreted as markup', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var titles = tableTexts(mountEl, '.msc-km-title-cell');
-  assert.ok(titles.indexOf('<img src=x onerror=alert(1)> Malicious Title') !== -1, 'the raw literal string must appear as text content');
-}));
-
-test('32. no upload control exists', withEnv(async (env) => {
-  await mountWithFixtures();
-  var hasFileInput = env.document._all.some(function (n) { return n.tagName === 'INPUT' && n.type === 'file'; });
-  assert.equal(hasFileInput, false);
-}));
-
-test('33. no document edit control exists', withEnv(async (env) => {
-  await mountWithFixtures();
-  var hasEditControl = env.document._all.some(function (n) {
-    return (n.tagName === 'BUTTON' || n.tagName === 'A') && /\bedit\b/i.test(n.textContent || '');
-  });
-  assert.equal(hasEditControl, false);
-}));
-
-test('34. no delete control exists', withEnv(async (env) => {
-  await mountWithFixtures();
-  var hasDeleteControl = env.document._all.some(function (n) {
-    return (n.tagName === 'BUTTON' || n.tagName === 'A') && /\bdelete\b/i.test(n.textContent || '');
-  });
-  assert.equal(hasDeleteControl, false);
-}));
-
-test('35. no fake ownership-verification control exists', withEnv(async (env) => {
-  await mountWithFixtures();
-  var hasOwnershipControl = env.document._all.some(function (n) {
-    return /owner access|ownership/i.test(n.textContent || '');
-  });
-  assert.equal(hasOwnershipControl, false);
-}));
-
-test('35b. isSafeHttpUrl rejects javascript: and only accepts http/https', withEnv(async () => {
-  var mod = await loadKmModule();
-  assert.equal(mod.isSafeHttpUrl('javascript:alert(1)'), false);
-  assert.equal(mod.isSafeHttpUrl('https://example.com'), true);
-  assert.equal(mod.isSafeHttpUrl('http://example.com'), true);
-  assert.equal(mod.isSafeHttpUrl(''), false);
-  assert.equal(mod.isSafeHttpUrl(null), false);
-}));
-
-test('35c. an unsafe sourceUrl renders as a dash, never as a clickable Open Document link', withEnv(async () => {
-  var { mountEl } = await mountWithFixtures();
-  var rows = mountEl.querySelectorAll('.msc-km-open-link');
-  // Only 3 of the 4 fixtures have a safe http(s) URL — fx-4 uses javascript:.
-  assert.equal(rows.length, 3);
-}));
-
-// ── REGRESSION (36-38) ───────────────────────────────────────────────────
-
-test('36. Issues remains unaffected by this change', () => {
-  assert.ok(segments['tab-issues'], 'the Issues panel segment should still be found');
-  assert.match(segments['tab-issues'], /msc-issues-workspace/);
-  assert.ok(!/knowledgeManagementWorkspace/.test(segments['tab-issues']), 'Knowledge Management must not be nested inside Issues');
-});
-
-test('37. Review Summaries remains unaffected by this change', () => {
-  assert.ok(segments['tab-review-summaries'], 'the Review Summaries panel segment should still be found');
-  assert.equal((html.match(/id="reviewSummariesWorkspace"/g) || []).length, 1);
-  assert.ok(!/knowledgeManagementWorkspace/.test(segments['tab-review-summaries']));
-});
-
-test('38. Calendar remains unaffected by this change', () => {
+test('54. Calendar mounts remain untouched', () => {
   var matches = html.match(/class="msc-instance"/g) || [];
-  assert.equal(matches.length, 5, 'all 5 Task/Leave/Calendar member mounts must remain untouched');
+  assert.equal(matches.length, 5);
+});
+
+test('55. Knowledge Management nav exactly once', () => {
+  assert.equal((html.match(/data-tab="knowledge-management"/g) || []).length, 1);
+  assert.equal((html.match(/id="tab-knowledge-management"/g) || []).length, 1);
+  var panelIds = topLevelPanels(html).map(function (p) { return p.id; });
+  assert.equal(panelIds.filter(function (id) { return id === 'tab-knowledge-management'; }).length, 1);
 });

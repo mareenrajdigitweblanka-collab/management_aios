@@ -53,3 +53,17 @@ export var STAFF_REVIEW_SUMMARIES_API_BASE = (function () {
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
   return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
 }());
+
+/* Knowledge Management (REQ-KM-CRUD-003 backend, REQ-KM-UI-004 frontend
+   integration) — same local-vs-production host detection as the four
+   bases above, just a different route prefix
+   (backend/routers/knowledge_documents.py). LIST/DETAIL are public
+   (no token); every other route requires a Calendar member token, exactly
+   like Task/Leave's own public-GET/protected-mutation split — unlike
+   STAFF_REVIEW_SUMMARIES_API_BASE, where even GET requires a token. */
+export var KNOWLEDGE_DOCUMENTS_API_BASE = (function () {
+  var LOCAL_BASE = 'http://127.0.0.1:8000/api/knowledge-documents';
+  var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/knowledge-documents';
+  var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
+}());

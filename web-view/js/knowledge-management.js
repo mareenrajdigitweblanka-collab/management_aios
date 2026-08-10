@@ -1,134 +1,91 @@
 /* knowledge-management.js — Knowledge Management workspace, Company
-   Documents view (REQ-KM-001, first usable implementation, 2026-08-10).
+   Documents view, wired to the real persistent backend CRUD API
+   (REQ-KM-UI-004, 2026-08-10).
 
-   Deliberately narrow: this is the first slice of the Knowledge Management
-   SRD (docs/knowledge-management-discovery-2026-08-10.md), not the full
-   module. It has NO backend, NO PostgreSQL table, NO file upload, NO
-   Google ownership verification, NO version-history workflow, NO audit
-   log, NO soft-delete workflow, NO AI features of any kind. See
-   docs/knowledge-management-company-documents-requirement-2026-08-10.md
-   for the full scope boundary.
+   REPLACES the REQ-KM-001 static APPROVED_DOCUMENTS registry entirely —
+   there is now exactly one document-record truth: the backend API /
+   PostgreSQL (management_aios.knowledge_documents and its two history
+   tables, backend/routers/knowledge_documents.py). The sample-data notice
+   ("Sample documents — document records will be updated after interface
+   review.") is removed along with it — real records carry no such notice.
+   If the API fails, this module shows an explicit error state; it NEVER
+   falls back to showing stale/sample records.
 
-   APPROVED_DOCUMENTS below is a small, hand-verified frontend registry —
-   an interim index only, explicitly NOT the permanent Knowledge Management
-   database model (that remains [VERIFY] pending the six Phase-0 decisions
-   recorded in the discovery report). Every record's title/team/document
-   type/creator/version/status/sourceUrl traces to real evidence found in
-   this repository's already-registered stakeholder documents — nothing
-   here is invented. Unproven optional fields (creator/version/status) are
-   `null`, rendered as "—" (dashOrText below), never guessed. Full source
-   evidence for each record is recorded in
-   docs/knowledge-management-company-documents-requirement-2026-08-10.md.
+   API contract (read from backend/routers/knowledge_documents.py,
+   backend/schemas.py, backend/models.py — never guessed):
+     GET    /api/knowledge-documents                        public, ?team=&document_type=&lifecycle_status=&search=&limit=&offset= -> {records, total, limit, offset}
+     GET    /api/knowledge-documents/{id}                    public -> KnowledgeDocumentOut
+     POST   /api/knowledge-documents                          auth, {title, team, document_type, job_role?, document_category?, creator?, source_url} -> 201 KnowledgeDocumentOut (warnings[])
+     PATCH  /api/knowledge-documents/{id}                     auth, {title?, team?, document_type?, job_role?, document_category?, creator?, lifecycle_status?, compliance_status?, change_description} -> KnowledgeDocumentOut (source_url is REJECTED here — 422)
+     POST   /api/knowledge-documents/{id}/versions             auth, {source_url, version_label, change_description} -> 201 KnowledgeDocumentOut
+     POST   /api/knowledge-documents/{id}/archive               auth -> KnowledgeDocumentOut (409 if already Archived)
+     POST   /api/knowledge-documents/{id}/unarchive              auth -> KnowledgeDocumentOut (409 if already Active)
+     DELETE /api/knowledge-documents/{id}                     auth, {delete_reason} -> {id, deleted:true} (SOFT delete only)
+     POST   /api/knowledge-documents/{id}/restore               auth -> KnowledgeDocumentOut (404 if not deleted; 409 on URL collision) — API client exists (restoreKnowledgeDocument) but has NO UI entry point, see RESTORE section below.
+     GET    /api/knowledge-documents/{id}/versions              auth -> [KnowledgeDocumentVersionOut] (append-only, no mutation route)
+     GET    /api/knowledge-documents/{id}/audit                 auth -> [KnowledgeDocumentAuditLogOut] (immutable, no mutation route)
+
+   KnowledgeDocumentOut has NO "description" field — Phase 8's requested
+   detail-field list named one ("description") that the actual API does
+   not return; per explicit instruction ("do not invent missing fields"),
+   it is simply omitted from the Detail view, not fabricated.
+
+   RESTORE UI — BLOCKED (documented, not implemented): the backend has no
+   route to enumerate soft-deleted documents (LIST/DETAIL both exclude
+   deleted_at IS NOT NULL rows unconditionally; there is no
+   ?include_deleted= parameter). The only way to reach a specific deleted
+   document's id is if the frontend already held it from before deletion
+   — building that would mean inventing client-side deleted-record
+   storage, explicitly disallowed. See "RESTORE FRONTEND BLOCKED BY API
+   READ-VISIBILITY GAP" in
+   docs/knowledge-management-frontend-api-integration-2026-08-10.md.
+   Every other CRUD workflow this module supports is fully implemented.
+
+   Auth model: LIST/DETAIL are public reads (no token) — same shape as
+   Task/Leave's own public-GET/protected-mutation split, NOT Review
+   Summaries' whole-panel-gated model (which does not fit here, since KM
+   documents are meant to be visible without a token). Every mutation AND
+   both history-read routes require the existing Calendar member token
+   (web-view/js/calendar/auth.js) — no second auth system, no new token
+   type. kmProtectedRequest() below calls ensureAuthorized() first
+   (opens the existing "Authorize this browser" dialog if no token is
+   stored yet), exactly like calendar/instance.js's own apiRequest()
+   mutation path.
 
    Built via createElement/appendChild with textContent for every
    document-authored field (never innerHTML for untrusted text) — same
-   convention as issues.js/review-summaries.js — so a document title can
-   never be interpreted as markup. sourceUrl is validated (isSafeHttpUrl)
-   before ever being used as an href — only http:// or https:// URLs are
-   ever rendered as an Open Document link.
+   convention as issues.js/review-summaries.js. sourceUrl is validated
+   (isSafeHttpUrl) before ever being used as an href. */
 
-   Mounted exactly once, inside the independent #tab-knowledge-management
-   panel (web-view/index.html) — a sibling of #tab-issues and
-   #tab-review-summaries, never nested inside any Management Team member
-   panel. */
+import { KNOWLEDGE_DOCUMENTS_API_BASE } from './config.js';
+import {
+  CALENDAR_AUTH_CHANGED_EVENT,
+  ensureAuthorized,
+  getStoredMemberKey,
+  handleUnauthorizedResponse
+} from './calendar/auth.js';
+import { confirmDestructive } from './ui/dialog.js';
+import { showToast } from './ui/toast.js';
+import { setButtonBusy } from './ui/loading.js';
+import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } from './ui/form-feedback.js';
+import { mapApiError, classifyHttpStatus } from './ui/error-mapper.js';
+import { trapTab, returnFocus } from './ui/popup.js';
+import { lockBodyScroll, unlockBodyScroll } from './ui/scroll-lock.js';
 
-// ── Approved document registry (interim frontend index — see header) ────
+export var EMPTY_STATE_TEXT = 'No company documents have been registered yet.';
+export var FILTERED_EMPTY_STATE_TEXT = 'No documents match your search or filters.';
+export var LOADING_TEXT = 'Loading documents...';
+export var ERROR_TEXT = 'Unable to load company documents.';
 
-export var APPROVED_DOCUMENTS = [
-  {
-    id: 'km-001',
-    title: '996 Project Management — Follow-up Sheet',
-    team: 'HR',
-    documentType: 'Google Sheet',
-    creator: 'HR Officer, Digitweb',
-    version: '1.0',
-    status: 'Active',
-    sourceUrl: 'https://docs.google.com/spreadsheets/d/11Y1lAppEc9gfSE9vahJbjLhMA5L8Y8X1etOcBDpONJ8/edit?usp=sharing'
-  },
-  {
-    id: 'km-002',
-    title: 'Developer Validation Checklist',
-    team: 'Development',
-    documentType: 'Google Doc',
-    creator: null,
-    version: null,
-    status: null,
-    sourceUrl: 'https://docs.google.com/document/d/1MQWowVBPzbefapCcPZXC8FKasZyiEXd-H-avw83Fxms/edit?usp=sharing'
-  },
-  {
-    id: 'km-003',
-    title: 'Arun Task Schedule',
-    team: 'Implementation',
-    documentType: 'Google Sheet',
-    creator: null,
-    version: null,
-    status: null,
-    sourceUrl: 'https://docs.google.com/spreadsheets/d/1_tugy9CfHniIVIgqCuSmQQZ38cYJXoXVIQvQx94XRc0/edit?usp=sharing'
-  }
+var DOCUMENT_TYPE_OPTIONS = [
+  'Google Sheet', 'Google Doc', 'Google Drive File', 'PDF',
+  'Word Document', 'Excel File', 'ZIP File', 'Skill File',
+  'Image', 'Video', 'External URL', 'Internal Documentation Link'
 ];
+var LIFECYCLE_STATUS_OPTIONS = ['Active', 'Archived'];
 
-export var EMPTY_STATE_TEXT = 'No documents match your search or filters.';
+// ── Pure helpers (exported for direct testing — no DOM/fetch involved) ──
 
-/* The 3 APPROVED_DOCUMENTS records are temporary/sample visual records for
-   this first implementation, NOT final approved Knowledge Management
-   truth (per explicit user direction, 2026-08-10: ship the visual
-   application first, correct the real records afterward). This notice
-   makes that status visible in the UI itself, not just in documentation —
-   never removed by a filter/search action, always shown above the table. */
-export var SAMPLE_DATA_NOTICE_TEXT = 'Sample documents — document records will be updated after interface review.';
-
-// ── Pure helpers (exported for direct testing — no DOM involved) ────────
-
-/* Dedupe + alphabetical sort of a plain array of strings, dropping falsy
-   values — a small self-contained copy of the same shape as issues.js's
-   own uniqueSorted, not imported from it: Knowledge Management must not
-   take a code dependency on the unrelated Issues feature. */
-export function uniqueSorted(values) {
-  var seen = {};
-  var out = [];
-  (values || []).forEach(function (v) {
-    if (!v || seen[v]) { return; }
-    seen[v] = true;
-    out.push(v);
-  });
-  out.sort(function (a, b) { return a.localeCompare(b); });
-  return out;
-}
-
-export function teamOptions(documents) {
-  return uniqueSorted((documents || []).map(function (d) { return d.team; }));
-}
-
-export function documentTypeOptions(documents) {
-  return uniqueSorted((documents || []).map(function (d) { return d.documentType; }));
-}
-
-/* Case-insensitive, partial, title-only match (Phase 7). A blank/whitespace
-   query returns every document unchanged. */
-export function searchByTitle(documents, query) {
-  var q = (query || '').trim().toLowerCase();
-  if (!q) { return documents.slice(); }
-  return documents.filter(function (d) {
-    return (d.title || '').toLowerCase().indexOf(q) !== -1;
-  });
-}
-
-export function filterDocuments(documents, filters) {
-  filters = filters || {};
-  var result = searchByTitle(documents, filters.search);
-  if (filters.team && filters.team !== 'all') {
-    result = result.filter(function (d) { return d.team === filters.team; });
-  }
-  if (filters.documentType && filters.documentType !== 'all') {
-    result = result.filter(function (d) { return d.documentType === filters.documentType; });
-  }
-  return result;
-}
-
-/* Defense-in-depth (Phase 13) — only http:// and https:// URLs are ever
-   treated as safe to render as an href, even though every APPROVED_DOCUMENTS
-   entry above is hand-verified. Rejects javascript:, data:, and any other
-   scheme, and anything that fails URL parsing entirely. */
 export function isSafeHttpUrl(url) {
   if (!url || typeof url !== 'string') { return false; }
   try {
@@ -137,6 +94,157 @@ export function isSafeHttpUrl(url) {
   } catch (e) {
     return false;
   }
+}
+
+/* Server-side filtering (Phase 6) — builds the exact query string the
+   already-existing GET /api/knowledge-documents route supports
+   (team/document_type/lifecycle_status/search), never an invented
+   parameter. Combined filters are AND because the backend's own
+   _apply_filters chains .filter() calls — this function just mirrors
+   that contract, it doesn't implement AND logic itself. */
+export function buildListQueryString(filters) {
+  filters = filters || {};
+  var params = [];
+  if (filters.search) { params.push('search=' + encodeURIComponent(filters.search)); }
+  if (filters.team && filters.team !== 'all') { params.push('team=' + encodeURIComponent(filters.team)); }
+  if (filters.documentType && filters.documentType !== 'all') {
+    params.push('document_type=' + encodeURIComponent(filters.documentType));
+  }
+  if (filters.lifecycleStatus && filters.lifecycleStatus !== 'all') {
+    params.push('lifecycle_status=' + encodeURIComponent(filters.lifecycleStatus));
+  }
+  params.push('limit=200');
+  return params.join('&');
+}
+
+function formatTimestamp(iso) {
+  if (!iso) { return '—'; }
+  var parsed = new Date(iso);
+  if (isNaN(parsed.getTime())) { return iso; }
+  return parsed.toLocaleString();
+}
+
+// ── API client (Phase 4) — the ONE place every request is built ─────────
+//
+// Centralizes request construction, Authorization header attachment, JSON
+// parsing, and error tagging — no fetch() call is repeated inline in any
+// click handler below.
+
+function parseJsonSafely(res) {
+  return res.text().then(function (text) {
+    if (!text) { return null; }
+    try { return JSON.parse(text); } catch (e) { return null; }
+  });
+}
+
+/* Public reads (LIST/DETAIL) — no Authorization header, matches the
+   backend's own public-GET routes exactly. */
+function kmPublicRequest(pathAndQuery) {
+  return fetch(KNOWLEDGE_DOCUMENTS_API_BASE + pathAndQuery, { cache: 'no-store' }).then(function (res) {
+    return parseJsonSafely(res).then(function (body) {
+      if (!res.ok) {
+        var err = new Error((body && body.message) || 'Request failed.');
+        err.status = res.status;
+        err.code = classifyHttpStatus(res.status);
+        err.body = body;
+        throw err;
+      }
+      return body;
+    });
+  });
+}
+
+/* Every mutation, plus the two auth-required history-read routes.
+   ensureAuthorized() opens the existing "Authorize this browser" dialog
+   if no token is stored yet — the same primitive calendar/instance.js's
+   own apiRequest() mutation path already uses; no second auth system. */
+function kmProtectedRequest(pathAndQuery, options) {
+  options = options || {};
+  return ensureAuthorized().then(function (token) {
+    var headers = { 'Authorization': 'Bearer ' + token };
+    if (options.body !== undefined) { headers['Content-Type'] = 'application/json'; }
+    return fetch(KNOWLEDGE_DOCUMENTS_API_BASE + pathAndQuery, {
+      method: options.method || 'GET',
+      headers: headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      cache: 'no-store'
+    }).then(function (res) {
+      return parseJsonSafely(res).then(function (body) {
+        if (res.status === 401) {
+          handleUnauthorizedResponse();
+          var authErr = new Error('Authorization expired.');
+          authErr.code = 'auth_required';
+          authErr.status = 401;
+          throw authErr;
+        }
+        if (!res.ok) {
+          var err = new Error((body && body.message) || 'Request failed.');
+          err.status = res.status;
+          // Known, backend-declared codes (body.error) are passed through
+          // to mapApiError verbatim; every other 4xx/5xx falls back to the
+          // shared, generic status classifier — same two-tier convention
+          // apiRequest()/leaveApiRequest() already use.
+          err.code = (body && body.error) || classifyHttpStatus(res.status);
+          err.body = body;
+          throw err;
+        }
+        return body;
+      });
+    });
+  }, function (err) {
+    var tagged = (err instanceof Error) ? err : new Error('Authorization cancelled.');
+    tagged.code = tagged.code || 'auth_cancelled';
+    throw tagged;
+  });
+}
+
+export function listKnowledgeDocuments(filters) {
+  return kmPublicRequest('?' + buildListQueryString(filters));
+}
+
+export function getKnowledgeDocument(id) {
+  return kmPublicRequest('/' + id);
+}
+
+export function createKnowledgeDocument(payload) {
+  return kmProtectedRequest('', { method: 'POST', body: payload });
+}
+
+export function updateKnowledgeDocumentMetadata(id, payload) {
+  return kmProtectedRequest('/' + id, { method: 'PATCH', body: payload });
+}
+
+export function createKnowledgeDocumentVersion(id, payload) {
+  return kmProtectedRequest('/' + id + '/versions', { method: 'POST', body: payload });
+}
+
+export function archiveKnowledgeDocument(id) {
+  return kmProtectedRequest('/' + id + '/archive', { method: 'POST' });
+}
+
+export function unarchiveKnowledgeDocument(id) {
+  return kmProtectedRequest('/' + id + '/unarchive', { method: 'POST' });
+}
+
+export function softDeleteKnowledgeDocument(id, deleteReason) {
+  return kmProtectedRequest('/' + id, { method: 'DELETE', body: { delete_reason: deleteReason } });
+}
+
+/* Exists for API-client completeness (Phase 4 asks for the client layer
+   to be centralized/complete) but has NO UI entry point anywhere in this
+   module — see the module docstring's RESTORE section. Available for a
+   future task once the backend exposes a way to discover deleted
+   documents. */
+export function restoreKnowledgeDocument(id) {
+  return kmProtectedRequest('/' + id + '/restore', { method: 'POST' });
+}
+
+export function listKnowledgeDocumentVersions(id) {
+  return kmProtectedRequest('/' + id + '/versions');
+}
+
+export function listKnowledgeDocumentAuditLog(id) {
+  return kmProtectedRequest('/' + id + '/audit');
 }
 
 // ── DOM helpers ───────────────────────────────────────────────────────
@@ -153,8 +261,6 @@ function textEl(tag, className, text) {
   return node;
 }
 
-/* Renders a value as plain text, or "—" when missing — never an empty
-   cell, and never innerHTML. Used for every document-authored field. */
 function dashOrText(container, value) {
   if (!value) {
     container.appendChild(textEl('span', 'msc-km-dash', '—'));
@@ -163,36 +269,60 @@ function dashOrText(container, value) {
   container.appendChild(document.createTextNode(String(value)));
 }
 
+function labelledField(labelText, forId) {
+  var wrap = el('div', 'msc-km-field');
+  var label = textEl('label', 'msc-km-field-label', labelText);
+  if (forId) { label.setAttribute('for', forId); }
+  wrap.appendChild(label);
+  return wrap;
+}
+
 // ── Workspace ─────────────────────────────────────────────────────────
 
 /* Mounted exactly once (initKnowledgeManagement below), inside the
-   independent #tab-knowledge-management panel. opts.documents defaults to
-   the production APPROVED_DOCUMENTS registry; tests may override it with a
-   fixture array so real production records never need to appear in test
-   assertions. */
+   independent #tab-knowledge-management panel. opts.api lets tests inject
+   fixture request functions instead of the real fetch-backed exports
+   above — production wiring (initKnowledgeManagement) always omits it. */
 export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   if (!mountEl) { return null; }
   opts = opts || {};
-  var documents = opts.documents || APPROVED_DOCUMENTS;
+  var api = opts.api || {
+    list: listKnowledgeDocuments,
+    detail: getKnowledgeDocument,
+    create: createKnowledgeDocument,
+    updateMetadata: updateKnowledgeDocumentMetadata,
+    createVersion: createKnowledgeDocumentVersion,
+    archive: archiveKnowledgeDocument,
+    unarchive: unarchiveKnowledgeDocument,
+    softDelete: softDeleteKnowledgeDocument,
+    listVersions: listKnowledgeDocumentVersions,
+    listAuditLog: listKnowledgeDocumentAuditLog
+  };
 
   var state = {
-    filters: { search: '', team: 'all', documentType: 'all' }
+    status: 'loading', // 'loading' | 'data' | 'empty' | 'error'
+    documents: [],
+    filters: { search: '', team: 'all', documentType: 'all', lifecycleStatus: 'all' },
+    requestId: 0,
+    errorMessage: null
   };
+
+  function currentAccess() {
+    return getStoredMemberKey() ? 'authorized' : 'unauthorized';
+  }
 
   mountEl.textContent = '';
 
+  var headerRow = el('div', 'msc-km-header-row');
   var heading = textEl('h3', 'msc-km-section-heading', 'Company Documents');
-  mountEl.appendChild(heading);
+  headerRow.appendChild(heading);
+  var addBtn = el('button', 'msc-btn msc-btn-primary msc-km-add-btn');
+  addBtn.type = 'button';
+  addBtn.textContent = '+ Add Document';
+  headerRow.appendChild(addBtn);
+  mountEl.appendChild(headerRow);
 
-  // Sample-data notice (Phase 2, 2026-08-10) — informational, not an error
-  // (role="note", not role="alert"); always visible above the toolbar,
-  // regardless of search/filter state.
-  var sampleNoticeEl = el('p', 'msc-km-sample-notice');
-  sampleNoticeEl.setAttribute('role', 'note');
-  sampleNoticeEl.textContent = SAMPLE_DATA_NOTICE_TEXT;
-  mountEl.appendChild(sampleNoticeEl);
-
-  // ── Toolbar: search + Team filter + Document Type filter ────────────
+  // ── Toolbar: search + Team + Document Type + Lifecycle Status ───────
   var toolbar = el('div', 'msc-km-toolbar');
 
   var searchField = el('div', 'msc-km-filter-field');
@@ -221,9 +351,28 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   typeField.appendChild(typeLabel);
   typeField.appendChild(typeSelect);
 
+  var lifecycleField = el('div', 'msc-km-filter-field');
+  var lifecycleLabel = textEl('label', 'msc-km-filter-label', 'Status:');
+  lifecycleLabel.setAttribute('for', 'msc-km-lifecycle-filter');
+  var lifecycleSelect = el('select', 'msc-km-select');
+  lifecycleSelect.id = 'msc-km-lifecycle-filter';
+  var allLifecycleOpt = el('option', '');
+  allLifecycleOpt.value = 'all';
+  allLifecycleOpt.textContent = 'All';
+  lifecycleSelect.appendChild(allLifecycleOpt);
+  LIFECYCLE_STATUS_OPTIONS.forEach(function (v) {
+    var opt = el('option', '');
+    opt.value = v;
+    opt.textContent = v;
+    lifecycleSelect.appendChild(opt);
+  });
+  lifecycleField.appendChild(lifecycleLabel);
+  lifecycleField.appendChild(lifecycleSelect);
+
   toolbar.appendChild(searchField);
   toolbar.appendChild(teamField);
   toolbar.appendChild(typeField);
+  toolbar.appendChild(lifecycleField);
 
   var countPill = el('span', 'msc-km-count-pill');
   toolbar.appendChild(countPill);
@@ -233,35 +382,629 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   var tableRegion = el('div', 'msc-km-table-region');
   mountEl.appendChild(tableRegion);
 
-  // ── Filter option population (built once — the registry is static) ──
-  function populateSelect(selectEl, values) {
-    selectEl.textContent = '';
+  // ── Team filter options — populated from whatever the current result
+  //    set actually contains (server has no distinct-values endpoint) ──
+  function populateTeamOptions() {
+    var current = teamSelect.value || 'all';
+    var seen = {};
+    var values = [];
+    state.documents.forEach(function (d) {
+      if (d.team && !seen[d.team]) { seen[d.team] = true; values.push(d.team); }
+    });
+    values.sort(function (a, b) { return a.localeCompare(b); });
+    teamSelect.textContent = '';
     var allOpt = el('option', '');
     allOpt.value = 'all';
     allOpt.textContent = 'All';
-    selectEl.appendChild(allOpt);
+    teamSelect.appendChild(allOpt);
     values.forEach(function (v) {
       var opt = el('option', '');
       opt.value = v;
       opt.textContent = v;
-      selectEl.appendChild(opt);
+      teamSelect.appendChild(opt);
     });
-    selectEl.value = 'all';
+    teamSelect.value = values.indexOf(current) !== -1 || current === 'all' ? current : 'all';
   }
 
-  populateSelect(teamSelect, teamOptions(documents));
-  populateSelect(typeSelect, documentTypeOptions(documents));
+  var typeAllOpt = el('option', '');
+  typeAllOpt.value = 'all';
+  typeAllOpt.textContent = 'All';
+  typeSelect.appendChild(typeAllOpt);
+  DOCUMENT_TYPE_OPTIONS.forEach(function (v) {
+    var opt = el('option', '');
+    opt.value = v;
+    opt.textContent = v;
+    typeSelect.appendChild(opt);
+  });
+  typeSelect.value = 'all';
+
+  // ── Modal shell (Phase 7-10/14-15) — one lazy singleton, reconfigured
+  //    per open() call, same pattern as calendar/auth.js's
+  //    ensureTokenDialog() ────────────────────────────────────────────
+  var modal = null;
+  function ensureModal() {
+    if (modal) { return modal; }
+    var overlay = el('div', 'msc-modal-overlay msc-km-modal-overlay');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    var box = el('div', 'msc-modal msc-modal-form msc-km-modal');
+    var head = el('div', 'msc-modal-form-head');
+    var titleEl = textEl('h4', '', '');
+    titleEl.id = 'msc-km-modal-title';
+    overlay.setAttribute('aria-labelledby', 'msc-km-modal-title');
+    var closeBtn = el('button', 'msc-modal-close');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.textContent = '×';
+    head.appendChild(titleEl);
+    head.appendChild(closeBtn);
+    var bodyEl = el('div', 'msc-km-modal-body');
+    box.appendChild(head);
+    box.appendChild(bodyEl);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    var triggerEl = null;
+
+    function close() {
+      overlay.classList.remove('show');
+      unlockBodyScroll();
+      overlay.removeEventListener('keydown', onKeydown);
+      bodyEl.textContent = '';
+      if (triggerEl) { returnFocus(triggerEl); }
+    }
+
+    function onKeydown(e) {
+      if (e.key === 'Escape') { close(); return; }
+      if (e.key === 'Tab') { trapTab(box, e); }
+    }
+
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) { close(); } });
+
+    function open(title, buildBody, trigger) {
+      triggerEl = trigger || document.activeElement;
+      titleEl.textContent = title;
+      bodyEl.textContent = '';
+      buildBody(bodyEl, close);
+      overlay.classList.add('show');
+      lockBodyScroll();
+      overlay.addEventListener('keydown', onKeydown);
+      window.requestAnimationFrame(function () {
+        var focusable = box.querySelector('.msc-km-modal-first-focus') || box.querySelector('.msc-km-modal-primary-focus');
+        (focusable || closeBtn).focus();
+      });
+    }
+
+    modal = { open: open, close: close };
+    return modal;
+  }
+
+  // ── Shared field-building for Create / Edit forms ────────────────────
+
+  function buildTextField(container, opts) {
+    var field = labelledField(opts.label, opts.id);
+    var input = el(opts.multiline ? 'textarea' : 'input', 'msc-km-input');
+    input.id = opts.id;
+    if (!opts.multiline) { input.type = opts.type || 'text'; }
+    if (opts.required) { input.required = true; }
+    if (opts.value) { input.value = opts.value; }
+    if (opts.placeholder) { input.setAttribute('placeholder', opts.placeholder); }
+    input.addEventListener('input', function () { clearFieldError(input); });
+    field.appendChild(input);
+    container.appendChild(field);
+    return input;
+  }
+
+  function buildSelectField(container, opts) {
+    var field = labelledField(opts.label, opts.id);
+    var select = el('select', 'msc-km-input');
+    select.id = opts.id;
+    (opts.options || []).forEach(function (v) {
+      var o = el('option', '');
+      o.value = v;
+      o.textContent = v;
+      select.appendChild(o);
+    });
+    if (opts.value) { select.value = opts.value; }
+    field.appendChild(select);
+    container.appendChild(field);
+    return select;
+  }
+
+  // ── CREATE (Phase 7) ─────────────────────────────────────────────────
+
+  function openCreateModal() {
+    ensureModal().open('Add Document', function (body, close) {
+      var form = el('form', 'msc-km-form');
+
+      var titleInput = buildTextField(form, { id: 'msc-km-create-title', label: 'Document Title (required)', required: true });
+      titleInput.classList.add('msc-km-modal-first-focus');
+      var teamInput = buildTextField(form, { id: 'msc-km-create-team', label: 'Team (required)', required: true });
+      var typeSelect = buildSelectField(form, { id: 'msc-km-create-type', label: 'Document Type (required)', options: DOCUMENT_TYPE_OPTIONS });
+      var jobRoleInput = buildTextField(form, { id: 'msc-km-create-job-role', label: 'Job Role (optional)' });
+      var categoryInput = buildTextField(form, { id: 'msc-km-create-category', label: 'Document Category (optional)' });
+      var creatorInput = buildTextField(form, { id: 'msc-km-create-creator', label: 'Creator (optional)' });
+      var urlInput = buildTextField(form, {
+        id: 'msc-km-create-url', label: 'Source URL (required)', type: 'url', required: true,
+        placeholder: 'https://...'
+      });
+
+      var actions = el('div', 'msc-km-form-actions');
+      var cancelBtn = el('button', 'msc-btn msc-btn-ghost');
+      cancelBtn.type = 'button';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', close);
+      var saveBtn = el('button', 'msc-btn msc-btn-primary msc-km-modal-primary-focus');
+      saveBtn.type = 'submit';
+      saveBtn.textContent = 'Save';
+      actions.appendChild(cancelBtn);
+      actions.appendChild(saveBtn);
+      form.appendChild(actions);
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearFormErrors(form);
+        var hasError = false;
+        if (!titleInput.value.trim()) { setFieldError(titleInput, 'Enter a document title.'); hasError = true; }
+        if (!teamInput.value.trim()) { setFieldError(teamInput, 'Enter a team.'); hasError = true; }
+        if (!urlInput.value.trim()) {
+          setFieldError(urlInput, 'Enter a source URL.'); hasError = true;
+        } else if (!isSafeHttpUrl(urlInput.value.trim())) {
+          setFieldError(urlInput, 'Enter a valid http:// or https:// URL.'); hasError = true;
+        }
+        if (hasError) { focusFirstInvalid(form); return; }
+
+        setButtonBusy(saveBtn, true, { busyLabel: 'Saving…' });
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+
+        api.create({
+          title: titleInput.value.trim(),
+          team: teamInput.value.trim(),
+          document_type: typeSelect.value,
+          job_role: jobRoleInput.value.trim() || null,
+          document_category: categoryInput.value.trim() || null,
+          creator: creatorInput.value.trim() || null,
+          source_url: urlInput.value.trim()
+        }).then(function (record) {
+          setButtonBusy(saveBtn, false);
+          close();
+          showToast({ type: 'success', title: 'Document added', message: '"' + record.title + '" was registered.' });
+          if (record.warnings && record.warnings.length) {
+            showToast({ type: 'warning', title: 'Possible duplicate title', message: record.warnings[0], persistent: true });
+          }
+          loadDocuments();
+        }, function (err) {
+          setButtonBusy(saveBtn, false);
+          saveBtn.disabled = false;
+          cancelBtn.disabled = false;
+          if (err.code === 'knowledge_document_duplicate_source_url') {
+            setFieldError(urlInput, mapApiError(err).message);
+            return;
+          }
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        });
+      });
+
+      body.appendChild(form);
+    });
+  }
+
+  // ── DETAIL (Phase 8) ─────────────────────────────────────────────────
+
+  function detailRow(container, label, value) {
+    var row = el('div', 'msc-km-detail-row');
+    row.appendChild(textEl('span', 'msc-km-detail-label', label));
+    var valueEl = el('span', 'msc-km-detail-value');
+    dashOrText(valueEl, value);
+    row.appendChild(valueEl);
+    container.appendChild(row);
+  }
+
+  function openDetailModal(document, trigger) {
+    ensureModal().open('Document Details', function (body, close) {
+      var grid = el('div', 'msc-km-detail-grid');
+      detailRow(grid, 'Title', document.title);
+      detailRow(grid, 'Team', document.team);
+      detailRow(grid, 'Document Type', document.document_type);
+      detailRow(grid, 'Job Role', document.job_role);
+      detailRow(grid, 'Document Category', document.document_category);
+      detailRow(grid, 'Creator', document.creator);
+      detailRow(grid, 'Created By', document.created_by);
+      detailRow(grid, 'Current Version', document.current_version);
+      detailRow(grid, 'Lifecycle', document.lifecycle_status);
+      detailRow(grid, 'Compliance', document.compliance_status);
+      detailRow(grid, 'Google Ownership', document.google_ownership_status);
+      detailRow(grid, 'Created', formatTimestamp(document.created_at));
+      detailRow(grid, 'Updated', formatTimestamp(document.updated_at));
+      body.appendChild(grid);
+
+      var linkRow = el('div', 'msc-km-detail-row');
+      linkRow.appendChild(textEl('span', 'msc-km-detail-label', 'Source'));
+      var linkValue = el('span', 'msc-km-detail-value');
+      if (isSafeHttpUrl(document.source_url)) {
+        var a = el('a', 'msc-km-open-link');
+        a.setAttribute('href', document.source_url);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+        a.textContent = 'Open Document';
+        linkValue.appendChild(a);
+      } else {
+        dashOrText(linkValue, null);
+      }
+      linkRow.appendChild(linkValue);
+      body.appendChild(linkRow);
+
+      var actions = el('div', 'msc-km-detail-actions');
+
+      var editBtn = el('button', 'msc-btn msc-btn-ghost');
+      editBtn.type = 'button';
+      editBtn.textContent = 'Edit Metadata';
+      editBtn.addEventListener('click', function () { openEditModal(document, trigger); });
+      actions.appendChild(editBtn);
+
+      var versionBtn = el('button', 'msc-btn msc-btn-ghost');
+      versionBtn.type = 'button';
+      versionBtn.textContent = 'Create New Version';
+      versionBtn.addEventListener('click', function () { openVersionModal(document, trigger); });
+      actions.appendChild(versionBtn);
+
+      var lifecycleBtn = el('button', 'msc-btn msc-btn-ghost');
+      lifecycleBtn.type = 'button';
+      if (document.lifecycle_status === 'Archived') {
+        lifecycleBtn.textContent = 'Unarchive';
+        lifecycleBtn.addEventListener('click', function () { handleUnarchive(document, trigger); });
+      } else {
+        lifecycleBtn.textContent = 'Archive';
+        lifecycleBtn.addEventListener('click', function () { handleArchive(document, trigger); });
+      }
+      actions.appendChild(lifecycleBtn);
+
+      var versionsBtn = el('button', 'msc-btn msc-btn-ghost');
+      versionsBtn.type = 'button';
+      versionsBtn.textContent = 'View Version History';
+      versionsBtn.addEventListener('click', function () { openVersionHistoryModal(document, trigger); });
+      actions.appendChild(versionsBtn);
+
+      var auditBtn = el('button', 'msc-btn msc-btn-ghost');
+      auditBtn.type = 'button';
+      auditBtn.textContent = 'View Audit History';
+      auditBtn.addEventListener('click', function () { openAuditHistoryModal(document, trigger); });
+      actions.appendChild(auditBtn);
+
+      body.appendChild(actions);
+
+      // Secondary/more action area (Phase 12) — visually separated Delete.
+      var moreArea = el('div', 'msc-km-more-actions');
+      var deleteBtn = el('button', 'msc-btn msc-btn-danger msc-km-delete-btn');
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', function () { handleDelete(document, trigger); });
+      moreArea.appendChild(deleteBtn);
+      body.appendChild(moreArea);
+    }, trigger);
+  }
+
+  // ── EDIT METADATA (Phase 9) ──────────────────────────────────────────
+
+  function openEditModal(document, trigger) {
+    ensureModal().open('Edit Metadata', function (body, close) {
+      var form = el('form', 'msc-km-form');
+
+      var titleInput = buildTextField(form, { id: 'msc-km-edit-title', label: 'Document Title (required)', required: true, value: document.title });
+      titleInput.classList.add('msc-km-modal-first-focus');
+      var teamInput = buildTextField(form, { id: 'msc-km-edit-team', label: 'Team (required)', required: true, value: document.team });
+      var typeSelect = buildSelectField(form, { id: 'msc-km-edit-type', label: 'Document Type (required)', options: DOCUMENT_TYPE_OPTIONS, value: document.document_type });
+      var jobRoleInput = buildTextField(form, { id: 'msc-km-edit-job-role', label: 'Job Role (optional)', value: document.job_role });
+      var categoryInput = buildTextField(form, { id: 'msc-km-edit-category', label: 'Document Category (optional)', value: document.document_category });
+      var creatorInput = buildTextField(form, { id: 'msc-km-edit-creator', label: 'Creator (optional)', value: document.creator });
+      var lifecycleSelectEl = buildSelectField(form, { id: 'msc-km-edit-lifecycle', label: 'Lifecycle', options: LIFECYCLE_STATUS_OPTIONS, value: document.lifecycle_status });
+      var complianceSelectEl = buildSelectField(form, { id: 'msc-km-edit-compliance', label: 'Compliance', options: ['Pending', 'Completed'], value: document.compliance_status });
+
+      // Source URL is NOT editable here — the backend explicitly rejects
+      // it on this route (Phase 9). Shown as read-only, with the required
+      // redirect explanation, never as an editable control.
+      var urlNote = el('div', 'msc-km-field');
+      urlNote.appendChild(textEl('span', 'msc-km-field-label', 'Source URL'));
+      var urlReadonly = textEl('p', 'msc-km-readonly-note', document.source_url + ' — use Create New Version to change the document source.');
+      urlNote.appendChild(urlReadonly);
+      form.appendChild(urlNote);
+
+      var changeDescInput = buildTextField(form, {
+        id: 'msc-km-edit-change-description', label: 'Change Description (required)', required: true, multiline: true
+      });
+
+      var actions = el('div', 'msc-km-form-actions');
+      var cancelBtn = el('button', 'msc-btn msc-btn-ghost');
+      cancelBtn.type = 'button';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', close);
+      var saveBtn = el('button', 'msc-btn msc-btn-primary msc-km-modal-primary-focus');
+      saveBtn.type = 'submit';
+      saveBtn.textContent = 'Save';
+      actions.appendChild(cancelBtn);
+      actions.appendChild(saveBtn);
+      form.appendChild(actions);
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearFormErrors(form);
+        var hasError = false;
+        if (!titleInput.value.trim()) { setFieldError(titleInput, 'Enter a document title.'); hasError = true; }
+        if (!teamInput.value.trim()) { setFieldError(teamInput, 'Enter a team.'); hasError = true; }
+        if (!changeDescInput.value.trim()) { setFieldError(changeDescInput, 'Describe what changed.'); hasError = true; }
+        if (hasError) { focusFirstInvalid(form); return; }
+
+        setButtonBusy(saveBtn, true, { busyLabel: 'Saving…' });
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+
+        api.updateMetadata(document.id, {
+          title: titleInput.value.trim(),
+          team: teamInput.value.trim(),
+          document_type: typeSelect.value,
+          job_role: jobRoleInput.value.trim() || null,
+          document_category: categoryInput.value.trim() || null,
+          creator: creatorInput.value.trim() || null,
+          lifecycle_status: lifecycleSelectEl.value,
+          compliance_status: complianceSelectEl.value,
+          change_description: changeDescInput.value.trim()
+        }).then(function (record) {
+          setButtonBusy(saveBtn, false);
+          close();
+          showToast({ type: 'success', title: 'Document updated', message: '"' + record.title + '" was saved.' });
+          loadDocuments();
+        }, function (err) {
+          setButtonBusy(saveBtn, false);
+          saveBtn.disabled = false;
+          cancelBtn.disabled = false;
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        });
+      });
+
+      body.appendChild(form);
+    }, trigger);
+  }
+
+  // ── CREATE VERSION (Phase 10) ────────────────────────────────────────
+
+  function openVersionModal(document, trigger) {
+    ensureModal().open('Create New Version', function (body, close) {
+      var form = el('form', 'msc-km-form');
+
+      var urlInput = buildTextField(form, {
+        id: 'msc-km-version-url', label: 'New Source URL (required)', type: 'url', required: true,
+        value: document.source_url
+      });
+      urlInput.classList.add('msc-km-modal-first-focus');
+      var versionInput = buildTextField(form, { id: 'msc-km-version-label', label: 'Version Label (required)', required: true });
+      var changeDescInput = buildTextField(form, {
+        id: 'msc-km-version-change-description', label: 'Change Description (required)', required: true, multiline: true
+      });
+
+      var actions = el('div', 'msc-km-form-actions');
+      var cancelBtn = el('button', 'msc-btn msc-btn-ghost');
+      cancelBtn.type = 'button';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', close);
+      var saveBtn = el('button', 'msc-btn msc-btn-primary msc-km-modal-primary-focus');
+      saveBtn.type = 'submit';
+      saveBtn.textContent = 'Save';
+      actions.appendChild(cancelBtn);
+      actions.appendChild(saveBtn);
+      form.appendChild(actions);
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearFormErrors(form);
+        var hasError = false;
+        if (!urlInput.value.trim()) {
+          setFieldError(urlInput, 'Enter the new source URL.'); hasError = true;
+        } else if (!isSafeHttpUrl(urlInput.value.trim())) {
+          setFieldError(urlInput, 'Enter a valid http:// or https:// URL.'); hasError = true;
+        }
+        if (!versionInput.value.trim()) { setFieldError(versionInput, 'Enter a version label.'); hasError = true; }
+        if (!changeDescInput.value.trim()) { setFieldError(changeDescInput, 'Describe what changed.'); hasError = true; }
+        if (hasError) { focusFirstInvalid(form); return; }
+
+        setButtonBusy(saveBtn, true, { busyLabel: 'Saving…' });
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+
+        api.createVersion(document.id, {
+          source_url: urlInput.value.trim(),
+          version_label: versionInput.value.trim(),
+          change_description: changeDescInput.value.trim()
+        }).then(function (record) {
+          setButtonBusy(saveBtn, false);
+          close();
+          showToast({ type: 'success', title: 'Version created', message: 'Now on version ' + record.current_version + '.' });
+          loadDocuments();
+        }, function (err) {
+          setButtonBusy(saveBtn, false);
+          saveBtn.disabled = false;
+          cancelBtn.disabled = false;
+          if (err.code === 'knowledge_document_duplicate_source_url') {
+            setFieldError(urlInput, mapApiError(err).message);
+            return;
+          }
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        });
+      });
+
+      body.appendChild(form);
+    }, trigger);
+  }
+
+  // ── ARCHIVE / UNARCHIVE (Phase 11) ───────────────────────────────────
+
+  function handleArchive(document, trigger) {
+    confirmDestructive({
+      title: 'Archive this document?',
+      message: '"' + document.title + '" will be marked Archived. This does not delete it — it remains visible and can be unarchived at any time.',
+      confirmLabel: 'Archive',
+      confirmVariant: 'primary',
+      trigger: trigger,
+      onConfirm: function () {
+        return api.archive(document.id).then(function () {
+          showToast({ type: 'success', title: 'Document archived', message: '"' + document.title + '" is now Archived.' });
+          loadDocuments();
+          return true;
+        }, function (err) {
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+          return false;
+        });
+      }
+    });
+  }
+
+  function handleUnarchive(document, trigger) {
+    api.unarchive(document.id).then(function () {
+      showToast({ type: 'success', title: 'Document unarchived', message: '"' + document.title + '" is now Active.' });
+      loadDocuments();
+    }, function (err) {
+      var mapped = mapApiError(err);
+      showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+    });
+  }
+
+  // ── SOFT DELETE (Phase 12) ───────────────────────────────────────────
+
+  function handleDelete(document, trigger) {
+    ensureModal().open('Delete Document', function (body, close) {
+      var notice = textEl('p', 'msc-km-delete-notice',
+        'This removes "' + document.title + '" from the active list. This is NOT permanent deletion — ' +
+        'the record and its history are kept and can be restored later.');
+      body.appendChild(notice);
+
+      var form = el('form', 'msc-km-form');
+      var reasonInput = buildTextField(form, {
+        id: 'msc-km-delete-reason', label: 'Reason for deletion (required)', required: true, multiline: true
+      });
+      reasonInput.classList.add('msc-km-modal-first-focus');
+
+      var actions = el('div', 'msc-km-form-actions');
+      var cancelBtn = el('button', 'msc-btn msc-btn-ghost');
+      cancelBtn.type = 'button';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', close);
+      var deleteBtn = el('button', 'msc-btn msc-btn-danger msc-km-modal-primary-focus');
+      deleteBtn.type = 'submit';
+      deleteBtn.textContent = 'Delete (not permanent)';
+      actions.appendChild(cancelBtn);
+      actions.appendChild(deleteBtn);
+      form.appendChild(actions);
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearFormErrors(form);
+        if (!reasonInput.value.trim()) {
+          setFieldError(reasonInput, 'Enter a reason for deletion.');
+          focusFirstInvalid(form);
+          return;
+        }
+        setButtonBusy(deleteBtn, true, { busyLabel: 'Deleting…' });
+        deleteBtn.disabled = true;
+        cancelBtn.disabled = true;
+
+        api.softDelete(document.id, reasonInput.value.trim()).then(function () {
+          setButtonBusy(deleteBtn, false);
+          close();
+          showToast({ type: 'success', title: 'Document deleted', message: '"' + document.title + '" was removed from the active list.' });
+          loadDocuments();
+        }, function (err) {
+          setButtonBusy(deleteBtn, false);
+          deleteBtn.disabled = false;
+          cancelBtn.disabled = false;
+          var mapped = mapApiError(err);
+          showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
+        });
+      });
+
+      body.appendChild(form);
+    }, trigger);
+  }
+
+  // ── VERSION HISTORY (Phase 14, read-only) ────────────────────────────
+
+  function openVersionHistoryModal(document, trigger) {
+    ensureModal().open('Version History', function (body, close) {
+      var listEl = el('div', 'msc-km-history-list');
+      listEl.textContent = 'Loading…';
+      body.appendChild(listEl);
+
+      api.listVersions(document.id).then(function (versions) {
+        listEl.textContent = '';
+        if (!versions.length) {
+          listEl.appendChild(textEl('p', 'msc-km-empty', 'No version history yet.'));
+          return;
+        }
+        versions.forEach(function (v) {
+          var item = el('div', 'msc-km-history-item');
+          item.appendChild(textEl('span', 'msc-km-history-version', 'v' + v.version_label));
+          item.appendChild(textEl('span', 'msc-km-history-meta', v.created_by + ' — ' + formatTimestamp(v.created_at)));
+          if (isSafeHttpUrl(v.source_url)) {
+            var a = el('a', 'msc-km-open-link');
+            a.setAttribute('href', v.source_url);
+            a.setAttribute('target', '_blank');
+            a.setAttribute('rel', 'noopener noreferrer');
+            a.textContent = 'Open';
+            item.appendChild(a);
+          }
+          if (v.change_note) { item.appendChild(textEl('p', 'msc-km-history-note', v.change_note)); }
+          listEl.appendChild(item);
+        });
+      }, function (err) {
+        listEl.textContent = '';
+        var mapped = mapApiError(err);
+        listEl.appendChild(textEl('p', 'msc-km-error', mapped.message));
+      });
+    }, trigger);
+  }
+
+  // ── AUDIT HISTORY (Phase 15, read-only) ──────────────────────────────
+
+  function openAuditHistoryModal(document, trigger) {
+    ensureModal().open('Audit History', function (body, close) {
+      var listEl = el('div', 'msc-km-history-list');
+      listEl.textContent = 'Loading…';
+      body.appendChild(listEl);
+
+      api.listAuditLog(document.id).then(function (rows) {
+        listEl.textContent = '';
+        if (!rows.length) {
+          listEl.appendChild(textEl('p', 'msc-km-empty', 'No audit history yet.'));
+          return;
+        }
+        rows.forEach(function (r) {
+          var item = el('div', 'msc-km-history-item');
+          item.appendChild(textEl('span', 'msc-km-history-version', r.action));
+          item.appendChild(textEl('span', 'msc-km-history-meta', r.actor_member_key + ' — ' + formatTimestamp(r.occurred_at)));
+          listEl.appendChild(item);
+        });
+      }, function (err) {
+        listEl.textContent = '';
+        var mapped = mapApiError(err);
+        listEl.appendChild(textEl('p', 'msc-km-error', mapped.message));
+      });
+    }, trigger);
+  }
 
   // ── Table rendering ───────────────────────────────────────────────
 
   function buildOpenDocumentCell(doc) {
     var td = el('td', '');
-    if (!isSafeHttpUrl(doc.sourceUrl)) {
+    if (!isSafeHttpUrl(doc.source_url)) {
       td.appendChild(textEl('span', 'msc-km-dash', '—'));
       return td;
     }
     var a = el('a', 'msc-km-open-link');
-    a.setAttribute('href', doc.sourceUrl);
+    a.setAttribute('href', doc.source_url);
     a.setAttribute('target', '_blank');
     a.setAttribute('rel', 'noopener noreferrer');
     a.textContent = 'Open Document';
@@ -281,7 +1024,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     tr.appendChild(teamTd);
 
     var typeTd = el('td', '');
-    dashOrText(typeTd, doc.documentType);
+    dashOrText(typeTd, doc.document_type);
     tr.appendChild(typeTd);
 
     var creatorTd = el('td', '');
@@ -289,12 +1032,20 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     tr.appendChild(creatorTd);
 
     var versionTd = el('td', '');
-    dashOrText(versionTd, doc.version);
+    dashOrText(versionTd, doc.current_version);
     tr.appendChild(versionTd);
 
     var statusTd = el('td', '');
-    dashOrText(statusTd, doc.status);
+    dashOrText(statusTd, doc.lifecycle_status);
     tr.appendChild(statusTd);
+
+    var actionTd = el('td', 'msc-km-actions-cell');
+    var viewBtn = el('button', 'msc-btn msc-btn-ghost msc-km-view-btn');
+    viewBtn.type = 'button';
+    viewBtn.textContent = 'View';
+    viewBtn.addEventListener('click', function () { openDetailModal(doc, viewBtn); });
+    actionTd.appendChild(viewBtn);
+    tr.appendChild(actionTd);
 
     tr.appendChild(buildOpenDocumentCell(doc));
 
@@ -302,58 +1053,121 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   }
 
   function renderTable() {
-    var filtered = filterDocuments(documents, state.filters);
-    countPill.textContent = filtered.length + (filtered.length === 1 ? ' document' : ' documents');
+    countPill.textContent = state.status === 'data'
+      ? state.documents.length + (state.documents.length === 1 ? ' document' : ' documents')
+      : '';
 
     tableRegion.textContent = '';
 
-    if (!filtered.length) {
-      tableRegion.appendChild(textEl('div', 'msc-km-empty', EMPTY_STATE_TEXT));
+    if (state.status === 'loading') {
+      tableRegion.appendChild(textEl('div', 'msc-km-loading', LOADING_TEXT));
+      return;
+    }
+
+    if (state.status === 'error') {
+      var errWrap = el('div', 'msc-km-error-state');
+      errWrap.setAttribute('role', 'alert');
+      errWrap.appendChild(textEl('p', '', state.errorMessage || ERROR_TEXT));
+      var retryBtn = el('button', 'msc-btn msc-btn-ghost');
+      retryBtn.type = 'button';
+      retryBtn.textContent = 'Retry';
+      retryBtn.addEventListener('click', loadDocuments);
+      errWrap.appendChild(retryBtn);
+      tableRegion.appendChild(errWrap);
+      return;
+    }
+
+    if (!state.documents.length) {
+      var hasActiveFilter = !!(state.filters.search || state.filters.team !== 'all' ||
+        state.filters.documentType !== 'all' || state.filters.lifecycleStatus !== 'all');
+      tableRegion.appendChild(
+        textEl('div', 'msc-km-empty', hasActiveFilter ? FILTERED_EMPTY_STATE_TEXT : EMPTY_STATE_TEXT)
+      );
       return;
     }
 
     var wrap = el('div', 'msc-km-table-wrap');
     var table = el('table', 'msc-km-table');
     var thead = el('thead', '');
-    var headerRow = el('tr', '');
-    ['Document Title', 'Team', 'Document Type', 'Creator', 'Version', 'Status', 'Action'].forEach(function (label) {
-      headerRow.appendChild(textEl('th', '', label));
+    var headerRowEl = el('tr', '');
+    ['Document Title', 'Team', 'Document Type', 'Creator', 'Version', 'Status', 'Action', ''].forEach(function (label) {
+      headerRowEl.appendChild(textEl('th', '', label));
     });
-    thead.appendChild(headerRow);
+    thead.appendChild(headerRowEl);
     var tbody = el('tbody', '');
-    filtered.forEach(function (doc) { tbody.appendChild(buildRow(doc)); });
+    state.documents.forEach(function (doc) { tbody.appendChild(buildRow(doc)); });
     table.appendChild(thead);
     table.appendChild(tbody);
     wrap.appendChild(table);
     tableRegion.appendChild(wrap);
   }
 
-  searchInput.addEventListener('input', function () {
-    state.filters.search = searchInput.value;
+  // ── Orchestration ───────────────────────────────────────────────────
+
+  function loadDocuments() {
+    state.status = 'loading';
+    state.errorMessage = null;
     renderTable();
+    var requestId = ++state.requestId;
+    api.list(state.filters).then(function (result) {
+      if (requestId !== state.requestId) { return; } // superseded by a newer request
+      state.documents = result.records || [];
+      state.status = state.documents.length ? 'data' : 'empty';
+      populateTeamOptions();
+      renderTable();
+    }, function (err) {
+      if (requestId !== state.requestId) { return; }
+      state.status = 'error';
+      state.documents = [];
+      state.errorMessage = mapApiError(err).message || ERROR_TEXT;
+      renderTable();
+    });
+  }
+
+  var searchDebounceHandle = null;
+  searchInput.addEventListener('input', function () {
+    if (searchDebounceHandle) { clearTimeout(searchDebounceHandle); }
+    searchDebounceHandle = setTimeout(function () {
+      state.filters.search = searchInput.value;
+      loadDocuments();
+    }, 250);
   });
   teamSelect.addEventListener('change', function () {
     state.filters.team = teamSelect.value;
-    renderTable();
+    loadDocuments();
   });
   typeSelect.addEventListener('change', function () {
     state.filters.documentType = typeSelect.value;
-    renderTable();
+    loadDocuments();
+  });
+  lifecycleSelect.addEventListener('change', function () {
+    state.filters.lifecycleStatus = lifecycleSelect.value;
+    loadDocuments();
   });
 
-  renderTable();
+  addBtn.addEventListener('click', function () {
+    ensureAuthorized().then(function () { openCreateModal(); }, function () { /* dialog cancelled */ });
+  });
+
+  loadDocuments();
 
   return {
     // Exposed for tests only — not used by production wiring.
-    getState: function () { return state; }
+    getState: function () { return state; },
+    reload: loadDocuments
   };
 }
 
-/* Mounted once at app boot (web-view/js/app.js). No auth/identity gating —
-   Company Documents is read-only and visible to every Management Team
-   member, matching the SRD's stated user group. */
+/* Mounted once at app boot (web-view/js/app.js). Re-mounts from scratch on
+   CALENDAR_AUTH_CHANGED_EVENT (same pattern issues.js already uses) so
+   that if a user authorizes/changes token mid-session, any modal state
+   tied to the previous identity is discarded rather than left stale. */
 export function initKnowledgeManagement() {
   var mountEl = document.getElementById('knowledgeManagementWorkspace');
   if (!mountEl) { return null; }
-  return mountKnowledgeManagementWorkspace(mountEl);
+  var current = mountKnowledgeManagementWorkspace(mountEl);
+  document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, function () {
+    current = mountKnowledgeManagementWorkspace(mountEl);
+  });
+  return current;
 }
