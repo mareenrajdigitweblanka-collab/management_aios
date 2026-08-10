@@ -133,6 +133,20 @@ class FakeElement {
     return child;
   }
 
+  /* Added for staff-data.js's authenticated-module gate
+     (REQ-AUTH-MODULES-007, 2026-08-10, setStaffDataAuthGateVisibility) —
+     inserts before referenceNode, or appends if referenceNode is falsy/not
+     a current child (matches real Node.insertBefore(node, null)
+     semantics). Purely additive; every existing caller of this stand-in
+     is unaffected. */
+  insertBefore(child, referenceNode) {
+    if (this._doc && child instanceof FakeElement) { this._doc._all.push(child); }
+    var idx = referenceNode ? this._children.indexOf(referenceNode) : -1;
+    if (idx === -1) { this._children.push(child); }
+    else { this._children.splice(idx, 0, child); }
+    return child;
+  }
+
   insertAdjacentElement(_position, node) {
     this._afterend = this._afterend || [];
     this._afterend.push(node);

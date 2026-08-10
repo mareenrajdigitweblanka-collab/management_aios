@@ -496,6 +496,41 @@ test('DOM: the real production wiring (initIssues\'s loadingMessage) shows "Load
   assert.equal(mountEl.querySelector('.msc-issues-loading'), null);
 }));
 
+// ── DOM: whole-panel authentication gate (REQ-AUTH-MODULES-007, 2026-08-10) ──
+//
+// A separate question from assignment AUTHORITY (canAssign()) above: these
+// tests cover whether the workspace may be ENTERED/READ at all.
+
+test('DOM: unauthenticated mount shows only the shared "Authorize this browser" placeholder — no table, no filters, no fetch', withEnv(async function () {
+  var mod = await loadIssuesModule();
+  var mountEl = document.createElement('div');
+  var fetchCalled = false;
+  var neverCalledSource = { fetchOptions: function () { fetchCalled = true; return Promise.resolve({ raisedByOptions: [], teamOptions: [] }); } };
+  mod.mountIssuesWorkspace(mountEl, {
+    adapter: mod.createProductionIssuesAdapter(neverCalledSource),
+    getAuthenticatedMemberKey: function () { return null; }
+  });
+  await flush();
+  assert.equal(fetchCalled, false, 'no Staff Data API call while unauthenticated');
+  assert.match(mountEl.textContent, /Authorize this browser to access Issues\./);
+  assert.equal(mountEl.querySelector('.msc-issues-view-tabs'), null);
+  assert.equal(mountEl.querySelector('.msc-issues-count-pill'), null);
+}));
+
+test('DOM: the real production default (no getAuthenticatedMemberKey override, no stored token) shows the placeholder', withEnv(async function () {
+  var mod = await loadIssuesModule();
+  var mountEl = document.createElement('div');
+  mod.mountIssuesWorkspace(mountEl, { adapter: mod.createInMemoryIssuesAdapter(FIXTURE_ISSUES) });
+  await flush();
+  assert.match(mountEl.textContent, /Authorize this browser to access Issues\./);
+}));
+
+test('DOM: authenticated mount shows the real workspace, not the placeholder', withEnv(async function () {
+  var ctx = await mountWithFixtures('mayurika');
+  assert.equal(ctx.mountEl.querySelector('.msc-issues-view-tabs') === null, false);
+  assert.doesNotMatch(ctx.mountEl.textContent, /Authorize this browser/);
+}));
+
 // ── DOM: assignment authority gating (rajiv, md) ─────────────────────────
 
 ['rajiv', 'md'].forEach(function (key) {

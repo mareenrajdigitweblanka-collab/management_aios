@@ -282,6 +282,22 @@
       box-shadow: var(--focus-ring);
     }
 
+    /* Authenticated-module lock state (REQ-AUTH-MODULES-007, 2026-08-10) —
+       Staff Data / Issues / Knowledge Management nav items stay visible and
+       focusable (never hidden — an unauthenticated user still needs a way
+       to discover and trigger authorization) but are visually muted and
+       carry aria-disabled="true" while no Calendar member token is stored.
+       web-view/js/auth-gate.js is the single place that toggles this class;
+       clicking a locked item opens the existing "Authorize this browser"
+       dialog instead of switching tabs (web-view/js/navigation.js). */
+    .app-nav-btn--locked {
+      opacity: .55;
+    }
+
+    .app-nav-btn--locked:hover {
+      background: rgba(255, 255, 255, .04);
+    }
+
     .app-nav-btn-sub {
       font-size: .68rem;
       font-weight: 500;

@@ -218,6 +218,43 @@ test('3. list calls API', withEnv(async () => {
   assert.equal(calls, 1);
 }));
 
+// ── Whole-panel authentication gate (REQ-AUTH-MODULES-007, 2026-08-10) ──
+
+test('2b. unauthenticated mount shows only the shared "Authorize this browser" placeholder — no list() call, no filter bar, no table', withEnv(async () => {
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var listCalled = false;
+  var api = makeFixtureApi({ list: function () { listCalled = true; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); } });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
+  assert.equal(listCalled, false, 'no GET /api/knowledge-documents call while unauthenticated');
+  assert.match(mountEl.allText(), /Authorize this browser to access Knowledge Management\./);
+  assert.equal(mountEl.querySelector('.msc-km-table-wrap'), null);
+  assert.equal(mountEl.querySelector('.msc-km-add-btn'), null);
+}, { storedAuth: null }));
+
+test('2c. re-mounting after authorization (the same re-mount initKnowledgeManagement performs on CALENDAR_AUTH_CHANGED_EVENT) replaces the placeholder with the real workspace', withEnv(async (env) => {
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var listCalls = 0;
+  var api = makeFixtureApi({ list: function () { listCalls += 1; return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); } });
+
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
+  assert.match(mountEl.allText(), /Authorize this browser/);
+  assert.equal(listCalls, 0);
+
+  env.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
+    version: 1, token: 'granted-token', verifiedMemberKey: 'mayurika', verifiedAt: '2026-08-10T00:00:00.000Z'
+  }));
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api }); // initKnowledgeManagement's own re-mount, exercised directly
+
+  await flush();
+  assert.doesNotMatch(mountEl.allText(), /Authorize this browser/);
+  assert.equal(listCalls, 1);
+  assert.ok(mountEl.querySelector('.msc-km-table-wrap') || /KPI Review Guide/.test(mountEl.allText()));
+}, { storedAuth: null }));
+
 test('4. loading state', withEnv(async () => {
   var mod = await loadKmModule();
   var mountEl = document.createElement('div');

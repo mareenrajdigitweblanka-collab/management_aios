@@ -381,12 +381,12 @@ class MdReadAccessTests(MdAuthorizationTestCase):
         self.assertEqual(detail_resp.status_code, 404)
 
     def test_md_can_access_minimal_employee_lookup(self):
-        """GET /api/staff is the SAME pre-existing, unauthenticated staff
-        selector endpoint Review Summaries already uses for every member —
-        REQ-CAL-REV-MD-READ-006 adds no new endpoint and no new field
-        projection. MD's Authorization header is simply ignored by this
-        route (it has no auth dependency at all), the same as it would be
-        for any other caller."""
+        """GET /api/staff is the SAME staff selector endpoint Review
+        Summaries already uses for every member — REQ-CAL-REV-MD-READ-006
+        adds no new endpoint and no new field projection. It now requires
+        authentication for every caller (REQ-AUTH-MODULES-007,
+        2026-08-10); MD's Authorization header satisfies that exactly like
+        any other authenticated Management Team member's would."""
         self.seed_staff(full_name="Lookup Target")
         resp = self.client.get(
             "/api/staff",
@@ -595,22 +595,30 @@ class MdUnrelatedPermissionsTests(MdAuthorizationTestCase):
         self.assertEqual(resp.status_code, 409)
 
     def test_md_gains_no_additional_staff_data_access(self):
-        """GET /api/staff has no auth dependency at all today — it is
-        already public/unauthenticated for every caller, MD included. This
-        test confirms MD's token grants no ADDITIONAL scope/fields beyond
-        what an unauthenticated request already receives — REQ-CAL-REV-MD-
-        READ-006 adds no new Staff Data dashboard access for MD; it simply
-        does not change this pre-existing endpoint at all."""
+        """GET /api/staff now requires the same Calendar member token every
+        other authenticated route requires (REQ-AUTH-MODULES-007,
+        2026-08-10 — Staff Data is no longer public for anyone, MD
+        included). This test confirms MD's token grants no ADDITIONAL
+        scope/fields beyond what any other authenticated Management Team
+        member already receives — REQ-CAL-REV-MD-READ-006 adds no special
+        Staff Data dashboard access for MD; it is just one more
+        authenticated identity among the six this endpoint now accepts."""
         self.seed_staff(full_name="Parity Check Staff")
         anon_resp = self.client.get("/api/staff", params={"search": "Parity Check Staff"})
+        member_resp = self.client.get(
+            "/api/staff",
+            params={"search": "Parity Check Staff"},
+            headers=bearer_header("mayurika"),
+        )
         md_resp = self.client.get(
             "/api/staff",
             params={"search": "Parity Check Staff"},
             headers=bearer_header(MD_MEMBER_KEY),
         )
-        self.assertEqual(anon_resp.status_code, 200)
+        self.assertEqual(anon_resp.status_code, 401)
+        self.assertEqual(member_resp.status_code, 200)
         self.assertEqual(md_resp.status_code, 200)
-        self.assertEqual(anon_resp.json(), md_resp.json())
+        self.assertEqual(member_resp.json(), md_resp.json())
 
 
 # ── Config-loader unit tests (no HTTP, no database) ─────────────────────

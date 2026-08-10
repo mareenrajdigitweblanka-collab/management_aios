@@ -6,9 +6,26 @@
    the former separate top tab strip was removed; every nav item is now an
    .app-nav-btn. One source of truth for the active panel — no per-item
    navigation code. Search + data-goto jump behaviour preserved verbatim.
-   Wired exactly once by app.js after DOMContentLoaded. */
+   Wired exactly once by app.js after DOMContentLoaded.
+
+   Authenticated-module gate (REQ-AUTH-MODULES-007, 2026-08-10) — Staff
+   Data/Issues/Knowledge Management (auth-gate.js PROTECTED_TABS) may not
+   be activated while this browser holds no Calendar member token.
+   activatePanel() below is the ONE place every panel switch goes through
+   (nav click, [data-goto] jump, and the auth-loss fallback here), so
+   gating it is sufficient to reject direct/programmatic activation from
+   any current caller — there is no second panel-switching code path
+   anywhere else in this codebase (confirmed by inspection). */
 
 import { returnFocus } from './ui/popup.js';
+import {
+  isProtectedTab,
+  isAuthenticated,
+  requestAuthorization,
+  onAuthChange
+} from './auth-gate.js';
+
+var DEFAULT_TAB_ID = 'root-aios';
 
 export function initNavigation() {
   'use strict';
@@ -16,7 +33,7 @@ export function initNavigation() {
   var sideNavBtns = document.querySelectorAll('.app-nav-btn');
   var tabPanels = document.querySelectorAll('.tab-panel');
 
-  function activatePanel(targetId) {
+  function setPanelActive(targetId) {
     sideNavBtns.forEach(function (btn) {
       var on = btn.getAttribute('data-tab') === targetId;
       btn.classList.toggle('active', on);
@@ -33,6 +50,57 @@ export function initNavigation() {
        redesign task, 2026-07-23, Step 12). */
     document.dispatchEvent(new CustomEvent('msc:close-toolbar-popovers'));
   }
+
+  /* A protected target requested while unauthenticated never activates —
+     it opens the existing "Authorize this browser" dialog (same
+     ensureAuthorized() primitive every Calendar mutation already uses)
+     and only switches panels once that resolves to a confirmed,
+     successful authorization. A cancelled/failed dialog leaves the
+     current panel exactly as it was. */
+  function activatePanel(targetId) {
+    if (isProtectedTab(targetId) && !isAuthenticated()) {
+      requestAuthorization().then(function (granted) {
+        if (granted) { setPanelActive(targetId); }
+      });
+      return;
+    }
+    setPanelActive(targetId);
+  }
+
+  function currentActiveTabId() {
+    var found = null;
+    sideNavBtns.forEach(function (btn) {
+      if (btn.classList.contains('active')) { found = btn.getAttribute('data-tab'); }
+    });
+    return found;
+  }
+
+  /* Sidebar lock state — protected nav items stay visible and focusable
+     (never hidden entirely: an unauthenticated user still needs a
+     discoverable way to start authorization) but are visually muted and
+     carry aria-disabled="true" until a Calendar member token is stored;
+     "become available" the moment one is (Phase 11's preferred UX).
+     Re-run on every authentication transition (authorize, change token,
+     401-triggered clear) and once at boot. If the panel currently showing
+     is itself protected and authorization is lost while viewing it
+     (logout / invalid token — Phase 12), falls back to the default public
+     tab rather than leaving a gated panel "active" with no accessible
+     content behind it. */
+  function applyProtectedNavState() {
+    var authed = isAuthenticated();
+    sideNavBtns.forEach(function (btn) {
+      if (!isProtectedTab(btn.getAttribute('data-tab'))) { return; }
+      btn.classList.toggle('app-nav-btn--locked', !authed);
+      if (authed) { btn.removeAttribute('aria-disabled'); }
+      else { btn.setAttribute('aria-disabled', 'true'); }
+    });
+    if (!authed && isProtectedTab(currentActiveTabId())) {
+      setPanelActive(DEFAULT_TAB_ID);
+    }
+  }
+
+  applyProtectedNavState();
+  onAuthChange(applyProtectedNavState);
 
   sideNavBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {

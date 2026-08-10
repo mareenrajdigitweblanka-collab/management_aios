@@ -291,7 +291,7 @@ class ListDetailTests(KnowledgeDocumentsTestCase):
             title="Deleted One", source_url="https://example.com/deleted-doc",
             deleted_at=datetime.now(timezone.utc), deleted_by="mayurika", delete_reason="x",
         )
-        response = self.client.get(BASE)
+        response = self.client.get(BASE, headers=bearer_header("mayurika"))
         self.assertEqual(response.status_code, 200)
         titles = [r["title"] for r in response.json()["records"]]
         self.assertIn("Active One", titles)
@@ -300,21 +300,21 @@ class ListDetailTests(KnowledgeDocumentsTestCase):
     def test_20_title_search(self):
         self.seed_document(title="Developer Validation Checklist", source_url="https://example.com/a")
         self.seed_document(title="Arun Task Schedule", source_url="https://example.com/b")
-        response = self.client.get(BASE, params={"search": "developer"})
+        response = self.client.get(BASE, params={"search": "developer"}, headers=bearer_header("mayurika"))
         titles = [r["title"] for r in response.json()["records"]]
         self.assertEqual(titles, ["Developer Validation Checklist"])
 
     def test_21_team_filter(self):
         self.seed_document(title="HR Doc", team="HR", source_url="https://example.com/a")
         self.seed_document(title="Dev Doc", team="Development", source_url="https://example.com/b")
-        response = self.client.get(BASE, params={"team": "Development"})
+        response = self.client.get(BASE, params={"team": "Development"}, headers=bearer_header("mayurika"))
         titles = [r["title"] for r in response.json()["records"]]
         self.assertEqual(titles, ["Dev Doc"])
 
     def test_22_document_type_filter(self):
         self.seed_document(title="Sheet Doc", document_type="Google Sheet", source_url="https://example.com/a")
         self.seed_document(title="PDF Doc", document_type="PDF", source_url="https://example.com/b")
-        response = self.client.get(BASE, params={"document_type": "PDF"})
+        response = self.client.get(BASE, params={"document_type": "PDF"}, headers=bearer_header("mayurika"))
         titles = [r["title"] for r in response.json()["records"]]
         self.assertEqual(titles, ["PDF Doc"])
 
@@ -326,19 +326,35 @@ class ListDetailTests(KnowledgeDocumentsTestCase):
         self.seed_document(
             title="KPI Notes", team="HR", document_type="Google Sheet", source_url="https://example.com/b"
         )
-        response = self.client.get(BASE, params={"search": "KPI", "team": "Management", "document_type": "Google Sheet"})
+        response = self.client.get(
+            BASE,
+            params={"search": "KPI", "team": "Management", "document_type": "Google Sheet"},
+            headers=bearer_header("mayurika"),
+        )
         titles = [r["title"] for r in response.json()["records"]]
         self.assertEqual(titles, ["KPI Review Guide"])
 
     def test_24_detail(self):
         doc_id = self.seed_document(title="Detail Target")
-        response = self.client.get(f"{BASE}/{doc_id}")
+        response = self.client.get(f"{BASE}/{doc_id}", headers=bearer_header("mayurika"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["title"], "Detail Target")
 
     def test_25_missing_id_handling(self):
-        response = self.client.get(f"{BASE}/00000000-0000-0000-0000-000000000000")
+        response = self.client.get(
+            f"{BASE}/00000000-0000-0000-0000-000000000000", headers=bearer_header("mayurika")
+        )
         self.assertEqual(response.status_code, 404)
+
+    def test_25b_unauthenticated_list_rejected(self):
+        self.seed_document(title="Active One")
+        response = self.client.get(BASE)
+        self.assertEqual(response.status_code, 401)
+
+    def test_25c_unauthenticated_detail_rejected(self):
+        doc_id = self.seed_document(title="Detail Target")
+        response = self.client.get(f"{BASE}/{doc_id}")
+        self.assertEqual(response.status_code, 401)
 
 
 # ── UPDATE (26-31) ────────────────────────────────────────────────────────
@@ -479,7 +495,7 @@ class ArchiveTests(KnowledgeDocumentsTestCase):
         self.client.post(f"{BASE}/{doc_id}/archive", headers=bearer_header("paraparan"))
         row = self.get_document_row(doc_id)
         self.assertIsNone(row.deleted_at)
-        response = self.client.get(f"{BASE}/{doc_id}")
+        response = self.client.get(f"{BASE}/{doc_id}", headers=bearer_header("paraparan"))
         self.assertEqual(response.status_code, 200)
 
     def test_39_unarchive_succeeds(self):
@@ -751,8 +767,15 @@ class MdReadOnlyTests(KnowledgeDocumentsTestCase):
 
     def test_md_can_still_read_list(self):
         self.seed_document()
-        response = self.client.get(BASE)
+        response = self.client.get(BASE, headers=bearer_header("mayurika"))
         self.assertEqual(response.status_code, 200)
+
+    def test_md_can_read_list_and_detail(self):
+        doc_id = self.seed_document(title="MD Readable")
+        list_response = self.client.get(BASE, headers=bearer_header("md"))
+        self.assertEqual(list_response.status_code, 200)
+        detail_response = self.client.get(f"{BASE}/{doc_id}", headers=bearer_header("md"))
+        self.assertEqual(detail_response.status_code, 200)
 
 
 if __name__ == "__main__":

@@ -14,8 +14,8 @@
 
    API contract (read from backend/routers/knowledge_documents.py,
    backend/schemas.py, backend/models.py — never guessed):
-     GET    /api/knowledge-documents                        public, ?team=&document_type=&lifecycle_status=&search=&limit=&offset= -> {records, total, limit, offset}
-     GET    /api/knowledge-documents/{id}                    public -> KnowledgeDocumentOut
+     GET    /api/knowledge-documents                          auth, ?team=&document_type=&lifecycle_status=&search=&limit=&offset= -> {records, total, limit, offset}
+     GET    /api/knowledge-documents/{id}                      auth -> KnowledgeDocumentOut
      POST   /api/knowledge-documents                          auth, {title, team, document_type, job_role?, document_category?, creator?, source_url} -> 201 KnowledgeDocumentOut (warnings[])
      PATCH  /api/knowledge-documents/{id}                     auth, {title?, team?, document_type?, job_role?, document_category?, creator?, lifecycle_status?, compliance_status?, change_description} -> KnowledgeDocumentOut (source_url is REJECTED here — 422)
      POST   /api/knowledge-documents/{id}/versions             auth, {source_url, version_label, change_description} -> 201 KnowledgeDocumentOut
@@ -41,16 +41,22 @@
    VIEW / RESTORE section below. Every CRUD workflow this module supports
    is now fully implemented — there is no longer a blocked workflow.
 
-   Auth model: LIST/DETAIL are public reads (no token) — same shape as
-   Task/Leave's own public-GET/protected-mutation split, NOT Review
-   Summaries' whole-panel-gated model (which does not fit here, since KM
-   documents are meant to be visible without a token). Every mutation AND
-   both history-read routes require the existing Calendar member token
-   (web-view/js/calendar/auth.js) — no second auth system, no new token
-   type. kmProtectedRequest() below calls ensureAuthorized() first
-   (opens the existing "Authorize this browser" dialog if no token is
-   stored yet), exactly like calendar/instance.js's own apiRequest()
-   mutation path.
+   Auth model (REVISED, REQ-AUTH-MODULES-007, 2026-08-10): Knowledge
+   Management is now a whole-panel-gated module, same shape as Review
+   Summaries — LIST and DETAIL used to be public reads (no token), matching
+   Task/Leave's own public-GET/protected-mutation split, but that no longer
+   satisfies the requirement that unauthenticated users must not be able to
+   view or retrieve Knowledge Management data at all. Every route in this
+   file — LIST, DETAIL, every mutation, and both history-read routes — now
+   requires the existing Calendar member token (web-view/js/calendar/auth.js)
+   — no second auth system, no new token type. mountKnowledgeManagementWorkspace()
+   itself renders auth-gate.js's shared "Authorize this browser" placeholder
+   INSTEAD OF the workspace (and never calls loadDocuments()) while
+   unauthenticated, so no request — not even LIST — is ever attempted
+   without a stored token; kmProtectedRequest() below (used for every route
+   now, including LIST/DETAIL) additionally calls ensureAuthorized() itself
+   as defense-in-depth, exactly like calendar/instance.js's own
+   apiRequest() mutation path.
 
    Built via createElement/appendChild with textContent for every
    document-authored field (never innerHTML for untrusted text) — same
@@ -64,6 +70,7 @@ import {
   getStoredMemberKey,
   handleUnauthorizedResponse
 } from './calendar/auth.js';
+import { buildAuthRequiredNotice } from './auth-gate.js';
 import { confirmDestructive } from './ui/dialog.js';
 import { showToast } from './ui/toast.js';
 import { setButtonBusy } from './ui/loading.js';
@@ -167,27 +174,15 @@ function parseJsonSafely(res) {
   });
 }
 
-/* Public reads (LIST/DETAIL) — no Authorization header, matches the
-   backend's own public-GET routes exactly. */
-function kmPublicRequest(pathAndQuery) {
-  return fetch(KNOWLEDGE_DOCUMENTS_API_BASE + pathAndQuery, { cache: 'no-store' }).then(function (res) {
-    return parseJsonSafely(res).then(function (body) {
-      if (!res.ok) {
-        var err = new Error((body && body.message) || 'Request failed.');
-        err.status = res.status;
-        err.code = classifyHttpStatus(res.status);
-        err.body = body;
-        throw err;
-      }
-      return body;
-    });
-  });
-}
-
-/* Every mutation, plus the two auth-required history-read routes.
-   ensureAuthorized() opens the existing "Authorize this browser" dialog
-   if no token is stored yet — the same primitive calendar/instance.js's
-   own apiRequest() mutation path already uses; no second auth system. */
+/* Every route in this file (LIST/DETAIL included, REQ-AUTH-MODULES-007,
+   2026-08-10) goes through this one function. ensureAuthorized() opens the
+   existing "Authorize this browser" dialog if no token is stored yet — the
+   same primitive calendar/instance.js's own apiRequest() mutation path
+   already uses; no second auth system. In normal operation this dialog is
+   never seen for LIST/DETAIL because mountKnowledgeManagementWorkspace()
+   never calls them while unauthenticated (see module docstring) — this is
+   defense-in-depth for the mid-session token-loss case, not the primary
+   gate. */
 function kmProtectedRequest(pathAndQuery, options) {
   options = options || {};
   return ensureAuthorized().then(function (token) {
@@ -229,11 +224,11 @@ function kmProtectedRequest(pathAndQuery, options) {
 }
 
 export function listKnowledgeDocuments(filters) {
-  return kmPublicRequest('?' + buildListQueryString(filters));
+  return kmProtectedRequest('?' + buildListQueryString(filters));
 }
 
 export function getKnowledgeDocument(id) {
-  return kmPublicRequest('/' + id);
+  return kmProtectedRequest('/' + id);
 }
 
 export function createKnowledgeDocument(payload) {
@@ -360,6 +355,24 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   }
 
   mountEl.textContent = '';
+
+  /* Whole-panel gate (REQ-AUTH-MODULES-007, 2026-08-10) — while
+     unauthenticated, this is the ENTIRE mount: no filter bar, no table, no
+     Add button, and critically no api.list() call at all (the only thing
+     GET /api/knowledge-documents ever sees from this module is a request
+     already carrying a valid Authorization header). initKnowledgeManagement()
+     re-mounts from scratch on CALENDAR_AUTH_CHANGED_EVENT, so authorizing
+     (via this notice's own button, the sidebar lock, or any other trigger)
+     replaces this placeholder with the real workspace automatically — no
+     page refresh needed. */
+  if (currentAccess() === 'unauthorized') {
+    mountEl.appendChild(buildAuthRequiredNotice('knowledge-management'));
+    return {
+      getState: function () { return state; },
+      reload: function () {},
+      reloadDeleted: function () {}
+    };
+  }
 
   var headerRow = el('div', 'msc-km-header-row');
   var heading = textEl('h3', 'msc-km-section-heading', 'Company Documents');

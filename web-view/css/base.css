@@ -426,3 +426,29 @@
       }
     }
 
+    /* Shared "Authorize this browser" in-panel placeholder (REQ-AUTH-
+       MODULES-007, 2026-08-10) — the ONE gate every protected module
+       (Staff Data, Issues, Knowledge Management) renders instead of its
+       real content/data while unauthenticated (web-view/js/auth-gate.js
+       buildAuthRequiredNotice()). Same visual language as the pre-existing
+       .review-summaries-unauthorized notice (review-summaries.css), kept
+       here instead of duplicated per-module since it is now shared by
+       three modules rather than one. */
+    .msc-auth-required {
+      color: var(--blocked);
+      background: var(--blocked-bg);
+      border: 1px solid var(--blocked);
+      border-radius: var(--radius-sm);
+      padding: var(--space-3) var(--space-4);
+      margin: var(--space-3) 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-2);
+    }
+
+    .msc-auth-required-message {
+      font-size: var(--font-sm);
+      margin: 0;
+    }
+

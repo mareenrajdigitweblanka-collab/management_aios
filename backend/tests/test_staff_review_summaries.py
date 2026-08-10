@@ -151,7 +151,7 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
 
     def test_staff_record_out_exposes_uuid_id(self):
         staff_id = self.seed_staff()
-        resp = self.client.get("/api/staff")
+        resp = self.client.get("/api/staff", headers=bearer_header("mayurika"))
         self.assertEqual(resp.status_code, 200)
         records = resp.json()["records"]
         self.assertEqual(len(records), 1)
@@ -165,7 +165,7 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
 
     def test_existing_staff_api_fields_remain_compatible(self):
         self.seed_staff(full_name="Compat Check", calling_name="Compat")
-        resp = self.client.get("/api/staff")
+        resp = self.client.get("/api/staff", headers=bearer_header("mayurika"))
         self.assertEqual(resp.status_code, 200)
         record = resp.json()["records"][0]
         for field in (

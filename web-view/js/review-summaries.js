@@ -108,6 +108,7 @@ import {
   ensureAuthorized,
   handleUnauthorizedResponse,
   getStoredMemberKey,
+  getStoredToken,
   CALENDAR_AUTH_CHANGED_EVENT
 } from './calendar/auth.js';
 import { resolveMember, isReadOnlyMember } from './member-registry.js';
@@ -460,10 +461,20 @@ function reviewSummariesApiRequest(pathAndQuery, options) {
   });
 }
 
+/* GET /api/staff now requires the same Calendar member token this whole
+   workspace already requires just to be visible (currentAccess() above
+   hides staffPanel — and therefore this search field — entirely while
+   unauthorized, REQ-AUTH-MODULES-007, 2026-08-10), so a stored token is
+   always expected to be present by the time this is ever called; the
+   Authorization header is added for correctness/defense-in-depth, not
+   because this call site could otherwise be reached unauthenticated. */
 function fetchStaffOptions(search, includeInactive, signal) {
   var params = ['limit=20', 'search=' + encodeURIComponent(search || '')];
   if (!includeInactive) { params.push('staff_status=Active'); }
-  return fetch(STAFF_API_BASE + '?' + params.join('&'), signal ? { signal: signal } : undefined)
+  var token = getStoredToken();
+  var options = { headers: token ? { 'Authorization': 'Bearer ' + token } : undefined };
+  if (signal) { options.signal = signal; }
+  return fetch(STAFF_API_BASE + '?' + params.join('&'), options)
     .then(function (res) {
       if (!res.ok) { throw new Error('Staff lookup failed.'); }
       return res.json();

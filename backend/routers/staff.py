@@ -15,6 +15,19 @@ not exist on StaffDashboardRecord at all (see backend/models.py), and
 StaffRecordOut (backend/schemas.py) additionally only declares the 16
 approved fields, so nothing else could be exposed by this router even if
 the ORM model changed shape unexpectedly.
+
+Authentication (REQ-AUTH-MODULES-007, 2026-08-10): every route below now
+requires the existing Calendar member token — Depends(get_verified_member),
+the same dependency every Task/Leave mutation route already uses (backend/
+routers/calendar_auth.py). Staff Data was previously fully public; that no
+longer satisfies the requirement that unauthenticated users must not be
+able to retrieve Staff Data via the API. This is a read-authorization
+change only — no schema, query, or response-field change. Any
+authenticated Management Team member (or MD) may read; there is no
+per-member scoping here, matching Knowledge Management's own "any
+authenticated member may read" convention rather than Task/Leave's
+own-member-only mutation lock (staff records are not owned by a
+particular member).
 """
 
 from typing import List, Optional
@@ -26,6 +39,7 @@ from sqlalchemy.orm import Session
 from backend.config import VALID_EMPLOYMENT_STAGES, VALID_LOCATIONS, VALID_STAFF_STATUSES
 from backend.database import get_db
 from backend.models import StaffDashboardRecord
+from backend.routers.calendar_auth import get_verified_member
 from backend.schemas import (
     StaffFilterOptionsResponse,
     StaffListResponse,
@@ -117,6 +131,7 @@ def list_staff_records(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
 ):
     query = _apply_filters(_base_query(db), team, staff_status, employment_stage, search, location)
 
@@ -175,7 +190,7 @@ def list_staff_records(
 
 
 @router.get("/summary", response_model=StaffSummaryResponse)
-def staff_summary(db: Session = Depends(get_db)):
+def staff_summary(db: Session = Depends(get_db), acting_member: str = Depends(get_verified_member)):
     base = _base_query(db)
 
     def count_where(*conditions):
@@ -197,7 +212,7 @@ def staff_summary(db: Session = Depends(get_db)):
 
 
 @router.get("/filter-options", response_model=StaffFilterOptionsResponse)
-def staff_filter_options(db: Session = Depends(get_db)):
+def staff_filter_options(db: Session = Depends(get_db), acting_member: str = Depends(get_verified_member)):
     base = _base_query(db)
 
     teams = [

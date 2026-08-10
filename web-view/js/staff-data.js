@@ -7,6 +7,8 @@
 import { trapTab, returnFocus } from './ui/popup.js';
 import { renderSkeletonRows } from './ui/loading.js';
 import { mapApiError, classifyHttpStatus } from './ui/error-mapper.js';
+import { getStoredToken, handleUnauthorizedResponse } from './calendar/auth.js';
+import { isAuthenticated, onAuthChange, buildAuthRequiredNotice } from './auth-gate.js';
 
 // DEV/FALLBACK-ONLY synthetic sample dataset — generated verbatim from
 // member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv.
@@ -128,10 +130,26 @@ export var STAFF_API_BASE = (function () {
   return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
 }());
 
+/* GET /api/staff* now requires the existing Calendar member token
+   (REQ-AUTH-MODULES-007, 2026-08-10) — the Authorization header is added
+   here, the ONE place every request in this file is issued, rather than
+   at each of the three call sites below. A 401 means the previously
+   stored token is no longer accepted (expired/rotated/invalidated
+   elsewhere) — handleUnauthorizedResponse() (calendar/auth.js) discards it
+   and fires CALENDAR_AUTH_CHANGED_EVENT immediately, the same reaction
+   every other protected module in this app already has to a 401, so the
+   sidebar/panel gates in this file (initStaffDataTab/
+   initTeamScopedStaffPilot below) re-run and fall back to the "Authorize
+   this browser" placeholder rather than leaving stale staff data on
+   screen. */
 function staffApiRequest(url, signal) {
-  return fetch(url, signal ? { signal: signal } : undefined).then(function (res) {
+  var token = getStoredToken();
+  var options = { headers: token ? { 'Authorization': 'Bearer ' + token } : undefined };
+  if (signal) { options.signal = signal; }
+  return fetch(url, options).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function () {
+        if (res.status === 401) { handleUnauthorizedResponse(); }
         /* Tagged with a stable .code (Phase 1 professional-UX-feedback
            task, 2026-07-22) so ui/error-mapper.js maps it to a plain-
            language message — never a raw HTTP status/JSON body shown to
@@ -764,6 +782,35 @@ function renderKpiPanel(containerEl, teamCode) {
   });
 }
 
+/* Shared authenticated-module gate for every Staff Data data-bearing
+   widget in this file (REQ-AUTH-MODULES-007, 2026-08-10) — the Staff Data
+   tab itself AND the two PH Staff Data pilots embedded inside Arun's and
+   Paraparan's own Calendar tabs (initTeamScopedStaffPilot below). Those
+   two embedded pilots are real Staff Data — same GET /api/staff, same
+   fields — so they are gated exactly like the Staff Data tab, even though
+   the Calendar tabs that host them otherwise remain fully public; only
+   this one sub-panel within each of those tabs is affected.
+
+   `contentEls` are toggled via the native `hidden` attribute (never
+   removed from the DOM — nothing about their own state/listeners is
+   disturbed, so re-authenticating needs no rebuild of anything static);
+   the shared "Authorize this browser" notice (auth-gate.js) is
+   inserted/removed as ONE marked sibling so repeated calls never leave a
+   duplicate behind. */
+function setStaffDataAuthGateVisibility(hostEl, contentEls, authed) {
+  contentEls.forEach(function (el) { if (el) { el.hidden = !authed; } });
+  var existingNotice = hostEl.querySelector('.msc-staff-data-auth-notice');
+  if (authed) {
+    if (existingNotice) { hostEl.removeChild(existingNotice); }
+    return;
+  }
+  if (!existingNotice) {
+    var notice = buildAuthRequiredNotice('staff-data');
+    notice.classList.add('msc-staff-data-auth-notice');
+    hostEl.insertBefore(notice, contentEls[0] || hostEl.firstChild);
+  }
+}
+
 // ── Staff Data tab: 3 subtabs + 1 shared filter bar. Each subtab owns
 // its own mountStaffTableView instance (independent sort/page/density/
 // column-visibility state), while all three share the one filter bar's
@@ -774,48 +821,73 @@ function initStaffDataTab() {
   var panel = document.getElementById('tab-staff-data');
   if (!panel) return;
   var filterBarEl = document.getElementById('staff-data-filter-bar');
+  var subtabBarEl = panel.querySelector('.staff-subtab-bar');
   var subtabBtns = panel.querySelectorAll('.staff-subtab-btn');
   var subpanels = panel.querySelectorAll('.staff-subpanel');
 
-  var controllers = {};
-  subpanels.forEach(function (sp) {
-    var key = sp.id.replace('staff-subpanel-', '');
-    controllers[key] = mountStaffTableView(sp.querySelector('.staff-table-container'), key);
+  /* Subtab switching is a pure UI toggle over already-mounted subpanels —
+     it never fetches and never depends on which data is currently loaded,
+     so (unlike the data load below) it is wired exactly once, here, and
+     never needs to be re-wired across an auth transition. Wiring it again
+     on every re-authentication would attach a second, third, ... duplicate
+     click listener to these same static buttons — mountData() below is
+     safe to call repeatedly only because everything IT touches is rebuilt
+     from scratch (innerHTML-cleared) on every call; these buttons are not. */
+  subtabBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      subtabBtns.forEach(function (b) {
+        var active = b === btn;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      subpanels.forEach(function (sp) {
+        sp.classList.toggle('active', sp.id === 'staff-subpanel-' + btn.getAttribute('data-staff-subtab'));
+      });
+    });
   });
 
-  function loadAll(userFilters) {
+  /* Re-run on mount and on every authentication transition
+     (CALENDAR_AUTH_CHANGED_EVENT, via onAuthChange). While unauthenticated
+     this renders ONLY the shared placeholder — no mountStaffTableView()
+     call, no filter bar, and critically no staffApiRequest() call at all
+     (not even for filter-options), so no Staff Data request of any kind
+     ever leaves the browser without a stored token. */
+  function mountData() {
+    var authed = isAuthenticated();
+    setStaffDataAuthGateVisibility(panel, [filterBarEl, subtabBarEl].concat(Array.prototype.slice.call(subpanels)), authed);
+    if (!authed) { return; }
+
+    var controllers = {};
     subpanels.forEach(function (sp) {
       var key = sp.id.replace('staff-subpanel-', '');
-      var effective = mergeStaffFilters(STAFF_SUBTAB_BASE_FILTERS[key], userFilters);
-      controllers[key].load(effective);
+      controllers[key] = mountStaffTableView(sp.querySelector('.staff-table-container'), key);
+    });
+
+    function loadAll(userFilters) {
+      subpanels.forEach(function (sp) {
+        var key = sp.id.replace('staff-subpanel-', '');
+        var effective = mergeStaffFilters(STAFF_SUBTAB_BASE_FILTERS[key], userFilters);
+        controllers[key].load(effective);
+      });
+    }
+
+    // Team dropdown options come from the live API (real department/team
+    // values currently in the table), not a hardcoded or client-side list.
+    staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
+      var filterApi = createStaffFilterBar(filterBarEl, opts.teams || [], loadAll, { instanceId: 'staff-data' });
+      loadAll(filterApi.getFilters());
+    }).catch(function () {
+      // Filter-options fetch failed (e.g. backend not running) — still
+      // let each subtab's controller show its own error+Retry state, and
+      // fall back to an empty (unlocked, no options) filter bar rather
+      // than leaving the page half-built.
+      var filterApi = createStaffFilterBar(filterBarEl, [], loadAll, { instanceId: 'staff-data' });
+      loadAll(filterApi.getFilters());
     });
   }
 
-  // Team dropdown options come from the live API (real department/team
-  // values currently in the table), not a hardcoded or client-side list.
-  staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
-    var filterApi = createStaffFilterBar(filterBarEl, opts.teams || [], loadAll, { instanceId: 'staff-data' });
-    subtabBtns.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        subtabBtns.forEach(function (b) {
-          var active = b === btn;
-          b.classList.toggle('active', active);
-          b.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
-        subpanels.forEach(function (sp) {
-          sp.classList.toggle('active', sp.id === 'staff-subpanel-' + btn.getAttribute('data-staff-subtab'));
-        });
-      });
-    });
-    loadAll(filterApi.getFilters());
-  }).catch(function () {
-    // Filter-options fetch failed (e.g. backend not running) — still
-    // let each subtab's controller show its own error+Retry state, and
-    // fall back to an empty (unlocked, no options) filter bar rather
-    // than leaving the page half-built.
-    var filterApi = createStaffFilterBar(filterBarEl, [], loadAll, { instanceId: 'staff-data' });
-    loadAll(filterApi.getFilters());
-  });
+  mountData();
+  onAuthChange(mountData);
 }
 
 // ── Team-scoped staff + KPI pilot section — used identically by the
@@ -829,17 +901,32 @@ function initTeamScopedStaffPilot(mountEl) {
   var tableEl = mountEl.querySelector('.staff-table-container');
   var kpiMountEl = mountEl.querySelector('.kpi-pilot-mount');
   var baseFilters = { team: teamCode };
-  var controller = mountStaffTableView(tableEl, mountId);
 
-  function loadTable(userFilters) {
-    var effective = mergeStaffFilters(baseFilters, userFilters);
-    effective.team = teamCode; // locked — never overridden by the user
-    controller.load(effective);
+  /* renderKpiPanel is synthetic, in-memory, non-Staff-API data (see its
+     own comment above) — unaffected by REQ-AUTH-MODULES-007 and rendered
+     unconditionally, exactly as before; only the live staff table+filter
+     bar below is gated. */
+  renderKpiPanel(kpiMountEl, teamCode);
+
+  function mountData() {
+    var authed = isAuthenticated();
+    setStaffDataAuthGateVisibility(mountEl, [filterBarEl, tableEl], authed);
+    if (!authed) { return; }
+
+    var controller = mountStaffTableView(tableEl, mountId);
+
+    function loadTable(userFilters) {
+      var effective = mergeStaffFilters(baseFilters, userFilters);
+      effective.team = teamCode; // locked — never overridden by the user
+      controller.load(effective);
+    }
+
+    var filterApi = createStaffFilterBar(filterBarEl, [teamCode], loadTable, { lockTeam: teamCode, instanceId: mountId });
+    loadTable(filterApi.getFilters());
   }
 
-  var filterApi = createStaffFilterBar(filterBarEl, [teamCode], loadTable, { lockTeam: teamCode, instanceId: mountId });
-  loadTable(filterApi.getFilters());
-  renderKpiPanel(kpiMountEl, teamCode);
+  mountData();
+  onAuthChange(mountData);
 }
 
 export function initStaffDataPilot() {

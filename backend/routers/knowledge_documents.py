@@ -22,10 +22,16 @@ Depends(get_verified_member) resolves, except MD.
 MD (backend/config.py MD_MEMBER_KEY) is explicitly NOT a Management Team
 member (see MEMBER_DIRECTORY, which excludes it) and is rejected from every
 mutating route here — _reject_md_write below, same pattern and rationale as
-backend/routers/staff_review_summaries.py's own _reject_md_write. LIST/
-DETAIL remain public (no token required at all), matching Task/Leave's own
-public-GET convention — Phase 16's auth test list only covers create/
-update/version/archive/delete/restore, not list/detail.
+backend/routers/staff_review_summaries.py's own _reject_md_write.
+
+LIST/DETAIL auth (REVISED, REQ-AUTH-MODULES-007, 2026-08-10): both used to
+be public (no token required at all), matching Task/Leave's own public-GET
+convention. That no longer satisfies the requirement that unauthenticated
+users must not be able to view or retrieve Knowledge Management data via
+the API — both routes now also require Depends(get_verified_member), same
+as every other route in this file. Neither calls _reject_md_write — MD is
+not excluded from any read route here (LIST/DETAIL, versions, audit all
+remain readable by MD), only from writes.
 
 Duplicate-URL prevention (rule 3/15) is ALWAYS an application-layer
 pre-check via knowledge_document_logic.assert_no_active_duplicate_source_url
@@ -223,12 +229,13 @@ def list_knowledge_documents(
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
 ):
-    """Public — no token required, matching Task/Leave's own public-GET
-    convention (Phase 16's auth-required test list does not include list).
-    Excludes soft-deleted records by default (no ?include_deleted= escape
-    hatch — not evidenced as a requirement). Deterministic ordering: title
-    ascending, then id ascending as a stable tiebreaker."""
+    """Auth-required (REQ-AUTH-MODULES-007, 2026-08-10) — any authenticated
+    Management Team member or MD; no _reject_md_write call (read, not a
+    write). Excludes soft-deleted records by default (no ?include_deleted=
+    escape hatch — not evidenced as a requirement). Deterministic
+    ordering: title ascending, then id ascending as a stable tiebreaker."""
     query = _apply_filters(_base_active_query(db), team, document_type, lifecycle_status, search)
 
     total = query.with_entities(func.count(KnowledgeDocument.id)).scalar()
@@ -299,9 +306,13 @@ def list_deleted_knowledge_documents(
 
 
 @router.get("/{document_id}", response_model=KnowledgeDocumentOut)
-def get_knowledge_document(document_id: UUID, db: Session = Depends(get_db)):
-    """Public. 404 for a missing or soft-deleted id — same non-disclosing
-    shape either way (Phase 6)."""
+def get_knowledge_document(
+    document_id: UUID,
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Auth-required (REQ-AUTH-MODULES-007, 2026-08-10). 404 for a missing
+    or soft-deleted id — same non-disclosing shape either way (Phase 6)."""
     record = _get_active_document_or_404(db, document_id)
     return _to_out(record)
 

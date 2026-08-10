@@ -77,9 +77,10 @@
    (web-view/index.html) — a sibling of #tab-review-summaries, never
    nested inside any Management Team member panel. */
 
-import { getStoredMemberKey, CALENDAR_AUTH_CHANGED_EVENT } from './calendar/auth.js';
+import { getStoredMemberKey, getStoredToken, CALENDAR_AUTH_CHANGED_EVENT } from './calendar/auth.js';
 import { MEMBER_REGISTRY, MD_MEMBER_KEY } from './member-registry.js';
 import { STAFF_API_BASE } from './staff-data.js';
+import { buildAuthRequiredNotice } from './auth-gate.js';
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -293,16 +294,27 @@ export function buildDemoIssues(raisedByOptions, teamOptions) {
   });
 }
 
-// ── Staff/Team source (2026-08-10 correction) ──────────────────────────
+// ── Staff/Team source (2026-08-10 correction; Authorization header added
+//    REQ-AUTH-MODULES-007, 2026-08-10) ──────────────────────────────────
 //
 // Reuses the existing, real, read-only Staff Data API — the same
 // STAFF_API_BASE host-detection constant staff-data.js already exports
 // and review-summaries.js already reuses for its own staff search — never
 // a second host-detection constant, never a hardcoded name/team list.
+// GET /api/staff and GET /api/staff/filter-options now both require the
+// same Calendar member token this module's own whole-panel gate
+// (mountIssuesWorkspace above) already requires before either function is
+// ever called — getStoredToken() is expected to be non-null here by
+// construction, not re-checked a second time.
+
+function authorizedHeaders() {
+  var token = getStoredToken();
+  return token ? { 'Authorization': 'Bearer ' + token } : undefined;
+}
 
 function fetchActiveStaffNames() {
   var params = ['limit=500', 'staff_status=Active'];
-  return fetch(STAFF_API_BASE + '?' + params.join('&')).then(function (res) {
+  return fetch(STAFF_API_BASE + '?' + params.join('&'), { headers: authorizedHeaders() }).then(function (res) {
     if (!res.ok) { throw new Error('Staff lookup failed.'); }
     return res.json();
   }).then(function (body) {
@@ -312,7 +324,7 @@ function fetchActiveStaffNames() {
 }
 
 function fetchTeamNames() {
-  return fetch(STAFF_API_BASE + '/filter-options').then(function (res) {
+  return fetch(STAFF_API_BASE + '/filter-options', { headers: authorizedHeaders() }).then(function (res) {
     if (!res.ok) { throw new Error('Team lookup failed.'); }
     return res.json();
   }).then(function (body) {
@@ -517,6 +529,25 @@ export function mountIssuesWorkspace(mountEl, opts) {
   // ── Static shell (built once) ──────────────────────────────────────
 
   mountEl.textContent = '';
+
+  /* Whole-panel gate (REQ-AUTH-MODULES-007, 2026-08-10) — Issues is now
+     authenticated-only to enter/read, a separate question from assignment
+     AUTHORITY (canAssign() above, unchanged). Reuses the same
+     getAuthenticatedMemberKey() identity source everywhere else in this
+     module already reads from (calendar/auth.js's getStoredMemberKey() in
+     production, overridable in tests) rather than a second auth check, so
+     "authenticated" can never mean something different here than it does
+     for canAssign(). While unauthenticated, this is the entire mount: no
+     table, no filters, and critically no fetchActiveStaffNames()/
+     fetchTeamNames() call against the Staff Data API (both of which now
+     require a token themselves — see production-adapter's Staff/Team
+     source above). initIssues() re-mounts from scratch on
+     CALENDAR_AUTH_CHANGED_EVENT, so authorizing replaces this placeholder
+     with the real workspace automatically. */
+  if (!getAuthenticatedMemberKey()) {
+    mountEl.appendChild(buildAuthRequiredNotice('issues'));
+    return { getState: function () { return state; }, reload: function () {} };
+  }
 
   var viewTabs = el('div', 'msc-issues-view-tabs');
   viewTabs.setAttribute('role', 'tablist');
