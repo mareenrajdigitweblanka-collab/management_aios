@@ -402,7 +402,7 @@ test('20. duplicate-submit protection — Save disabled immediately on submit', 
   await flush();
   var form = document.querySelector('.msc-km-form');
   form.querySelector('#msc-km-create-title').value = 'T';
-  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-team').value = 'Ebay Team';
   form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
   fire(form, 'submit');
   await flush();
@@ -421,7 +421,7 @@ test('21. success updates UI (list refetched, modal closed)', withEnv(async () =
   await flush();
   var form = document.querySelector('.msc-km-form');
   form.querySelector('#msc-km-create-title').value = 'T';
-  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-team').value = 'Ebay Team';
   form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
   fire(form, 'submit');
   await flush();
@@ -438,7 +438,7 @@ test('22. 409 duplicate URL message shown on the URL field', withEnv(async () =>
   await flush();
   var form = document.querySelector('.msc-km-form');
   form.querySelector('#msc-km-create-title').value = 'T';
-  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-team').value = 'Ebay Team';
   form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
   fire(form, 'submit');
   await flush();
@@ -459,7 +459,7 @@ test('23. warning response shown as a toast when create returns warnings', withE
   await flush();
   var form = document.querySelector('.msc-km-form');
   form.querySelector('#msc-km-create-title').value = 'T';
-  form.querySelector('#msc-km-create-team').value = 'Team';
+  form.querySelector('#msc-km-create-team').value = 'Ebay Team';
   form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
   fire(form, 'submit');
   await flush();
@@ -1181,16 +1181,18 @@ test('76. detail retry works after a failed GET', withEnv(async () => {
 // REQ-KM-UI-005 — FILTER STABILITY (77-83)
 // ══════════════════════════════════════════════════════════════════════
 
-test('77. initial Team options captured from the unfiltered load', withEnv(async () => {
+test('77. initial Team options are the fixed KM_DEFAULT_TEAMS list (REQ-KM-UI-006 superseded the data-derived baseline)', withEnv(async () => {
+  var mod = await loadKmModule();
   var { mountEl } = await mountWithFixture();
   var teamSelect = mountEl.querySelector('#msc-km-team-filter');
   var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
-  assert.ok(optionTexts.indexOf('Management') !== -1);
-  assert.ok(optionTexts.indexOf('HR') !== -1);
+  assert.deepEqual(optionTexts, ['All'].concat(mod.KM_DEFAULT_TEAMS));
 }));
 
 test('78. Team filtering does not collapse Team options', withEnv(async () => {
-  var { mountEl } = await mountWithFixture({
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var api = makeFixtureApi({
     list: function (filters) {
       var records = filters.team && filters.team !== 'all'
         ? [FIXTURE_DOC, FIXTURE_DOC_2].filter(function (d) { return d.team === filters.team; })
@@ -1198,31 +1200,34 @@ test('78. Team filtering does not collapse Team options', withEnv(async () => {
       return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
     }
   });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
   var teamSelect = mountEl.querySelector('#msc-km-team-filter');
-  teamSelect.value = 'HR';
+  teamSelect.value = 'Ebay Team';
   fire(teamSelect, 'change');
   await flush();
   var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
-  assert.ok(optionTexts.indexOf('Management') !== -1, 'Management must still be selectable after filtering to HR');
-  assert.ok(optionTexts.indexOf('HR') !== -1);
+  assert.deepEqual(optionTexts, ['All'].concat(mod.KM_DEFAULT_TEAMS), 'every approved Team must still be selectable after filtering to one of them');
 }));
 
 test('79. search does not collapse Team options', withEnv(async () => {
-  var { mountEl } = await mountWithFixture({
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var api = makeFixtureApi({
     list: function (filters) {
-      var records = filters.search
-        ? [FIXTURE_DOC_2] // only the HR document matches this search
-        : [FIXTURE_DOC, FIXTURE_DOC_2];
+      var records = filters.search ? [FIXTURE_DOC_2] : [FIXTURE_DOC, FIXTURE_DOC_2];
       return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
     }
   });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
   var searchInput = mountEl.querySelector('.msc-km-search-input');
   searchInput.value = 'handbook';
   fire(searchInput, 'input');
   await new Promise(function (r) { setTimeout(r, 300); });
   var teamSelect = mountEl.querySelector('#msc-km-team-filter');
   var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
-  assert.ok(optionTexts.indexOf('Management') !== -1, 'Management must remain even though search only matched an HR document');
+  assert.deepEqual(optionTexts, ['All'].concat(mod.KM_DEFAULT_TEAMS));
 }));
 
 test('80. Document Type filtering does not collapse Type options', withEnv(async () => {
@@ -1265,13 +1270,13 @@ test('82. switching directly between Team values works without reselecting All f
     list: function (filters) { capturedTeams.push(filters.team); return Promise.resolve({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 }); }
   });
   var teamSelect = mountEl.querySelector('#msc-km-team-filter');
-  teamSelect.value = 'HR';
+  teamSelect.value = 'Ebay Team';
   fire(teamSelect, 'change');
   await flush();
-  teamSelect.value = 'Management';
+  teamSelect.value = 'Postage Team';
   fire(teamSelect, 'change');
   await flush();
-  assert.deepEqual(capturedTeams.slice(-2), ['HR', 'Management']);
+  assert.deepEqual(capturedTeams.slice(-2), ['Ebay Team', 'Postage Team']);
 }));
 
 test('83. switching directly between Document Type values works without reselecting All first', withEnv(async () => {
@@ -1333,3 +1338,245 @@ test('87. sample-data notice remains absent', withEnv(async () => {
   assert.equal(mountEl.querySelector('.msc-km-sample-notice'), null);
   assert.doesNotMatch(mountEl.allText(), /Sample documents/);
 }));
+
+// ══════════════════════════════════════════════════════════════════════
+// REQ-KM-UI-006 — STANDARD TEAM DROPDOWN (88-110)
+// ══════════════════════════════════════════════════════════════════════
+
+var APPROVED_TEAM_LIST = [
+  'Management Team', 'Graphic Designing Team', 'Digital Marketing Team', 'Technical Team',
+  'Ebay Team', 'Postage Team', 'Development Team', 'Customer Service Team', 'Amazon Team',
+  'Centralized PPC Team', 'Inventory Team', 'Accounts Team', 'Portfolio Holders Team',
+  'US /Canada Market Rebuild Team', 'Merchandising Team', 'Wayfair Team', 'IT support Team'
+];
+
+test('88. KM_DEFAULT_TEAMS exists once as a single exported constant', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.ok(Array.isArray(mod.KM_DEFAULT_TEAMS));
+}));
+
+test('89. KM_DEFAULT_TEAMS has exactly 17 Team values', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.equal(mod.KM_DEFAULT_TEAMS.length, 17);
+}));
+
+test('90. KM_DEFAULT_TEAMS matches the exact approved spelling and order', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.deepEqual(mod.KM_DEFAULT_TEAMS, APPROVED_TEAM_LIST);
+}));
+
+test('91. Team filter includes "All"', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.equal(optionTexts[0], 'All');
+}));
+
+test('92. Team filter includes all 17 approved values', withEnv(async () => {
+  var mod = await loadKmModule();
+  var { mountEl } = await mountWithFixture();
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  mod.KM_DEFAULT_TEAMS.forEach(function (team) { assert.ok(optionTexts.indexOf(team) !== -1, team + ' must be a filter option'); });
+}));
+
+test('93. Team filter does not derive its option list from API records', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    // A record with a Team value that is NOT one of the 17 approved
+    // values (legacy/test data) must never appear as a filter option.
+    list: function () { return Promise.resolve({ records: [Object.assign({}, FIXTURE_DOC, { team: 'test team' })], total: 1, limit: 200, offset: 0 }); }
+  });
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.equal(optionTexts.indexOf('test team'), -1);
+}));
+
+test('94. filtering does not collapse Team options', withEnv(async () => {
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var api = makeFixtureApi({
+    list: function (filters) {
+      var records = filters.team && filters.team !== 'all' ? [FIXTURE_DOC] : [FIXTURE_DOC, FIXTURE_DOC_2];
+      return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
+    }
+  });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  teamSelect.value = 'Amazon Team';
+  fire(teamSelect, 'change');
+  await flush();
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.equal(optionTexts.length, 18); // All + 17
+}));
+
+test('95. searching does not collapse Team options', withEnv(async () => {
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var api = makeFixtureApi({
+    list: function (filters) {
+      var records = filters.search ? [FIXTURE_DOC] : [FIXTURE_DOC, FIXTURE_DOC_2];
+      return Promise.resolve({ records: records, total: records.length, limit: 200, offset: 0 });
+    }
+  });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
+  var searchInput = mountEl.querySelector('.msc-km-search-input');
+  searchInput.value = 'kpi';
+  fire(searchInput, 'input');
+  await new Promise(function (r) { setTimeout(r, 300); });
+  var teamSelect = mountEl.querySelector('#msc-km-team-filter');
+  var optionTexts = teamSelect.querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.equal(optionTexts.length, 18);
+}));
+
+test('96. Add Document Team uses a select element', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var teamField = document.querySelector('#msc-km-create-team');
+  assert.equal(teamField.tagName, 'SELECT');
+}));
+
+test('97. no free-text Team input on Add Document (superseded by the select)', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var teamField = document.querySelector('#msc-km-create-team');
+  assert.notEqual(teamField.tagName, 'INPUT');
+}));
+
+test('98. Add requires a Team selection before submit reaches the API', withEnv(async () => {
+  var createCalled = false;
+  var { mountEl } = await mountWithFixture({ create: function () { createCalled = true; return Promise.resolve(FIXTURE_DOC); } });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  form.querySelector('#msc-km-create-title').value = 'T';
+  form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
+  // Team select deliberately left on the "Select Team" placeholder.
+  fire(form, 'submit');
+  await flush();
+  assert.equal(createCalled, false);
+}));
+
+test('99. selected Team is sent unchanged in the POST payload', withEnv(async () => {
+  var capturedPayload = null;
+  var { mountEl } = await mountWithFixture({ create: function (payload) { capturedPayload = payload; return Promise.resolve(FIXTURE_DOC); } });
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var form = document.querySelector('.msc-km-form');
+  form.querySelector('#msc-km-create-title').value = 'T';
+  form.querySelector('#msc-km-create-team').value = 'Wayfair Team';
+  form.querySelector('#msc-km-create-url').value = 'https://example.com/x';
+  fire(form, 'submit');
+  await flush();
+  assert.equal(capturedPayload.team, 'Wayfair Team');
+}));
+
+test('100. Edit Metadata Team uses a select element', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  var teamField = document.querySelector('#msc-km-edit-team');
+  assert.equal(teamField.tagName, 'SELECT');
+}));
+
+test('101. an existing approved Team is preselected in Edit Metadata', withEnv(async () => {
+  var approvedDoc = Object.assign({}, FIXTURE_DOC, { team: 'Technical Team' });
+  var { mountEl } = await mountWithFixture({ detail: function () { return Promise.resolve(approvedDoc); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  var teamField = document.querySelector('#msc-km-edit-team');
+  assert.equal(teamField.value, 'Technical Team');
+}));
+
+test('102. a selected edited Team is sent unchanged in the PATCH payload', withEnv(async () => {
+  var approvedDoc = Object.assign({}, FIXTURE_DOC, { team: 'Technical Team' });
+  var capturedPayload = null;
+  var { mountEl } = await mountWithFixture({
+    detail: function () { return Promise.resolve(approvedDoc); },
+    updateMetadata: function (id, payload) { capturedPayload = payload; return Promise.resolve(approvedDoc); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  document.querySelector('#msc-km-edit-team').value = 'Merchandising Team';
+  document.querySelector('#msc-km-edit-change-description').value = 'Reassigned to Merchandising';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(capturedPayload.team, 'Merchandising Team');
+}));
+
+test('103. a legacy/non-default existing Team is never silently rewritten by an unrelated metadata edit', withEnv(async () => {
+  // FIXTURE_DOC.team is "Management" — not one of the 17 approved values,
+  // so it exercises the legacy-Team code path directly.
+  var capturedPayload = null;
+  var { mountEl } = await mountWithFixture({
+    updateMetadata: function (id, payload) { capturedPayload = payload; return Promise.resolve(FIXTURE_DOC); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  // Team select is left untouched (still "Select Team") — only an
+  // unrelated field is edited.
+  document.querySelector('#msc-km-edit-change-description').value = 'Fixed a typo in the title only';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal('team' in capturedPayload, false, 'team must be omitted from the PATCH payload, never silently rewritten');
+}));
+
+test('104. legacy Team value is clearly shown in Edit Metadata', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.match(overlay.allText(), /Management/); // FIXTURE_DOC.team, shown as the current legacy value
+  var teamField = document.querySelector('#msc-km-edit-team');
+  assert.equal(teamField.value, ''); // left on the "Select Team" placeholder, never silently coerced
+}));
+
+test('105. no "Other" arbitrary Team input exists anywhere', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  var createOptionTexts = document.querySelector('#msc-km-create-team').querySelectorAll('.msc-km-select-option').map(function (o) { return o.textContent; });
+  assert.equal(createOptionTexts.indexOf('Other'), -1);
+}));
+
+test('106. static sample registry remains absent (REQ-KM-UI-006 regression)', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.equal(mod.APPROVED_DOCUMENTS, undefined);
+}));
+
+test('107. no hard-delete UI regression', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  assert.doesNotMatch(mountEl.allText().toLowerCase(), /permanent/);
+  assert.doesNotMatch(mountEl.allText().toLowerCase(), /hard delete/);
+}));
+
+test('108. Knowledge Management navigation regression', () => {
+  assert.equal((html.match(/data-tab="knowledge-management"/g) || []).length, 1);
+  var panelIds = topLevelPanels(html).map(function (p) { return p.id; });
+  assert.equal(panelIds.filter(function (id) { return id === 'tab-knowledge-management'; }).length, 1);
+});
+
+test('109. Issues regression', () => {
+  assert.equal((html.match(/data-tab="issues"/g) || []).length, 1);
+  assert.ok(segments['tab-issues']);
+});
+
+test('110. Review Summaries and Calendar regression', () => {
+  assert.equal((html.match(/data-tab="review-summaries"/g) || []).length, 1);
+  assert.ok(segments['tab-review-summaries']);
+  var calendarMatches = html.match(/class="msc-instance"/g) || [];
+  assert.equal(calendarMatches.length, 5);
+});

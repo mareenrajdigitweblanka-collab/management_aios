@@ -86,6 +86,34 @@ var DOCUMENT_TYPE_OPTIONS = [
 ];
 var LIFECYCLE_STATUS_OPTIONS = ['Active', 'Archived'];
 
+/* REQ-KM-UI-006 — the ONE canonical Team source for this module, reused by
+   the Team filter, the Add Document Team field, and the Edit Metadata Team
+   field (never three separate hardcoded arrays). Exact approved spelling
+   and order, per explicit instruction — never renamed, alphabetized, or
+   extended. Scoped to Knowledge Management only: member-registry.js is a
+   Management Team *identity* registry (people), not a document-Team
+   registry (departments/teams like "Ebay Team"), so this constant does not
+   belong there. */
+export var KM_DEFAULT_TEAMS = [
+  'Management Team',
+  'Graphic Designing Team',
+  'Digital Marketing Team',
+  'Technical Team',
+  'Ebay Team',
+  'Postage Team',
+  'Development Team',
+  'Customer Service Team',
+  'Amazon Team',
+  'Centralized PPC Team',
+  'Inventory Team',
+  'Accounts Team',
+  'Portfolio Holders Team',
+  'US /Canada Market Rebuild Team',
+  'Merchandising Team',
+  'Wayfair Team',
+  'IT support Team'
+];
+
 // ── Pure helpers (exported for direct testing — no DOM/fetch involved) ──
 
 export function isSafeHttpUrl(url) {
@@ -319,17 +347,12 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     deletedStatus: 'idle', // 'idle' | 'loading' | 'data' | 'empty' | 'error'
     deletedDocuments: [],
     deletedErrorMessage: null,
-    deletedRequestId: 0,
-    // REQ-KM-UI-005 Phase 7 — Team filter options, captured once from the
-    // most recent UNFILTERED (search='', team=all, documentType=all,
-    // lifecycleStatus=all) list response, never rebuilt from a filtered
-    // one. `complete` is false only if that response's own `total` proved
-    // it was truncated (more records exist than were returned) — see
-    // updateFilterOptionsBaseline(). Document Type does not need this: its
-    // options come from the fixed DOCUMENT_TYPE_OPTIONS enum below, which
-    // was already stable before this task (populated once at mount, never
-    // rebuilt from state.documents).
-    filterOptionsBaseline: { teams: [], captured: false, complete: false }
+    deletedRequestId: 0
+    // REQ-KM-UI-005's Phase 7 data-derived filterOptionsBaseline is gone —
+    // REQ-KM-UI-006 replaced the Team filter with the fixed KM_DEFAULT_TEAMS
+    // enum (same "populated once at mount, never rebuilt from
+    // state.documents" approach DOCUMENT_TYPE_OPTIONS already used), so
+    // there is no longer any data-derived Team option list to keep stable.
   };
 
   function currentAccess() {
@@ -452,67 +475,24 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   deletedViewPanel.appendChild(deletedTableRegion);
   mountEl.appendChild(deletedViewPanel);
 
-  // ── Team filter options — captured once from the most recent UNFILTERED
-  //    list response (state.filterOptionsBaseline, REQ-KM-UI-005 Phase 7)
-  //    so selecting a Team/search never collapses the dropdown to just
-  //    that one value. Document Type's own options are the fixed
-  //    DOCUMENT_TYPE_OPTIONS enum below — already stable, unrelated to
-  //    this baseline. ──
-  function populateTeamOptions() {
-    var current = teamSelect.value || 'all';
-    var values = state.filterOptionsBaseline.teams;
-    teamSelect.textContent = '';
-    var allOpt = el('option', 'msc-km-select-option');
-    allOpt.value = 'all';
-    allOpt.textContent = 'All';
-    teamSelect.appendChild(allOpt);
-    values.forEach(function (v) {
-      var opt = el('option', 'msc-km-select-option');
-      opt.value = v;
-      opt.textContent = v;
-      teamSelect.appendChild(opt);
-    });
-    teamSelect.value = values.indexOf(current) !== -1 || current === 'all' ? current : 'all';
-  }
-
-  function isUnfilteredFilters(filters) {
-    return !filters.search && filters.team === 'all' &&
-      filters.documentType === 'all' && filters.lifecycleStatus === 'all';
-  }
-
-  function distinctSortedTeams(records) {
-    var seen = {};
-    var values = [];
-    records.forEach(function (d) {
-      if (d.team && !seen[d.team]) { seen[d.team] = true; values.push(d.team); }
-    });
-    values.sort(function (a, b) { return a.localeCompare(b); });
-    return values;
-  }
-
-  /* Captures the Team filter baseline (Phase 7) from a successful LIST
-     response — but ONLY when that request was itself unfiltered
-     (isUnfilteredFilters), and only overwrites an already-`complete`
-     baseline with a fresh one that is ALSO complete. A truncated
-     unfiltered response (result.total > records actually returned) never
-     regresses a previously-established complete baseline — this repo's
-     hardcoded limit=200 (buildListQueryString) covers every realistic
-     document count today, so `complete` is expected to stay true; if this
-     Knowledge Management library ever exceeds 200 active documents,
-     `complete` will correctly flip to false and a dedicated distinct-
-     values endpoint would be the right follow-up (see docs). */
-  function updateFilterOptionsBaseline(result, filtersAtRequest) {
-    if (!isUnfilteredFilters(filtersAtRequest)) { return; }
-    var records = result.records || [];
-    var total = typeof result.total === 'number' ? result.total : records.length;
-    var complete = records.length >= total;
-    if (!complete && state.filterOptionsBaseline.captured) { return; }
-    state.filterOptionsBaseline = {
-      teams: distinctSortedTeams(records),
-      captured: true,
-      complete: complete
-    };
-  }
+  // ── Team filter options (REQ-KM-UI-006) — the fixed KM_DEFAULT_TEAMS
+  //    enum, populated once at mount, exactly like Document Type's own
+  //    DOCUMENT_TYPE_OPTIONS block right below. Never derived from
+  //    state.documents / API records / search results — REQ-KM-UI-005's
+  //    data-derived baseline approach (which this replaces) is why the
+  //    filter used to show stray values like "test team" in the first
+  //    place; a fixed enum has no such failure mode by construction. ──
+  var teamAllOpt = el('option', 'msc-km-select-option');
+  teamAllOpt.value = 'all';
+  teamAllOpt.textContent = 'All';
+  teamSelect.appendChild(teamAllOpt);
+  KM_DEFAULT_TEAMS.forEach(function (v) {
+    var opt = el('option', 'msc-km-select-option');
+    opt.value = v;
+    opt.textContent = v;
+    teamSelect.appendChild(opt);
+  });
+  teamSelect.value = 'all';
 
   var typeAllOpt = el('option', 'msc-km-select-option');
   typeAllOpt.value = 'all';
@@ -604,12 +584,24 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     return input;
   }
 
+  /* opts.placeholder (REQ-KM-UI-006) — when given, prepends a disabled-
+     looking value="" option with that label as the unselected default, so
+     the user must make a deliberate choice rather than silently inheriting
+     whatever option happens to be first (typeSelect/lifecycleSelectEl/
+     complianceSelectEl below all omit it — unaffected, same behavior as
+     before this option existed). */
   function buildSelectField(container, opts) {
     var field = labelledField(opts.label, opts.id);
     var select = el('select', 'msc-km-input');
     select.id = opts.id;
+    if (opts.placeholder) {
+      var placeholderOpt = el('option', 'msc-km-select-option');
+      placeholderOpt.value = '';
+      placeholderOpt.textContent = opts.placeholder;
+      select.appendChild(placeholderOpt);
+    }
     (opts.options || []).forEach(function (v) {
-      var o = el('option', '');
+      var o = el('option', 'msc-km-select-option');
       o.value = v;
       o.textContent = v;
       select.appendChild(o);
@@ -628,7 +620,11 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
 
       var titleInput = buildTextField(form, { id: 'msc-km-create-title', label: 'Document Title (required)', required: true });
       titleInput.classList.add('msc-km-modal-first-focus');
-      var teamInput = buildTextField(form, { id: 'msc-km-create-team', label: 'Team (required)', required: true });
+      // REQ-KM-UI-006 — fixed-list select, never free text. No "Other"
+      // escape hatch: the user must pick one of the 17 approved values.
+      var teamSelect = buildSelectField(form, {
+        id: 'msc-km-create-team', label: 'Team *', options: KM_DEFAULT_TEAMS, placeholder: 'Select Team'
+      });
       var typeSelect = buildSelectField(form, { id: 'msc-km-create-type', label: 'Document Type (required)', options: DOCUMENT_TYPE_OPTIONS });
       var jobRoleInput = buildTextField(form, { id: 'msc-km-create-job-role', label: 'Job Role (optional)' });
       var categoryInput = buildTextField(form, { id: 'msc-km-create-category', label: 'Document Category (optional)' });
@@ -655,7 +651,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
         clearFormErrors(form);
         var hasError = false;
         if (!titleInput.value.trim()) { setFieldError(titleInput, 'Enter a document title.'); hasError = true; }
-        if (!teamInput.value.trim()) { setFieldError(teamInput, 'Enter a team.'); hasError = true; }
+        if (!teamSelect.value) { setFieldError(teamSelect, 'Select a team.'); hasError = true; }
         if (!urlInput.value.trim()) {
           setFieldError(urlInput, 'Enter a source URL.'); hasError = true;
         } else if (!isSafeHttpUrl(urlInput.value.trim())) {
@@ -669,7 +665,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
 
         api.create({
           title: titleInput.value.trim(),
-          team: teamInput.value.trim(),
+          team: teamSelect.value,
           document_type: typeSelect.value,
           job_role: jobRoleInput.value.trim() || null,
           document_category: categoryInput.value.trim() || null,
@@ -856,7 +852,41 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
 
       var titleInput = buildTextField(form, { id: 'msc-km-edit-title', label: 'Document Title (required)', required: true, value: document.title });
       titleInput.classList.add('msc-km-modal-first-focus');
-      var teamInput = buildTextField(form, { id: 'msc-km-edit-team', label: 'Team (required)', required: true, value: document.team });
+
+      // REQ-KM-UI-006 Phase 6 — LEGACY TEAM SAFETY. A record created before
+      // this task (or via direct API/DB access) may carry a Team value that
+      // is not one of the 17 approved values (e.g. "test team"). Opening or
+      // saving this form must NEVER silently rewrite that value:
+      //   - if document.team IS one of the 17: preselect it normally, and
+      //     (matching this form's pre-existing behavior for every other
+      //     field) it is resent unchanged on every save, whether or not the
+      //     user touches it — never a behavior change for a normal record.
+      //   - if document.team is NOT one of the 17 (legacy): the select is
+      //     left on the "Select Team" placeholder (not silently coerced to
+      //     one of the 17, and not added as a fake extra option either — an
+      //     invented 18th dropdown entry would look like an approved value
+      //     it isn't), a read-only note states the current legacy value
+      //     explicitly, and — critically — if the user leaves the select on
+      //     the placeholder and saves (e.g. only fixing a typo in Job
+      //     Role), `team` is omitted from the PATCH payload entirely below,
+      //     so the backend's exclude_unset semantics leave the legacy value
+      //     on the record completely untouched. Only an INTENTIONAL
+      //     selection of one of the 17 values changes it.
+      var isLegacyTeam = KM_DEFAULT_TEAMS.indexOf(document.team) === -1;
+      var teamSelect = buildSelectField(form, {
+        id: 'msc-km-edit-team', label: 'Team *', options: KM_DEFAULT_TEAMS, placeholder: 'Select Team',
+        value: isLegacyTeam ? '' : document.team
+      });
+      if (isLegacyTeam) {
+        var teamLegacyNote = textEl(
+          'p', 'msc-km-readonly-note msc-km-team-legacy-note',
+          'Current Team on record: "' + document.team + '" (not a standard Team). ' +
+          'Select one of the standard Teams above only if you want to change it — ' +
+          'leaving "Select Team" chosen keeps the current value unchanged.'
+        );
+        form.appendChild(teamLegacyNote);
+      }
+
       var typeSelect = buildSelectField(form, { id: 'msc-km-edit-type', label: 'Document Type (required)', options: DOCUMENT_TYPE_OPTIONS, value: document.document_type });
       var jobRoleInput = buildTextField(form, { id: 'msc-km-edit-job-role', label: 'Job Role (optional)', value: document.job_role });
       var categoryInput = buildTextField(form, { id: 'msc-km-edit-category', label: 'Document Category (optional)', value: document.document_category });
@@ -894,7 +924,10 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
         clearFormErrors(form);
         var hasError = false;
         if (!titleInput.value.trim()) { setFieldError(titleInput, 'Enter a document title.'); hasError = true; }
-        if (!teamInput.value.trim()) { setFieldError(teamInput, 'Enter a team.'); hasError = true; }
+        // A legacy Team is allowed to stay unselected (that means "leave
+        // unchanged") — only a NORMAL record's Team select is required,
+        // since it always starts preselected to a real value already.
+        if (!isLegacyTeam && !teamSelect.value) { setFieldError(teamSelect, 'Select a team.'); hasError = true; }
         if (!changeDescInput.value.trim()) { setFieldError(changeDescInput, 'Describe what changed.'); hasError = true; }
         if (hasError) { focusFirstInvalid(form); return; }
 
@@ -902,9 +935,8 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
         saveBtn.disabled = true;
         cancelBtn.disabled = true;
 
-        api.updateMetadata(document.id, {
+        var payload = {
           title: titleInput.value.trim(),
-          team: teamInput.value.trim(),
           document_type: typeSelect.value,
           job_role: jobRoleInput.value.trim() || null,
           document_category: categoryInput.value.trim() || null,
@@ -912,7 +944,14 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
           lifecycle_status: lifecycleSelectEl.value,
           compliance_status: complianceSelectEl.value,
           change_description: changeDescInput.value.trim()
-        }).then(function (record) {
+        };
+        // team is included only when the select actually holds a real
+        // value — for a normal record that's always true (preselected);
+        // for an untouched legacy record it's deliberately omitted so the
+        // PATCH never overwrites the legacy value (see the note above).
+        if (teamSelect.value) { payload.team = teamSelect.value; }
+
+        api.updateMetadata(document.id, payload).then(function (record) {
           setButtonBusy(saveBtn, false);
           close();
           showToast({ type: 'success', title: 'Document updated', message: '"' + record.title + '" was saved.' });
@@ -1270,18 +1309,10 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     state.errorMessage = null;
     renderTable();
     var requestId = ++state.requestId;
-    var filtersAtRequest = {
-      search: state.filters.search,
-      team: state.filters.team,
-      documentType: state.filters.documentType,
-      lifecycleStatus: state.filters.lifecycleStatus
-    };
     api.list(state.filters).then(function (result) {
       if (requestId !== state.requestId) { return; } // superseded by a newer request
       state.documents = result.records || [];
       state.status = state.documents.length ? 'data' : 'empty';
-      updateFilterOptionsBaseline(result, filtersAtRequest);
-      populateTeamOptions();
       renderTable();
     }, function (err) {
       if (requestId !== state.requestId) { return; }
