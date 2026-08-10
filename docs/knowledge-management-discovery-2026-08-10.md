@@ -10,6 +10,8 @@
 
 **Protected path:** `member-aios/mayurika-hr/staff-data/` was never opened, read, listed, or referenced during this discovery.
 
+**Live `management_aios` PostgreSQL inspection: NOT COMPLETED.** The connector/database access needed to query the Management AIOS's own live database was unavailable and unauthorized in this session. Every finding in this report about `management_aios` is derived from static inspection of repository code (SQLAlchemy models, tracked migration SQL) only — not a live query. See §5a and §16.
+
 ---
 
 ## 1. Purpose
@@ -60,16 +62,20 @@ Two distinct databases are relevant to this repository, and only one was reachab
 
 ### 5a. `management_aios` (Neon — the Management AIOS's own database, `DATABASE_URL`)
 
-No live MCP/tool connection to this specific database was available or authenticated in this session (the `claude.ai postgres` connector requires authorization the user has not yet granted here). Findings about it below are from **static analysis of `backend/models.py` and `database/migrations/*.sql` only** — not a live query.
+**Live inspection status: NOT COMPLETED.** No live MCP/tool connection to this specific database was available or authenticated in this session (the `claude.ai postgres` connector requires authorization the user has not yet granted here). No `SELECT`, no schema introspection, and no row-level query of any kind was run against this database in this session.
 
-- Tables: `member_schedule_events`, `member_leave_records`, `staff_dashboard_records`, `staff_review_summaries`. None are document/file/attachment/evidence-related.
-- No table named anything resembling `document`, `knowledge`, `repository`, `attachment`, or `link` exists in the tracked migration history.
+Everything below is instead derived from **static analysis of `backend/models.py` and `database/migrations/*.sql` only** — i.e. what the tracked source code says the schema should contain, not a live query of what the schema actually contains today:
+
+- Tracked ORM models / migration files describe: `member_schedule_events`, `member_leave_records`, `staff_dashboard_records`, `staff_review_summaries`. None are document/file/attachment/evidence-related.
+- No table named anything resembling `document`, `knowledge`, `repository`, `attachment`, or `link` appears in the tracked migration history.
+
+**Existing Management AIOS document/storage truth:** no document repository or document-storage truth was found in the inspected repository code or static assets (frontend, backend, tracked migration SQL — §§3–5a). **Live database state remains unverified** — an unmigrated, undocumented, or manually-created table in the live `management_aios` database (one that has no corresponding file in this repository) cannot be ruled out from static analysis alone. This gap closes only once the live database is inspected read-only in a future, properly authorized session.
 
 ### 5b. `ledsone` (company operational database — reached via `mcp__ledsone__*`, authenticated, read-only queries only)
 
 137 tables across schemas: `accounting`, `amazon_campaigns`, `amazon_fba`, `business_reports`, `configurator`, `customer_service`, `customers`, `ebay_campaigns`, `employee_management`, `google_ads`, `google_analytics`, `google_search_console`, `inventory`, `listings`, `order_management`, `public`, `staff`, `suppliers`. **No `management_aios` schema exists in this database** — it is confirmed to be a separate system from the Management AIOS's own backing store.
 
-The only document-shaped table found: **`suppliers.supplier_documents`** (288 rows) — a narrow supplier-compliance file registry (`document_type` ENUM: gpsr_label / instruction_manual / inspection_checklist; `marketplace` ENUM: UK/US/Germany; `file_name`, `file_url`, `temp_url`, `file_size`, `mime_type`, `description`, `created_at`, `updated_at`). This is a different domain (supplier compliance), a different database, and not part of the Management AIOS or this repository's scope. **Overlap risk: none for REQ-KM-001** — noted only as a naming-convention precedent (`file_url` + `file_name` + `mime_type` + `document_type` columns), not a reuse target.
+The only document-shaped table found: **`suppliers.supplier_documents`** (288 rows) — a narrow supplier-compliance file registry (`document_type` ENUM: gpsr_label / instruction_manual / inspection_checklist; `marketplace` ENUM: UK/US/Germany; `file_name`, `file_url`, `temp_url`, `file_size`, `mime_type`, `description`, `created_at`, `updated_at`). This table exists in a separate operational database (`ledsone`) and a separate business domain (supplier compliance) from the Management AIOS. **It is not proposed for reuse or modification by REQ-KM-001.** It is recorded here only as an **external overlap signal** — a naming-convention data point (`file_url` + `file_name` + `mime_type` + `document_type` columns) — not as a resolution of the duplicate-truth question in §6, which concerns the (unverified — see §5a) live `management_aios` database, not `ledsone`.
 
 Only `SELECT`/introspection statements were run. No `INSERT`/`UPDATE`/`DELETE`/`CREATE`/`ALTER`/`DROP` was executed at any point.
 
@@ -85,7 +91,12 @@ The SRD states the module "shall serve as the organization's Single Source of Tr
 | B | Metadata + uploaded physical files | Not currently buildable safely — see §8 (no storage mechanism exists). |
 | **C — Recommended** | **Hybrid:** external cloud documents (Google Sheets/Docs/Drive files, external URLs) stay externally stored, with Management AIOS holding canonical metadata + link + version/audit state; uploaded binaries use a to-be-approved managed object-storage layer, with Management AIOS storing metadata + a storage reference, never raw bytes in Postgres. | Matches what the SRD actually asks for and what this codebase can safely support without inventing new infrastructure at this stage. |
 
-**Duplicate-truth risk:** "Single Source of Truth" should be read as *metadata + audit trail is the source of truth*, not *physical content copy is the source of truth*. This interpretation should be confirmed with Arun (requester) before implementation begins.
+**Duplicate-truth conclusion:** no direct duplicate collision was found in the repository assets inspected in this session (frontend, backend, tracked migration SQL — §§3–5). This is **not** a clearance. **Duplicate-truth risk remains OPEN** until both of the following occur:
+
+1. The live `management_aios` database is inspected read-only (§5a — not completed in this session), confirming no undocumented document/storage table already exists there; and
+2. The final source-of-truth/storage architecture (the Option A/B/C choice above) is reviewed and approved by Arun (requester).
+
+"Single Source of Truth" (the SRD's own wording) is read here as a candidate interpretation only — *metadata + audit trail is the source of truth*, not *physical content copy is the source of truth* — and is not adopted as confirmed architecture until Arun signs off.
 
 ---
 
@@ -196,7 +207,7 @@ No AI feature, index, or embedding pipeline was designed or implemented — this
 
 ## 16. Known Limitations of This Discovery
 
-- The Management AIOS's own Postgres database (`management_aios` schema, Neon) was **not** queried live in this session — findings about it are static-analysis-only (models + migration SQL). A future session with the `claude.ai postgres` connector authorized should confirm no drift has occurred since the last migration was written.
+- **Live `management_aios` PostgreSQL inspection: NOT COMPLETED.** The Management AIOS's own Postgres database (Neon) was not queried live in this session — connector access was unavailable/unauthorized. Findings about it (§5a) are static-analysis-only (models + migration SQL) and cannot rule out drift, an undocumented table, or a manually-created object that has no corresponding file in this repository. A future session with the `claude.ai postgres` connector authorized must run this live inspection before the duplicate-truth question (§6) can be closed.
 - Skill File format, and several SRD-example teams (e.g. "Graphic Design Team," "Warehouse Team") were not cross-checked against the live `department_team` values returned by `/api/staff/filter-options` — do not assume the SRD's team list and the live staff data's team list are identical without checking.
 - No user interviews were conducted as part of this discovery; all permission/status/version ambiguities in §§10, 13, 14 remain genuinely open.
 
@@ -228,10 +239,10 @@ No AI feature, index, or embedding pipeline was designed or implemented — this
 
 ## 19. PASS / AMBER / BLOCKED
 
-**AMBER.** Discovery is complete and no unsafe action was taken, but the module cannot proceed to implementation until the Phase 0 business decisions in §18 are made — most critically the Google ownership feasibility (§7 — BLOCKED) and binary storage mechanism (§8 — BLOCKED), both of which the SRD's acceptance criteria (§17 of the SRD) depend on.
+**AMBER.** Discovery is complete for the repository assets that were reachable in this session, and no unsafe action was taken. The module cannot proceed to implementation until the Phase 0 business decisions in §18 are made — most critically the Google ownership feasibility (§7 — BLOCKED), binary storage mechanism (§8 — BLOCKED), and the duplicate-truth risk (§6 — OPEN, pending the live `management_aios` inspection that was not completed this session, §5a).
 
 ---
 
 ## 20. One Next Step
 
-Arun (requester) reviews §6 (source-of-truth interpretation), §7 (Google ownership — currently BLOCKED), §8 (storage — currently BLOCKED), §10 (version semantics), §13 (permission model), and §14 (status model) and provides explicit decisions on each before any schema or code is drafted.
+Arun (requester) reviews §6 (source-of-truth interpretation — duplicate-truth risk OPEN), §7 (Google ownership — currently BLOCKED), §8 (storage — currently BLOCKED), §10 (version semantics), §13 (permission model), and §14 (status model) and provides explicit decisions on each; in parallel, the live `management_aios` database should be inspected read-only (§5a, §16 — not completed this session) before any schema or code is drafted.

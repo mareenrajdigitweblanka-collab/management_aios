@@ -38,11 +38,11 @@ Discovery-only architecture assessment for the SRD "Centralized Document Reposit
 
 - **Frontend:** generic `navigation.js` tab controller; static File Map tab (no overlap risk — not a real document system); Staff Data tab/`/api/staff` (closest precedent for searchable records); reusable UI primitives (`web-view/js/ui/*`); `member-registry.js` identity registry already reused by `issues.js`.
 - **Backend:** 6 routers, 4 ORM models in `management_aios` schema — none document/file-related. Zero Google API, cloud storage, or file-upload library present in `requirements.txt`.
-- **Database:** `management_aios` (Neon) not queried live this session (connector unauthorized) — static analysis only, no document tables found. `ledsone` (operational DB, queried read-only via `mcp__ledsone__*`) has one document-shaped table, `suppliers.supplier_documents` (288 rows) — different domain, different database, no overlap with this project.
+- **Database — live `management_aios` PostgreSQL inspection: NOT COMPLETED.** Connector/database access to the Management AIOS's own live Postgres (Neon) was unavailable/unauthorized this session. Findings about it are static-analysis-only (tracked models + migration SQL); no document repository/storage truth was found in inspected repository code/static assets, but **live database state remains unverified**. `ledsone` (a separate operational database, queried live/read-only via `mcp__ledsone__*`) has one document-shaped table, `suppliers.supplier_documents` (288 rows) — a different domain and a different database from `management_aios`, not proposed for reuse or modification by REQ-KM-001, recorded only as an external overlap signal.
 
 ## E. Duplicate-Risk Assessment
 
-No existing Management AIOS asset would be duplicated by a future Knowledge Management module. File Map is static/unmanaged and not functionally equivalent. `suppliers.supplier_documents` lives in a separate company database (`ledsone`) outside this project's scope. Recommended architecture (discovery doc §6) treats the future module as metadata + audit trail, explicitly not a physical copy of documents that already have an authoritative home (e.g., HR-owned documents remain out of scope per CLAUDE.md §6).
+No direct duplicate collision was found in the repository assets inspected this session (frontend, backend, tracked migration SQL). This is not a clearance. **Duplicate-truth risk remains OPEN** until (1) the live `management_aios` database is inspected read-only (not completed this session — see §D above and discovery doc §5a), and (2) the final source-of-truth/storage architecture (discovery doc §6) is reviewed and approved by Arun. File Map is static/unmanaged and not functionally equivalent to the proposed module. `suppliers.supplier_documents` lives in a separate operational database (`ledsone`) outside this project's scope, is not proposed for reuse or modification by REQ-KM-001, and is recorded only as an external overlap signal.
 
 ## F. Google Ownership Feasibility
 
@@ -91,4 +91,4 @@ Only the two files listed in §L were staged and committed. No `git add -A` / `g
 
 ## P. Verdict
 
-**PASS** (process compliance) / **AMBER** (module readiness — per discovery doc §19, the module cannot proceed to implementation until Phase 0 business decisions are made; see discovery doc §20 for the single next step).
+**PASS** (process compliance) / **AMBER** (module readiness — per discovery doc §19, the module cannot proceed to implementation until Phase 0 business decisions are made, and duplicate-truth risk (§E above, discovery doc §6) remains OPEN pending a live `management_aios` inspection not completed this session; see discovery doc §20 for the next step).
