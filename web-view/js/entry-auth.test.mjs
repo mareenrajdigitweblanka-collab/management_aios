@@ -309,3 +309,112 @@ test('re-authenticating after a mid-session loss reveals the app shell again wit
   assert.equal(els.appShell.hidden, false);
   assert.equal(authenticatedCalls, 1, 'boot() runs exactly once for the whole page lifetime');
 }, { storedAuth: { token: 'saved-token', memberKey: 'mayurika' } }));
+
+// ── REQ-AUTH-ENTRY-011 (2026-08-11) — stuck "Checking authorization…" for
+//    unauthenticated users. Root cause was a CSS [hidden]-specificity bug
+//    (see entry-auth-css-structure.test.mjs), not a JS/network bug — these
+//    tests pin down the exact /verify request counts and the checking-
+//    indicator's hidden STATE (this file has no CSS engine; the visual
+//    fix itself is verified separately, by reading the actual rendered
+//    `display` value is not possible here — entry-auth-css-structure.test.mjs
+//    asserts the fixed stylesheet text directly) so a future change can
+//    never silently reintroduce an actual duplicate-request regression
+//    even if the CSS side stays correct. ──────────────────────────────────
+
+test('no saved token: form is enabled and ready for input (not busy/disabled)', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  globalThis.fetch = function () { throw new Error('must not fetch when there is no stored token'); };
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+
+  assert.equal(els.submitBtn.disabled, false);
+  assert.equal(els.input.value, '', 'input ready/empty, not left in a stale state');
+}));
+
+test('no saved token: exactly zero /verify requests are ever made', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  var fetchCalls = 0;
+  globalThis.fetch = function () { fetchCalls += 1; return fakeFetchJson(200, {})(); };
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+
+  assert.equal(fetchCalls, 0);
+}));
+
+test('no saved token, left idle: no background /verify polling ever starts', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  var fetchCalls = 0;
+  globalThis.fetch = function () { fetchCalls += 1; return fakeFetchJson(200, {})(); };
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+
+  // Several idle event-loop turns, simulating a user leaving the token
+  // screen open — no timer/interval/retry exists anywhere in entry-auth.js
+  // (confirmed by code reading: no setInterval/setTimeout call at all), so
+  // this must stay at 0 no matter how long the wait.
+  for (var i = 0; i < 5; i++) { await flush(); }
+
+  assert.equal(fetchCalls, 0, 'idle unauthenticated browser must never auto-poll /verify');
+  assert.equal(els.form.hidden, false, 'form remains available the whole time');
+}));
+
+test('saved token: checking indicator stays hidden=false (visible) while the verify request is pending', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  var controllable = makeControllableFetch();
+  globalThis.fetch = controllable.fetchImpl;
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+
+  assert.equal(els.checking.hidden, false, 'checking indicator state remains visible while genuinely verifying');
+  assert.equal(els.form.hidden, true, 'form not shown while a saved-token check is still pending');
+  assert.equal(els.appShell.hidden, true);
+
+  controllable.resolveNext(200, { memberKey: 'mayurika' });
+  await flush();
+}, { storedAuth: { token: 'saved-token', memberKey: 'mayurika' } }));
+
+test('saved token: exactly one /verify request is made for the whole startup check', withEnv(async (env) => {
+  var callCount = 0;
+  globalThis.fetch = function () { callCount += 1; return fakeFetchJson(200, { memberKey: 'mayurika' })(); };
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+  await flush();
+
+  assert.equal(callCount, 1);
+}, { storedAuth: { token: 'saved-token', memberKey: 'mayurika' } }));
+
+test('valid saved token: checking indicator is hidden once AUTHENTICATED', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  globalThis.fetch = fakeFetchJson(200, { memberKey: 'mayurika' });
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+  await flush();
+
+  assert.equal(els.checking.hidden, true);
+  assert.equal(els.gateScreen.hidden, true);
+}, { storedAuth: { token: 'saved-token', memberKey: 'mayurika' } }));
+
+test('invalid saved token: checking indicator is hidden once UNAUTHENTICATED', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  globalThis.fetch = fakeFetchJson(401, {});
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+  await flush();
+
+  assert.equal(els.checking.hidden, true, 'checking indicator state cleared, not left stuck visible');
+  assert.equal(els.form.hidden, false);
+}, { storedAuth: { token: 'stale-token', memberKey: 'mayurika' } }));
+
+test('manual submit: exactly one /verify request per explicit submission', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  var callCount = 0;
+  globalThis.fetch = function () { callCount += 1; return fakeFetchJson(200, { memberKey: 'suman' })(); };
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+
+  els.input.value = 'a-real-token';
+  els.submitBtn.click();
+  await flush();
+
+  assert.equal(callCount, 1);
+}));

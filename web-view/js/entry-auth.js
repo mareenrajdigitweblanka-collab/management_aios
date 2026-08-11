@@ -63,8 +63,18 @@ function queryGateEls() {
   };
 }
 
+/* Hiding #authGateScreen alone is visually sufficient (its children,
+   including #authGateChecking, are never rendered while their ancestor
+   is hidden) — but REQ-AUTH-ENTRY-011 (2026-08-11) showed that relying
+   on an ancestor's hidden state as the ONLY source of truth for a
+   descendant's own visibility is exactly the kind of implicit state that
+   goes stale/wrong; #authGateChecking.hidden is explicitly reset here
+   too so this module's own state is never inconsistent with what's
+   rendered, regardless of how the gate screen's CSS/markup changes
+   later. */
 function revealApp(els) {
   if (els.gateScreen) { els.gateScreen.hidden = true; }
+  if (els.checking) { els.checking.hidden = true; }
   if (els.appShell) { els.appShell.hidden = false; }
 }
 

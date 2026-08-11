@@ -18,6 +18,20 @@
   background: var(--bg);
 }
 
+/* REQ-AUTH-ENTRY-011 (2026-08-11) — a native `hidden` attribute and this
+   rule's own unconditional `display: flex` above are the same specificity
+   (one attribute selector vs. one class selector), so author-cascade
+   order alone decided the winner and this class's `display: flex` always
+   won — `hidden` never actually hid this element. This compound selector
+   (class + attribute, higher specificity than either alone) is the fix;
+   same technique .auth-gate-checking[hidden] below uses, and the same
+   "[hidden] cannot reliably beat an element's own conflicting display
+   value" gotcha web-view/README.md already documents for
+   .msc-calendar-main/.msc-view-dropdown. */
+.auth-gate-screen[hidden] {
+  display: none;
+}
+
 .auth-gate-card {
   width: 100%;
   max-width: 380px;
@@ -55,6 +69,20 @@
   color: var(--text-secondary);
   font-size: var(--font-sm);
   padding: var(--space-5) 0;
+}
+
+/* REQ-AUTH-ENTRY-011 (2026-08-11) — root cause of "Checking authorization…"
+   staying visible alongside the token form for a fresh, no-saved-token
+   visitor. entry-auth.js's showGateForm() correctly sets
+   #authGateChecking.hidden = true (verified by direct code reading — there
+   is no JS bug and no repeated /verify request; see
+   validation/unauthenticated-checking-state-stuck-fix-check-2026-08-11.md
+   §3 for the full evidence trail), but this class's own unconditional
+   `display: flex` above defeated the native `[hidden]` UA rule at equal
+   specificity — the checking text/spinner kept rendering even though the
+   attribute was set. This higher-specificity override is the fix. */
+.auth-gate-checking[hidden] {
+  display: none;
 }
 
 .auth-gate-spinner {
