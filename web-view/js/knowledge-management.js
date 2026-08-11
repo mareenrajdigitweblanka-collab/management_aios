@@ -472,7 +472,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   };
 
   var state = {
-    status: 'loading', // 'loading' | 'data' | 'empty' | 'error'
+    status: 'loading', // 'loading' | 'refreshing' | 'data' | 'empty' | 'error'
     documents: [],
     filters: {
       search: '', team: 'all', documentType: 'all', lifecycleStatus: 'all',
@@ -1040,10 +1040,20 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     document.body.appendChild(overlay);
 
     var triggerEl = null;
+    // Tracks whether THIS overlay is currently the one holding the shared
+    // scroll lock — see open()'s comment. Without this guard, every
+    // Detail-modal button that reopens this same singleton with new
+    // content (Edit Metadata, Create New Version, Version History, Audit
+    // History, Delete) called lockBodyScroll() an extra time without ever
+    // pairing it with a matching close(), permanently stranding
+    // document.body at `position: fixed` after the modal visually closed
+    // — the exact "page stuck partway down, can't scroll to top" defect
+    // found via real-browser reproduction (2026-08-11 scroll audit).
+    var holdsLock = false;
 
     function close() {
       overlay.classList.remove('show');
-      unlockBodyScroll();
+      if (holdsLock) { unlockBodyScroll(); holdsLock = false; }
       overlay.removeEventListener('keydown', onKeydown);
       bodyEl.textContent = '';
       if (triggerEl) { returnFocus(triggerEl); }
@@ -1057,13 +1067,23 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     closeBtn.addEventListener('click', close);
     overlay.addEventListener('click', function (e) { if (e.target === overlay) { close(); } });
 
+    /* This one overlay element is reused as a "screen" for every KM modal
+       type (Detail, Edit Metadata, Create Version, Version History, Audit
+       History, Delete) — a button INSIDE the currently-shown content
+       (e.g. Detail's own "Delete" button) calls open() again on this same
+       instance to swap in new content, without the caller ever calling
+       close() first (there is only ever one overlay visible; swapping
+       content is not a nested "second modal opening"). lockBodyScroll()
+       is therefore only called on the FIRST open() of a given show cycle
+       — holdsLock already true means this call is a content swap within
+       an already-locked, already-open overlay, not a fresh open. */
     function open(title, buildBody, trigger) {
       triggerEl = trigger || document.activeElement;
       titleEl.textContent = title;
       bodyEl.textContent = '';
       buildBody(bodyEl, close);
       overlay.classList.add('show');
-      lockBodyScroll();
+      if (!holdsLock) { lockBodyScroll(); holdsLock = true; }
       overlay.addEventListener('keydown', onKeydown);
       window.requestAnimationFrame(function () {
         var focusable = box.querySelector('.msc-km-modal-first-focus') || box.querySelector('.msc-km-modal-primary-focus');
@@ -1841,9 +1861,22 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   }
 
   function renderTable() {
-    countPill.textContent = state.status === 'data'
+    countPill.textContent = (state.status === 'data' || state.status === 'refreshing')
       ? state.documents.length + (state.documents.length === 1 ? ' document' : ' documents')
       : '';
+
+    /* 'refreshing' (2026-08-11 scroll audit) — a background refetch of an
+       already-rendered table (after delete/restore/archive/edit/version,
+       or a filter change) deliberately leaves the current table exactly
+       as-is instead of blanking it to a loading message first. Collapsing
+       the table to one line and back within a few hundred ms was
+       clamping/discarding the user's scroll position the instant it had
+       just been restored by ui/scroll-lock.js's unlockBodyScroll() —
+       landing them back near the page top after every delete. A genuinely
+       first load (state.status starts 'loading', never 'refreshing') is
+       unaffected and still shows the loading state, since there is
+       nothing on screen yet to preserve. */
+    if (state.status === 'refreshing') { return; }
 
     tableRegion.textContent = '';
 
@@ -1892,7 +1925,11 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   // ── Orchestration ───────────────────────────────────────────────────
 
   function loadDocuments() {
-    state.status = 'loading';
+    // See renderTable()'s 'refreshing' branch — only blank the table to a
+    // loading message on a genuinely first/error-recovery load; a refresh
+    // of already-rendered data keeps that data on screen untouched while
+    // the new request is in flight.
+    state.status = state.status === 'data' ? 'refreshing' : 'loading';
     state.errorMessage = null;
     renderTable();
     var requestId = ++state.requestId;

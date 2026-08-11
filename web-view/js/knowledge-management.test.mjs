@@ -33,6 +33,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { installFakeBrowserGlobals } from './review-summaries-test-dom.mjs';
+import { __resetScrollLockForTests } from './ui/scroll-lock.js';
 
 var importCounter = 0;
 function loadKmModule() {
@@ -2212,4 +2213,119 @@ test('166. dashboard widget calculations are unchanged — same summary fixture 
   assert.match(text, new RegExp(String(SUMMARY_FIXTURE.total)));
   assert.match(text, new RegExp(String(SUMMARY_FIXTURE.pending)));
   assert.match(text, new RegExp(String(SUMMARY_FIXTURE.archived)));
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// Scroll/layout audit (167-172) — regression coverage for the real
+// production defect found and fixed via real-browser validation
+// (2026-08-11): the shared body-scroll lock (ui/scroll-lock.js) was
+// permanently stranding document.body at `position: fixed` after any
+// Detail-modal transition (Delete/Edit Metadata/Create Version/Version
+// History/Audit History) that reopens the same singleton modal without
+// an intervening close(). These tests assert the OBSERVABLE fix —
+// document.body.classList no longer carries 'msc-scroll-locked' once the
+// modal is genuinely closed — through the exact nested-transition paths
+// that were broken. The CSS-only scroll/overflow architecture itself
+// (single scroll owner = window/body, no competing overflow:hidden
+// ancestor) has no equivalent fake-DOM representation and is instead
+// covered by real-browser evidence — see
+// validation/screenshots/knowledge-management-scroll-audit-2026-08-11/
+// and its accompanying report for that evidence. ══════════════════════
+
+test('167. Delete-from-Detail-modal releases the shared scroll lock once fully closed (regression for the stuck-scroll production defect)', withEnv(async () => {
+  __resetScrollLockForTests(); // see its own doc comment — ui/scroll-lock.js is a shared leaf module across this whole test file's run
+  var { mountEl } = await mountWithFixture({ softDelete: function () { return Promise.resolve({ id: FIXTURE_DOC.id, deleted: true }); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  assert.equal(document.body.classList.contains('msc-scroll-locked'), true, 'Detail modal should lock scroll while open');
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Delete'; })[0], 'click');
+  await flush();
+  // Still locked — this is a content swap within the SAME open overlay,
+  // not a second independent modal opening.
+  assert.equal(document.body.classList.contains('msc-scroll-locked'), true, 'still one open overlay while showing the Delete form');
+  document.querySelector('#msc-km-delete-reason').value = 'Regression test';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.equal(document.body.classList.contains('msc-scroll-locked'), false, 'scroll lock must be fully released once the overlay is actually closed');
+  assert.equal(document.body.style.position, '', 'body position must be cleared, not left at position: fixed');
+}));
+
+test('168. Detail -> Edit Metadata -> Cancel releases the shared scroll lock (same class of bug, different transition path)', withEnv(async () => {
+  __resetScrollLockForTests();
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Edit Metadata'; })[0], 'click');
+  await flush();
+  assert.equal(document.body.classList.contains('msc-scroll-locked'), true);
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Cancel'; })[0], 'click');
+  await flush();
+  assert.equal(document.body.classList.contains('msc-scroll-locked'), false, 'scroll lock must be released after Edit Metadata Cancel, not stranded');
+}));
+
+test('169. Detail -> Create New Version -> Cancel releases the shared scroll lock (same class of bug, third transition path)', withEnv(async () => {
+  __resetScrollLockForTests();
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Create New Version'; })[0], 'click');
+  await flush();
+  assert.equal(document.body.classList.contains('msc-scroll-locked'), true);
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Cancel'; })[0], 'click');
+  await flush();
+  assert.equal(document.body.classList.contains('msc-scroll-locked'), false, 'scroll lock must be released after Create Version Cancel, not stranded');
+}));
+
+test('170. a background refresh after archive keeps the existing table visible instead of blanking to a loading message', withEnv(async () => {
+  var resolveArchive;
+  var { mountEl } = await mountWithFixture({
+    archive: function () { return new Promise(function (resolve) { resolveArchive = resolve; }); }
+  });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Archive'; })[0], 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  // archive() promise not resolved yet -> loadDocuments() is mid-flight;
+  // the previously-rendered table must still be showing, not a loading
+  // spinner (which would have blanked/shrunk the page, per the scroll
+  // audit's root-cause finding).
+  assert.equal(q(mountEl, '.msc-km-loading'), null, 'must not blank an already-rendered table to a loading message during a background refresh');
+  assert.ok(q(mountEl, '.msc-km-table'), 'previously-rendered table must remain visible while the refresh is in flight');
+  resolveArchive(Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' }));
+  await flush();
+  assert.ok(q(mountEl, '.msc-km-table'), 'table renders normally once the refresh resolves');
+}));
+
+test('171. a genuinely first load still shows the loading state (regression against accidentally removing it)', withEnv(async () => {
+  var resolveList;
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var api = makeFixtureApi({ list: function () { return new Promise(function (resolve) { resolveList = resolve; }); } });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
+  assert.ok(q(mountEl, '.msc-km-loading'), 'first load with nothing on screen yet must still show the loading state');
+  resolveList({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 });
+  await flush();
+  assert.equal(q(mountEl, '.msc-km-loading'), null);
+}));
+
+test('172. clearing a search filter with existing results keeps the table visible during the refetch, not a loading blank', withEnv(async () => {
+  var resolveList;
+  var listCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) {
+      listCalls += 1;
+      if (listCalls === 1) { return Promise.resolve({ records: [FIXTURE_DOC, FIXTURE_DOC_2], total: 2, limit: 200, offset: 0 }); }
+      return new Promise(function (resolve) { resolveList = resolve; });
+    }
+  });
+  document.querySelector('#msc-km-search-input').value = 'kpi';
+  fire(document.querySelector('#msc-km-search-input'), 'input');
+  await new Promise(function (resolve) { setTimeout(resolve, 300); });
+  assert.equal(q(mountEl, '.msc-km-loading'), null, 'filter refetch with prior data on screen must not blank to a loading message');
+  assert.ok(q(mountEl, '.msc-km-table'));
+  resolveList({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 });
+  await flush();
 }));

@@ -328,7 +328,19 @@ export function installFakeBrowserGlobals(opts) {
   var fakeWindow = {
     localStorage: fakeLocalStorage,
     location: { hostname: 'localhost' },
-    requestAnimationFrame: function (cb) { cb(); }
+    requestAnimationFrame: function (cb) { cb(); },
+    // scrollY/scrollTo (2026-08-11 KM scroll audit) — ui/scroll-lock.js
+    // reads window.scrollY and calls window.scrollTo(x, y) verbatim
+    // against whatever `window` is global at call time; a real minimal
+    // stub (not a no-op) so tests can assert the restored scroll value,
+    // same as a real browser's basic scroll-position bookkeeping.
+    scrollY: 0,
+    pageYOffset: 0,
+    scrollTo: function (_x, y) {
+      var target = (typeof y === 'number') ? y : (_x && typeof _x.top === 'number' ? _x.top : 0);
+      fakeWindow.scrollY = target;
+      fakeWindow.pageYOffset = target;
+    }
   };
   globalThis.document = fakeDocument;
   globalThis.window = fakeWindow;

@@ -41,3 +41,25 @@ export function unlockBodyScroll() {
     window.scrollTo(0, savedScrollY);
   }
 }
+
+/* Test-only. This module's lock counter is intentionally page-lifetime
+   state in production (one real page load = one module instance,
+   correctly never reset) — but knowledge-management.test.mjs loads a
+   FRESH knowledge-management.js per test (via a versioned import query)
+   while this leaf module stays cached and shared across the whole test
+   file's run, same as every other leaf ui/* module. Without a reset hook,
+   an earlier test that opens a modal without closing it leaves lockCount
+   nonzero for every later test, silently breaking the ability to assert
+   on this module's DOM side effects (document.body.classList/style).
+   Never imported by any production code path. */
+export function __resetScrollLockForTests() {
+  lockCount = 0;
+  savedScrollY = 0;
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.remove('msc-scroll-locked');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+  }
+}

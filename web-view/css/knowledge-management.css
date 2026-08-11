@@ -714,6 +714,14 @@ textarea.msc-km-input {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-3);
+  /* Without this, CSS Grid's default stretch behavior forces every card
+     in a row to match its tallest sibling — measured (real-browser,
+     2026-08-11 scroll/layout audit) to leave 5-item cards stretched to
+     561px (same as a 10-item card) when their own natural content height
+     is ~163px. align-items: start lets each card size to its own
+     content; the grid stays visually orderly via the shared column
+     tracks/gap, it just no longer force-equalizes row height. */
+  align-items: start;
 }
 
 /* Same [hidden]-vs-author-`display` cascade issue as .msc-km-advanced-panel

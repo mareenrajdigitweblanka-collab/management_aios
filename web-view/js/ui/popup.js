@@ -39,9 +39,18 @@ export function trapTab(root, event) {
 }
 
 /* Restores focus to whatever triggered a popup/dialog/drawer open, once it
-   closes — a no-op if the trigger is missing or no longer focusable. */
+   closes — a no-op if the trigger is missing or no longer focusable.
+
+   preventScroll: true (2026-08-11 KM scroll audit) — a plain .focus() call
+   lets the browser auto-scroll the trigger element into view by default,
+   which can silently override a scroll position a caller just restored on
+   purpose (e.g. ui/scroll-lock.js's unlockBodyScroll() calling
+   window.scrollTo(0, savedScrollY) immediately before this function runs
+   in every modal's close()). Every existing caller wants focus restored,
+   never an extra, unrequested scroll jump — this is a pure bug fix, not a
+   behavior change any caller depended on. */
 export function returnFocus(trigger) {
   if (trigger && typeof trigger.focus === 'function') {
-    trigger.focus();
+    trigger.focus({ preventScroll: true });
   }
 }
