@@ -5,7 +5,16 @@
    independent (different DOM regions), so order only mirrors prior behaviour.
    config.js / calendar/core.js are evaluated before their consumers by the ES
    module loader's static import graph — no consumer runs before its config.
-   No formerly-private state is exposed on window. */
+   No formerly-private state is exposed on window.
+
+   REQ-AUTH-ENTRY-009 (2026-08-11) — boot() (which mounts every subsystem,
+   including data-bearing fetches like the Calendar's initAllScheduleCalendars())
+   no longer runs unconditionally on DOMContentLoaded. It is now the
+   onAuthenticated callback entry-auth.js's global entry gate calls exactly
+   once the first time this browser is confirmed authenticated (either an
+   already-valid saved token or a freshly-entered one) — see entry-auth.js
+   for the full state model and web-view/index.html for the
+   #authGateScreen/#appShell markup that gate controls. */
 
 import { initNavigation } from './navigation.js';
 import { initAllScheduleCalendars } from './calendar/instance.js';
@@ -15,6 +24,7 @@ import { initPlanningWarning } from './planning-warning.js';
 import { initReviewSummaries } from './review-summaries.js';
 import { initIssues } from './issues.js';
 import { initKnowledgeManagement } from './knowledge-management.js';
+import { initEntryAuthGate } from './entry-auth.js';
 
 function boot() {
   /* Each subsystem is idempotent to a single call and mounts its listeners /
@@ -36,8 +46,12 @@ function boot() {
   initKnowledgeManagement();
 }
 
+function start() {
+  initEntryAuthGate(boot);
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot);
+  document.addEventListener('DOMContentLoaded', start);
 } else {
-  boot();
+  start();
 }

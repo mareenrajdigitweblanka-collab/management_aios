@@ -166,6 +166,29 @@ function verifyToken(token) {
   });
 }
 
+/* REQ-AUTH-ENTRY-009 (2026-08-11) — the single place a token is verified
+   against the backend AND, only on success, stored/announced. Extracted
+   from the token dialog's own submit() below (which now calls this
+   instead of duplicating the fetch/writeStoredAuth/renderIndicator/
+   dispatchAuthChanged sequence) so the new global entry auth gate
+   (web-view/js/entry-auth.js) can reuse the exact same verify-and-store
+   path — for both a freshly-typed token and an already-stored one being
+   re-verified on page load — without a second implementation of "what
+   does a successful verification do." Rejects (never resolves false) on
+   an invalid/unreachable token; storage is untouched on rejection, same
+   as verifyToken() alone always was — callers decide whether a failure
+   should also clear any previously-stored token (entry-auth.js's saved-
+   token boot check does; a first-time or Change Token dialog attempt,
+   with nothing new stored yet, does not). */
+export function verifyAndStoreToken(token) {
+  return verifyToken(token).then(function (body) {
+    writeStoredAuth(token, body.memberKey);
+    renderIndicator();
+    dispatchAuthChanged();
+    return body.memberKey;
+  });
+}
+
 // ── Token dialog — "Authorize this browser" (first use) and "Change
 //    Calendar token" (topbar control) share ONE lazy-singleton dialog
 //    (same pattern as ui/dialog.js's ensureDialog()), parameterized per
@@ -420,15 +443,12 @@ function ensureTokenDialog() {
     setButtonBusy(submitBtn, true, { busyLabel: 'Verifying…' });
     cancelBtn.disabled = true;
     var announceSuccess = !!(activeOptions && activeOptions.announceSuccess);
-    verifyToken(token).then(function (body) {
-      writeStoredAuth(token, body.memberKey);
-      renderIndicator();
-      dispatchAuthChanged();
+    verifyAndStoreToken(token).then(function (memberKey) {
       if (announceSuccess) {
         showToast({
           type: 'success',
           title: 'Authorization updated',
-          message: 'Calendar authorization changed to ' + labelForMemberKey(body.memberKey) + '.'
+          message: 'Calendar authorization changed to ' + labelForMemberKey(memberKey) + '.'
         });
       }
       submitting = false;

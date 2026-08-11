@@ -15,9 +15,54 @@
   <link rel="stylesheet" href="./css/review-summaries.css" />
   <link rel="stylesheet" href="./css/issues.css" />
   <link rel="stylesheet" href="./css/knowledge-management.css" />
+  <link rel="stylesheet" href="./css/entry-auth.css" />
 </head>
 
 <body>
+
+  <!-- ═══════════════════════════════════
+     GLOBAL ENTRY AUTHENTICATION GATE (REQ-AUTH-ENTRY-009, 2026-08-11)
+     Application entry point — no Management AIOS content (dashboard,
+     header, search, sidebar, Root/File Map, member navigation, Calendar,
+     task lists, Staff Data, Review Summaries, Issues, Knowledge
+     Management) may be visible until a member token is verified. Visible
+     by default (the "Checking authorization…" state below) so this is
+     the ONLY thing a first-time page load ever paints; #appShell just
+     below carries the `hidden` attribute directly in this raw HTML — not
+     added by JavaScript — so there is no flash of application content
+     while js/entry-auth.js resolves a saved token or waits for one to be
+     entered. See docs/global-authentication-entry-gate-requirement-
+     2026-08-11.md and web-view/js/entry-auth.js for the full state model.
+     ═══════════════════════════════════ -->
+  <div id="authGateScreen" class="auth-gate-screen">
+    <div class="auth-gate-card">
+      <div class="auth-gate-logo">Management <span>AIOS</span></div>
+      <h1 class="auth-gate-title">Authorization Required</h1>
+
+      <div id="authGateChecking" class="auth-gate-checking" role="status" aria-live="polite">
+        <span class="auth-gate-spinner" aria-hidden="true"></span>
+        <span>Checking authorization…</span>
+      </div>
+
+      <div id="authGateForm" class="auth-gate-form" hidden>
+        <p class="auth-gate-message">Enter your Management AIOS member token to continue.</p>
+        <label for="authGateTokenInput" class="calendar-auth-label">Member token</label>
+        <div class="calendar-auth-input-wrap">
+          <input id="authGateTokenInput" name="auth-gate-token" type="password" autocomplete="off"
+            autocapitalize="off" spellcheck="false"
+            class="calendar-auth-input calendar-auth-input--with-toggle" />
+          <button type="button" id="authGateToggleVisibility" class="calendar-auth-toggle-visibility"
+            aria-label="Show token" aria-pressed="false">Show</button>
+        </div>
+        <p id="authGateError" class="calendar-auth-error" role="alert" hidden></p>
+        <div class="auth-gate-actions">
+          <button type="button" id="authGateSubmitBtn" class="msc-btn msc-btn-primary auth-gate-submit-btn">Authorize</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="appShell" class="app-shell" hidden>
 
   <!-- ═══════════════════════════════════
      TOP BAR — compact application header (2026-07-17 redesign)
@@ -2156,6 +2201,9 @@
     ══════════════════════════════════ -->
   </main>
   </div><!-- /.app-body -->
+
+  </div><!-- /#appShell (REQ-AUTH-ENTRY-009, 2026-08-11) -->
+
   <!-- ═══════════════════════════════════
      INLINE JAVASCRIPT
 ═══════════════════════════════════ -->
