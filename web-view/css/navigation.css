@@ -130,7 +130,6 @@
       position: sticky;
       top: var(--header-height);
       height: calc(100vh - var(--header-height));
-      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -145,6 +144,11 @@
       padding: var(--space-5) var(--space-3);
       background: var(--sidebar-bg);
       border-right: 1px solid var(--topbar-border);
+      /* Height-responsive density (REQ-SIDEBAR-RESP-008, 2026-08-11) — the
+         sidebar must never scroll internally, so overflow-y is visible,
+         not auto/scroll/hidden; the max-height media queries below make
+         the content actually shrink to fit shorter viewports instead. */
+      overflow-y: visible;
     }
 
     .app-sidebar-group + .app-sidebar-group {
@@ -589,5 +593,102 @@
 
       body.sidebar-open {
         overflow: hidden;
+      }
+    }
+
+    /* ── Height-responsive density (REQ-SIDEBAR-RESP-008, 2026-08-11) ──
+       Strict requirement: the sidebar must never grow a vertical or
+       horizontal scrollbar, every OVERVIEW/MEMBERS/STAFF/KNOWLEDGE nav
+       item (including locked, unauthenticated ones) must stay visible and
+       readable, and no section may be hidden/collapsed. Approved strategy
+       (A): only vertical whitespace and icon/button container size shrink
+       as viewport height shrinks — labels, subtitles, and badges are
+       untouched. Independent of the max-width drawer breakpoint above, so
+       it also compacts a short-height mobile drawer, not just the desktop
+       column.
+
+       Breakpoints are set with headroom around the sidebar's own measured
+       box-model total at the untouched values above — padding 20px×2 +
+       inter-group gap/margin (2px×3 + 12px×3 = 42px) + 4 group titles
+       (~12px padding each) + top-row (32px toggle + 8px margin) + 9 nav
+       rows × 44px (6px+6px padding + 32px icon) ≈ 642px of sidebar
+       content, +56px sticky header ≈ 698px viewport before the old
+       overflow-y:auto would have started scrolling. Exact rendered text
+       line-height cannot be measured pixel-for-pixel without a real
+       browser engine in this environment (no Playwright/Puppeteer/jsdom
+       in this repo — see the responsive-sidebar-height validation doc),
+       so breakpoints are placed with margin above/below that estimate
+       rather than at it, and the reduction per tier is generous enough
+       to absorb the estimate's uncertainty. */
+    @media (max-height: 820px) {
+      .app-sidebar {
+        padding: var(--space-3) var(--space-3);
+        gap: 0;
+      }
+
+      .app-sidebar-group + .app-sidebar-group {
+        margin-top: var(--space-2);
+      }
+
+      .app-sidebar-title {
+        padding: 3px 10px 4px;
+      }
+
+      .app-sidebar-top-row {
+        margin-bottom: 4px;
+      }
+
+      .app-nav-btn {
+        padding: 4px 10px;
+      }
+
+      .app-nav-icon,
+      .app-sidebar-collapse-toggle {
+        width: 26px;
+        height: 26px;
+      }
+
+      .app-nav-icon svg,
+      .app-sidebar-collapse-icon {
+        width: 15px;
+        height: 15px;
+      }
+    }
+
+    @media (max-height: 620px) {
+      .app-sidebar {
+        padding: var(--space-2) var(--space-3);
+      }
+
+      .app-sidebar-group + .app-sidebar-group {
+        margin-top: 4px;
+      }
+
+      .app-sidebar-title {
+        padding: 2px 10px 3px;
+      }
+
+      .app-sidebar-top-row {
+        margin-bottom: 2px;
+      }
+
+      .app-nav-btn {
+        padding: 3px 10px;
+      }
+
+      .app-nav-btn-text {
+        gap: 0;
+      }
+
+      .app-nav-icon,
+      .app-sidebar-collapse-toggle {
+        width: 22px;
+        height: 22px;
+      }
+
+      .app-nav-icon svg,
+      .app-sidebar-collapse-icon {
+        width: 13px;
+        height: 13px;
       }
     }
