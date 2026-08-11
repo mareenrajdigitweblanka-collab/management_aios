@@ -733,6 +733,184 @@ class DeletedListTests(KnowledgeDocumentsTestCase):
         self.assertEqual(self.count_documents(), 1)
 
 
+# ── ADVANCED FILTERS (SRD §9 Search & Filter completion) ────────────────
+
+
+class AdvancedFilterTests(KnowledgeDocumentsTestCase):
+    def test_61_creator_filter_partial_match(self):
+        self.seed_document(title="By Arunraj", creator="Arunraj", source_url="https://example.com/a")
+        self.seed_document(title="By Suman", creator="Suman", source_url="https://example.com/b")
+        response = self.client.get(BASE, params={"creator": "arun"}, headers=bearer_header("mayurika"))
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["By Arunraj"])
+
+    def test_62_job_role_filter_partial_match(self):
+        self.seed_document(title="HR Role Doc", job_role="HR Officer", source_url="https://example.com/a")
+        self.seed_document(title="Dev Role Doc", job_role="Developer", source_url="https://example.com/b")
+        response = self.client.get(BASE, params={"job_role": "officer"}, headers=bearer_header("mayurika"))
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["HR Role Doc"])
+
+    def test_63_created_by_filter_exact_match(self):
+        self.seed_document(title="By Mayurika", created_by="mayurika", source_url="https://example.com/a")
+        self.seed_document(title="By Arun", created_by="arun", source_url="https://example.com/b")
+        response = self.client.get(BASE, params={"created_by": "arun"}, headers=bearer_header("mayurika"))
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["By Arun"])
+
+    def test_64_version_filter_exact_match(self):
+        self.seed_document(title="V1 Doc", current_version="1.0", source_url="https://example.com/a")
+        self.seed_document(title="V2 Doc", current_version="2.0", source_url="https://example.com/b")
+        response = self.client.get(BASE, params={"version": "2.0"}, headers=bearer_header("mayurika"))
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["V2 Doc"])
+
+    def test_65_compliance_status_filter(self):
+        self.seed_document(title="Pending Doc", compliance_status="Pending", source_url="https://example.com/a")
+        self.seed_document(
+            title="Completed Doc", document_type="PDF", compliance_status="Completed",
+            source_url="https://example.com/b",
+        )
+        response = self.client.get(BASE, params={"compliance_status": "Completed"}, headers=bearer_header("mayurika"))
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["Completed Doc"])
+
+    def test_66_created_date_range_filter(self):
+        self.seed_document(
+            title="Old Doc", now=datetime(2026, 1, 1, tzinfo=timezone.utc), source_url="https://example.com/a",
+        )
+        self.seed_document(
+            title="New Doc", now=datetime(2026, 8, 1, tzinfo=timezone.utc), source_url="https://example.com/b",
+        )
+        response = self.client.get(
+            BASE, params={"created_from": "2026-07-01", "created_to": "2026-08-31"},
+            headers=bearer_header("mayurika"),
+        )
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["New Doc"])
+
+    def test_67_updated_date_range_filter(self):
+        self.seed_document(
+            title="Old Update", now=datetime(2026, 1, 1, tzinfo=timezone.utc), source_url="https://example.com/a",
+        )
+        self.seed_document(
+            title="Recent Update", now=datetime(2026, 8, 1, tzinfo=timezone.utc), source_url="https://example.com/b",
+        )
+        response = self.client.get(
+            BASE, params={"updated_from": "2026-07-01"}, headers=bearer_header("mayurika"),
+        )
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["Recent Update"])
+
+    def test_68_combined_advanced_filters(self):
+        self.seed_document(
+            title="Match", creator="Arunraj", job_role="Implementation Officer",
+            current_version="1.0", compliance_status="Pending", source_url="https://example.com/a",
+        )
+        self.seed_document(
+            title="No Match", creator="Arunraj", job_role="Implementation Officer",
+            current_version="2.0", compliance_status="Pending", source_url="https://example.com/b",
+        )
+        response = self.client.get(
+            BASE, params={"creator": "Arun", "job_role": "Implementation", "version": "1.0"},
+            headers=bearer_header("mayurika"),
+        )
+        titles = [r["title"] for r in response.json()["records"]]
+        self.assertEqual(titles, ["Match"])
+
+    def test_69_unauthenticated_advanced_filter_rejected(self):
+        self.seed_document(title="Active One")
+        response = self.client.get(BASE, params={"creator": "x"})
+        self.assertEqual(response.status_code, 401)
+
+
+# ── SUMMARY (dashboard aggregation, SRD §13) ──────────────────────────────
+
+
+class SummaryTests(KnowledgeDocumentsTestCase):
+    def test_70_unauthenticated_rejected(self):
+        response = self.client.get(f"{BASE}/summary")
+        self.assertEqual(response.status_code, 401)
+
+    def test_71_totals_and_status_counts(self):
+        self.seed_document(title="Active Pending", source_url="https://example.com/a")
+        self.seed_document(
+            title="Archived Completed", document_type="PDF", lifecycle_status="Archived",
+            compliance_status="Completed", source_url="https://example.com/b",
+        )
+        self.seed_document(
+            title="Deleted One", source_url="https://example.com/c",
+            deleted_at=datetime.now(timezone.utc), deleted_by="mayurika", delete_reason="x",
+        )
+        response = self.client.get(f"{BASE}/summary", headers=bearer_header("mayurika"))
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        # Deleted document excluded from every count (matches every other
+        # active-scoped view in this router).
+        self.assertEqual(body["total"], 2)
+        self.assertEqual(body["active"], 1)
+        self.assertEqual(body["archived"], 1)
+        self.assertEqual(body["pending"], 1)
+        self.assertEqual(body["completed"], 1)
+
+    def test_72_missing_creator_count(self):
+        self.seed_document(title="No Creator", creator=None, source_url="https://example.com/a")
+        self.seed_document(title="Has Creator", creator="Arunraj", source_url="https://example.com/b")
+        response = self.client.get(f"{BASE}/summary", headers=bearer_header("mayurika"))
+        self.assertEqual(response.json()["missing_creator"], 1)
+
+    def test_73_google_unverified_reflects_real_blocked_state(self):
+        # google_ownership_status is only ever 'Not Applicable'/'Not
+        # Verified' in this codebase — no route can ever write 'Verified'
+        # (REQ-KM-001 discovery §7, still BLOCKED). This count is therefore
+        # expected to equal every active Google-type document, honestly.
+        self.seed_document(
+            title="Google Sheet Doc", document_type="Google Sheet",
+            google_ownership_status="Not Verified", source_url="https://example.com/a",
+        )
+        self.seed_document(title="PDF Doc", document_type="PDF", source_url="https://example.com/b")
+        response = self.client.get(f"{BASE}/summary", headers=bearer_header("mayurika"))
+        self.assertEqual(response.json()["google_unverified"], 1)
+
+    def test_74_by_team_breakdown(self):
+        self.seed_document(title="HR One", team="HR", source_url="https://example.com/a")
+        self.seed_document(title="HR Two", team="HR", source_url="https://example.com/b")
+        self.seed_document(title="Dev One", team="Development", source_url="https://example.com/c")
+        response = self.client.get(f"{BASE}/summary", headers=bearer_header("mayurika"))
+        by_team = {row["team"]: row["count"] for row in response.json()["by_team"]}
+        self.assertEqual(by_team["HR"], 2)
+        self.assertEqual(by_team["Development"], 1)
+
+    def test_75_recently_added_ordering(self):
+        self.seed_document(
+            title="Older", now=datetime(2026, 1, 1, tzinfo=timezone.utc), source_url="https://example.com/a",
+        )
+        self.seed_document(
+            title="Newer", now=datetime(2026, 8, 1, tzinfo=timezone.utc), source_url="https://example.com/b",
+        )
+        response = self.client.get(f"{BASE}/summary", headers=bearer_header("mayurika"))
+        titles = [r["title"] for r in response.json()["recently_added"]]
+        self.assertEqual(titles[0], "Newer")
+
+    def test_76_recent_activity_includes_create_action(self):
+        self.create_document(title="Freshly Created")
+        response = self.client.get(f"{BASE}/summary", headers=bearer_header("mayurika"))
+        actions = [row["action"] for row in response.json()["recent_activity"]]
+        self.assertIn("create", actions)
+
+    def test_77_latest_version_updates_reflects_version_create(self):
+        doc_response = self.create_document(title="Versioned Doc")
+        doc_id = doc_response.json()["id"]
+        self.client.post(
+            f"{BASE}/{doc_id}/versions",
+            json={"source_url": "https://example.com/v2", "version_label": "2.0", "change_description": "Update"},
+            headers=bearer_header("mayurika"),
+        )
+        response = self.client.get(f"{BASE}/summary", headers=bearer_header("mayurika"))
+        labels = [row["version_label"] for row in response.json()["latest_version_updates"]]
+        self.assertIn("2.0", labels)
+
+
 # ── MD read-only enforcement (extra, beyond the required 54 — directly
 #    exercises the rule-1-derived MD exclusion documented in
 #    knowledge_documents.py's module docstring) ────────────────────────────

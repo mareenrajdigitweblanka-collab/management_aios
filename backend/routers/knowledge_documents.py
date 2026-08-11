@@ -61,7 +61,7 @@ from any read route in this file (only writes). It is registered BEFORE
 dynamic one — see that route's own docstring for the full explanation.
 """
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 from uuid import UUID
 
@@ -76,6 +76,7 @@ from backend.models import KnowledgeDocument, KnowledgeDocumentAuditLog, Knowled
 from backend.routers import knowledge_document_logic as kdl
 from backend.routers.calendar_auth import get_verified_member
 from backend.schemas import (
+    KnowledgeDocumentActivityItem,
     KnowledgeDocumentAuditLogOut,
     KnowledgeDocumentCreate,
     KnowledgeDocumentDeletedOut,
@@ -83,6 +84,8 @@ from backend.schemas import (
     KnowledgeDocumentListResponse,
     KnowledgeDocumentMetadataUpdate,
     KnowledgeDocumentOut,
+    KnowledgeDocumentSummaryResponse,
+    KnowledgeDocumentTeamCount,
     KnowledgeDocumentVersionCreate,
     KnowledgeDocumentVersionOut,
 )
@@ -93,8 +96,20 @@ router = APIRouter(prefix="/api/knowledge-documents", tags=["knowledge-documents
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
+
+def _start_of_day(d: date) -> datetime:
+    """Converts a plain (timezone-less) query-param date into a UTC
+    datetime boundary for filtering the tz-aware created_at/updated_at
+    columns — the SRD's "Created Date"/"Last Updated Date" filters are
+    date-only inputs, but the underlying columns are TIMESTAMPTZ."""
+    return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+
+
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
+RECENT_LIST_LIMIT = 5
+RECENT_ACTIVITY_LIMIT = 10
+RECENT_VERSION_LIMIT = 5
 
 _NOT_FOUND_DETAIL = "Knowledge document not found."
 
@@ -166,16 +181,47 @@ def _apply_filters(
     document_type: Optional[str],
     lifecycle_status: Optional[str],
     search: Optional[str],
+    compliance_status: Optional[str] = None,
+    creator: Optional[str] = None,
+    job_role: Optional[str] = None,
+    created_by: Optional[str] = None,
+    version: Optional[str] = None,
+    created_from: Optional[date] = None,
+    created_to: Optional[date] = None,
+    updated_from: Optional[date] = None,
+    updated_to: Optional[date] = None,
 ):
+    """Search & Filter (SRD §9) — every param here maps directly onto an
+    existing knowledge_documents column; no new column was added to
+    support any of these. AND-combined, same as the original four filters
+    (team/document_type/lifecycle_status/search)."""
     if team:
         query = query.filter(KnowledgeDocument.team == team)
     if document_type:
         query = query.filter(KnowledgeDocument.document_type == document_type)
     if lifecycle_status:
         query = query.filter(KnowledgeDocument.lifecycle_status == lifecycle_status)
+    if compliance_status:
+        query = query.filter(KnowledgeDocument.compliance_status == compliance_status)
     if search:
         like_term = f"%{search}%"
         query = query.filter(KnowledgeDocument.title.ilike(like_term))
+    if creator:
+        query = query.filter(KnowledgeDocument.creator.ilike(f"%{creator}%"))
+    if job_role:
+        query = query.filter(KnowledgeDocument.job_role.ilike(f"%{job_role}%"))
+    if created_by:
+        query = query.filter(KnowledgeDocument.created_by == created_by)
+    if version:
+        query = query.filter(KnowledgeDocument.current_version == version)
+    if created_from:
+        query = query.filter(KnowledgeDocument.created_at >= _start_of_day(created_from))
+    if created_to:
+        query = query.filter(KnowledgeDocument.created_at < _start_of_day(created_to) + timedelta(days=1))
+    if updated_from:
+        query = query.filter(KnowledgeDocument.updated_at >= _start_of_day(updated_from))
+    if updated_to:
+        query = query.filter(KnowledgeDocument.updated_at < _start_of_day(updated_to) + timedelta(days=1))
     return query
 
 
@@ -225,7 +271,16 @@ def list_knowledge_documents(
     team: Optional[str] = Query(default=None),
     document_type: Optional[str] = Query(default=None),
     lifecycle_status: Optional[str] = Query(default=None),
+    compliance_status: Optional[str] = Query(default=None),
     search: Optional[str] = Query(default=None, max_length=200),
+    creator: Optional[str] = Query(default=None, max_length=200),
+    job_role: Optional[str] = Query(default=None, max_length=120),
+    created_by: Optional[str] = Query(default=None, max_length=80),
+    version: Optional[str] = Query(default=None, max_length=20),
+    created_from: Optional[date] = Query(default=None),
+    created_to: Optional[date] = Query(default=None),
+    updated_from: Optional[date] = Query(default=None),
+    updated_to: Optional[date] = Query(default=None),
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -235,8 +290,19 @@ def list_knowledge_documents(
     Management Team member or MD; no _reject_md_write call (read, not a
     write). Excludes soft-deleted records by default (no ?include_deleted=
     escape hatch — not evidenced as a requirement). Deterministic
-    ordering: title ascending, then id ascending as a stable tiebreaker."""
-    query = _apply_filters(_base_active_query(db), team, document_type, lifecycle_status, search)
+    ordering: title ascending, then id ascending as a stable tiebreaker.
+
+    compliance_status/creator/job_role/created_by/version/created_from/
+    created_to/updated_from/updated_to complete the SRD §9 Search & Filter
+    list (Document Creator, Uploaded By, Job Role, Created Date, Last
+    Updated Date, Version, Status) — every one maps onto an existing
+    column via _apply_filters; none required a schema change."""
+    query = _apply_filters(
+        _base_active_query(db), team, document_type, lifecycle_status, search,
+        compliance_status=compliance_status, creator=creator, job_role=job_role,
+        created_by=created_by, version=version, created_from=created_from, created_to=created_to,
+        updated_from=updated_from, updated_to=updated_to,
+    )
 
     total = query.with_entities(func.count(KnowledgeDocument.id)).scalar()
 
@@ -300,6 +366,106 @@ def list_deleted_knowledge_documents(
         .all()
     )
     return [KnowledgeDocumentDeletedOut.model_validate(r) for r in rows]
+
+
+# ── SUMMARY (dashboard aggregation, SRD §13) ────────────────────────────
+
+
+@router.get("/summary", response_model=KnowledgeDocumentSummaryResponse)
+def get_knowledge_document_summary(
+    db: Session = Depends(get_db),
+    acting_member: str = Depends(get_verified_member),
+):
+    """Every figure here is computed live from knowledge_documents /
+    knowledge_document_versions / knowledge_document_audit_log — no
+    separately stored or cached summary value exists, so nothing here can
+    drift from the underlying records. Registered BEFORE "/{document_id}",
+    same static-path-before-dynamic-path reason as GET /deleted above.
+    Counts (total/active/archived/pending/completed/missing_creator/
+    google_unverified/by_team) are scoped to active (non-soft-deleted)
+    documents, matching every other aggregate view in this router.
+    recently_added/recently_updated reuse KnowledgeDocumentOut (no new
+    response shape for what is just a short, filtered slice of LIST).
+    recent_activity/latest_version_updates read across ALL documents
+    (soft-deleted included) because they are activity feeds, not current-
+    state views — see KnowledgeDocumentActivityItem's docstring."""
+    base = _base_active_query(db)
+
+    def count_where(*conditions):
+        q = base
+        for c in conditions:
+            q = q.filter(c)
+        return q.with_entities(func.count(KnowledgeDocument.id)).scalar()
+
+    total = count_where()
+    active = count_where(KnowledgeDocument.lifecycle_status == "Active")
+    archived = count_where(KnowledgeDocument.lifecycle_status == "Archived")
+    pending = count_where(KnowledgeDocument.compliance_status == "Pending")
+    completed = count_where(KnowledgeDocument.compliance_status == "Completed")
+    missing_creator = count_where(KnowledgeDocument.creator.is_(None))
+    google_unverified = count_where(
+        KnowledgeDocument.document_type.in_(KNOWLEDGE_GOOGLE_DOCUMENT_TYPES),
+        KnowledgeDocument.google_ownership_status != "Verified",
+    )
+
+    team_rows = (
+        base.with_entities(KnowledgeDocument.team, func.count(KnowledgeDocument.id))
+        .group_by(KnowledgeDocument.team)
+        .order_by(KnowledgeDocument.team)
+        .all()
+    )
+    by_team = [KnowledgeDocumentTeamCount(team=row[0], count=row[1]) for row in team_rows]
+
+    recently_added = (
+        base.order_by(KnowledgeDocument.created_at.desc(), asc(KnowledgeDocument.id))
+        .limit(RECENT_LIST_LIMIT)
+        .all()
+    )
+    recently_updated = (
+        base.order_by(KnowledgeDocument.updated_at.desc(), asc(KnowledgeDocument.id))
+        .limit(RECENT_LIST_LIMIT)
+        .all()
+    )
+
+    activity_rows = (
+        db.query(KnowledgeDocumentAuditLog, KnowledgeDocument.title)
+        .join(KnowledgeDocument, KnowledgeDocument.id == KnowledgeDocumentAuditLog.document_id)
+        .order_by(KnowledgeDocumentAuditLog.occurred_at.desc())
+        .limit(RECENT_ACTIVITY_LIMIT)
+        .all()
+    )
+    recent_activity = [
+        KnowledgeDocumentActivityItem(
+            document_id=log.document_id,
+            document_title=title,
+            action=log.action,
+            actor_member_key=log.actor_member_key,
+            occurred_at=log.occurred_at,
+        )
+        for log, title in activity_rows
+    ]
+
+    version_rows = (
+        db.query(KnowledgeDocumentVersion)
+        .order_by(KnowledgeDocumentVersion.created_at.desc())
+        .limit(RECENT_VERSION_LIMIT)
+        .all()
+    )
+
+    return KnowledgeDocumentSummaryResponse(
+        total=total,
+        active=active,
+        archived=archived,
+        pending=pending,
+        completed=completed,
+        missing_creator=missing_creator,
+        google_unverified=google_unverified,
+        by_team=by_team,
+        recently_added=[_to_out(r) for r in recently_added],
+        recently_updated=[_to_out(r) for r in recently_updated],
+        recent_activity=recent_activity,
+        latest_version_updates=[KnowledgeDocumentVersionOut.model_validate(r) for r in version_rows],
+    )
 
 
 # ── DETAIL ────────────────────────────────────────────────────────────────

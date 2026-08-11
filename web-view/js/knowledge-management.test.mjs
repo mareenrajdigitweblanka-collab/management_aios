@@ -99,9 +99,27 @@ var DELETED_FIXTURE_DOC = {
   delete_reason: 'Superseded by new guide'
 };
 
+var SUMMARY_FIXTURE = {
+  total: 2, active: 1, archived: 1, pending: 1, completed: 1,
+  missing_creator: 1, google_unverified: 1,
+  by_team: [{ team: 'Management', count: 1 }, { team: 'HR', count: 1 }],
+  recently_added: [FIXTURE_DOC],
+  recently_updated: [FIXTURE_DOC],
+  recent_activity: [{
+    document_id: FIXTURE_DOC.id, document_title: FIXTURE_DOC.title,
+    action: 'create', actor_member_key: 'mayurika', occurred_at: '2026-08-10T10:00:00Z'
+  }],
+  latest_version_updates: [{
+    id: 'v1', document_id: FIXTURE_DOC.id, version_label: '1.0',
+    source_url: FIXTURE_DOC.source_url, change_note: null,
+    created_by: 'mayurika', created_at: '2026-08-10T10:00:00Z'
+  }]
+};
+
 function makeFixtureApi(overrides) {
   var base = {
     list: function () { return Promise.resolve({ records: [FIXTURE_DOC, FIXTURE_DOC_2], total: 2, limit: 200, offset: 0 }); },
+    summary: function () { return Promise.resolve(SUMMARY_FIXTURE); },
     detail: function () { return Promise.resolve(FIXTURE_DOC); },
     create: function () { return Promise.resolve(FIXTURE_DOC); },
     updateMetadata: function () { return Promise.resolve(FIXTURE_DOC); },
@@ -1617,3 +1635,442 @@ test('110. Review Summaries and Calendar regression', () => {
   var calendarMatches = html.match(/class="msc-instance"/g) || [];
   assert.equal(calendarMatches.length, 5);
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// SRD "Centralized Document Repository & Knowledge Management Module"
+// §9 Search & Filter completion — ADVANCED FILTERS (111-121)
+// ══════════════════════════════════════════════════════════════════════
+
+test('111. More Filters toggle is collapsed by default', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var panel = q(mountEl, '.msc-km-advanced-panel');
+  assert.ok(panel);
+  assert.equal(panel.hidden, true);
+  var toggle = q(mountEl, '.msc-km-advanced-toggle');
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+}));
+
+test('112. More Filters toggle reveals the advanced panel', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(q(mountEl, '.msc-km-advanced-toggle'), 'click');
+  var panel = q(mountEl, '.msc-km-advanced-panel');
+  assert.equal(panel.hidden, false);
+  assert.equal(q(mountEl, '.msc-km-advanced-toggle').getAttribute('aria-expanded'), 'true');
+}));
+
+test('113. Uploaded By filter options come from MEMBER_REGISTRY, MD excluded', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var select = document.querySelector('#msc-km-uploaded-by-filter');
+  var values = select.querySelectorAll('.msc-km-select-option').map(function (o) { return o.value; });
+  assert.deepEqual(values, ['all', 'mayurika', 'suman', 'arun', 'rajiv', 'paraparan']);
+}));
+
+test('114. creator filter is debounced and sent as ?creator=', withEnv(async () => {
+  var capturedFilters = null;
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) { capturedFilters = filters; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); }
+  });
+  var input = document.querySelector('#msc-km-creator-filter');
+  input.value = 'Arun';
+  fire(input, 'input');
+  await new Promise(function (resolve) { setTimeout(resolve, 300); });
+  assert.equal(capturedFilters.creator, 'Arun');
+}));
+
+test('115. job role filter updates state and reloads', withEnv(async () => {
+  var callCount = 0;
+  var { mountEl } = await mountWithFixture({
+    list: function () { callCount += 1; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); }
+  });
+  var before = callCount;
+  var input = document.querySelector('#msc-km-job-role-filter');
+  input.value = 'Officer';
+  fire(input, 'input');
+  await new Promise(function (resolve) { setTimeout(resolve, 300); });
+  assert.ok(callCount > before);
+}));
+
+test('116. Uploaded By select change reloads immediately (no debounce)', withEnv(async () => {
+  var capturedFilters = null;
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) { capturedFilters = filters; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); }
+  });
+  var select = document.querySelector('#msc-km-uploaded-by-filter');
+  select.value = 'arun';
+  fire(select, 'change');
+  await flush();
+  assert.equal(capturedFilters.uploadedBy, 'arun');
+}));
+
+test('117. Compliance Status select change reloads with the selected value', withEnv(async () => {
+  var capturedFilters = null;
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) { capturedFilters = filters; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); }
+  });
+  var select = document.querySelector('#msc-km-compliance-filter');
+  select.value = 'Completed';
+  fire(select, 'change');
+  await flush();
+  assert.equal(capturedFilters.complianceStatus, 'Completed');
+}));
+
+test('118. Version filter reaches the query string builder', withEnv(async () => {
+  var mod = await loadKmModule();
+  var qs = mod.buildListQueryString({ version: '2.0' });
+  assert.match(qs, /version=2\.0/);
+}));
+
+test('119. Created/Updated date range filters reach the query string builder', withEnv(async () => {
+  var mod = await loadKmModule();
+  var qs = mod.buildListQueryString({
+    createdFrom: '2026-07-01', createdTo: '2026-08-01', updatedFrom: '2026-07-15', updatedTo: '2026-08-15'
+  });
+  assert.match(qs, /created_from=2026-07-01/);
+  assert.match(qs, /created_to=2026-08-01/);
+  assert.match(qs, /updated_from=2026-07-15/);
+  assert.match(qs, /updated_to=2026-08-15/);
+}));
+
+test('120. Clear Advanced Filters resets every advanced field and reloads', withEnv(async () => {
+  var capturedFilters = null;
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) { capturedFilters = filters; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); }
+  });
+  document.querySelector('#msc-km-creator-filter').value = 'Arun';
+  fire(document.querySelector('#msc-km-creator-filter'), 'input');
+  await new Promise(function (resolve) { setTimeout(resolve, 300); });
+  assert.equal(capturedFilters.creator, 'Arun');
+
+  fire(q(mountEl, '.msc-km-clear-advanced'), 'click');
+  await flush();
+  assert.equal(capturedFilters.creator, '');
+  assert.equal(capturedFilters.uploadedBy, 'all');
+  assert.equal(capturedFilters.complianceStatus, 'all');
+}));
+
+test('121. hasActiveKnowledgeDocumentFilters recognizes every advanced filter', withEnv(async () => {
+  var mod = await loadKmModule();
+  assert.equal(mod.hasActiveKnowledgeDocumentFilters({}), false);
+  assert.equal(mod.hasActiveKnowledgeDocumentFilters({ creator: 'Arun' }), true);
+  assert.equal(mod.hasActiveKnowledgeDocumentFilters({ uploadedBy: 'arun' }), true);
+  assert.equal(mod.hasActiveKnowledgeDocumentFilters({ complianceStatus: 'Completed' }), true);
+  assert.equal(mod.hasActiveKnowledgeDocumentFilters({ createdFrom: '2026-01-01' }), true);
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// SRD §13 Dashboard Widgets — GET /api/knowledge-documents/summary (122-133)
+// ══════════════════════════════════════════════════════════════════════
+
+test('122. dashboard loads on mount', withEnv(async () => {
+  var summaryCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    summary: function () { summaryCalls += 1; return Promise.resolve(SUMMARY_FIXTURE); }
+  });
+  assert.equal(summaryCalls, 1);
+  assert.match(mountEl.allText(), /Total Documents/);
+}));
+
+test('123. stat tiles render the summary counts', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var text = mountEl.allText();
+  assert.match(text, /Total Documents/);
+  assert.match(text, /Archived Documents/);
+  assert.match(text, /Pending Documents/);
+  assert.match(text, /Documents Missing Creator/);
+  assert.match(text, /Google Sheets Without Verified Owner Access/);
+}));
+
+test('124. Documents by Team card renders team counts', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var text = mountEl.allText();
+  assert.match(text, /Documents by Team/);
+  assert.match(text, /Management/);
+  assert.match(text, /HR/);
+}));
+
+test('125. Recently Added Documents card renders titles', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  assert.match(mountEl.allText(), /Recently Added Documents/);
+  assert.match(mountEl.allText(), new RegExp(FIXTURE_DOC.title));
+}));
+
+test('126. Recent Updates card renders an activity row with actor and action', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var text = mountEl.allText();
+  assert.match(text, /Recent Updates/);
+  assert.match(text, /Mayurika/);
+  assert.match(text, /create/);
+}));
+
+test('127. Latest Version Updates card renders version labels', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var text = mountEl.allText();
+  assert.match(text, /Latest Version Updates/);
+  assert.match(text, /v1\.0/);
+}));
+
+test('128. empty summary shows empty-state text per card, not fabricated data', withEnv(async () => {
+  var { mountEl } = await mountWithFixture({
+    summary: function () {
+      return Promise.resolve({
+        total: 0, active: 0, archived: 0, pending: 0, completed: 0,
+        missing_creator: 0, google_unverified: 0, by_team: [],
+        recently_added: [], recently_updated: [], recent_activity: [], latest_version_updates: []
+      });
+    }
+  });
+  var text = mountEl.allText();
+  assert.match(text, /No documents registered yet\./);
+  assert.match(text, /No activity recorded yet\./);
+  assert.match(text, /No version history yet\./);
+}));
+
+test('129. dashboard error state shows Retry and recovers on click', withEnv(async () => {
+  var attempt = 0;
+  var { mountEl } = await mountWithFixture({
+    summary: function () {
+      attempt += 1;
+      if (attempt === 1) { return Promise.reject(new Error('boom')); }
+      return Promise.resolve(SUMMARY_FIXTURE);
+    }
+  });
+  assert.doesNotMatch(mountEl.allText(), /Total Documents/);
+  var summaryRegion = q(mountEl, '.msc-km-summary-region');
+  var retryBtn = Array.from(summaryRegion.querySelectorAll('.msc-btn')).find(function (b) { return b.textContent === 'Retry'; });
+  assert.ok(retryBtn);
+  fire(retryBtn, 'click');
+  await flush();
+  assert.match(mountEl.allText(), /Total Documents/);
+}));
+
+test('130. dashboard refreshes after Create Document succeeds', withEnv(async () => {
+  var summaryCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    summary: function () { summaryCalls += 1; return Promise.resolve(SUMMARY_FIXTURE); }
+  });
+  var callsAfterMount = summaryCalls;
+  fire(q(mountEl, '.msc-km-add-btn'), 'click');
+  await flush();
+  document.querySelector('#msc-km-create-title').value = 'New Doc';
+  document.querySelector('#msc-km-create-team').value = 'HR';
+  document.querySelector('#msc-km-create-type').value = 'PDF';
+  document.querySelector('#msc-km-create-url').value = 'https://example.com/new';
+  fire(document.querySelector('.msc-km-form'), 'submit');
+  await flush();
+  assert.ok(summaryCalls > callsAfterMount);
+}));
+
+test('131. dashboard refreshes after Archive succeeds', withEnv(async () => {
+  var summaryCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    summary: function () { summaryCalls += 1; return Promise.resolve(SUMMARY_FIXTURE); }
+  });
+  var callsAfterMount = summaryCalls;
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  fire(Array.prototype.filter.call(document.querySelector('.msc-km-modal-overlay').querySelectorAll('.msc-btn'), function (b) { return b.textContent === 'Archive'; })[0], 'click');
+  await flush();
+  fire(getDialogConfirmBtn(), 'click');
+  await flush();
+  assert.ok(summaryCalls > callsAfterMount);
+}));
+
+test('132. reloadSummary handle is exposed for external refresh', withEnv(async () => {
+  var summaryCalls = 0;
+  var { handle } = await mountWithFixture({
+    summary: function () { summaryCalls += 1; return Promise.resolve(SUMMARY_FIXTURE); }
+  });
+  var before = summaryCalls;
+  handle.reloadSummary();
+  await flush();
+  assert.ok(summaryCalls > before);
+}));
+
+test('133. unauthenticated mount never calls the summary endpoint', withEnv(async () => {
+  var summaryCalls = 0;
+  var mod = await loadKmModule();
+  var mountEl = document.createElement('div');
+  var api = makeFixtureApi({ summary: function () { summaryCalls += 1; return Promise.resolve(SUMMARY_FIXTURE); } });
+  mod.mountKnowledgeManagementWorkspace(mountEl, { api: api });
+  await flush();
+  assert.equal(summaryCalls, 0);
+}, { storedAuth: null }));
+
+// ══════════════════════════════════════════════════════════════════════
+// SRD §10 Browser Preview — REQUIRED NOW (134-153)
+// ══════════════════════════════════════════════════════════════════════
+
+test('134. buildDocumentPreviewSpec: Google Sheet with a recognized URL builds a preview iframe', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({
+    document_type: 'Google Sheet', source_url: 'https://docs.google.com/spreadsheets/d/ABC123/edit?usp=sharing'
+  });
+  assert.equal(spec.kind, 'iframe');
+  assert.equal(spec.url, 'https://docs.google.com/spreadsheets/d/ABC123/preview');
+}));
+
+test('135. buildDocumentPreviewSpec: Google Doc with a recognized URL builds a preview iframe', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({
+    document_type: 'Google Doc', source_url: 'https://docs.google.com/document/d/XYZ789/edit'
+  });
+  assert.equal(spec.kind, 'iframe');
+  assert.equal(spec.url, 'https://docs.google.com/document/d/XYZ789/preview');
+}));
+
+test('136. buildDocumentPreviewSpec: Google Drive File (file/d/ form) builds a preview iframe', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({
+    document_type: 'Google Drive File', source_url: 'https://drive.google.com/file/d/DEF456/view?usp=sharing'
+  });
+  assert.equal(spec.kind, 'iframe');
+  assert.equal(spec.url, 'https://drive.google.com/file/d/DEF456/preview');
+}));
+
+test('137. buildDocumentPreviewSpec: Google Drive File (open?id= form) builds a preview iframe', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({
+    document_type: 'Google Drive File', source_url: 'https://drive.google.com/open?id=GHI999'
+  });
+  assert.equal(spec.kind, 'iframe');
+  assert.equal(spec.url, 'https://drive.google.com/file/d/GHI999/preview');
+}));
+
+test('138. buildDocumentPreviewSpec: unrecognized Google URL is reported unavailable, not guessed', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'Google Sheet', source_url: 'https://example.com/not-a-real-sheet' });
+  assert.equal(spec.kind, 'unavailable');
+  assert.equal(spec.message, mod.PREVIEW_MESSAGE_UNRECOGNIZED_GOOGLE_URL);
+}));
+
+test('139. buildDocumentPreviewSpec: PDF previews via the document\'s own source URL', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'PDF', source_url: 'https://example.com/handbook.pdf' });
+  assert.equal(spec.kind, 'iframe');
+  assert.equal(spec.url, 'https://example.com/handbook.pdf');
+}));
+
+test('140. buildDocumentPreviewSpec: Image previews as an image', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'Image', source_url: 'https://example.com/photo.png' });
+  assert.equal(spec.kind, 'image');
+  assert.equal(spec.url, 'https://example.com/photo.png');
+}));
+
+test('141. buildDocumentPreviewSpec: Video previews as a video', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'Video', source_url: 'https://example.com/clip.mp4' });
+  assert.equal(spec.kind, 'video');
+  assert.equal(spec.url, 'https://example.com/clip.mp4');
+}));
+
+test('142. buildDocumentPreviewSpec: Word Document is explicitly BLOCKED, not faked', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'Word Document', source_url: 'https://example.com/doc.docx' });
+  assert.equal(spec.kind, 'unavailable');
+  assert.equal(spec.reason, 'blocked');
+  assert.equal(spec.message, mod.PREVIEW_MESSAGE_OFFICE_BLOCKED);
+}));
+
+test('143. buildDocumentPreviewSpec: Excel File is explicitly BLOCKED, not faked', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'Excel File', source_url: 'https://example.com/sheet.xlsx' });
+  assert.equal(spec.kind, 'unavailable');
+  assert.equal(spec.reason, 'blocked');
+}));
+
+test('144. buildDocumentPreviewSpec: ZIP File is not-applicable per SRD spec', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'ZIP File', source_url: 'https://example.com/archive.zip' });
+  assert.equal(spec.kind, 'unavailable');
+  assert.equal(spec.reason, 'not-applicable');
+  assert.equal(spec.message, mod.PREVIEW_MESSAGE_ZIP);
+}));
+
+test('145. buildDocumentPreviewSpec: Skill File is not-applicable (format undefined by SRD)', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'Skill File', source_url: 'https://example.com/skill.md' });
+  assert.equal(spec.kind, 'unavailable');
+  assert.equal(spec.reason, 'not-applicable');
+}));
+
+test('146. buildDocumentPreviewSpec: External URL is not-applicable (not in the SRD preview list)', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec = mod.buildDocumentPreviewSpec({ document_type: 'External URL', source_url: 'https://example.com/page' });
+  assert.equal(spec.kind, 'unavailable');
+  assert.equal(spec.reason, 'not-applicable');
+}));
+
+test('147. buildDocumentPreviewSpec: an unsafe/missing source URL never produces an embeddable spec', withEnv(async () => {
+  var mod = await loadKmModule();
+  var spec1 = mod.buildDocumentPreviewSpec({ document_type: 'PDF', source_url: 'javascript:alert(1)' });
+  assert.equal(spec1.kind, 'unavailable');
+  var spec2 = mod.buildDocumentPreviewSpec({ document_type: 'Image', source_url: null });
+  assert.equal(spec2.kind, 'unavailable');
+}));
+
+test('148. Detail modal renders a Google Sheet preview iframe with a sandboxed, safe URL', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  var iframe = overlay.querySelector('.msc-km-preview-iframe');
+  assert.ok(iframe);
+  assert.equal(iframe.src, 'https://docs.google.com/spreadsheets/d/FIXTURE1/preview');
+  assert.equal(iframe.getAttribute('sandbox'), 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+}));
+
+test('149. Detail modal renders an image preview for an Image document', withEnv(async () => {
+  var imageDoc = Object.assign({}, FIXTURE_DOC, { document_type: 'Image', source_url: 'https://example.com/photo.png' });
+  var { mountEl } = await mountWithFixture({ detail: function () { return Promise.resolve(imageDoc); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  var img = overlay.querySelector('.msc-km-preview-image');
+  assert.ok(img);
+  assert.equal(img.src, 'https://example.com/photo.png');
+}));
+
+test('150. Detail modal renders a video preview with controls for a Video document', withEnv(async () => {
+  var videoDoc = Object.assign({}, FIXTURE_DOC, { document_type: 'Video', source_url: 'https://example.com/clip.mp4' });
+  var { mountEl } = await mountWithFixture({ detail: function () { return Promise.resolve(videoDoc); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  var video = overlay.querySelector('.msc-km-preview-video');
+  assert.ok(video);
+  assert.equal(video.src, 'https://example.com/clip.mp4');
+  assert.equal(video.controls, true);
+}));
+
+test('151. Detail modal shows a clear BLOCKED message for Word Document preview, not a fake viewer', withEnv(async () => {
+  var wordDoc = Object.assign({}, FIXTURE_DOC, { document_type: 'Word Document', source_url: 'https://example.com/doc.docx' });
+  var { mountEl } = await mountWithFixture({ detail: function () { return Promise.resolve(wordDoc); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.equal(overlay.querySelector('.msc-km-preview-iframe'), null);
+  assert.match(overlay.allText(), /No approved document viewer is configured/);
+}));
+
+test('152. Detail modal shows the ZIP-specific no-preview message', withEnv(async () => {
+  var zipDoc = Object.assign({}, FIXTURE_DOC, { document_type: 'ZIP File', source_url: 'https://example.com/archive.zip' });
+  var { mountEl } = await mountWithFixture({ detail: function () { return Promise.resolve(zipDoc); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.match(overlay.allText(), /ZIP files are not previewed/);
+}));
+
+test('153. Preview section never uses innerHTML for a document-authored value (title)', withEnv(async () => {
+  var xssDoc = Object.assign({}, FIXTURE_DOC, {
+    document_type: 'Image', source_url: 'https://example.com/photo.png',
+    title: '<img src=x onerror=alert(1)>'
+  });
+  var { mountEl } = await mountWithFixture({ detail: function () { return Promise.resolve(xssDoc); } });
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  var img = overlay.querySelector('.msc-km-preview-image');
+  assert.equal(img.alt, '<img src=x onerror=alert(1)> preview');
+}));

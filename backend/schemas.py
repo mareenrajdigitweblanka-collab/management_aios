@@ -1221,3 +1221,55 @@ class KnowledgeDocumentAuditLogOut(BaseModel):
     occurred_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+
+# ── Dashboard summary (SRD "Centralized Document Repository & Knowledge
+# Management Module" §13) — GET /api/knowledge-documents/summary. Every
+# figure is computed live from knowledge_documents / knowledge_document_
+# versions / knowledge_document_audit_log by the route itself; none of
+# these fields is a separately stored or cached value, so nothing here can
+# drift from the underlying records.
+
+
+class KnowledgeDocumentTeamCount(BaseModel):
+    team: str
+    count: int
+
+
+class KnowledgeDocumentActivityItem(BaseModel):
+    """One row of the summary's recent_activity feed — the audit log's own
+    action/actor/timestamp plus the parent document's title, so the
+    dashboard can render a cross-document feed without a second lookup per
+    row on the frontend. Deliberately ignores the parent document's
+    deleted_at, same reasoning as the per-document audit-history route
+    (knowledge_documents.py module docstring) — a soft-deleted document's
+    own 'soft_delete' action is exactly the kind of thing this feed exists
+    to surface."""
+
+    document_id: UUID
+    document_title: str
+    action: str
+    actor_member_key: str
+    occurred_at: Optional[datetime] = None
+
+
+class KnowledgeDocumentSummaryResponse(BaseModel):
+    """google_unverified counts active Google-type documents whose
+    google_ownership_status is not 'Verified' — currently ALL of them,
+    because no code path ever sets 'Verified' (REQ-KM-001 discovery §7,
+    still BLOCKED on Google API credentials/scopes). This widget reports
+    that real, current state; it does not simulate or claim a permission
+    check that has not actually happened."""
+
+    total: int
+    active: int
+    archived: int
+    pending: int
+    completed: int
+    missing_creator: int
+    google_unverified: int
+    by_team: List[KnowledgeDocumentTeamCount]
+    recently_added: List[KnowledgeDocumentOut]
+    recently_updated: List[KnowledgeDocumentOut]
+    recent_activity: List[KnowledgeDocumentActivityItem]
+    latest_version_updates: List[KnowledgeDocumentVersionOut]

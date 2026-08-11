@@ -14,7 +14,8 @@
 
    API contract (read from backend/routers/knowledge_documents.py,
    backend/schemas.py, backend/models.py — never guessed):
-     GET    /api/knowledge-documents                          auth, ?team=&document_type=&lifecycle_status=&search=&limit=&offset= -> {records, total, limit, offset}
+     GET    /api/knowledge-documents                          auth, ?team=&document_type=&lifecycle_status=&compliance_status=&search=&creator=&job_role=&created_by=&version=&created_from=&created_to=&updated_from=&updated_to=&limit=&offset= -> {records, total, limit, offset}
+     GET    /api/knowledge-documents/summary                  auth -> KnowledgeDocumentSummaryResponse (dashboard aggregation, SRD §13)
      GET    /api/knowledge-documents/{id}                      auth -> KnowledgeDocumentOut
      POST   /api/knowledge-documents                          auth, {title, team, document_type, job_role?, document_category?, creator?, source_url} -> 201 KnowledgeDocumentOut (warnings[])
      PATCH  /api/knowledge-documents/{id}                     auth, {title?, team?, document_type?, job_role?, document_category?, creator?, lifecycle_status?, compliance_status?, change_description} -> KnowledgeDocumentOut (source_url is REJECTED here — 422)
@@ -70,6 +71,7 @@ import {
   getStoredMemberKey,
   handleUnauthorizedResponse
 } from './calendar/auth.js';
+import { MD_MEMBER_KEY, MEMBER_REGISTRY } from './member-registry.js';
 import { buildAuthRequiredNotice } from './auth-gate.js';
 import { confirmDestructive } from './ui/dialog.js';
 import { showToast } from './ui/toast.js';
@@ -92,6 +94,17 @@ var DOCUMENT_TYPE_OPTIONS = [
   'Image', 'Video', 'External URL', 'Internal Documentation Link'
 ];
 var LIFECYCLE_STATUS_OPTIONS = ['Active', 'Archived'];
+var COMPLIANCE_STATUS_OPTIONS = ['Pending', 'Completed'];
+
+/* "Uploaded By" filter options (SRD §9) — the same MEMBER_REGISTRY
+   identity source issues.js already reuses for its own assignee picker
+   (discovery doc §9's direct precedent), never a second hand-typed name
+   list. MD is excluded: every mutating KM route rejects MD
+   (_reject_md_write, backend/routers/knowledge_documents.py), so no
+   document's created_by can ever be 'md'. */
+var KM_UPLOADED_BY_OPTIONS = Object.keys(MEMBER_REGISTRY).filter(function (key) {
+  return key !== MD_MEMBER_KEY;
+});
 
 /* REQ-KM-UI-006 — the ONE canonical Team source for this module, reused by
    the Team filter, the Add Document Team field, and the Edit Metadata Team
@@ -133,6 +146,91 @@ export function isSafeHttpUrl(url) {
   }
 }
 
+/* Browser Preview (SRD "Centralized Document Repository & Knowledge
+   Management Module" §10, current-phase REQUIRED). Documents in this
+   module are link-only (no physical upload — see this session's storage-
+   architecture stop report), so every preview here targets the document's
+   existing source_url; nothing is fetched or proxied through our own
+   backend. A pure function so its type-by-type logic is directly testable
+   without touching the DOM.
+
+   Google Sheet/Doc/Drive File: the SRD requires "a safe Google preview/
+   view URL only where the registered link can be transformed reliably...
+   Do not bypass Google access controls." This rewrites Google's own
+   edit/view URL into Google's own /preview URL for the same file id —
+   Google's preview endpoint enforces the exact same sharing permissions
+   as the original link; a viewer without access sees Google's own
+   access-denied page inside the frame, never our content. If the URL
+   doesn't match a recognized Google URL shape, no guess is made — preview
+   is reported unavailable and Open Document still works normally.
+
+   PDF: browser-native iframe viewing (Chrome/Firefox/Edge render a PDF
+   URL natively inside an <iframe>) — no external viewer needed.
+
+   Word/Excel: no approved viewer (Office/Google Docs Viewer embed) exists
+   in this codebase — explicitly reported BLOCKED, never faked as a
+   working preview.
+
+   ZIP/Skill File/External URL/Internal Documentation Link: not required
+   by the SRD's preview list (ZIP explicitly excluded; the other two were
+   never in it) — reported as not-applicable, Open Document remains the
+   only and correct action. */
+export var PREVIEW_MESSAGE_ZIP = 'ZIP files are not previewed — use Open Document to download.';
+export var PREVIEW_MESSAGE_SKILL_FILE = 'Preview is not defined for Skill Files — use Open Document instead.';
+export var PREVIEW_MESSAGE_EXTERNAL_LINK = 'Preview is not offered for this link type — use Open Document instead.';
+export var PREVIEW_MESSAGE_OFFICE_BLOCKED = 'No approved document viewer is configured for this file type yet — use Open Document instead.';
+export var PREVIEW_MESSAGE_UNRECOGNIZED_GOOGLE_URL = 'This link could not be reliably converted to a preview — use Open Document instead.';
+export var PREVIEW_MESSAGE_NO_SOURCE = 'No safe source link is available to preview.';
+export var PREVIEW_MESSAGE_UNSUPPORTED_TYPE = 'Preview is not available for this document type.';
+
+var GOOGLE_DOC_ID_PATTERN = /docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/;
+var GOOGLE_SHEET_ID_PATTERN = /docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/;
+var GOOGLE_DRIVE_FILE_ID_PATTERN = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
+var GOOGLE_DRIVE_OPEN_ID_PATTERN = /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/;
+
+function extractIdFromUrl(url, pattern) {
+  var m = pattern.exec(url);
+  return m ? m[1] : null;
+}
+
+export function buildDocumentPreviewSpec(record) {
+  record = record || {};
+  var type = record.document_type;
+
+  if (type === 'ZIP File') { return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_ZIP }; }
+  if (type === 'Skill File') { return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_SKILL_FILE }; }
+  if (type === 'External URL' || type === 'Internal Documentation Link') {
+    return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_EXTERNAL_LINK };
+  }
+  if (type === 'Word Document' || type === 'Excel File') {
+    return { kind: 'unavailable', reason: 'blocked', message: PREVIEW_MESSAGE_OFFICE_BLOCKED };
+  }
+
+  var safeUrl = isSafeHttpUrl(record.source_url) ? record.source_url : null;
+  if (!safeUrl) { return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_NO_SOURCE }; }
+
+  if (type === 'Google Doc') {
+    var docId = extractIdFromUrl(safeUrl, GOOGLE_DOC_ID_PATTERN);
+    if (!docId) { return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_UNRECOGNIZED_GOOGLE_URL }; }
+    return { kind: 'iframe', url: 'https://docs.google.com/document/d/' + docId + '/preview' };
+  }
+  if (type === 'Google Sheet') {
+    var sheetId = extractIdFromUrl(safeUrl, GOOGLE_SHEET_ID_PATTERN);
+    if (!sheetId) { return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_UNRECOGNIZED_GOOGLE_URL }; }
+    return { kind: 'iframe', url: 'https://docs.google.com/spreadsheets/d/' + sheetId + '/preview' };
+  }
+  if (type === 'Google Drive File') {
+    var fileId = extractIdFromUrl(safeUrl, GOOGLE_DRIVE_FILE_ID_PATTERN) || extractIdFromUrl(safeUrl, GOOGLE_DRIVE_OPEN_ID_PATTERN);
+    if (!fileId) { return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_UNRECOGNIZED_GOOGLE_URL }; }
+    return { kind: 'iframe', url: 'https://drive.google.com/file/d/' + fileId + '/preview' };
+  }
+  if (type === 'PDF') { return { kind: 'iframe', url: safeUrl }; }
+  if (type === 'Image') { return { kind: 'image', url: safeUrl }; }
+  if (type === 'Video') { return { kind: 'video', url: safeUrl }; }
+
+  return { kind: 'unavailable', reason: 'not-applicable', message: PREVIEW_MESSAGE_UNSUPPORTED_TYPE };
+}
+
 /* Server-side filtering (Phase 6) — builds the exact query string the
    already-existing GET /api/knowledge-documents route supports
    (team/document_type/lifecycle_status/search), never an invented
@@ -150,8 +248,42 @@ export function buildListQueryString(filters) {
   if (filters.lifecycleStatus && filters.lifecycleStatus !== 'all') {
     params.push('lifecycle_status=' + encodeURIComponent(filters.lifecycleStatus));
   }
+  // SRD §9 Search & Filter completion — each maps onto the backend's own
+  // _apply_filters query param of the same name (knowledge_documents.py).
+  if (filters.complianceStatus && filters.complianceStatus !== 'all') {
+    params.push('compliance_status=' + encodeURIComponent(filters.complianceStatus));
+  }
+  if (filters.creator) { params.push('creator=' + encodeURIComponent(filters.creator)); }
+  if (filters.jobRole) { params.push('job_role=' + encodeURIComponent(filters.jobRole)); }
+  if (filters.uploadedBy && filters.uploadedBy !== 'all') {
+    params.push('created_by=' + encodeURIComponent(filters.uploadedBy));
+  }
+  if (filters.version) { params.push('version=' + encodeURIComponent(filters.version)); }
+  if (filters.createdFrom) { params.push('created_from=' + encodeURIComponent(filters.createdFrom)); }
+  if (filters.createdTo) { params.push('created_to=' + encodeURIComponent(filters.createdTo)); }
+  if (filters.updatedFrom) { params.push('updated_from=' + encodeURIComponent(filters.updatedFrom)); }
+  if (filters.updatedTo) { params.push('updated_to=' + encodeURIComponent(filters.updatedTo)); }
   params.push('limit=200');
   return params.join('&');
+}
+
+/* Whether any filter (base or advanced) is currently active — used to pick
+   the correct empty-state message and to show/hide the "Clear Filters"
+   affordance. Kept as one function so the two callers (renderTable's
+   empty-state check, the Advanced Filters toggle badge) can never drift
+   out of sync on what counts as "a filter is active". */
+export function hasActiveKnowledgeDocumentFilters(filters) {
+  filters = filters || {};
+  return !!(
+    filters.search || (filters.team && filters.team !== 'all') ||
+    (filters.documentType && filters.documentType !== 'all') ||
+    (filters.lifecycleStatus && filters.lifecycleStatus !== 'all') ||
+    (filters.complianceStatus && filters.complianceStatus !== 'all') ||
+    filters.creator || filters.jobRole ||
+    (filters.uploadedBy && filters.uploadedBy !== 'all') ||
+    filters.version || filters.createdFrom || filters.createdTo ||
+    filters.updatedFrom || filters.updatedTo
+  );
 }
 
 function formatTimestamp(iso) {
@@ -225,6 +357,13 @@ function kmProtectedRequest(pathAndQuery, options) {
 
 export function listKnowledgeDocuments(filters) {
   return kmProtectedRequest('?' + buildListQueryString(filters));
+}
+
+/* Dashboard aggregation (SRD §13) — GET /api/knowledge-documents/summary.
+   Same kmProtectedRequest path every other route uses; no separate auth
+   handling. */
+export function getKnowledgeDocumentSummary() {
+  return kmProtectedRequest('/summary');
 }
 
 export function getKnowledgeDocument(id) {
@@ -318,6 +457,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   opts = opts || {};
   var api = opts.api || {
     list: listKnowledgeDocuments,
+    summary: getKnowledgeDocumentSummary,
     detail: getKnowledgeDocument,
     create: createKnowledgeDocument,
     updateMetadata: updateKnowledgeDocumentMetadata,
@@ -334,9 +474,22 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   var state = {
     status: 'loading', // 'loading' | 'data' | 'empty' | 'error'
     documents: [],
-    filters: { search: '', team: 'all', documentType: 'all', lifecycleStatus: 'all' },
+    filters: {
+      search: '', team: 'all', documentType: 'all', lifecycleStatus: 'all',
+      // SRD §9 Search & Filter completion (Document Creator, Uploaded By,
+      // Job Role, Version, Status, Created/Last Updated Date).
+      complianceStatus: 'all', creator: '', jobRole: '', uploadedBy: 'all',
+      version: '', createdFrom: '', createdTo: '', updatedFrom: '', updatedTo: ''
+    },
     requestId: 0,
     errorMessage: null,
+    // Dashboard widgets (SRD §13) — independent of the filters above; the
+    // summary always reflects the whole active library, not the current
+    // filtered view.
+    summaryStatus: 'loading', // 'loading' | 'data' | 'error'
+    summary: null,
+    summaryErrorMessage: null,
+    summaryRequestId: 0,
     // REQ-KM-UI-005 Phase 4 — internal view toggle, not a second sidebar item.
     view: 'active', // 'active' | 'deleted'
     deletedStatus: 'idle', // 'idle' | 'loading' | 'data' | 'empty' | 'error'
@@ -370,7 +523,8 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     return {
       getState: function () { return state; },
       reload: function () {},
-      reloadDeleted: function () {}
+      reloadDeleted: function () {},
+      reloadSummary: function () {}
     };
   }
 
@@ -382,6 +536,164 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   addBtn.textContent = '+ Add Document';
   headerRow.appendChild(addBtn);
   mountEl.appendChild(headerRow);
+
+  // ── Dashboard widgets (SRD §13) — GET /api/knowledge-documents/summary.
+  //    Independent of the Active-Documents filters/table below: this
+  //    always reflects the whole active library, not the current search/
+  //    filter view. Mounted once; refreshed on initial load and after
+  //    every mutation that could change a count (create/edit/version/
+  //    archive/unarchive/delete/restore) — see the loadSummary() call
+  //    sites alongside loadDocuments() further down. ──
+  var summaryRegion = el('div', 'msc-km-summary-region');
+  mountEl.appendChild(summaryRegion);
+
+  function statTile(label, value) {
+    var tile = el('div', 'msc-km-stat-tile');
+    tile.appendChild(textEl('div', 'msc-km-stat-value', String(value)));
+    tile.appendChild(textEl('div', 'msc-km-stat-label', label));
+    return tile;
+  }
+
+  function summaryListCard(titleText, items, emptyText, buildItem) {
+    var card = el('div', 'msc-km-summary-card');
+    card.appendChild(textEl('h4', 'msc-km-summary-card-title', titleText));
+    if (!items || !items.length) {
+      card.appendChild(textEl('p', 'msc-km-summary-empty', emptyText));
+      return card;
+    }
+    var list = el('ul', 'msc-km-summary-list');
+    items.forEach(function (item) { list.appendChild(buildItem(item)); });
+    card.appendChild(list);
+    return card;
+  }
+
+  function renderSummary() {
+    summaryRegion.textContent = '';
+
+    if (state.summaryStatus === 'loading') {
+      summaryRegion.appendChild(textEl('div', 'msc-km-loading', 'Loading dashboard…'));
+      return;
+    }
+
+    if (state.summaryStatus === 'error') {
+      var errWrap = el('div', 'msc-km-error-state');
+      errWrap.setAttribute('role', 'alert');
+      errWrap.appendChild(textEl('p', '', state.summaryErrorMessage || 'Unable to load the dashboard.'));
+      var retryBtn = el('button', 'msc-btn msc-btn-ghost');
+      retryBtn.type = 'button';
+      retryBtn.textContent = 'Retry';
+      retryBtn.addEventListener('click', loadSummary);
+      errWrap.appendChild(retryBtn);
+      summaryRegion.appendChild(errWrap);
+      return;
+    }
+
+    var summary = state.summary;
+    if (!summary) { return; }
+
+    var statsGrid = el('div', 'msc-km-stats-grid');
+    statsGrid.appendChild(statTile('Total Documents', summary.total));
+    statsGrid.appendChild(statTile('Archived Documents', summary.archived));
+    statsGrid.appendChild(statTile('Pending Documents', summary.pending));
+    statsGrid.appendChild(statTile('Documents Missing Creator', summary.missing_creator));
+    // Reflects the real, current state that automated Google Owner-Access
+    // verification is not implemented (SRD §6 — BLOCKED on Google API
+    // credentials; REQ-KM-001 discovery §7) — every active Google-type
+    // document shows here as unverified because none can ever be
+    // programmatically marked 'Verified' today. This is not a fabricated
+    // compliance check; it is an honest count of what remains unverified.
+    statsGrid.appendChild(statTile('Google Sheets Without Verified Owner Access', summary.google_unverified));
+    summaryRegion.appendChild(statsGrid);
+
+    var cardsGrid = el('div', 'msc-km-summary-grid');
+
+    var teamCard = el('div', 'msc-km-summary-card');
+    teamCard.appendChild(textEl('h4', 'msc-km-summary-card-title', 'Documents by Team'));
+    if (!summary.by_team || !summary.by_team.length) {
+      teamCard.appendChild(textEl('p', 'msc-km-summary-empty', 'No documents registered yet.'));
+    } else {
+      var teamList = el('ul', 'msc-km-summary-list');
+      summary.by_team.forEach(function (row) {
+        var li = el('li', 'msc-km-summary-list-item');
+        li.appendChild(textEl('span', '', row.team));
+        li.appendChild(textEl('span', 'msc-km-summary-list-value', String(row.count)));
+        teamList.appendChild(li);
+      });
+      teamCard.appendChild(teamList);
+    }
+    cardsGrid.appendChild(teamCard);
+
+    cardsGrid.appendChild(summaryListCard(
+      'Recently Added Documents', summary.recently_added, 'No documents registered yet.',
+      function (doc) {
+        var li = el('li', 'msc-km-summary-list-item');
+        li.appendChild(textEl('span', '', doc.title));
+        li.appendChild(textEl('span', 'msc-km-summary-list-value', formatTimestamp(doc.created_at)));
+        return li;
+      }
+    ));
+
+    cardsGrid.appendChild(summaryListCard(
+      'Recently Updated Documents', summary.recently_updated, 'No documents registered yet.',
+      function (doc) {
+        var li = el('li', 'msc-km-summary-list-item');
+        li.appendChild(textEl('span', '', doc.title));
+        li.appendChild(textEl('span', 'msc-km-summary-list-value', formatTimestamp(doc.updated_at)));
+        return li;
+      }
+    ));
+
+    cardsGrid.appendChild(summaryListCard(
+      'Recent Updates', summary.recent_activity, 'No activity recorded yet.',
+      function (row) {
+        var li = el('li', 'msc-km-summary-list-item');
+        var actor = MEMBER_REGISTRY[row.actor_member_key];
+        li.appendChild(textEl(
+          'span', '',
+          (actor ? actor.displayName : row.actor_member_key) + ' — ' + row.action.replace(/_/g, ' ') +
+            ' — ' + row.document_title
+        ));
+        li.appendChild(textEl('span', 'msc-km-summary-list-value', formatTimestamp(row.occurred_at)));
+        return li;
+      }
+    ));
+
+    cardsGrid.appendChild(summaryListCard(
+      'Latest Version Updates', summary.latest_version_updates, 'No version history yet.',
+      function (row) {
+        var li = el('li', 'msc-km-summary-list-item');
+        li.appendChild(textEl('span', '', 'v' + row.version_label + (row.change_note ? ' — ' + row.change_note : '')));
+        li.appendChild(textEl('span', 'msc-km-summary-list-value', formatTimestamp(row.created_at)));
+        return li;
+      }
+    ));
+
+    summaryRegion.appendChild(cardsGrid);
+  }
+
+  function loadSummary() {
+    // Production's default api object (above) always defines summary —
+    // this guard exists only for test fixtures that inject a partial api
+    // object covering just the flow under test (same reasoning as this
+    // module's other optional api methods): calling loadSummary() is then
+    // simply a no-op rather than a thrown TypeError.
+    if (typeof api.summary !== 'function') { return; }
+    state.summaryStatus = 'loading';
+    state.summaryErrorMessage = null;
+    renderSummary();
+    var requestId = ++state.summaryRequestId;
+    api.summary().then(function (result) {
+      if (requestId !== state.summaryRequestId) { return; }
+      state.summary = result;
+      state.summaryStatus = 'data';
+      renderSummary();
+    }, function (err) {
+      if (requestId !== state.summaryRequestId) { return; }
+      state.summaryStatus = 'error';
+      state.summaryErrorMessage = mapApiError(err).message || 'Unable to load the dashboard.';
+      renderSummary();
+    });
+  }
 
   // ── Internal view toggle (Active / Deleted) — REQ-KM-UI-005 Phase 4.
   //    NOT a new sidebar item: this is entirely within the existing
@@ -466,10 +778,132 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   toolbar.appendChild(typeField);
   toolbar.appendChild(lifecycleField);
 
+  var advancedToggleBtn = el('button', 'msc-btn msc-btn-ghost msc-km-advanced-toggle');
+  advancedToggleBtn.type = 'button';
+  advancedToggleBtn.textContent = 'More Filters';
+  advancedToggleBtn.setAttribute('aria-expanded', 'false');
+  toolbar.appendChild(advancedToggleBtn);
+
   var countPill = el('span', 'msc-km-count-pill');
   toolbar.appendChild(countPill);
 
   activeViewPanel.appendChild(toolbar);
+
+  // ── Advanced Filters (SRD §9 completion) — Document Creator, Uploaded
+  //    By, Job Role, Version, Compliance Status, Created/Updated date
+  //    ranges. Collapsed by default so the base toolbar (search/Team/
+  //    Document Type/Status) stays uncluttered — same "extend, don't
+  //    redesign" instruction the rest of this module already follows. ──
+  var advancedPanel = el('div', 'msc-km-advanced-panel');
+  advancedPanel.hidden = true;
+
+  var creatorField = el('div', 'msc-km-filter-field');
+  var creatorLabel = textEl('label', 'msc-km-filter-label', 'Document Creator:');
+  creatorLabel.setAttribute('for', 'msc-km-creator-filter');
+  var creatorInput = el('input', 'msc-km-input');
+  creatorInput.type = 'text';
+  creatorInput.id = 'msc-km-creator-filter';
+  creatorInput.setAttribute('placeholder', 'Any creator');
+  creatorField.appendChild(creatorLabel);
+  creatorField.appendChild(creatorInput);
+
+  var uploadedByField = el('div', 'msc-km-filter-field');
+  var uploadedByLabel = textEl('label', 'msc-km-filter-label', 'Uploaded By:');
+  uploadedByLabel.setAttribute('for', 'msc-km-uploaded-by-filter');
+  var uploadedBySelect = el('select', 'msc-km-select');
+  uploadedBySelect.id = 'msc-km-uploaded-by-filter';
+  var uploadedByAllOpt = el('option', 'msc-km-select-option');
+  uploadedByAllOpt.value = 'all';
+  uploadedByAllOpt.textContent = 'All';
+  uploadedBySelect.appendChild(uploadedByAllOpt);
+  KM_UPLOADED_BY_OPTIONS.forEach(function (key) {
+    var opt = el('option', 'msc-km-select-option');
+    opt.value = key;
+    opt.textContent = MEMBER_REGISTRY[key].displayName;
+    uploadedBySelect.appendChild(opt);
+  });
+  uploadedBySelect.value = 'all';
+  uploadedByField.appendChild(uploadedByLabel);
+  uploadedByField.appendChild(uploadedBySelect);
+
+  var jobRoleField = el('div', 'msc-km-filter-field');
+  var jobRoleLabel = textEl('label', 'msc-km-filter-label', 'Job Role:');
+  jobRoleLabel.setAttribute('for', 'msc-km-job-role-filter');
+  var jobRoleInput = el('input', 'msc-km-input');
+  jobRoleInput.type = 'text';
+  jobRoleInput.id = 'msc-km-job-role-filter';
+  jobRoleInput.setAttribute('placeholder', 'Any job role');
+  jobRoleField.appendChild(jobRoleLabel);
+  jobRoleField.appendChild(jobRoleInput);
+
+  var versionField = el('div', 'msc-km-filter-field');
+  var versionLabel = textEl('label', 'msc-km-filter-label', 'Version:');
+  versionLabel.setAttribute('for', 'msc-km-version-filter');
+  var versionInput = el('input', 'msc-km-input');
+  versionInput.type = 'text';
+  versionInput.id = 'msc-km-version-filter';
+  versionInput.setAttribute('placeholder', 'e.g. 1.0');
+  versionField.appendChild(versionLabel);
+  versionField.appendChild(versionInput);
+
+  var complianceField = el('div', 'msc-km-filter-field');
+  var complianceLabel = textEl('label', 'msc-km-filter-label', 'Compliance Status:');
+  complianceLabel.setAttribute('for', 'msc-km-compliance-filter');
+  var complianceSelect = el('select', 'msc-km-select');
+  complianceSelect.id = 'msc-km-compliance-filter';
+  var complianceAllOpt = el('option', 'msc-km-select-option');
+  complianceAllOpt.value = 'all';
+  complianceAllOpt.textContent = 'All';
+  complianceSelect.appendChild(complianceAllOpt);
+  COMPLIANCE_STATUS_OPTIONS.forEach(function (v) {
+    var opt = el('option', 'msc-km-select-option');
+    opt.value = v;
+    opt.textContent = v;
+    complianceSelect.appendChild(opt);
+  });
+  complianceSelect.value = 'all';
+  complianceField.appendChild(complianceLabel);
+  complianceField.appendChild(complianceSelect);
+
+  function dateRangeField(labelText, id) {
+    var field = el('div', 'msc-km-filter-field');
+    var label = textEl('label', 'msc-km-filter-label', labelText);
+    label.setAttribute('for', id);
+    var input = el('input', 'msc-km-input');
+    input.type = 'date';
+    input.id = id;
+    field.appendChild(label);
+    field.appendChild(input);
+    return { field: field, input: input };
+  }
+
+  var createdFromPair = dateRangeField('Created From:', 'msc-km-created-from-filter');
+  var createdToPair = dateRangeField('Created To:', 'msc-km-created-to-filter');
+  var updatedFromPair = dateRangeField('Updated From:', 'msc-km-updated-from-filter');
+  var updatedToPair = dateRangeField('Updated To:', 'msc-km-updated-to-filter');
+
+  advancedPanel.appendChild(creatorField);
+  advancedPanel.appendChild(uploadedByField);
+  advancedPanel.appendChild(jobRoleField);
+  advancedPanel.appendChild(versionField);
+  advancedPanel.appendChild(complianceField);
+  advancedPanel.appendChild(createdFromPair.field);
+  advancedPanel.appendChild(createdToPair.field);
+  advancedPanel.appendChild(updatedFromPair.field);
+  advancedPanel.appendChild(updatedToPair.field);
+
+  var clearAdvancedBtn = el('button', 'msc-btn msc-btn-ghost msc-km-clear-advanced');
+  clearAdvancedBtn.type = 'button';
+  clearAdvancedBtn.textContent = 'Clear Advanced Filters';
+  advancedPanel.appendChild(clearAdvancedBtn);
+
+  activeViewPanel.appendChild(advancedPanel);
+
+  advancedToggleBtn.addEventListener('click', function () {
+    var willShow = advancedPanel.hidden;
+    advancedPanel.hidden = !willShow;
+    advancedToggleBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+  });
 
   var tableRegion = el('div', 'msc-km-table-region');
   activeViewPanel.appendChild(tableRegion);
@@ -692,6 +1126,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
             showToast({ type: 'warning', title: 'Possible duplicate title', message: record.warnings[0], persistent: true });
           }
           loadDocuments();
+          loadSummary();
         }, function (err) {
           setButtonBusy(saveBtn, false);
           saveBtn.disabled = false;
@@ -732,6 +1167,62 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
      Delete) is wired to that fresh canonical `record`, not the stale list
      row — e.g. so the Archive/Unarchive label reflects the true current
      lifecycle_status even if it changed since the list was last loaded. */
+  /* Renders buildDocumentPreviewSpec()'s result into DOM (SRD §10,
+     current-phase REQUIRED). Only ever called from inside the Detail
+     modal — i.e. only after an explicit "View" click already fetched the
+     real record — never from the table row, so nothing embeds or fetches
+     third-party content just from loading the document list.
+
+     sandbox on the iframe path permits scripts/same-origin/popups (Google's
+     own Docs/Sheets/Drive preview UI needs script execution to render and
+     to open "Open in new tab" from inside its own toolbar) while granting
+     nothing else (no allow-top-navigation, no allow-forms) — the embedded
+     page can never navigate or redirect our own tab. PDF iframes get the
+     same conservative sandbox for consistency even though most browsers'
+     native PDF viewer does not need it. Never innerHTML — src/attributes
+     only, matching this module's existing convention for untrusted text/
+     URLs (module docstring). */
+  function buildPreviewSection(record) {
+    var section = el('div', 'msc-km-preview-section');
+    section.appendChild(textEl('span', 'msc-km-detail-label', 'Preview'));
+
+    var spec = buildDocumentPreviewSpec(record);
+
+    if (spec.kind === 'unavailable') {
+      section.appendChild(textEl('p', 'msc-km-preview-unavailable', spec.message));
+      return section;
+    }
+
+    if (spec.kind === 'image') {
+      var img = el('img', 'msc-km-preview-image');
+      img.src = spec.url;
+      img.alt = (record.title || 'Document') + ' preview';
+      img.setAttribute('loading', 'lazy');
+      img.setAttribute('referrerpolicy', 'no-referrer');
+      section.appendChild(img);
+      return section;
+    }
+
+    if (spec.kind === 'video') {
+      var video = el('video', 'msc-km-preview-video');
+      video.src = spec.url;
+      video.controls = true;
+      video.setAttribute('preload', 'metadata');
+      section.appendChild(video);
+      return section;
+    }
+
+    // kind === 'iframe' (PDF, Google Sheet/Doc/Drive File)
+    var iframe = el('iframe', 'msc-km-preview-iframe');
+    iframe.src = spec.url;
+    iframe.title = (record.title || 'Document') + ' preview';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
+    iframe.setAttribute('loading', 'lazy');
+    section.appendChild(iframe);
+    return section;
+  }
+
   function openDetailModal(listRowDoc, trigger) {
     ensureModal().open('Document Details', function (body, close) {
       var contextNote = textEl('p', 'msc-km-detail-context', listRowDoc.title);
@@ -798,6 +1289,8 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
         }
         linkRow.appendChild(linkValue);
         statusWrap.appendChild(linkRow);
+
+        statusWrap.appendChild(buildPreviewSection(record));
 
         var actions = el('div', 'msc-km-detail-actions');
 
@@ -969,6 +1462,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
           close();
           showToast({ type: 'success', title: 'Document updated', message: '"' + record.title + '" was saved.' });
           loadDocuments();
+          loadSummary();
         }, function (err) {
           setButtonBusy(saveBtn, false);
           saveBtn.disabled = false;
@@ -1036,6 +1530,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
           close();
           showToast({ type: 'success', title: 'Version created', message: 'Now on version ' + record.current_version + '.' });
           loadDocuments();
+          loadSummary();
         }, function (err) {
           setButtonBusy(saveBtn, false);
           saveBtn.disabled = false;
@@ -1066,6 +1561,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
         return api.archive(document.id).then(function () {
           showToast({ type: 'success', title: 'Document archived', message: '"' + document.title + '" is now Archived.' });
           loadDocuments();
+          loadSummary();
           return true;
         }, function (err) {
           var mapped = mapApiError(err);
@@ -1080,6 +1576,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     api.unarchive(document.id).then(function () {
       showToast({ type: 'success', title: 'Document unarchived', message: '"' + document.title + '" is now Active.' });
       loadDocuments();
+      loadSummary();
     }, function (err) {
       var mapped = mapApiError(err);
       showToast({ type: mapped.type, title: mapped.title, message: mapped.message, persistent: mapped.persistent });
@@ -1130,6 +1627,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
           close();
           showToast({ type: 'success', title: 'Document deleted', message: '"' + document.title + '" was removed from the active list.' });
           loadDocuments();
+          loadSummary();
         }, function (err) {
           setButtonBusy(deleteBtn, false);
           deleteBtn.disabled = false;
@@ -1291,8 +1789,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     }
 
     if (!state.documents.length) {
-      var hasActiveFilter = !!(state.filters.search || state.filters.team !== 'all' ||
-        state.filters.documentType !== 'all' || state.filters.lifecycleStatus !== 'all');
+      var hasActiveFilter = hasActiveKnowledgeDocumentFilters(state.filters);
       tableRegion.appendChild(
         textEl('div', 'msc-km-empty', hasActiveFilter ? FILTERED_EMPTY_STATE_TEXT : EMPTY_STATE_TEXT)
       );
@@ -1447,6 +1944,7 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
           showToast({ type: 'success', title: 'Document restored', message: '"' + deletedDoc.title + '" is now active again.' });
           loadDeletedDocuments();
           loadDocuments();
+          loadSummary();
           return true;
         }, function (err) {
           if (err.code === 'knowledge_document_duplicate_source_url') {
@@ -1501,18 +1999,82 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     loadDocuments();
   });
 
+  // ── Advanced Filters listeners — same debounce-for-text /
+  //    immediate-for-select-or-date pattern as the base toolbar above. ──
+  var advancedDebounceHandles = {};
+  function debouncedAdvancedFilter(key, input) {
+    input.addEventListener('input', function () {
+      if (advancedDebounceHandles[key]) { clearTimeout(advancedDebounceHandles[key]); }
+      advancedDebounceHandles[key] = setTimeout(function () {
+        state.filters[key] = input.value;
+        loadDocuments();
+      }, 250);
+    });
+  }
+  debouncedAdvancedFilter('creator', creatorInput);
+  debouncedAdvancedFilter('jobRole', jobRoleInput);
+  debouncedAdvancedFilter('version', versionInput);
+
+  uploadedBySelect.addEventListener('change', function () {
+    state.filters.uploadedBy = uploadedBySelect.value;
+    loadDocuments();
+  });
+  complianceSelect.addEventListener('change', function () {
+    state.filters.complianceStatus = complianceSelect.value;
+    loadDocuments();
+  });
+  createdFromPair.input.addEventListener('change', function () {
+    state.filters.createdFrom = createdFromPair.input.value;
+    loadDocuments();
+  });
+  createdToPair.input.addEventListener('change', function () {
+    state.filters.createdTo = createdToPair.input.value;
+    loadDocuments();
+  });
+  updatedFromPair.input.addEventListener('change', function () {
+    state.filters.updatedFrom = updatedFromPair.input.value;
+    loadDocuments();
+  });
+  updatedToPair.input.addEventListener('change', function () {
+    state.filters.updatedTo = updatedToPair.input.value;
+    loadDocuments();
+  });
+  clearAdvancedBtn.addEventListener('click', function () {
+    creatorInput.value = '';
+    jobRoleInput.value = '';
+    versionInput.value = '';
+    uploadedBySelect.value = 'all';
+    complianceSelect.value = 'all';
+    createdFromPair.input.value = '';
+    createdToPair.input.value = '';
+    updatedFromPair.input.value = '';
+    updatedToPair.input.value = '';
+    state.filters.creator = '';
+    state.filters.jobRole = '';
+    state.filters.version = '';
+    state.filters.uploadedBy = 'all';
+    state.filters.complianceStatus = 'all';
+    state.filters.createdFrom = '';
+    state.filters.createdTo = '';
+    state.filters.updatedFrom = '';
+    state.filters.updatedTo = '';
+    loadDocuments();
+  });
+
   addBtn.addEventListener('click', function () {
     ensureAuthorized().then(function () { openCreateModal(); }, function () { /* dialog cancelled */ });
   });
 
   setActiveView('active'); // sets initial aria state without a redundant deleted-view fetch
   loadDocuments();
+  loadSummary();
 
   return {
     // Exposed for tests only — not used by production wiring.
     getState: function () { return state; },
     reload: loadDocuments,
-    reloadDeleted: loadDeletedDocuments
+    reloadDeleted: loadDeletedDocuments,
+    reloadSummary: loadSummary
   };
 }
 
