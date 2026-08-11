@@ -100,7 +100,7 @@ A new login system, a new token type, a new backend endpoint, or any change to w
 | W. Production writes | 0 |
 | X. Protected path excluded | `member-aios/mayurika-hr/staff-data/` — never opened |
 | Y. Evidence files | See "Files Created" above |
-| Z. Commit hash | See Git section below |
+| Z. Commit hash | `943e62a` |
 | AA. Push result | Not pushed |
 | AB. PASS/FAIL | **PASS** |
 | AC. One next step | Live browser/production visual verification (confirm no dashboard-underneath-a-modal flash on a real deployed instance) — currently pending, not performed in this environment |
@@ -109,7 +109,7 @@ A new login system, a new token type, a new backend endpoint, or any change to w
 
 Six files' worth of runtime changes (3 new, 3 modified) plus documentation, staged by exact path (no `git add -A`/`git add .`), committed as a single commit: "Require authentication before opening Management AIOS". Not pushed in this session.
 
-Commit hash: `<pending — recorded immediately after the commit in the same task>`.
+Commit hash: `943e62a`.
 
 ## One Next Step
 
