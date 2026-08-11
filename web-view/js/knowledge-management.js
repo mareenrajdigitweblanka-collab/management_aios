@@ -490,6 +490,10 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     summary: null,
     summaryErrorMessage: null,
     summaryRequestId: 0,
+    // UI-only, not fetched — collapsed by default so the workspace opens
+    // on a calm, scannable view (headline stats + filters + table) rather
+    // than five same-weight cards competing for attention up front.
+    summaryDetailsExpanded: false,
     // REQ-KM-UI-005 Phase 4 — internal view toggle, not a second sidebar item.
     view: 'active', // 'active' | 'deleted'
     deletedStatus: 'idle', // 'idle' | 'loading' | 'data' | 'empty' | 'error'
@@ -529,8 +533,15 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   }
 
   var headerRow = el('div', 'msc-km-header-row');
+  var headerText = el('div', 'msc-km-header-text');
   var heading = textEl('h3', 'msc-km-section-heading', 'Company Documents');
-  headerRow.appendChild(heading);
+  var headerHelper = textEl(
+    'p', 'msc-km-header-helper',
+    'Find, manage, and open your team’s documents, SOPs, and shared files in one place.'
+  );
+  headerText.appendChild(heading);
+  headerText.appendChild(headerHelper);
+  headerRow.appendChild(headerText);
   var addBtn = el('button', 'msc-btn msc-btn-primary msc-km-add-btn');
   addBtn.type = 'button';
   addBtn.textContent = '+ Add Document';
@@ -552,6 +563,18 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     tile.appendChild(textEl('div', 'msc-km-stat-value', String(value)));
     tile.appendChild(textEl('div', 'msc-km-stat-label', label));
     return tile;
+  }
+
+  /* Secondary stats (Missing Creator / Google Owner-Access) are compliance
+     "flags," not headline metrics — rendered as small inline pills rather
+     than full stat tiles so they read as lower-priority than Total/
+     Pending/Archived, per the visual-hierarchy pass on this page. Same
+     underlying numbers as before; only the visual weight changed. */
+  function secondaryStat(label, value) {
+    var item = el('div', 'msc-km-stat-secondary-item');
+    item.appendChild(textEl('span', 'msc-km-stat-secondary-value', String(value)));
+    item.appendChild(textEl('span', 'msc-km-stat-secondary-label', label));
+    return item;
   }
 
   function summaryListCard(titleText, items, emptyText, buildItem) {
@@ -591,21 +614,48 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     var summary = state.summary;
     if (!summary) { return; }
 
-    var statsGrid = el('div', 'msc-km-stats-grid');
+    // Primary — the three headline numbers a user should see first
+    // (what exists, what needs attention, what's put away). Same data as
+    // before this pass; only Missing Creator/Google Unverified moved out
+    // to a lighter secondary row below, and this row is now visually the
+    // strongest thing on the page after the document title column itself.
+    var statsGrid = el('div', 'msc-km-stats-grid msc-km-stats-grid-primary');
     statsGrid.appendChild(statTile('Total Documents', summary.total));
-    statsGrid.appendChild(statTile('Archived Documents', summary.archived));
     statsGrid.appendChild(statTile('Pending Documents', summary.pending));
-    statsGrid.appendChild(statTile('Documents Missing Creator', summary.missing_creator));
+    statsGrid.appendChild(statTile('Archived Documents', summary.archived));
+    summaryRegion.appendChild(statsGrid);
+
+    // Secondary — compliance flags, intentionally lower visual weight than
+    // the primary row above (small pills, not full tiles) so they read as
+    // "worth knowing" rather than competing headline numbers.
+    var secondaryRow = el('div', 'msc-km-stats-secondary');
+    secondaryRow.appendChild(secondaryStat('Documents Missing Creator', summary.missing_creator));
     // Reflects the real, current state that automated Google Owner-Access
     // verification is not implemented (SRD §6 — BLOCKED on Google API
     // credentials; REQ-KM-001 discovery §7) — every active Google-type
     // document shows here as unverified because none can ever be
     // programmatically marked 'Verified' today. This is not a fabricated
     // compliance check; it is an honest count of what remains unverified.
-    statsGrid.appendChild(statTile('Google Sheets Without Verified Owner Access', summary.google_unverified));
-    summaryRegion.appendChild(statsGrid);
+    secondaryRow.appendChild(secondaryStat('Google Sheets Without Verified Owner Access', summary.google_unverified));
+    summaryRegion.appendChild(secondaryRow);
+
+    // Team breakdown / recent activity / version feed — five cards' worth
+    // of detail that was previously always-on and competing with the
+    // headline stats above. Collapsed by default (state.summaryDetailsExpanded);
+    // still fully built every render (just hidden), so the underlying data
+    // and empty/error states are unchanged — only default visibility is new.
+    var detailsToggle = el('button', 'msc-btn msc-btn-ghost msc-km-details-toggle');
+    detailsToggle.type = 'button';
+    detailsToggle.setAttribute('aria-expanded', state.summaryDetailsExpanded ? 'true' : 'false');
+    detailsToggle.textContent = state.summaryDetailsExpanded ? 'Hide Document Activity' : 'Show Document Activity';
+    detailsToggle.addEventListener('click', function () {
+      state.summaryDetailsExpanded = !state.summaryDetailsExpanded;
+      renderSummary();
+    });
+    summaryRegion.appendChild(detailsToggle);
 
     var cardsGrid = el('div', 'msc-km-summary-grid');
+    cardsGrid.hidden = !state.summaryDetailsExpanded;
 
     var teamCard = el('div', 'msc-km-summary-card');
     teamCard.appendChild(textEl('h4', 'msc-km-summary-card-title', 'Documents by Team'));
@@ -780,7 +830,13 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
 
   var advancedToggleBtn = el('button', 'msc-btn msc-btn-ghost msc-km-advanced-toggle');
   advancedToggleBtn.type = 'button';
-  advancedToggleBtn.textContent = 'More Filters';
+  // "Filters ▾/▴" rather than "Show/Hide Advanced Filters" — the panel
+  // itself is already titled "Advanced Filters" once open (see
+  // advancedHeader below), so the toggle only needs to be compact; a
+  // longer label here was measured (real-browser visual check,
+  // 2026-08-11) to push the toolbar's document-count pill past its own
+  // horizontal-scroll strip on a standard 1440px viewport.
+  advancedToggleBtn.textContent = 'Filters ▾';
   advancedToggleBtn.setAttribute('aria-expanded', 'false');
   toolbar.appendChild(advancedToggleBtn);
 
@@ -796,6 +852,14 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   //    redesign" instruction the rest of this module already follows. ──
   var advancedPanel = el('div', 'msc-km-advanced-panel');
   advancedPanel.hidden = true;
+
+  var advancedHeader = el('div', 'msc-km-advanced-header');
+  advancedHeader.appendChild(textEl('span', 'msc-km-advanced-heading', 'Advanced Filters'));
+  var clearAdvancedBtn = el('button', 'msc-km-clear-advanced');
+  clearAdvancedBtn.type = 'button';
+  clearAdvancedBtn.textContent = 'Clear';
+  advancedHeader.appendChild(clearAdvancedBtn);
+  advancedPanel.appendChild(advancedHeader);
 
   var creatorField = el('div', 'msc-km-filter-field');
   var creatorLabel = textEl('label', 'msc-km-filter-label', 'Document Creator:');
@@ -892,17 +956,13 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
   advancedPanel.appendChild(updatedFromPair.field);
   advancedPanel.appendChild(updatedToPair.field);
 
-  var clearAdvancedBtn = el('button', 'msc-btn msc-btn-ghost msc-km-clear-advanced');
-  clearAdvancedBtn.type = 'button';
-  clearAdvancedBtn.textContent = 'Clear Advanced Filters';
-  advancedPanel.appendChild(clearAdvancedBtn);
-
   activeViewPanel.appendChild(advancedPanel);
 
   advancedToggleBtn.addEventListener('click', function () {
     var willShow = advancedPanel.hidden;
     advancedPanel.hidden = !willShow;
     advancedToggleBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+    advancedToggleBtn.textContent = willShow ? 'Filters ▴' : 'Filters ▾';
   });
 
   var tableRegion = el('div', 'msc-km-table-region');
@@ -1723,6 +1783,16 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     return td;
   }
 
+  /* Status as a small colored badge instead of plain text — the table's
+     single fastest-scan cue for "is this document still active." Archived
+     intentionally uses a neutral (not red/warning) color: archived is a
+     normal lifecycle state, not a problem. */
+  function buildStatusBadge(status) {
+    if (!status) { return textEl('span', 'msc-km-dash', '—'); }
+    var variant = status === 'Archived' ? 'msc-km-status-badge-archived' : 'msc-km-status-badge-active';
+    return textEl('span', 'msc-km-status-badge ' + variant, status);
+  }
+
   function buildRow(doc) {
     var tr = el('tr', '');
 
@@ -1730,30 +1800,37 @@ export function mountKnowledgeManagementWorkspace(mountEl, opts) {
     titleTd.textContent = doc.title || '';
     tr.appendChild(titleTd);
 
-    var teamTd = el('td', '');
+    // Team/Type/Creator/Version are supporting metadata, not the primary
+    // scan target — muted so Title and Status (the two things a user
+    // actually decides on) stand out more clearly in the row.
+    var teamTd = el('td', 'msc-km-cell-muted');
     dashOrText(teamTd, doc.team);
     tr.appendChild(teamTd);
 
-    var typeTd = el('td', '');
+    var typeTd = el('td', 'msc-km-cell-muted');
     dashOrText(typeTd, doc.document_type);
     tr.appendChild(typeTd);
 
-    var creatorTd = el('td', '');
+    var creatorTd = el('td', 'msc-km-cell-muted');
     dashOrText(creatorTd, doc.creator);
     tr.appendChild(creatorTd);
 
-    var versionTd = el('td', '');
+    var versionTd = el('td', 'msc-km-cell-muted');
     dashOrText(versionTd, doc.current_version);
     tr.appendChild(versionTd);
 
     var statusTd = el('td', '');
-    dashOrText(statusTd, doc.lifecycle_status);
+    statusTd.appendChild(buildStatusBadge(doc.lifecycle_status));
     tr.appendChild(statusTd);
 
+    // "Preview" (not "View") — clearer next to "Open Document": this
+    // button opens the in-app Detail view (metadata + embedded preview +
+    // actions); "Open Document" opens the source link itself in a new
+    // tab. Same click handler/target as before — only the label changed.
     var actionTd = el('td', 'msc-km-actions-cell');
     var viewBtn = el('button', 'msc-btn msc-btn-ghost msc-km-view-btn');
     viewBtn.type = 'button';
-    viewBtn.textContent = 'View';
+    viewBtn.textContent = 'Preview';
     viewBtn.addEventListener('click', function () { openDetailModal(doc, viewBtn); });
     actionTd.appendChild(viewBtn);
     tr.appendChild(actionTd);

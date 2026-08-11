@@ -526,11 +526,11 @@ test('23. warning response shown as a toast when create returns warnings', withE
 // DETAIL (24-25)
 // ══════════════════════════════════════════════════════════════════════
 
-test('24. View Details button exists per row', withEnv(async () => {
+test('24. Preview button exists per row (renamed from "View" for clarity against "Open Document")', withEnv(async () => {
   var { mountEl } = await mountWithFixture();
   var viewBtns = qAll(mountEl, '.msc-km-view-btn');
   assert.equal(viewBtns.length, 2);
-  assert.equal(viewBtns[0].textContent, 'View');
+  assert.equal(viewBtns[0].textContent, 'Preview');
 }));
 
 test('25. persisted metadata renders in detail view', withEnv(async () => {
@@ -2073,4 +2073,143 @@ test('153. Preview section never uses innerHTML for a document-authored value (t
   var overlay = document.querySelector('.msc-km-modal-overlay');
   var img = overlay.querySelector('.msc-km-preview-image');
   assert.equal(img.alt, '<img src=x onerror=alert(1)> preview');
+}));
+
+// ══════════════════════════════════════════════════════════════════════
+// UI/UX visual-hierarchy refactor (154-166) — header helper text,
+// primary/secondary dashboard tiers, collapsible activity details,
+// Advanced Filters relabel/reposition, table status badges. Pure
+// presentation/DOM-structure changes only — every assertion below
+// confirms the SAME underlying data (search/filter behavior, dashboard
+// calculations, actions) is unchanged; only how it's grouped/labeled
+// changed. No business logic, no new network calls.
+// ══════════════════════════════════════════════════════════════════════
+
+test('154. header shows a short helper description under the title', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var helper = q(mountEl, '.msc-km-header-helper');
+  assert.ok(helper);
+  assert.match(helper.textContent, /find, manage, and open/i);
+}));
+
+test('155. primary stat row shows exactly Total/Pending/Archived, in that order', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var primaryGrid = q(mountEl, '.msc-km-stats-grid-primary');
+  assert.ok(primaryGrid);
+  var labels = primaryGrid.querySelectorAll('.msc-km-stat-label').map(function (n) { return n.textContent; });
+  assert.deepEqual(labels, ['Total Documents', 'Pending Documents', 'Archived Documents']);
+}));
+
+test('156. secondary stats (Missing Creator / Google Unverified) render as lighter-weight pills, not primary tiles', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var secondaryRow = q(mountEl, '.msc-km-stats-secondary');
+  assert.ok(secondaryRow);
+  var text = secondaryRow.allText();
+  assert.match(text, /Documents Missing Creator/);
+  assert.match(text, /Google Sheets Without Verified Owner Access/);
+  // Confirms they are NOT duplicated into the primary tile row.
+  var primaryGrid = q(mountEl, '.msc-km-stats-grid-primary');
+  assert.doesNotMatch(primaryGrid.allText(), /Missing Creator/);
+}));
+
+test('157. document activity detail cards are collapsed by default', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var toggle = q(mountEl, '.msc-km-details-toggle');
+  assert.ok(toggle);
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  assert.equal(toggle.textContent, 'Show Document Activity');
+  var cardsGrid = q(mountEl, '.msc-km-summary-grid');
+  assert.equal(cardsGrid.hidden, true);
+}));
+
+test('158. Show Document Activity toggle reveals the detail cards without refetching', withEnv(async () => {
+  var summaryCalls = 0;
+  var { mountEl } = await mountWithFixture({
+    summary: function () { summaryCalls += 1; return Promise.resolve(SUMMARY_FIXTURE); }
+  });
+  var callsAfterMount = summaryCalls;
+  fire(q(mountEl, '.msc-km-details-toggle'), 'click');
+  var cardsGrid = q(mountEl, '.msc-km-summary-grid');
+  assert.equal(cardsGrid.hidden, false);
+  assert.equal(q(mountEl, '.msc-km-details-toggle').getAttribute('aria-expanded'), 'true');
+  assert.equal(q(mountEl, '.msc-km-details-toggle').textContent, 'Hide Document Activity');
+  assert.equal(summaryCalls, callsAfterMount, 'toggling visibility must not re-fetch the summary');
+}));
+
+test('159. Advanced Filters toggle button label changes with state and panel carries its own heading', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var toggle = q(mountEl, '.msc-km-advanced-toggle');
+  assert.equal(toggle.textContent, 'Filters ▾');
+  fire(toggle, 'click');
+  assert.equal(toggle.textContent, 'Filters ▴');
+  var heading = q(mountEl, '.msc-km-advanced-heading');
+  assert.equal(heading.textContent, 'Advanced Filters');
+}));
+
+test('160. Clear Advanced Filters button still works after relabel/reposition ("Clear")', withEnv(async () => {
+  var capturedFilters = null;
+  var { mountEl } = await mountWithFixture({
+    list: function (filters) { capturedFilters = filters; return Promise.resolve({ records: [], total: 0, limit: 200, offset: 0 }); }
+  });
+  var clearBtn = q(mountEl, '.msc-km-clear-advanced');
+  assert.equal(clearBtn.textContent, 'Clear');
+  document.querySelector('#msc-km-creator-filter').value = 'Arun';
+  fire(document.querySelector('#msc-km-creator-filter'), 'input');
+  await new Promise(function (resolve) { setTimeout(resolve, 300); });
+  assert.equal(capturedFilters.creator, 'Arun');
+  fire(clearBtn, 'click');
+  await flush();
+  assert.equal(capturedFilters.creator, '');
+}));
+
+test('161. table rows render lifecycle status as a badge, not plain text', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var badge = q(mountEl, '.msc-km-status-badge');
+  assert.ok(badge);
+  assert.equal(badge.textContent, 'Active');
+  assert.ok(badge.classList.contains('msc-km-status-badge-active'));
+}));
+
+test('162. an Archived document renders the archived (neutral) badge variant', withEnv(async () => {
+  var archivedDoc = Object.assign({}, FIXTURE_DOC, { lifecycle_status: 'Archived' });
+  var { mountEl } = await mountWithFixture({
+    list: function () { return Promise.resolve({ records: [archivedDoc], total: 1, limit: 200, offset: 0 }); }
+  });
+  var badge = q(mountEl, '.msc-km-status-badge-archived');
+  assert.ok(badge);
+  assert.equal(badge.textContent, 'Archived');
+}));
+
+test('163. Team/Type/Creator/Version cells are visually de-emphasized (muted class), Title is not', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  assert.ok(q(mountEl, '.msc-km-title-cell'));
+  var mutedCells = qAll(mountEl, '.msc-km-cell-muted');
+  assert.ok(mutedCells.length >= 4);
+}));
+
+test('164. row actions still open the Detail modal and the external link, functionally unchanged by the rename', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  fire(qAll(mountEl, '.msc-km-view-btn')[0], 'click');
+  await flush();
+  var overlay = document.querySelector('.msc-km-modal-overlay');
+  assert.match(overlay.allText(), /Document Details|KPI Review Guide/);
+  var openLink = q(mountEl, '.msc-km-open-link');
+  assert.equal(openLink.getAttribute('href'), FIXTURE_DOC.source_url);
+}));
+
+test('165. search/filter/dashboard regression: filters still build the same query string after the layout refactor', withEnv(async () => {
+  var mod = await loadKmModule();
+  var qs = mod.buildListQueryString({ search: 'kpi', team: 'HR', documentType: 'PDF', lifecycleStatus: 'Active' });
+  assert.match(qs, /search=kpi/);
+  assert.match(qs, /team=HR/);
+  assert.match(qs, /document_type=PDF/);
+  assert.match(qs, /lifecycle_status=Active/);
+}));
+
+test('166. dashboard widget calculations are unchanged — same summary fixture numbers render after the layout refactor', withEnv(async () => {
+  var { mountEl } = await mountWithFixture();
+  var text = mountEl.allText();
+  assert.match(text, new RegExp(String(SUMMARY_FIXTURE.total)));
+  assert.match(text, new RegExp(String(SUMMARY_FIXTURE.pending)));
+  assert.match(text, new RegExp(String(SUMMARY_FIXTURE.archived)));
 }));

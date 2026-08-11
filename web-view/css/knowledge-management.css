@@ -18,11 +18,25 @@
   margin-bottom: var(--space-3);
 }
 
+.msc-km-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 .msc-km-section-heading {
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--text);
   margin: 0;
+}
+
+.msc-km-header-helper {
+  font-size: var(--font-sm);
+  color: var(--muted);
+  margin: 0;
+  max-width: 640px;
 }
 
 /* ── Internal view tabs (Active Documents / Deleted Documents) —
@@ -183,6 +197,7 @@
 
 .msc-km-title-cell {
   font-weight: 700;
+  font-size: var(--font-md);
   color: var(--text);
   max-width: 320px;
   overflow-wrap: break-word;
@@ -191,6 +206,38 @@
 
 .msc-km-dash {
   color: var(--muted);
+}
+
+/* Team/Type/Creator/Version — supporting metadata, deliberately quieter
+   than Title (strongest) and Status (its own colored badge) so the eye
+   lands on what matters first when scanning a row. */
+.msc-km-cell-muted {
+  color: var(--muted);
+}
+
+/* ── Status badge — replaces plain lifecycle-status text in the table. ── */
+.msc-km-status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 3px 10px;
+  border-radius: var(--pill-radius);
+  white-space: nowrap;
+}
+
+.msc-km-status-badge-active {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.msc-km-status-badge-archived {
+  background: var(--surface-tint-3);
+  color: var(--muted);
+  border: 1px solid var(--border);
 }
 
 /* ── Open Document action (Phase 11) — same visual weight as the Issues
@@ -522,6 +569,32 @@ textarea.msc-km-input {
   background: var(--surface-tint-3);
 }
 
+/* Without this, the [hidden] attribute set by JS has no visual effect:
+   an author-stylesheet `display: grid` rule of equal specificity always
+   beats the user-agent stylesheet's own `[hidden] { display: none }`
+   rule, regardless of source order — found via real-browser visual
+   validation (2026-08-11), not caught by the fake-DOM test suite (which
+   only asserts the `.hidden` property, never actual rendering). */
+.msc-km-advanced-panel[hidden] {
+  display: none;
+}
+
+.msc-km-advanced-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.msc-km-advanced-heading {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+}
+
 .msc-km-advanced-panel .msc-km-filter-field {
   flex-direction: column;
   align-items: stretch;
@@ -534,8 +607,27 @@ textarea.msc-km-input {
   width: 100%;
 }
 
+/* A quiet text link rather than a bordered button — "Clear" is a light,
+   secondary action and shouldn't visually compete with the filter fields
+   themselves. */
 .msc-km-clear-advanced {
-  align-self: end;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  color: var(--accent);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.msc-km-clear-advanced:hover {
+  text-decoration: underline;
+}
+
+.msc-km-clear-advanced:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
 }
 
 /* ── Dashboard widgets (SRD §13) — GET /api/knowledge-documents/summary.
@@ -573,10 +665,62 @@ textarea.msc-km-input {
   margin-top: 4px;
 }
 
+/* Primary row (Total/Pending/Archived) reads as the headline — slightly
+   larger value type than the base .msc-km-stat-value, and the only stat
+   row shown before the user does anything. */
+.msc-km-stats-grid-primary .msc-km-stat-value {
+  font-size: var(--font-xl);
+}
+
+/* ── Secondary stats (Missing Creator / Google Owner-Access) — small
+   inline pills, deliberately lighter than the primary stat tiles above so
+   they read as flags to check, not headline numbers. ── */
+.msc-km-stats-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.msc-km-stat-secondary-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  background: var(--surface-tint-3);
+  border: 1px solid var(--border);
+  border-radius: var(--pill-radius);
+  padding: 5px 12px;
+}
+
+.msc-km-stat-secondary-value {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.msc-km-stat-secondary-label {
+  font-size: var(--font-xs);
+  color: var(--muted);
+}
+
+/* Collapsed-by-default toggle for the Team/Recent-Activity/Version detail
+   cards below — keeps the dashboard's first impression to three headline
+   stats + two flags, not eight competing cards. */
+.msc-km-details-toggle {
+  margin-bottom: var(--space-3);
+}
+
 .msc-km-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-3);
+}
+
+/* Same [hidden]-vs-author-`display` cascade issue as .msc-km-advanced-panel
+   above — required for the "Show/Hide Document Activity" collapse to have
+   any visual effect. */
+.msc-km-summary-grid[hidden] {
+  display: none;
 }
 
 .msc-km-summary-card {
