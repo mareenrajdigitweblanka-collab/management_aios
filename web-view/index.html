@@ -52,7 +52,13 @@
             autocapitalize="off" spellcheck="false"
             class="calendar-auth-input calendar-auth-input--with-toggle" />
           <button type="button" id="authGateToggleVisibility" class="calendar-auth-toggle-visibility"
-            aria-label="Show token" aria-pressed="false">Show</button>
+            aria-label="Show member token" aria-pressed="false">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
+              <circle cx="10" cy="10" r="2.4" />
+            </svg>
+          </button>
         </div>
         <p id="authGateError" class="calendar-auth-error" role="alert" hidden></p>
         <div class="auth-gate-actions">

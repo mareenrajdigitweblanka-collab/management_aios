@@ -217,6 +217,12 @@ export function createFakeDocument() {
     activeElement: null,
     createElement: function (tag) { return new FakeElement(tag, doc); },
     createTextNode: function (text) { return new FakeTextNode(text); },
+    // Entry-auth-gate eye-icon toggle (2026-08-11 follow-up) builds a real
+    // SVG via createElementNS — same deliberate, documented alias as
+    // calendar/auth-test-dom.mjs already uses for its own show/hide icon:
+    // the namespace URI is irrelevant to this fake DOM (no rendering
+    // happens here), so this is just createElement under a second name.
+    createElementNS: function (_ns, tag) { return new FakeElement(tag, doc); },
     getElementById: function (id) {
       return Object.prototype.hasOwnProperty.call(doc._byId, id) ? doc._byId[id] : null;
     },

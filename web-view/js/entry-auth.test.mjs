@@ -264,6 +264,25 @@ test('Show/Hide toggle flips the token input between password and text', withEnv
   assert.equal(els.input.type, 'password');
 }));
 
+test('Show/Hide toggle: eye icon toggle carries the required accessible labels, not a text label', withEnv(async (env) => {
+  var els = mountGateMarkup(env.document);
+  var mod = await loadModule();
+  mod.initEntryAuthGate(function () {});
+
+  assert.equal(els.toggleBtn.getAttribute('aria-label'), 'Show member token');
+  assert.equal(els.toggleBtn.getAttribute('aria-pressed'), 'false');
+  var iconBefore = els.toggleBtn._children[0];
+  assert.equal(iconBefore.tagName, 'SVG', 'an icon, not a "Show" text label, is rendered');
+
+  els.toggleBtn.click();
+
+  assert.equal(els.toggleBtn.getAttribute('aria-label'), 'Hide member token');
+  assert.equal(els.toggleBtn.getAttribute('aria-pressed'), 'true');
+  var iconAfter = els.toggleBtn._children[0];
+  assert.equal(iconAfter.tagName, 'SVG');
+  assert.equal(els.toggleBtn.textContent, '', 'no visible text label is ever rendered, icon-only');
+}));
+
 // ── Auth loss mid-session (Phase 9) ─────────────────────────────────────
 
 test('auth loss after a successful session: app shell hides again and the gate form reappears, onAuthenticated not called twice', withEnv(async (env) => {

@@ -113,15 +113,54 @@ function showError(els, message) {
    entirely separate input element on the page. The verification/storage
    logic (the part Phase 6 says must not be duplicated) is untouched;
    this is presentation-only wiring, same as any other page's show/hide
-   button. */
+   button.
+
+   Icon (2026-08-11 follow-up) — same eye/eye-slash glyph as calendar/
+   auth.js's own token dialog toggle (byte-identical path/circle/line
+   geometry), so the two token-visibility controls in this app read as
+   one consistent control, not two different designs. Built via
+   createElementNS/appendChild, never innerHTML, matching this whole
+   codebase's no-innerHTML-for-interactive-markup convention. */
+function renderToggleVisibilityIcon(button, visible) {
+  while (button.firstChild) { button.removeChild(button.firstChild); }
+  var svgNS = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 20 20');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.6');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  var eyeOutline = document.createElementNS(svgNS, 'path');
+  eyeOutline.setAttribute('d', 'M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z');
+  var pupil = document.createElementNS(svgNS, 'circle');
+  pupil.setAttribute('cx', '10');
+  pupil.setAttribute('cy', '10');
+  pupil.setAttribute('r', '2.4');
+  svg.appendChild(eyeOutline);
+  svg.appendChild(pupil);
+  if (visible) {
+    // Token currently shown as plain text — icon becomes a slashed eye
+    // ("click to hide"), same open-eye shape plus one diagonal line.
+    var slash = document.createElementNS(svgNS, 'line');
+    slash.setAttribute('x1', '2');
+    slash.setAttribute('y1', '18');
+    slash.setAttribute('x2', '18');
+    slash.setAttribute('y2', '2');
+    svg.appendChild(slash);
+  }
+  button.appendChild(svg);
+}
+
 function wireToggleVisibility(els) {
   if (!els.toggleVisibilityBtn || !els.input) { return; }
   var visible = false;
   function render() {
     els.input.type = visible ? 'text' : 'password';
-    els.toggleVisibilityBtn.setAttribute('aria-label', visible ? 'Hide token' : 'Show token');
+    els.toggleVisibilityBtn.setAttribute('aria-label', visible ? 'Hide member token' : 'Show member token');
     els.toggleVisibilityBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
-    els.toggleVisibilityBtn.textContent = visible ? 'Hide' : 'Show';
+    renderToggleVisibilityIcon(els.toggleVisibilityBtn, visible);
   }
   render();
   els.toggleVisibilityBtn.addEventListener('click', function () {
