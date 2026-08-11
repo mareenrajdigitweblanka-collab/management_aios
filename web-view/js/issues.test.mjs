@@ -263,19 +263,28 @@ test('createProductionStaffTeamSource: fetches active staff from STAFF_API_BASE 
   globalThis.fetch = function (url) {
     calls.push(url);
     if (String(url).indexOf('/filter-options') !== -1) {
-      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ teams: ['Zenith Team', 'Amazon Team', 'Amazon Team'] }); } });
+      // 2026-08-11: teams (name strings) replaced by team_ids (Ledsone's
+      // raw integers, no name lookup available) — see issues.js
+      // fetchTeamNames.
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ team_ids: [3, 1, 1] }); } });
     }
     return Promise.resolve({
       ok: true,
-      json: function () { return Promise.resolve({ records: [{ full_name: 'Bhanu Silva' }, { full_name: 'Amara Fernando' }, { full_name: 'Bhanu Silva' }] }); }
+      // 2026-08-11: raw staff records use `name`, not the former
+      // `full_name` — see issues.js fetchActiveStaffNames.
+      json: function () { return Promise.resolve({ records: [{ name: 'Bhanu Silva' }, { name: 'Amara Fernando' }, { name: 'Bhanu Silva' }] }); }
     });
   };
   var mod = await loadIssuesModule();
   var source = mod.createProductionStaffTeamSource();
   var result = await source.fetchOptions();
   assert.deepEqual(result.raisedByOptions, ['Amara Fernando', 'Bhanu Silva']);
-  assert.deepEqual(result.teamOptions, ['Amazon Team', 'Zenith Team']);
-  assert.ok(calls.some(function (u) { return u.indexOf('/api/staff?') !== -1 && u.indexOf('staff_status=Active') !== -1; }));
+  assert.deepEqual(result.teamOptions, ['1', '3']);
+  // 2026-08-11: staff_status=Active is no longer sent — the column was
+  // dropped along with the re-source to employee_management.staff
+  // (Ledsone) — see issues.js fetchActiveStaffNames.
+  assert.ok(calls.some(function (u) { return u.indexOf('/api/staff?') !== -1; }));
+  assert.ok(!calls.some(function (u) { return u.indexOf('staff_status') !== -1; }));
   assert.ok(calls.some(function (u) { return u.indexOf('/api/staff/filter-options') !== -1; }));
 }));
 
@@ -290,9 +299,9 @@ test('createProductionStaffTeamSource: HTTP/network failure rejects with staffTe
 test('createProductionStaffTeamSource: a successful-but-empty response is also treated as unavailable, never a fabricated empty list', withEnv(async function () {
   globalThis.fetch = function (url) {
     if (String(url).indexOf('/filter-options') !== -1) {
-      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ teams: [] }); } });
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ team_ids: [] }); } });
     }
-    return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ records: [{ full_name: 'Amara Fernando' }] }); } });
+    return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ records: [{ name: 'Amara Fernando' }] }); } });
   };
   var mod = await loadIssuesModule();
   await assert.rejects(mod.createProductionStaffTeamSource().fetchOptions(), function (err) {

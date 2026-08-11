@@ -177,8 +177,8 @@ export function buildListQuery(filters) {
    (the export is deliberately unpaginated — "the complete active Review
    Summary history," never one page of it). Never includes a token,
    reviewer display name, employee display name, or summary text — only
-   reviewed_staff_id (a UUID), an optional reviewer_member_key, and two
-   optional dates. */
+   reviewed_staff_id (an integer as of 2026-08-11 — was a UUID), an
+   optional reviewer_member_key, and two optional dates. */
 export function buildExportQuery(filters) {
   filters = filters || {};
   var params = [];
@@ -248,15 +248,13 @@ export function summaryPreview(text, maxLength) {
   return { truncated: true, preview: cut + '…' };
 }
 
-/* Reviewed-staff option label — full_name primary, calling_name as a
-   parenthetical secondary label when it differs. Never employee_number. */
+/* Reviewed-staff option label — reads a raw GET /api/staff search result
+   (StaffRecordOut), which uses Ledsone's own `name` field (renamed from
+   full_name 2026-08-11 — see backend/schemas.py StaffRecordOut
+   docstring). Never staff_code/employee_number. */
 export function staffOptionLabel(staff) {
   if (!staff) { return ''; }
-  var name = staff.full_name || staff.calling_name || 'Unnamed staff record';
-  if (staff.calling_name && staff.calling_name !== staff.full_name) {
-    return name + ' (' + staff.calling_name + ')';
-  }
-  return name;
+  return staff.name || 'Unnamed staff record';
 }
 
 /* REQ-CAL-REV-PDF-003-FIX-02 — PDF export filename handling. The server
@@ -334,20 +332,14 @@ export function parseReviewSummaryPdfFilename(dispositionHeader, fallbackEmploye
 }
 
 /* Same shape as staffOptionLabel, but reading a history record's own
-   reviewed_staff_full_name/reviewed_staff_calling_name (live-joined by the
-   backend at read time, backend/routers/staff_review_summaries.py
-   _to_out()) rather than a staff-search result object — used for each
-   card's "Reviewed employee" field. */
+   reviewed_staff_full_name (live-joined by the backend at read time,
+   backend/routers/staff_review_summaries.py _to_out()) rather than a
+   staff-search result object — used for each card's "Reviewed employee"
+   field. 2026-08-11: reviewed_staff_calling_name removed — see
+   staffOptionLabel above. */
 export function reviewedEmployeeLabel(record) {
   if (!record) { return ''; }
-  var name = record.reviewed_staff_full_name || record.reviewed_staff_calling_name || 'Unknown staff record';
-  if (
-    record.reviewed_staff_calling_name &&
-    record.reviewed_staff_calling_name !== record.reviewed_staff_full_name
-  ) {
-    return name + ' (' + record.reviewed_staff_calling_name + ')';
-  }
-  return name;
+  return record.reviewed_staff_full_name || 'Unknown staff record';
 }
 
 /* Two access states only (corrects the old 5-mount own/read_only/
@@ -468,9 +460,12 @@ function reviewSummariesApiRequest(pathAndQuery, options) {
    always expected to be present by the time this is ever called; the
    Authorization header is added for correctness/defense-in-depth, not
    because this call site could otherwise be reached unauthenticated. */
-function fetchStaffOptions(search, includeInactive, signal) {
+/* 2026-08-11: the includeInactive param/staff_status filter was removed —
+   StaffDashboardRecord.staff_status no longer exists (Ledsone's
+   employee_management.staff has no equivalent), so there is no longer an
+   active/inactive distinction to filter on. */
+function fetchStaffOptions(search, signal) {
   var params = ['limit=20', 'search=' + encodeURIComponent(search || '')];
-  if (!includeInactive) { params.push('staff_status=Active'); }
   var token = getStoredToken();
   var options = { headers: token ? { 'Authorization': 'Bearer ' + token } : undefined };
   if (signal) { options.signal = signal; }
@@ -518,7 +513,6 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
   var state = {
     selectedStaff: null,
-    includeInactive: false,
     reviewerFilter: '', // '' = All reviewers (include_all_reviewers=true)
     dateFrom: '',
     dateTo: '',
@@ -614,19 +608,10 @@ export function mountReviewSummariesWorkspace(mountEl) {
   var selectedStaffEl = el('div', 'review-summaries-selected-staff');
   selectedStaffEl.hidden = true;
 
-  var includeInactiveLabel = el('label', 'review-summaries-toggle');
-  var includeInactiveCheckbox = el('input', 'review-summaries-toggle-input');
-  includeInactiveCheckbox.type = 'checkbox';
-  var includeInactiveTrack = el('span', 'review-summaries-toggle-track');
-  var includeInactiveText = el('span', 'review-summaries-toggle-text');
-  includeInactiveText.textContent = 'Include inactive staff';
-  includeInactiveLabel.appendChild(includeInactiveCheckbox);
-  includeInactiveLabel.appendChild(includeInactiveTrack);
-  includeInactiveLabel.appendChild(includeInactiveText);
-
+  // 2026-08-11: the "Include inactive staff" toggle was removed along
+  // with staff_status — see fetchStaffOptions above.
   staffField.appendChild(staffSearchWrap);
   staffField.appendChild(selectedStaffEl);
-  staffField.appendChild(includeInactiveLabel);
   staffPanel.appendChild(staffPanelTitle);
   staffPanel.appendChild(staffField);
 
@@ -702,7 +687,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
     showInlineLoading(staffResultsEl, 'Searching…');
     staffResultsEl.hidden = false;
     var requestToken = controller;
-    fetchStaffOptions(query, state.includeInactive, controller && controller.signal)
+    fetchStaffOptions(query, controller && controller.signal)
       .then(function (records) {
         if (requestToken !== state.staffSearchAbort) { return; } // a newer search superseded this one
         renderStaffResults(records);
@@ -719,10 +704,6 @@ export function mountReviewSummariesWorkspace(mountEl) {
   }, STAFF_SEARCH_DEBOUNCE_MS);
 
   staffSearchInput.addEventListener('input', doStaffSearch);
-  includeInactiveCheckbox.addEventListener('change', function () {
-    state.includeInactive = includeInactiveCheckbox.checked;
-    if (staffSearchInput.value.trim()) { doStaffSearch(); }
-  });
 
   // ── Create / edit form ───────────────────────────────────────────
   var formPanel = el('div', 'review-summaries-panel review-summaries-form-panel');

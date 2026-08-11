@@ -10,63 +10,60 @@ import { mapApiError, classifyHttpStatus } from './ui/error-mapper.js';
 import { getStoredToken, handleUnauthorizedResponse } from './calendar/auth.js';
 import { isAuthenticated, onAuthChange, buildAuthRequiredNotice } from './auth-gate.js';
 
-// DEV/FALLBACK-ONLY synthetic sample dataset — generated verbatim from
-// member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv.
-// No real employee name, NIC, or employee number appears here.
-// As of 2026-07-13 this is NOT the operational data source — real
-// staff data is fetched live from the Staff API (STAFF_API_BASE,
-// below). This array is retained only so this file can still be
-// opened offline for markup/CSS development without a backend
-// running; no init function in this script references it.
+// DEV/FALLBACK-ONLY synthetic sample dataset. As of 2026-08-11 this
+// mirrors the exact-Ledsone-mirror field shape (see STAFF_MAIN_COLUMNS
+// comment below) with fully invented values — no real employee data. Real
+// staff data is fetched live from the Staff API (STAFF_API_BASE, below).
+// This array is retained only so this file can still be opened offline
+// for markup/CSS development without a backend running; no init function
+// in this script references it.
 var STAFF_DATA_SAMPLE = [
-  { employee_number: "SAMPLE001", epf_number: "[VERIFY]", date_of_joining: "01/01/2020", full_name: "Sample Staff One", calling_name: "Staff One", location: "Jaffna", staff_status: "Active", department_team: "PH", designation: "Portfolio Executive", cv_reference: "SAMPLE-CV-001.pdf", nic: "SAMPLE-NIC-001", remarks: "synthetic sample row", employment_stage: "Permanent", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-001" },
-  { employee_number: "SAMPLE002", epf_number: "[VERIFY]", date_of_joining: "15/03/2021", full_name: "Sample Staff Two", calling_name: "Staff Two", location: "Nelliyadi", staff_status: "Inactive", department_team: "PH", designation: "Portfolio Executive", cv_reference: "", nic: "SAMPLE-NIC-002", remarks: "synthetic sample row", employment_stage: "[VERIFY]", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-002" },
-  { employee_number: "SAMPLE003", epf_number: "[VERIFY]", date_of_joining: "10/06/2022", full_name: "Sample Staff Three", calling_name: "Staff Three", location: "Chankanai", staff_status: "Active", department_team: "Digital Marketing", designation: "Digital Marketing Executive", cv_reference: "SAMPLE-CV-003.pdf", nic: "", remarks: "synthetic sample row", employment_stage: "Probation", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-003" },
-  { employee_number: "SAMPLE004", epf_number: "[VERIFY]", date_of_joining: "05/09/2023", full_name: "Sample Staff Four", calling_name: "Staff Four", location: "WFH", staff_status: "Active", department_team: "Technical Team", designation: "Automation Engineer", cv_reference: "", nic: "SAMPLE-NIC-004", remarks: "synthetic sample row", employment_stage: "training_7_day", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-004" },
-  { employee_number: "SAMPLE005", epf_number: "[VERIFY]", date_of_joining: "20/11/2019", full_name: "Sample Staff Five", calling_name: "Staff Five", location: "Jaffna", staff_status: "Inactive", department_team: "eBay", designation: "E-Commerce Executive", cv_reference: "SAMPLE-CV-005.pdf", nic: "SAMPLE-NIC-005", remarks: "synthetic sample row", employment_stage: "[VERIFY]", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-005" },
-  { employee_number: "SAMPLE006", epf_number: "[VERIFY]", date_of_joining: "12/02/2024", full_name: "Sample Staff Six", calling_name: "Staff Six", location: "Nelliyadi", staff_status: "Active", department_team: "PH", designation: "E-Commerce Executive", cv_reference: "", nic: "", remarks: "synthetic sample row", employment_stage: "Permanent", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-006" },
-  { employee_number: "SAMPLE007", epf_number: "[VERIFY]", date_of_joining: "28/04/2025", full_name: "Sample Staff Seven", calling_name: "Staff Seven", location: "Chankanai", staff_status: "Active", department_team: "Accounts", designation: "Accounts Assistant", cv_reference: "SAMPLE-CV-007.pdf", nic: "SAMPLE-NIC-007", remarks: "synthetic sample row", employment_stage: "Probation", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-007" },
-  { employee_number: "SAMPLE008", epf_number: "[VERIFY]", date_of_joining: "30/07/2018", full_name: "Sample Staff Eight", calling_name: "Staff Eight", location: "Jaffna", staff_status: "Inactive", department_team: "Customer Service", designation: "Customer Service Executive", cv_reference: "", nic: "", remarks: "synthetic sample row", employment_stage: "[VERIFY]", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-008" },
-  { employee_number: "SAMPLE009", epf_number: "[VERIFY]", date_of_joining: "03/05/2026", full_name: "Sample Staff Nine", calling_name: "Staff Nine", location: "WFH", staff_status: "Active", department_team: "Technical Team", designation: "Software Engineer", cv_reference: "SAMPLE-CV-009.pdf", nic: "SAMPLE-NIC-009", remarks: "synthetic sample row", employment_stage: "training_7_day", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-009" },
-  { employee_number: "SAMPLE010", epf_number: "[VERIFY]", date_of_joining: "17/10/2020", full_name: "Sample Staff Ten", calling_name: "Staff Ten", location: "Nelliyadi", staff_status: "Active", department_team: "PH", designation: "Portfolio Executive", cv_reference: "", nic: "", remarks: "synthetic sample row", employment_stage: "Permanent", source_file: "SAMPLE-SOURCE.csv", source_page: "0", source_row_reference: "sample-row-010" }
+  { id: 1, staff_code: "SAMPLE001", name: "Sample Staff One", role: 2, email: "sample1@example.com", phone: "0700000001", roster: "saturday", designation: "Portfolio Executive", joined_date: "2020-01-01", confirmed_date: null, address: "Sample Address One", skype: "sample.one", delete_status: false, team_id: 1, is_approved: 1, staff_type: "full-time", staff_level: "Senior", informed_leave_balance: 10, urgent_leave_balance: 2, backup_staffs: null },
+  { id: 2, staff_code: "SAMPLE002", name: "Sample Staff Two", role: 2, email: "sample2@example.com", phone: null, roster: null, designation: "Portfolio Executive", joined_date: "2021-03-15", confirmed_date: null, address: null, skype: null, delete_status: true, team_id: 1, is_approved: 1, staff_type: "full-time", staff_level: "Junior", informed_leave_balance: 5, urgent_leave_balance: 0, backup_staffs: null }
 ];
 
-// Columns shown in the main staff table. source_file/source_page/
-// source_row_reference are intentionally excluded from display but
-// remain on each row object for internal traceability.
+// Columns shown in the main staff table / detail drawer.
+//
+// 2026-08-11: staff_dashboard_records was rebuilt as an EXACT mirror of
+// employee_management.staff (Ledsone) — same columns, same field names,
+// same integer primary key — per explicit, deliberate user instruction.
+// This replaces the former dashboard-specific 5-field curated shape
+// (employee_number/full_name/department_team/date_of_joining/designation)
+// entirely. Includes PDPA-sensitive fields (email/phone/address/skype) and
+// HR-sensitive fields (leave balances, is_approved) — see backend/models.py
+// StaffDashboardRecord docstring and member-aios/staff-data/README.md §0.
+// fcm_token is the one deliberate exclusion (a security credential, not
+// staff data).
 var STAFF_MAIN_COLUMNS = [
-  'employee_number', 'epf_number', 'date_of_joining', 'full_name', 'calling_name',
-  'location', 'staff_status', 'department_team', 'designation', 'cv_reference',
-  'nic', 'remarks', 'employment_stage'
+  'staff_code', 'name', 'designation', 'team_id', 'joined_date', 'confirmed_date',
+  'email', 'phone', 'address', 'skype', 'role', 'staff_type', 'staff_level',
+  'is_approved', 'delete_status', 'informed_leave_balance', 'urgent_leave_balance',
+  'backup_staffs'
 ];
 var STAFF_COLUMN_LABELS = {
-  employee_number: 'Employee Number', epf_number: 'EPF Number', date_of_joining: 'Date of Joining',
-  full_name: 'Full Name', calling_name: 'Calling Name', location: 'Location',
-  staff_status: 'Staff Status', department_team: 'Team', designation: 'Designation',
-  cv_reference: 'CV Reference', nic: 'NIC', remarks: 'Remarks', employment_stage: 'Employment Stage'
+  staff_code: 'Staff Code', name: 'Name', designation: 'Designation', team_id: 'Team ID',
+  joined_date: 'Joined Date', confirmed_date: 'Confirmed Date', email: 'Email', phone: 'Phone',
+  address: 'Address', skype: 'Skype', role: 'Role', staff_type: 'Staff Type',
+  staff_level: 'Staff Level', is_approved: 'Approval Status', delete_status: 'Deleted',
+  informed_leave_balance: 'Informed Leave Balance', urgent_leave_balance: 'Urgent Leave Balance',
+  backup_staffs: 'Backup Staff IDs'
 };
-var STAGE_DISPLAY_LABELS = {
-  'training_7_day': '7-Day Training',
-  '[VERIFY]': '[VERIFY]',
-  'Permanent': 'Permanent',
-  'Probation': 'Probation'
-};
-var ONBOARDING_STAGES = { 'Probation': true, 'training_7_day': true, '[VERIFY]': true };
 
 /* Compact/default columns shown in the primary table (UX upgrade,
    2026-07-13). `sortKey` is the sort_by value sent to GET /api/staff
    (null = not sortable); `hideable` marks columns the column-visibility
    chooser may hide (Employee and Actions are always shown). The fuller
-   STAFF_MAIN_COLUMNS field set above is unchanged and is reused as-is
-   for the detail drawer. */
+   STAFF_MAIN_COLUMNS field set above is reused as-is for the detail
+   drawer, which shows every field this compact table doesn't.
+
+   2026-08-11: field names updated to match the exact Ledsone mirror — see
+   STAFF_MAIN_COLUMNS comment above. team_id has no human-readable name
+   available in this table (Ledsone's own team_id column, mostly NULL). */
 var STAFF_PRIMARY_COLUMNS = [
-  { key: 'employee', label: 'Employee', sortKey: 'full_name', hideable: false },
-  { key: 'department_team', label: 'Team', sortKey: 'department_team', hideable: true },
+  { key: 'employee', label: 'Employee', sortKey: 'name', hideable: false },
+  { key: 'team_id', label: 'Team ID', sortKey: 'team_id', hideable: true },
   { key: 'designation', label: 'Designation', sortKey: null, hideable: true },
-  { key: 'staff_status', label: 'Staff Status', sortKey: 'staff_status', hideable: true },
-  { key: 'employment_stage', label: 'Employment Stage', sortKey: 'employment_stage', hideable: true },
-  { key: 'location', label: 'Location', sortKey: 'location', hideable: true },
-  { key: 'date_of_joining', label: 'Date of Joining', sortKey: 'date_of_joining', hideable: true },
+  { key: 'joined_date', label: 'Joined Date', sortKey: 'joined_date', hideable: true },
   { key: 'actions', label: 'Actions', sortKey: null, hideable: false }
 ];
 var STAFF_ROWS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
@@ -167,25 +164,19 @@ function staffApiRequest(url, signal) {
   });
 }
 
-/* Builds the GET /api/staff query string. `stage` may be a single
-   string (user-selected, from the shared filter dropdown) or an
-   array (a tab's base pilot classification, e.g. Onboarding's
-   Probation/training_7_day/[VERIFY] set) — the API accepts repeated
-   employment_stage params for exactly this reason. `sortBy`/`sortDir`
-   and `limit`/`offset` are populated by the per-instance table
-   controller (see mountStaffTableView) — omitting sortBy reproduces
-   the API's original hardcoded ordering exactly. */
+/* Builds the GET /api/staff query string. `sortBy`/`sortDir` and
+   `limit`/`offset` are populated by the per-instance table controller
+   (see mountStaffTableView) — omitting sortBy reproduces the API's
+   original hardcoded ordering exactly.
+
+   2026-08-11: staff_status/employment_stage/location query params
+   removed along with their backing columns; `team` renamed to `teamId`
+   (sent as team_id) — see STAFF_MAIN_COLUMNS comment above. */
 function buildStaffQuery(filters) {
   filters = filters || {};
   var params = [];
-  if (filters.team) params.push('team=' + encodeURIComponent(filters.team));
-  if (filters.status) params.push('staff_status=' + encodeURIComponent(filters.status));
-  if (filters.stage) {
-    var stages = Array.isArray(filters.stage) ? filters.stage : [filters.stage];
-    stages.forEach(function (s) { params.push('employment_stage=' + encodeURIComponent(s)); });
-  }
+  if (filters.teamId != null && filters.teamId !== '') params.push('team_id=' + encodeURIComponent(filters.teamId));
   if (filters.search) params.push('search=' + encodeURIComponent(filters.search));
-  if (filters.location) params.push('location=' + encodeURIComponent(filters.location));
   if (filters.sortBy) {
     params.push('sort_by=' + encodeURIComponent(filters.sortBy));
     params.push('sort_direction=' + encodeURIComponent(filters.sortDir || 'asc'));
@@ -205,83 +196,71 @@ function fetchStaffRecords(filters, signal) {
   return staffApiRequest(STAFF_API_BASE + '?' + buildStaffQuery(filters), signal);
 }
 
-// ── Shared filter-merge helper — reused by Current Staff, Onboarding
-// Staff Process, Resigned Staff, the Arun PH view, and the Paraparan
-// view. Combines a view's fixed base classification (e.g. "Active
-// only" for Current Staff) with whatever the user has additionally
-// selected in the shared filter bar — the user's selection narrows
-// within the base, it does not need to be re-specified per view. ──
+// ── Shared filter-merge helper — reused by the unified Staff Data
+// panel, the Arun PH view, and the Paraparan view. Combines a view's
+// fixed base filter (e.g. { teamId: 1 } for the team-locked pilots) with
+// whatever the user has additionally selected in the shared filter bar.
+//
+// 2026-08-11: status/stage/location dropped along with their backing
+// columns — the former Current/Onboarding/Resigned subtab split relied
+// on exactly these fields and no longer exists (see
+// member-aios/staff-data/README.md). `team` renamed to `teamId` (Ledsone's
+// raw team_id integer — no human-readable team/department name is
+// available in this table). ──
 function mergeStaffFilters(baseFilters, userFilters) {
   userFilters = userFilters || {};
+  var teamId = userFilters.teamId != null && userFilters.teamId !== ''
+    ? userFilters.teamId
+    : (baseFilters && baseFilters.teamId);
   return {
-    team: userFilters.team || (baseFilters && baseFilters.team) || '',
-    status: userFilters.status || (baseFilters && baseFilters.status) || '',
-    stage: userFilters.stage ? userFilters.stage : (baseFilters && baseFilters.stage) || '',
-    search: userFilters.search || '',
-    location: userFilters.location || (baseFilters && baseFilters.location) || ''
+    teamId: teamId != null ? teamId : '',
+    search: userFilters.search || ''
   };
 }
 
-// ── Technical pilot classification base filters — NOT approved HR
-// policy (see member-aios/staff-data/evidence/
-// employment-stage-rule-review-2026-07-13.md). These only decide
-// which real staff rows appear under which subtab; they do not alter
-// any stored data. ──
-var STAFF_SUBTAB_BASE_FILTERS = {
-  'current-staff': { status: 'Active' },
-  'resigned-staff': { status: 'Inactive' },
-  'onboarding-staff': { stage: ['Probation', 'training_7_day', '[VERIFY]'] }
-};
+/* Renders a raw cell value, correctly distinguishing "no value" (null/
+   undefined/empty string -> em dash) from legitimate falsy values like
+   `false` or `0` (Boolean/Number.leave-balance fields on this row shape,
+   2026-08-11 exact-Ledsone-mirror) — a plain `raw || fallback` pattern
+   would incorrectly blank out delete_status: false or a 0 leave balance. */
+function formatStaffCellValue(raw) {
+  if (raw === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
+  if (raw === null || raw === undefined || raw === '') return null;
+  if (typeof raw === 'boolean') return raw ? 'Yes' : 'No';
+  return escapeHtml(raw);
+}
 
-// ── Shared cell renderers — used by the primary table, the detail
-// drawer, and (for the fuller field set) never by CSV export directly
-// (export reads raw values so the file stays plain text). Employment
-// stage and staff status get a text label *plus* a color chip — never
-// color alone (Staff Table UX upgrade, 2026-07-13 — see "STATUS
-// DISPLAY" requirement). ──
+// ── Shared cell renderers — used by the primary table and the detail
+// drawer (fuller field set); never by CSV export directly (export reads
+// raw values so the file stays plain text). ──
 function renderStaffPrimaryCell(r, colKey) {
   if (colKey === 'employee') {
     return '<div class="staff-employee-cell">' +
-      '<div class="staff-employee-name">' + escapeHtml(r.full_name || '—') + '</div>' +
-      (r.calling_name ? '<div class="staff-employee-calling">' + escapeHtml(r.calling_name) + '</div>' : '') +
-      (r.employee_number ? '<div class="staff-employee-number">' + escapeHtml(r.employee_number) + '</div>' : '') +
+      '<div class="staff-employee-name">' + escapeHtml(r.name || '—') + '</div>' +
+      (r.staff_code ? '<div class="staff-employee-number">' + escapeHtml(r.staff_code) + '</div>' : '') +
       '</div>';
   }
   if (colKey === 'actions') {
     return '<button type="button" class="staff-details-btn">Details</button>';
   }
-  if (colKey === 'staff_status') {
-    var s = r.staff_status;
-    if (!s) return '';
-    if (s === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
-    var cls = s === 'Active' ? 'badge-pass' : (s === 'Inactive' ? 'badge-blocked' : 'badge-verify');
-    return '<span class="badge ' + cls + '">' + escapeHtml(s) + '</span>';
-  }
-  if (colKey === 'employment_stage') {
-    var v = r.employment_stage;
-    if (!v) return '';
-    if (v === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
-    return escapeHtml(STAGE_DISPLAY_LABELS[v] || v);
-  }
-  var raw = r[colKey];
-  if (raw === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
-  return escapeHtml(raw || '');
+  var formatted = formatStaffCellValue(r[colKey]);
+  return formatted == null ? '' : formatted;
 }
 
 function renderStaffDrawerFieldValue(r, colKey) {
-  var raw = r[colKey];
-  if (raw === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
-  var display = (colKey === 'employment_stage' && STAGE_DISPLAY_LABELS[raw]) ? STAGE_DISPLAY_LABELS[raw] : raw;
-  return escapeHtml(display || '—');
+  var formatted = formatStaffCellValue(r[colKey]);
+  return formatted == null ? '—' : formatted;
 }
 
 /* Single centralized detail drawer, lazily created and reused by every
-   staff table instance (Current/Onboarding/Resigned/Arun/Paraparan) —
-   only one row can be inspected at a time, so one shared drawer avoids
-   mounting 5 near-identical overlay/focus-trap instances. Renders
-   exactly the STAFF_MAIN_COLUMNS field set (already the approved,
-   PII-free 13-field list) — never salary/address/personal-contact
-   fields, which do not exist on the row objects at all. */
+   mounted staff table instance — only one row can be inspected at a time,
+   so one shared drawer avoids mounting several near-identical overlay/
+   focus-trap instances. Renders exactly the STAFF_MAIN_COLUMNS field set
+   — as of 2026-08-11 this includes PDPA-sensitive fields (email/phone/
+   address/skype) and HR-sensitive fields (leave balances, is_approved),
+   per explicit user instruction (exact Ledsone mirror) — see
+   STAFF_MAIN_COLUMNS comment above. Still never salary, which does not
+   exist on the row objects at all. */
 var staffDrawerApi = null;
 function ensureStaffDrawer() {
   if (staffDrawerApi) return staffDrawerApi;
@@ -599,48 +578,34 @@ function mountStaffTableView(containerEl, viewLabel) {
 }
 
 // ── Shared filter-bar component — one function, instantiated once per
-// view (Staff Data tab, Arun PH pilot, Paraparan tab). `teamOptions`
-// is a plain array of team name strings (from GET
-// /api/staff/filter-options for the unlocked Staff Data tab; ignored
-// when opts.lockTeam is set for the Arun/Paraparan team-locked
-// views). Extended (2026-07-13) with a debounced search input, a
-// Clear-all button, and active-filter chips. ──
-function createStaffFilterBar(containerEl, teamOptions, onChange, opts) {
+// view (Staff Data tab, Arun PH pilot, Paraparan tab). `teamIdOptions` is
+// a plain array of distinct team_id integers (from GET
+// /api/staff/filter-options). Extended (2026-07-13) with a debounced
+// search input, a Clear-all button, and active-filter chips.
+//
+// 2026-08-11: Staff Status/Employment Stage/Location dropdowns removed
+// along with their backing columns — Ledsone's employee_management.staff
+// has no equivalent (see member-aios/staff-data/README.md). Team filter
+// renamed team -> teamId (Ledsone's raw team_id integer, no
+// human-readable name available). The lockTeam mechanism (used by the
+// former Arun/Paraparan team-scoped pilots) is removed — a "PH" text lock
+// has no meaning against a numeric team_id; see
+// initTeamScopedStaffPilot. ──
+function createStaffFilterBar(containerEl, teamIdOptions, onChange, opts) {
   if (!containerEl) return { getFilters: function () { return {}; } };
   opts = opts || {};
-  var teams = opts.lockTeam ? [opts.lockTeam] : (teamOptions || []);
-  var statuses = ['Active', 'Inactive'];
-  var stages = ['Permanent', 'Probation', 'training_7_day', '[VERIFY]'];
-  var locations = ['Jaffna', 'Nelliyadi', 'Chankanai', 'WFH'];
+  var teamIds = teamIdOptions || [];
 
-  var html = '<div class="staff-filter-field"><label>Team</label><select class="staff-filter-team"' +
-    (opts.lockTeam ? ' disabled' : '') + '>' +
-    (opts.lockTeam ? '' : '<option value="">All Teams</option>') +
-    teams.map(function (t) {
-      return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) +
-        (opts.lockTeam ? ' (pilot-locked)' : '') + '</option>';
+  var html = '<div class="staff-filter-field"><label>Team ID</label><select class="staff-filter-team">' +
+    '<option value="">All Teams</option>' +
+    teamIds.map(function (t) {
+      return '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>';
     }).join('') + '</select></div>';
-
-  html += '<div class="staff-filter-field"><label>Staff Status</label><select class="staff-filter-status">' +
-    '<option value="">All Statuses</option>' +
-    statuses.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') +
-    '</select></div>';
-
-  html += '<div class="staff-filter-field"><label>Employment Stage</label><select class="staff-filter-stage">' +
-    '<option value="">All Stages</option>' +
-    stages.map(function (s) {
-      return '<option value="' + escapeHtml(s) + '">' + escapeHtml(STAGE_DISPLAY_LABELS[s] || s) + '</option>';
-    }).join('') + '</select></div>';
-
-  html += '<div class="staff-filter-field"><label>Location</label><select class="staff-filter-location">' +
-    '<option value="">All Locations</option>' +
-    locations.map(function (l) { return '<option value="' + escapeHtml(l) + '">' + escapeHtml(l) + '</option>'; }).join('') +
-    '</select></div>';
 
   html += '<div class="staff-filter-field staff-filter-search-field"><label for="staff-filter-search-' +
     escapeHtml(opts.instanceId || '') + '">Search</label>' +
     '<input type="search" id="staff-filter-search-' + escapeHtml(opts.instanceId || '') + '" ' +
-    'class="staff-filter-search" placeholder="Name, employee #, designation…" ' +
+    'class="staff-filter-search" placeholder="Name, staff code, designation…" ' +
     'aria-label="Search staff records" /></div>';
 
   html += '<div class="staff-filter-field staff-filter-clear-field"><label>&nbsp;</label>' +
@@ -651,28 +616,18 @@ function createStaffFilterBar(containerEl, teamOptions, onChange, opts) {
   containerEl.innerHTML = html;
 
   var teamSel = containerEl.querySelector('.staff-filter-team');
-  var statusSel = containerEl.querySelector('.staff-filter-status');
-  var stageSel = containerEl.querySelector('.staff-filter-stage');
-  var locationSel = containerEl.querySelector('.staff-filter-location');
   var searchInput = containerEl.querySelector('.staff-filter-search');
   var clearBtn = containerEl.querySelector('.staff-filter-clear-btn');
   var chipsEl = containerEl.querySelector('.staff-filter-chips');
-  if (opts.lockTeam) { teamSel.value = opts.lockTeam; }
 
   function currentFilters() {
-    return {
-      team: teamSel.value, status: statusSel.value, stage: stageSel.value,
-      search: searchInput.value.trim(), location: locationSel.value
-    };
+    return { teamId: teamSel.value, search: searchInput.value.trim() };
   }
 
   function renderChips() {
     var f = currentFilters();
     var chips = [];
-    if (f.team && !opts.lockTeam) chips.push({ key: 'team', label: 'Team: ' + f.team });
-    if (f.status) chips.push({ key: 'status', label: 'Status: ' + f.status });
-    if (f.stage) chips.push({ key: 'stage', label: 'Stage: ' + (STAGE_DISPLAY_LABELS[f.stage] || f.stage) });
-    if (f.location) chips.push({ key: 'location', label: 'Location: ' + f.location });
+    if (f.teamId) chips.push({ key: 'teamId', label: 'Team ID: ' + f.teamId });
     if (f.search) chips.push({ key: 'search', label: 'Search: "' + f.search + '"' });
     if (!chips.length) { chipsEl.innerHTML = ''; return; }
     chipsEl.innerHTML = chips.map(function (c) {
@@ -683,10 +638,7 @@ function createStaffFilterBar(containerEl, teamOptions, onChange, opts) {
     chipsEl.querySelectorAll('.staff-filter-chip-remove').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var key = btn.getAttribute('data-chip-key');
-        if (key === 'team' && !opts.lockTeam) teamSel.value = '';
-        if (key === 'status') statusSel.value = '';
-        if (key === 'stage') stageSel.value = '';
-        if (key === 'location') locationSel.value = '';
+        if (key === 'teamId') teamSel.value = '';
         if (key === 'search') searchInput.value = '';
         fireChange();
       });
@@ -700,15 +652,10 @@ function createStaffFilterBar(containerEl, teamOptions, onChange, opts) {
 
   var debouncedFireChange = debounce(fireChange, 300);
 
-  [teamSel, statusSel, stageSel, locationSel].forEach(function (sel) {
-    sel.addEventListener('change', fireChange);
-  });
+  teamSel.addEventListener('change', fireChange);
   searchInput.addEventListener('input', debouncedFireChange);
   clearBtn.addEventListener('click', function () {
-    if (!opts.lockTeam) teamSel.value = '';
-    statusSel.value = '';
-    stageSel.value = '';
-    locationSel.value = '';
+    teamSel.value = '';
     searchInput.value = '';
     fireChange();
   });
@@ -811,40 +758,22 @@ function setStaffDataAuthGateVisibility(hostEl, contentEls, authed) {
   }
 }
 
-// ── Staff Data tab: 3 subtabs + 1 shared filter bar. Each subtab owns
-// its own mountStaffTableView instance (independent sort/page/density/
-// column-visibility state), while all three share the one filter bar's
-// team/status/stage/search selection — exactly the existing base-filter
-// + user-filter merge behavior, just re-triggering three controllers
-// instead of three direct fetch calls. ──
+// ── Staff Data tab: one unified staff table + 1 shared filter bar.
+//
+// 2026-08-11: the former Current Staff / Onboarding Staff Process /
+// Resigned Staff 3-subtab split relied entirely on
+// staff_status/employment_stage, which no longer exist on
+// staff_dashboard_records (re-sourced from employee_management.staff on
+// Ledsone — see member-aios/staff-data/README.md). There is no
+// replacement classification, so this is now a single unmodified list —
+// the subtab bar and its wiring were removed, not reworked into
+// something that fakes a distinction the data no longer carries. ──
 function initStaffDataTab() {
   var panel = document.getElementById('tab-staff-data');
   if (!panel) return;
   var filterBarEl = document.getElementById('staff-data-filter-bar');
-  var subtabBarEl = panel.querySelector('.staff-subtab-bar');
-  var subtabBtns = panel.querySelectorAll('.staff-subtab-btn');
-  var subpanels = panel.querySelectorAll('.staff-subpanel');
-
-  /* Subtab switching is a pure UI toggle over already-mounted subpanels —
-     it never fetches and never depends on which data is currently loaded,
-     so (unlike the data load below) it is wired exactly once, here, and
-     never needs to be re-wired across an auth transition. Wiring it again
-     on every re-authentication would attach a second, third, ... duplicate
-     click listener to these same static buttons — mountData() below is
-     safe to call repeatedly only because everything IT touches is rebuilt
-     from scratch (innerHTML-cleared) on every call; these buttons are not. */
-  subtabBtns.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      subtabBtns.forEach(function (b) {
-        var active = b === btn;
-        b.classList.toggle('active', active);
-        b.setAttribute('aria-selected', active ? 'true' : 'false');
-      });
-      subpanels.forEach(function (sp) {
-        sp.classList.toggle('active', sp.id === 'staff-subpanel-' + btn.getAttribute('data-staff-subtab'));
-      });
-    });
-  });
+  var subpanel = panel.querySelector('.staff-subpanel');
+  if (!subpanel) return;
 
   /* Re-run on mount and on every authentication transition
      (CALENDAR_AUTH_CHANGED_EVENT, via onAuthChange). While unauthenticated
@@ -854,35 +783,28 @@ function initStaffDataTab() {
      ever leaves the browser without a stored token. */
   function mountData() {
     var authed = isAuthenticated();
-    setStaffDataAuthGateVisibility(panel, [filterBarEl, subtabBarEl].concat(Array.prototype.slice.call(subpanels)), authed);
+    setStaffDataAuthGateVisibility(panel, [filterBarEl, subpanel], authed);
     if (!authed) { return; }
 
-    var controllers = {};
-    subpanels.forEach(function (sp) {
-      var key = sp.id.replace('staff-subpanel-', '');
-      controllers[key] = mountStaffTableView(sp.querySelector('.staff-table-container'), key);
-    });
+    var controller = mountStaffTableView(subpanel.querySelector('.staff-table-container'), 'all-staff');
 
-    function loadAll(userFilters) {
-      subpanels.forEach(function (sp) {
-        var key = sp.id.replace('staff-subpanel-', '');
-        var effective = mergeStaffFilters(STAFF_SUBTAB_BASE_FILTERS[key], userFilters);
-        controllers[key].load(effective);
-      });
+    function load(userFilters) {
+      controller.load(mergeStaffFilters(null, userFilters));
     }
 
-    // Team dropdown options come from the live API (real department/team
-    // values currently in the table), not a hardcoded or client-side list.
+    // Team ID dropdown options come from the live API (distinct team_id
+    // values currently in the table — Ledsone's raw integer, no
+    // human-readable name available), not a hardcoded or client-side list.
     staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
-      var filterApi = createStaffFilterBar(filterBarEl, opts.teams || [], loadAll, { instanceId: 'staff-data' });
-      loadAll(filterApi.getFilters());
+      var filterApi = createStaffFilterBar(filterBarEl, opts.team_ids || [], load, { instanceId: 'staff-data' });
+      load(filterApi.getFilters());
     }).catch(function () {
       // Filter-options fetch failed (e.g. backend not running) — still
-      // let each subtab's controller show its own error+Retry state, and
+      // let the table controller show its own error+Retry state, and
       // fall back to an empty (unlocked, no options) filter bar rather
       // than leaving the page half-built.
-      var filterApi = createStaffFilterBar(filterBarEl, [], loadAll, { instanceId: 'staff-data' });
-      loadAll(filterApi.getFilters());
+      var filterApi = createStaffFilterBar(filterBarEl, [], load, { instanceId: 'staff-data' });
+      load(filterApi.getFilters());
     });
   }
 
@@ -892,7 +814,19 @@ function initStaffDataTab() {
 
 // ── Team-scoped staff + KPI pilot section — used identically by the
 // Arun PH view and the Paraparan tab. One function, two call sites,
-// no parallel implementations. ──
+// no parallel implementations.
+//
+// 2026-08-11: the `lockTeam` behavior (locking the staff table to
+// data-team-code="PH") is removed. That lock depended on `department_team`
+// being a human-readable name string match — staff_dashboard_records now
+// mirrors Ledsone's raw `team_id` integer instead (mostly NULL in the
+// source, and "PH" has no known numeric team_id), so a text-based lock
+// would silently filter every row out rather than scope to PH staff. The
+// staff table here is now unlocked (same unscoped filter bar as the main
+// Staff Data tab) rather than showing a broken, permanently-empty table —
+// see member-aios/staff-data/README.md §0. The KPI panel below is
+// unaffected (synthetic, in-memory, keyed by its own team_code — never
+// touches the Staff API). ──
 function initTeamScopedStaffPilot(mountEl) {
   if (!mountEl) return;
   var teamCode = mountEl.getAttribute('data-team-code') || 'PH';
@@ -900,7 +834,6 @@ function initTeamScopedStaffPilot(mountEl) {
   var filterBarEl = mountEl.querySelector('.staff-filter-bar');
   var tableEl = mountEl.querySelector('.staff-table-container');
   var kpiMountEl = mountEl.querySelector('.kpi-pilot-mount');
-  var baseFilters = { team: teamCode };
 
   /* renderKpiPanel is synthetic, in-memory, non-Staff-API data (see its
      own comment above) — unaffected by REQ-AUTH-MODULES-007 and rendered
@@ -916,13 +849,16 @@ function initTeamScopedStaffPilot(mountEl) {
     var controller = mountStaffTableView(tableEl, mountId);
 
     function loadTable(userFilters) {
-      var effective = mergeStaffFilters(baseFilters, userFilters);
-      effective.team = teamCode; // locked — never overridden by the user
-      controller.load(effective);
+      controller.load(mergeStaffFilters(null, userFilters));
     }
 
-    var filterApi = createStaffFilterBar(filterBarEl, [teamCode], loadTable, { lockTeam: teamCode, instanceId: mountId });
-    loadTable(filterApi.getFilters());
+    staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
+      var filterApi = createStaffFilterBar(filterBarEl, opts.team_ids || [], loadTable, { instanceId: mountId });
+      loadTable(filterApi.getFilters());
+    }).catch(function () {
+      var filterApi = createStaffFilterBar(filterBarEl, [], loadTable, { instanceId: mountId });
+      loadTable(filterApi.getFilters());
+    });
   }
 
   mountData();

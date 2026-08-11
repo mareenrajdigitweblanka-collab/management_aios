@@ -8,9 +8,11 @@
 --
 -- Depends on management_aios.staff_dashboard_records already existing
 -- (reviewed_staff_id's foreign key target) — apply
--- database/migrations/2026-07-13-create-staff-dashboard-records.sql (or the
--- companion staff_dashboard_records fresh-install schema, if one exists)
--- first.
+-- database/migrations/2026-08-11-mirror-staff-dashboard-records-from-
+-- ledsone.sql first (staff_dashboard_records.id is INTEGER as of
+-- 2026-08-11 — an exact mirror of employee_management.staff.id on
+-- Ledsone, not a generated UUID; reviewed_staff_id below matches that
+-- type change).
 --
 -- Ownership boundary: every row is privately owned by the reviewer
 -- (reviewer_member_key) who created it — never by the reviewed staff
@@ -27,7 +29,16 @@ CREATE TABLE IF NOT EXISTS management_aios.staff_review_summaries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     reviewer_member_key TEXT NOT NULL,
-    reviewed_staff_id UUID NOT NULL REFERENCES management_aios.staff_dashboard_records(id),
+    reviewed_staff_id INTEGER NOT NULL REFERENCES management_aios.staff_dashboard_records(id),
+
+    -- Durable lookup key, independent of reviewed_staff_id's UUID — added
+    -- 2026-08-11 (database/migrations/2026-08-11-add-reviewed-staff-
+    -- employee-number-to-staff-review-summaries.sql) so re-sourcing
+    -- staff_dashboard_records (new UUIDs per row) can remap
+    -- reviewed_staff_id without orphaning existing review rows. Snapshotted
+    -- once per row, at backfill/creation time — not re-synced automatically
+    -- if a person's employee_number ever changes upstream.
+    reviewed_staff_employee_number TEXT NULL,
 
     meeting_date DATE NOT NULL,
     summary_text TEXT NOT NULL,

@@ -13,6 +13,7 @@ Run with: python -m unittest backend.tests.test_staff_review_summaries
 """
 
 import unittest
+import zlib
 from datetime import date, datetime, timedelta, timezone
 from io import BytesIO
 from zoneinfo import ZoneInfo
@@ -65,24 +66,28 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
     def make_session(self):
         return self.SessionLocal()
 
-    def seed_staff(self, source_record_key="staff-001", full_name="Test Staff One",
-                    calling_name="Staff One", staff_status="Active"):
+    def seed_staff(self, source_record_key="staff-001", full_name="Test Staff One"):
+        """2026-08-11: StaffDashboardRecord is now an exact mirror of
+        employee_management.staff (Ledsone) — id is an explicit integer
+        (no autoincrement default; matches Ledsone's own id in production),
+        not a generated UUID, and the old CSV-provenance bookkeeping fields
+        (source_record_key/employee_number/source_hash/source_status/
+        is_current/imported_at) no longer exist. `source_record_key` is
+        kept as this helper's parameter name (unchanged across every call
+        site in this file) purely as a human-readable label that gets
+        deterministically hashed into a unique integer id — it is not
+        stored anywhere."""
         session = self.make_session()
         now = datetime.now(timezone.utc)
         staff = StaffDashboardRecord(
-            source_record_key=source_record_key,
-            employee_number="EMP-" + source_record_key,
-            full_name=full_name,
-            calling_name=calling_name,
-            staff_status=staff_status,
-            source_hash="test-hash-" + source_record_key,
-            source_status="imported",
-            is_current=True,
+            id=zlib.crc32(source_record_key.encode("utf-8")),
+            staff_code="DWL-" + source_record_key,
+            name=full_name,
             # Explicit values (not the Postgres-only server_default=now())
             # so this row can be seeded against the test SQLite database —
             # same reasoning as MemberScheduleEvent/MemberLeaveRecord seed
             # helpers in test_calendar_mutation_authorization.py.
-            imported_at=now,
+            synced_at=now,
             created_at=now,
             updated_at=now,
         )
@@ -149,13 +154,15 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
 
     # ── 1-2: StaffRecordOut / Staff API compatibility ─────────────────
 
-    def test_staff_record_out_exposes_uuid_id(self):
+    def test_staff_record_out_exposes_integer_id(self):
+        # 2026-08-11: id is now a plain integer (employee_management.
+        # staff.id on Ledsone, mirrored verbatim) — was a UUID before.
         staff_id = self.seed_staff()
         resp = self.client.get("/api/staff", headers=bearer_header("mayurika"))
         self.assertEqual(resp.status_code, 200)
         records = resp.json()["records"]
         self.assertEqual(len(records), 1)
-        self.assertEqual(records[0]["id"], str(staff_id))
+        self.assertEqual(records[0]["id"], staff_id)
         # Confirm the schema itself accepts the ORM row unmodified.
         session = self.make_session()
         staff = session.get(StaffDashboardRecord, staff_id)
@@ -164,18 +171,22 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         self.assertEqual(out.id, staff_id)
 
     def test_existing_staff_api_fields_remain_compatible(self):
-        self.seed_staff(full_name="Compat Check", calling_name="Compat")
+        # 2026-08-11: StaffRecordOut is now an exact mirror of
+        # employee_management.staff (Ledsone) — see backend/models.py
+        # StaffDashboardRecord docstring. Checks every surviving field.
+        self.seed_staff(full_name="Compat Check")
         resp = self.client.get("/api/staff", headers=bearer_header("mayurika"))
         self.assertEqual(resp.status_code, 200)
         record = resp.json()["records"][0]
         for field in (
-            "employee_number", "epf_number", "date_of_joining", "full_name",
-            "calling_name", "location", "staff_status", "department_team",
-            "designation", "cv_reference", "nic", "remarks", "employment_stage",
-            "source_file", "source_page", "source_row_reference",
+            "id", "staff_code", "name", "role", "email", "phone", "roster",
+            "designation", "joined_date", "confirmed_date", "address", "skype",
+            "delete_status", "team_id", "is_approved", "staff_type",
+            "staff_level", "informed_leave_balance", "urgent_leave_balance",
+            "backup_staffs",
         ):
             self.assertIn(field, record)
-        self.assertEqual(record["full_name"], "Compat Check")
+        self.assertEqual(record["name"], "Compat Check")
 
     # ── 3-9: Create ──────────────────────────────────────────────────
 
@@ -193,7 +204,9 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         self.assertEqual(resp.status_code, 201)
         body = resp.json()
         self.assertEqual(body["reviewer_member_key"], "mayurika")
-        self.assertEqual(body["reviewed_staff_id"], str(staff_id))
+        # 2026-08-11: reviewed_staff_id is now an integer in the response
+        # (was a UUID string).
+        self.assertEqual(body["reviewed_staff_id"], staff_id)
         self.assertEqual(body["summary_text"], "A real review discussion.")
         self.assertIsNotNone(body["id"])
         self.assertIsNotNone(body["created_at"])
@@ -257,10 +270,14 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         self.assertEqual(resp.json()["reviewer_member_key"], "mayurika")
 
     def test_invalid_reviewed_staff_id_is_rejected(self):
+        # 2026-08-11: reviewed_staff_id is an integer now (was a UUID) — a
+        # well-formed but nonexistent id (rather than a malformed value)
+        # exercises the intended "unknown staff" 422
+        # (_reviewed_staff_or_422), not a schema-level type-coercion 422.
         resp = self.client.post(
             "/api/staff-review-summaries",
             json={
-                "reviewed_staff_id": "00000000-0000-0000-0000-000000000000",
+                "reviewed_staff_id": 999999999,
                 "meeting_date": str(self.today),
                 "summary_text": "Unknown staff id.",
             },
@@ -297,21 +314,12 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, 201)
 
-    def test_inactive_staff_allowed_to_be_reviewed(self):
-        """Server-side create does not reject on staff_status — the
-        active-by-default selector is a UI convenience, not a server rule
-        (approved technical design §4)."""
-        staff_id = self.seed_staff(source_record_key="staff-inactive", staff_status="Inactive")
-        resp = self.client.post(
-            "/api/staff-review-summaries",
-            json={
-                "reviewed_staff_id": str(staff_id),
-                "meeting_date": str(self.today),
-                "summary_text": "Exit-review discussion.",
-            },
-            headers=bearer_header("mayurika"),
-        )
-        self.assertEqual(resp.status_code, 201)
+    # test_inactive_staff_allowed_to_be_reviewed removed 2026-08-11:
+    # staff_status no longer exists on StaffDashboardRecord (re-sourced
+    # from employee_management.staff on Ledsone, which has no equivalent
+    # field), so there is no longer an active/inactive distinction for the
+    # server to reject or allow on — every seeded staff row is reviewable,
+    # already covered by test_valid_reviewer_creates_a_summary above.
 
     # ── 11-20: List / history ───────────────────────────────────────
 

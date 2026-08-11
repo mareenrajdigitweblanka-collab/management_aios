@@ -1662,41 +1662,21 @@
       </div>
 
       <div class="member-testing-table-note" data-searchable
-        data-tags="staff data live current onboarding resigned verify api">
-        <span class="member-pill member-pill-sample">Live Data — Classification [VERIFY]</span>
-        <span>This tab displays real HR-sourced staff records, fetched read-only from the Staff API
-          (<code>GET /api/staff</code>, backed by <code>management_aios.staff_dashboard_records</code>). HR remains
-          the authoritative source (CLAUDE.md §9.1) — this is a controlled dashboard projection, not a replacement
-          HR master. The Current / Onboarding / Resigned split below is a <strong>technical pilot classification
-          only</strong> — it is not approved HR policy, and final classification rules remain
-          <span class="badge badge-verify">[VERIFY]</span> pending HR confirmation (see
-          <code>member-aios/staff-data/evidence/employment-stage-rule-review-2026-07-13.md</code>). A synthetic
-          sample dataset (<code>member-aios/staff-data/source/sample/hr-staff-dashboard-sample.csv</code>) remains
-          available for development/fallback testing only — it is not used by this tab.</span>
+        data-tags="staff data live ledsone verify api">
+        <span class="member-pill member-pill-sample">Live Data — Ledsone-Sourced (2026-08-11)</span>
+        <span>This tab displays staff records, fetched read-only from the Staff API
+          (<code>GET /api/staff</code>, backed by <code>management_aios.staff_dashboard_records</code>). As of
+          2026-08-11 this table is synced from <code>employee_management.staff</code> on the Ledsone operational
+          database (<code>scripts/sync_staff_dashboard_from_ledsone.py</code>), not the former HR-provided CSV — see
+          <code>member-aios/staff-data/README.md</code> for the full rationale. The former Current / Onboarding /
+          Resigned subtab split relied on <code>staff_status</code>/<code>employment_stage</code>, which Ledsone has
+          no equivalent for and which were removed from this table in the same change — this is now a single
+          unified staff list.</span>
       </div>
 
       <div class="staff-filter-bar" id="staff-data-filter-bar"></div>
 
-      <div class="staff-subtab-bar" role="tablist" aria-label="Staff Data subtabs">
-        <button class="staff-subtab-btn active" data-staff-subtab="current-staff" role="tab" aria-selected="true">Current
-          Staff</button>
-        <button class="staff-subtab-btn" data-staff-subtab="onboarding-staff" role="tab" aria-selected="false">Onboarding
-          Staff Process</button>
-        <button class="staff-subtab-btn" data-staff-subtab="resigned-staff" role="tab" aria-selected="false">Resigned
-          Staff</button>
-      </div>
-
-      <div class="staff-subpanel active" id="staff-subpanel-current-staff" role="tabpanel">
-        <p class="staff-pilot-classification-label">Pilot rule: staff_status == Active</p>
-        <div class="staff-table-container"></div>
-      </div>
-      <div class="staff-subpanel" id="staff-subpanel-onboarding-staff" role="tabpanel">
-        <p class="staff-pilot-classification-label">Pilot rule: employment_stage is Probation, 7-Day Training, or
-          [VERIFY]</p>
-        <div class="staff-table-container"></div>
-      </div>
-      <div class="staff-subpanel" id="staff-subpanel-resigned-staff" role="tabpanel">
-        <p class="staff-pilot-classification-label">Pilot rule: staff_status == Inactive</p>
+      <div class="staff-subpanel active" id="staff-subpanel-all-staff" role="tabpanel">
         <div class="staff-table-container"></div>
       </div>
 

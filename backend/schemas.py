@@ -762,40 +762,44 @@ class TaskConflictResponseOut(BaseModel):
 
 
 class StaffRecordOut(BaseModel):
-    """Dashboard-facing staff record shape — the 16 approved fields
-    (member-aios/staff-data/data-maps/staff-field-map-draft.md) plus the
-    stable surrogate primary key `id` (REQ-CAL-REV-001, 2026-08-03 —
-    additive, backward compatible; every pre-existing consumer of this
-    schema is unaffected since no existing field changed shape or meaning).
+    """Dashboard-facing staff record shape. As of 2026-08-11 this is an
+    EXACT mirror of employee_management.staff on Ledsone — every column on
+    StaffDashboardRecord is exposed here except the three pure bookkeeping
+    timestamps (synced_at/created_at/updated_at), per explicit, deliberate
+    user instruction (see member-aios/staff-data/README.md §0 and
+    backend/models.py StaffDashboardRecord docstring for the full
+    rationale, including the fcm_token exclusion).
 
-    `id` is the approved stable reviewed-staff identifier for the Staff
-    Review Summaries feature — never `employee_number`, which is known
-    non-unique across distinct people (see backend/models.py
-    StaffDashboardRecord.source_record_key docstring). Internal bookkeeping
-    columns (source_record_key, source_hash, source_status, is_current,
-    imported_at, imported_by, created_at, updated_at) remain unexposed —
-    this is still a read-only dashboard projection, not a full table dump.
-    No salary/address/email/phone/guardian field exists on the ORM model
-    this is built from, so none can appear here regardless of this
-    schema's definition."""
+    `id` is employee_management.staff.id directly (INTEGER, not a
+    generated UUID as of 2026-08-11) — the approved stable identifier for
+    the Staff Review Summaries feature.
 
-    id: UUID
-    employee_number: Optional[str] = None
-    epf_number: Optional[str] = None
-    date_of_joining: Optional[date_type] = None
-    full_name: Optional[str] = None
-    calling_name: Optional[str] = None
-    location: Optional[str] = None
-    staff_status: Optional[str] = None
-    department_team: Optional[str] = None
+    Includes PDPA-sensitive fields (email, phone, address, skype) and
+    HR-sensitive fields (informed_leave_balance, urgent_leave_balance,
+    is_approved) per the same explicit instruction — CLAUDE.md §6 governs
+    handling of this data once exposed; this is a wider surface than the
+    Staff Data dashboard has ever exposed before 2026-08-11."""
+
+    id: int
+    staff_code: Optional[str] = None
+    name: Optional[str] = None
+    role: Optional[int] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    roster: Optional[str] = None
     designation: Optional[str] = None
-    cv_reference: Optional[str] = None
-    nic: Optional[str] = None
-    remarks: Optional[str] = None
-    employment_stage: Optional[str] = None
-    source_file: Optional[str] = None
-    source_page: Optional[int] = None
-    source_row_reference: Optional[str] = None
+    joined_date: Optional[date_type] = None
+    confirmed_date: Optional[date_type] = None
+    address: Optional[str] = None
+    skype: Optional[str] = None
+    delete_status: Optional[bool] = None
+    team_id: Optional[int] = None
+    is_approved: Optional[int] = None
+    staff_type: Optional[str] = None
+    staff_level: Optional[str] = None
+    informed_leave_balance: Optional[float] = None
+    urgent_leave_balance: Optional[float] = None
+    backup_staffs: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -808,22 +812,14 @@ class StaffListResponse(BaseModel):
     filters: dict
 
 
-class StaffSummaryResponse(BaseModel):
-    total: int
-    active: int
-    inactive: int
-    ph: int
-    permanent: int
-    probation: int
-    training_7_day: int
-    verify: int
-
-
 class StaffFilterOptionsResponse(BaseModel):
-    teams: list[str]
-    staff_statuses: list[str]
-    employment_stages: list[str]
-    locations: list[str]
+    """team_ids replaces the former department_team name list — Ledsone's
+    employee_management.staff carries only the raw team_id integer (mostly
+    NULL), not a human-readable team/department name (that required a join
+    the 2026-08-11 exact-mirror instruction does not include). See
+    StaffRecordOut docstring."""
+
+    team_ids: list[int]
 
 
 # ── Staff Review Summaries (REQ-CAL-REV-001, 2026-08-03) ─────────────────
@@ -832,8 +828,9 @@ class StaffFilterOptionsResponse(BaseModel):
 # server-derived from the validated Calendar token (backend/routers/
 # calendar_auth.py get_verified_member) and assigned directly by the
 # router, mirroring MemberLeaveRecordCreate's exclusion of member_key
-# above. reviewed_staff_id uses staff.id (StaffRecordOut.id), never
-# employee_number — see that schema's docstring.
+# above. reviewed_staff_id uses staff.id (StaffRecordOut.id, INTEGER as of
+# 2026-08-11 — employee_management.staff.id directly, not a generated
+# UUID), never employee_number/staff_code — see that schema's docstring.
 
 
 class StaffReviewSummaryCreate(BaseModel):
@@ -844,7 +841,7 @@ class StaffReviewSummaryCreate(BaseModel):
     value silently ignored by Pydantic, exactly as MemberLeaveRecordCreate
     excludes member_key/half_day_period above."""
 
-    reviewed_staff_id: UUID
+    reviewed_staff_id: int
     meeting_date: date_type
     summary_text: str = Field(..., min_length=1, max_length=10000)
 
@@ -890,17 +887,23 @@ class StaffReviewSummaryOut(BaseModel):
     staff_review_summaries.py), so this schema has no deleted_at field at
     all; there is nothing for it to ever expose.
 
-    reviewed_staff_full_name/reviewed_staff_calling_name are populated by
-    the router via a live lookup against staff_dashboard_records at read
-    time (no reviewed_staff_name_snapshot column exists — approved
-    technical design §5) — display always reflects the current name, not
-    a name-at-review-time snapshot."""
+    reviewed_staff_full_name is populated by the router via a live lookup
+    against staff_dashboard_records at read time (no
+    reviewed_staff_name_snapshot column exists — approved technical design
+    §5) — display always reflects the current name, not a
+    name-at-review-time snapshot. The API field name is kept as
+    `reviewed_staff_full_name` for contract stability even though the
+    underlying ORM column is now `StaffDashboardRecord.name` (Ledsone's own
+    column name, since 2026-08-11) — the router maps name -> this field.
+
+    reviewed_staff_calling_name was removed 2026-08-11 along with
+    StaffDashboardRecord.calling_name (Ledsone's employee_management.staff
+    has no equivalent field) — see member-aios/staff-data/README.md."""
 
     id: UUID
     reviewer_member_key: str
-    reviewed_staff_id: UUID
+    reviewed_staff_id: int
     reviewed_staff_full_name: Optional[str] = None
-    reviewed_staff_calling_name: Optional[str] = None
     meeting_date: date_type
     summary_text: str
     created_at: Optional[datetime] = None

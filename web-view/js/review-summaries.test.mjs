@@ -124,8 +124,12 @@ var AUTHORIZED = { token: 'test-only-frontend-token', memberKey: 'mayurika' };
 var ARUN_AUTHORIZED = { token: 'test-only-frontend-token-arun', memberKey: 'arun' };
 var CALENDAR_AUTH_CHANGED_EVENT_NAME = 'management-aios:calendar-auth-changed';
 
+// 2026-08-11: raw GET /api/staff results use `name` (Ledsone's own column
+// name), not the former `full_name` — see review-summaries.js
+// staffOptionLabel. reviewed_staff_full_name (fakeSummaryRecord below) is
+// a distinct, unaffected API output field name.
 function fakeStaffRecord(overrides) {
-  return Object.assign({ id: 'staff-x', full_name: 'Someone', calling_name: null }, overrides || {});
+  return Object.assign({ id: 'staff-x', name: 'Someone' }, overrides || {});
 }
 
 function fakeSummaryRecord(overrides) {
@@ -134,7 +138,6 @@ function fakeSummaryRecord(overrides) {
     reviewer_member_key: 'mayurika',
     reviewed_staff_id: 'staff-x',
     reviewed_staff_full_name: 'Someone',
-    reviewed_staff_calling_name: null,
     meeting_date: '2026-08-01',
     summary_text: 'A review discussion.',
     created_at: '2026-08-01T09:00:00Z',
@@ -270,23 +273,23 @@ test('summaryPreview hard-cuts a single long token with no spaces', async (t) =>
   assert.equal(result.preview.length, 401);
 });
 
-test('staffOptionLabel never includes employee_number and adds calling_name when it differs', async (t) => {
+test('staffOptionLabel returns name and never includes staff_code', async (t) => {
   var globals = installFakeBrowserGlobals();
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
-  var withCalling = mod.staffOptionLabel({ id: '1', full_name: 'Jane Staff', calling_name: 'Janie', employee_number: 'EMP-999' });
-  assert.equal(withCalling, 'Jane Staff (Janie)');
-  assert.ok(!withCalling.includes('EMP-999'));
+  var label = mod.staffOptionLabel({ id: '1', name: 'Jane Staff', staff_code: 'DWL999' });
+  assert.equal(label, 'Jane Staff');
+  assert.ok(!label.includes('DWL999'));
 });
 
-test('reviewedEmployeeLabel reads a history record\'s own reviewed_staff fields, never employee_number', async (t) => {
+test('reviewedEmployeeLabel reads a history record\'s own reviewed_staff_full_name, never employee_number', async (t) => {
   var globals = installFakeBrowserGlobals();
   t.after(globals.restore);
   var mod = await freshReviewSummariesModule();
-  var withCalling = mod.reviewedEmployeeLabel({ reviewed_staff_full_name: 'Jane Staff', reviewed_staff_calling_name: 'Janie' });
-  assert.equal(withCalling, 'Jane Staff (Janie)');
-  var sameName = mod.reviewedEmployeeLabel({ reviewed_staff_full_name: 'Same Name', reviewed_staff_calling_name: 'Same Name' });
-  assert.equal(sameName, 'Same Name');
+  var label = mod.reviewedEmployeeLabel({ reviewed_staff_full_name: 'Jane Staff' });
+  assert.equal(label, 'Jane Staff');
+  var fallback = mod.reviewedEmployeeLabel({ reviewed_staff_full_name: null });
+  assert.equal(fallback, 'Unknown staff record');
 });
 
 /* REQ-CAL-REV-PDF-003-FIX-02 — parseReviewSummaryPdfFilename /
@@ -577,7 +580,10 @@ test('date filters are included in the list request', async (t) => {
   assert.match(lastUrl, /date_to=2026-08-05/);
 });
 
-test('include inactive toggle omits staff_status=Active from the staff search request', async (t) => {
+/* 2026-08-11: the "Include inactive staff" toggle was removed along with
+   staff_status (see review-summaries.js fetchStaffOptions) — this test
+   now just confirms the search request never sends that param at all. */
+test('staff search request never sends staff_status', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
   t.after(globals.restore);
@@ -586,16 +592,13 @@ test('include inactive toggle omits staff_status=Active from the staff search re
   mod.mountReviewSummariesWorkspace(mountEl);
 
   var searchInput = findByClass(mountEl, 'review-summaries-staff-search');
-  var includeInactiveCheckbox = findByClass(mountEl, 'review-summaries-toggle-input');
-  includeInactiveCheckbox.checked = true;
-  includeInactiveCheckbox.dispatchEvent({ type: 'change' });
   searchInput.value = 'jane';
   searchInput.dispatchEvent({ type: 'input' });
   await new Promise(function (resolve) { setTimeout(resolve, 320); });
 
   var staffCalls = fetchMock.calls.filter(function (c) { return String(c.url).indexOf('/api/staff') !== -1; });
   assert.ok(staffCalls.length > 0);
-  assert.ok(!String(staffCalls[staffCalls.length - 1].url).includes('staff_status=Active'));
+  assert.ok(!String(staffCalls[staffCalls.length - 1].url).includes('staff_status'));
 });
 
 test('owned + editable record shows Edit; a card from another reviewer does not', async (t) => {
@@ -752,7 +755,6 @@ test('each card shows reviewed employee, reviewer display name, reviewer role, a
   var record = fakeSummaryRecord({
     reviewer_member_key: 'suman',
     reviewed_staff_full_name: 'Jane Employee',
-    reviewed_staff_calling_name: 'Janie',
     meeting_date: '2026-08-04'
   });
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
@@ -765,7 +767,7 @@ test('each card shows reviewed employee, reviewer display name, reviewer role, a
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   var employeeEl = findByClass(mountEl, 'review-summaries-card-employee');
-  assert.equal(employeeEl.textContent, 'Reviewed employee: Jane Employee (Janie)');
+  assert.equal(employeeEl.textContent, 'Reviewed employee: Jane Employee');
   assert.equal(findMetaValue(mountEl, 'Reviewed by').textContent, 'Suman');
   assert.equal(findMetaValue(mountEl, 'Reviewer role').textContent, 'Recruiting Officer');
   assert.equal(findMetaValue(mountEl, 'Meeting date').textContent, '2026-08-04');
@@ -1690,7 +1692,7 @@ test('clicking Download PDF with All reviewers sends include_all_reviewers and n
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesWorkspace(mountEl);
-  api.selectStaff(fakeStaffRecord({ id: 'staff-export-3', full_name: "Employee's Confidential Name" }));
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-3', name: "Employee's Confidential Name" }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   await api.downloadReviewSummariesPdf();
@@ -1817,7 +1819,7 @@ test('a successful export falls back to a generated filename when Content-Dispos
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesWorkspace(mountEl);
-  api.selectStaff(fakeStaffRecord({ id: 'staff-export-8', full_name: 'Fallback Employee' }));
+  api.selectStaff(fakeStaffRecord({ id: 'staff-export-8', name: 'Fallback Employee' }));
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   await api.downloadReviewSummariesPdf();

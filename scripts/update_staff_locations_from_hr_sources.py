@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Update management_aios.staff_dashboard_records.location from four
+"""SUPERSEDED 2026-08-11 — DO NOT RUN.
+
+The `location` column this script updates no longer exists on
+staff_dashboard_records — dropped when the table was re-sourced from the
+HR-provided CSV to employee_management.staff on Ledsone, which has no
+location equivalent (database/migrations/2026-08-11-drop-uncovered-
+columns-from-staff-dashboard-records.sql; see backend/models.py
+StaffDashboardRecord docstring and member-aios/staff-data/README.md).
+Running --apply now fails at the first UPDATE.
+
+Kept for history, not deleted, per this repo's convention of marking
+rather than removing superseded write paths.
+
+Original docstring follows, unmodified, for historical reference:
+
+Update management_aios.staff_dashboard_records.location from four
 HR-verified branch/WFH location CSV files.
 
 Source files (NOT tracked in this repository — see --source-dir):

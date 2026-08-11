@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
-"""Import the real, git-ignored, normalized HR staff CSV into
+"""SUPERSEDED 2026-08-11 — DO NOT RUN.
+
+staff_dashboard_records was re-sourced from the HR-provided CSV to
+employee_management.staff on Ledsone (deliberate architecture change —
+see backend/models.py StaffDashboardRecord docstring and
+member-aios/staff-data/README.md). The 8 columns this script writes
+(epf_number, calling_name, location, staff_status, cv_reference, nic,
+remarks, employment_stage) no longer exist on the table
+(database/migrations/2026-08-11-drop-uncovered-columns-from-staff-
+dashboard-records.sql) — running --apply now fails at the first INSERT.
+
+The only live write path to staff_dashboard_records is now
+scripts/sync_staff_dashboard_from_ledsone.py. This file is kept for
+history, not deleted, per this repo's convention of marking rather than
+removing superseded write paths.
+
+Original docstring follows, unmodified, for historical reference:
+
+Import the real, git-ignored, normalized HR staff CSV into
 management_aios.staff_dashboard_records.
 
 Source: member-aios/staff-data/source/normalized/hr-staff-dashboard.csv

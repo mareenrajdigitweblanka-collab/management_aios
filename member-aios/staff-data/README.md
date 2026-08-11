@@ -3,13 +3,35 @@ name: staff-data-readme
 type: folder-readme
 scope: dashboard-specific staff data staging area
 created: 2026-07-13
-updated: 2026-07-13
-status: DRAFT — real normalized CSV built (310 rows, local-only, git-ignored); synthetic repository sample CSV added; Staff Module UI designed; database design only, not applied
-source-boundary: SRC-STAFF-001, HR-provided PDF (unregistered), CLAUDE.md §6, §9.1
+updated: 2026-08-11
+status: SUPERSEDED SOURCE (2026-08-11) — management_aios.staff_dashboard_records no longer reads from the CSV/HR-PDF pipeline documented below; it is now an exact mirror of employee_management.staff (Ledsone). See §0.
+source-boundary: SRC-STAFF-001, HR-provided PDF (unregistered), CLAUDE.md §6, §9.1 — see §0 for the 2026-08-11 change
 root-truth: CLAUDE.md — canonical; this file is a documentation-only folder overview
 ---
 
 # Staff Data — Folder Overview
+
+## 0. 2026-08-11 Update — Rebuilt as an Exact Ledsone Mirror (Read This First)
+
+**As of 2026-08-11, `management_aios.staff_dashboard_records` is no longer populated from the HR-provided CSV described in this folder.** Same day, in two steps: first re-sourced to a curated 5-column projection of `employee_management.staff` on Ledsone, then — per a second, more explicit user instruction — **rebuilt again as an exact, unmodified mirror**: every column of `employee_management.staff` (except `fcm_token`), including its own integer primary key (`staff_dashboard_records.id` is now `employee_management.staff.id` directly, not a generated UUID). See `database/migrations/2026-08-11-mirror-staff-dashboard-records-from-ledsone.sql`. Both earlier write paths are superseded and kept only for history: `scripts/import_staff_dashboard_csv.py`, `scripts/update_staff_locations_from_hr_sources.py`, and `scripts/sync_staff_dashboard_from_ledsone.py` (the last was built for the short-lived curated shape and was already obsolete by the time it was finished).
+
+**There is currently no repeatable write path to this table.** The 312-row population was a one-time bulk copy run directly against both databases in one session, not a script — a future re-sync needs new tooling built against this exact-mirror shape.
+
+**This directly overrides several claims made elsewhere in this file** — most notably §2's "PostgreSQL, once populated, will hold operational dashboard records derived from HR's source" (§4) and the "single write path" / "controlled dashboard PROJECTION, not a full table dump" design recorded in `database/migrations/2026-07-13-create-staff-dashboard-records.sql` and `backend/schemas.py`'s original `StaffRecordOut` docstring. Those claims were accurate through 2026-08-10; they are historical from 2026-08-11 onward. The rest of this file (source maps, field maps, evidence, the original 16-column design) remains an accurate historical record of the CSV-era design and is not rewritten — read it as "how this table worked before 2026-08-11," not current state.
+
+**Why, and what changed:**
+
+- **This was a deliberate architecture change, not a bug fix**, made without prior HR/Mayurika review despite touching staff record sourcing (CLAUDE.md §9.1 custodianship, §18 reviewer routing). It is flagged here for Mayurika's review, not presented as pre-approved.
+- **The table now carries PDPA-sensitive fields it never held before**: `email`, `phone`, `address`, `skype` (CLAUDE.md §6), plus HR-sensitive `informed_leave_balance`/`urgent_leave_balance`/`is_approved`. `fcm_token` (a push-notification device token — a security credential, not staff data) is the one deliberate exclusion. This is a materially wider data-sensitivity surface than the dashboard has ever exposed, on an API gated only by a shared Calendar member token (no PDPA-specific access control) — flagged here explicitly for Mayurika's review, not treated as pre-cleared by the earlier §6-conscious 16-column design.
+- **Field names changed to match Ledsone exactly**: `staff_code` (was `employee_number`), `name` (was `full_name`), `team_id` (raw integer, was the human-readable `department_team` name), `joined_date` (was `date_of_joining`). There is now no human-readable team/department name available anywhere in this table — `team_id` is Ledsone's own column, mostly `NULL` in the source, with no name lookup.
+- **This broke and required reworking**: `GET /api/staff/summary` (removed — depended on columns that no longer exist), `GET /api/staff/filter-options` (now returns `team_ids`, integers, not team names), the Staff Data dashboard's Current/Onboarding/Resigned subtab split (collapsed to one unified list — no active/inactive or onboarding-stage distinction exists in this data anymore), the "Include inactive staff" toggle in the Review Summaries reviewed-staff selector (removed), the Arun/Paraparan team-scoped pilot's `"PH"` team lock (removed — a text lock has no meaning against a numeric `team_id`; those two panels now show the unlocked, unscoped staff list), and the Issues tracker's team-name dropdown (now shows numeric team ids, not names — see `web-view/js/issues.js`).
+- **5 review-summary records were permanently deleted** (`DWL299`, `DWL300` ×2, `DWL304`, `DWL310`) — those employee numbers do not exist in Ledsone under any match. Per explicit user instruction, chosen over keeping non-Ledsone stub rows or pausing. This destroyed private reviewer-authored content (mayurika/suman/arun/paraparan). The other 6 review-summary rows were remapped via `staff_review_summaries.reviewed_staff_employee_number` (durable key, added earlier the same day — `database/migrations/2026-08-11-add-reviewed-staff-employee-number-to-staff-review-summaries.sql`) matched against `staff_code` (normalized), and `reviewed_staff_id` changed type from UUID to INTEGER to match the new primary key.
+- **Coverage accepted as a full replacement, not a partial merge**: the table now holds exactly Ledsone's 312 rows (including soft-deleted/`delete_status: true` staff and rows with no `staff_code`) — not a filtered "active only" subset. This is wider in row count than the earlier curated design but narrower in that ~200 people from the original CSV-era ~310 rows who have no Ledsone counterpart are gone entirely (except the 6 still protected by a review record having been remapped, and the 5 deleted above).
+- The §14 "5 duplicate `employee_number` values" open review (`evidence/hr-duplicate-employee-id-review-2026-07-13.md`) is now moot for the live table — those rows came from the CSV source, not Ledsone — but the evidence file is left open/unresolved rather than closed, since it documents a real defect in data HR may still need to correct elsewhere.
+
+**Next step:** Route this whole change to Mayurika for review per CLAUDE.md §18 before treating the Ledsone mirror as final — the PDPA-sensitive-field exposure in particular needs explicit sign-off. If she requires reverting to the CSV/HR-PDF source or the curated 5-column design, none of the three superseded scripts can be run as-is; each needs rebuilding against whichever shape is chosen, and the 5 deleted review-summary records cannot be recovered.
+
+---
 
 ## 1. What This Folder Is
 

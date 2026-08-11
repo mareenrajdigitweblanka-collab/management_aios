@@ -49,8 +49,10 @@ function jsonResponse(status, body) {
 
 /* Mirrors web-view/index.html's real #tab-staff-data structure closely
    enough for staff-data.js's initStaffDataTab() to find every element it
-   queries (STAFF_SUBTAB_BASE_FILTERS keys: current-staff, onboarding-staff,
-   resigned-staff — see staff-data.js). */
+   queries. 2026-08-11: the former 3-subtab (current-staff/onboarding-staff/
+   resigned-staff) split was collapsed to one unified panel
+   (#staff-subpanel-all-staff) when staff_status/employment_stage were
+   dropped — see staff-data.js initStaffDataTab. */
 function buildStaffDataTabDom(doc) {
   var panel = doc.createElement('div');
   panel.id = 'tab-staff-data';
@@ -61,25 +63,14 @@ function buildStaffDataTabDom(doc) {
   filterBar.className = 'staff-filter-bar';
   panel.appendChild(filterBar);
 
-  var subtabBar = doc.createElement('div');
-  subtabBar.className = 'staff-subtab-bar';
-  panel.appendChild(subtabBar);
+  var subpanel = doc.createElement('div');
+  subpanel.className = 'staff-subpanel active';
+  subpanel.id = 'staff-subpanel-all-staff';
+  panel.appendChild(subpanel);
 
-  ['current-staff', 'onboarding-staff', 'resigned-staff'].forEach(function (key, i) {
-    var btn = doc.createElement('button');
-    btn.className = 'staff-subtab-btn' + (i === 0 ? ' active' : '');
-    btn.setAttribute('data-staff-subtab', key);
-    subtabBar.appendChild(btn);
-
-    var subpanel = doc.createElement('div');
-    subpanel.className = 'staff-subpanel' + (i === 0 ? ' active' : '');
-    subpanel.id = 'staff-subpanel-' + key;
-    panel.appendChild(subpanel);
-
-    var tableContainer = doc.createElement('div');
-    tableContainer.className = 'staff-table-container';
-    subpanel.appendChild(tableContainer);
-  });
+  var tableContainer = doc.createElement('div');
+  tableContainer.className = 'staff-table-container';
+  subpanel.appendChild(tableContainer);
 
   return panel;
 }

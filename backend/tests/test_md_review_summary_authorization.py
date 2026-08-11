@@ -22,6 +22,7 @@ Run with: python -m unittest backend.tests.test_md_review_summary_authorization
 """
 
 import unittest
+import zlib
 from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
@@ -94,20 +95,20 @@ class MdAuthorizationTestCase(unittest.TestCase):
     # ── Seed helpers (mirrors test_staff_review_summaries.py /
     #    test_calendar_mutation_authorization.py exactly) ─────────────────
 
-    def seed_staff(self, source_record_key="md-staff-001", full_name="MD Test Staff",
-                    calling_name="MD Staff", staff_status="Active"):
+    def seed_staff(self, source_record_key="md-staff-001", full_name="MD Test Staff"):
+        """2026-08-11: StaffDashboardRecord is now an exact mirror of
+        employee_management.staff (Ledsone) — see backend/models.py
+        StaffDashboardRecord docstring and test_staff_review_summaries.py's
+        own seed_staff for the full rationale. `source_record_key` is kept
+        as this helper's parameter name (unchanged call sites) purely as a
+        label deterministically hashed into a unique integer id."""
         session = self.make_session()
         now = datetime.now(timezone.utc)
         staff = StaffDashboardRecord(
-            source_record_key=source_record_key,
-            employee_number="EMP-" + source_record_key,
-            full_name=full_name,
-            calling_name=calling_name,
-            staff_status=staff_status,
-            source_hash="test-hash-" + source_record_key,
-            source_status="imported",
-            is_current=True,
-            imported_at=now,
+            id=zlib.crc32(source_record_key.encode("utf-8")),
+            staff_code="DWL-" + source_record_key,
+            name=full_name,
+            synced_at=now,
             created_at=now,
             updated_at=now,
         )

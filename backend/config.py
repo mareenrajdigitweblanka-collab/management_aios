@@ -31,6 +31,17 @@ def _normalize_database_url(raw_url):
 
 DATABASE_URL = _normalize_database_url(os.environ.get("DATABASE_URL"))
 
+# Read-only connection to the Ledsone operational Postgres (the `ledsone`
+# database on the VPS, `tech_user` role — SELECT-only across all schemas
+# including employee_management, sslmode=require). Added 2026-08-11 for
+# scripts/sync_staff_dashboard_from_ledsone.py, which is the only consumer
+# of this variable. Distinct from DATABASE_URL (management_aios) — there is
+# no cross-server SQL join between the two Postgres instances, so that
+# script reads this connection and writes DATABASE_URL as two explicit
+# steps. Unset by default; the sync script fails fast with a clear error
+# rather than silently skipping the read if this is missing.
+LEDSONE_DATABASE_URL = _normalize_database_url(os.environ.get("LEDSONE_DATABASE_URL"))
+
 # Comma-separated list of extra allowed CORS origins, e.g.
 # "https://management-aios.vercel.app,https://staging.example.com".
 # Whitespace around each entry is trimmed. Falls back to the known production
@@ -135,48 +146,38 @@ MEMBER_LABELS = {
     for key, entry in MEMBER_DIRECTORY.items()
 }
 
-# ── Staff Data dashboard constants (2026-07-13) ──────────────────────────
-# Shared between backend/routers/staff.py and scripts/import_staff_dashboard_csv.py
-# so the two never drift apart. See
-# member-aios/staff-data/data-maps/staff-field-map-draft.md for the
-# approved 16-column field list this mirrors.
-
-VALID_STAFF_STATUSES = ("Active", "Inactive")
-
-# 'training_7_day' and the literal '[VERIFY]' are real, expected stored
-# values — no HR-approved rule exists to resolve '[VERIFY]' rows (see
-# member-aios/staff-data/source-maps/hr-staff-source-map-draft.md §6). This
-# AIOS must not invent that rule; '[VERIFY]' stays a valid, queryable value.
-VALID_EMPLOYMENT_STAGES = ("Permanent", "Probation", "training_7_day", "[VERIFY]")
-
-# Controlled vocabulary observed in the HR source (see
-# member-aios/staff-data/data-maps/staff-field-map-draft.md §1). Used to
-# validate the ?location= filter param; not used to reject/alter stored
-# values that fall outside this set.
-VALID_LOCATIONS = ("Jaffna", "Nelliyadi", "Chankanai", "WFH")
+# ── Staff Data dashboard constants (2026-07-13; re-sourced 2026-08-11) ───
+# Shared between backend/routers/staff.py and
+# scripts/sync_staff_dashboard_from_ledsone.py so the two never drift apart.
+#
+# 2026-08-11: staff_dashboard_records was re-sourced from the HR-provided
+# CSV to employee_management.staff (Ledsone) — see backend/models.py
+# StaffDashboardRecord docstring and member-aios/staff-data/README.md.
+# epf_number/calling_name/location/staff_status/cv_reference/nic/remarks/
+# employment_stage were dropped: Ledsone has no equivalent for any of them.
+# VALID_STAFF_STATUSES/VALID_EMPLOYMENT_STAGES/VALID_LOCATIONS are removed
+# along with the columns and filters they validated.
+#
+# scripts/import_staff_dashboard_csv.py and
+# scripts/update_staff_locations_from_hr_sources.py are superseded (their
+# module docstrings explain why) but kept for history — STAFF_EXCLUDED_COLUMNS
+# below still backs their defense-in-depth header check, unchanged.
 
 STAFF_APPROVED_COLUMNS = (
     "employee_number",
-    "epf_number",
     "date_of_joining",
     "full_name",
-    "calling_name",
-    "location",
-    "staff_status",
     "department_team",
     "designation",
-    "cv_reference",
-    "nic",
-    "remarks",
-    "employment_stage",
     "source_file",
     "source_page",
     "source_row_reference",
 )
 
 # Defense-in-depth only — these columns must never exist on
-# StaffDashboardRecord or in the approved CSV. Used by the import script to
-# reject a source file that somehow contains one of these headers.
+# StaffDashboardRecord or in any source feeding it. Referenced by the
+# superseded scripts/import_staff_dashboard_csv.py to reject a source file
+# that somehow contains one of these headers.
 STAFF_EXCLUDED_COLUMNS = (
     "salary",
     "home_address",

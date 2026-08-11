@@ -1,12 +1,24 @@
 """HTTP-level auth tests for the Staff Data dashboard endpoints
 (REQ-AUTH-MODULES-007, 2026-08-10).
 
-Staff Data (GET /api/staff, GET /api/staff/summary, GET
-/api/staff/filter-options) was previously fully public. This file exercises
-the new requirement — every read now requires the existing Calendar member
-token (Depends(get_verified_member), backend/routers/staff.py) — through
-the real app (backend.main.app), same isolated in-memory SQLite convention
-as test_knowledge_documents.py.
+Staff Data (GET /api/staff, GET /api/staff/filter-options) was previously
+fully public. This file exercises the new requirement — every read now
+requires the existing Calendar member token (Depends(get_verified_member),
+backend/routers/staff.py) — through the real app (backend.main.app), same
+isolated in-memory SQLite convention as test_knowledge_documents.py.
+
+GET /api/staff/summary was removed 2026-08-11 along with
+staff_status/employment_stage (its entire logic depended on them — see
+backend/routers/staff.py module docstring); its auth tests were removed
+with it.
+
+2026-08-11: seed_staff rebuilt for the exact-Ledsone-mirror shape — id is
+now an explicit integer (StaffDashboardRecord.id has no autoincrement
+default; matches employee_management.staff.id on Ledsone in production)
+instead of a generated UUID, and the old CSV-provenance bookkeeping fields
+(source_record_key/employee_number/full_name/department_team/source_hash/
+source_status/is_current/imported_at) no longer exist — see
+backend/models.py StaffDashboardRecord docstring.
 
 Run with: python -m unittest backend.tests.test_staff_auth
 """
@@ -53,20 +65,15 @@ class StaffAuthTestCase(unittest.TestCase):
         session = self.SessionLocal()
         now = datetime.now(timezone.utc)
         fields = dict(
-            source_record_key=overrides.pop("source_record_key", "staff-auth-001"),
-            employee_number=overrides.pop("employee_number", "EMP-AUTH-001"),
-            full_name=overrides.pop("full_name", "Auth Test Staff"),
-            department_team=overrides.pop("department_team", "PH"),
-            staff_status=overrides.pop("staff_status", "Active"),
-            employment_stage=overrides.pop("employment_stage", "Permanent"),
-            location=overrides.pop("location", "Jaffna"),
-            source_hash=overrides.pop("source_hash", "test-hash-staff-auth-001"),
-            source_status=overrides.pop("source_status", "imported"),
-            is_current=overrides.pop("is_current", True),
+            id=overrides.pop("id", 1),
+            staff_code=overrides.pop("staff_code", "DWL-AUTH-001"),
+            name=overrides.pop("name", "Auth Test Staff"),
+            designation=overrides.pop("designation", "Test Role"),
+            team_id=overrides.pop("team_id", None),
             # Explicit values (not the Postgres-only server_default=now()) —
             # same reasoning as test_staff_review_summaries.py's own
             # seed_staff helper, so this row can be seeded against SQLite.
-            imported_at=overrides.pop("imported_at", now),
+            synced_at=overrides.pop("synced_at", now),
             created_at=overrides.pop("created_at", now),
             updated_at=overrides.pop("updated_at", now),
         )
@@ -101,22 +108,10 @@ class FilterOptionsAuthTests(StaffAuthTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_5_authenticated_filter_options_succeeds(self):
-        self.seed_staff(department_team="Technical Team")
+        self.seed_staff(team_id=7)
         response = self.client.get("/api/staff/filter-options", headers=bearer_header("arun"))
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Technical Team", response.json()["teams"])
-
-
-class SummaryAuthTests(StaffAuthTestCase):
-    def test_6_unauthenticated_summary_rejected(self):
-        response = self.client.get("/api/staff/summary")
-        self.assertEqual(response.status_code, 401)
-
-    def test_7_authenticated_summary_succeeds(self):
-        self.seed_staff()
-        response = self.client.get("/api/staff/summary", headers=bearer_header("suman"))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["total"], 1)
+        self.assertIn(7, response.json()["team_ids"])
 
 
 class CrossMemberReadTests(StaffAuthTestCase):

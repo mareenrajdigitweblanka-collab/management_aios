@@ -174,14 +174,17 @@ def _reject_md_write(acting_member: str) -> None:
         )
 
 
-def _reviewed_staff_or_422(db: Session, reviewed_staff_id: UUID) -> StaffDashboardRecord:
+def _reviewed_staff_or_422(db: Session, reviewed_staff_id: int) -> StaffDashboardRecord:
     """reviewed_staff_id must resolve to an existing staff row — an
     unknown id is a client input error (422), not a 404 (404 is reserved
     for "authenticated but not this reviewer's record" on the other four
-    routes). Deliberately does NOT filter on staff_status/is_current — a
-    reviewer may record a summary about an inactive/departed staff member
-    (e.g. an exit-review discussion); the selector's active-by-default UI
-    behavior is a convenience, not a server-enforced rule."""
+    routes). Deliberately does NOT filter on delete_status — a reviewer
+    may record a summary about a departed staff member (e.g. an
+    exit-review discussion); the selector's UI behavior is a convenience,
+    not a server-enforced rule. reviewed_staff_id is INTEGER as of
+    2026-08-11 (staff_dashboard_records.id is now employee_management.
+    staff.id directly — see backend/models.py StaffDashboardRecord
+    docstring), was UUID before."""
     staff = (
         db.query(StaffDashboardRecord)
         .filter(StaffDashboardRecord.id == reviewed_staff_id)
@@ -304,8 +307,7 @@ def _to_out(record: StaffReviewSummary, db: Session, acting_member: str) -> Staf
         id=record.id,
         reviewer_member_key=record.reviewer_member_key,
         reviewed_staff_id=record.reviewed_staff_id,
-        reviewed_staff_full_name=staff.full_name if staff else None,
-        reviewed_staff_calling_name=staff.calling_name if staff else None,
+        reviewed_staff_full_name=staff.name if staff else None,
         meeting_date=record.meeting_date,
         summary_text=record.summary_text,
         created_at=record.created_at,
@@ -354,7 +356,7 @@ def _build_review_summary_query(
     db: Session,
     acting_member: str,
     reviewer_member_key: Optional[str],
-    reviewed_staff_id: Optional[UUID],
+    reviewed_staff_id: Optional[int],
     date_from: Optional[date_type],
     date_to: Optional[date_type],
     include_all_reviewers: bool,
@@ -408,7 +410,7 @@ def _build_review_summary_query(
 def list_staff_review_summaries(
     response: Response,
     reviewer_member_key: Optional[str] = Query(default=None),
-    reviewed_staff_id: Optional[UUID] = Query(default=None),
+    reviewed_staff_id: Optional[int] = Query(default=None),
     date_from: Optional[date_type] = Query(default=None),
     date_to: Optional[date_type] = Query(default=None),
     include_all_reviewers: bool = Query(default=False),
@@ -469,7 +471,7 @@ def list_staff_review_summaries(
 @router.get("/export/pdf")
 def export_staff_review_summaries_pdf(
     response: Response,
-    reviewed_staff_id: UUID = Query(...),
+    reviewed_staff_id: int = Query(...),
     reviewer_member_key: Optional[str] = Query(default=None),
     include_all_reviewers: bool = Query(default=False),
     date_from: Optional[date_type] = Query(default=None),
@@ -549,7 +551,10 @@ def export_staff_review_summaries_pdf(
     else:
         reviewer_scope_label = reviewer_scope_label_for(acting_member)
 
-    employee_label = staff.full_name or staff.calling_name or "Unknown staff record"
+    # StaffDashboardRecord.full_name/calling_name renamed/dropped 2026-08-11
+    # — this is now Ledsone's own `name` column (see backend/schemas.py
+    # StaffReviewSummaryOut docstring).
+    employee_label = staff.name or "Unknown staff record"
     generated_at_local = datetime.now(timezone.utc).astimezone(_COLOMBO)
 
     pdf_bytes = build_review_summary_pdf(

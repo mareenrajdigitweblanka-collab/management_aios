@@ -312,23 +312,38 @@ function authorizedHeaders() {
   return token ? { 'Authorization': 'Bearer ' + token } : undefined;
 }
 
+// 2026-08-11: the staff_status=Active filter was removed —
+// StaffDashboardRecord.staff_status no longer exists. staff_dashboard_
+// records is now an exact mirror of employee_management.staff on Ledsone
+// (see member-aios/staff-data/README.md), including departed staff
+// (delete_status: true) and every other row — this now returns every
+// staff name the table holds, not a server-filtered "Active"-only set.
+// Function name kept for now to minimize churn at call sites; behavior
+// described here, not by the name alone. `name` replaces the former
+// `full_name` field (2026-08-11 — Ledsone's own column name).
 function fetchActiveStaffNames() {
-  var params = ['limit=500', 'staff_status=Active'];
+  var params = ['limit=500'];
   return fetch(STAFF_API_BASE + '?' + params.join('&'), { headers: authorizedHeaders() }).then(function (res) {
     if (!res.ok) { throw new Error('Staff lookup failed.'); }
     return res.json();
   }).then(function (body) {
-    var names = (body.records || []).map(function (r) { return r.full_name; });
+    var names = (body.records || []).map(function (r) { return r.name; });
     return uniqueSorted(names);
   });
 }
 
+/* 2026-08-11: StaffFilterOptionsResponse.teams (human-readable department
+   names) was replaced by team_ids (Ledsone's raw, mostly-NULL team_id
+   integers, no name lookup available in this table — see
+   member-aios/staff-data/README.md). This degrades what was a real team
+   name list to a list of numeric ids stringified for display — there is
+   no way to recover the names from this table alone. */
 function fetchTeamNames() {
   return fetch(STAFF_API_BASE + '/filter-options', { headers: authorizedHeaders() }).then(function (res) {
     if (!res.ok) { throw new Error('Team lookup failed.'); }
     return res.json();
   }).then(function (body) {
-    return uniqueSorted(body.teams || []);
+    return uniqueSorted((body.team_ids || []).map(String));
   });
 }
 

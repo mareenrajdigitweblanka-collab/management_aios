@@ -54,6 +54,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -280,74 +281,58 @@ class MemberLeaveRecord(Base):
 class StaffDashboardRecord(Base):
     """SQLAlchemy ORM model for management_aios.staff_dashboard_records.
 
-    Mirrors database/migrations/2026-07-13-create-staff-dashboard-records.sql
-    exactly. A read-model dashboard projection only — HR remains the
-    authoritative staff-record source (CLAUDE.md §9.1). The only write path
-    to this table is scripts/import_staff_dashboard_csv.py; this API is
-    read-only for staff records (no create/update/delete route exists for
-    this model).
+    Mirrors database/migrations/2026-08-11-mirror-staff-dashboard-records-
+    from-ledsone.sql exactly. As of 2026-08-11 this is an EXACT mirror of
+    employee_management.staff on the Ledsone operational database — same
+    columns, same types, same primary key (id is employee_management.
+    staff.id directly, not a generated UUID) — per explicit, deliberate
+    user instruction (flagged to Mayurika per CLAUDE.md §9.1/§18 — see
+    member-aios/staff-data/README.md §0 for the full rationale and
+    supersession history of the two narrower designs that preceded this
+    one the same day). This is a full replication, not a curated
+    projection — every column below (except fcm_token, see next
+    paragraph) is exposed by StaffRecordOut.
 
-    Deliberately has no salary/home_address/personal_email/personal_phone/
-    contact_number/guardian_phone/guardian_number column — not filtered at
-    query time, simply absent from the schema.
+    fcm_token is the one deliberate exclusion — a push-notification device
+    token (a security credential), not staff data, never stored here.
+
+    No write path currently exists for this table — the 312-row 2026-08-11
+    population was a one-time bulk load, not a repeatable script.
+    scripts/sync_staff_dashboard_from_ledsone.py is superseded (built for
+    the prior 5-column curated shape) and has not been rewritten for this
+    one; a future re-sync needs a new script built against this shape.
     """
 
     __tablename__ = "staff_dashboard_records"
-    __table_args__ = (
-        CheckConstraint(
-            "staff_status IS NULL OR staff_status IN ('Active', 'Inactive')",
-            name="staff_dashboard_records_staff_status_check",
-        ),
-        CheckConstraint(
-            "employment_stage IS NULL OR employment_stage IN "
-            "('Permanent', 'Probation', 'training_7_day', '[VERIFY]')",
-            name="staff_dashboard_records_employment_stage_check",
-        ),
-        CheckConstraint(
-            "source_status IN ('imported', 'superseded')",
-            name="staff_dashboard_records_source_status_check",
-        ),
-        {"schema": "management_aios"},
-    )
+    __table_args__ = ({"schema": "management_aios"},)
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Not a generated key — this is employee_management.staff.id, copied
+    # verbatim from Ledsone.
+    id = Column(Integer, primary_key=True, autoincrement=False)
 
-    # Deterministic, not employee_number alone — the HR source has reused
-    # employee_number values across distinct people (see
-    # member-aios/staff-data/evidence/hr-duplicate-employee-id-review-2026-07-13.md).
-    source_record_key = Column(String, nullable=False, unique=True)
-
-    employee_number = Column(String, nullable=True)
-    epf_number = Column(String, nullable=True)
-    date_of_joining = Column(Date, nullable=True)
-    full_name = Column(String, nullable=True)
-    calling_name = Column(String, nullable=True)
-    location = Column(String, nullable=True)
-    staff_status = Column(String, nullable=True)
-    department_team = Column(String, nullable=True)
+    staff_code = Column(String, nullable=True)
+    name = Column(String, nullable=True)
+    role = Column(Integer, nullable=True)
+    email = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    roster = Column(String, nullable=True)
     designation = Column(String, nullable=True)
-    cv_reference = Column(String, nullable=True)
-    nic = Column(String, nullable=True)
-    remarks = Column(String, nullable=True)
-    employment_stage = Column(String, nullable=True)
-    source_file = Column(String, nullable=True)
-    source_page = Column(Integer, nullable=True)
-    source_row_reference = Column(String, nullable=True)
+    joined_date = Column(Date, nullable=True)
+    confirmed_date = Column(Date, nullable=True)
+    address = Column(Text, nullable=True)
+    skype = Column(String, nullable=True)
+    delete_status = Column(Boolean, nullable=True)
+    team_id = Column(Integer, nullable=True)
+    is_approved = Column(Integer, nullable=True)
+    staff_type = Column(String, nullable=True)
+    staff_level = Column(String, nullable=True)
+    informed_leave_balance = Column(Float, nullable=True)
+    urgent_leave_balance = Column(Float, nullable=True)
+    backup_staffs = Column(Text, nullable=True)
 
-    source_hash = Column(String, nullable=False)
-    source_status = Column(String, nullable=False, server_default="imported")
-    is_current = Column(Boolean, nullable=False, server_default=text("true"))
-    imported_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
-    imported_by = Column(String, nullable=True)
-
+    synced_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
-
-    # Per-update actor, distinct from imported_by (set once, at import time).
-    # Added by database/migrations/2026-07-13-add-updated-by-to-staff-dashboard-records.sql
-    # for scripts/update_staff_locations_from_hr_sources.py. Not part of the
-    # 16-field dashboard API contract (StaffRecordOut) — bookkeeping only.
-    updated_by = Column(String, nullable=True)
 
 
 class StaffReviewSummary(Base):
@@ -365,9 +350,16 @@ class StaffReviewSummary(Base):
     soft-delete a given row (backend/routers/staff_review_summaries.py) —
     other reviewers and the reviewed staff member have no access in Phase 1.
 
-    reviewed_staff_id is a UUID FK to staff_dashboard_records.id — the
-    approved stable identifier (see StaffRecordOut docstring above);
-    employee_number is prohibited as an identifier and is never used here.
+    reviewed_staff_id is an INTEGER FK to staff_dashboard_records.id (type
+    changed from UUID 2026-08-11 — staff_dashboard_records.id is now
+    employee_management.staff.id directly, see that model's docstring) —
+    the approved stable identifier and the only field the API accepts/
+    returns as "the reviewed staff member". employee_number/staff_code is
+    not an API-facing identifier and is never accepted from a request.
+    reviewed_staff_employee_number (added 2026-08-11) is an internal remap
+    anchor only — used during the 2026-08-11 Ledsone re-source to re-point
+    reviewed_staff_id when staff_dashboard_records was rebuilt with new
+    ids; it is not exposed on StaffReviewSummaryOut.
 
     No reviewed_staff_name_snapshot column exists by design (approved
     technical design, docs/2026-08-03_calendar-review-summaries-technical-
@@ -399,10 +391,20 @@ class StaffReviewSummary(Base):
 
     reviewer_member_key = Column(String, nullable=False)
     reviewed_staff_id = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey("management_aios.staff_dashboard_records.id"),
         nullable=False,
     )
+
+    # Durable lookup key, independent of reviewed_staff_id. Added
+    # 2026-08-11 (database/migrations/2026-08-11-add-reviewed-staff-
+    # employee-number-to-staff-review-summaries.sql) so re-sourcing
+    # staff_dashboard_records (new ids per row) can remap reviewed_staff_id
+    # by employee_number/staff_code instead of orphaning rows. Used again
+    # the same day when staff_dashboard_records was rebuilt as an exact
+    # Ledsone mirror (2026-08-11-mirror-staff-dashboard-records-from-
+    # ledsone.sql).
+    reviewed_staff_employee_number = Column(String, nullable=True)
 
     meeting_date = Column(Date, nullable=False)
     summary_text = Column(Text, nullable=False)
