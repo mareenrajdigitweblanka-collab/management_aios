@@ -340,7 +340,16 @@ export function installFakeBrowserGlobals(opts) {
       var target = (typeof y === 'number') ? y : (_x && typeof _x.top === 'number' ? _x.top : 0);
       fakeWindow.scrollY = target;
       fakeWindow.pageYOffset = target;
-    }
+    },
+    // setInterval/clearInterval (2026-08-12, announcements.js bell polling)
+    // — deliberately never actually schedules anything: tests drive polling
+    // manually by calling the returned handle's refresh()/stop(), not by
+    // waiting out a real 30s interval, so a no-op id generator is enough to
+    // let the real code path run without leaving a live Node timer behind
+    // that would keep the test process alive after the run completes.
+    setInterval: function () { return ++fakeWindow._intervalIdCounter; },
+    clearInterval: function () {},
+    _intervalIdCounter: 0
   };
   globalThis.document = fakeDocument;
   globalThis.window = fakeWindow;

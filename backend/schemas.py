@@ -1276,3 +1276,198 @@ class KnowledgeDocumentSummaryResponse(BaseModel):
     recently_updated: List[KnowledgeDocumentOut]
     recent_activity: List[KnowledgeDocumentActivityItem]
     latest_version_updates: List[KnowledgeDocumentVersionOut]
+
+
+# ── Announcements & Notifications (REQ-ANN-001, 2026-08-12) ─────────────
+#
+# created_by is NEVER accepted from the client on any of these schemas —
+# always server-derived from get_verified_member, mirroring every other
+# *_by field in this file. mentioned_member_key is validated here against
+# VALID_MEMBER_KEYS (the same canonical registry every other module reads)
+# — deliberately NOT a second, independently-maintained member list, and
+# never enforced by a database CHECK constraint (see backend/models.py
+# AnnouncementMention docstring and the migration file's own comment).
+
+from backend.config import VALID_MEMBER_KEYS  # noqa: E402 — grouped with this section
+
+
+def _dedup_preserve_order(values: List[str]) -> List[str]:
+    seen = set()
+    out = []
+    for v in values:
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
+
+
+def _validate_mention_keys(value: Optional[List[str]]) -> List[str]:
+    """Shared validator for both Create and Update — zero, one, or many
+    mentions are all legal (REQ-ANN-001 §4). Self-mention is explicitly
+    allowed (no suppression at this layer — see requirement doc §8).
+    Duplicate selections are silently deduplicated (defense-in-depth; the
+    frontend picker already prevents them and the DB's own unique index is
+    the final backstop). An unknown member_key is a hard 422 — never
+    silently dropped, so a typo/stale key is never mistaken for "no
+    mentions"."""
+    if not value:
+        return []
+    deduped = _dedup_preserve_order(value)
+    invalid = [v for v in deduped if v not in VALID_MEMBER_KEYS]
+    if invalid:
+        raise ValueError(f"mention_member_keys contains unknown member key(s): {invalid}")
+    return deduped
+
+
+class AnnouncementCreate(BaseModel):
+    """Request body for POST /api/announcements — always creates a Draft.
+    status/created_by/published_at/deleted_at/deleted_by are all absent
+    from this model by design; a client attempting to send any of them has
+    the value silently ignored by Pydantic, exactly as
+    KnowledgeDocumentCreate excludes lifecycle_status above."""
+
+    title: str = Field(..., min_length=1, max_length=200)
+    body: str = Field(..., min_length=1, max_length=10000)
+    mention_member_keys: List[str] = Field(default_factory=list)
+
+    @field_validator("title")
+    @classmethod
+    def trim_title(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("title must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @field_validator("body")
+    @classmethod
+    def trim_body(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("body must contain at least 1 non-whitespace character.")
+        if len(trimmed) > 10000:
+            raise ValueError("body must be 10,000 characters or fewer after trimming.")
+        return trimmed
+
+    @field_validator("mention_member_keys")
+    @classmethod
+    def validate_mentions(cls, value: List[str]) -> List[str]:
+        return _validate_mention_keys(value)
+
+
+class AnnouncementUpdate(BaseModel):
+    """Request body for PATCH /api/announcements/{id} — Draft only (the
+    router's ownership lookup never resolves a Published id for this
+    route — technical design §5). mention_member_keys, when supplied
+    (including an explicit empty list), REPLACES the Draft's full mention
+    set; omitting the field entirely leaves the existing mention set
+    unchanged. status/published_at are never accepted — Publish is its own
+    dedicated endpoint, never a side effect of a metadata PATCH."""
+
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    body: Optional[str] = Field(default=None, min_length=1, max_length=10000)
+    mention_member_keys: Optional[List[str]] = None
+
+    @field_validator("title")
+    @classmethod
+    def trim_title(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("title must contain at least 1 non-whitespace character.")
+        return trimmed
+
+    @field_validator("body")
+    @classmethod
+    def trim_body(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("body must contain at least 1 non-whitespace character.")
+        if len(trimmed) > 10000:
+            raise ValueError("body must be 10,000 characters or fewer after trimming.")
+        return trimmed
+
+    @field_validator("mention_member_keys")
+    @classmethod
+    def validate_mentions(cls, value: Optional[List[str]]) -> Optional[List[str]]:
+        if value is None:
+            return None
+        return _validate_mention_keys(value)
+
+
+class AnnouncementOut(BaseModel):
+    """Response shape for every Announcement route except the notification
+    feed/read-receipts views below. mention_member_keys is populated by the
+    router from a separate announcement_mentions query — not an
+    from_attributes relationship load — so this schema is always
+    constructed explicitly (backend/routers/announcements.py _to_out),
+    never via model_validate(record) directly."""
+
+    id: UUID
+    title: str
+    body: str
+    status: Literal["Draft", "Published"]
+    created_by: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
+    mention_member_keys: List[str] = Field(default_factory=list)
+
+    model_config = {"from_attributes": True}
+
+
+class AnnouncementListResponse(BaseModel):
+    records: List[AnnouncementOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class AnnouncementMentionNotificationOut(BaseModel):
+    """One row of the bell dropdown feed (GET /api/announcements/
+    notifications) — always scoped server-side to the current member's own
+    mentions on Published announcements only (notified_at IS NOT NULL);
+    never another member's feed (REQ-ANN-001 §7)."""
+
+    mention_id: UUID
+    announcement_id: UUID
+    title: str
+    created_by: str
+    published_at: Optional[datetime] = None
+    read_at: Optional[datetime] = None
+
+
+class AnnouncementUnreadCountOut(BaseModel):
+    unread_count: int
+
+
+class AnnouncementNotificationFeedOut(BaseModel):
+    """Response for GET /api/announcements/notifications — the single bell
+    endpoint (smallest API surface, REQ-ANN-001 §12): the 30s poll only
+    needs unread_count; opening the dropdown needs items too. Both are
+    computed from the same scoped query (current member, Published,
+    notified_at IS NOT NULL) so the two can never disagree."""
+
+    unread_count: int
+    items: List[AnnouncementMentionNotificationOut]
+
+
+class AnnouncementReadReceiptItemOut(BaseModel):
+    member_key: str
+    display_label: str
+    read: bool
+    read_at: Optional[datetime] = None
+
+
+class AnnouncementReadReceiptsOut(BaseModel):
+    """Response for GET /api/announcements/{id}/read-receipts — creator-only
+    (technical design §5-equivalent ownership check; non-creator gets 404,
+    never this body)."""
+
+    announcement_id: UUID
+    mentioned_count: int
+    read_count: int
+    unread_count: int
+    receipts: List[AnnouncementReadReceiptItemOut]

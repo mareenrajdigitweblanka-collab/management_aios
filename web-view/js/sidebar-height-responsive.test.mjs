@@ -29,10 +29,10 @@ var EXPECTED_NAV_TABS = [
   'root-aios', 'file-map',
   'mayurika-hr', 'suman-recruitment', 'arun-implementation', 'rajiv-blocked', 'paraparan',
   'staff-data', 'review-summaries', 'issues',
-  'knowledge-management'
+  'knowledge-management', 'announcements'
 ];
 
-var AUTH_LOCKED_TABS = ['staff-data', 'issues', 'knowledge-management'];
+var AUTH_LOCKED_TABS = ['staff-data', 'issues', 'knowledge-management', 'announcements'];
 
 // ── 1. One sidebar remains ──────────────────────────────────────────────
 
@@ -43,21 +43,21 @@ test('exactly one application sidebar <nav> remains in index.html', () => {
 
 // ── 2/3. All expected sidebar entries remain, none removed ─────────────
 
-test('all 11 expected sidebar nav items remain, each exactly once', () => {
+test('all 12 expected sidebar nav items remain, each exactly once', () => {
   EXPECTED_NAV_TABS.forEach(function (tab) {
     var matches = html.match(new RegExp('data-tab="' + tab + '"', 'g')) || [];
     assert.equal(matches.length, 1, tab + ' nav item should appear exactly once');
   });
 });
 
-test('exactly 11 .app-nav-btn sidebar buttons exist (no item removed)', () => {
+test('exactly 12 .app-nav-btn sidebar buttons exist (no item removed)', () => {
   var matches = html.match(/<button type="button" class="app-nav-btn[^"]*" data-tab="/g) || [];
   assert.equal(matches.length, EXPECTED_NAV_TABS.length);
 });
 
 // ── 4-7. Section headings remain ────────────────────────────────────────
 
-['Overview', 'Members', 'Staff', 'Knowledge'].forEach(function (heading) {
+['Overview', 'Members', 'Staff', 'Knowledge', 'Announcements'].forEach(function (heading) {
   test('"' + heading + '" sidebar section heading remains', () => {
     var re = new RegExp('<div class="app-sidebar-title">' + heading + '</div>');
     assert.match(html, re);
@@ -66,7 +66,7 @@ test('exactly 11 .app-nav-btn sidebar buttons exist (no item removed)', () => {
 
 // ── 8. Authenticated-only locked items remain represented ──────────────
 
-test('authenticated-only locked nav items (Data, Issues, Knowledge Management) remain in the sidebar markup', () => {
+test('authenticated-only locked nav items (Data, Issues, Knowledge Management, Announcements) remain in the sidebar markup', () => {
   AUTH_LOCKED_TABS.forEach(function (tab) {
     assert.match(html, new RegExp('data-tab="' + tab + '"'), tab + ' should remain in the sidebar');
   });

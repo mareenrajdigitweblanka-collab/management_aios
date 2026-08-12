@@ -24,6 +24,7 @@ import { initPlanningWarning } from './planning-warning.js';
 import { initReviewSummaries } from './review-summaries.js';
 import { initIssues } from './issues.js';
 import { initKnowledgeManagement } from './knowledge-management.js';
+import { initAnnouncements } from './announcements.js';
 import { initEntryAuthGate } from './entry-auth.js';
 
 function boot() {
@@ -44,6 +45,10 @@ function boot() {
   // only. Frontend-only, narrow first implementation — see
   // docs/knowledge-management-company-documents-requirement-2026-08-10.md.
   initKnowledgeManagement();
+  // REQ-ANN-001 (2026-08-12) — Announcement & Notification workspace +
+  // topbar bell. Backend-integrated from day one (unlike KM's initial
+  // frontend-only slice) — see backend/routers/announcements.py.
+  initAnnouncements();
 }
 
 function start() {

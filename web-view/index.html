@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./css/review-summaries.css" />
   <link rel="stylesheet" href="./css/issues.css" />
   <link rel="stylesheet" href="./css/knowledge-management.css" />
+  <link rel="stylesheet" href="./css/announcements.css" />
   <link rel="stylesheet" href="./css/entry-auth.css" />
 </head>
 
@@ -98,6 +99,11 @@
       <span class="topbar-calendar-auth-label" id="calendarAuthIndicatorLabel"></span>
       <button type="button" class="topbar-calendar-auth-change-btn" id="calendarAuthChangeTokenBtn">Change token</button>
     </div>
+    <!-- Announcement bell (REQ-ANN-001, 2026-08-12) — hidden until this
+         browser is authenticated (web-view/js/announcements.js
+         mountAnnouncementBell()), same convention as #calendarAuthIndicator
+         above. Populated entirely by JS; no static content here. -->
+    <div class="topbar-announcement-bell" id="announcementBell" hidden></div>
     <!-- Search moved into the top header (2026-07-20 header/sidebar UX task)
          — same #searchInput/#searchClear/#searchResults/#searchHint IDs and
          the same navigation.js doSearch()/data-searchable logic as before;
@@ -301,6 +307,19 @@
             </svg>
           </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Knowledge Management</span></span>
+        </button>
+      </div>
+      <div class="app-sidebar-group">
+        <div class="app-sidebar-title">Announcements</div>
+        <button type="button" class="app-nav-btn" data-tab="announcements" title="Announcements">
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 8.5h3.5L11 4.5v11L6.5 11.5H3z" />
+              <path d="M13.5 7.2a3 3 0 0 1 0 5.6" />
+            </svg>
+          </span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Announcements</span></span>
         </button>
       </div>
     </nav>
@@ -1756,6 +1775,22 @@
         data-tags="knowledge management company documents search team type google sheet doc"></div>
 
     </div><!-- /tab-knowledge-management -->
+
+
+    <!-- ══════════════════════════════════
+       TAB — ANNOUNCEMENTS (REQ-ANN-001, 2026-08-12)
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-announcements" role="tabpanel">
+
+      <div class="member-header">
+        <h2>Announcements</h2>
+        <p class="member-header-lede">Publish a centralized instruction and optionally notify specific members. Published announcements are permanent and visible to every authenticated member.</p>
+      </div>
+
+      <div class="msc-ann-workspace" id="announcementsWorkspace" data-searchable
+        data-tags="announcements notifications mentions draft publish read receipts bell"></div>
+
+    </div><!-- /tab-announcements -->
 
 
     <!-- ══════════════════════════════════

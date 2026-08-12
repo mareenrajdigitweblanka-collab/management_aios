@@ -17,6 +17,7 @@ from backend.config import (
     SERVICE_NAME,
     load_calendar_auth_token_hashes,
 )
+from backend.routers.announcements import router as announcements_router
 from backend.routers.calendar_auth import router as calendar_auth_router
 from backend.routers.knowledge_documents import router as knowledge_documents_router
 from backend.routers.member_leave import router as member_leave_router
@@ -86,6 +87,7 @@ app.include_router(staff_router)
 app.include_router(calendar_auth_router)
 app.include_router(staff_review_summaries_router)
 app.include_router(knowledge_documents_router)
+app.include_router(announcements_router)
 
 
 @app.get("/health", response_model=HealthResponse)

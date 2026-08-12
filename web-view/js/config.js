@@ -67,3 +67,16 @@ export var KNOWLEDGE_DOCUMENTS_API_BASE = (function () {
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
   return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
 }());
+
+/* Announcements & Notifications (REQ-ANN-001, 2026-08-12) — same
+   local-vs-production host detection as the five bases above, just a
+   different route prefix (backend/routers/announcements.py). Every route
+   requires a Calendar member token, same as STAFF_REVIEW_SUMMARIES_API_BASE
+   and the (revised) KNOWLEDGE_DOCUMENTS_API_BASE — there is no public GET
+   here, matching REQ-AUTH-MODULES-007's whole-module-gated convention. */
+export var ANNOUNCEMENTS_API_BASE = (function () {
+  var LOCAL_BASE = 'http://127.0.0.1:8000/api/announcements';
+  var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/announcements';
+  var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
+}());

@@ -31,7 +31,7 @@ export { CALENDAR_AUTH_CHANGED_EVENT };
    staff-data sub-panel within them is gated, directly by staff-data.js
    using isAuthenticated()/onAuthChange() below, not by hiding the whole
    Arun/Paraparan tab. */
-export var PROTECTED_TABS = ['staff-data', 'issues', 'knowledge-management'];
+export var PROTECTED_TABS = ['staff-data', 'issues', 'knowledge-management', 'announcements'];
 
 export function isProtectedTab(tabId) {
   return PROTECTED_TABS.indexOf(tabId) !== -1;
@@ -42,7 +42,8 @@ export function isProtectedTab(tabId) {
 var MODULE_LABELS = {
   'staff-data': 'Staff Data',
   'issues': 'Issues',
-  'knowledge-management': 'Knowledge Management'
+  'knowledge-management': 'Knowledge Management',
+  'announcements': 'Announcements'
 };
 
 export function moduleLabelForTab(tabId) {

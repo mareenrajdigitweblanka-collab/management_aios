@@ -597,3 +597,130 @@ class KnowledgeDocumentAuditLog(Base):
     detail = Column(JSON, nullable=True)
 
     occurred_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+
+
+class Announcement(Base):
+    """SQLAlchemy ORM model for management_aios.announcements (REQ-ANN-001).
+    Mirrors database/migrations/2026-08-12-create-announcements.sql exactly —
+    same "Python mapping only, SQL file is DDL truth" convention as every
+    other model above. That migration has NOT been executed against the
+    live database as of this class's introduction — see the migration
+    file's own DRAFT header and docs/2026-08-12_management-aios-
+    announcement-notification-technical-design.md §9.
+
+    Lifecycle: Draft -> Published only, enforced at the application layer
+    (backend/routers/announcements.py) via a lookup helper that scopes
+    every mutation route to status='Draft' AND created_by=acting_member —
+    a Published row is therefore structurally unreachable by any mutation
+    route, not merely conditionally rejected (technical design §5). No
+    route ever sets status back to 'Draft', and no route ever mutates
+    title/body/status once status='Published'.
+
+    Soft delete is Draft-only (announcements_delete_only_while_draft_check)
+    — a Published announcement is permanent and is never soft-deleted, per
+    the confirmed business rule. deleted_by only (no delete_reason column,
+    Phase-1 simplification — see requirement doc §8)."""
+
+    __tablename__ = "announcements"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('Draft', 'Published')",
+            name="announcements_status_check",
+        ),
+        CheckConstraint(
+            "(status = 'Draft' AND published_at IS NULL) "
+            "OR (status = 'Published' AND published_at IS NOT NULL)",
+            name="announcements_published_at_pairing_check",
+        ),
+        CheckConstraint(
+            "deleted_at IS NULL OR status = 'Draft'",
+            name="announcements_delete_only_while_draft_check",
+        ),
+        CheckConstraint(
+            "(deleted_at IS NULL AND deleted_by IS NULL) "
+            "OR (deleted_at IS NOT NULL AND deleted_by IS NOT NULL)",
+            name="announcements_soft_delete_pairing_check",
+        ),
+        CheckConstraint(
+            "length(trim(title)) > 0",
+            name="announcements_title_nonblank_check",
+        ),
+        CheckConstraint(
+            "length(trim(body)) > 0",
+            name="announcements_body_nonblank_check",
+        ),
+        CheckConstraint(
+            "length(body) <= 10000",
+            name="announcements_body_max_length_check",
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    title = Column(String(200), nullable=False)
+    body = Column(Text, nullable=False)
+
+    status = Column(String(20), nullable=False, server_default="Draft")
+
+    created_by = Column(String(80), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+
+    published_at = Column(DateTime(timezone=True), nullable=True)
+
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(String(80), nullable=True)
+
+
+class AnnouncementMention(Base):
+    """SQLAlchemy ORM model for management_aios.announcement_mentions
+    (REQ-ANN-001). One row per (announcement, mentioned member) — used for
+    BOTH the Draft-time mention selection AND the Published notification/
+    read state (technical design §3 — mandatory architecture correction;
+    there is no separate notifications table).
+
+    mentioned_member_key is a plain VARCHAR — deliberately not constrained
+    by a CheckConstraint against a hard-coded member list (technical design
+    §4). Membership is validated against backend.config.VALID_MEMBER_KEYS
+    at the application layer only, in backend/routers/announcements.py, so
+    a future membership change never requires a schema migration here.
+
+    notified_at is NULL for a pure Draft-time mention selection, and is set
+    exactly once (at Publish) for every mention row that exists at that
+    moment — every notification-facing query MUST filter
+    notified_at IS NOT NULL so a Draft's mention rows never appear as
+    notifications. read_at NULL means unread; a timestamp means read — the
+    sole read/unread signal, no separate boolean column."""
+
+    __tablename__ = "announcement_mentions"
+    __table_args__ = (
+        CheckConstraint(
+            "read_at IS NULL OR notified_at IS NOT NULL",
+            name="announcement_mentions_read_requires_notified_check",
+        ),
+        CheckConstraint(
+            "read_at IS NULL OR notified_at IS NULL OR read_at >= notified_at",
+            name="announcement_mentions_read_not_before_notified_check",
+        ),
+        Index(
+            "idx_announcement_mentions_unique_target",
+            "announcement_id",
+            "mentioned_member_key",
+            unique=True,
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    announcement_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("management_aios.announcements.id"),
+        nullable=False,
+    )
+
+    mentioned_member_key = Column(String(80), nullable=False)
+
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    notified_at = Column(DateTime(timezone=True), nullable=True)
+    read_at = Column(DateTime(timezone=True), nullable=True)

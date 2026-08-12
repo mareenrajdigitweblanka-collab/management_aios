@@ -23,14 +23,14 @@ function withEnv(testFn, envOpts) {
   };
 }
 
-test('PROTECTED_TABS is exactly Staff Data, Issues, Knowledge Management', withEnv(async () => {
+test('PROTECTED_TABS is exactly Staff Data, Issues, Knowledge Management, Announcements', withEnv(async () => {
   var mod = await loadModule();
-  assert.deepEqual(mod.PROTECTED_TABS, ['staff-data', 'issues', 'knowledge-management']);
+  assert.deepEqual(mod.PROTECTED_TABS, ['staff-data', 'issues', 'knowledge-management', 'announcements']);
 }));
 
-test('isProtectedTab: true only for the three protected tabs', withEnv(async () => {
+test('isProtectedTab: true only for the four protected tabs', withEnv(async () => {
   var mod = await loadModule();
-  ['staff-data', 'issues', 'knowledge-management'].forEach(function (id) {
+  ['staff-data', 'issues', 'knowledge-management', 'announcements'].forEach(function (id) {
     assert.equal(mod.isProtectedTab(id), true, id);
   });
   ['root-aios', 'file-map', 'review-summaries', 'mayurika-hr', null, undefined].forEach(function (id) {

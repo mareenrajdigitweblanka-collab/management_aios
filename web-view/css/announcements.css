@@ -1,0 +1,374 @@
+/* announcements.css — Announcement & Notification workspace (REQ-ANN-001,
+   2026-08-12). Every rule is namespaced under .msc-ann-* — this file adds
+   no global body/html/page-reset rule. Reuses existing design tokens
+   (tokens.css), the shared modal foundation (.msc-modal/.msc-modal-form/
+   .msc-modal-form-head from calendar.css), and the Knowledge Management
+   form-field primitives (.msc-km-field/.msc-km-field-label/.msc-km-input)
+   verbatim rather than re-declaring them — same "extend, don't duplicate"
+   convention documented at the top of knowledge-management.css. */
+
+.msc-ann-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.msc-ann-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.msc-ann-section-heading {
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.msc-ann-header-helper {
+  font-size: var(--font-sm);
+  color: var(--muted);
+  margin: 0;
+  max-width: 640px;
+}
+
+/* ── View tabs (Published History / My Drafts) — same visual pattern as
+   .msc-km-view-tab*, independently namespaced. ── */
+.msc-ann-view-tabs {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.msc-ann-view-tab {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.msc-ann-view-tab:hover {
+  color: var(--text);
+}
+
+.msc-ann-view-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.msc-ann-view-tab-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.msc-ann-view-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0 var(--radius) var(--radius) var(--radius);
+  padding: var(--space-5);
+}
+
+/* ── Loading / empty / error states ── */
+.msc-ann-loading,
+.msc-ann-empty-state,
+.msc-ann-empty {
+  text-align: center;
+  padding: var(--space-7) 0;
+  color: var(--muted);
+  font-size: var(--font-sm);
+}
+
+.msc-ann-error-state {
+  text-align: center;
+  padding: var(--space-6) 0;
+  color: var(--error);
+  font-size: var(--font-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.msc-ann-error {
+  color: var(--error);
+  font-size: var(--font-sm);
+}
+
+/* ── Announcement / Draft cards ── */
+.msc-ann-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.msc-ann-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  background: var(--surface);
+}
+
+.msc-ann-card-draft {
+  border-style: dashed;
+}
+
+.msc-ann-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.msc-ann-card-title {
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.msc-ann-card-meta {
+  font-size: var(--font-xs);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.msc-ann-card-body {
+  font-size: var(--font-sm);
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  margin: 0 0 var(--space-3) 0;
+}
+
+.msc-ann-card-mentions {
+  font-size: var(--font-xs);
+  color: var(--muted);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* ── Modal form (Create/Edit Draft) — reuses .msc-modal/.msc-modal-form/
+   .msc-modal-form-head from calendar.css and .msc-km-field/
+   .msc-km-field-label/.msc-km-input from knowledge-management.css. ── */
+.msc-ann-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.msc-ann-body-input {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.msc-ann-form-actions {
+  justify-content: flex-end;
+}
+
+.msc-ann-form-error {
+  color: var(--error);
+  font-size: var(--font-sm);
+  margin: 0;
+}
+
+/* ── Mention picker — simple multi-select checkbox list over the fixed
+   5-member registry (no free-text @typing, per REQ-ANN-001 §16). ── */
+.msc-ann-mention-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.msc-ann-mention-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.msc-ann-mention-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* ── Read receipts (creator-only) ── */
+.msc-ann-receipt-summary {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.msc-ann-receipt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.msc-ann-receipt-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-sm);
+}
+
+.msc-ann-receipt-read {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.msc-ann-receipt-unread {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* ── Topbar bell ── */
+.topbar-announcement-bell {
+  position: relative;
+  display: inline-flex;
+}
+
+.msc-ann-bell-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+
+.msc-ann-bell-btn:hover {
+  background: var(--surface-tint-2);
+}
+
+.msc-ann-bell-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.msc-ann-bell-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.msc-ann-bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.msc-ann-bell-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,.18));
+  z-index: 60;
+}
+
+.msc-ann-bell-empty {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--font-sm);
+  margin: 0;
+}
+
+.msc-ann-bell-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+
+.msc-ann-bell-item-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.msc-ann-bell-item-btn:hover {
+  background: var(--surface-tint-2);
+}
+
+.msc-ann-bell-item-unread .msc-ann-bell-item-btn {
+  background: var(--accent-light);
+}
+
+.msc-ann-bell-item-title {
+  font-size: var(--font-sm);
+  color: var(--text);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.msc-ann-bell-item-meta {
+  font-size: var(--font-2xs);
+  color: var(--muted);
+}
+
+/* ── Responsive — no horizontal overflow at narrow viewports ── */
+@media (max-width: 767px) {
+  .msc-ann-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .msc-ann-mention-list {
+    flex-direction: column;
+  }
+
+  .msc-ann-bell-dropdown {
+    width: calc(100vw - 24px);
+    right: -8px;
+  }
+}
