@@ -215,6 +215,13 @@ export function createFakeDocument() {
     _byId: {},
     _all: [],
     activeElement: null,
+    // REQ-ANN-001 Stage A (2026-08-12 follow-up) — announcements.js's bell
+    // now listens for 'visibilitychange' on document and reads
+    // document.visibilityState to trigger an immediate refresh when the
+    // tab regains focus. Defaults to 'visible' (matches every existing
+    // test's implicit "tab is focused" assumption); tests exercising the
+    // hidden-tab guard set this directly before dispatching.
+    visibilityState: 'visible',
     createElement: function (tag) { return new FakeElement(tag, doc); },
     createTextNode: function (text) { return new FakeTextNode(text); },
     // Entry-auth-gate eye-icon toggle (2026-08-11 follow-up) builds a real

@@ -2,11 +2,24 @@
 
 Operates against management_aios.announcements and
 management_aios.announcement_mentions — both created by
-database/migrations/2026-08-12-create-announcements.sql. As of this
-router's introduction, that migration has NOT been executed against the
-live database (see the migration file's own DRAFT header and
-docs/2026-08-12_management-aios-announcement-notification-technical-design.md
-§9) — this router never creates, alters, or drops that schema itself.
+database/migrations/2026-08-12-create-announcements.sql, executed against
+the live database on 2026-08-12 (see the migration file's own EXECUTED
+header and validation/announcement-notification-migration-execution-check-2026-08-12.md)
+— this router never creates, alters, or drops that schema itself.
+
+Self-mention (REQ-ANN-001 Stage A, 2026-08-12 production UX correction):
+the original REQ-ANN-001 §4/§8 design allowed a member to mention
+themselves. Production user acceptance on 2026-08-12 reversed that
+decision — a member may no longer mention themselves. Enforced here by
+_reject_self_mention (create + Draft update) and, on the read side, by
+excluding the creator from _mention_keys, from the read-receipts query,
+and from their own notification feed/unread count (_notification_query,
+added 2026-08-12 as a Stage A follow-up) — never by mutating historical
+announcement_mentions rows. Any self-mention row created before this
+change (Phase 1 / early production testing) is preserved in the database
+and is only ever filtered out at read time. The exclusion is scoped to
+Announcement.created_by == acting_member specifically — a legitimate
+mention on someone else's announcement is never affected.
 
 Access (REQ-ANN-001 §2, confirmed business rule — verbatim, no MD carve-out
 stated): any identity Depends(get_verified_member) resolves — the five
@@ -126,13 +139,19 @@ def _get_owned_draft_or_404(db: Session, announcement_id: UUID, acting_member: s
     return record
 
 
-def _mention_keys(db: Session, announcement_id: UUID) -> List[str]:
-    rows = (
-        db.query(AnnouncementMention.mentioned_member_key)
-        .filter(AnnouncementMention.announcement_id == announcement_id)
-        .order_by(asc(AnnouncementMention.mentioned_member_key))
-        .all()
+def _mention_keys(db: Session, announcement_id: UUID, exclude_member: str = None) -> List[str]:
+    """Mentioned member keys for an announcement. exclude_member (always
+    the announcement's own creator, passed by _to_out below) hides a
+    historical self-mention from every mention-display surface — Published
+    History's "Mentioned: ..." line and a Draft's mention-picker prefill —
+    without touching the underlying announcement_mentions row. Read-time
+    filter only; see module docstring."""
+    query = db.query(AnnouncementMention.mentioned_member_key).filter(
+        AnnouncementMention.announcement_id == announcement_id
     )
+    if exclude_member is not None:
+        query = query.filter(AnnouncementMention.mentioned_member_key != exclude_member)
+    rows = query.order_by(asc(AnnouncementMention.mentioned_member_key)).all()
     return [r[0] for r in rows]
 
 
@@ -146,8 +165,22 @@ def _to_out(db: Session, record: Announcement) -> AnnouncementOut:
         created_at=record.created_at,
         updated_at=record.updated_at,
         published_at=record.published_at,
-        mention_member_keys=_mention_keys(db, record.id),
+        mention_member_keys=_mention_keys(db, record.id, exclude_member=record.created_by),
     )
+
+
+_SELF_MENTION_DETAIL = "You cannot mention yourself in an announcement."
+
+
+def _reject_self_mention(acting_member: str, mention_member_keys: List[str]) -> None:
+    """Backend defense-in-depth for the frontend's own self-exclusion
+    (web-view/js/announcements.js's buildMentionPicker never renders the
+    acting member as a selectable option) — the API is directly callable
+    outside the UI, so this is the actual enforcement point. Called from
+    every mutation path that writes mention_member_keys: create and Draft
+    update (REQ-ANN-001 Stage A)."""
+    if acting_member in mention_member_keys:
+        raise HTTPException(status_code=422, detail=_SELF_MENTION_DETAIL)
 
 
 def _reconcile_mentions(db: Session, announcement_id: UUID, target_keys: List[str], now: datetime) -> None:
@@ -257,13 +290,37 @@ def list_own_drafts(
 
 # ── Notification feed / unread count ──────────────────────────────────────
 
+_BODY_PREVIEW_LIMIT = 140
+
+
+def _body_preview(body: str) -> str:
+    """Short excerpt used by the Notification History tab to identify an
+    announcement without a second request (REQ-ANN-001 Stage A §9) — the
+    body is already loaded (joined in every query below), so this is a
+    cheap in-memory truncation, never a separate query/column."""
+    trimmed = (body or "").strip()
+    if len(trimmed) <= _BODY_PREVIEW_LIMIT:
+        return trimmed
+    return trimmed[:_BODY_PREVIEW_LIMIT].rstrip() + "…"
+
 
 def _notification_query(db: Session, acting_member: str):
     """THE single query shape behind both the bell feed and the unread
     count — requires status='Published' AND notified_at IS NOT NULL, so a
     Draft's mention rows (notified_at IS NULL) can never appear here
     regardless of how long the Draft sits unpublished (technical design
-    §3 — mandatory architecture correction)."""
+    §3 — mandatory architecture correction).
+
+    Also excludes Announcement.created_by == acting_member (REQ-ANN-001
+    Stage A follow-up, 2026-08-12) — a member can no longer self-mention
+    going forward (_reject_self_mention), but a historical self-mention
+    row from before that change may still exist. Read-time filter only,
+    same pattern as _mention_keys/read-receipts: the row itself is never
+    modified or deleted. This only ever removes the acting member's OWN
+    self-mention from THEIR OWN feed — mentions on announcements created
+    by someone else are completely unaffected, since Announcement.created_by
+    is compared against acting_member, not against every mentioned_member_key
+    in general."""
     return (
         db.query(AnnouncementMention, Announcement)
         .join(Announcement, Announcement.id == AnnouncementMention.announcement_id)
@@ -272,6 +329,7 @@ def _notification_query(db: Session, acting_member: str):
             AnnouncementMention.notified_at.isnot(None),
             Announcement.status == "Published",
             Announcement.deleted_at.is_(None),
+            Announcement.created_by != acting_member,
         )
     )
 
@@ -284,10 +342,12 @@ def get_notification_feed(
 ):
     """Registered BEFORE GET /{announcement_id} — same static-path
     reasoning as GET /drafts above. Single endpoint for both the 30s
-    unread-count poll (read only .unread_count) and the bell dropdown
-    (read .items) — smallest API surface (REQ-ANN-001 §12) computed from
-    one consistent query so the two can never disagree. Never exposes
-    another member's feed — always scoped to acting_member."""
+    unread-count poll (read only .unread_count) and the Notification
+    History tab (read .items) — smallest API surface (REQ-ANN-001 §12)
+    computed from one consistent query so the two can never disagree.
+    Never exposes another member's feed — always scoped to acting_member.
+    Newest-notified-first (notified_at DESC) — the Notification History
+    tab renders this order verbatim (REQ-ANN-001 Stage A §9)."""
     base = _notification_query(db, acting_member)
     unread_count = base.filter(AnnouncementMention.read_at.is_(None)).count()
 
@@ -304,6 +364,7 @@ def get_notification_feed(
             created_by=announcement.created_by,
             published_at=announcement.published_at,
             read_at=mention.read_at,
+            body_preview=_body_preview(announcement.body),
         )
         for mention, announcement in rows
     ]
@@ -347,6 +408,7 @@ def mark_notification_read(
         created_by=announcement.created_by,
         published_at=announcement.published_at,
         read_at=mention.read_at,
+        body_preview=_body_preview(announcement.body),
     )
 
 
@@ -390,7 +452,9 @@ def create_announcement(
     AnnouncementCreate has no such field, so a client cannot spoof it.
     Mention rows are inserted with notified_at/read_at both NULL — pure
     Draft-time selections, invisible to every notification query until
-    Publish (technical design §3)."""
+    Publish (technical design §3). Self-mention is rejected before any
+    row is written (REQ-ANN-001 Stage A)."""
+    _reject_self_mention(acting_member, payload.mention_member_keys)
     now = _now()
     announcement = Announcement(
         title=payload.title,
@@ -428,8 +492,11 @@ def update_announcement_draft(
     """Creator-only, Draft-only (_get_owned_draft_or_404 — a Published id
     is invisible to this route, never a 409). mention_member_keys, when
     supplied (including []), replaces the full mention set; omitted means
-    unchanged."""
+    unchanged. Self-mention is rejected before any row is touched
+    (REQ-ANN-001 Stage A)."""
     announcement = _get_owned_draft_or_404(db, announcement_id, acting_member)
+    if payload.mention_member_keys is not None:
+        _reject_self_mention(acting_member, payload.mention_member_keys)
     now = _now()
 
     if payload.title is not None:
@@ -519,7 +586,14 @@ def get_read_receipts(
     """Published announcement creator only (REQ-ANN-001 §5/§12). A
     Published announcement not created by acting_member, a Draft id, or a
     nonexistent id are all a 404 either way — never disclosing another
-    creator's receipt list."""
+    creator's receipt list.
+
+    The creator is excluded from the receipt list and from
+    mentioned/read/unread counts (REQ-ANN-001 Stage A) — a creator can no
+    longer self-mention going forward, but historical self-mention rows
+    (Phase 1 / early production testing) may still exist. This is a
+    read-time filter only; the underlying announcement_mentions row, if
+    any, is never modified or deleted."""
     announcement = _get_published_or_404(db, announcement_id)
     if announcement.created_by != acting_member:
         raise HTTPException(status_code=404, detail=_NOT_FOUND_DETAIL)
@@ -529,6 +603,7 @@ def get_read_receipts(
         .filter(
             AnnouncementMention.announcement_id == announcement.id,
             AnnouncementMention.notified_at.isnot(None),
+            AnnouncementMention.mentioned_member_key != announcement.created_by,
         )
         .order_by(asc(AnnouncementMention.mentioned_member_key))
         .all()

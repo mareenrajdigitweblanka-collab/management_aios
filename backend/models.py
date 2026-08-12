@@ -603,10 +603,9 @@ class Announcement(Base):
     """SQLAlchemy ORM model for management_aios.announcements (REQ-ANN-001).
     Mirrors database/migrations/2026-08-12-create-announcements.sql exactly —
     same "Python mapping only, SQL file is DDL truth" convention as every
-    other model above. That migration has NOT been executed against the
-    live database as of this class's introduction — see the migration
-    file's own DRAFT header and docs/2026-08-12_management-aios-
-    announcement-notification-technical-design.md §9.
+    other model above. That migration was executed against the live
+    database on 2026-08-12 — see the migration file's own EXECUTED header
+    and validation/announcement-notification-migration-execution-check-2026-08-12.md.
 
     Lifecycle: Draft -> Published only, enforced at the application layer
     (backend/routers/announcements.py) via a lookup helper that scopes

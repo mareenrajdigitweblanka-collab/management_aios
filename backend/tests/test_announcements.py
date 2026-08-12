@@ -98,6 +98,26 @@ class AnnouncementsTestCase(unittest.TestCase):
         session.close()
         return row
 
+    def insert_mention_row(self, announcement_id, member_key, notified_at=None, read_at=None):
+        """Directly inserts an AnnouncementMention row via the ORM,
+        bypassing the API's _reject_self_mention guard entirely — used
+        only to simulate a historical self-mention row that predates the
+        Stage A rule change (REQ-ANN-001 Stage A §5/§6/§7); the API can no
+        longer create one, so this is the only way to reproduce that state
+        in a test. Never used to test anything the API itself should
+        allow."""
+        session = self.make_session()
+        row = AnnouncementMention(
+            announcement_id=self._as_uuid(announcement_id),
+            mentioned_member_key=member_key,
+            created_at=datetime.now(timezone.utc),
+            notified_at=notified_at,
+            read_at=read_at,
+        )
+        session.add(row)
+        session.commit()
+        session.close()
+
     # ── Auth ───────────────────────────────────────────────────────────
 
     def test_unauthenticated_blocked_on_every_surface(self):
@@ -400,14 +420,206 @@ class AnnouncementsTestCase(unittest.TestCase):
         resp = self.client.get(f"{BASE}/{created['id']}/read-receipts", headers=bearer_header("arun"))
         self.assertEqual(resp.status_code, 404)
 
-    # ── Self-mention ───────────────────────────────────────────────────
+    # ── Self-mention (REQ-ANN-001 Stage A, 2026-08-12 production UX
+    #    correction) ────────────────────────────────────────────────────
+    #
+    # Self-mention was explicitly ALLOWED under the original REQ-ANN-001
+    # §4/§8 design. Production user acceptance on 2026-08-12 reversed that
+    # decision: a member may no longer mention themselves. These tests
+    # replace the old test_self_mention_allowed_and_notifies_creator,
+    # which asserted the now-reversed behavior.
 
-    def test_self_mention_allowed_and_notifies_creator(self):
-        created = self.create_draft("mayurika", mentions=["mayurika"])
+    def test_self_mention_rejected_on_create(self):
+        resp = self.client.post(
+            BASE,
+            json={"title": "x", "body": "y", "mention_member_keys": ["mayurika"]},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+        # The guard runs before any row is written — nothing was created.
+        listed = self.client.get(f"{BASE}/drafts", headers=bearer_header("mayurika")).json()
+        self.assertEqual(listed["total"], 0)
+
+    def test_self_mention_alongside_other_members_rejected_entirely(self):
+        resp = self.client.post(
+            BASE,
+            json={"title": "x", "body": "y", "mention_member_keys": ["arun", "mayurika"]},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+        # All-or-nothing — a self-mention anywhere in the list rejects the
+        # whole request, it does not silently drop just the self entry.
+        listed = self.client.get(f"{BASE}/drafts", headers=bearer_header("mayurika")).json()
+        self.assertEqual(listed["total"], 0)
+
+    def test_self_mention_rejected_on_draft_update(self):
+        created = self.create_draft("mayurika", mentions=["arun"])
+        resp = self.client.patch(
+            f"{BASE}/{created['id']}",
+            json={"mention_member_keys": ["mayurika"]},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+        # Original mention set untouched by the rejected edit.
+        reopened = self.client.get(f"{BASE}/{created['id']}", headers=bearer_header("mayurika")).json()
+        self.assertEqual(reopened["mention_member_keys"], ["arun"])
+
+    def test_other_members_still_mentionable_after_self_mention_rejected(self):
+        rejected = self.client.post(
+            BASE,
+            json={"title": "x", "body": "y", "mention_member_keys": ["mayurika"]},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(rejected.status_code, 422)
+        # The same acting member can still create and multi-mention normally.
+        created = self.create_draft("mayurika", mentions=["arun", "suman"])
+        self.assertEqual(sorted(created["mention_member_keys"]), ["arun", "suman"])
+
+    def test_invalid_member_key_rejected_independent_of_self_mention_rule(self):
+        # Confirms the pre-existing invalid-member-key 422 (schema-layer,
+        # backend/schemas.py _validate_mention_keys) is unaffected by the
+        # new router-layer self-mention guard — different validator,
+        # different layer, both still correct on their own terms.
+        resp = self.client.post(
+            BASE,
+            json={"title": "x", "body": "y", "mention_member_keys": ["not-a-real-member"]},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    # ── Historical self-mention (REQ-ANN-001 Stage A §5/§6/§7) ──────────
+    #
+    # Self-mention rows can no longer be created via the API (see above),
+    # but rows created before this change (Phase 1 / early production
+    # testing) must remain readable-but-filtered — NEVER deleted or
+    # mutated. These tests insert such a row directly via the ORM
+    # (insert_mention_row, bypassing the now-guarded API) to simulate that
+    # historical state in an isolated test database only.
+
+    def test_historical_self_mention_excluded_from_read_receipts(self):
+        created = self.create_draft("mayurika", mentions=["arun"])
+        self.publish("mayurika", created["id"])
+        self.insert_mention_row(created["id"], "mayurika", notified_at=datetime.now(timezone.utc))
+
+        resp = self.client.get(f"{BASE}/{created['id']}/read-receipts", headers=bearer_header("mayurika"))
+        self.assertEqual(resp.status_code, 200, resp.text)
+        body = resp.json()
+        self.assertEqual(body["mentioned_count"], 1)
+        self.assertEqual(body["unread_count"], 1)
+        keys = [r["member_key"] for r in body["receipts"]]
+        self.assertNotIn("mayurika", keys)
+        self.assertIn("arun", keys)
+
+        # Read-time filter only — the historical row itself is untouched.
+        self.assertIsNotNone(self.get_mention_row(created["id"], "mayurika"))
+
+    def test_creator_excluded_from_published_mention_display(self):
+        created = self.create_draft("mayurika", mentions=["arun"])
+        self.publish("mayurika", created["id"])
+        self.insert_mention_row(created["id"], "mayurika", notified_at=datetime.now(timezone.utc))
+
+        history = self.client.get(BASE, headers=bearer_header("arun")).json()
+        record = next(r for r in history["records"] if r["id"] == created["id"])
+        self.assertNotIn("mayurika", record["mention_member_keys"])
+        self.assertIn("arun", record["mention_member_keys"])
+
+    def test_other_member_read_receipts_unaffected_by_historical_self_mention(self):
+        created = self.create_draft("mayurika", mentions=["arun", "suman"])
+        self.publish("mayurika", created["id"])
+        self.insert_mention_row(created["id"], "mayurika", notified_at=datetime.now(timezone.utc))
+
+        feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("arun")).json()
+        mention_id = feed["items"][0]["mention_id"]
+        self.client.post(f"{BASE}/notifications/{mention_id}/read", headers=bearer_header("arun"))
+
+        resp = self.client.get(f"{BASE}/{created['id']}/read-receipts", headers=bearer_header("mayurika")).json()
+        self.assertEqual(resp["mentioned_count"], 2)
+        self.assertEqual(resp["read_count"], 1)
+        self.assertEqual(resp["unread_count"], 1)
+        by_key = {r["member_key"]: r["read"] for r in resp["receipts"]}
+        self.assertTrue(by_key["arun"])
+        self.assertFalse(by_key["suman"])
+        self.assertNotIn("mayurika", by_key)
+
+    def test_individual_read_isolation_holds_alongside_historical_self_mention(self):
+        created = self.create_draft("mayurika", mentions=["arun"])
+        self.publish("mayurika", created["id"])
+        self.insert_mention_row(created["id"], "mayurika", notified_at=datetime.now(timezone.utc))
+
+        # Marking arun's own notification read must not touch the
+        # historical self-mention row's read_at.
+        feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("arun")).json()
+        mention_id = feed["items"][0]["mention_id"]
+        self.client.post(f"{BASE}/notifications/{mention_id}/read", headers=bearer_header("arun"))
+
+        self_row = self.get_mention_row(created["id"], "mayurika")
+        self.assertIsNone(self_row.read_at)
+
+    def test_historical_self_mention_excluded_from_notification_feed_and_unread_count(self):
+        # Consistency follow-up (2026-08-12): Stage A already filtered
+        # read receipts and mention display; this closes the remaining
+        # gap — the acting member's own notification feed/unread count
+        # must not surface their own historical self-mention either.
+        created = self.create_draft("mayurika", mentions=["suman"])
+        self.publish("mayurika", created["id"])
+        self.insert_mention_row(created["id"], "mayurika", notified_at=datetime.now(timezone.utc))
+
+        # A: historical row is physically present in the DB before we assert anything else.
+        self.assertIsNotNone(self.get_mention_row(created["id"], "mayurika"))
+
+        # B + C: creator's own feed and unread count exclude the self-mention.
+        mayurika_feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("mayurika")).json()
+        self.assertEqual(mayurika_feed["unread_count"], 0)
+        self.assertEqual(mayurika_feed["items"], [])
+
+        # D: the legitimate mention to another member is completely unaffected.
+        suman_feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("suman")).json()
+        self.assertEqual(suman_feed["unread_count"], 1)
+        self.assertEqual(len(suman_feed["items"]), 1)
+        self.assertEqual(suman_feed["items"][0]["announcement_id"], created["id"])
+
+        # E: no mutation — the historical row is untouched (still present, still unread).
+        self_row_after = self.get_mention_row(created["id"], "mayurika")
+        self.assertIsNotNone(self_row_after)
+        self.assertIsNone(self_row_after.read_at)
+
+    def test_mentions_from_other_creators_unaffected_by_own_self_mention_feed_filter(self):
+        # Proves the exclusion is scoped to Announcement.created_by ==
+        # acting_member specifically, not a blanket "hide anything
+        # mentioning mayurika" rule — a legitimate mention on someone
+        # ELSE's announcement must still appear in Mayurika's own feed,
+        # even while she also has an unrelated historical self-mention.
+        arun_announcement = self.create_draft("arun", mentions=["mayurika"])
+        self.publish("arun", arun_announcement["id"])
+
+        own_announcement = self.create_draft("mayurika", mentions=["suman"])
+        self.publish("mayurika", own_announcement["id"])
+        self.insert_mention_row(own_announcement["id"], "mayurika", notified_at=datetime.now(timezone.utc))
+
+        mayurika_feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("mayurika")).json()
+        self.assertEqual(mayurika_feed["unread_count"], 1)
+        announcement_ids = [item["announcement_id"] for item in mayurika_feed["items"]]
+        self.assertIn(arun_announcement["id"], announcement_ids)
+        self.assertNotIn(own_announcement["id"], announcement_ids)
+
+    def test_self_mention_rejection_still_enforced_after_notification_feed_fix(self):
+        # The notification-feed read-time filter above must not loosen
+        # the existing create/update-time rejection in any way.
+        resp = self.client.post(
+            BASE,
+            json={"title": "x", "body": "y", "mention_member_keys": ["mayurika"]},
+            headers=bearer_header("mayurika"),
+        )
+        self.assertEqual(resp.status_code, 422)
+
+    # ── Notification History body_preview (REQ-ANN-001 Stage A §9) ─────
+
+    def test_notification_feed_items_include_body_preview(self):
+        created = self.create_draft("mayurika", body="Please review your responsibilities.", mentions=["arun"])
         self.publish("mayurika", created["id"])
 
-        feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("mayurika")).json()
-        self.assertEqual(feed["unread_count"], 1)
+        feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("arun")).json()
+        self.assertEqual(feed["items"][0]["body_preview"], "Please review your responsibilities.")
 
 
 if __name__ == "__main__":

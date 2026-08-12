@@ -1303,8 +1303,17 @@ def _dedup_preserve_order(values: List[str]) -> List[str]:
 
 def _validate_mention_keys(value: Optional[List[str]]) -> List[str]:
     """Shared validator for both Create and Update — zero, one, or many
-    mentions are all legal (REQ-ANN-001 §4). Self-mention is explicitly
-    allowed (no suppression at this layer — see requirement doc §8).
+    mentions are all legal (REQ-ANN-001 §4). This layer only checks
+    dedup + membership — it cannot reject self-mention here because a
+    Pydantic field_validator never sees the authenticated acting_member
+    (identity resolves later, in the router, via
+    Depends(get_verified_member)). Self-mention rejection is enforced by
+    backend/routers/announcements.py's _reject_self_mention, called from
+    create_announcement and update_announcement_draft — the only two
+    places both the mention list and acting_member are in scope
+    (REQ-ANN-001 Stage A, 2026-08-12 production UX correction — self-
+    mention was allowed in the original REQ-ANN-001 §4/§8 design; the
+    2026-08-12 production acceptance review reversed that decision).
     Duplicate selections are silently deduplicated (defense-in-depth; the
     frontend picker already prevents them and the DB's own unique index is
     the final backstop). An unknown member_key is a hard 422 — never
@@ -1426,10 +1435,15 @@ class AnnouncementListResponse(BaseModel):
 
 
 class AnnouncementMentionNotificationOut(BaseModel):
-    """One row of the bell dropdown feed (GET /api/announcements/
-    notifications) — always scoped server-side to the current member's own
-    mentions on Published announcements only (notified_at IS NOT NULL);
-    never another member's feed (REQ-ANN-001 §7)."""
+    """One row of the notification feed (GET /api/announcements/
+    notifications) — powers both the bell's unread-count poll and the
+    Notification History tab (REQ-ANN-001 Stage A §8/§9). Always scoped
+    server-side to the current member's own mentions on Published
+    announcements only (notified_at IS NOT NULL); never another member's
+    feed (REQ-ANN-001 §7). body_preview is a short, truncated excerpt of
+    the announcement body — enough to identify the announcement in the
+    history list without a second request; see
+    backend/routers/announcements.py _body_preview."""
 
     mention_id: UUID
     announcement_id: UUID
@@ -1437,6 +1451,7 @@ class AnnouncementMentionNotificationOut(BaseModel):
     created_by: str
     published_at: Optional[datetime] = None
     read_at: Optional[datetime] = None
+    body_preview: Optional[str] = None
 
 
 class AnnouncementUnreadCountOut(BaseModel):
@@ -1444,11 +1459,11 @@ class AnnouncementUnreadCountOut(BaseModel):
 
 
 class AnnouncementNotificationFeedOut(BaseModel):
-    """Response for GET /api/announcements/notifications — the single bell
-    endpoint (smallest API surface, REQ-ANN-001 §12): the 30s poll only
-    needs unread_count; opening the dropdown needs items too. Both are
-    computed from the same scoped query (current member, Published,
-    notified_at IS NOT NULL) so the two can never disagree."""
+    """Response for GET /api/announcements/notifications — the single
+    notification endpoint (smallest API surface, REQ-ANN-001 §12): the 30s
+    poll only needs unread_count; the Notification History tab needs items
+    too. Both are computed from the same scoped query (current member,
+    Published, notified_at IS NOT NULL) so the two can never disagree."""
 
     unread_count: int
     items: List[AnnouncementMentionNotificationOut]

@@ -52,8 +52,16 @@ import { lockBodyScroll, unlockBodyScroll } from './ui/scroll-lock.js';
 
 export var EMPTY_HISTORY_TEXT = 'No announcements have been published yet.';
 export var EMPTY_DRAFTS_TEXT = 'You have no Drafts.';
+export var EMPTY_NOTIFICATIONS_TEXT = 'You have no notifications yet.';
 export var LOADING_TEXT = 'Loading announcements...';
 export var ERROR_TEXT = 'Unable to load announcements.';
+
+/* GET /api/announcements/notifications caps `limit` at 100
+   (backend/routers/announcements.py: Query(default=20, ge=1, le=100)) —
+   unlike listPublished/listDrafts, which allow up to 500. The
+   Notification History tab requests the endpoint's actual maximum, not
+   the 200 those other lists use. */
+var NOTIFICATION_HISTORY_LIMIT = 100;
 
 /* The exact 5-member mention target pool — the same ASSIGNEE_ORDER
    convention issues.js already established for its own single-select
@@ -200,12 +208,14 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
     update: updateAnnouncementDraft,
     remove: deleteAnnouncementDraft,
     publish: publishAnnouncementDraft,
-    readReceipts: getReadReceipts
+    readReceipts: getReadReceipts,
+    notifications: getNotificationFeed,
+    markRead: markNotificationRead
   };
   var onChanged = typeof opts.onChanged === 'function' ? opts.onChanged : function () {};
 
   var state = {
-    view: 'history', // 'history' | 'drafts'
+    view: 'history', // 'history' | 'drafts' | 'notifications'
     historyStatus: 'loading', // 'loading' | 'data' | 'empty' | 'error'
     historyRecords: [],
     historyErrorMessage: null,
@@ -213,7 +223,11 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
     draftsStatus: 'loading',
     draftRecords: [],
     draftsErrorMessage: null,
-    draftsRequestId: 0
+    draftsRequestId: 0,
+    notificationsStatus: 'loading',
+    notificationItems: [],
+    notificationsErrorMessage: null,
+    notificationsRequestId: 0
   };
 
   mountEl.textContent = '';
@@ -222,7 +236,7 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
 
   if (!isAuthorized()) {
     mountEl.appendChild(buildAuthRequiredNotice('announcements'));
-    return { getState: function () { return state; }, reload: function () {} };
+    return { getState: function () { return state; }, reload: function () {}, showNotificationHistory: function () {} };
   }
 
   // ── Header + Create button ──────────────────────────────────────────
@@ -259,8 +273,16 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
   draftsTabBtn.setAttribute('aria-controls', 'msc-ann-view-panel-drafts');
   draftsTabBtn.textContent = 'My Drafts';
 
+  var notificationsTabBtn = el('button', 'msc-ann-view-tab');
+  notificationsTabBtn.type = 'button';
+  notificationsTabBtn.id = 'msc-ann-view-tab-notifications';
+  notificationsTabBtn.setAttribute('role', 'tab');
+  notificationsTabBtn.setAttribute('aria-controls', 'msc-ann-view-panel-notifications');
+  notificationsTabBtn.textContent = 'Notification History';
+
   viewTabs.appendChild(historyTabBtn);
   viewTabs.appendChild(draftsTabBtn);
+  viewTabs.appendChild(notificationsTabBtn);
   mountEl.appendChild(viewTabs);
 
   var historyPanel = el('div', 'msc-ann-view-panel');
@@ -276,17 +298,32 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
   draftsPanel.hidden = true;
   mountEl.appendChild(draftsPanel);
 
+  var notificationsPanel = el('div', 'msc-ann-view-panel');
+  notificationsPanel.id = 'msc-ann-view-panel-notifications';
+  notificationsPanel.setAttribute('role', 'tabpanel');
+  notificationsPanel.setAttribute('aria-labelledby', 'msc-ann-view-tab-notifications');
+  notificationsPanel.hidden = true;
+  mountEl.appendChild(notificationsPanel);
+
   function setView(view) {
     state.view = view;
     historyTabBtn.classList.toggle('msc-ann-view-tab-active', view === 'history');
     draftsTabBtn.classList.toggle('msc-ann-view-tab-active', view === 'drafts');
+    notificationsTabBtn.classList.toggle('msc-ann-view-tab-active', view === 'notifications');
     historyTabBtn.setAttribute('aria-selected', view === 'history' ? 'true' : 'false');
     draftsTabBtn.setAttribute('aria-selected', view === 'drafts' ? 'true' : 'false');
+    notificationsTabBtn.setAttribute('aria-selected', view === 'notifications' ? 'true' : 'false');
     historyPanel.hidden = view !== 'history';
     draftsPanel.hidden = view !== 'drafts';
+    notificationsPanel.hidden = view !== 'notifications';
+    // Switching TO Notification History is a plain tab switch, not a read
+    // action — it must never mark anything read (REQ-ANN-001 Stage A §10).
+    // Only the per-item click handler in openNotificationItem() below ever
+    // calls api.markRead.
   }
   historyTabBtn.addEventListener('click', function () { setView('history'); });
   draftsTabBtn.addEventListener('click', function () { setView('drafts'); });
+  notificationsTabBtn.addEventListener('click', function () { setView('notifications'); });
   setView('history');
 
   // ── Modal shell — one lazy singleton, reconfigured per open() call,
@@ -359,7 +396,13 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
     var selected = {};
     (selectedKeys || []).forEach(function (k) { selected[k] = true; });
 
-    MENTION_TARGET_ORDER.forEach(function (key) {
+    // A member cannot mention themselves (REQ-ANN-001 Stage A). Filters the
+    // one existing target list — no second member source — against the
+    // currently authenticated member, so the option is never offered.
+    var currentMemberKey = getStoredMemberKey();
+    var pickerTargets = MENTION_TARGET_ORDER.filter(function (key) { return key !== currentMemberKey; });
+
+    pickerTargets.forEach(function (key) {
       var row = el('label', 'msc-ann-mention-row');
       var checkbox = el('input', 'msc-ann-mention-checkbox');
       checkbox.type = 'checkbox';
@@ -690,18 +733,136 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
     });
   }
 
+  // ── Notification History (current member only) ──────────────────────
+  //
+  // Scoped entirely by the existing GET /api/announcements/notifications
+  // route (acting_member is always server-derived — never another
+  // member's feed). Newest-notified-first is already the API's own order
+  // (notified_at DESC — see backend/routers/announcements.py
+  // _notification_query); this view renders that order verbatim, no
+  // client-side re-sort.
+
+  function openNotificationItem(item, trigger) {
+    function showAnnouncement() {
+      ensureModal().open(item.title, function (bodyEl) {
+        bodyEl.appendChild(textEl('p', 'msc-ann-loading', 'Loading announcement…'));
+        api.detail(item.announcement_id).then(function (record) {
+          bodyEl.textContent = '';
+          bodyEl.appendChild(textEl(
+            'p', 'msc-ann-card-meta',
+            '@' + displayName(record.created_by) + ' · ' + formatTimestamp(record.published_at)
+          ));
+          bodyEl.appendChild(textEl('p', 'msc-ann-card-body', record.body));
+        }, function (err) {
+          bodyEl.textContent = '';
+          bodyEl.appendChild(textEl('p', 'msc-ann-error', mapApiError(err).message));
+        });
+      }, trigger);
+    }
+
+    // Idempotent by construction: an already-read item never calls
+    // api.markRead again — it just opens the announcement. Only an unread
+    // item's click marks THAT ONE mention read; every other item's
+    // read/unread state (this member's other notifications, and every
+    // other member's own notification list) is untouched.
+    if (item.read_at) {
+      showAnnouncement();
+      return;
+    }
+    api.markRead(item.mention_id).then(function (updated) {
+      item.read_at = updated.read_at;
+      renderNotificationHistory();
+      onChanged(); // refreshes the bell's unread badge
+      showAnnouncement();
+    }, function () {
+      // Non-fatal — the member can still view the announcement even if the
+      // read-marking call failed; the item just stays visually unread
+      // until the next successful mark/poll.
+      showAnnouncement();
+    });
+  }
+
+  function renderNotificationHistory() {
+    notificationsPanel.textContent = '';
+
+    if (state.notificationsStatus === 'loading') {
+      notificationsPanel.appendChild(textEl('div', 'msc-ann-loading', LOADING_TEXT));
+      return;
+    }
+    if (state.notificationsStatus === 'error') {
+      var errWrap = el('div', 'msc-ann-error-state');
+      errWrap.setAttribute('role', 'alert');
+      errWrap.appendChild(textEl('p', '', state.notificationsErrorMessage || ERROR_TEXT));
+      var retryBtn = el('button', 'msc-btn msc-btn-ghost');
+      retryBtn.type = 'button';
+      retryBtn.textContent = 'Retry';
+      retryBtn.addEventListener('click', loadNotificationHistory);
+      errWrap.appendChild(retryBtn);
+      notificationsPanel.appendChild(errWrap);
+      return;
+    }
+    if (!state.notificationItems.length) {
+      notificationsPanel.appendChild(textEl('div', 'msc-ann-empty-state', EMPTY_NOTIFICATIONS_TEXT));
+      return;
+    }
+
+    var list = el('ul', 'msc-ann-notification-list');
+    state.notificationItems.forEach(function (item) {
+      var li = el('li', 'msc-ann-notification-item' + (item.read_at ? '' : ' msc-ann-notification-item-unread'));
+      var btn = el('button', 'msc-ann-notification-item-btn');
+      btn.type = 'button';
+      btn.appendChild(textEl('span', 'msc-ann-notification-item-title', item.title));
+      btn.appendChild(textEl(
+        'span', 'msc-ann-notification-item-meta',
+        '@' + displayName(item.created_by) + ' · ' + formatTimestamp(item.published_at)
+      ));
+      if (item.body_preview) {
+        btn.appendChild(textEl('span', 'msc-ann-notification-item-preview', item.body_preview));
+      }
+      btn.appendChild(textEl(
+        'span',
+        item.read_at ? 'msc-ann-notification-item-read' : 'msc-ann-notification-item-unread-label',
+        item.read_at ? 'Read' : 'Unread'
+      ));
+      btn.addEventListener('click', function () { openNotificationItem(item, btn); });
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+    notificationsPanel.appendChild(list);
+  }
+
+  function loadNotificationHistory() {
+    state.notificationsStatus = 'loading';
+    state.notificationsErrorMessage = null;
+    renderNotificationHistory();
+    var requestId = ++state.notificationsRequestId;
+    api.notifications(NOTIFICATION_HISTORY_LIMIT).then(function (result) {
+      if (requestId !== state.notificationsRequestId) { return; }
+      state.notificationItems = result.items || [];
+      state.notificationsStatus = 'data';
+      renderNotificationHistory();
+    }, function (err) {
+      if (requestId !== state.notificationsRequestId) { return; }
+      state.notificationsStatus = 'error';
+      state.notificationsErrorMessage = mapApiError(err).message || ERROR_TEXT;
+      renderNotificationHistory();
+    });
+  }
+
   createBtn.addEventListener('click', function () { openDraftEditor(null, createBtn); });
 
   loadHistory();
   loadDrafts();
+  loadNotificationHistory();
 
   return {
     getState: function () { return state; },
-    reload: function () { loadHistory(); loadDrafts(); }
+    reload: function () { loadHistory(); loadDrafts(); loadNotificationHistory(); },
+    showNotificationHistory: function () { setView('notifications'); }
   };
 }
 
-// ── Bell (topbar unread notification indicator + dropdown) ──────────────
+// ── Bell (topbar unread-count indicator) ─────────────────────────────────
 
 var POLL_INTERVAL_MS = 30000;
 
@@ -709,17 +870,23 @@ var POLL_INTERVAL_MS = 30000;
    #announcementBell region (web-view/index.html). Independent of the
    Announcements tab panel — the bell is visible from every tab once
    authenticated, matching #calendarAuthIndicator's own always-in-topbar
-   convention. opts.api lets tests inject fixture request functions. */
+   convention. opts.api lets tests inject fixture request functions.
+
+   REQ-ANN-001 Stage A §12: the bell is a navigation trigger, not a
+   popover. It no longer owns a dropdown or any mark-read logic — clicking
+   it opens the Announcements module's Notification History tab (the one
+   persistent, primary destination for notifications; see
+   mountAnnouncementsWorkspace's notifications view above), which owns all
+   per-item rendering and read-marking. This removes the previous
+   dropdown's separate, parallel notification-item rendering entirely
+   rather than maintaining two implementations that could drift. */
 export function mountAnnouncementBell(rootEl, opts) {
   if (!rootEl) { return null; }
   opts = opts || {};
-  var api = opts.api || {
-    feed: getNotificationFeed,
-    markRead: markNotificationRead
-  };
+  var api = opts.api || { feed: getNotificationFeed };
 
   var pollTimer = null;
-  var state = { unreadCount: 0, items: [], open: false };
+  var state = { unreadCount: 0 };
 
   rootEl.textContent = '';
 
@@ -733,9 +900,7 @@ export function mountAnnouncementBell(rootEl, opts) {
 
   var bellBtn = el('button', 'msc-ann-bell-btn');
   bellBtn.type = 'button';
-  bellBtn.setAttribute('aria-haspopup', 'true');
-  bellBtn.setAttribute('aria-expanded', 'false');
-  bellBtn.setAttribute('aria-label', 'Announcement notifications');
+  bellBtn.setAttribute('aria-label', 'Open notification history');
   var bellIcon = textEl('span', 'msc-ann-bell-icon', '🔔');
   bellIcon.setAttribute('aria-hidden', 'true');
   var badge = textEl('span', 'msc-ann-bell-badge', '0');
@@ -743,11 +908,6 @@ export function mountAnnouncementBell(rootEl, opts) {
   bellBtn.appendChild(bellIcon);
   bellBtn.appendChild(badge);
   rootEl.appendChild(bellBtn);
-
-  var dropdown = el('div', 'msc-ann-bell-dropdown');
-  dropdown.hidden = true;
-  dropdown.setAttribute('role', 'menu');
-  rootEl.appendChild(dropdown);
 
   function renderBadge() {
     if (state.unreadCount > 0) {
@@ -758,65 +918,15 @@ export function mountAnnouncementBell(rootEl, opts) {
     }
   }
 
-  function renderDropdown() {
-    dropdown.textContent = '';
-    if (!state.items.length) {
-      dropdown.appendChild(textEl('p', 'msc-ann-bell-empty', 'No mentions yet.'));
-      return;
-    }
-    var list = el('ul', 'msc-ann-bell-list');
-    state.items.forEach(function (item) {
-      var li = el('li', 'msc-ann-bell-item' + (item.read_at ? '' : ' msc-ann-bell-item-unread'));
-      li.setAttribute('role', 'menuitem');
-      var btn = el('button', 'msc-ann-bell-item-btn');
-      btn.type = 'button';
-      var title = textEl('span', 'msc-ann-bell-item-title', '@You were mentioned — ' + item.title);
-      var meta = textEl('span', 'msc-ann-bell-item-meta', formatTimestamp(item.published_at));
-      btn.appendChild(title);
-      btn.appendChild(meta);
-      btn.addEventListener('click', function () {
-        if (!item.read_at) {
-          api.markRead(item.mention_id).then(function () {
-            refresh();
-          }, function () {
-            // Non-fatal — badge simply stays stale until the next poll.
-          });
-        }
-        closeDropdown();
-        if (typeof opts.onOpenAnnouncement === 'function') { opts.onOpenAnnouncement(item.announcement_id); }
-      });
-      li.appendChild(btn);
-      list.appendChild(li);
-    });
-    dropdown.appendChild(list);
-  }
-
-  function openDropdown() {
-    state.open = true;
-    dropdown.hidden = false;
-    bellBtn.setAttribute('aria-expanded', 'true');
-  }
-  function closeDropdown() {
-    state.open = false;
-    dropdown.hidden = true;
-    bellBtn.setAttribute('aria-expanded', 'false');
-  }
-
   bellBtn.addEventListener('click', function () {
-    if (state.open) { closeDropdown(); return; }
-    openDropdown();
     refresh();
-  });
-  document.addEventListener('click', function (e) {
-    if (state.open && !rootEl.contains(e.target)) { closeDropdown(); }
+    if (typeof opts.onOpenHistory === 'function') { opts.onOpenHistory(); }
   });
 
   function refresh() {
     return api.feed(20).then(function (result) {
       state.unreadCount = result.unread_count || 0;
-      state.items = result.items || [];
       renderBadge();
-      if (state.open) { renderDropdown(); }
     }, function () {
       // Silent — a failed poll must never surface a toast/error UI; the
       // badge simply keeps its last-known value until the next successful poll.
@@ -833,10 +943,25 @@ export function mountAnnouncementBell(rootEl, opts) {
     if (pollTimer) { window.clearInterval(pollTimer); pollTimer = null; }
   }
 
+  /* REQ-ANN-001 Stage A §13: the one polling UX fix in scope for this
+     stage — the interval itself stays 30s, but the badge no longer waits
+     up to a full tick after the tab regains focus. Removed on stop() so a
+     remounted bell (auth-change) never accumulates a second listener. */
+  function onVisibilityChange() {
+    if (document.visibilityState === 'visible' && isAuthorized()) { refresh(); }
+  }
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
   refresh();
   startPolling();
 
-  return { refresh: refresh, stop: stopPolling };
+  return {
+    refresh: refresh,
+    stop: function () {
+      stopPolling();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    }
+  };
 }
 
 // ── Wiring ────────────────────────────────────────────────────────────
@@ -845,10 +970,28 @@ export function initAnnouncements() {
   var mountEl = document.getElementById('announcementsWorkspace');
   var bellRootEl = document.getElementById('announcementBell');
 
+  /* Bell click → primary destination (REQ-ANN-001 Stage A §12): activate
+     the Announcements sidebar tab via its own real nav button (reuses
+     navigation.js's existing activatePanel gating verbatim — same
+     technique as the member snapshot cards' [data-goto] jump — no new
+     panel-switching code path), then switch the workspace's own view to
+     Notification History. currentWorkspace is read at call time (bell
+     clicks always happen after both mounts have run), same lazy-closure
+     convention onChanged already uses below for currentBell. */
+  function openAnnouncementsNotificationHistory() {
+    var navBtn = document.querySelector('.app-nav-btn[data-tab="announcements"]');
+    if (navBtn) { navBtn.click(); }
+    if (currentWorkspace && typeof currentWorkspace.showNotificationHistory === 'function') {
+      currentWorkspace.showNotificationHistory();
+    }
+  }
+
   var currentWorkspace = mountEl
     ? mountAnnouncementsWorkspace(mountEl, { onChanged: function () { if (currentBell) { currentBell.refresh(); } } })
     : null;
-  var currentBell = bellRootEl ? mountAnnouncementBell(bellRootEl) : null;
+  var currentBell = bellRootEl
+    ? mountAnnouncementBell(bellRootEl, { onOpenHistory: openAnnouncementsNotificationHistory })
+    : null;
 
   document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, function () {
     if (currentBell) { currentBell.stop(); }
@@ -857,7 +1000,9 @@ export function initAnnouncements() {
         onChanged: function () { if (currentBell) { currentBell.refresh(); } }
       });
     }
-    if (bellRootEl) { currentBell = mountAnnouncementBell(bellRootEl); }
+    if (bellRootEl) {
+      currentBell = mountAnnouncementBell(bellRootEl, { onOpenHistory: openAnnouncementsNotificationHistory });
+    }
   });
 
   return { workspace: currentWorkspace, bell: currentBell };
