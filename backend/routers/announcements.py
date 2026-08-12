@@ -54,17 +54,57 @@ A Draft's mention rows have notified_at IS NULL and are therefore invisible
 to every notification-facing query (_notification_feed_query,
 unread-count) — Publish stamps notified_at on the existing rows; it never
 inserts new ones.
+
+Realtime WebSocket fast path (REQ-ANN-001 Stage B, 2026-08-12): PostgreSQL
+(management_aios.announcements/announcement_mentions) remains the sole
+authoritative store — WebSocket carries no notification history, no read
+state, no mention truth, and no announcement content. A WebSocket message
+is only ever the single event {"type": "announcement_notification_changed",
+"announcement_id": "..."}, telling an already-connected mentioned member
+"go re-fetch your authoritative state over HTTP" — see get_notification_feed
+above and web-view/js/announcements.js. Connections are authenticated by a
+short-lived (<=60s) signed ticket (_issue_ws_ticket/_validate_ws_ticket),
+never the long-lived member bearer token, which cannot safely travel in a
+WebSocket URL. The in-process connection registry (_CONNECTIONS below) is
+explicitly single-instance/best-effort: this deployment has no shared
+cross-instance pub/sub service (Redis or equivalent), and Vercel pins one
+WebSocket connection to one Function instance for its lifetime — a Publish
+request handled by a different instance than the one holding a mentioned
+member's socket cannot signal it directly. The existing 30-second HTTP
+polling (Stage A) is deliberately left in place as the correctness
+fallback; WebSocket only shortens the common-case latency, never replaces
+polling as the source of truth. See the Stage B validation asset for the
+full architecture writeup and the explicit cross-instance limitation.
 """
 
+import hashlib
+import hmac
+import logging
+import time
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import anyio
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+    WebSocketException,
+    status,
+)
 from sqlalchemy import asc
 from sqlalchemy.orm import Session
 
-from backend.config import VALID_MEMBER_KEYS, member_display_label
+from backend.config import (
+    ANNOUNCEMENT_WS_TICKET_TTL_SECONDS,
+    VALID_MEMBER_KEYS,
+    load_announcement_ws_ticket_secret,
+    member_display_label,
+)
 from backend.database import get_db
 from backend.models import Announcement, AnnouncementMention
 from backend.routers.calendar_auth import get_verified_member
@@ -77,9 +117,21 @@ from backend.schemas import (
     AnnouncementReadReceiptItemOut,
     AnnouncementReadReceiptsOut,
     AnnouncementUpdate,
+    AnnouncementWsTicketOut,
 )
 
 router = APIRouter(prefix="/api/announcements", tags=["announcements"])
+
+# No print(), no third-party logging dependency — this is the first use of
+# the standard logging module anywhere in backend/ (confirmed by inspection
+# before adding it); every other module either has no diagnostic events
+# worth logging or relies on raised HTTPExceptions instead. Vercel captures
+# stdout/stderr from the Python runtime automatically, so this requires no
+# extra configuration to be visible in deployment logs. NEVER logs a raw
+# member token, a ws ticket, a secret, or full announcement content — see
+# _log_ws_event below, the single place every WebSocket diagnostic line is
+# emitted.
+logger = logging.getLogger(__name__)
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
@@ -412,6 +464,180 @@ def mark_notification_read(
     )
 
 
+# ── Realtime WebSocket fast path (REQ-ANN-001 Stage B, 2026-08-12) ─────────
+#
+# WebSocket carries no business truth — see the module docstring. This
+# section owns: (1) short-lived ticket issuance/validation, (2) the
+# WebSocket connection route, (3) the in-process connection registry, and
+# (4) the broadcast helper Publish calls after its transaction commits.
+#
+# Registry is explicitly SINGLE-INSTANCE / BEST-EFFORT: no shared
+# cross-instance pub/sub service (Redis or equivalent) exists in this
+# deployment, and a WebSocket connection is pinned to the one Vercel
+# Function instance that accepted it for the connection's lifetime — a
+# Publish request served by a different instance cannot reach a connection
+# held by another. The 30-second HTTP polling fallback (REQ-ANN-001 Stage
+# A, unchanged) is what makes this safe to ship without that guarantee:
+# realtime delivery is a latency optimization only, never the sole path to
+# correct state.
+
+_WS_TICKET_PARTS = 3
+
+
+class _WsTicketError(Exception):
+    """Carries a short, non-secret reason string for _log_ws_event — never
+    the ticket value itself. reason is one of: "unavailable", "missing",
+    "malformed", "unknown_member", "bad_signature", "expired"."""
+
+    def __init__(self, reason: str):
+        super().__init__(reason)
+        self.reason = reason
+
+
+def _log_ws_event(event: str, **fields) -> None:
+    """THE single place every WebSocket diagnostic line is emitted. fields
+    must never include a raw member token, a ticket, a secret, or full
+    announcement content — every call site below passes only
+    member_key/announcement_id/reason/target_count, which are all safe to
+    log."""
+    detail = " ".join(f"{key}={value}" for key, value in fields.items())
+    logger.info("%s %s", event, detail)
+
+
+def _issue_ws_ticket(member_key: str) -> AnnouncementWsTicketOut:
+    secret = load_announcement_ws_ticket_secret()
+    if secret is None:
+        raise HTTPException(status_code=503, detail="Realtime notifications are not available.")
+    expires_at = int(time.time()) + ANNOUNCEMENT_WS_TICKET_TTL_SECONDS
+    payload = f"{member_key}.{expires_at}"
+    signature = hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    return AnnouncementWsTicketOut(
+        ticket=f"{payload}.{signature}",
+        expires_in=ANNOUNCEMENT_WS_TICKET_TTL_SECONDS,
+    )
+
+
+def _validate_ws_ticket(ticket: Optional[str]) -> str:
+    """Returns the ticket's member_key on success. Raises _WsTicketError
+    otherwise — never trusts a client-supplied member_key; the identity is
+    derived entirely from the signed ticket itself, so no member_key
+    supplied any other way (there isn't one) can override it."""
+    secret = load_announcement_ws_ticket_secret()
+    if secret is None:
+        raise _WsTicketError("unavailable")
+    if not ticket:
+        raise _WsTicketError("missing")
+
+    parts = ticket.split(".")
+    if len(parts) != _WS_TICKET_PARTS:
+        raise _WsTicketError("malformed")
+    member_key, expires_at_raw, signature = parts
+
+    if member_key not in VALID_MEMBER_KEYS:
+        raise _WsTicketError("unknown_member")
+    if not expires_at_raw.isdigit():
+        raise _WsTicketError("malformed")
+
+    payload = f"{member_key}.{expires_at_raw}"
+    expected_signature = hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise _WsTicketError("bad_signature")
+
+    if int(time.time()) > int(expires_at_raw):
+        raise _WsTicketError("expired")
+
+    return member_key
+
+
+@router.post("/ws-ticket", response_model=AnnouncementWsTicketOut)
+def issue_ws_ticket(acting_member: str = Depends(get_verified_member)):
+    """Issues a ticket scoped to the CALLING member only — acting_member
+    comes exclusively from the existing, already-authenticated bearer-token
+    dependency, never from any request body/query the client controls.
+    This is the one and only place a WebSocket ticket is minted."""
+    return _issue_ws_ticket(acting_member)
+
+
+# In-process only — see the section docstring above for the explicit
+# single-instance/best-effort limitation. A member may hold more than one
+# live connection (multiple tabs/devices), hence a list per key.
+_CONNECTIONS: dict = {}
+
+
+async def _broadcast_notification_changed(member_keys: List[str], announcement_id: UUID) -> None:
+    """Sends the one small signal event to every currently-connected
+    socket for each of member_keys — never announcement content, never
+    read state. A send failure on one socket (already gone, e.g. the
+    client closed without a clean disconnect frame arriving yet) never
+    stops delivery to any other socket; that connection's own receive loop
+    will clean up the registry entry once it observes the disconnect."""
+    payload = {"type": "announcement_notification_changed", "announcement_id": str(announcement_id)}
+    for member_key in member_keys:
+        for connection in list(_CONNECTIONS.get(member_key, [])):
+            try:
+                await connection.send_json(payload)
+            except Exception:
+                continue
+    _log_ws_event(
+        "announcement_realtime_signal",
+        announcement_id=str(announcement_id),
+        target_count=len(member_keys),
+    )
+
+
+def _signal_publish(mentioned_keys: List[str], announcement_id: UUID) -> None:
+    """Called by publish_announcement AFTER its db.commit() — see the call
+    site for why a delivery failure here must never affect the
+    already-committed Publish result. Bridges from this sync route
+    function back onto the async event loop that owns _CONNECTIONS/the
+    live WebSocket objects (anyio.from_thread.run — the same primitive
+    Starlette's own run_in_threadpool uses in reverse); a sync route
+    function executes in a worker thread, so it cannot `await` directly."""
+    if not mentioned_keys:
+        return
+    try:
+        anyio.from_thread.run(_broadcast_notification_changed, mentioned_keys, announcement_id)
+    except Exception:
+        # Realtime delivery failure is NOT business-data failure — the
+        # Publish transaction already committed successfully before this
+        # function is ever called. Polling (REQ-ANN-001 Stage A, unchanged)
+        # recovers state regardless.
+        logger.warning("announcement_realtime_signal_failed announcement_id=%s", announcement_id)
+
+
+@router.websocket("/ws")
+async def announcements_ws(websocket: WebSocket, ticket: Optional[str] = None):
+    """Accepts only after a valid, unexpired, correctly-signed ticket
+    resolves a member_key — rejects BEFORE accept() on any ticket failure
+    (WebSocketException, never a silently-accepted-then-closed connection),
+    so an invalid/expired/malformed/missing ticket never becomes a live
+    connection."""
+    try:
+        member_key = _validate_ws_ticket(ticket)
+    except _WsTicketError as exc:
+        _log_ws_event("ws_auth_rejected", reason=exc.reason)
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+    await websocket.accept()
+    _CONNECTIONS.setdefault(member_key, []).append(websocket)
+    _log_ws_event("ws_connect", member_key=member_key)
+    try:
+        while True:
+            # No client->server protocol exists (§7 — one event type,
+            # server->client only). This just blocks until the client
+            # disconnects; WebSocketDisconnect is the normal exit path.
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        connections = _CONNECTIONS.get(member_key)
+        if connections and websocket in connections:
+            connections.remove(websocket)
+            if not connections:
+                del _CONNECTIONS[member_key]
+        _log_ws_event("ws_disconnect", member_key=member_key)
+
+
 # ── DETAIL ────────────────────────────────────────────────────────────────
 
 
@@ -555,7 +781,15 @@ def publish_announcement(
     notified_at is ever set, and it never inserts new mention rows (the
     mention set was already finalized during the Draft; see
     _reconcile_mentions). After commit, the announcement and its mention
-    set are permanent (technical design §5)."""
+    set are permanent (technical design §5).
+
+    Realtime signal (REQ-ANN-001 Stage B): _signal_publish runs strictly
+    AFTER db.commit() below, using the already-committed mention set
+    (self-mention is impossible here — _reject_self_mention already
+    guarantees the creator never appears among their own mentions, so no
+    extra exclusion is needed, unlike the historical-row read-time
+    filters elsewhere in this file). Draft create/update never call this —
+    only a successful Publish does."""
     announcement = _get_owned_draft_or_404(db, announcement_id, acting_member)
 
     now = _now()
@@ -571,6 +805,20 @@ def publish_announcement(
 
     db.commit()
     db.refresh(announcement)
+
+    # Belt-and-suspenders (REQ-ANN-001 Stage B §19): _signal_publish already
+    # catches its own broadcast failures internally, but this call site is
+    # wrapped too — the Publish result below must never depend on ANY
+    # exception from the realtime path, including a bug inside the
+    # signaling code itself, not just an expected/anticipated failure mode.
+    # The transaction has already committed by this point; nothing here
+    # can ever roll it back.
+    try:
+        mentioned_keys = _mention_keys(db, announcement.id)
+        _signal_publish(mentioned_keys, announcement.id)
+    except Exception:
+        logger.warning("announcement_realtime_signal_failed announcement_id=%s", announcement.id)
+
     return _to_out(db, announcement)
 
 

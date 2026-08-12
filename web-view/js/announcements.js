@@ -34,7 +34,7 @@
    user-authored field (never innerHTML for untrusted text) — same
    convention as knowledge-management.js/issues.js/review-summaries.js. */
 
-import { ANNOUNCEMENTS_API_BASE } from './config.js';
+import { ANNOUNCEMENTS_API_BASE, ANNOUNCEMENTS_WS_BASE } from './config.js';
 import {
   CALENDAR_AUTH_CHANGED_EVENT,
   ensureAuthorized,
@@ -163,6 +163,16 @@ export function markNotificationRead(mentionId) {
 
 export function getReadReceipts(id) {
   return annProtectedRequest('/' + id + '/read-receipts');
+}
+
+/* REQ-ANN-001 Stage B (2026-08-12) — issues a short-lived (<=60s) signed
+   ticket for the realtime WebSocket. Goes through the exact same
+   authenticated request path (annProtectedRequest -> ensureAuthorized ->
+   Authorization: Bearer <token>) as every other call in this file — the
+   long-lived member token never leaves this one place; only the returned
+   ticket is ever used to open the socket (mountAnnouncementBell below). */
+export function getWsTicket() {
+  return annProtectedRequest('/ws-ticket', { method: 'POST' });
 }
 
 // ── DOM helpers ───────────────────────────────────────────────────────
@@ -866,6 +876,13 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
 
 var POLL_INTERVAL_MS = 30000;
 
+/* REQ-ANN-001 Stage B — bounded reconnect backoff (ms), capped at 30s, per
+   opts.onOpenHistory-style explicit design. Reset to the first entry on
+   every stable connection (see connectRealtimeSocket's onopen below), so a
+   brief outage never leaves a socket waiting the full 30s to try again
+   after recovering. */
+var WS_RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 30000];
+
 /* Mounted exactly once (initAnnouncements below), inside the topbar
    #announcementBell region (web-view/index.html). Independent of the
    Announcements tab panel — the bell is visible from every tab once
@@ -879,11 +896,25 @@ var POLL_INTERVAL_MS = 30000;
    mountAnnouncementsWorkspace's notifications view above), which owns all
    per-item rendering and read-marking. This removes the previous
    dropdown's separate, parallel notification-item rendering entirely
-   rather than maintaining two implementations that could drift. */
+   rather than maintaining two implementations that could drift.
+
+   REQ-ANN-001 Stage B (2026-08-12) — this is also the ONE lifecycle owner
+   for the realtime WebSocket fast path (never scattered across app.js/
+   auth-gate.js/navigation.js/individual tabs). The socket carries exactly
+   one signal, {"type":"announcement_notification_changed"}; on receipt
+   this module does nothing but call the SAME refresh() the 30s poll
+   already uses, plus opts.onRealtimeSignal() so the Notification History
+   tab (if mounted) can reload too — PostgreSQL via the existing HTTP API
+   remains the only source of truth either way. Polling and the visibility
+   refresh are both left completely unchanged and keep running regardless
+   of socket state — this is a latency optimization only, never a
+   replacement (see backend/routers/announcements.py's module docstring
+   for the explicit single-instance/best-effort delivery limitation). */
 export function mountAnnouncementBell(rootEl, opts) {
   if (!rootEl) { return null; }
   opts = opts || {};
-  var api = opts.api || { feed: getNotificationFeed };
+  var api = opts.api || { feed: getNotificationFeed, wsTicket: getWsTicket };
+  var WebSocketImpl = opts.WebSocketImpl || (typeof window !== 'undefined' ? window.WebSocket : undefined);
 
   var pollTimer = null;
   var state = { unreadCount: 0 };
@@ -952,13 +983,98 @@ export function mountAnnouncementBell(rootEl, opts) {
   }
   document.addEventListener('visibilitychange', onVisibilityChange);
 
+  // ── Realtime WebSocket fast path (REQ-ANN-001 Stage B) ────────────────
+
+  var wsSocket = null;
+  var wsConnecting = false;
+  var wsReconnectTimer = null;
+  var wsReconnectAttempt = 0;
+  var wsStopped = false;
+
+  function clearWsReconnectTimer() {
+    if (wsReconnectTimer) { window.clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
+  }
+
+  // Never a duplicate pending reconnect (the wsReconnectTimer guard) —
+  // bounded at WS_RECONNECT_DELAYS_MS's last entry (30s), never an
+  // infinite rapid-retry loop.
+  function scheduleWsReconnect() {
+    if (wsStopped || wsReconnectTimer) { return; }
+    var delay = WS_RECONNECT_DELAYS_MS[Math.min(wsReconnectAttempt, WS_RECONNECT_DELAYS_MS.length - 1)];
+    wsReconnectAttempt += 1;
+    wsReconnectTimer = window.setTimeout(function () {
+      wsReconnectTimer = null;
+      connectRealtimeSocket();
+    }, delay);
+  }
+
+  // One socket only: guarded by wsSocket (already open/connected) AND
+  // wsConnecting (a ticket request already in flight, before wsSocket is
+  // assigned) — closes the race window where two calls could each fetch
+  // their own ticket and open two sockets.
+  function connectRealtimeSocket() {
+    if (wsStopped || !isAuthorized() || !WebSocketImpl || wsSocket || wsConnecting) { return; }
+    if (typeof api.wsTicket !== 'function') { return; } // no ticket source configured — polling-only, no error
+    wsConnecting = true;
+    api.wsTicket().then(function (result) {
+      wsConnecting = false;
+      if (wsStopped || !isAuthorized()) { return; } // auth changed while the ticket request was in flight
+      var socket = new WebSocketImpl(ANNOUNCEMENTS_WS_BASE + '/ws?ticket=' + encodeURIComponent(result.ticket));
+      wsSocket = socket;
+      socket.onopen = function () {
+        wsReconnectAttempt = 0; // stable connection — reset backoff
+        refresh(); // immediate HTTP refresh on (re)connect, same as tab-visibility return
+      };
+      socket.onmessage = function (event) {
+        var payload;
+        try { payload = JSON.parse(event.data); } catch (e) { return; }
+        // The ONLY event this protocol defines. Content is never trusted —
+        // it only tells this client to re-fetch authoritative state.
+        if (payload && payload.type === 'announcement_notification_changed') {
+          refresh();
+          if (typeof opts.onRealtimeSignal === 'function') { opts.onRealtimeSignal(); }
+        }
+      };
+      socket.onclose = function () {
+        if (wsSocket === socket) { wsSocket = null; }
+        if (!wsStopped) { scheduleWsReconnect(); }
+      };
+      socket.onerror = function () {
+        // A WebSocket always fires close after error — reconnect is
+        // scheduled from onclose only, never duplicated here.
+      };
+    }, function () {
+      // Ticket request failed (feature unavailable, network blip, auth
+      // lost mid-flight) — polling remains the correctness fallback;
+      // retry with the same bounded backoff as a dropped connection.
+      wsConnecting = false;
+      if (!wsStopped) { scheduleWsReconnect(); }
+    });
+  }
+
+  function stopRealtimeSocket() {
+    wsStopped = true;
+    clearWsReconnectTimer();
+    if (wsSocket) {
+      var socket = wsSocket;
+      wsSocket = null;
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onclose = null;
+      socket.onerror = null;
+      socket.close();
+    }
+  }
+
   refresh();
   startPolling();
+  connectRealtimeSocket();
 
   return {
     refresh: refresh,
     stop: function () {
       stopPolling();
+      stopRealtimeSocket();
       document.removeEventListener('visibilitychange', onVisibilityChange);
     }
   };
@@ -986,11 +1102,22 @@ export function initAnnouncements() {
     }
   }
 
+  /* REQ-ANN-001 Stage B — the realtime signal's only job is "reload
+     whatever the workspace is currently showing," reusing the workspace's
+     own existing reload() (History + Drafts + Notification History)
+     verbatim rather than adding a narrower, second reload path. */
+  function reloadWorkspaceOnRealtimeSignal() {
+    if (currentWorkspace && typeof currentWorkspace.reload === 'function') { currentWorkspace.reload(); }
+  }
+
   var currentWorkspace = mountEl
     ? mountAnnouncementsWorkspace(mountEl, { onChanged: function () { if (currentBell) { currentBell.refresh(); } } })
     : null;
   var currentBell = bellRootEl
-    ? mountAnnouncementBell(bellRootEl, { onOpenHistory: openAnnouncementsNotificationHistory })
+    ? mountAnnouncementBell(bellRootEl, {
+        onOpenHistory: openAnnouncementsNotificationHistory,
+        onRealtimeSignal: reloadWorkspaceOnRealtimeSignal
+      })
     : null;
 
   document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, function () {
@@ -1001,7 +1128,10 @@ export function initAnnouncements() {
       });
     }
     if (bellRootEl) {
-      currentBell = mountAnnouncementBell(bellRootEl, { onOpenHistory: openAnnouncementsNotificationHistory });
+      currentBell = mountAnnouncementBell(bellRootEl, {
+        onOpenHistory: openAnnouncementsNotificationHistory,
+        onRealtimeSignal: reloadWorkspaceOnRealtimeSignal
+      });
     }
   });
 

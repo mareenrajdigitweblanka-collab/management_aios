@@ -1486,3 +1486,15 @@ class AnnouncementReadReceiptsOut(BaseModel):
     read_count: int
     unread_count: int
     receipts: List[AnnouncementReadReceiptItemOut]
+
+
+class AnnouncementWsTicketOut(BaseModel):
+    """Response for POST /api/announcements/ws-ticket (REQ-ANN-001 Stage B,
+    2026-08-12) — a short-lived signed ticket the browser passes in the
+    WebSocket URL's query string instead of the long-lived member bearer
+    token (which cannot safely travel in a URL). Never the token, never
+    the signing secret — see backend/routers/announcements.py
+    _issue_ws_ticket."""
+
+    ticket: str
+    expires_in: int

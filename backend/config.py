@@ -443,3 +443,42 @@ KNOWLEDGE_DOCUMENT_AUDIT_ACTIONS = (
     "create", "update_metadata", "create_version",
     "archive", "unarchive", "soft_delete", "restore",
 )
+
+# ── Announcements realtime WebSocket ticket (Stage B, 2026-08-12) ────────
+# Short-lived signed ticket, NOT a session token: a browser cannot attach
+# the existing Authorization header to a WebSocket handshake the way it
+# can to a normal fetch() request, so an already-authenticated HTTP call
+# (POST /api/announcements/ws-ticket, guarded by the existing
+# get_verified_member dependency — same auth as every other Announcement
+# route) issues a ticket scoped to that one verified member, which is then
+# passed in the WebSocket URL's query string INSTEAD OF the raw long-lived
+# member bearer token. See backend/routers/announcements.py
+# _issue_ws_ticket/_validate_ws_ticket for the HMAC-SHA256 signing/
+# verification (same hashlib/hmac primitives calendar_auth.py already uses
+# for its own token comparisons — no new cryptographic dependency).
+#
+# Optional-but-fail-closed, same shape as MD_CALENDAR_AUTH_TOKEN_ENV_VAR
+# (load_md_review_summary_token_hash above) rather than the five mandatory
+# CALENDAR_AUTH_TOKEN_HASH_* (which crash the whole app at startup if
+# missing): the WebSocket fast path is additive, delivery-only
+# infrastructure with an HTTP-polling fallback already in place
+# (REQ-ANN-001 Stage A) — an unconfigured secret must never crash the rest
+# of the application (every other Task/Leave/Announcements HTTP route is
+# unrelated to this), but it must also never fall back to a default or
+# guessable secret. Missing/blank means "the realtime fast path is
+# unavailable": ticket issuance returns 503 and no ticket can ever be
+# produced or validated, so the feature fails closed by simply never
+# working, not by ever accepting an unsigned/weakly-signed ticket.
+ANNOUNCEMENT_WS_TICKET_ENV_VAR = "ANNOUNCEMENT_WS_TICKET_SECRET"
+ANNOUNCEMENT_WS_TICKET_TTL_SECONDS = 60
+
+
+def load_announcement_ws_ticket_secret(environ=None):
+    """Returns the raw signing secret string, or None if unset/blank —
+    never a placeholder/default value. `environ` defaults to os.environ;
+    tests pass an isolated mapping of their own test-only secret (see
+    backend/tests/test_announcements.py) — production secrets are never
+    read by, or needed for, any test using this."""
+    source = os.environ if environ is None else environ
+    raw = (source.get(ANNOUNCEMENT_WS_TICKET_ENV_VAR) or "").strip()
+    return raw or None

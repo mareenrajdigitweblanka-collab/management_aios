@@ -356,7 +356,33 @@ export function installFakeBrowserGlobals(opts) {
     // that would keep the test process alive after the run completes.
     setInterval: function () { return ++fakeWindow._intervalIdCounter; },
     clearInterval: function () {},
-    _intervalIdCounter: 0
+    _intervalIdCounter: 0,
+    // setTimeout/clearTimeout (2026-08-12, announcements.js WebSocket
+    // reconnect backoff) — deliberately controllable rather than either a
+    // real timer (would keep the test process alive / make backoff tests
+    // slow and flaky) or a no-op (reconnect-scheduling tests need to
+    // inspect the pending delay and manually fire it). Pending callbacks
+    // live in _timeouts, keyed by id; a test fires one by calling
+    // `env.window._timeouts[id].cb()` directly and inspects `.delay` to
+    // assert the bounded-backoff progression (announcements.test.mjs).
+    // Single-shot, same as a real timer: firing .cb() removes its own
+    // entry from _timeouts first — Object.values(_timeouts) always
+    // reflects only genuinely still-pending timers, never a stale
+    // already-fired one a test forgot to clearTimeout.
+    _timeouts: {},
+    _timeoutIdCounter: 0,
+    setTimeout: function (cb, delay) {
+      var id = ++fakeWindow._timeoutIdCounter;
+      fakeWindow._timeouts[id] = {
+        delay: delay,
+        cb: function () {
+          delete fakeWindow._timeouts[id];
+          cb();
+        }
+      };
+      return id;
+    },
+    clearTimeout: function (id) { delete fakeWindow._timeouts[id]; }
   };
   globalThis.document = fakeDocument;
   globalThis.window = fakeWindow;

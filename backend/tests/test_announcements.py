@@ -12,15 +12,24 @@ schema fresh, in-memory, per test.
 Run with: python -m unittest backend.tests.test_announcements
 """
 
+import hashlib
+import hmac
+import os
+import queue
+import threading
+import time
 import unittest
 import uuid
 from datetime import datetime, timezone
+from unittest import mock
 
 from fastapi.testclient import TestClient
+from starlette.testclient import WebSocketDisconnect
 
 from backend.database import get_db
 from backend.main import app
 from backend.models import Announcement, AnnouncementMention
+from backend.routers import announcements as announcements_module
 from backend.tests.calendar_auth_test_support import (
     bearer_header,
     make_sqlite_engine_and_session_factory,
@@ -28,6 +37,43 @@ from backend.tests.calendar_auth_test_support import (
 )
 
 BASE = "/api/announcements"
+WS_BASE = "/api/announcements/ws"
+TEST_WS_TICKET_SECRET = "test-only-ws-ticket-secret-never-a-real-secret"
+
+
+def _sign_ws_ticket(member_key, expires_at, secret=TEST_WS_TICKET_SECRET):
+    """Mirrors backend/routers/announcements.py's _issue_ws_ticket signing
+    algorithm exactly, so tests can craft invalid ticket variants (expired,
+    wrong signature, unknown member) without needing internal access to the
+    router's private functions — same black-box-via-HTTP-contract
+    convention as every other test in this file."""
+    payload = f"{member_key}.{expires_at}"
+    signature = hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"{payload}.{signature}"
+
+
+def _receive_or_none(ws, timeout=0.5):
+    """Starlette's TestClient WebSocket session has no built-in receive
+    timeout (WebSocketTestSession.receive blocks on a portal call
+    indefinitely) — used only to prove a member did NOT receive a realtime
+    signal within a short, generous window, without ever hanging a test.
+    Runs the blocking receive in a daemon thread so a true "nothing ever
+    arrives" case cannot leak a hung foreground thread into the test run."""
+    result = queue.Queue()
+
+    def _run():
+        try:
+            result.put(("ok", ws.receive_json()))
+        except Exception as exc:  # noqa: BLE001 - deliberately broad, see docstring
+            result.put(("error", exc))
+
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+    try:
+        kind, value = result.get(timeout=timeout)
+    except queue.Empty:
+        return None
+    return value if kind == "ok" else None
 
 
 class AnnouncementsTestCase(unittest.TestCase):
@@ -620,6 +666,221 @@ class AnnouncementsTestCase(unittest.TestCase):
 
         feed = self.client.get(f"{BASE}/notifications", headers=bearer_header("arun")).json()
         self.assertEqual(feed["items"][0]["body_preview"], "Please review your responsibilities.")
+
+
+class AnnouncementsWebSocketTestCase(unittest.TestCase):
+    """REQ-ANN-001 Stage B (2026-08-12) — the realtime WebSocket fast path.
+
+    Same isolated-in-memory-SQLite-per-test convention as
+    AnnouncementsTestCase above, extended with two things WebSocket
+    testing specifically needs: a configured ANNOUNCEMENT_WS_TICKET_SECRET
+    (test-only, never a real secret) and an explicit
+    announcements_module._CONNECTIONS.clear() in tearDown — that registry
+    is module-level (by design; see the router's own docstring on why),
+    so it persists across test methods within one test run unless
+    explicitly cleared, unlike the DB, which is already fresh per test."""
+
+    def setUp(self):
+        self.engine, self.SessionLocal = make_sqlite_engine_and_session_factory()
+
+        def override_get_db():
+            db = self.SessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
+
+        app.dependency_overrides[get_db] = override_get_db
+        self.env_ctx = patched_calendar_auth_env(
+            extra_overrides={"ANNOUNCEMENT_WS_TICKET_SECRET": TEST_WS_TICKET_SECRET},
+            include_md=True,
+        )
+        self.env_ctx.__enter__()
+        self.client_ctx = TestClient(app)
+        self.client = self.client_ctx.__enter__()
+
+    def tearDown(self):
+        self.client_ctx.__exit__(None, None, None)
+        self.env_ctx.__exit__(None, None, None)
+        app.dependency_overrides.clear()
+        self.engine.dispose()
+        announcements_module._CONNECTIONS.clear()
+
+    # ── helpers ────────────────────────────────────────────────────────
+
+    def create_draft(self, member_key, title="Realtime Check", body="Body.", mentions=None):
+        payload = {"title": title, "body": body, "mention_member_keys": mentions or []}
+        resp = self.client.post(BASE, json=payload, headers=bearer_header(member_key))
+        self.assertEqual(resp.status_code, 201, resp.text)
+        return resp.json()
+
+    def publish(self, member_key, announcement_id):
+        return self.client.post(f"{BASE}/{announcement_id}/publish", headers=bearer_header(member_key))
+
+    def get_ticket(self, member_key):
+        resp = self.client.post(f"{BASE}/ws-ticket", headers=bearer_header(member_key))
+        self.assertEqual(resp.status_code, 200, resp.text)
+        return resp.json()["ticket"]
+
+    # ── Ticket issuance ───────────────────────────────────────────────
+
+    def test_ws_ticket_requires_authentication(self):
+        resp = self.client.post(f"{BASE}/ws-ticket")
+        self.assertEqual(resp.status_code, 401)
+
+    def test_ws_ticket_issued_for_calling_member_only(self):
+        body = self.client.post(f"{BASE}/ws-ticket", headers=bearer_header("mayurika")).json()
+        self.assertIn("ticket", body)
+        self.assertEqual(body["expires_in"], 60)
+        parts = body["ticket"].split(".")
+        self.assertEqual(len(parts), 3)
+        self.assertEqual(parts[0], "mayurika")
+
+    def test_ws_ticket_unavailable_when_secret_unconfigured(self):
+        with mock.patch.dict(os.environ, {"ANNOUNCEMENT_WS_TICKET_SECRET": ""}, clear=False):
+            resp = self.client.post(f"{BASE}/ws-ticket", headers=bearer_header("mayurika"))
+        self.assertEqual(resp.status_code, 503)
+
+    # ── Connection authentication (valid / expired / malformed / missing /
+    #    invalid identity) ────────────────────────────────────────────
+
+    def test_valid_ticket_connects(self):
+        ticket = self.get_ticket("mayurika")
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={ticket}"):
+            pass  # connecting without raising IS the assertion
+
+    def test_missing_ticket_rejected(self):
+        with self.assertRaises(WebSocketDisconnect):
+            with self.client.websocket_connect(WS_BASE):
+                pass
+
+    def test_malformed_ticket_rejected(self):
+        with self.assertRaises(WebSocketDisconnect):
+            with self.client.websocket_connect(f"{WS_BASE}?ticket=not-a-real-ticket"):
+                pass
+
+    def test_expired_ticket_rejected(self):
+        expired_at = int(time.time()) - 10
+        ticket = _sign_ws_ticket("mayurika", expired_at)
+        with self.assertRaises(WebSocketDisconnect):
+            with self.client.websocket_connect(f"{WS_BASE}?ticket={ticket}"):
+                pass
+
+    def test_bad_signature_ticket_rejected(self):
+        real_ticket = self.get_ticket("mayurika")
+        member_key, expires_at, _real_signature = real_ticket.split(".")
+        tampered = f"{member_key}.{expires_at}." + "0" * 64
+        with self.assertRaises(WebSocketDisconnect):
+            with self.client.websocket_connect(f"{WS_BASE}?ticket={tampered}"):
+                pass
+
+    def test_unknown_member_ticket_rejected(self):
+        future = int(time.time()) + 60
+        ticket = _sign_ws_ticket("not-a-real-member", future)
+        with self.assertRaises(WebSocketDisconnect):
+            with self.client.websocket_connect(f"{WS_BASE}?ticket={ticket}"):
+                pass
+
+    def test_identity_comes_entirely_from_the_ticket(self):
+        # There is no member_key parameter anywhere on this route for a
+        # client to supply or spoof — the only channel is the signed
+        # ticket. Proven end-to-end: connecting with Mayurika's own ticket
+        # and having a DIFFERENT member (Arun) publish and mention
+        # Mayurika reaches this exact connection.
+        ticket = self.get_ticket("mayurika")
+        arun_draft = self.create_draft("arun", mentions=["mayurika"])
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={ticket}") as ws:
+            self.publish("arun", arun_draft["id"])
+            message = ws.receive_json()
+        self.assertEqual(message, {"type": "announcement_notification_changed", "announcement_id": arun_draft["id"]})
+
+    # ── Publish signal targeting (§8/§9 — mentioned users only, after
+    #    Publish only) ──────────────────────────────────────────────────
+
+    def test_publish_signals_mentioned_member(self):
+        ticket = self.get_ticket("arun")
+        draft = self.create_draft("mayurika", mentions=["arun"])
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={ticket}") as ws:
+            resp = self.publish("mayurika", draft["id"])
+            self.assertEqual(resp.status_code, 200, resp.text)
+            message = ws.receive_json()
+        self.assertEqual(message, {"type": "announcement_notification_changed", "announcement_id": draft["id"]})
+
+    def test_draft_create_does_not_signal(self):
+        ticket = self.get_ticket("arun")
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={ticket}") as ws:
+            self.create_draft("mayurika", mentions=["arun"])
+            message = _receive_or_none(ws)
+        self.assertIsNone(message, "Draft creation must never emit a realtime signal")
+
+    def test_draft_update_does_not_signal(self):
+        ticket = self.get_ticket("arun")
+        draft = self.create_draft("mayurika", mentions=["arun"])
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={ticket}") as ws:
+            resp = self.client.patch(
+                f"{BASE}/{draft['id']}", json={"title": "Updated"}, headers=bearer_header("mayurika")
+            )
+            self.assertEqual(resp.status_code, 200, resp.text)
+            message = _receive_or_none(ws)
+        self.assertIsNone(message, "Draft update must never emit a realtime signal")
+
+    def test_unmentioned_member_receives_no_signal(self):
+        rajiv_ticket = self.get_ticket("rajiv")
+        arun_ticket = self.get_ticket("arun")
+        draft = self.create_draft("mayurika", mentions=["arun"])
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={rajiv_ticket}") as rajiv_ws:
+            with self.client.websocket_connect(f"{WS_BASE}?ticket={arun_ticket}") as arun_ws:
+                self.publish("mayurika", draft["id"])
+                arun_message = arun_ws.receive_json()
+                rajiv_message = _receive_or_none(rajiv_ws)
+        self.assertEqual(arun_message["type"], "announcement_notification_changed")
+        self.assertIsNone(rajiv_message, "An unmentioned member must never receive a realtime signal")
+
+    def test_creator_receives_no_self_signal(self):
+        # REQ-ANN-001 Stage A's self-mention rejection already guarantees
+        # the creator can never be among their own mentions on a NEW
+        # announcement (unlike the historical-row read-time filters
+        # elsewhere in this file, which exist only for pre-Stage-A data) —
+        # this proves that guarantee holds through the realtime path too.
+        mayurika_ticket = self.get_ticket("mayurika")
+        draft = self.create_draft("mayurika", mentions=["arun"])
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={mayurika_ticket}") as ws:
+            self.publish("mayurika", draft["id"])
+            message = _receive_or_none(ws)
+        self.assertIsNone(message, "The creator must never receive a realtime signal for their own announcement")
+
+    def test_multiple_mentions_each_receive_signal(self):
+        suman_ticket = self.get_ticket("suman")
+        arun_ticket = self.get_ticket("arun")
+        draft = self.create_draft("mayurika", mentions=["suman", "arun"])
+        with self.client.websocket_connect(f"{WS_BASE}?ticket={suman_ticket}") as suman_ws:
+            with self.client.websocket_connect(f"{WS_BASE}?ticket={arun_ticket}") as arun_ws:
+                self.publish("mayurika", draft["id"])
+                suman_message = suman_ws.receive_json()
+                arun_message = arun_ws.receive_json()
+        self.assertEqual(suman_message["announcement_id"], draft["id"])
+        self.assertEqual(arun_message["announcement_id"], draft["id"])
+
+    # ── Realtime failure must never affect Publish's own success ───────
+
+    def test_realtime_failure_does_not_roll_back_publish(self):
+        draft = self.create_draft("mayurika", mentions=["arun"])
+
+        with mock.patch.object(
+            announcements_module, "_signal_publish", side_effect=RuntimeError("simulated realtime failure")
+        ):
+            resp = self.publish("mayurika", draft["id"])
+
+        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertEqual(resp.json()["status"], "Published")
+        row = (
+            self.SessionLocal()
+            .query(Announcement)
+            .filter(Announcement.id == uuid.UUID(draft["id"]))
+            .first()
+        )
+        self.assertEqual(row.status, "Published")
+        self.assertIsNotNone(row.published_at)
 
 
 if __name__ == "__main__":

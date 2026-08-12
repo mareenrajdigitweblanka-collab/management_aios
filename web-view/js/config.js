@@ -80,3 +80,17 @@ export var ANNOUNCEMENTS_API_BASE = (function () {
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
   return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
 }());
+
+/* Announcements realtime WebSocket (REQ-ANN-001 Stage B, 2026-08-12) — same
+   local-vs-production host detection as every base above, ws/wss instead of
+   http/https, same /api/announcements route prefix (backend/routers/
+   announcements.py's /ws route). Only ever used with a short-lived signed
+   ticket in the query string (web-view/js/announcements.js) — never the
+   long-lived Calendar member bearer token, which cannot safely travel in a
+   WebSocket URL. */
+export var ANNOUNCEMENTS_WS_BASE = (function () {
+  var LOCAL_BASE = 'ws://127.0.0.1:8000/api/announcements';
+  var PRODUCTION_BASE = 'wss://management-aios-api.vercel.app/api/announcements';
+  var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
+}());
