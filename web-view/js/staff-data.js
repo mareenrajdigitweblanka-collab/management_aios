@@ -22,48 +22,68 @@ var STAFF_DATA_SAMPLE = [
   { id: 2, staff_code: "SAMPLE002", name: "Sample Staff Two", role: 2, email: "sample2@example.com", phone: null, roster: null, designation: "Portfolio Executive", joined_date: "2021-03-15", confirmed_date: null, address: null, skype: null, delete_status: true, team_id: 1, is_approved: 1, staff_type: "full-time", staff_level: "Junior", informed_leave_balance: 5, urgent_leave_balance: 0, backup_staffs: null }
 ];
 
-// Columns shown in the main staff table / detail drawer.
+// Approved 14-field Staff Data business contract (2026-08-11 frontend/
+// backend field-contract alignment). This is the exhaustive display field
+// list — deliberately narrower than every column StaffRecordOut returns
+// (team_id/role/skype/is_approved/backup_staffs are real API fields but
+// are NOT part of this approved display set, so they are never rendered
+// here). See backend/schemas.py StaffRecordOut for the full API shape.
 //
-// 2026-08-11: staff_dashboard_records was rebuilt as an EXACT mirror of
-// employee_management.staff (Ledsone) — same columns, same field names,
-// same integer primary key — per explicit, deliberate user instruction.
-// This replaces the former dashboard-specific 5-field curated shape
-// (employee_number/full_name/department_team/date_of_joining/designation)
-// entirely. Includes PDPA-sensitive fields (email/phone/address/skype) and
-// HR-sensitive fields (leave balances, is_approved) — see backend/models.py
-// StaffDashboardRecord docstring and member-aios/staff-data/README.md §0.
-// fcm_token is the one deliberate exclusion (a security credential, not
-// staff data).
-var STAFF_MAIN_COLUMNS = [
-  'staff_code', 'name', 'designation', 'team_id', 'joined_date', 'confirmed_date',
-  'email', 'phone', 'address', 'skype', 'role', 'staff_type', 'staff_level',
-  'is_approved', 'delete_status', 'informed_leave_balance', 'urgent_leave_balance',
-  'backup_staffs'
+// Grouped to match the approved detail-view layout (see
+// STAFF_DETAIL_GROUPS below) — CSV export (exportStaffCsvFromRows) and the
+// column-labels lookup both reuse this same flat, grouped order.
+export var STAFF_MAIN_COLUMNS = [
+  // IDENTITY
+  'staff_code', 'name', 'designation',
+  // CONTACT
+  'email', 'phone', 'address',
+  // EMPLOYMENT
+  'roster', 'staff_type', 'staff_level', 'joined_date', 'confirmed_date',
+  // STATUS
+  'delete_status',
+  // LEAVE
+  'informed_leave_balance', 'urgent_leave_balance'
 ];
-var STAFF_COLUMN_LABELS = {
-  staff_code: 'Staff Code', name: 'Name', designation: 'Designation', team_id: 'Team ID',
-  joined_date: 'Joined Date', confirmed_date: 'Confirmed Date', email: 'Email', phone: 'Phone',
-  address: 'Address', skype: 'Skype', role: 'Role', staff_type: 'Staff Type',
-  staff_level: 'Staff Level', is_approved: 'Approval Status', delete_status: 'Deleted',
-  informed_leave_balance: 'Informed Leave Balance', urgent_leave_balance: 'Urgent Leave Balance',
-  backup_staffs: 'Backup Staff IDs'
+export var STAFF_COLUMN_LABELS = {
+  staff_code: 'Staff Code', name: 'Name', designation: 'Designation',
+  email: 'Email', phone: 'Phone', address: 'Address',
+  roster: 'Roster', staff_type: 'Staff Type', staff_level: 'Staff Level',
+  joined_date: 'Joined Date', confirmed_date: 'Confirmed Date',
+  delete_status: 'Delete Status',
+  informed_leave_balance: 'Informed Leave Balance', urgent_leave_balance: 'Urgent Leave Balance'
 };
 
-/* Compact/default columns shown in the primary table (UX upgrade,
-   2026-07-13). `sortKey` is the sort_by value sent to GET /api/staff
-   (null = not sortable); `hideable` marks columns the column-visibility
-   chooser may hide (Employee and Actions are always shown). The fuller
-   STAFF_MAIN_COLUMNS field set above is reused as-is for the detail
-   drawer, which shows every field this compact table doesn't.
+// Detail-drawer field grouping (approved layout) — same 14 fields as
+// STAFF_MAIN_COLUMNS, split into labeled sections instead of one flat list.
+export var STAFF_DETAIL_GROUPS = [
+  { heading: 'Identity', fields: ['staff_code', 'name', 'designation'] },
+  { heading: 'Contact', fields: ['email', 'phone', 'address'] },
+  { heading: 'Employment', fields: ['roster', 'staff_type', 'staff_level', 'joined_date', 'confirmed_date'] },
+  { heading: 'Status', fields: ['delete_status'] },
+  { heading: 'Leave', fields: ['informed_leave_balance', 'urgent_leave_balance'] }
+];
 
-   2026-08-11: field names updated to match the exact Ledsone mirror — see
-   STAFF_MAIN_COLUMNS comment above. team_id has no human-readable name
-   available in this table (Ledsone's own team_id column, mostly NULL). */
-var STAFF_PRIMARY_COLUMNS = [
-  { key: 'employee', label: 'Employee', sortKey: 'name', hideable: false },
-  { key: 'team_id', label: 'Team ID', sortKey: 'team_id', hideable: true },
-  { key: 'designation', label: 'Designation', sortKey: null, hideable: true },
-  { key: 'joined_date', label: 'Joined Date', sortKey: 'joined_date', hideable: true },
+/* Compact/default columns shown in the primary table (UX upgrade,
+   2026-07-13; field contract realigned 2026-08-11). `sortKey` is the
+   sort_by value sent to GET /api/staff (null = not sortable — matches
+   backend/routers/staff.py SORTABLE_COLUMNS exactly: name/staff_code/
+   designation/team_id/joined_date; roster/staff_type/staff_level/
+   delete_status are not server-sortable). `hideable` marks columns the
+   column-visibility chooser may hide (Staff Code, Name, and Actions are
+   always shown). The fuller STAFF_MAIN_COLUMNS/STAFF_DETAIL_GROUPS field
+   set above is reused by the detail drawer, which shows every field this
+   compact table doesn't — team_id is deliberately not a primary column
+   (no human-readable name available in this table; kept only as the
+   filter-bar's Team ID dropdown, a separate concern from the approved
+   14-field display set). */
+export var STAFF_PRIMARY_COLUMNS = [
+  { key: 'staff_code', label: 'Staff Code', sortKey: 'staff_code', hideable: false },
+  { key: 'name', label: 'Name', sortKey: 'name', hideable: false },
+  { key: 'designation', label: 'Designation', sortKey: 'designation', hideable: true },
+  { key: 'roster', label: 'Roster', sortKey: null, hideable: true },
+  { key: 'staff_type', label: 'Staff Type', sortKey: null, hideable: true },
+  { key: 'staff_level', label: 'Staff Level', sortKey: null, hideable: true },
+  { key: 'delete_status', label: 'Delete Status', sortKey: null, hideable: true },
   { key: 'actions', label: 'Actions', sortKey: null, hideable: false }
 ];
 var STAFF_ROWS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
@@ -172,7 +192,7 @@ function staffApiRequest(url, signal) {
    2026-08-11: staff_status/employment_stage/location query params
    removed along with their backing columns; `team` renamed to `teamId`
    (sent as team_id) — see STAFF_MAIN_COLUMNS comment above. */
-function buildStaffQuery(filters) {
+export function buildStaffQuery(filters) {
   filters = filters || {};
   var params = [];
   if (filters.teamId != null && filters.teamId !== '') params.push('team_id=' + encodeURIComponent(filters.teamId));
@@ -219,46 +239,50 @@ function mergeStaffFilters(baseFilters, userFilters) {
 }
 
 /* Renders a raw cell value, correctly distinguishing "no value" (null/
-   undefined/empty string -> em dash) from legitimate falsy values like
-   `false` or `0` (Boolean/Number.leave-balance fields on this row shape,
-   2026-08-11 exact-Ledsone-mirror) — a plain `raw || fallback` pattern
-   would incorrectly blank out delete_status: false or a 0 leave balance. */
-function formatStaffCellValue(raw) {
+   undefined/empty string -> null, callers render the established
+   Management AIOS empty-value convention, an em dash '—' — same pattern
+   knowledge-management.js uses, e.g. its msc-km-dash spans) from
+   legitimate falsy values like `false` or `0` (Boolean/Number leave-
+   balance fields on this row shape, 2026-08-11 exact-Ledsone-mirror) — a
+   plain `raw || fallback` pattern would incorrectly blank out
+   delete_status: false or a 0 leave balance.
+
+   delete_status is rendered as its own explicit Current/Deleted pair
+   (never Resigned/Inactive/another HR status — delete_status is not
+   equivalent to those concepts), not the generic boolean Yes/No path. */
+export function formatStaffCellValue(raw, colKey) {
   if (raw === '[VERIFY]') return '<span class="badge badge-verify">[VERIFY]</span>';
   if (raw === null || raw === undefined || raw === '') return null;
+  if (colKey === 'delete_status') return raw ? 'Deleted' : 'Current';
   if (typeof raw === 'boolean') return raw ? 'Yes' : 'No';
   return escapeHtml(raw);
 }
 
 // ── Shared cell renderers — used by the primary table and the detail
 // drawer (fuller field set); never by CSV export directly (export reads
-// raw values so the file stays plain text). ──
+// raw values so the file stays plain text). Both fall back to the
+// established '—' empty-value convention — never a blank cell, never
+// undefined/null/NaN visible to the user. ──
 function renderStaffPrimaryCell(r, colKey) {
-  if (colKey === 'employee') {
-    return '<div class="staff-employee-cell">' +
-      '<div class="staff-employee-name">' + escapeHtml(r.name || '—') + '</div>' +
-      (r.staff_code ? '<div class="staff-employee-number">' + escapeHtml(r.staff_code) + '</div>' : '') +
-      '</div>';
-  }
   if (colKey === 'actions') {
     return '<button type="button" class="staff-details-btn">Details</button>';
   }
-  var formatted = formatStaffCellValue(r[colKey]);
-  return formatted == null ? '' : formatted;
+  var formatted = formatStaffCellValue(r[colKey], colKey);
+  return formatted == null ? '—' : formatted;
 }
 
 function renderStaffDrawerFieldValue(r, colKey) {
-  var formatted = formatStaffCellValue(r[colKey]);
+  var formatted = formatStaffCellValue(r[colKey], colKey);
   return formatted == null ? '—' : formatted;
 }
 
 /* Single centralized detail drawer, lazily created and reused by every
    mounted staff table instance — only one row can be inspected at a time,
    so one shared drawer avoids mounting several near-identical overlay/
-   focus-trap instances. Renders exactly the STAFF_MAIN_COLUMNS field set
-   — as of 2026-08-11 this includes PDPA-sensitive fields (email/phone/
-   address/skype) and HR-sensitive fields (leave balances, is_approved),
-   per explicit user instruction (exact Ledsone mirror) — see
+   focus-trap instances. Renders the approved 14-field set grouped into
+   Identity/Contact/Employment/Status/Leave sections (STAFF_DETAIL_GROUPS)
+   — includes PDPA-sensitive fields (email/phone/address) per explicit
+   user instruction (2026-08-11 field-contract alignment) — see
    STAFF_MAIN_COLUMNS comment above. Still never salary, which does not
    exist on the row objects at all. */
 var staffDrawerApi = null;
@@ -305,10 +329,15 @@ function ensureStaffDrawer() {
   staffDrawerApi = {
     open: function (row, triggerEl) {
       lastTrigger = triggerEl || null;
-      bodyEl.innerHTML = STAFF_MAIN_COLUMNS.map(function (c) {
-        return '<div class="staff-drawer-field"><div class="staff-drawer-field-label">' +
-          escapeHtml(STAFF_COLUMN_LABELS[c]) + '</div><div class="staff-drawer-field-value">' +
-          renderStaffDrawerFieldValue(row, c) + '</div></div>';
+      bodyEl.innerHTML = STAFF_DETAIL_GROUPS.map(function (group) {
+        return '<div class="staff-drawer-group">' +
+          '<h5 class="staff-drawer-group-heading">' + escapeHtml(group.heading) + '</h5>' +
+          group.fields.map(function (c) {
+            return '<div class="staff-drawer-field"><div class="staff-drawer-field-label">' +
+              escapeHtml(STAFF_COLUMN_LABELS[c]) + '</div><div class="staff-drawer-field-value">' +
+              renderStaffDrawerFieldValue(row, c) + '</div></div>';
+          }).join('') +
+          '</div>';
       }).join('');
       overlay.classList.add('show');
       document.addEventListener('keydown', onKeydown);

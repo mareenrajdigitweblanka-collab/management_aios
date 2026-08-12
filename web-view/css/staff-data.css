@@ -737,6 +737,25 @@
       flex: 1;
     }
 
+    .staff-drawer-group {
+      margin-bottom: 20px;
+    }
+
+    .staff-drawer-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .staff-drawer-group-heading {
+      font-size: var(--font-xs, 12px);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 0 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border, rgba(128, 128, 128, 0.25));
+    }
+
     .staff-drawer-field {
       margin-bottom: 14px;
     }
