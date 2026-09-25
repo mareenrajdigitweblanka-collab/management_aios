@@ -42,6 +42,57 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { installFakeBrowserGlobals } from './review-summaries-test-dom.mjs';
 
+/* Toast-content assertions (2026-09-23 follow-up, REQ-CAL-REV-HISTORY-PDF-
+   001 regression fix) — same cross-test singleton issue knowledge-
+   management.test.mjs's getToastRegion() already documents: ui/toast.js's
+   module-level `regionEl` is created lazily ONCE per process (the first
+   showToast() call anywhere), bound to whichever fake `document` was
+   global at that moment — a LATER test's own fresh installFakeBrowserGlobals()
+   document would never see it via a plain document.querySelector() call.
+   Priming it here, once, before any test() body runs, and caching the
+   resulting region reference, means every later test's showToast() calls
+   still append into this SAME cached region object (toast.js never
+   re-queries `document` for it once created), so its rendered content is
+   readable from any test via getToastRegion().allText() regardless of
+   which fake document happens to be active by then. */
+var sharedToastRegion = null;
+function getToastRegion() {
+  var region = (typeof document !== 'undefined' && document.querySelector)
+    ? document.querySelector('.ui-toast-region') : null;
+  if (region) { sharedToastRegion = region; }
+  return region || sharedToastRegion;
+}
+
+/* ui/toast.js's own auto-dismiss timers are REAL (bare `setTimeout`, never
+   patched to the fake window's controllable one — only document/window/
+   fetch are swapped per test), so a toast shown by an EARLIER test (e.g.
+   the existing "Download PDF"/"Download complete review" buttons' own
+   404-empty handling shows this exact same "No matching records" message
+   — see review-summaries.js) can still be "active" (not yet expired) when
+   a LATER test triggers the identical type+title+message: showToast()'s
+   own duplicate-suppression then just restarts that EXISTING toast's
+   timer instead of appending a new element, so reading "whatever the
+   region's last child currently is" is not reliable on its own.
+   dismissAllToasts() (imported below) marks every currently-active toast
+   dismissed FIRST — a dismissed entry is never matched by the duplicate-
+   suppression key check (see ui/toast.js showToast: `!activeToasts[i].
+   dismissed`), so the very next showToast() call is guaranteed to append
+   a genuinely new element regardless of what any earlier test already
+   showed, without needing to wait out any real timer. */
+function lastToastText() {
+  var region = getToastRegion();
+  var children = region && region._children;
+  if (!children || !children.length) { return ''; }
+  var last = children[children.length - 1];
+  return last.allText ? last.allText() : (last.textContent || '');
+}
+var primeToastEnv = installFakeBrowserGlobals();
+var primeToastMod = await import('./ui/toast.js');
+var dismissAllToasts = primeToastMod.dismissAllToasts;
+primeToastMod.showToast({ type: 'information', title: '', message: '' });
+sharedToastRegion = document.querySelector('.ui-toast-region');
+primeToastEnv.restore();
+
 var importCounter = 0;
 
 async function freshReviewSummariesModule() {
@@ -581,7 +632,7 @@ test('date filters are included in the list request', async (t) => {
 });
 
 /* 2026-08-11: the "Include inactive staff" toggle was removed along with
-   staff_status (see review-summaries.js fetchStaffOptions) — this test
+   staff_status (see review-summaries.js fetchStaffDirectory) — this test
    now just confirms the search request never sends that param at all. */
 test('staff search request never sends staff_status', async (t) => {
   var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
@@ -885,7 +936,11 @@ test('no reviewer display name/role is ever present in the request body sent to 
   assert.ok(postBody);
   assert.equal(postBody.reviewed_staff_id, 'staff-uuid-6');
   assert.equal(Object.prototype.hasOwnProperty.call(postBody, 'reviewer_member_key'), false);
-  assert.equal(Object.keys(postBody).sort().join(','), 'meeting_date,reviewed_staff_id,summary_text');
+  // attachment_ids added (REQ-CAL-REV-ATTACH-001, 2026-09-23) — always
+  // present (empty array when no files were attached), never
+  // reviewer_member_key.
+  assert.equal(Object.keys(postBody).sort().join(','), 'attachment_ids,meeting_date,reviewed_staff_id,summary_text');
+  assert.deepEqual(postBody.attachment_ids, []);
 });
 
 test('create form rejects a blank summary before any POST is sent', async (t) => {
@@ -1403,7 +1458,11 @@ test('an owner-only mutation denial (a 404 on PUT for a record the token no long
 
 test('stale in-flight response is ignored — a slower earlier request never overwrites a newer selection', async (t) => {
   var resolvers = [];
-  var fetchMock = makeFetchMock(function () {
+  var fetchMock = makeFetchMock(function (url) {
+    // The workspace now asks the backend for its attachment storage mode when
+    // it mounts (2026-09-25); answer that immediately so only the two
+    // history requests under test stay pending.
+    if (String(url).indexOf('/attachments/storage-mode') !== -1) { return jsonResponse(200, { mode: 'postgres' }); }
     return new Promise(function (resolve) { resolvers.push(resolve); });
   });
   var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
@@ -1531,33 +1590,6 @@ test('no summary content is ever included in a request URL', async (t) => {
   fetchMock.calls.forEach(function (call) {
     assert.ok(!String(call.url).includes(secret));
   });
-});
-
-test('staff search shows an immediate "Searching…" indicator while the request is in flight', async (t) => {
-  var resolveSearch;
-  var fetchMock = makeFetchMock(function (url) {
-    if (String(url).indexOf('/api/staff') !== -1 && String(url).indexOf('staff-review-summaries') === -1) {
-      return new Promise(function (resolve) { resolveSearch = resolve; });
-    }
-    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
-  });
-  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
-  t.after(globals.restore);
-  var mod = await freshReviewSummariesModule();
-  var mountEl = globals.document.createElement('div');
-  mod.mountReviewSummariesWorkspace(mountEl);
-
-  var searchInput = findByClass(mountEl, 'review-summaries-staff-search');
-  searchInput.value = 'jane';
-  searchInput.dispatchEvent({ type: 'input' });
-  await new Promise(function (resolve) { setTimeout(resolve, 320); });
-
-  var resultsEl = findByClass(mountEl, 'review-summaries-staff-results');
-  assert.match(resultsEl._innerHTML, /Searching/i);
-  assert.equal(resultsEl.hidden, false);
-
-  resolveSearch(jsonResponse(200, { records: [], total: 0, limit: 20, offset: 0 }));
-  await new Promise(function (resolve) { setTimeout(resolve, 0); });
 });
 
 test('a second, independently mounted workspace instance is unaffected by the first (mount is not a hidden singleton)', async (t) => {
@@ -2363,4 +2395,1264 @@ test('token change from MD to a normal member restores the create form', async (
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
   assert.equal(notice.hidden, true, 'a normal member must not see the read-only notice after the token change');
+});
+
+// ── REQ-CAL-REV-ATTACH-001 (2026-09-23) — Review Summary Attachments ────
+
+// ── Pure helpers — no DOM required ──────────────────────────────────
+
+test('classifyAttachmentFilename maps every supported extension, case-insensitively', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.classifyAttachmentFilename('clip.MP3'), 'audio');
+  assert.equal(mod.classifyAttachmentFilename('clip.wav'), 'audio');
+  assert.equal(mod.classifyAttachmentFilename('notes.DOCX'), 'word');
+  assert.equal(mod.classifyAttachmentFilename('notes.doc'), 'word');
+  assert.equal(mod.classifyAttachmentFilename('sheet.xlsx'), 'excel');
+  assert.equal(mod.classifyAttachmentFilename('sheet.xls'), 'excel');
+  assert.equal(mod.classifyAttachmentFilename('photo.PNG'), 'image');
+  assert.equal(mod.classifyAttachmentFilename('photo.jpeg'), 'image');
+  assert.equal(mod.classifyAttachmentFilename('scan.pdf'), 'pdf');
+  assert.equal(mod.classifyAttachmentFilename('virus.exe'), null);
+  assert.equal(mod.classifyAttachmentFilename(''), null);
+});
+
+test('validateAttachmentFile accepts a well-formed file and rejects unsupported/empty/oversized ones', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+
+  var ok = mod.validateAttachmentFile({ name: 'clip.mp3', size: 1024 });
+  assert.equal(ok.valid, true);
+  assert.equal(ok.attachmentType, 'audio');
+
+  var badType = mod.validateAttachmentFile({ name: 'virus.exe', size: 10 });
+  assert.equal(badType.valid, false);
+  assert.match(badType.error, /Unsupported file type/);
+
+  var empty = mod.validateAttachmentFile({ name: 'clip.mp3', size: 0 });
+  assert.equal(empty.valid, false);
+  assert.match(empty.error, /empty/);
+
+  var oversized = mod.validateAttachmentFile({ name: 'clip.mp3', size: mod.MAX_ATTACHMENT_FILE_SIZE_BYTES + 1 });
+  assert.equal(oversized.valid, false);
+  assert.match(oversized.error, /maximum allowed size/);
+});
+
+test('formatAttachmentFileSize renders bytes/KB/MB at the right thresholds', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  assert.equal(mod.formatAttachmentFileSize(500), '500 B');
+  assert.equal(mod.formatAttachmentFileSize(2048), '2.0 KB');
+  assert.equal(mod.formatAttachmentFileSize(5 * 1024 * 1024), '5.0 MB');
+});
+
+test('staffSearchResultLabel disambiguates similarly-named staff with staff_code/designation', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var withExtras = mod.staffSearchResultLabel({ name: 'John Silva', staff_code: 'DWL-042', designation: 'Developer' });
+  assert.equal(withExtras, 'John Silva — DWL-042 · Developer');
+  var nameOnly = mod.staffSearchResultLabel({ name: 'John Silva' });
+  assert.equal(nameOnly, 'John Silva');
+  assert.equal(nameOnly, mod.staffOptionLabel({ name: 'John Silva' }));
+});
+
+test('buildFallbackReviewSummaryZipFilename and parseReviewSummaryZipFilename produce a distinct .zip name from the PDF one', async (t) => {
+  var globals = installFakeBrowserGlobals();
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var fallback = mod.buildFallbackReviewSummaryZipFilename('Jane Doe', '2026-09-20');
+  assert.equal(fallback, 'Complete_Review_Jane_Doe_2026-09-20.zip');
+  var parsed = mod.parseReviewSummaryZipFilename(
+    'attachment; filename="Complete_Review_Jane_Doe_2026-09-20.zip"', 'Jane Doe', '2026-09-20'
+  );
+  assert.equal(parsed, 'Complete_Review_Jane_Doe_2026-09-20.zip');
+  var pdfFallback = mod.buildFallbackReviewSummaryPdfFilename('Jane Doe', '2026-09-20');
+  assert.notEqual(fallback, pdfFallback);
+});
+
+// ── DOM: keyboard selection (requirement #1) ────────────────────────
+
+test('ArrowDown then Enter selects a staff search result without a mouse click', async (t) => {
+  var staffRecords = [
+    fakeStaffRecord({ id: 'staff-kb-1', name: 'Kavindu Silva' }),
+    fakeStaffRecord({ id: 'staff-kb-2', name: 'Kavindu Perera' })
+  ];
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/api/staff?') !== -1) {
+      return jsonResponse(200, { records: staffRecords });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.value = 'Kavindu';
+  api.staffSearchInputEl.dispatchEvent({ type: 'input' });
+  await new Promise(function (resolve) { setTimeout(resolve, 320); });
+
+  var results = findAllByClass(mountEl, 'review-summaries-staff-result');
+  assert.equal(results.length, 2, 'both matching staff should be listed');
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'keydown', key: 'ArrowDown', preventDefault: function () {} });
+  assert.ok(
+    results[0].classList.contains('review-summaries-staff-result--active'),
+    'first result should be highlighted after one ArrowDown'
+  );
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault: function () {} });
+  assert.equal(api.state.selectedStaff && api.state.selectedStaff.id, 'staff-kb-1');
+  // selectStaff() triggers an async renderHistory() fetch — let it settle
+  // before this test's globals are torn down (t.after), or its
+  // resolution fires against an already-restored/undefined document.
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+});
+
+test('Escape closes the results list without selecting anything', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/api/staff?') !== -1) {
+      return jsonResponse(200, { records: [fakeStaffRecord({ id: 'staff-esc-1' })] });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.value = 'x';
+  api.staffSearchInputEl.dispatchEvent({ type: 'input' });
+  await new Promise(function (resolve) { setTimeout(resolve, 320); });
+  assert.equal(api.staffResultsEl.hidden, false);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'keydown', key: 'Escape', preventDefault: function () {} });
+  assert.equal(api.staffResultsEl.hidden, true);
+  assert.equal(api.state.selectedStaff, null);
+});
+
+// ── DOM: searchable staff dropdown (2026-09-24) ─────────────────────
+//
+// The whole directory is loaded once through GET /api/staff on first
+// focus/typing and filtered client-side by name. Only an option chosen from
+// the list selects a staff member.
+
+var DROPDOWN_STAFF = [
+  fakeStaffRecord({ id: 11, name: 'Kavindu Silva', staff_code: 'S011' }),
+  fakeStaffRecord({ id: 12, name: 'Kavindu Perera', staff_code: 'S012' }),
+  fakeStaffRecord({ id: 13, name: 'Nadeesha Fernando', staff_code: 'S013' })
+];
+
+function staffApiHandler(records, extra) {
+  return function (url, options) {
+    var u = String(url);
+    if (u.indexOf('staff-review-summaries') === -1 && u.indexOf('/api/staff') !== -1) {
+      return jsonResponse(200, { records: records, total: records.length, limit: 500, offset: 0 });
+    }
+    if (extra) {
+      var custom = extra(u, options);
+      if (custom) { return custom; }
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  };
+}
+
+function staffApiCalls(fetchMock) {
+  return fetchMock.calls.filter(function (c) {
+    var u = String(c.url);
+    return u.indexOf('/api/staff') !== -1 && u.indexOf('staff-review-summaries') === -1;
+  });
+}
+
+function historyCalls(fetchMock) {
+  return fetchMock.calls.filter(function (c) {
+    return String(c.url).indexOf('staff-review-summaries') !== -1
+      && String(c.url).indexOf('/attachments/storage-mode') === -1
+      && (!c.options.method || c.options.method === 'GET');
+  });
+}
+
+function settle() { return new Promise(function (resolve) { setTimeout(resolve, 0); }); }
+
+function optionLabels(mountEl) {
+  return findAllByClass(mountEl, 'review-summaries-staff-result').map(function (b) { return b.textContent; });
+}
+
+function typeInto(api, text) {
+  api.staffSearchInputEl.value = text;
+  api.staffSearchInputEl.dispatchEvent({ type: 'input' });
+}
+
+function pressKey(api, key) {
+  var prevented = false;
+  api.staffSearchInputEl.dispatchEvent({ type: 'keydown', key: key, preventDefault: function () { prevented = true; } });
+  return prevented;
+}
+
+test('focusing the empty staff field lists every staff member without typing, loading the directory once with no search param', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  assert.equal(api.staffResultsEl.hidden, true, 'closed until focused');
+  assert.equal(api.staffSearchInputEl.getAttribute('role'), 'combobox');
+  assert.equal(api.staffSearchInputEl.getAttribute('aria-expanded'), 'false');
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  assert.match(findByClass(mountEl, 'review-summaries-staff-result-empty')._innerHTML, /Loading staff/, 'shows a loading state while the directory loads');
+  await settle();
+
+  assert.equal(api.staffResultsEl.hidden, false);
+  assert.equal(api.staffSearchInputEl.getAttribute('aria-expanded'), 'true');
+  assert.equal(optionLabels(mountEl).length, 3);
+  assert.match(optionLabels(mountEl)[0], /Kavindu Silva/);
+
+  var calls = staffApiCalls(fetchMock);
+  assert.equal(calls.length, 1);
+  assert.doesNotMatch(String(calls[0].url), /search=/);
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer ' + AUTHORIZED.token);
+
+  // Closing and refocusing reuses the loaded directory — no second request.
+  api.staffSearchInputEl.dispatchEvent({ type: 'blur' });
+  assert.equal(api.staffResultsEl.hidden, true);
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  assert.equal(optionLabels(mountEl).length, 3);
+  assert.equal(staffApiCalls(fetchMock).length, 1);
+});
+
+test('typing filters staff by name case-insensitively; zero matches shows "No matching staff"; clearing the text restores the full list', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+
+  typeInto(api, 'kAVINDU');
+  var labels = optionLabels(mountEl);
+  assert.equal(labels.length, 2, 'multiple matches, case-insensitive');
+  assert.ok(labels.every(function (l) { return /Kavindu/.test(l); }));
+
+  typeInto(api, 'perera');
+  assert.equal(optionLabels(mountEl).length, 1, 'a single match');
+
+  typeInto(api, 'zzz-nobody');
+  assert.equal(optionLabels(mountEl).length, 0);
+  assert.match(api.staffResultsEl.allText(), /No matching staff/);
+  assert.equal(api.state.selectedStaff, null);
+
+  typeInto(api, '');
+  assert.equal(optionLabels(mountEl).length, 3, 'empty text shows everyone again');
+  assert.equal(staffApiCalls(fetchMock).length, 1, 'filtering is client-side — no extra staff requests');
+});
+
+test('typed text alone never selects: Enter with nothing highlighted does nothing, even for an exact single match', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  typeInto(api, 'Nadeesha Fernando');
+  assert.equal(optionLabels(mountEl).length, 1);
+
+  pressKey(api, 'Enter');
+  await settle();
+  assert.equal(api.state.selectedStaff, null);
+  assert.equal(findByTag(mountEl, 'FORM').hidden, true, 'the Add Review Summary form stays disabled');
+  assert.equal(historyCalls(fetchMock).length, 0, 'no history is loaded for typed-only text');
+});
+
+test('mouse selection: the chosen option becomes the selected staff (by its staff id), shows its name, loads that staff review history, and enables the form', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF, function (u) {
+    if (u.indexOf('reviewed_staff_id=13') !== -1) {
+      return jsonResponse(200, {
+        records: [fakeSummaryRecord({ id: 'sum-13', reviewed_staff_id: 13, reviewed_staff_full_name: 'Nadeesha Fernando', summary_text: 'History for thirteen.' })],
+        total: 1, limit: 50, offset: 0
+      });
+    }
+    return null;
+  }));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  findAllByClass(mountEl, 'review-summaries-staff-result')[2].click();
+  await settle();
+
+  assert.equal(api.state.selectedStaff.id, 13);
+  var chip = findByClass(mountEl, 'review-summaries-selected-staff');
+  assert.equal(chip.hidden, false);
+  assert.match(chip.allText(), /Nadeesha Fernando/);
+  assert.equal(api.staffSearchInputEl.hidden, true);
+  assert.equal(api.staffResultsEl.hidden, true, 'the list closes on selection');
+  assert.equal(findByTag(mountEl, 'FORM').hidden, false, 'the Add Review Summary form is enabled');
+  var hist = historyCalls(fetchMock);
+  assert.equal(hist.length >= 1, true);
+  assert.match(String(hist[hist.length - 1].url), /reviewed_staff_id=13/);
+  assert.match(findByClass(mountEl, 'review-summaries-history-panel').allText(), /History for thirteen/);
+});
+
+test('keyboard: ArrowDown/ArrowUp move (and wrap) the highlight with aria-activedescendant, Enter selects the highlighted option', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  var options = findAllByClass(mountEl, 'review-summaries-staff-result');
+
+  assert.equal(pressKey(api, 'ArrowDown'), true, 'ArrowDown is default-prevented (no caret/page scroll)');
+  assert.ok(options[0].classList.contains('review-summaries-staff-result--active'));
+  assert.equal(api.staffSearchInputEl.getAttribute('aria-activedescendant'), options[0].id);
+  assert.equal(options[0].getAttribute('aria-selected'), 'true');
+
+  pressKey(api, 'ArrowUp'); // wraps from the first to the last
+  assert.ok(options[2].classList.contains('review-summaries-staff-result--active'));
+  assert.ok(!options[0].classList.contains('review-summaries-staff-result--active'));
+  assert.equal(api.staffSearchInputEl.getAttribute('aria-activedescendant'), options[2].id);
+
+  pressKey(api, 'ArrowDown'); // wraps from the last to the first
+  pressKey(api, 'ArrowDown');
+  pressKey(api, 'Enter');
+  await settle();
+  assert.equal(api.state.selectedStaff.id, 12);
+  assert.equal(api.staffResultsEl.hidden, true);
+});
+
+test('keyboard: Escape closes the list without selecting; ArrowDown or a click reopens it', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  pressKey(api, 'ArrowDown');
+  pressKey(api, 'Escape');
+  assert.equal(api.staffResultsEl.hidden, true);
+  assert.equal(api.staffSearchInputEl.getAttribute('aria-expanded'), 'false');
+  assert.equal(api.staffSearchInputEl.getAttribute('aria-activedescendant'), null);
+  assert.equal(api.state.selectedStaff, null);
+
+  pressKey(api, 'ArrowDown');
+  assert.equal(api.staffResultsEl.hidden, false, 'ArrowDown reopens a closed list');
+  pressKey(api, 'Escape');
+  api.staffSearchInputEl.dispatchEvent({ type: 'click' });
+  assert.equal(api.staffResultsEl.hidden, false, 'clicking the still-focused field reopens it');
+  assert.equal(optionLabels(mountEl).length, 3);
+});
+
+test('a staff API failure shows a clear error with Retry — never "No matching staff" or an empty list — and Retry recovers', async (t) => {
+  var failing = true;
+  var fetchMock = makeFetchMock(function (url, options) {
+    var u = String(url);
+    if (u.indexOf('staff-review-summaries') === -1 && u.indexOf('/api/staff') !== -1) {
+      return failing
+        ? jsonResponse(500, { detail: 'boom' })
+        : jsonResponse(200, { records: DROPDOWN_STAFF, total: 3, limit: 500, offset: 0 });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+
+  var text = api.staffResultsEl.allText();
+  assert.match(text, /Could not load the staff list/);
+  assert.doesNotMatch(text, /No matching staff|No staff records/);
+  assert.equal(optionLabels(mountEl).length, 0);
+  var msg = findByClass(mountEl, 'review-summaries-staff-result-empty');
+  assert.equal(msg.getAttribute('role'), 'alert');
+
+  // typing while in the error state must not turn the failure into "no match"
+  typeInto(api, 'kav');
+  assert.match(api.staffResultsEl.allText(), /Could not load the staff list/);
+
+  failing = false;
+  findByClass(mountEl, 'review-summaries-staff-retry-btn').click();
+  await settle();
+  assert.equal(optionLabels(mountEl).length, 2, 'Retry reloads the directory and applies the current text filter');
+  assert.equal(staffApiCalls(fetchMock).length, 2);
+});
+
+test('a network failure on the staff API is also reported as an error, not an empty list', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    var u = String(url);
+    if (u.indexOf('staff-review-summaries') === -1 && u.indexOf('/api/staff') !== -1) {
+      return Promise.reject(new TypeError('Failed to fetch'));
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  assert.match(api.staffResultsEl.allText(), /Could not load the staff list/);
+  assert.doesNotMatch(api.staffResultsEl.allText(), /No matching staff/);
+});
+
+test('a directory larger than one page is fully loaded; a failure on a later page is an error, not a partial list', async (t) => {
+  var page1 = [fakeStaffRecord({ id: 1, name: 'Alpha One' }), fakeStaffRecord({ id: 2, name: 'Beta Two' })];
+  var page2 = [fakeStaffRecord({ id: 3, name: 'Gamma Three' })];
+  var failSecondPage = false;
+  var fetchMock = makeFetchMock(function (url) {
+    var u = String(url);
+    if (u.indexOf('staff-review-summaries') === -1 && u.indexOf('/api/staff') !== -1) {
+      if (u.indexOf('offset=0') !== -1) { return jsonResponse(200, { records: page1, total: 3, limit: 500, offset: 0 }); }
+      if (failSecondPage) { return jsonResponse(503, {}); }
+      return jsonResponse(200, { records: page2, total: 3, limit: 500, offset: 2 });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  assert.equal(optionLabels(mountEl).length, 3);
+  assert.match(String(staffApiCalls(fetchMock)[1].url), /offset=2/);
+
+  // fresh mount, second page fails
+  failSecondPage = true;
+  var mountEl2 = globals.document.createElement('div');
+  var api2 = mod.mountReviewSummariesWorkspace(mountEl2);
+  api2.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  assert.equal(optionLabels(mountEl2).length, 0, 'no partial list is offered');
+  assert.match(api2.staffResultsEl.allText(), /Could not load the staff list/);
+});
+
+test('records without an id are never offered as options', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler([
+    fakeStaffRecord({ id: null, name: 'No Id Person' }),
+    fakeStaffRecord({ id: 21, name: 'Has Id' })
+  ]));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  assert.deepEqual(optionLabels(mountEl).map(function (l) { return l.replace(/ —.*/, ''); }), ['Has Id']);
+});
+
+test('changing staff after entering a draft resets the draft, filters, pending attachments and history; the next save goes to the NEWLY chosen staff id', async (t) => {
+  var createBodies = [];
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF, function (u, options) {
+    if (u.indexOf('/attachments') !== -1 && options.method === 'POST') {
+      return jsonResponse(201, { id: 'att-9', original_filename: 'a.pdf', attachment_type: 'pdf', file_size_bytes: 10 });
+    }
+    if (options.method === 'POST') {
+      var body = JSON.parse(options.body);
+      createBodies.push(body);
+      return jsonResponse(201, fakeSummaryRecord(body));
+    }
+    if (u.indexOf('reviewed_staff_id=11') !== -1) {
+      return jsonResponse(200, {
+        records: [fakeSummaryRecord({ id: 'sum-eleven', summary_text: 'Eleven history.' })], total: 1, limit: 50, offset: 0
+      });
+    }
+    return null;
+  }));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  findAllByClass(mountEl, 'review-summaries-staff-result')[0].click(); // id 11
+  await settle();
+  assert.match(findByClass(mountEl, 'review-summaries-history-panel').allText(), /Eleven history/);
+
+  // draft + filters + an uploaded attachment for staff 11
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'Half-written draft for staff eleven.';
+  var reviewerSelect = findByClass(mountEl, 'review-summaries-reviewer-select');
+  reviewerSelect.value = 'arun';
+  reviewerSelect.dispatchEvent({ type: 'change' });
+  var fromInput = findByClass(mountEl, 'review-summaries-date-from');
+  fromInput.value = '2026-08-01';
+  fromInput.dispatchEvent({ type: 'change' });
+  api.addFilesToPending([new File(['pdf'], 'a.pdf', { type: 'application/pdf' })]);
+  await settle();
+  assert.equal(api.state.pendingAttachments.length > 0, true);
+
+  // Change → everything belonging to staff 11 is gone
+  findByClass(mountEl, 'review-summaries-change-staff').click();
+  await settle();
+  assert.equal(api.state.selectedStaff, null);
+  assert.equal(textarea.value, '');
+  assert.equal(api.state.pendingAttachments.length, 0);
+  assert.equal(api.state.reviewerFilter, '');
+  assert.equal(reviewerSelect.value, '');
+  assert.equal(fromInput.value, '');
+  assert.equal(api.state.dateFrom, '');
+  assert.equal(form.hidden, true, 'the form is disabled until someone is chosen again');
+  assert.equal(api.exportButtonEl.disabled, true);
+  assert.doesNotMatch(findByClass(mountEl, 'review-summaries-history-panel').allText(), /Eleven history/);
+  assert.equal(api.staffSearchInputEl.hidden, false, 'the picker is back');
+  assert.equal(api.staffResultsEl.hidden, false, 'Change opens the list to pick again');
+
+  // Choose someone else and save — the request must carry the new id.
+  findAllByClass(mountEl, 'review-summaries-staff-result')[2].click(); // id 13
+  await settle();
+  textarea.value = 'Fresh summary for staff thirteen.';
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await settle();
+  assert.equal(createBodies.length, 1);
+  assert.equal(createBodies[0].reviewed_staff_id, 13);
+  assert.deepEqual(createBodies[0].attachment_ids, [], 'the old staff member\'s attachment is not carried over');
+});
+
+test('Clear deselects, resets the same state, and leaves the list closed with an empty field', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  findAllByClass(mountEl, 'review-summaries-staff-result')[1].click();
+  await settle();
+  var textarea = findByTag(findByTag(mountEl, 'FORM'), 'TEXTAREA');
+  textarea.value = 'Draft to be discarded.';
+
+  findByClass(mountEl, 'review-summaries-clear-staff').click();
+  await settle();
+  assert.equal(api.state.selectedStaff, null);
+  assert.equal(textarea.value, '');
+  assert.equal(findByTag(mountEl, 'FORM').hidden, true);
+  assert.equal(api.staffSearchInputEl.hidden, false);
+  assert.equal(api.staffSearchInputEl.value, '');
+  assert.equal(api.staffResultsEl.hidden, true, 'Clear does not pop the list open');
+  assert.equal(api.exportButtonEl.disabled, true);
+  assert.match(findByClass(mountEl, 'review-summaries-history-panel').allText(), /Select a staff member/);
+});
+
+test('changing staff while a save is in flight names the ORIGINAL staff in the toast and does not disturb the new selection', async (t) => {
+  var resolveCreate;
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF, function (u, options) {
+    if (options.method === 'POST') {
+      return new Promise(function (resolve) { resolveCreate = resolve; });
+    }
+    return null;
+  }));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  findAllByClass(mountEl, 'review-summaries-staff-result')[0].click(); // Kavindu Silva (11)
+  await settle();
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'Saved for eleven.';
+  dismissAllToasts();
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await settle();
+
+  // switch to Nadeesha (13) and start a new draft while the POST is pending
+  findByClass(mountEl, 'review-summaries-change-staff').click();
+  await settle();
+  findAllByClass(mountEl, 'review-summaries-staff-result')[2].click();
+  await settle();
+  textarea.value = 'New draft for thirteen.';
+
+  resolveCreate({ ok: true, status: 201, json: function () { return Promise.resolve(fakeSummaryRecord({ id: 'sum-new' })); } });
+  await settle();
+  await settle();
+
+  assert.match(lastToastText(), /Kavindu Silva/);
+  assert.doesNotMatch(lastToastText(), /Nadeesha/);
+  assert.equal(api.state.selectedStaff.id, 13);
+  assert.equal(textarea.value, 'New draft for thirteen.', 'the new employee\'s draft is not wiped by the old save finishing');
+});
+
+test('a token change discards the loaded staff directory so the next focus reloads it', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  assert.equal(staffApiCalls(fetchMock).length, 1);
+
+  api.reactToAuthChange();
+  await settle();
+  api.staffSearchInputEl.dispatchEvent({ type: 'focus' });
+  await settle();
+  assert.equal(staffApiCalls(fetchMock).length, 2);
+  assert.equal(optionLabels(mountEl).length, 3);
+});
+
+test('the staff field is a labelled combobox wired to its listbox', async (t) => {
+  var fetchMock = makeFetchMock(staffApiHandler(DROPDOWN_STAFF));
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  var input = api.staffSearchInputEl;
+  var title = findByClass(mountEl, 'review-summaries-step-title');
+  assert.equal(input.getAttribute('aria-labelledby'), title.id);
+  assert.match(title.textContent, /Select employee/);
+  var listbox = globals.document.getElementById(input.getAttribute('aria-controls'));
+  assert.ok(listbox, 'aria-controls points at a real element');
+  assert.equal(listbox.getAttribute('role'), 'listbox');
+  input.dispatchEvent({ type: 'focus' });
+  await settle();
+  var option = findByClass(mountEl, 'review-summaries-staff-result');
+  assert.equal(option.getAttribute('role'), 'option');
+  assert.ok(option.id);
+});
+
+// ── DOM: attachment upload (requirement #2) ─────────────────────────
+
+test('a valid selected file uploads immediately and its id is included on Save', async (t) => {
+  var postedAttachment = false;
+  var createBody = null;
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (String(url).indexOf('/attachments') !== -1 && options.method === 'POST') {
+      postedAttachment = true;
+      return jsonResponse(201, {
+        id: 'att-1', original_filename: 'clip.mp3', content_type: 'audio/mpeg',
+        attachment_type: 'audio', file_size_bytes: 1024, created_at: '2026-09-20T09:00:00Z'
+      });
+    }
+    if (options.method === 'POST') {
+      createBody = JSON.parse(options.body);
+      return jsonResponse(201, fakeSummaryRecord(createBody));
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-att-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  api.addFilesToPending([new File(['fake mp3 bytes'], 'clip.mp3', { type: 'audio/mpeg' })]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.ok(postedAttachment, 'the file should be uploaded immediately, before Save is pressed');
+  assert.equal(api.state.pendingAttachments.length, 1);
+  assert.equal(api.state.pendingAttachments[0].status, 'uploaded');
+  assert.equal(api.state.pendingAttachments[0].id, 'att-1');
+
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'A real review discussion.';
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.ok(createBody, 'the create request should have been sent');
+  assert.deepEqual(createBody.attachment_ids, ['att-1']);
+  // A successful save clears the pending list — it is no longer "to add".
+  assert.equal(api.state.pendingAttachments.length, 0);
+});
+
+test('an unsupported file is rejected client-side and never uploaded', async (t) => {
+  var attachmentPosts = 0;
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (String(url).indexOf('/attachments') !== -1 && options.method === 'POST') { attachmentPosts += 1; }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-att-2' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  api.addFilesToPending([new File(['whatever'], 'virus.exe')]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(attachmentPosts, 0, 'an unsupported file must never reach the network');
+  assert.equal(api.state.pendingAttachments[0].status, 'error');
+});
+
+test('a failed upload blocks Save until the file is resolved', async (t) => {
+  var createPosted = false;
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (String(url).indexOf('/attachments') !== -1 && options.method === 'POST') {
+      return jsonResponse(502, { detail: 'Attachment upload failed. Please try again.' });
+    }
+    if (options.method === 'POST') {
+      createPosted = true;
+      return jsonResponse(201, fakeSummaryRecord({}));
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-att-3' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  api.addFilesToPending([new File(['fake mp3 bytes'], 'clip.mp3', { type: 'audio/mpeg' })]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.state.pendingAttachments[0].status, 'error');
+
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'A real review discussion.';
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(createPosted, false, 'a summary must never be created while an attachment upload has failed');
+});
+
+test('attachments UI is hidden while editing an existing summary', async (t) => {
+  var record = fakeSummaryRecord({ id: 'sum-edit-att', reviewer_member_key: 'mayurika', can_edit: true });
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [record], total: 1, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-x' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var attachmentsGroup = findByClass(mountEl, 'review-summaries-attachments-group');
+  assert.equal(attachmentsGroup.hidden, false, 'attachments are offered while creating a new summary');
+
+  var editBtn = findByClass(mountEl, 'review-summaries-edit-btn');
+  editBtn.dispatchEvent({ type: 'click' });
+  assert.equal(attachmentsGroup.hidden, true, 'attachments are not editable on an existing summary in this phase');
+});
+
+// ── DOM: "Download complete review" ZIP export ──────────────────────
+
+test('clicking Download complete review sends the same filters as Download PDF, to /export/zip', async (t) => {
+  var lastZipUrl = null;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/zip') !== -1) {
+      lastZipUrl = String(url);
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="Complete_Review_Test_2026-09-20.zip"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-zip-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.setReviewerFilter('arun');
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadReviewSummariesZip();
+
+  assert.ok(lastZipUrl, 'the zip export request should have fired');
+  assert.match(lastZipUrl, /reviewed_staff_id=staff-zip-1/);
+  assert.match(lastZipUrl, /reviewer_member_key=arun/);
+  assert.ok(!lastZipUrl.includes('token'), 'token must never appear in the export URL');
+});
+
+test('Download PDF and Download complete review are two independent, separately-labelled buttons', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  assert.equal(api.exportButtonEl.textContent, 'Download PDF');
+  assert.equal(api.zipExportButtonEl.textContent, 'Download complete review');
+  assert.notEqual(api.exportButtonEl, api.zipExportButtonEl);
+});
+
+// ── DOM: "Download all reviews as one PDF" (REQ-CAL-REV-HISTORY-PDF-001,
+//    2026-09-23) ──────────────────────────────────────────────────────
+
+test('"Download all reviews as one PDF" is a clearly labelled, independent third button', async (t) => {
+  var fetchMock = makeFetchMock(function () { return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 }); });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+
+  assert.equal(api.allReviewsExportButtonEl.textContent, 'Download all reviews as one PDF');
+  assert.notEqual(api.allReviewsExportButtonEl, api.exportButtonEl);
+  assert.notEqual(api.allReviewsExportButtonEl, api.zipExportButtonEl);
+});
+
+test('clicking Download all reviews as one PDF sends the same filters as the other exports, to /export/pdf/history', async (t) => {
+  var lastUrl = null;
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf/history') !== -1) {
+      lastUrl = String(url);
+      return pdfBlobResponse(200, { 'content-disposition': 'attachment; filename="All_Reviews_Test_2026-09-20.pdf"' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-all-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.setReviewerFilter('arun');
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  await api.downloadAllReviewsPdf();
+
+  assert.ok(lastUrl, 'the all-reviews export request should have fired');
+  assert.match(lastUrl, /reviewed_staff_id=staff-all-1/);
+  assert.match(lastUrl, /reviewer_member_key=arun/);
+  assert.ok(!lastUrl.includes('token'), 'token must never appear in the export URL');
+  assert.ok(!lastUrl.includes('limit=') && !lastUrl.includes('offset='), 'the export is never paginated');
+});
+
+test('a 413 "too large" response from /export/pdf/history shows the backend’s own specific message', async (t) => {
+  var detailText = 'This selection matches 400 reviews, which is more than the 300-review limit for a single combined PDF. Narrow the reviewer or date filters and try again.';
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf/history') !== -1) {
+      return jsonResponse(413, { detail: detailText });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-all-2' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  dismissAllToasts();
+  await api.downloadAllReviewsPdf();
+
+  assert.equal(api.state.allReviewsExportInFlight, false, 'the in-flight flag must be cleared even after a 413');
+  assert.equal(api.allReviewsExportButtonEl.disabled, false, 'the button must be re-enabled after a 413');
+  assert.match(lastToastText(), /300-review limit/, 'the backend\'s own specific limit message should be shown to the user');
+});
+
+// ── REQ-CAL-REV-HISTORY-PDF-001 regression fix (2026-09-23) — a real
+//    report showed "No matching records" for a staff member/reviewer/date
+//    combination that plainly HAD one matching review in Review History.
+//    Root cause (see the conversation record / handover note): the backend
+//    process actually serving the request did not have this route
+//    registered at all (predated this feature), so Starlette returned its
+//    own generic 404 {"detail":"Not Found"} — which the frontend's OLD
+//    `res.status === 404` check (with no body inspection) rendered
+//    identically to a genuine zero-matching-records 404, misleadingly
+//    suggesting a date-filter bug that did not exist. The fix (below)
+//    checks the response body's own detail text before ever showing "no
+//    matching records." These two tests lock in both branches. ──────────
+
+test('a genuine "no matching records" 404 (this route’s own detail text) shows the specific empty-result message', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf/history') !== -1) {
+      return jsonResponse(404, { detail: 'No review summaries match the selected filters.' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-all-empty' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  dismissAllToasts();
+  await api.downloadAllReviewsPdf();
+
+  assert.match(lastToastText(), /No matching records/, 'a genuine empty result should show "No matching records"');
+  assert.match(lastToastText(), /No review summaries match the selected filters\./);
+});
+
+test('a 404 with a DIFFERENT body (e.g. the route is not registered on the server actually handling the request) never claims "no matching records"', async (t) => {
+  var fetchMock = makeFetchMock(function (url) {
+    if (String(url).indexOf('/export/pdf/history') !== -1) {
+      // Starlette's own generic "route not found" shape — never this
+      // route's own fixed empty-result sentence.
+      return jsonResponse(404, { detail: 'Not Found' });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-all-stale-route' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  dismissAllToasts();
+  await api.downloadAllReviewsPdf();
+
+  var toastText = lastToastText();
+  assert.doesNotMatch(toastText, /No matching records/, 'a route-not-found 404 must never be shown as "no matching records"');
+  assert.doesNotMatch(toastText, /No review summaries match the selected filters\./);
+  assert.equal(api.state.allReviewsExportInFlight, false, 'the in-flight flag must still be cleared');
+  assert.equal(api.allReviewsExportButtonEl.disabled, false, 'the button must still be re-enabled');
+});
+
+// ── REQ-CAL-REV-ATTACH-001 follow-up (2026-09-23) — "attachment storage
+//    not ready" (missing-migration) failure handling. Backend root cause:
+//    backend/routers/staff_review_summaries.py now converts an unhandled
+//    UndefinedTable DB error into a clean, typed 503 —
+//    {"detail": {"error": "attachment_storage_not_ready", "message": ...}}
+//    — which actually flows through Starlette's normal exception path (so
+//    CORSMiddleware attaches Access-Control-Allow-Origin correctly,
+//    unlike the previous unhandled-500 case). These tests simulate that
+//    exact response shape at the fetch-mock level — they do not touch a
+//    real or fake database — and prove the frontend surfaces it as a
+//    real, specific message rather than a raw "Failed to fetch". ────────
+
+test('a 503 attachment_storage_not_ready upload failure shows the real backend message, never "[object Object]" or "Failed to fetch"', async (t) => {
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (String(url).indexOf('/attachments') !== -1 && options.method === 'POST') {
+      return jsonResponse(503, {
+        detail: {
+          error: 'attachment_storage_not_ready',
+          message: 'Attachment storage is not ready: database migration required.'
+        }
+      });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-missing-table-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  api.addFilesToPending([new File(['fake mp3 bytes'], 'clip.mp3', { type: 'audio/mpeg' })]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var item = api.state.pendingAttachments[0];
+  assert.equal(item.status, 'error');
+  assert.equal(item.error, 'Attachment storage is not ready: database migration required.');
+  assert.notEqual(item.error, 'Failed to fetch');
+  assert.ok(item.error.indexOf('[object Object]') === -1);
+});
+
+test('form text, date, and the selected file all survive an upload failure — nothing is retyped or reselected to retry', async (t) => {
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (String(url).indexOf('/attachments') !== -1 && options.method === 'POST') {
+      return jsonResponse(503, {
+        detail: { error: 'attachment_storage_not_ready', message: 'Attachment storage is not ready: database migration required.' }
+      });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-missing-table-2' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  var dateInput = findByClass(mountEl, 'review-summaries-date-input');
+  textarea.value = 'Text the reviewer already typed before the upload failed.';
+  dateInput.value = '2026-09-15';
+
+  api.addFilesToPending([new File(['fake mp3 bytes'], 'clip.mp3', { type: 'audio/mpeg' })]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(api.state.pendingAttachments[0].status, 'error');
+  // Nothing about the open form was cleared or reset by the failure.
+  assert.equal(textarea.value, 'Text the reviewer already typed before the upload failed.');
+  assert.equal(dateInput.value, '2026-09-15');
+  assert.equal(api.state.selectedStaff.id, 'staff-missing-table-2');
+  assert.equal(api.state.pendingAttachments.length, 1);
+  assert.equal(api.state.pendingAttachments[0].file.name, 'clip.mp3');
+});
+
+test('retry re-attempts the same file and succeeds once the backend recovers', async (t) => {
+  var attempt = 0;
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (String(url).indexOf('/attachments') !== -1 && options.method === 'POST') {
+      attempt += 1;
+      if (attempt === 1) {
+        return jsonResponse(503, {
+          detail: { error: 'attachment_storage_not_ready', message: 'Attachment storage is not ready: database migration required.' }
+        });
+      }
+      return jsonResponse(201, {
+        id: 'att-retry-1', original_filename: 'clip.mp3', content_type: 'audio/mpeg',
+        attachment_type: 'audio', file_size_bytes: 14, created_at: '2026-09-23T09:00:00Z'
+      });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-retry-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  api.addFilesToPending([new File(['fake mp3 bytes'], 'clip.mp3', { type: 'audio/mpeg' })]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.state.pendingAttachments[0].status, 'error');
+
+  var retryBtn = findByClass(mountEl, 'review-summaries-attachment-retry-btn');
+  assert.ok(retryBtn, 'a Retry control must be offered for a failed attachment');
+  retryBtn.dispatchEvent({ type: 'click' });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(attempt, 2);
+  assert.equal(api.state.pendingAttachments[0].status, 'uploaded');
+  assert.equal(api.state.pendingAttachments[0].id, 'att-retry-1');
+});
+
+test('review history shows a specific "migration required" state, never the generic "We couldn\'t connect", for attachment_storage_not_ready', async (t) => {
+  var fetchMock = makeFetchMock(function () {
+    return jsonResponse(503, {
+      detail: { error: 'attachment_storage_not_ready', message: 'Attachment storage is not ready: database migration required.' }
+    });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-history-missing-table' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var errorEl = findByClass(mountEl, 'review-summaries-error');
+  assert.ok(errorEl, 'an error state should render');
+  // The fake DOM stand-in's textContent getter only concatenates CHILD
+  // nodes once any exist (it does not model a real browser's own text
+  // node for a plain string assignment) — the title/message string this
+  // code sets via `errorEl.textContent = ...` lives in the stand-in's own
+  // `_text` before the <br>/Retry button are appended as real children,
+  // so it's read directly here rather than via `.textContent`, which
+  // would only ever return "Retry" (the last-appended child's own text)
+  // once those children exist — the render below is the exact combined
+  // 'title — message' string this workspace actually shows the user, this
+  // is only a fake-DOM inspection detail, not a change in what happens.
+  assert.match(errorEl._text, /Attachment storage is not ready: database migration required\./);
+  assert.ok(
+    errorEl._text.indexOf("couldn") === -1,
+    'must not show the generic "We couldn\'t connect" message for this specific, known cause'
+  );
+});
+
+test('a false Save is never possible for a still-failed attachment, and no summary text or file is ever written to localStorage/sessionStorage', async (t) => {
+  var createPosted = false;
+  var fetchMock = makeFetchMock(function (url, options) {
+    if (String(url).indexOf('/attachments') !== -1 && options.method === 'POST') {
+      return jsonResponse(503, {
+        detail: { error: 'attachment_storage_not_ready', message: 'Attachment storage is not ready: database migration required.' }
+      });
+    }
+    if (options.method === 'POST') {
+      createPosted = true;
+      return jsonResponse(201, fakeSummaryRecord({}));
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-missing-table-3' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  var form = findByTag(mountEl, 'FORM');
+  var textarea = findByTag(form, 'TEXTAREA');
+  textarea.value = 'Sensitive staff review content that must never leave memory.';
+
+  api.addFilesToPending([new File(['fake mp3 bytes'], 'clip.mp3', { type: 'audio/mpeg' })]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.state.pendingAttachments[0].status, 'error');
+
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(createPosted, false, 'Save must never claim success while an attachment is still failed');
+  // Only the pre-seeded auth entry may ever exist — never the summary
+  // text, never a filename, never anything derived from either.
+  var storedKeys = Object.keys(globals.localStorage._store);
+  assert.deepEqual(storedKeys, ['management_aios_calendar_auth_v1']);
+  var storedValues = storedKeys.map(function (k) { return globals.localStorage._store[k]; }).join(' ');
+  assert.ok(storedValues.indexOf('Sensitive staff review content') === -1);
+  assert.ok(storedValues.indexOf('clip.mp3') === -1);
+  // This app never references sessionStorage/indexedDB for form content at
+  // all (grep-confirmed) — asserting their absence here would only prove
+  // the fake DOM stand-in doesn't define them, not a real behavior, so
+  // this test intentionally limits itself to localStorage, the one
+  // browser-storage API this workspace's own auth module (calendar/auth.js)
+  // does use, and only ever for the token — never review content.
+});
+
+// ── REQ-CAL-REV-ATTACH-001-LOCAL-PROTO (2026-09-23) — Local Prototype
+//    Attachment mode display ────────────────────────────────────────────
+
+function storageModeHandler(mode) {
+  return makeFetchMock(function (url) {
+    if (String(url).indexOf('/attachments/storage-mode') !== -1) {
+      return mode === 'error' ? jsonResponse(500, { detail: 'boom' }) : jsonResponse(200, { mode: mode });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+}
+
+async function mountWithStorageMode(t, mode) {
+  var fetchMock = storageModeHandler(mode);
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  return {
+    mod: mod, mountEl: mountEl, api: api, fetchMock: fetchMock, globals: globals,
+    noteEl: findByClass(mountEl, 'review-summaries-attachments-storage-mode-note')
+  };
+}
+
+test('the storage state is loaded when the workspace mounts — no click on "Add files" is needed', async (t) => {
+  var ctx = await mountWithStorageMode(t, 'local_prototype');
+  assert.ok(ctx.fetchMock.calls.some(function (c) { return String(c.url).indexOf('/attachments/storage-mode') !== -1; }));
+  assert.equal(ctx.noteEl.hidden, false);
+});
+
+test('local_prototype mode keeps showing the Local prototype storage warning', async (t) => {
+  var ctx = await mountWithStorageMode(t, 'local_prototype');
+  assert.match(ctx.noteEl._text, /Local prototype storage/);
+  assert.match(ctx.noteEl._text, /only on this computer/);
+  assert.ok(ctx.noteEl.classList.contains('review-summaries-attachments-storage-mode-note--local'));
+  assert.ok(!ctx.noteEl.classList.contains('review-summaries-attachments-storage-mode-note--shared'));
+});
+
+test('postgres mode removes the local warning and states the true shared-database storage', async (t) => {
+  var ctx = await mountWithStorageMode(t, 'postgres');
+  assert.equal(ctx.noteEl.hidden, false);
+  assert.match(ctx.noteEl._text, /shared database/);
+  assert.ok(!/Local prototype/.test(ctx.noteEl._text), 'the obsolete warning must be gone');
+  assert.ok(ctx.noteEl.classList.contains('review-summaries-attachments-storage-mode-note--shared'));
+  assert.ok(!ctx.noteEl.classList.contains('review-summaries-attachments-storage-mode-note--local'));
+});
+
+test('an unknown mode or a failed lookup never claims a storage state', async (t) => {
+  var unknown = await mountWithStorageMode(t, 'something_else');
+  assert.equal(unknown.noteEl.hidden, true);
+  var failed = await mountWithStorageMode(t, 'error');
+  assert.equal(failed.noteEl.hidden, true);
+  assert.equal(failed.noteEl._text || '', '');
+});
+
+test('an unauthorized workspace never asks for the storage mode', async (t) => {
+  var fetchMock = storageModeHandler('postgres');
+  var globals = installFakeBrowserGlobals({ fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesWorkspace(mountEl);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(fetchMock.calls.length, 0);
+});
+
+test('attachment-only reviews are visibly identified as unavailable', async (t) => {
+  var ctx = await mountWithStorageMode(t, 'postgres');
+  var noteEl = findByClass(ctx.mountEl, 'review-summaries-attachments-requirement-note');
+  assert.ok(noteEl, 'the notice must exist in the form');
+  assert.equal(noteEl._text, ctx.mod.ATTACHMENT_ONLY_UNAVAILABLE_NOTE);
+  assert.match(noteEl._text, /not available yet/);
+  assert.match(noteEl._text, /written summary is required/);
+});
+
+test('saving with an uploaded file but no text is refused with the attachment-only explanation and sends nothing', async (t) => {
+  var createPosts = 0;
+  var fetchMock = makeFetchMock(function (url, options) {
+    var u = String(url);
+    if (u.indexOf('/attachments/storage-mode') !== -1) { return jsonResponse(200, { mode: 'postgres' }); }
+    if (u.indexOf('/attachments') !== -1 && options.method === 'POST') {
+      return jsonResponse(201, {
+        id: 'att-only', original_filename: 'clip.mp3', content_type: 'audio/mpeg',
+        attachment_type: 'audio', file_size_bytes: 1024, created_at: '2026-09-25T09:00:00Z'
+      });
+    }
+    if (options.method === 'POST') { createPosts += 1; return jsonResponse(201, fakeSummaryRecord({})); }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0 });
+  });
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  var api = mod.mountReviewSummariesWorkspace(mountEl);
+  api.selectStaff(fakeStaffRecord({ id: 'staff-only-1' }));
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  api.addFilesToPending([new File(['fake mp3 bytes'], 'clip.mp3', { type: 'audio/mpeg' })]);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(api.state.pendingAttachments[0].status, 'uploaded');
+
+  var form = findByTag(mountEl, 'FORM');
+  findByTag(form, 'TEXTAREA').value = '   ';
+  form.dispatchEvent({ type: 'submit', preventDefault: function () {} });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+  assert.equal(createPosts, 0, 'an attachment-only review must never be sent');
+  assert.ok(form.allText().indexOf(mod.ATTACHMENT_ONLY_UNAVAILABLE_NOTE) !== -1, 'the explanation must be shown');
 });

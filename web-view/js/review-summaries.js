@@ -118,8 +118,86 @@ import { setFieldError, clearFieldError, clearFormErrors, focusFirstInvalid } fr
 import { showToast } from './ui/toast.js';
 
 var SUMMARY_MAX_LENGTH = 10000;
-var STAFF_SEARCH_DEBOUNCE_MS = 300;
 var SUMMARY_PREVIEW_LENGTH = 400;
+var mountCounter = 0; // unique DOM-id prefix per mounted workspace (staff combobox aria wiring)
+
+/* Review Summary Attachments (REQ-CAL-REV-ATTACH-001, 2026-09-23) —
+   client-side UX only. The single source of truth for every one of these
+   numbers is backend/config.py (MAX_ATTACHMENT_FILE_SIZE_BYTES,
+   MAX_ATTACHMENTS_PER_SUMMARY, ATTACHMENT_EXTENSION_TYPES) — the server
+   re-validates everything here independently and is what is actually
+   enforced; this module mirrors those same values purely so an invalid
+   file is rejected instantly, before ever reaching the network, rather
+   than only after a round trip. If the backend limits ever change, these
+   must be updated to match — there is no shared/generated source between
+   the two languages. */
+export var MAX_ATTACHMENT_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+export var MAX_ATTACHMENTS_PER_SUMMARY = 10;
+
+export var ATTACHMENT_EXTENSION_TYPES = {
+  '.mp3': 'audio', '.wav': 'audio', '.m4a': 'audio', '.ogg': 'audio',
+  '.doc': 'word', '.docx': 'word',
+  '.xls': 'excel', '.xlsx': 'excel',
+  '.jpg': 'image', '.jpeg': 'image', '.png': 'image', '.gif': 'image', '.webp': 'image',
+  '.pdf': 'pdf'
+};
+
+var ATTACHMENT_TYPE_LABELS = {
+  audio: 'Audio', word: 'Word document', excel: 'Excel spreadsheet', image: 'Image', pdf: 'PDF'
+};
+
+export function attachmentTypeLabel(attachmentType) {
+  return ATTACHMENT_TYPE_LABELS[attachmentType] || 'File';
+}
+
+/* Extension -> attachment_type, or null for an unsupported file — mirrors
+   backend/routers/staff_review_summaries.py _classify_attachment_extension
+   exactly (same suffix-match approach). */
+export function classifyAttachmentFilename(filename) {
+  var lowered = String(filename || '').toLowerCase();
+  var keys = Object.keys(ATTACHMENT_EXTENSION_TYPES);
+  for (var i = 0; i < keys.length; i++) {
+    var ext = keys[i];
+    if (lowered.slice(-ext.length) === ext) {
+      return ATTACHMENT_EXTENSION_TYPES[ext];
+    }
+  }
+  return null;
+}
+
+/* Client-side pre-check for one File object, mirroring the server's own
+   validation order (extension, then size, then non-empty) so the same
+   file always fails for the same reason in both places. Returns
+   {valid, attachmentType, error}. */
+export function validateAttachmentFile(file) {
+  var attachmentType = classifyAttachmentFilename(file && file.name);
+  if (!attachmentType) {
+    return {
+      valid: false, attachmentType: null,
+      error: 'Unsupported file type. Allowed: audio, Word, Excel, images, and PDF.'
+    };
+  }
+  if (!file.size) {
+    return { valid: false, attachmentType: attachmentType, error: 'File is empty.' };
+  }
+  if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
+    return {
+      valid: false, attachmentType: attachmentType,
+      error: 'File exceeds the maximum allowed size of '
+        + Math.floor(MAX_ATTACHMENT_FILE_SIZE_BYTES / (1024 * 1024)) + ' MB.'
+    };
+  }
+  return { valid: true, attachmentType: attachmentType, error: null };
+}
+
+/* "12.3 KB" / "4.1 MB" — never shows a raw byte count once it is large
+   enough to be unreadable at a glance. */
+export function formatAttachmentFileSize(bytes) {
+  var value = Number(bytes) || 0;
+  if (value < 1024) { return value + ' B'; }
+  if (value < 1024 * 1024) { return (value / 1024).toFixed(1) + ' KB'; }
+  return (value / (1024 * 1024)).toFixed(1) + ' MB';
+}
 
 /* REQ-CAL-REV-UX-005 — approved PDF-progress copy, exported as named
    constants (not inlined at each call site) so the exact wording is
@@ -133,6 +211,24 @@ var SUMMARY_PREVIEW_LENGTH = 400;
 export var PDF_PREPARING_MESSAGE = 'Preparing your PDF. The browser save window may take a few seconds to open.';
 export var PDF_SUCCESS_MESSAGE = 'PDF ready. Your browser may ask where to save it or save it automatically.';
 export var PDF_GENERIC_FAILURE_MESSAGE = 'The PDF could not be prepared. Please try again.';
+
+/* REQ-CAL-REV-ATTACH-001 (2026-09-23) — "Download complete review" ZIP
+   export copy, same constants-not-inlined rationale as the PDF messages
+   above. Deliberately distinct wording from the PDF messages (not a
+   shared template) so the two downloads' status text is never ambiguous
+   about which one is in progress. */
+export var ZIP_PREPARING_MESSAGE = 'Preparing your complete review (PDF plus every attachment, including audio). This can take longer than the PDF alone.';
+export var ZIP_SUCCESS_MESSAGE = 'Complete review ready. Your browser may ask where to save it or save it automatically.';
+export var ZIP_GENERIC_FAILURE_MESSAGE = 'The complete review could not be prepared. Please try again.';
+
+/* "Download all reviews as one PDF" (REQ-CAL-REV-HISTORY-PDF-001,
+   2026-09-23) — same constants-not-inlined rationale as the PDF/ZIP
+   messages above. This can genuinely take much longer than either (every
+   matching review, not just one page of them), so the preparing copy sets
+   that expectation explicitly. */
+export var ALL_REVIEWS_PREPARING_MESSAGE = 'Preparing the combined PDF for every matching review. This can take significantly longer than Download PDF, especially with many attachments.';
+export var ALL_REVIEWS_SUCCESS_MESSAGE = 'All reviews ready as one PDF. Your browser may ask where to save it or save it automatically.';
+export var ALL_REVIEWS_GENERIC_FAILURE_MESSAGE = 'The combined PDF could not be prepared. Please try again.';
 
 /* Fixed display order for the reviewer filter dropdown — matches
    backend/config.py's VALID_MEMBER_KEYS order (the canonical Management
@@ -205,6 +301,9 @@ export function isInvalidDateRange(dateFrom, dateTo) {
    exact rule (StaffReviewSummaryCreate/Update in backend/schemas.py) so
    an invalid submission never reaches the network. Returns
    {valid, trimmed, error} — error is a plain-language message, or null. */
+export var ATTACHMENT_ONLY_UNAVAILABLE_NOTE =
+  'Attachment-only reviews are not available yet — a written summary is required.';
+
 export function validateSummaryText(raw) {
   var trimmed = String(raw == null ? '' : raw).trim();
   if (!trimmed) {
@@ -257,6 +356,25 @@ export function staffOptionLabel(staff) {
   return staff.name || 'Unnamed staff record';
 }
 
+/* REQ-CAL-REV-ATTACH-001 (2026-09-23) — a disambiguating label for the
+   staff-search RESULTS LIST only (never used for a history card's already-
+   resolved reviewed_staff_full_name, which has no staff_code/designation
+   available — see reviewedEmployeeLabel below). Two staff members sharing
+   a name are only distinguishable by staff_code/designation, both of
+   which GET /api/staff already returns on every search result
+   (StaffRecordOut) — no backend change needed for this. Falls back to the
+   bare name when neither disambiguator is present, byte-for-byte the same
+   as staffOptionLabel's own output, so a caller that does not need
+   disambiguation (e.g. the "selected employee" chip, which already reads
+   staffOptionLabel directly) is unaffected. */
+export function staffSearchResultLabel(staff) {
+  var name = staffOptionLabel(staff);
+  if (!staff) { return name; }
+  var extras = [staff.staff_code, staff.designation].filter(function (v) { return !!v; });
+  if (!extras.length) { return name; }
+  return name + ' — ' + extras.join(' · ');
+}
+
 /* REQ-CAL-REV-PDF-003-FIX-02 — PDF export filename handling. The server
    (backend/review_summary_pdf_export.py) sends an already-sanitized
    filename in Content-Disposition; this client-side sanitization is a
@@ -283,6 +401,25 @@ export function buildFallbackReviewSummaryPdfFilename(employeeDisplayName, dateS
   return 'Review_Summary_' + sanitizeFallbackNameComponent(employeeDisplayName) + '_' + dateStr + '.pdf';
 }
 
+/* "Download complete review" (REQ-CAL-REV-ATTACH-001) — deliberately a
+   different prefix/extension from the PDF-only filename above, mirroring
+   backend/review_summary_pdf_export.py build_review_summary_zip_filename,
+   so the two downloads' saved files are visually distinguishable in a
+   downloads folder. */
+export function buildFallbackReviewSummaryZipFilename(employeeDisplayName, dateStr) {
+  return 'Complete_Review_' + sanitizeFallbackNameComponent(employeeDisplayName) + '_' + dateStr + '.zip';
+}
+
+/* "Download all reviews as one PDF" (REQ-CAL-REV-HISTORY-PDF-001,
+   2026-09-23) — a THIRD distinct prefix ("All_Reviews_"), alongside
+   "Review_Summary_..." (single-scope PDF) and "Complete_Review_..." (ZIP),
+   mirroring backend/review_summary_pdf_export.py
+   build_all_reviews_pdf_filename, so all three downloads' saved files stay
+   visually distinguishable in a downloads folder. */
+export function buildFallbackAllReviewsPdfFilename(employeeDisplayName, dateStr) {
+  return 'All_Reviews_' + sanitizeFallbackNameComponent(employeeDisplayName) + '_' + dateStr + '.pdf';
+}
+
 function sanitizeDispositionFilenameValue(value) {
   if (!value) { return ''; }
   // Defends against a path-separator-bearing header value by taking only
@@ -294,6 +431,12 @@ function sanitizeDispositionFilenameValue(value) {
 
 function ensurePdfExtension(name) {
   return PDF_SUFFIX_RE.test(name) ? name : name + '.pdf';
+}
+
+var ZIP_SUFFIX_RE = /\.zip$/i;
+
+function ensureZipExtension(name) {
+  return ZIP_SUFFIX_RE.test(name) ? name : name + '.zip';
 }
 
 /* Prefers the RFC 5987/6266 filename*=UTF-8''<percent-encoded> form (set
@@ -326,6 +469,78 @@ export function parseReviewSummaryPdfFilename(dispositionHeader, fallbackEmploye
   if (bareMatch) {
     var cleanedBare = sanitizeDispositionFilenameValue(bareMatch[1].trim());
     if (cleanedBare) { return ensurePdfExtension(cleanedBare); }
+  }
+
+  return fallback;
+}
+
+/* Same shape as parseReviewSummaryPdfFilename, for the "Download complete
+   review" ZIP export (backend/review_summary_pdf_export.py
+   build_review_summary_zip_filename). Kept as its own function (not a
+   shared parameterized one) so neither download's parsing can accidentally
+   regress the other. */
+export function parseReviewSummaryZipFilename(dispositionHeader, fallbackEmployeeName, fallbackDateStr) {
+  var fallback = buildFallbackReviewSummaryZipFilename(fallbackEmployeeName, fallbackDateStr);
+  var header = dispositionHeader || '';
+
+  var starMatch = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header);
+  if (starMatch) {
+    var rawStar = starMatch[1].trim().replace(/^["']|["']$/g, '');
+    try {
+      var decoded = decodeURIComponent(rawStar);
+      var cleanedStar = sanitizeDispositionFilenameValue(decoded);
+      if (cleanedStar) { return ensureZipExtension(cleanedStar); }
+    } catch (e) {
+      // Malformed percent-encoding — fall through to filename= or fallback.
+    }
+  }
+
+  var quotedMatch = /filename\s*=\s*"([^"]*)"/i.exec(header);
+  if (quotedMatch) {
+    var cleanedQuoted = sanitizeDispositionFilenameValue(quotedMatch[1]);
+    if (cleanedQuoted) { return ensureZipExtension(cleanedQuoted); }
+  }
+
+  var bareMatch = /filename\s*=\s*([^;]+)/i.exec(header);
+  if (bareMatch) {
+    var cleanedBare = sanitizeDispositionFilenameValue(bareMatch[1].trim());
+    if (cleanedBare) { return ensureZipExtension(cleanedBare); }
+  }
+
+  return fallback;
+}
+
+/* Same shape as parseReviewSummaryPdfFilename, for "Download all reviews
+   as one PDF" (backend/review_summary_pdf_export.py
+   build_all_reviews_pdf_filename). Kept as its own function (not a shared
+   parameterized one), same "neither download can accidentally regress the
+   other" reasoning as parseReviewSummaryZipFilename above. */
+export function parseAllReviewsPdfFilename(dispositionHeader, fallbackEmployeeName, fallbackDateStr) {
+  var fallback = buildFallbackAllReviewsPdfFilename(fallbackEmployeeName, fallbackDateStr);
+  var header = dispositionHeader || '';
+
+  var starMatch = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header);
+  if (starMatch) {
+    var rawStar = starMatch[1].trim().replace(/^["']|["']$/g, '');
+    try {
+      var decoded = decodeURIComponent(rawStar);
+      var cleanedStar = sanitizeDispositionFilenameValue(decoded);
+      if (cleanedStar) { return ensurePdfExtension(cleanedStar); }
+    } catch (e) {
+      // Malformed percent-encoding — fall through to filename= or fallback.
+    }
+  }
+
+  var quotedMatch = /filename\s*=\s*"([^"]*)"/i.exec(header);
+  if (quotedMatch) {
+    var cleanedQuoted = sanitizeDispositionFilenameValue(quotedMatch[1]);
+    if (cleanedQuoted) { return ensurePdfExtension(cleanedQuoted); }
+  }
+
+  var bareMatch2 = /filename\s*=\s*([^;]+)/i.exec(header);
+  if (bareMatch2) {
+    var cleanedBare2 = sanitizeDispositionFilenameValue(bareMatch2[1].trim());
+    if (cleanedBare2) { return ensurePdfExtension(cleanedBare2); }
   }
 
   return fallback;
@@ -434,10 +649,22 @@ function reviewSummariesApiRequest(pathAndQuery, options) {
         // calendar/instance.js's apiRequest already uses for
         // outcome_locked/outcome_recorded_immutable: read the backend's
         // own typed `error` field when present, rather than only ever
-        // falling back to a generic status-code classification.
-        if (body && (body.error === 'review_summary_edit_locked' || body.error === 'review_summary_delete_disabled')) {
-          err = new Error(body.message || 'Request failed.');
-          err.code = body.error;
+        // falling back to a generic status-code classification. Two
+        // response shapes are recognized: a flat {error, message} body
+        // (the JSONResponse-based 409s) and FastAPI's own
+        // {detail: {error, message}} shape (raise HTTPException(...,
+        // detail={...}) — REQ-CAL-REV-ATTACH-001's
+        // attachment_storage_not_ready 503, 2026-09-23).
+        var typed = (body && body.error) ? body
+          : (body && body.detail && typeof body.detail === 'object' && body.detail.error) ? body.detail
+          : null;
+        if (typed && (
+          typed.error === 'review_summary_edit_locked' ||
+          typed.error === 'review_summary_delete_disabled' ||
+          typed.error === 'attachment_storage_not_ready'
+        )) {
+          err = new Error(typed.message || 'Request failed.');
+          err.code = typed.error;
         } else {
           err = new Error('Request failed.');
           err.code = classifyHttpStatus(res.status);
@@ -453,41 +680,63 @@ function reviewSummariesApiRequest(pathAndQuery, options) {
   });
 }
 
-/* GET /api/staff now requires the same Calendar member token this whole
-   workspace already requires just to be visible (currentAccess() above
-   hides staffPanel — and therefore this search field — entirely while
+/* GET /api/staff requires the same Calendar member token this whole
+   workspace already requires just to be visible (currentAccess() below
+   hides staffPanel — and therefore this field — entirely while
    unauthorized, REQ-AUTH-MODULES-007, 2026-08-10), so a stored token is
    always expected to be present by the time this is ever called; the
-   Authorization header is added for correctness/defense-in-depth, not
-   because this call site could otherwise be reached unauthenticated. */
-/* 2026-08-11: the includeInactive param/staff_status filter was removed —
-   StaffDashboardRecord.staff_status no longer exists (Ledsone's
-   employee_management.staff has no equivalent), so there is no longer an
-   active/inactive distinction to filter on. */
-function fetchStaffOptions(search, signal) {
-  var params = ['limit=20', 'search=' + encodeURIComponent(search || '')];
+   Authorization header is added for correctness/defense-in-depth.
+
+   2026-09-24: the staff selector is now a searchable dropdown that loads
+   the whole directory once and filters it client-side by name, so this
+   pages through GET /api/staff (page size = the backend's MAX_LIMIT,
+   backend/routers/staff.py) until every record is loaded — a failure on
+   ANY page rejects the whole load; a partial list is never presented as
+   the full one. A record without an id can never be a valid
+   reviewed_staff_id, so it is dropped rather than offered as an option.
+   (2026-08-11: the staff_status / include-inactive filter was removed —
+   StaffDashboardRecord.staff_status no longer exists.) */
+var STAFF_DIRECTORY_PAGE_SIZE = 500;
+var STAFF_DIRECTORY_MAX_PAGES = 20;
+
+function fetchStaffPage(offset) {
   var token = getStoredToken();
   var options = { headers: token ? { 'Authorization': 'Bearer ' + token } : undefined };
-  if (signal) { options.signal = signal; }
-  return fetch(STAFF_API_BASE + '?' + params.join('&'), options)
-    .then(function (res) {
-      if (!res.ok) { throw new Error('Staff lookup failed.'); }
-      return res.json();
-    })
-    .then(function (body) { return body.records || []; });
+  var query = 'limit=' + STAFF_DIRECTORY_PAGE_SIZE + '&offset=' + offset;
+  return fetch(STAFF_API_BASE + '?' + query, options).then(function (res) {
+    if (res.status === 401) {
+      handleUnauthorizedResponse();
+      var authErr = new Error('Authorization expired.');
+      authErr.code = 'auth_required';
+      throw authErr;
+    }
+    if (!res.ok) {
+      var err = new Error('Staff lookup failed.');
+      err.code = classifyHttpStatus(res.status);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  });
+}
+
+function fetchStaffDirectory() {
+  var all = [];
+  function nextPage(offset, pagesFetched) {
+    return fetchStaffPage(offset).then(function (body) {
+      var records = (body && body.records) || [];
+      all = all.concat(records);
+      var total = body && typeof body.total === 'number' ? body.total : all.length;
+      if (records.length && all.length < total && pagesFetched + 1 < STAFF_DIRECTORY_MAX_PAGES) {
+        return nextPage(offset + records.length, pagesFetched + 1);
+      }
+      return all.filter(function (staff) { return staff && staff.id != null; });
+    });
+  }
+  return nextPage(0, 0);
 }
 
 // ── DOM building ─────────────────────────────────────────────────────
-
-function debounce(fn, waitMs) {
-  var timer = null;
-  return function () {
-    var args = arguments;
-    var ctx = this;
-    clearTimeout(timer);
-    timer = setTimeout(function () { fn.apply(ctx, args); }, waitMs);
-  };
-}
 
 function el(tag, className) {
   var node = document.createElement(tag);
@@ -517,7 +766,12 @@ export function mountReviewSummariesWorkspace(mountEl) {
     dateFrom: '',
     dateTo: '',
     editingId: null,
-    staffSearchAbort: null,
+    // REQ-CAL-REV-ATTACH-001 (2026-09-23) — files selected/uploaded for the
+    // NEXT create (CREATE only — see toggleAttachmentsVisibility). Each
+    // item: {clientId, file, status: 'uploading'|'uploaded'|'error', id,
+    // error}. Cleared on successful save and on employee change; never
+    // persisted across a resetWorkspaceState().
+    pendingAttachments: [],
     // Stale-request guard — bumped on every new history fetch AND on
     // every reset, so a slow in-flight request that resolves after a
     // newer one has superseded it never overwrites the current view.
@@ -525,7 +779,15 @@ export function mountReviewSummariesWorkspace(mountEl) {
     // PDF export in-flight guard (REQ-CAL-REV-PDF-003) — a plain-boolean
     // duplicate-click guard, same pattern as calendar/instance.js's own
     // exportInFlight for the weekly-schedule .xlsx download.
-    exportInFlight: false
+    exportInFlight: false,
+    // Same guard, separate flag, for the ZIP export (REQ-CAL-REV-ATTACH-001)
+    // — the two downloads are independent requests and must be able to run
+    // one at a time each without one blocking the other's own button.
+    zipExportInFlight: false,
+    // Same guard, separate flag again, for "Download all reviews as one
+    // PDF" (REQ-CAL-REV-HISTORY-PDF-001, 2026-09-23) — a third independent
+    // download, never blocking or blocked by the other two.
+    allReviewsExportInFlight: false
   };
 
   mountEl.textContent = '';
@@ -591,50 +853,256 @@ export function mountReviewSummariesWorkspace(mountEl) {
   unauthorizedEl.appendChild(authorizeBtn);
   headerEl.appendChild(unauthorizedEl);
 
-  // ── Reviewed-staff selector ──────────────────────────────────────
+  // ── Reviewed-staff selector — searchable dropdown ────────────────
+  //    (2026-09-24) The whole staff directory is loaded once through the
+  //    existing authorized GET /api/staff (fetchStaffDirectory) the first
+  //    time the field is focused/typed in; typing then filters that list
+  //    client-side by name. Only an option chosen from the list ever calls
+  //    selectStaff() — typed text alone never selects anyone.
+  var staffUid = 'review-summaries-staff-' + (++mountCounter);
   var staffPanel = el('div', 'review-summaries-panel review-summaries-staff-panel');
   var staffPanelTitle = el('h5', 'review-summaries-step-title');
+  staffPanelTitle.id = staffUid + '-title';
   staffPanelTitle.textContent = '1. Select employee';
   var staffField = el('div', 'review-summaries-field');
   var staffSearchWrap = el('div', 'review-summaries-search-wrap');
   var staffSearchInput = el('input', 'review-summaries-staff-search');
   staffSearchInput.type = 'search';
-  staffSearchInput.placeholder = 'Search staff by name…';
-  staffSearchInput.setAttribute('aria-label', 'Search reviewed staff member');
+  staffSearchInput.placeholder = 'Click to choose, or type to search by name…';
+  staffSearchInput.setAttribute('aria-labelledby', staffPanelTitle.id);
+  staffSearchInput.setAttribute('autocomplete', 'off');
+  staffSearchInput.setAttribute('role', 'combobox');
+  staffSearchInput.setAttribute('aria-expanded', 'false');
+  staffSearchInput.setAttribute('aria-autocomplete', 'list');
+  staffSearchInput.setAttribute('aria-haspopup', 'listbox');
+
+  // staffResultsEl is the popup box; it holds exactly one of two children
+  // at a time — the listbox of options, or a status/error message.
   var staffResultsEl = el('div', 'review-summaries-staff-results');
   staffResultsEl.hidden = true;
+  var staffListEl = el('div', 'review-summaries-staff-list');
+  staffListEl.id = staffUid + '-listbox';
+  staffListEl.setAttribute('role', 'listbox');
+  staffListEl.setAttribute('aria-label', 'Matching staff');
+  staffListEl.hidden = true;
+  var staffMessageEl = el('div', 'review-summaries-staff-result-empty');
+  staffMessageEl.hidden = true;
+  staffResultsEl.appendChild(staffListEl);
+  staffResultsEl.appendChild(staffMessageEl);
+  staffSearchInput.setAttribute('aria-controls', staffListEl.id);
+  // Keeps focus in the input when the popup itself (an option, the
+  // scrollbar, Retry) is pressed — otherwise the input's blur would close
+  // the popup before the click lands.
+  staffResultsEl.addEventListener('mousedown', function (e) { e.preventDefault(); });
+
+  var staffResultHighlightIndex = -1;
   staffSearchWrap.appendChild(staffSearchInput);
   staffSearchWrap.appendChild(staffResultsEl);
   var selectedStaffEl = el('div', 'review-summaries-selected-staff');
   selectedStaffEl.hidden = true;
 
-  // 2026-08-11: the "Include inactive staff" toggle was removed along
-  // with staff_status — see fetchStaffOptions above.
   staffField.appendChild(staffSearchWrap);
   staffField.appendChild(selectedStaffEl);
   staffPanel.appendChild(staffPanelTitle);
   staffPanel.appendChild(staffField);
 
-  function renderStaffResults(records) {
-    staffResultsEl.textContent = '';
-    if (!records.length) {
-      var empty = el('div', 'review-summaries-staff-result-empty');
-      empty.textContent = 'No matching staff found.';
-      staffResultsEl.appendChild(empty);
-      staffResultsEl.hidden = false;
+  /* The loaded directory. status: 'idle' (not loaded) | 'loading' |
+     'ready' | 'error'. loadId guards against a superseded/invalidated
+     load repopulating it (same idea as state.historyRequestId). */
+  var staffDirectory = { status: 'idle', records: [], errorText: '', loadId: 0 };
+  var suppressStaffPopupOpen = false;
+
+  function invalidateStaffDirectory() {
+    staffDirectory.loadId += 1;
+    staffDirectory.status = 'idle';
+    staffDirectory.records = [];
+    staffDirectory.errorText = '';
+  }
+
+  /* Name filter — case-insensitive substring match on `name` only. */
+  function filterStaffByName(records, query) {
+    var needle = String(query || '').trim().toLowerCase();
+    if (!needle) { return records; }
+    return records.filter(function (staff) {
+      return String(staff.name || '').toLowerCase().indexOf(needle) !== -1;
+    });
+  }
+
+  function staffResultButtons() {
+    return Array.prototype.slice.call(staffListEl.querySelectorAll('.review-summaries-staff-result'));
+  }
+
+  /* Keyboard selection — ArrowDown/ArrowUp move a highlighted option
+     (wrapping at either end), Enter selects the highlighted option, Escape
+     closes the list without selecting. Enter with nothing highlighted does
+     nothing: typed text alone never selects a staff member. Mouse hover
+     keeps the highlight in sync with the pointer so the two input methods
+     never disagree about which option is "current". */
+  function setStaffResultHighlight(index) {
+    var buttons = staffResultButtons();
+    if (!buttons.length) { staffResultHighlightIndex = -1; return; }
+    if (index < 0) { index = buttons.length - 1; }
+    if (index >= buttons.length) { index = 0; }
+    staffResultHighlightIndex = index;
+    buttons.forEach(function (btn, i) {
+      var active = i === index;
+      btn.classList.toggle('review-summaries-staff-result--active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    staffSearchInput.setAttribute('aria-activedescendant', buttons[index].id);
+    // Guarded — not every DOM stand-in (e.g. the hand-rolled test one)
+    // implements scrollIntoView; keyboard selection must still work
+    // without it, it just won't auto-scroll in that environment.
+    if (typeof buttons[index].scrollIntoView === 'function') {
+      buttons[index].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function showStaffMessage(text, isError, withRetry) {
+    staffListEl.hidden = true;
+    staffListEl.textContent = '';
+    staffResultHighlightIndex = -1;
+    staffSearchInput.removeAttribute('aria-activedescendant');
+    staffMessageEl.textContent = '';
+    staffMessageEl.removeAttribute('aria-busy');
+    staffMessageEl.setAttribute('role', isError ? 'alert' : 'status');
+    staffMessageEl.classList.toggle('review-summaries-staff-result-empty--error', !!isError);
+    staffMessageEl.appendChild(document.createTextNode(text));
+    if (withRetry) {
+      var retryBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-staff-retry-btn');
+      retryBtn.type = 'button';
+      retryBtn.textContent = 'Retry';
+      retryBtn.addEventListener('click', function () {
+        invalidateStaffDirectory();
+        loadStaffDirectory();
+        renderStaffPopup();
+      });
+      staffMessageEl.appendChild(retryBtn);
+    }
+    staffMessageEl.hidden = false;
+  }
+
+  /* Draws the popup's content from the directory status + current query.
+     Never treats a failed load as an empty list — 'error' has its own
+     message and a Retry button. */
+  function renderStaffPopup() {
+    if (staffResultsEl.hidden) { return; }
+    if (staffDirectory.status === 'loading' || staffDirectory.status === 'idle') {
+      staffListEl.hidden = true;
+      staffResultHighlightIndex = -1;
+      staffSearchInput.removeAttribute('aria-activedescendant');
+      showInlineLoading(staffMessageEl, 'Loading staff…');
+      staffMessageEl.setAttribute('role', 'status');
+      staffMessageEl.classList.remove('review-summaries-staff-result-empty--error');
+      staffMessageEl.hidden = false;
       return;
     }
-    records.forEach(function (staff) {
+    if (staffDirectory.status === 'error') {
+      showStaffMessage(staffDirectory.errorText, true, true);
+      return;
+    }
+    if (!staffDirectory.records.length) {
+      showStaffMessage('No staff records are available.', false, false);
+      return;
+    }
+    var matches = filterStaffByName(staffDirectory.records, staffSearchInput.value);
+    if (!matches.length) {
+      showStaffMessage('No matching staff', false, false);
+      return;
+    }
+    staffMessageEl.hidden = true;
+    staffMessageEl.textContent = '';
+    staffMessageEl.removeAttribute('aria-busy');
+    staffListEl.textContent = '';
+    staffResultHighlightIndex = -1;
+    staffSearchInput.removeAttribute('aria-activedescendant');
+    matches.forEach(function (staff, index) {
       var btn = el('button', 'review-summaries-staff-result');
       btn.type = 'button';
-      btn.textContent = staffOptionLabel(staff);
-      btn.addEventListener('click', function () {
-        selectStaff(staff);
-      });
-      staffResultsEl.appendChild(btn);
+      btn.id = staffUid + '-option-' + staff.id;
+      btn.setAttribute('tabindex', '-1');
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('aria-selected', 'false');
+      btn.textContent = staffSearchResultLabel(staff);
+      btn.addEventListener('mouseenter', function () { setStaffResultHighlight(index); });
+      btn.addEventListener('click', function () { selectStaff(staff); });
+      staffListEl.appendChild(btn);
     });
-    staffResultsEl.hidden = false;
+    staffListEl.hidden = false;
   }
+
+  function loadStaffDirectory() {
+    if (staffDirectory.status === 'loading' || staffDirectory.status === 'ready') { return; }
+    if (currentAccess() === 'unauthorized') { return; }
+    staffDirectory.status = 'loading';
+    var loadId = ++staffDirectory.loadId;
+    fetchStaffDirectory().then(function (records) {
+      if (loadId !== staffDirectory.loadId) { return; } // invalidated (auth change / tab leave / retry)
+      staffDirectory.records = records;
+      staffDirectory.status = 'ready';
+      renderStaffPopup();
+    }).catch(function (err) {
+      if (loadId !== staffDirectory.loadId) { return; }
+      // auth_required (401): handleUnauthorizedResponse() already fired
+      // CALENDAR_AUTH_CHANGED_EVENT, so the access gate has taken over.
+      if (err && err.code === 'auth_required') { return; }
+      if (!err.code) { err.code = 'network'; }
+      var mapped = mapApiError(err);
+      staffDirectory.status = 'error';
+      staffDirectory.errorText = 'Could not load the staff list. ' + mapped.message;
+      renderStaffPopup();
+    });
+  }
+
+  /* A failed load is retried automatically whenever the field is opened
+     (focus / click / arrow key), but NOT on every keystroke while typing —
+     otherwise a down API would be re-hit per character; Retry covers that. */
+  function openStaffPopup(fromTyping) {
+    staffResultsEl.hidden = false;
+    staffSearchInput.setAttribute('aria-expanded', 'true');
+    if (!(fromTyping === true && staffDirectory.status === 'error')) { loadStaffDirectory(); }
+    renderStaffPopup();
+  }
+
+  function closeStaffPopup() {
+    staffResultsEl.hidden = true;
+    staffSearchInput.setAttribute('aria-expanded', 'false');
+    staffSearchInput.removeAttribute('aria-activedescendant');
+    staffResultHighlightIndex = -1;
+  }
+
+  staffSearchInput.addEventListener('focus', function () {
+    if (suppressStaffPopupOpen) { return; }
+    openStaffPopup();
+  });
+  staffSearchInput.addEventListener('click', function () {
+    // Reopens after Escape / an accidental close while focus stayed here.
+    if (staffResultsEl.hidden) { openStaffPopup(); }
+  });
+  staffSearchInput.addEventListener('blur', closeStaffPopup);
+  staffSearchInput.addEventListener('input', function () { openStaffPopup(true); });
+
+  staffSearchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (!staffResultsEl.hidden) {
+        e.preventDefault();
+        closeStaffPopup();
+      }
+      return;
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (staffResultsEl.hidden) { openStaffPopup(); return; }
+      if (!staffResultButtons().length) { return; }
+      setStaffResultHighlight(staffResultHighlightIndex + (e.key === 'ArrowDown' ? 1 : -1));
+    } else if (e.key === 'Enter') {
+      var buttons = staffResultButtons();
+      if (!staffResultsEl.hidden && staffResultHighlightIndex >= 0 && buttons[staffResultHighlightIndex]) {
+        e.preventDefault();
+        buttons[staffResultHighlightIndex].click();
+      }
+    }
+  });
 
   /* Shared by resetWorkspaceState() (the single central reset, defined
      below) — resets the staff-selector UI back to its pre-selection
@@ -646,64 +1114,62 @@ export function mountReviewSummariesWorkspace(mountEl) {
     selectedStaffEl.textContent = '';
     staffSearchInput.value = '';
     staffSearchInput.hidden = false;
-    staffResultsEl.hidden = true;
-    staffResultsEl.textContent = '';
+    closeStaffPopup();
+    staffListEl.textContent = '';
+    staffListEl.hidden = true;
+    staffMessageEl.textContent = '';
+    staffMessageEl.hidden = true;
   }
 
   function selectStaff(staff) {
+    // Only a real directory record (with an id) can ever become the
+    // selected staff member.
+    if (!staff || staff.id == null) { return; }
+    var inputHadFocus = document.activeElement === staffSearchInput;
     // A fresh employee always starts from the exact same clean baseline —
     // reviewer filter back to "All reviewers", date filters cleared, no
     // inherited history/edit/draft state from whichever employee (if any)
     // was previously selected (Phase 3 correction, 2026-08-06).
     resetWorkspaceState();
     state.selectedStaff = staff;
-    staffResultsEl.hidden = true;
-    staffSearchInput.value = '';
     selectedStaffEl.textContent = '';
-    var nameEl = document.createTextNode(staffOptionLabel(staff) + ' ');
+    var nameEl = el('span', 'review-summaries-selected-staff-name');
+    nameEl.textContent = staffOptionLabel(staff);
     var changeBtn = el('button', 'review-summaries-change-staff');
     changeBtn.type = 'button';
     changeBtn.textContent = 'Change';
+    changeBtn.setAttribute('aria-label', 'Change selected employee');
     changeBtn.addEventListener('click', function () {
       resetWorkspaceState();
       staffSearchInput.focus();
+      openStaffPopup();
+      renderHistory();
+    });
+    var clearBtn = el('button', 'review-summaries-change-staff review-summaries-clear-staff');
+    clearBtn.type = 'button';
+    clearBtn.textContent = 'Clear';
+    clearBtn.setAttribute('aria-label', 'Clear selected employee');
+    clearBtn.addEventListener('click', function () {
+      resetWorkspaceState();
+      // Back to an empty field, list closed — Change is the "pick another
+      // now" path; Clear just deselects.
+      suppressStaffPopupOpen = true;
+      staffSearchInput.focus();
+      suppressStaffPopupOpen = false;
       renderHistory();
     });
     selectedStaffEl.appendChild(nameEl);
     selectedStaffEl.appendChild(changeBtn);
+    selectedStaffEl.appendChild(clearBtn);
     selectedStaffEl.hidden = false;
     staffSearchInput.hidden = true;
+    // The input just became hidden — keep keyboard focus somewhere sensible
+    // instead of dropping it to <body>.
+    if (inputHadFocus) { changeBtn.focus(); }
     updateFormVisibility();
     updateExportButtonState();
     renderHistory();
   }
-
-  var doStaffSearch = debounce(function () {
-    var query = staffSearchInput.value.trim();
-    if (!query) { staffResultsEl.hidden = true; return; }
-    if (state.staffSearchAbort) { state.staffSearchAbort.abort(); }
-    var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-    state.staffSearchAbort = controller;
-    showInlineLoading(staffResultsEl, 'Searching…');
-    staffResultsEl.hidden = false;
-    var requestToken = controller;
-    fetchStaffOptions(query, controller && controller.signal)
-      .then(function (records) {
-        if (requestToken !== state.staffSearchAbort) { return; } // a newer search superseded this one
-        renderStaffResults(records);
-      })
-      .catch(function (err) {
-        if (err && err.name === 'AbortError') { return; }
-        if (requestToken !== state.staffSearchAbort) { return; }
-        staffResultsEl.textContent = '';
-        var e = el('div', 'review-summaries-staff-result-empty');
-        e.textContent = 'Could not load staff records. Check your connection.';
-        staffResultsEl.appendChild(e);
-        staffResultsEl.hidden = false;
-      });
-  }, STAFF_SEARCH_DEBOUNCE_MS);
-
-  staffSearchInput.addEventListener('input', doStaffSearch);
 
   // ── Create / edit form ───────────────────────────────────────────
   var formPanel = el('div', 'review-summaries-panel review-summaries-form-panel');
@@ -756,6 +1222,261 @@ export function mountReviewSummariesWorkspace(mountEl) {
     if (summaryTextarea.value.trim()) { clearFieldError(summaryTextarea); }
   });
 
+  // ── Attachments (REQ-CAL-REV-ATTACH-001, 2026-09-23) — CREATE only; the
+  //    same-day edit form (StaffReviewSummaryUpdate) has no attachment_ids
+  //    field at all, so this whole section is hidden while editing an
+  //    existing summary (see toggleAttachmentsVisibility below). Each
+  //    selected file is uploaded IMMEDIATELY (POST .../attachments) rather
+  //    than deferred to Save — this is what lets Save show real per-file
+  //    upload state (uploading/uploaded/failed) instead of one opaque
+  //    "Saving…" that could hide a mid-flight failure. Only files that
+  //    finish with status 'uploaded' are ever included in attachment_ids
+  //    on Save; the summary can never be created referencing a file that
+  //    is not already durably stored (backend/routers/
+  //    staff_review_summaries.py create_staff_review_summary). ──────────
+  var attachmentsFieldGroup = el('div', 'review-summaries-field-group review-summaries-attachments-group');
+  var attachmentsLabel = el('label', 'review-summaries-label');
+  attachmentsLabel.textContent = 'Attachments (optional)';
+  var attachmentsHint = el('p', 'review-summaries-attachments-hint');
+  attachmentsHint.textContent =
+    'Audio, Word, Excel, images, and PDF. Up to ' + MAX_ATTACHMENTS_PER_SUMMARY + ' files, '
+    + Math.floor(MAX_ATTACHMENT_FILE_SIZE_BYTES / (1024 * 1024)) + ' MB each.';
+  /* Always visible (2026-09-25): attachment-only reviews are a pending
+     requirement, NOT a working feature — the database (summary_text NOT
+     NULL + non-blank CHECK), the backend schema and validateSummaryText all
+     still require written text. Say so instead of implying otherwise. */
+  var attachmentsRequirementNoteEl = el('p', 'review-summaries-attachments-requirement-note');
+  attachmentsRequirementNoteEl.textContent = ATTACHMENT_ONLY_UNAVAILABLE_NOTE;
+
+  /* Local Prototype Attachment mode (REQ-CAL-REV-ATTACH-001-LOCAL-PROTO,
+     2026-09-23) — GET .../attachments/storage-mode reports which
+     attachment metadata backend the server is currently running with
+     (backend/config.py LOCAL_PROTOTYPE_ATTACHMENTS). Purely a display
+     label: every validation/authorization rule is identical either way,
+     so this never changes any request this module sends — it only tells
+     the reviewer, honestly, that attachment metadata for this session is
+     local-only and will not transfer to another machine. */
+  var attachmentsStorageModeNoteEl = el('p', 'review-summaries-attachments-storage-mode-note');
+  attachmentsStorageModeNoteEl.hidden = true;
+  var storageModeChecked = false;
+
+  /* 2026-09-25: shows the TRUE active state instead of only ever warning.
+       local_prototype -> the warning (metadata still on this computer's SQLite file);
+       postgres        -> a neutral "shared database" status (the warning is gone
+                          only because the backend itself reports postgres);
+       anything else   -> nothing (never claim a state the backend did not report). */
+  function applyAttachmentStorageMode(mode) {
+    attachmentsStorageModeNoteEl.classList.remove(
+      'review-summaries-attachments-storage-mode-note--local',
+      'review-summaries-attachments-storage-mode-note--shared'
+    );
+    if (mode === 'local_prototype') {
+      attachmentsStorageModeNoteEl.textContent =
+        'Local prototype storage — original files are stored in Cloudinary; ' +
+        'which files belong to which summary is tracked only on this computer ' +
+        'and will not transfer to another machine or deployment.';
+      attachmentsStorageModeNoteEl.classList.add('review-summaries-attachments-storage-mode-note--local');
+      attachmentsStorageModeNoteEl.hidden = false;
+    } else if (mode === 'postgres') {
+      attachmentsStorageModeNoteEl.textContent =
+        'Attachments are saved to the shared database; original files are stored in Cloudinary.';
+      attachmentsStorageModeNoteEl.classList.add('review-summaries-attachments-storage-mode-note--shared');
+      attachmentsStorageModeNoteEl.hidden = false;
+    } else {
+      attachmentsStorageModeNoteEl.hidden = true;
+      attachmentsStorageModeNoteEl.textContent = '';
+    }
+  }
+
+  function ensureAttachmentStorageModeLoaded() {
+    if (storageModeChecked || currentAccess() === 'unauthorized') { return; }
+    storageModeChecked = true;
+    guardedRequest('/attachments/storage-mode').then(function (body) {
+      applyAttachmentStorageMode(body && body.mode);
+    }).catch(function () {
+      storageModeChecked = false; // allow a retry on the next panel show
+    });
+  }
+
+  var attachmentsFileInput = el('input', 'review-summaries-attachments-input');
+  attachmentsFileInput.type = 'file';
+  attachmentsFileInput.multiple = true;
+  attachmentsFileInput.id = 'review-summaries-attachments-input';
+  attachmentsFileInput.setAttribute(
+    'accept',
+    Object.keys(ATTACHMENT_EXTENSION_TYPES).join(',')
+  );
+  var attachmentsAddBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-attachments-add-btn');
+  attachmentsAddBtn.type = 'button';
+  attachmentsAddBtn.textContent = 'Add files';
+  attachmentsAddBtn.addEventListener('click', function () {
+    ensureAttachmentStorageModeLoaded();
+    attachmentsFileInput.click();
+  });
+  var attachmentsListEl = el('ul', 'review-summaries-attachments-list');
+  attachmentsListEl.setAttribute('aria-live', 'polite');
+
+  attachmentsFieldGroup.appendChild(attachmentsLabel);
+  attachmentsFieldGroup.appendChild(attachmentsHint);
+  attachmentsFieldGroup.appendChild(attachmentsRequirementNoteEl);
+  attachmentsFieldGroup.appendChild(attachmentsStorageModeNoteEl);
+  attachmentsFieldGroup.appendChild(attachmentsAddBtn);
+  attachmentsFieldGroup.appendChild(attachmentsFileInput);
+  attachmentsFieldGroup.appendChild(attachmentsListEl);
+
+  var attachmentClientIdCounter = 0;
+
+  function toggleAttachmentsVisibility() {
+    attachmentsFieldGroup.hidden = !!state.editingId;
+  }
+
+  function pendingAttachmentCount() {
+    return state.pendingAttachments.filter(function (a) { return a.status !== 'removed'; }).length;
+  }
+
+  function renderPendingAttachments() {
+    attachmentsListEl.textContent = '';
+    state.pendingAttachments.forEach(function (item) {
+      if (item.status === 'removed') { return; }
+      var row = el('li', 'review-summaries-attachment-row review-summaries-attachment-row--' + item.status);
+      var nameEl = el('span', 'review-summaries-attachment-name');
+      nameEl.textContent = item.file.name;
+      var sizeEl = el('span', 'review-summaries-attachment-size');
+      sizeEl.textContent = formatAttachmentFileSize(item.file.size);
+      var statusEl = el('span', 'review-summaries-attachment-status');
+      if (item.status === 'uploading') { statusEl.textContent = 'Uploading…'; }
+      else if (item.status === 'uploaded') { statusEl.textContent = 'Uploaded'; }
+      else if (item.status === 'error') { statusEl.textContent = item.error || 'Upload failed'; }
+      row.appendChild(nameEl);
+      row.appendChild(sizeEl);
+      row.appendChild(statusEl);
+
+      if (item.status === 'error') {
+        var retryBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-attachment-retry-btn');
+        retryBtn.type = 'button';
+        retryBtn.textContent = 'Retry';
+        retryBtn.addEventListener('click', function () { uploadPendingAttachment(item); });
+        row.appendChild(retryBtn);
+      }
+
+      var removeBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-attachment-remove-btn');
+      removeBtn.type = 'button';
+      removeBtn.setAttribute('aria-label', 'Remove ' + item.file.name);
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', function () { removePendingAttachment(item.clientId); });
+      row.appendChild(removeBtn);
+
+      attachmentsListEl.appendChild(row);
+    });
+  }
+
+  function removePendingAttachment(clientId) {
+    // A file already uploaded (status 'uploaded'/'error' with an
+    // assigned server id) is simply never referenced in attachment_ids —
+    // its already-uploaded bytes become an orphaned pending row, swept up
+    // later by scripts/cleanup_pending_review_summary_attachments.py
+    // (there is no delete-attachment route in this phase; see the
+    // migration file's own docstring for the full two-phase rationale).
+    state.pendingAttachments = state.pendingAttachments.filter(function (a) { return a.clientId !== clientId; });
+    renderPendingAttachments();
+  }
+
+  function uploadPendingAttachment(item) {
+    item.status = 'uploading';
+    item.error = null;
+    renderPendingAttachments();
+
+    var formData = new FormData();
+    formData.append('file', item.file, item.file.name);
+
+    ensureAuthorized().then(function (token) {
+      return fetch(STAFF_REVIEW_SUMMARIES_API_BASE + '/attachments', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+    }, function () {
+      var e = new Error('Authorization required.');
+      e.code = 'auth_cancelled';
+      throw e;
+    }).then(function (res) {
+      if (res.status === 401) {
+        handleUnauthorizedResponse();
+        var authErr = new Error('Authorization expired.');
+        authErr.code = 'auth_required';
+        throw authErr;
+      }
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (body) {
+          // `detail` is either a plain string (every existing validation
+          // failure — 422 unsupported type, 413 too large, 502 upload
+          // failed, ...) or an object {error, message} (REQ-CAL-REV-
+          // ATTACH-001's attachment_storage_not_ready 503, 2026-09-23).
+          // Reading only the string form here (as this used to) would
+          // stringify the object form to the useless literal
+          // "[object Object]" instead of a real, actionable message.
+          var detail = body && body.detail;
+          var message = typeof detail === 'string' ? detail
+            : (detail && typeof detail === 'object' && detail.message) ? detail.message
+            : null;
+          var err = new Error(message || 'Upload failed.');
+          err.status = res.status;
+          err.code = detail && typeof detail === 'object' ? detail.error : null;
+          throw err;
+        });
+      }
+      return res.json();
+    }).then(function (body) {
+      item.status = 'uploaded';
+      item.id = body.id;
+      renderPendingAttachments();
+    }).catch(function (err) {
+      if (err && (err.code === 'auth_cancelled' || err.code === 'auth_required')) {
+        item.status = 'error';
+        item.error = 'Authorization required. Choose Add files again after authorizing.';
+      } else {
+        item.status = 'error';
+        item.error = (err && err.message) || 'Upload failed.';
+      }
+      renderPendingAttachments();
+    });
+  }
+
+  function addFilesToPending(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    files.forEach(function (file) {
+      if (pendingAttachmentCount() >= MAX_ATTACHMENTS_PER_SUMMARY) {
+        showToast({
+          type: 'error', title: 'Too many files',
+          message: 'Up to ' + MAX_ATTACHMENTS_PER_SUMMARY + ' attachments per summary.', persistent: false
+        });
+        return;
+      }
+      var validation = validateAttachmentFile(file);
+      attachmentClientIdCounter += 1;
+      var item = {
+        clientId: 'att-' + attachmentClientIdCounter,
+        file: file,
+        status: validation.valid ? 'uploading' : 'error',
+        error: validation.valid ? null : validation.error,
+        id: null
+      };
+      state.pendingAttachments.push(item);
+      renderPendingAttachments();
+      if (validation.valid) { uploadPendingAttachment(item); }
+    });
+  }
+
+  attachmentsFileInput.addEventListener('change', function () {
+    addFilesToPending(attachmentsFileInput.files);
+    attachmentsFileInput.value = ''; // allow re-selecting the same file after removal
+  });
+
+  function resetPendingAttachments() {
+    state.pendingAttachments = [];
+    renderPendingAttachments();
+  }
+
   var formActions = el('div', 'review-summaries-form-actions');
   var saveBtn = el('button', 'msc-btn msc-btn-primary review-summaries-save-btn');
   saveBtn.type = 'submit';
@@ -771,6 +1492,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
   form.appendChild(dateFieldGroup);
   form.appendChild(summaryFieldGroup);
+  form.appendChild(attachmentsFieldGroup);
   form.appendChild(formActions);
 
   formPanel.appendChild(formPanelTitle);
@@ -788,6 +1510,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
     formPlaceholder.hidden = readOnly || hasStaff;
   }
   updateFormVisibility();
+  toggleAttachmentsVisibility();
 
   /* Edit mode / unsaved-draft clearing — called on: Cancel edit, employee
      change, reviewer-filter change, date-filter change, token change, and
@@ -801,6 +1524,8 @@ export function mountReviewSummariesWorkspace(mountEl) {
     dateInput.value = getColomboTodayStr();
     counterEl.textContent = summaryCounterText('');
     clearFormErrors(form);
+    resetPendingAttachments();
+    toggleAttachmentsVisibility();
   }
 
   form.addEventListener('submit', function (e) {
@@ -818,13 +1543,44 @@ export function mountReviewSummariesWorkspace(mountEl) {
     }
     var validation = validateSummaryText(summaryTextarea.value);
     if (!validation.valid) {
-      setFieldError(summaryTextarea, validation.error);
+      var hasUploadedAttachment = !state.editingId && state.pendingAttachments.some(function (a) {
+        return a.status === 'uploaded';
+      });
+      setFieldError(
+        summaryTextarea,
+        hasUploadedAttachment && !validation.trimmed ? ATTACHMENT_ONLY_UNAVAILABLE_NOTE : validation.error
+      );
       focusFirstInvalid(form);
       return;
     }
 
+    // REQ-CAL-REV-ATTACH-001 — a failed/still-in-flight attachment upload
+    // must block Save (client-side defense in depth; the backend's own
+    // atomic attachment_ids validation is the real enforcement — see
+    // create_staff_review_summary). CREATE only; attachmentsFieldGroup is
+    // hidden while editing, so state.pendingAttachments is always empty on
+    // an update submit.
+    if (!state.editingId) {
+      var hasUnresolvedAttachment = state.pendingAttachments.some(function (a) {
+        return a.status === 'uploading' || a.status === 'error';
+      });
+      if (hasUnresolvedAttachment) {
+        showToast({
+          type: 'error', title: 'Attachments not ready',
+          message: 'Wait for uploads to finish, or remove any failed attachment, before saving.',
+          persistent: false
+        });
+        return;
+      }
+    }
+
     setButtonBusy(saveBtn, true, { busyLabel: 'Saving…' });
 
+    // The staff member this submit was built for — if the reviewer changes
+    // or clears the employee while the request is in flight, the response
+    // must neither name the NEW employee in its toast nor clear/refresh
+    // the new employee's (empty) form and history.
+    var submittedStaff = state.selectedStaff;
     var request;
     if (state.editingId) {
       request = guardedRequest('/' + state.editingId, {
@@ -832,16 +1588,22 @@ export function mountReviewSummariesWorkspace(mountEl) {
         body: { meeting_date: dateInput.value, summary_text: validation.trimmed }
       });
     } else {
-      // reviewed_staff_id, meeting_date, summary_text only — the browser
-      // never sends reviewer_member_key (technical design §5.3/§2.9); the
-      // create schema has no such field, so ownership is always
-      // server-derived from the token regardless of request contents.
+      // reviewed_staff_id, meeting_date, summary_text, attachment_ids only
+      // — the browser never sends reviewer_member_key (technical design
+      // §5.3/§2.9); the create schema has no such field, so ownership is
+      // always server-derived from the token regardless of request
+      // contents. attachment_ids references only already-uploaded
+      // ('uploaded' status) pending attachments.
+      var attachmentIds = state.pendingAttachments
+        .filter(function (a) { return a.status === 'uploaded' && a.id; })
+        .map(function (a) { return a.id; });
       request = guardedRequest('', {
         method: 'POST',
         body: {
           reviewed_staff_id: state.selectedStaff.id,
           meeting_date: dateInput.value,
-          summary_text: validation.trimmed
+          summary_text: validation.trimmed,
+          attachment_ids: attachmentIds
         }
       });
     }
@@ -851,8 +1613,9 @@ export function mountReviewSummariesWorkspace(mountEl) {
       showToast({
         type: 'success',
         title: state.editingId ? 'Summary updated' : 'Summary saved',
-        message: staffOptionLabel(state.selectedStaff) + ' — ' + dateInput.value
+        message: staffOptionLabel(submittedStaff) + ' — ' + dateInput.value
       });
+      if (state.selectedStaff !== submittedStaff) { return; }
       exitEditMode();
       renderHistory();
     }).catch(function (err) {
@@ -866,7 +1629,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
       // re-renders with its now-current, backend-authoritative can_edit
       // state — never leaves the form stuck open against a record that
       // can no longer be saved.
-      if (err && err.code === 'review_summary_edit_locked') {
+      if (err && err.code === 'review_summary_edit_locked' && state.selectedStaff === submittedStaff) {
         exitEditMode();
         renderHistory();
       }
@@ -953,6 +1716,31 @@ export function mountReviewSummariesWorkspace(mountEl) {
   var exportBtn = el('button', 'msc-btn msc-btn-secondary review-summaries-export-btn');
   exportBtn.type = 'button';
   exportBtn.textContent = 'Download PDF';
+  exportBtn.title = 'Summary text and reviewer/employee/date details only — no attachment files.';
+
+  /* "Download complete review" (REQ-CAL-REV-ATTACH-001, 2026-09-23) — a
+     SEPARATE button/request/in-flight-flag from Download PDF, not a mode
+     switch on the same one, so the two downloads' own distinct wording
+     (title attribute here, toast/status text in
+     downloadReviewSummariesZip below) is what makes the difference between
+     them clear in the UI, per the approved requirement. Both apply the
+     exact same employee/reviewer/date filters currently selected — see
+     buildExportQuery, reused unchanged by both. */
+  var zipExportBtn = el('button', 'msc-btn msc-btn-secondary review-summaries-zip-export-btn');
+  zipExportBtn.type = 'button';
+  zipExportBtn.textContent = 'Download complete review';
+  zipExportBtn.title = 'One ZIP file: the same PDF plus every original attachment file, including audio.';
+
+  /* "Download all reviews as one PDF" (REQ-CAL-REV-HISTORY-PDF-001,
+     2026-09-23) — a THIRD separate button/request/in-flight-flag, same
+     "one page-level button, never one per record" convention as Download
+     PDF above. Combines EVERY review matching the current Reviewer/From/To
+     filters (never just one page of results) into one chronologically
+     ordered PDF, each with its attachments converted/embedded as pages. */
+  var allReviewsExportBtn = el('button', 'msc-btn msc-btn-secondary review-summaries-all-reviews-export-btn');
+  allReviewsExportBtn.type = 'button';
+  allReviewsExportBtn.textContent = 'Download all reviews as one PDF';
+  allReviewsExportBtn.title = 'Every matching review, oldest to newest, in one PDF with attachments embedded after each review.';
 
   /* REQ-CAL-REV-UX-005 — accessible in-flight/outcome status, distinct
      from the button's own busy label (which only ever shows short text).
@@ -963,6 +1751,14 @@ export function mountReviewSummariesWorkspace(mountEl) {
   exportStatusEl.setAttribute('aria-live', 'polite');
   exportStatusEl.hidden = true;
 
+  var zipExportStatusEl = el('p', 'review-summaries-export-status');
+  zipExportStatusEl.setAttribute('aria-live', 'polite');
+  zipExportStatusEl.hidden = true;
+
+  var allReviewsExportStatusEl = el('p', 'review-summaries-export-status');
+  allReviewsExportStatusEl.setAttribute('aria-live', 'polite');
+  allReviewsExportStatusEl.hidden = true;
+
   function showExportStatus(text) {
     exportStatusEl.textContent = text;
     exportStatusEl.hidden = false;
@@ -971,12 +1767,30 @@ export function mountReviewSummariesWorkspace(mountEl) {
     exportStatusEl.textContent = '';
     exportStatusEl.hidden = true;
   }
+  function showZipExportStatus(text) {
+    zipExportStatusEl.textContent = text;
+    zipExportStatusEl.hidden = false;
+  }
+  function clearZipExportStatus() {
+    zipExportStatusEl.textContent = '';
+    zipExportStatusEl.hidden = true;
+  }
+  function showAllReviewsExportStatus(text) {
+    allReviewsExportStatusEl.textContent = text;
+    allReviewsExportStatusEl.hidden = false;
+  }
+  function clearAllReviewsExportStatus() {
+    allReviewsExportStatusEl.textContent = '';
+    allReviewsExportStatusEl.hidden = true;
+  }
 
   function updateExportButtonState() {
     var hasStaff = !!state.selectedStaff;
     var hasToken = currentAccess() !== 'unauthorized';
     var invalidRange = isInvalidDateRange(state.dateFrom, state.dateTo);
     exportBtn.disabled = !hasStaff || !hasToken || invalidRange || state.exportInFlight;
+    zipExportBtn.disabled = !hasStaff || !hasToken || invalidRange || state.zipExportInFlight;
+    allReviewsExportBtn.disabled = !hasStaff || !hasToken || invalidRange || state.allReviewsExportInFlight;
   }
 
   /* PDF Blob download — deliberately its own fetch, not
@@ -1086,9 +1900,258 @@ export function mountReviewSummariesWorkspace(mountEl) {
     });
   }
 
+  /* ZIP Blob download (REQ-CAL-REV-ATTACH-001) — same shape as
+     downloadReviewSummariesPdf above (own fetch, own auth handling, own
+     404-empty/other-failure classification), hitting /export/zip instead
+     of /export/pdf and using the ZIP-specific messages/filename parser.
+     Kept as a fully separate function (not a shared parameterized one)
+     so a change to either download can never silently affect the
+     other. */
+  function downloadReviewSummariesZip() {
+    if (state.zipExportInFlight || !state.selectedStaff) { return; }
+    if (currentAccess() === 'unauthorized') { return; }
+    if (isInvalidDateRange(state.dateFrom, state.dateTo)) { return; }
+
+    state.zipExportInFlight = true;
+    updateExportButtonState();
+    setButtonBusy(zipExportBtn, true, { busyLabel: 'Preparing…' });
+    showZipExportStatus(ZIP_PREPARING_MESSAGE);
+
+    var query = buildExportQuery({
+      includeAllReviewers: !state.reviewerFilter,
+      reviewerMemberKey: state.reviewerFilter || null,
+      reviewedStaffId: state.selectedStaff.id,
+      dateFrom: state.dateFrom,
+      dateTo: state.dateTo
+    });
+
+    return ensureAuthorized().then(function (token) {
+      return fetch(STAFF_REVIEW_SUMMARIES_API_BASE + '/export/zip?' + query, {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        cache: 'no-store'
+      });
+    }, function () {
+      var e = new Error('Authorization required.');
+      e.code = 'auth_cancelled';
+      throw e;
+    }).then(function (res) {
+      if (res.status === 401) {
+        handleUnauthorizedResponse();
+        var authErr = new Error('Authorization expired.');
+        authErr.code = 'auth_required';
+        throw authErr;
+      }
+      if (res.status === 404) {
+        var emptyErr = new Error('No review summaries match the selected filters.');
+        emptyErr.code = 'export_empty';
+        throw emptyErr;
+      }
+      if (!res.ok) {
+        var failErr = new Error('Export failed.');
+        failErr.code = classifyHttpStatus(res.status);
+        failErr.status = res.status;
+        throw failErr;
+      }
+      var disposition = res.headers.get('Content-Disposition') || '';
+      var filename = parseReviewSummaryZipFilename(
+        disposition,
+        staffOptionLabel(state.selectedStaff),
+        getColomboTodayStr()
+      );
+      return res.blob().then(function (blob) { return { blob: blob, filename: filename }; });
+    }).then(function (result) {
+      var blobUrl = URL.createObjectURL(result.blob);
+      var link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      showToast({
+        type: 'success', title: 'Complete review ready',
+        message: ZIP_SUCCESS_MESSAGE
+      });
+    }).catch(function (err) {
+      if (err && err.code === 'auth_cancelled') { return; }
+      if (err && err.code === 'auth_required') { return; }
+      if (err && err.code === 'export_empty') {
+        showToast({ type: 'error', title: 'No matching records', message: 'No review summaries match the selected filters.', persistent: false });
+        return;
+      }
+      showToast({
+        type: 'error', title: 'Complete review not prepared',
+        message: ZIP_GENERIC_FAILURE_MESSAGE, persistent: false
+      });
+    }).then(function () {
+      state.zipExportInFlight = false;
+      setButtonBusy(zipExportBtn, false);
+      clearZipExportStatus();
+      updateExportButtonState();
+    });
+  }
+
+  /* "Download all reviews as one PDF" (REQ-CAL-REV-HISTORY-PDF-001,
+     2026-09-23) — same shape as downloadReviewSummariesPdf above (own
+     fetch, own auth handling, own 404-empty classification), hitting
+     /export/pdf/history instead of /export/pdf and using this download's
+     own filename parser. Kept as its own function (not a shared
+     parameterized one), same "a change to one download can never
+     accidentally affect another" reasoning as the ZIP export above.
+
+     Additionally handles two response codes neither of the other two
+     downloads can ever return: 413 (too many matching reviews, or their
+     combined attachments, or the combined PDF's page count, over the
+     practical limits in backend/config.py) and 504 (the combined export
+     took too long to assemble within its own time budget). Both carry a
+     fixed, safe, entirely backend-authored sentence (see backend/routers/
+     staff_review_summaries.py export_all_reviews_pdf's own HTTPException
+     detail strings — never a stack trace or raw exception text) that is
+     shown directly, the same narrow "show the backend's own safe message
+     verbatim" exception ui/error-mapper.js documents for
+     attachment_storage_not_ready. */
+  function downloadAllReviewsPdf() {
+    if (state.allReviewsExportInFlight || !state.selectedStaff) { return; }
+    if (currentAccess() === 'unauthorized') { return; }
+    if (isInvalidDateRange(state.dateFrom, state.dateTo)) { return; }
+
+    state.allReviewsExportInFlight = true;
+    updateExportButtonState();
+    setButtonBusy(allReviewsExportBtn, true, { busyLabel: 'Preparing…' });
+    showAllReviewsExportStatus(ALL_REVIEWS_PREPARING_MESSAGE);
+
+    var query = buildExportQuery({
+      includeAllReviewers: !state.reviewerFilter,
+      reviewerMemberKey: state.reviewerFilter || null,
+      reviewedStaffId: state.selectedStaff.id,
+      dateFrom: state.dateFrom,
+      dateTo: state.dateTo
+    });
+
+    return ensureAuthorized().then(function (token) {
+      return fetch(STAFF_REVIEW_SUMMARIES_API_BASE + '/export/pdf/history?' + query, {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        cache: 'no-store'
+      });
+    }, function () {
+      var e = new Error('Authorization required.');
+      e.code = 'auth_cancelled';
+      throw e;
+    }).then(function (res) {
+      if (res.status === 401) {
+        handleUnauthorizedResponse();
+        var authErr = new Error('Authorization expired.');
+        authErr.code = 'auth_required';
+        throw authErr;
+      }
+      if (res.status === 404) {
+        // 2026-09-23 fix — a plain `res.status === 404` check alone
+        // cannot tell "genuinely zero reviews match these filters" (this
+        // route's own HTTPException(404, "No review summaries match the
+        // selected filters.")) apart from a completely different 404 —
+        // most notably Starlette's own generic {"detail":"Not Found"}
+        // when the request reaches a server process that does not have
+        // THIS route registered at all (e.g. an older backend process
+        // still running from before this endpoint existed). A real
+        // report of exactly that situation showed "No matching records"
+        // for a staff member/reviewer/date combination that plainly DID
+        // have one matching review in Review History, which sent the
+        // investigation looking for a nonexistent date-filter bug. Now
+        // the response body's own detail text must match this route's
+        // own fixed "no records" sentence before it is ever shown to the
+        // user as "no matching records" — any other 404 body (or an
+        // unreadable one) falls through to the generic failure message
+        // instead, which is honest about "something went wrong" rather
+        // than confidently wrong about "no records."
+        return res.json().then(function (body) {
+          var detail = body && body.detail;
+          if (detail === 'No review summaries match the selected filters.') {
+            var emptyErr = new Error(detail);
+            emptyErr.code = 'export_empty';
+            throw emptyErr;
+          }
+          var routeErr = new Error('Export failed.');
+          routeErr.code = classifyHttpStatus(res.status);
+          routeErr.status = res.status;
+          throw routeErr;
+        }, function () {
+          var unreadableErr = new Error('Export failed.');
+          unreadableErr.code = classifyHttpStatus(res.status);
+          unreadableErr.status = res.status;
+          throw unreadableErr;
+        });
+      }
+      if (res.status === 413 || res.status === 504) {
+        return res.json().then(function (body) {
+          var limitErr = new Error((body && body.detail) || ALL_REVIEWS_GENERIC_FAILURE_MESSAGE);
+          limitErr.code = 'export_too_large';
+          throw limitErr;
+        }, function () {
+          var limitErr = new Error(ALL_REVIEWS_GENERIC_FAILURE_MESSAGE);
+          limitErr.code = 'export_too_large';
+          throw limitErr;
+        });
+      }
+      if (!res.ok) {
+        var failErr = new Error('Export failed.');
+        failErr.code = classifyHttpStatus(res.status);
+        failErr.status = res.status;
+        throw failErr;
+      }
+      var disposition = res.headers.get('Content-Disposition') || '';
+      var filename = parseAllReviewsPdfFilename(
+        disposition,
+        staffOptionLabel(state.selectedStaff),
+        getColomboTodayStr()
+      );
+      return res.blob().then(function (blob) { return { blob: blob, filename: filename }; });
+    }).then(function (result) {
+      var blobUrl = URL.createObjectURL(result.blob);
+      var link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      showToast({
+        type: 'success', title: 'All reviews ready',
+        message: ALL_REVIEWS_SUCCESS_MESSAGE
+      });
+    }).catch(function (err) {
+      if (err && err.code === 'auth_cancelled') { return; }
+      if (err && err.code === 'auth_required') { return; }
+      if (err && err.code === 'export_empty') {
+        showToast({ type: 'error', title: 'No matching records', message: 'No review summaries match the selected filters.', persistent: false });
+        return;
+      }
+      if (err && err.code === 'export_too_large') {
+        showToast({ type: 'error', title: 'Combined PDF too large', message: err.message, persistent: true });
+        return;
+      }
+      showToast({
+        type: 'error', title: 'PDF not prepared',
+        message: ALL_REVIEWS_GENERIC_FAILURE_MESSAGE, persistent: false
+      });
+    }).then(function () {
+      state.allReviewsExportInFlight = false;
+      setButtonBusy(allReviewsExportBtn, false);
+      clearAllReviewsExportStatus();
+      updateExportButtonState();
+    });
+  }
+
   exportBtn.addEventListener('click', downloadReviewSummariesPdf);
+  zipExportBtn.addEventListener('click', downloadReviewSummariesZip);
+  allReviewsExportBtn.addEventListener('click', downloadAllReviewsPdf);
   exportGroupEl.appendChild(exportBtn);
   exportGroupEl.appendChild(exportStatusEl);
+  exportGroupEl.appendChild(zipExportBtn);
+  exportGroupEl.appendChild(zipExportStatusEl);
+  exportGroupEl.appendChild(allReviewsExportBtn);
+  exportGroupEl.appendChild(allReviewsExportStatusEl);
   toolbarEl.appendChild(exportGroupEl);
   updateExportButtonState();
 
@@ -1110,6 +2173,61 @@ export function mountReviewSummariesWorkspace(mountEl) {
     row.appendChild(dt);
     row.appendChild(dd);
     return row;
+  }
+
+  /* Individual attachment download (REQ-CAL-REV-ATTACH-001) — same Blob-
+     download pattern as downloadReviewSummariesPdf/Zip above (own fetch,
+     not reviewSummariesApiRequest, since the response body is binary, not
+     JSON), scoped to one attachment rather than the whole filtered
+     history. A busy button (not the whole card) is disabled while this
+     one download is in flight, so downloading one attachment never blocks
+     interacting with any other card/attachment. */
+  function downloadReviewSummaryAttachment(summaryId, attachmentId, filename, triggerBtn) {
+    if (triggerBtn.disabled) { return; }
+    setButtonBusy(triggerBtn, true, { busyLabel: 'Downloading…' });
+
+    ensureAuthorized().then(function (token) {
+      return fetch(
+        STAFF_REVIEW_SUMMARIES_API_BASE + '/' + summaryId + '/attachments/' + attachmentId,
+        { method: 'GET', headers: { 'Authorization': 'Bearer ' + token }, cache: 'no-store' }
+      );
+    }, function () {
+      var e = new Error('Authorization required.');
+      e.code = 'auth_cancelled';
+      throw e;
+    }).then(function (res) {
+      if (res.status === 401) {
+        handleUnauthorizedResponse();
+        var authErr = new Error('Authorization expired.');
+        authErr.code = 'auth_required';
+        throw authErr;
+      }
+      if (!res.ok) {
+        var failErr = new Error('Download failed.');
+        failErr.code = classifyHttpStatus(res.status);
+        failErr.status = res.status;
+        throw failErr;
+      }
+      return res.blob();
+    }).then(function (blob) {
+      var blobUrl = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }).catch(function (err) {
+      if (err && err.code === 'auth_cancelled') { return; }
+      if (err && err.code === 'auth_required') { return; }
+      showToast({
+        type: 'error', title: 'Download failed',
+        message: 'The attachment could not be downloaded. Please try again.', persistent: false
+      });
+    }).then(function () {
+      setButtonBusy(triggerBtn, false);
+    });
   }
 
   function renderHistoryCard(record) {
@@ -1189,6 +2307,41 @@ export function mountReviewSummariesWorkspace(mountEl) {
     }
     card.appendChild(summaryEl);
 
+    // ── Attachments (REQ-CAL-REV-ATTACH-001, 2026-09-23) — filename + type
+    //    for every attachment, each with its own individual download
+    //    action. Read access mirrors the summary's own shared-read rule
+    //    (any authenticated Management Team member or MD) — there is no
+    //    separate, stricter per-attachment UI gate here because the
+    //    backend itself has none (see download_review_summary_attachment's
+    //    docstring). ─────────────────────────────────────────────────────
+    if (record.attachments && record.attachments.length) {
+      var attachmentsSectionEl = el('div', 'review-summaries-card-attachments');
+      var attachmentsSectionLabelEl = el('p', 'review-summaries-card-attachments-label');
+      attachmentsSectionLabelEl.textContent = 'Attachments (' + record.attachments.length + ')';
+      attachmentsSectionEl.appendChild(attachmentsSectionLabelEl);
+
+      var attachmentsSectionListEl = el('ul', 'review-summaries-card-attachments-list');
+      record.attachments.forEach(function (attachment) {
+        var itemEl = el('li', 'review-summaries-card-attachment-item');
+        var nameEl = el('span', 'review-summaries-card-attachment-name');
+        nameEl.textContent = attachment.original_filename;
+        var typeEl = el('span', 'review-summaries-card-attachment-type');
+        typeEl.textContent = attachmentTypeLabel(attachment.attachment_type);
+        var downloadBtn = el('button', 'msc-btn msc-btn-ghost review-summaries-card-attachment-download-btn');
+        downloadBtn.type = 'button';
+        downloadBtn.textContent = 'Download';
+        downloadBtn.addEventListener('click', function () {
+          downloadReviewSummaryAttachment(record.id, attachment.id, attachment.original_filename, downloadBtn);
+        });
+        itemEl.appendChild(nameEl);
+        itemEl.appendChild(typeEl);
+        itemEl.appendChild(downloadBtn);
+        attachmentsSectionListEl.appendChild(itemEl);
+      });
+      attachmentsSectionEl.appendChild(attachmentsSectionListEl);
+      card.appendChild(attachmentsSectionEl);
+    }
+
     // ── Status message — shown only for the AUTHENTICATED REVIEWER'S OWN
     //    card (editable or locked), explaining the badge (a same-day
     //    deadline, or why the window closed). The other-reviewer/MD
@@ -1229,6 +2382,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
         counterEl.textContent = summaryCounterText(record.summary_text);
         saveBtn.textContent = 'Save Changes';
         cancelEditBtn.hidden = false;
+        toggleAttachmentsVisibility();
         summaryTextarea.focus();
       });
       actions.appendChild(editBtn);
@@ -1348,7 +2502,6 @@ export function mountReviewSummariesWorkspace(mountEl) {
          scratch, never patched in place);
        - the reviewer filter, reset to '' ("All reviewers");
        - both date filters;
-       - any pending staff-search request (aborted, not just abandoned);
        - the stale-response guard (historyRequestId bumped), so a
          slower, already-in-flight request from before this reset can
          never repopulate the just-cleared state once it resolves.
@@ -1363,7 +2516,6 @@ export function mountReviewSummariesWorkspace(mountEl) {
      needs to re-run the access gate; a plain employee-selection call site
      does not). */
   function resetWorkspaceState() {
-    if (state.staffSearchAbort) { state.staffSearchAbort.abort(); state.staffSearchAbort = null; }
     state.historyRequestId += 1;
     deselectStaff();
     state.reviewerFilter = '';
@@ -1388,10 +2540,11 @@ export function mountReviewSummariesWorkspace(mountEl) {
      genuine identity change, not preserve the previous employee selection
      for later. */
   function reactToAuthChange() {
+    invalidateStaffDirectory();
     resetWorkspaceState();
     updateAuthorizedAsLabel();
     var mode = renderAccessGate();
-    if (mode !== 'unauthorized') { renderHistory(); }
+    if (mode !== 'unauthorized') { renderHistory(); ensureAttachmentStorageModeLoaded(); }
   }
 
   /* navigation.js's 'msc:close-toolbar-popovers' fires on every panel
@@ -1404,6 +2557,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
      the stored Calendar token — ordinary navigation is not an
      authorization event. */
   function onLeaveOrPanelSwitch() {
+    invalidateStaffDirectory();
     resetWorkspaceState();
     renderHistory();
   }
@@ -1418,6 +2572,7 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
   renderAccessGate();
   renderHistory();
+  ensureAttachmentStorageModeLoaded();
 
   return {
     selectStaff: selectStaff,
@@ -1437,6 +2592,19 @@ export function mountReviewSummariesWorkspace(mountEl) {
     downloadReviewSummariesPdf: downloadReviewSummariesPdf,
     exportButtonEl: exportBtn,
     updateExportButtonState: updateExportButtonState,
+    // REQ-CAL-REV-ATTACH-001 (2026-09-23) — test-facing hooks, same
+    // "expose the real function/element, never a duplicated test-only
+    // implementation" convention as every entry above.
+    downloadReviewSummariesZip: downloadReviewSummariesZip,
+    zipExportButtonEl: zipExportBtn,
+    // REQ-CAL-REV-HISTORY-PDF-001 (2026-09-23) — same test-facing-hook
+    // convention, for "Download all reviews as one PDF".
+    downloadAllReviewsPdf: downloadAllReviewsPdf,
+    allReviewsExportButtonEl: allReviewsExportBtn,
+    addFilesToPending: addFilesToPending,
+    attachmentsListEl: attachmentsListEl,
+    staffResultsEl: staffResultsEl,
+    staffSearchInputEl: staffSearchInput,
     state: state
   };
 }

@@ -75,6 +75,20 @@ var KNOWN_ERRORS = {
     message: 'Review summaries can’t be deleted. This record is permanent.',
     persistent: true
   },
+  /* REQ-CAL-REV-ATTACH-001 (2026-09-23) — the backend's own message is
+     shown verbatim here (a deliberate, narrow exception to this file's
+     "never show raw backend text" rule): it is a fixed, safe, entirely
+     backend-authored sentence (backend/routers/staff_review_summaries.py
+     _ATTACHMENT_STORAGE_NOT_READY_MESSAGE), never a stack trace or raw
+     exception text, and telling the user specifically what is missing
+     (a database migration, not "something went wrong") is exactly what
+     lets them or their admin actually fix it. */
+  attachment_storage_not_ready: {
+    type: 'error',
+    title: 'Attachments unavailable',
+    message: 'Attachment storage is not ready: database migration required.',
+    persistent: true
+  },
   same_task_time_required: {
     type: 'error',
     title: 'Task time required',

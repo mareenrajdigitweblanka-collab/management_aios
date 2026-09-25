@@ -40,6 +40,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from backend.config import (
     MD_MEMBER_KEY,
     load_calendar_auth_token_hashes,
+    load_dev_auth_bypass,
     load_md_review_summary_token_hash,
     member_display_label,
 )
@@ -105,18 +106,34 @@ def validate_calendar_auth_token(authorization: Optional[str]) -> str:
     if md_hash is not None and md_hash not in configured_hashes.values():
         configured_hashes[MD_MEMBER_KEY] = md_hash
 
+    # Local-development-only bypass (backend/config.py load_dev_auth_bypass
+    # — ENVIRONMENT != production, DEV_AUTH_BYPASS=true, a valid member key,
+    # a well-formed hash, none cached). Deliberately kept as a SEPARATE
+    # (member_key, hash) candidate list, never merged into configured_hashes
+    # (a member_key -> hash dict): DEV_AUTH_BYPASS_MEMBER_KEY is always one
+    # of the five real member keys, so merging it in would silently
+    # overwrite — and disable — that member's own real token hash. Skipped
+    # entirely if its hash happens to collide with any already-configured
+    # hash, same collision-avoidance reasoning as the MD merge above.
+    candidates = list(configured_hashes.items())
+    dev_bypass = load_dev_auth_bypass()
+    if dev_bypass is not None:
+        bypass_member_key, bypass_hash = dev_bypass
+        if bypass_hash not in configured_hashes.values():
+            candidates.append((bypass_member_key, bypass_hash))
+
     candidate_hash = _hash_token(token)
 
-    # Compares against EVERY configured member hash (five Management Team
-    # members plus, when configured, MD) with hmac.compare_digest, with no
-    # early return on the first match — an early-exit loop would let
-    # response timing hint at which member's hash the candidate token is
-    # closest to. Hash uniqueness among the five is already enforced by
-    # load_calendar_auth_token_hashes, and MD is only ever added above when
-    # its hash doesn't collide with one of those five, so at most one match
-    # is ever possible here.
+    # Compares against EVERY candidate hash (five Management Team members,
+    # optionally MD, optionally the local-dev bypass) with
+    # hmac.compare_digest, with no early return on the first match — an
+    # early-exit loop would let response timing hint at which member's hash
+    # the candidate token is closest to. Hash uniqueness among the five is
+    # already enforced by load_calendar_auth_token_hashes, and MD/the dev
+    # bypass are only ever added above when their hash doesn't collide with
+    # an already-present one, so at most one match is ever possible here.
     matched_member: Optional[str] = None
-    for member_key, configured_hash in configured_hashes.items():
+    for member_key, configured_hash in candidates:
         if hmac.compare_digest(candidate_hash, configured_hash):
             matched_member = member_key
 

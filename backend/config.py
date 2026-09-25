@@ -398,6 +398,89 @@ def load_md_review_summary_token_hash(environ=None):
     return normalized
 
 
+# ── Local-development-only Calendar auth bypass (2026-09-23) ─────────────
+# A single, optional, fail-closed shortcut so a developer running the API
+# locally (python -m uvicorn backend.main:app --reload) can authorize as one
+# real Management Team member without needing that member's actual token
+# hash. Folded into the EXACT SAME comparison mechanism
+# validate_calendar_auth_token already uses for the five mandatory member
+# tokens and the optional MD token (backend/routers/calendar_auth.py) —
+# never a second endpoint, never a query-string/header shortcut. All four
+# of the following must hold simultaneously or the bypass is entirely
+# unavailable — a missing/blank/malformed value never weakens normal
+# authentication and never crashes startup (same optional-config shape as
+# load_md_review_summary_token_hash above, not the fail-closed-at-STARTUP
+# shape load_calendar_auth_token_hashes uses for the five mandatory
+# tokens):
+#
+#   1. ENVIRONMENT (normalized strip().lower()) is not "production" — a
+#      production deployment ignores every bypass variable completely,
+#      even if all three below happen to be present and well-formed.
+#   2. DEV_AUTH_BYPASS is the exact literal "true" (see _strict_true) —
+#      no existing boolean-env-var convention exists elsewhere in this
+#      backend, so this parser is deliberately narrow rather than
+#      guessing at "1"/"yes"/etc.
+#   3. DEV_AUTH_BYPASS_MEMBER_KEY names one of VALID_MEMBER_KEYS — the
+#      bypass always resolves to a REAL Management Team member's identity
+#      (never a synthetic one), so every existing per-member authorization
+#      rule (require_matching_member, reviewer ownership, the
+#      reviewer_member_key DB CHECK constraint, etc.) applies to a
+#      bypass-authorized request exactly as it would to that member's own
+#      real token — there is nothing downstream to special-case.
+#   4. CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH is a 64-character SHA-256 hex
+#      digest (same shape check as _looks_like_sha256_hex_digest above).
+#
+# Called on every request, never cached — identical reasoning to
+# load_calendar_auth_token_hashes' own no-caching design, so disabling any
+# one of the four conditions after startup (e.g. flipping DEV_AUTH_BYPASS
+# to false, or deploying with ENVIRONMENT=production) takes effect
+# immediately with no stale in-memory copy.
+DEV_AUTH_BYPASS_ENV_VAR = "DEV_AUTH_BYPASS"
+DEV_AUTH_BYPASS_MEMBER_KEY_ENV_VAR = "DEV_AUTH_BYPASS_MEMBER_KEY"
+CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH_ENV_VAR = "CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH"
+
+
+def _strict_true(value: str) -> bool:
+    """Strict boolean parser for DEV_AUTH_BYPASS. Only the exact literal
+    "true" (after strip().lower()) is True — "1", "yes", "TRUE " with
+    trailing content, blank, and "false" are all False. Deliberately
+    narrow for a security-sensitive flag rather than guessing at a looser
+    convention that does not exist anywhere else in this backend."""
+    return value.strip().lower() == "true"
+
+
+def load_dev_auth_bypass(environ=None):
+    """Fail-closed, optional loader for the local-development Calendar
+    auth bypass described above. Returns (member_key, hash) only when all
+    four gating conditions hold; returns None (bypass unavailable) in
+    every other case, including a misconfigured or absent value — never
+    raises. `environ` defaults to os.environ; tests pass an isolated
+    mapping of their own test-only values (see
+    backend/tests/calendar_auth_test_support.py) — this repo's real
+    CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH value is never read by, or needed
+    for, any test using this."""
+    source = os.environ if environ is None else environ
+
+    environment = (source.get("ENVIRONMENT") or "").strip().lower()
+    if not environment:
+        environment = "development"  # mirrors ENVIRONMENT's own default above
+    if environment == "production":
+        return None
+
+    if not _strict_true(source.get(DEV_AUTH_BYPASS_ENV_VAR) or ""):
+        return None
+
+    member_key = (source.get(DEV_AUTH_BYPASS_MEMBER_KEY_ENV_VAR) or "").strip().lower()
+    if member_key not in VALID_MEMBER_KEYS:
+        return None
+
+    raw_hash = (source.get(CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH_ENV_VAR) or "").strip().lower()
+    if not _looks_like_sha256_hex_digest(raw_hash):
+        return None
+
+    return member_key, raw_hash
+
+
 def member_display_label(member_key: str) -> str:
     """The one place that resolves a verified member_key to a safe display
     label, for both the five Management Team members (MEMBER_LABELS) and
@@ -409,6 +492,172 @@ def member_display_label(member_key: str) -> str:
     if member_key == MD_MEMBER_KEY:
         return MD_DISPLAY_LABEL
     return MEMBER_LABELS[member_key]
+
+
+# ── Review Summary Attachments (REQ-CAL-REV-ATTACH-001, 2026-09-23) ──────
+# Attachments were explicitly out of scope for Phase 1 (docs/2026-08-03_
+# calendar-review-summaries-requirement.md), so no prior source/documented
+# size or type limit exists anywhere in this repo. The limits below are an
+# assumed, clearly-flagged business decision (not confirmed by a
+# Management Team/domain owner) — this is the single place they are
+# defined; both backend/routers/staff_review_summaries.py and the frontend
+# (web-view/js/review-summaries.js, which mirrors these same numbers for
+# client-side UX only — the server-side check here is the one that is
+# actually enforced) read from here. Adjust in one place if a different
+# limit is ever approved.
+MAX_ATTACHMENT_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB per file
+MAX_ATTACHMENTS_PER_SUMMARY = 10
+# How long a "pending" attachment (uploaded, never attached to a summary —
+# browser closed, network drop, etc.) is kept before
+# scripts/cleanup_pending_review_summary_attachments.py treats it as an
+# abandoned partial upload and deletes both the storage-provider asset and
+# this row.
+PENDING_ATTACHMENT_CLEANUP_AGE_HOURS = 24
+
+# Image/PDF attachments larger than this are never embedded/merged into the
+# PDF export (backend/review_summary_pdf_export.py) — listed by filename
+# only instead, with a note that the original file is in the ZIP download.
+# Keeps a single export's memory/PDF size bounded regardless of how many or
+# how large the underlying attachments are. Word/Excel/audio attachments
+# are never embedded regardless of size (see ATTACHMENT_EXTENSION_TYPES
+# comment above) so this cap does not apply to them.
+MAX_EMBEDDABLE_ATTACHMENT_BYTES_FOR_PDF = 15 * 1024 * 1024  # 15 MB
+
+# ── "Download all reviews as one PDF" limits (REQ-CAL-REV-HISTORY-PDF-001,
+# 2026-09-23) ──────────────────────────────────────────────────────────
+# Combining EVERY matching review (across all result pages, never just the
+# first 50 — see backend/routers/staff_review_summaries.py
+# export_all_reviews_pdf) plus every one of their attachments converted to
+# PDF pages has no natural upper bound the way a single review's own
+# /export/pdf does. These are assumed, clearly-flagged business decisions
+# (not confirmed by a Management Team/domain owner) — this is the single
+# place they are defined; adjust here if a different limit is ever
+# approved. Each is enforced with a clear, specific error message (never a
+# silent truncation) — see that route for where each is checked.
+MAX_HISTORY_PDF_EXPORT_RECORDS = 300
+MAX_HISTORY_PDF_EXPORT_ATTACHMENT_BYTES = 300 * 1024 * 1024  # 300 MB combined
+MAX_HISTORY_PDF_EXPORT_TOTAL_PAGES = 1000
+# Wall-clock budget for the whole request handler (attachment fetch +
+# Word/Excel conversion + PDF assembly) — well under common reverse-proxy/
+# serverless gateway timeouts, so a runaway export fails with this route's
+# own clear message instead of an opaque gateway timeout the frontend can't
+# distinguish from a dropped connection.
+HISTORY_PDF_EXPORT_TIME_BUDGET_SECONDS = 45
+
+# ── Local Prototype Attachment mode (REQ-CAL-REV-ATTACH-001-LOCAL-PROTO,
+# 2026-09-23) ──────────────────────────────────────────────────────────
+# The real PostgreSQL attachment migration (database/migrations/2026-09-23-
+# create-staff-review-summary-attachments.sql) is blocked in this local
+# environment by a privilege gap (the configured role lacks REFERENCES on
+# staff_review_summaries — see the conversation record for the dry-run that
+# discovered this; nothing here works around that or touches PostgreSQL at
+# all). This mode lets Cloudinary attachment upload/download/PDF/ZIP be
+# exercised locally anyway by keeping attachment METADATA (never file
+# bytes, never staff review text/summary content — that stays exactly
+# where it already is, in PostgreSQL) in a separate, local-only SQLite
+# file instead. Explicitly opt-in and OFF by default — the existing
+# PostgreSQL-backed implementation (backend/routers/
+# staff_review_summaries.py's original attachment code, unchanged and
+# fully intact) remains the only path when this is unset, so a future
+# real migration+privilege-grant needs zero code changes to switch back.
+#
+# NEVER used as a silent substitute for the database, and NEVER a browser-
+# side cache — see backend/local_attachment_metadata.py's own module
+# docstring for the full local-only-persistence caveat and the
+# export/transition plan to PostgreSQL once the real migration lands.
+LOCAL_PROTOTYPE_ATTACHMENTS_ENV_VAR = "LOCAL_PROTOTYPE_ATTACHMENTS"
+
+# Where the local-only SQLite file lives — inside .gitignore'd local_data/,
+# never committed, never transfers with the repo to another machine or
+# deployment (see docs/2026-09-23_local-prototype-attachment-metadata.md).
+LOCAL_ATTACHMENT_METADATA_DB_PATH = "local_data/local_prototype_attachments.db"
+
+
+def is_local_prototype_attachments_enabled(environ=None) -> bool:
+    """Fail-closed (defaults to False/off) — same _strict_true parser as
+    DEV_AUTH_BYPASS above: only the exact literal "true" turns this on,
+    never a guessed-at "1"/"yes". `environ` defaults to os.environ; tests
+    pass an isolated mapping of their own (see
+    backend/tests/test_local_attachment_metadata.py) — this never reads or
+    needs any real credential."""
+    source = os.environ if environ is None else environ
+    # 2026-09-25: the shared PostgreSQL table now exists and is the only
+    # attachment mapping a deployment may use. A production deployment
+    # ignores this flag completely (same rule as DEV_AUTH_BYPASS above), so
+    # a stray LOCAL_PROTOTYPE_ATTACHMENTS=true can never route deployed
+    # traffic to a machine-local SQLite file. Non-production use stays
+    # available as the documented rollback (docs/2026-09-24_review-summary-
+    # attachments-postgres-cutover.md).
+    environment = (source.get("ENVIRONMENT") or "development").strip().lower()
+    if environment == "production":
+        return False
+    return _strict_true(source.get(LOCAL_PROTOTYPE_ATTACHMENTS_ENV_VAR) or "")
+
+
+# File extension (lowercase, with leading dot) -> coarse attachment_type
+# category (backend/models.py StaffReviewSummaryAttachment CHECK
+# constraint; also drives export rendering rules in
+# backend/review_summary_pdf_export.py — image/pdf embedded, word/excel/
+# audio listed by filename only, audio never embedded or transcribed).
+# This — never the client-declared Content-Type header, which is never
+# trusted for this decision — is the sole source of truth for what kind of
+# file was uploaded; content_type actually stored is server-derived via
+# Python's own mimetypes module (backend/routers/staff_review_summaries.py),
+# not accepted from the request.
+ATTACHMENT_EXTENSION_TYPES = {
+    ".mp3": "audio",
+    ".wav": "audio",
+    ".m4a": "audio",
+    ".ogg": "audio",
+    ".doc": "word",
+    ".docx": "word",
+    ".xls": "excel",
+    ".xlsx": "excel",
+    ".jpg": "image",
+    ".jpeg": "image",
+    ".png": "image",
+    ".gif": "image",
+    ".webp": "image",
+    ".pdf": "pdf",
+}
+
+VALID_ATTACHMENT_TYPES = ("audio", "word", "excel", "image", "pdf")
+
+# Cloudinary resource_type each attachment_type must be uploaded/addressed
+# under — Cloudinary's own taxonomy, not this app's attachment_type. Word/
+# Excel files are uploaded as 'raw' (Cloudinary applies no
+# image/video-specific processing to them); PDFs as 'image' (Cloudinary can
+# rasterize PDF pages, which backend/attachment_storage.py never relies on,
+# but 'image' is still the correct resource_type for PDF bytes on
+# Cloudinary); audio as 'video' (Cloudinary's own audio/video resource
+# type — there is no separate 'audio' resource_type in Cloudinary's API).
+ATTACHMENT_TYPE_STORAGE_RESOURCE_TYPE = {
+    "audio": "video",
+    "word": "raw",
+    "excel": "raw",
+    "image": "image",
+    "pdf": "image",
+}
+
+
+def load_cloudinary_config(environ=None):
+    """Fail-closed, optional loader for the three Cloudinary credentials
+    (CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET). Returns None — "attachment
+    storage is unavailable" — unless all three are present and non-blank;
+    never raises, mirroring load_md_review_summary_token_hash's shape.
+    Attachment upload/download routes must treat None as a clean 503, never
+    a crash and never a silent no-op that pretends to succeed. `environ`
+    defaults to os.environ; tests pass an isolated mapping of their own
+    test-only (never real) values — see backend/attachment_storage.py's
+    FakeAttachmentStorage, which is used by every automated test instead of
+    ever calling the real Cloudinary API."""
+    source = os.environ if environ is None else environ
+    cloud_name = (source.get("CLOUDINARY_CLOUD_NAME") or "").strip()
+    api_key = (source.get("CLOUDINARY_API_KEY") or "").strip()
+    api_secret = (source.get("CLOUDINARY_API_SECRET") or "").strip()
+    if not cloud_name or not api_key or not api_secret:
+        return None
+    return {"cloud_name": cloud_name, "api_key": api_key, "api_secret": api_secret}
 
 
 # ── Knowledge Management (REQ-KM-CRUD-002/003) ───────────────────────────

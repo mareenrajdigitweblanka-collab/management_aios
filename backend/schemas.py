@@ -36,6 +36,7 @@ from backend.config import (
     LEAVE_HALF_DAY_FIRST_DEDUCTION_MINUTES,
     LEAVE_HALF_DAY_SECOND_DEDUCTION_MINUTES,
     LEAVE_POLICY_SOURCE_ID,
+    MAX_ATTACHMENTS_PER_SUMMARY,
     SHORT_LEAVE_MONTHLY_CAP_MINUTES,
     VALID_PRIORITIES,
 )
@@ -834,16 +835,29 @@ class StaffFilterOptionsResponse(BaseModel):
 
 
 class StaffReviewSummaryCreate(BaseModel):
-    """Request body for POST /api/staff-review-summaries. Only these three
+    """Request body for POST /api/staff-review-summaries. Only these four
     fields may ever be supplied by the browser — reviewer_member_key,
     created_at, updated_at, deleted_at, and id are all absent from this
     model by design, so a client attempting to send any of them has the
     value silently ignored by Pydantic, exactly as MemberLeaveRecordCreate
-    excludes member_key/half_day_period above."""
+    excludes member_key/half_day_period above.
+
+    attachment_ids (REQ-CAL-REV-ATTACH-001, 2026-09-23): references to
+    already-uploaded, still-"pending" attachments (POST .../attachments —
+    see backend/routers/staff_review_summaries.py
+    upload_review_summary_attachment), never raw file content. The router
+    validates every id (exists, summary_id IS NULL, uploaded_by = the
+    acting reviewer) and re-points it to the new summary in the SAME
+    transaction as the insert — an invalid id fails the whole create with
+    no row ever written, which is what keeps "a failed upload can never
+    produce a successful summary with missing files" true even for this
+    id-list step (the file bytes themselves were already durably uploaded
+    before this request is ever sent — see that route's own docstring)."""
 
     reviewed_staff_id: int
     meeting_date: date_type
     summary_text: str = Field(..., min_length=1, max_length=10000)
+    attachment_ids: List[UUID] = Field(default_factory=list, max_length=MAX_ATTACHMENTS_PER_SUMMARY)
 
     @field_validator("summary_text")
     @classmethod
@@ -878,6 +892,26 @@ class StaffReviewSummaryUpdate(BaseModel):
         if len(trimmed) > 10000:
             raise ValueError("summary_text must be 10,000 characters or fewer after trimming.")
         return trimmed
+
+
+class StaffReviewSummaryAttachmentOut(BaseModel):
+    """Response shape for one attachment — returned both by POST
+    .../attachments (a freshly uploaded, still-pending attachment) and
+    embedded in StaffReviewSummaryOut.attachments below (once attached to a
+    summary). Deliberately never exposes storage_public_id/
+    storage_resource_type/storage_provider — those are internal-only
+    values; original-file access always goes through the dedicated
+    download route (GET .../{summary_id}/attachments/{attachment_id}),
+    never a raw storage reference handed to the browser."""
+
+    id: UUID
+    original_filename: str
+    content_type: str
+    attachment_type: str
+    file_size_bytes: int
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
 
 
 class StaffReviewSummaryOut(BaseModel):
@@ -918,6 +952,12 @@ class StaffReviewSummaryOut(BaseModel):
     # no existing field's meaning changes.
     can_edit: bool = False
     edit_deadline: Optional[datetime] = None
+
+    # REQ-CAL-REV-ATTACH-001 (2026-09-23) — populated by the router via a
+    # live query against staff_review_summary_attachments (never stored
+    # denormalized on this record). Empty list, never omitted, for a
+    # summary with no attachments.
+    attachments: List[StaffReviewSummaryAttachmentOut] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

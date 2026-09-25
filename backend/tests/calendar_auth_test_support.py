@@ -64,11 +64,26 @@ def test_token_env(extra_overrides=None, include_md=False) -> dict:
 
     include_md=True additionally sets CALENDAR_AUTH_TOKEN_HASH_MD to
     MD_TEST_TOKEN's hash — omitted by default so every existing five-member
-    test is unaffected by MD's optional env var existing at all."""
+    test is unaffected by MD's optional env var existing at all.
+
+    LOCAL_PROTOTYPE_ATTACHMENTS is explicitly forced to "" (off) here,
+    2026-09-23 — this repo's own real .env may have it set to "true" for
+    local development (see docs/2026-09-23_local-prototype-attachment-
+    metadata.md), and mock.patch.dict's clear=False means an unlisted key
+    is left exactly as the real ambient environment has it. Without this
+    explicit override, every test using this helper would silently run
+    against whichever attachment backend the real .env happens to select,
+    exactly the ambient-leakage failure mode already documented at length
+    for CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH elsewhere in this file. Tests
+    that specifically want Local Prototype mode (test_local_prototype_
+    attachments.py) apply their own LOCAL_PROTOTYPE_ATTACHMENTS=true patch
+    AFTER calling patched_calendar_auth_env(), so theirs is the one that
+    ends up active."""
     env = {
         env_var: sha256_hex(TEST_TOKENS[member_key])
         for member_key, env_var in CALENDAR_AUTH_TOKEN_ENV_VARS.items()
     }
+    env["LOCAL_PROTOTYPE_ATTACHMENTS"] = ""
     if include_md:
         env[MD_CALENDAR_AUTH_TOKEN_ENV_VAR] = sha256_hex(MD_TEST_TOKEN)
     if extra_overrides:
@@ -120,3 +135,63 @@ def make_sqlite_engine_and_session_factory():
     event.listen(engine, "connect", _attach_schema)
     Base.metadata.create_all(engine)
     return engine, sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+
+# ── Real-database safety guard ───────────────────────────────────────────
+#
+# Defense in depth for TestClient-based suites (e.g.
+# test_staff_review_summaries.py) that must never write to the real
+# management_aios database: the backend's get_db dependency lazily builds
+# its engine from DATABASE_URL (backend/database.py get_engine), and that
+# value in this repo's own .env currently points at a real remote Postgres
+# instance, not a fixture. Overriding get_db with an isolated SQLite
+# session (make_sqlite_engine_and_session_factory above) already prevents
+# any real connection under normal operation; the two helpers below turn a
+# missing/bypassed override from a silent real-database write into an
+# immediate, loud test failure, called from setUp() before any request is
+# sent.
+
+def assert_isolated_sqlite_override(app, engine, get_db_dependency=None):
+    """Fails immediately (before any request is sent) unless `app` has a
+    get_db override registered AND that override's own engine is an
+    isolated in-memory SQLite database — never a file, never a real
+    Postgres DATABASE_URL. `get_db_dependency` defaults to
+    backend.database.get_db (imported lazily to avoid a hard import-order
+    dependency for callers that already imported it under a different
+    name)."""
+    if get_db_dependency is None:
+        from backend.database import get_db as get_db_dependency
+
+    if get_db_dependency not in app.dependency_overrides:
+        raise AssertionError(
+            "get_db is not overridden on this app instance — refusing to "
+            "run: requests would fall through to the real DATABASE_URL."
+        )
+
+    backend_name = engine.url.get_backend_name()
+    if backend_name != "sqlite" or engine.url.database not in (None, ":memory:"):
+        raise AssertionError(
+            "Test database engine is not an isolated in-memory SQLite "
+            f"database (got {engine.url!r}) — refusing to run against "
+            "what may be a real database."
+        )
+
+
+@contextmanager
+def forbid_real_database_engine():
+    """Patches backend.database.get_engine to raise instead of connecting,
+    for the lifetime of the context. Belt-and-suspenders on top of
+    assert_isolated_sqlite_override: even if a get_db override were ever
+    removed or bypassed mid-test (e.g. a stray app.dependency_overrides.clear()
+    call), the very first attempt to build the real engine from
+    DATABASE_URL fails loudly instead of silently opening a connection to
+    the real database."""
+    def _forbidden(*args, **kwargs):
+        raise RuntimeError(
+            "backend.database.get_engine() was called during a test. "
+            "This test's get_db override is missing or was bypassed — "
+            "tests must never connect to the real DATABASE_URL."
+        )
+
+    with mock.patch("backend.database.get_engine", side_effect=_forbidden):
+        yield

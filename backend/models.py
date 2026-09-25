@@ -414,6 +414,90 @@ class StaffReviewSummary(Base):
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class StaffReviewSummaryAttachment(Base):
+    """SQLAlchemy ORM model for management_aios.staff_review_summary_attachments
+    (REQ-CAL-REV-ATTACH-001). Mirrors database/migrations/2026-09-23-create-
+    staff-review-summary-attachments.sql exactly — same "Python mapping
+    only, SQL file is DDL truth" convention as every other model above.
+
+    File bytes are never stored here — only the storage provider's own
+    reference (storage_public_id, storage_resource_type; see
+    backend/attachment_storage.py) plus display/validation metadata.
+
+    Two-phase, atomicity-preserving upload flow (see the migration file's
+    own docstring for the full rationale): summary_id is NULL for a
+    "pending" row (uploaded, not yet attached to any summary) and is set
+    exactly once, atomically, by the summary-create transaction in
+    backend/routers/staff_review_summaries.py — never changed afterward. A
+    row that stays permanently NULL is an orphaned partial upload, cleaned
+    up periodically by scripts/cleanup_pending_review_summary_attachments.py
+    (this backend has no in-process background job scheduler).
+
+    Revised 2026-09-24: summary_id carries no foreign key (see below)."""
+
+    __tablename__ = "staff_review_summary_attachments"
+    __table_args__ = (
+        CheckConstraint(
+            "uploaded_by IN ('mayurika', 'suman', 'arun', 'rajiv', 'paraparan')",
+            name="staff_review_summary_attachments_uploaded_by_check",
+        ),
+        CheckConstraint(
+            "attachment_type IN ('audio', 'word', 'excel', 'image', 'pdf')",
+            name="staff_review_summary_attachments_attachment_type_check",
+        ),
+        CheckConstraint(
+            "file_size_bytes > 0",
+            name="staff_review_summary_attachments_file_size_positive_check",
+        ),
+        CheckConstraint(
+            "storage_resource_type IN ('image', 'video', 'raw')",
+            name="staff_review_summary_attachments_storage_resource_type_check",
+        ),
+        # Added 2026-09-25 (mirrors the finalized migration) — no parent table
+        # to lean on, so blank/unknown values are refused by the table itself.
+        CheckConstraint(
+            "storage_provider = 'cloudinary'",
+            name="staff_review_summary_attachments_storage_provider_check",
+        ),
+        CheckConstraint(
+            "length(trim(original_filename)) > 0",
+            name="staff_review_summary_attachments_filename_nonblank_check",
+        ),
+        CheckConstraint(
+            "length(trim(content_type)) > 0",
+            name="staff_review_summary_attachments_content_type_nonblank_check",
+        ),
+        CheckConstraint(
+            "length(trim(storage_public_id)) > 0",
+            name="staff_review_summary_attachments_public_id_nonblank_check",
+        ),
+        {"schema": "management_aios"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # NO ForeignKey, by approved design (2026-09-24): the application role does
+    # not hold REFERENCES on staff_review_summaries. The link's integrity is
+    # enforced in backend/routers/staff_review_summaries.py (a link is only
+    # written in the same transaction that inserts the summary) and verified
+    # read-only by backend/attachment_integrity.py — see the migration's
+    # header for the full rationale.
+    summary_id = Column(UUID(as_uuid=True), nullable=True)
+
+    uploaded_by = Column(String(80), nullable=False)
+
+    original_filename = Column(String(255), nullable=False)
+    content_type = Column(String(120), nullable=False)
+    attachment_type = Column(String(20), nullable=False)
+    file_size_bytes = Column(Integer, nullable=False)
+
+    storage_provider = Column(String(20), nullable=False, server_default="cloudinary")
+    storage_public_id = Column(String(255), nullable=False)
+    storage_resource_type = Column(String(20), nullable=False)
+
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+
+
 class KnowledgeDocument(Base):
     """SQLAlchemy ORM model for management_aios.knowledge_documents
     (REQ-KM-CRUD-002/003). Mirrors

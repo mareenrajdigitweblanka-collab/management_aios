@@ -276,5 +276,198 @@ class CorsExposeHeadersTests(unittest.TestCase):
         self.assertIn("content-disposition", exposed.lower())
 
 
+class DevAuthBypassTests(unittest.TestCase):
+    """Local-development-only Calendar auth bypass (backend/config.py
+    load_dev_auth_bypass, folded into backend/routers/calendar_auth.py
+    validate_calendar_auth_token's existing comparison loop).
+
+    A fixed, test-only bypass token/hash — never this developer's real
+    CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH value from .env, which is never
+    read by any test here. Every test explicitly sets (never merely
+    omits) all four bypass-related environment variables, so a real,
+    already-configured .env value on the machine running these tests can
+    never leak in and change the outcome — patched_calendar_auth_env's
+    mock.patch.dict(..., clear=False) only overrides the keys it is given;
+    an omitted key would fall through to whatever the real process
+    environment already has, which is exactly what these tests must not
+    depend on."""
+
+    DEV_BYPASS_TEST_TOKEN = "test-only-token-dev-bypass-never-a-real-secret"
+    DEV_BYPASS_TEST_HASH = sha256_hex(DEV_BYPASS_TEST_TOKEN)
+    DEV_BYPASS_MEMBER_KEY = "arun"
+
+    def setUp(self):
+        self.engine, self.SessionLocal = make_sqlite_engine_and_session_factory()
+
+        def override_get_db():
+            db = self.SessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
+
+        app.dependency_overrides[get_db] = override_get_db
+
+    def tearDown(self):
+        app.dependency_overrides.clear()
+        self.engine.dispose()
+
+    def _bypass_env(self, **overrides):
+        env = {
+            "ENVIRONMENT": "development",
+            "DEV_AUTH_BYPASS": "true",
+            "DEV_AUTH_BYPASS_MEMBER_KEY": self.DEV_BYPASS_MEMBER_KEY,
+            "CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH": self.DEV_BYPASS_TEST_HASH,
+        }
+        env.update(overrides)
+        return env
+
+    def _bypass_bearer(self):
+        return {"Authorization": "Bearer " + self.DEV_BYPASS_TEST_TOKEN}
+
+    def _post_verify(self, env, headers):
+        with patched_calendar_auth_env(env):
+            with TestClient(app) as client:
+                return client.post("/api/calendar-auth/verify", headers=headers)
+
+    # 1. development + explicitly enabled + matching token + valid member key
+    def test_enabled_bypass_with_matching_token_succeeds(self):
+        resp = self._post_verify(self._bypass_env(), self._bypass_bearer())
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["memberKey"], self.DEV_BYPASS_MEMBER_KEY)
+
+    # 2. wrong raw token
+    def test_wrong_token_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(),
+            {"Authorization": "Bearer this-token-does-not-match-the-bypass-hash"},
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    # 3. DEV_AUTH_BYPASS missing or false
+    def test_bypass_flag_missing_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(DEV_AUTH_BYPASS=""), self._bypass_bearer()
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_bypass_flag_false_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(DEV_AUTH_BYPASS="false"), self._bypass_bearer()
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_bypass_flag_loose_truthy_value_rejected(self):
+        """Strict parser: only the exact literal "true" enables anything —
+        "1"/"yes" are not guessed at."""
+        resp = self._post_verify(
+            self._bypass_env(DEV_AUTH_BYPASS="1"), self._bypass_bearer()
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    # 4. bypass hash missing
+    def test_bypass_hash_missing_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH=""),
+            self._bypass_bearer(),
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    # 5. bypass hash malformed or not 64 hexadecimal characters
+    def test_bypass_hash_wrong_length_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH="abc123"),
+            self._bypass_bearer(),
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_bypass_hash_non_hex_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH="z" * 64),
+            self._bypass_bearer(),
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    # 6. bypass member key missing
+    def test_bypass_member_key_missing_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(DEV_AUTH_BYPASS_MEMBER_KEY=""), self._bypass_bearer()
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    # 7. bypass member key invalid
+    def test_bypass_member_key_invalid_rejected(self):
+        resp = self._post_verify(
+            self._bypass_env(DEV_AUTH_BYPASS_MEMBER_KEY="not_a_real_member"),
+            self._bypass_bearer(),
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_bypass_member_key_md_rejected(self):
+        """MD is deliberately not in VALID_MEMBER_KEYS — the bypass must
+        not become a backdoor into the separate MD identity."""
+        resp = self._post_verify(
+            self._bypass_env(DEV_AUTH_BYPASS_MEMBER_KEY="md"), self._bypass_bearer()
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    # 8. ENVIRONMENT=production with every bypass variable configured
+    def test_production_environment_ignores_fully_configured_bypass(self):
+        resp = self._post_verify(
+            self._bypass_env(ENVIRONMENT="production"), self._bypass_bearer()
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_production_environment_normalization_is_case_and_whitespace_insensitive(self):
+        resp = self._post_verify(
+            self._bypass_env(ENVIRONMENT="  PRODUCTION  "), self._bypass_bearer()
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    # 9. existing normal member token authentication still succeeds
+    def test_normal_member_token_still_succeeds_with_bypass_enabled(self):
+        resp = self._post_verify(self._bypass_env(), bearer_header("mayurika"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["memberKey"], "mayurika")
+
+    def test_bypass_members_own_real_token_still_succeeds_independently(self):
+        """The bypass is configured for "arun" here — Arun's own real
+        token must keep working exactly as before, side by side with the
+        bypass token, never overwritten by it."""
+        resp = self._post_verify(self._bypass_env(), bearer_header("arun"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["memberKey"], "arun")
+
+    # 10. existing MD-token behavior remains unchanged
+    def test_md_token_still_succeeds_with_bypass_enabled(self):
+        with patched_calendar_auth_env(self._bypass_env(), include_md=True):
+            with TestClient(app) as client:
+                resp = client.post(
+                    "/api/calendar-auth/verify", headers=bearer_header("md")
+                )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["memberKey"], "md")
+
+    # Collision defense-in-depth: a bypass hash equal to an already-
+    # configured real hash must never be added as a second candidate.
+    def test_bypass_hash_colliding_with_a_real_member_hash_is_not_added(self):
+        colliding_hash = sha256_hex(TEST_TOKENS["suman"])
+        env = self._bypass_env(CALENDAR_AUTH_DEV_BYPASS_TOKEN_HASH=colliding_hash)
+        # The bypass token itself (whose hash does NOT equal the collision)
+        # must not verify — the colliding hash was skipped, not added.
+        resp = self._post_verify(env, self._bypass_bearer())
+        self.assertEqual(resp.status_code, 401)
+        # Suman's own real token still works normally either way.
+        resp2 = self._post_verify(env, bearer_header("suman"))
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2.json()["memberKey"], "suman")
+
+    def test_bypass_response_never_contains_token_or_hash(self):
+        resp = self._post_verify(self._bypass_env(), self._bypass_bearer())
+        raw_body = resp.text
+        self.assertNotIn(self.DEV_BYPASS_TEST_TOKEN, raw_body)
+        self.assertNotIn(self.DEV_BYPASS_TEST_HASH, raw_body)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,7 +26,9 @@ from backend.main import app
 from backend.models import MemberLeaveRecord, MemberScheduleEvent, StaffDashboardRecord, StaffReviewSummary
 from backend.schemas import StaffRecordOut
 from backend.tests.calendar_auth_test_support import (
+    assert_isolated_sqlite_override,
     bearer_header,
+    forbid_real_database_engine,
     make_sqlite_engine_and_session_factory,
     patched_calendar_auth_env,
 )
@@ -51,6 +53,15 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
                 db.close()
 
         app.dependency_overrides[get_db] = override_get_db
+
+        # Safety guard (fail before any request is sent, not after): confirm
+        # get_db is actually overridden and that the override serves an
+        # isolated in-memory SQLite database, never the real DATABASE_URL —
+        # see calendar_auth_test_support.py for why this matters here.
+        assert_isolated_sqlite_override(app, self.engine, get_db_dependency=get_db)
+        self.forbid_real_db_ctx = forbid_real_database_engine()
+        self.forbid_real_db_ctx.__enter__()
+
         self.env_ctx = patched_calendar_auth_env()
         self.env_ctx.__enter__()
         self.client_ctx = TestClient(app)
@@ -60,6 +71,7 @@ class StaffReviewSummariesTestCase(unittest.TestCase):
     def tearDown(self):
         self.client_ctx.__exit__(None, None, None)
         self.env_ctx.__exit__(None, None, None)
+        self.forbid_real_db_ctx.__exit__(None, None, None)
         app.dependency_overrides.clear()
         self.engine.dispose()
 

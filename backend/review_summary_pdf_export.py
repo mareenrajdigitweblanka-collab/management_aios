@@ -46,14 +46,18 @@ from datetime import date as date_type, datetime
 from io import BytesIO
 from typing import List, Optional
 
+from pypdf import PdfReader, PdfWriter
+from pypdf.errors import PdfReadError
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
     HRFlowable,
+    Image as PlatypusImage,
     KeepTogether,
     Paragraph,
     SimpleDocTemplate,
@@ -62,6 +66,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from backend.attachment_conversion import convert_excel_bytes_to_pdf, convert_word_bytes_to_pdf
 from backend.config import MEMBER_DIRECTORY
 
 PDF_TITLE = "Management AIOS Employee Review Summary"
@@ -165,6 +170,19 @@ def build_review_summary_pdf_filename(employee_display_name: str, generated_date
     return "Review_Summary_" + safe_name + "_" + generated_date.isoformat() + ".pdf"
 
 
+def build_review_summary_zip_filename(employee_display_name: str, generated_date: date_type) -> str:
+    """Complete_Review_<Sanitized_Employee_Name>_<YYYY-MM-DD>.zip (REQ-CAL-
+    REV-ATTACH-001) — deliberately a different prefix from
+    build_review_summary_pdf_filename's "Review_Summary_..." so the two
+    downloads' saved files are visually distinguishable in a downloads
+    folder, matching the approved requirement's "make the difference
+    between these two downloads clear" — never includes token, summary
+    text, reviewer name/role, NIC, contact information, staff/summary
+    UUID, or any other database ID, same guarantee as the PDF filename."""
+    safe_name = _sanitize_filename_component(employee_display_name, ascii_only=True)
+    return "Complete_Review_" + safe_name + "_" + generated_date.isoformat() + ".zip"
+
+
 def build_content_disposition_header(employee_display_name: str, generated_date: date_type) -> str:
     """Builds the full Content-Disposition value — both the ASCII-safe
     filename= (for older/conventional clients) and a UTF-8-preserving
@@ -182,6 +200,45 @@ def build_content_disposition_header(employee_display_name: str, generated_date:
         'attachment; filename="' + ascii_filename + '"; '
         "filename*=UTF-8''" + encoded
     )
+
+
+def build_all_reviews_pdf_filename(employee_display_name: str, generated_date: date_type) -> str:
+    """All_Reviews_<Sanitized_Employee_Name>_<YYYY-MM-DD>.pdf (REQ-CAL-REV-
+    HISTORY-PDF-001, 2026-09-23) — "Download all reviews as one PDF",
+    deliberately a third distinct prefix alongside "Review_Summary_..."
+    (single-scope PDF) and "Complete_Review_..." (ZIP), so all three
+    downloads' saved files stay visually distinguishable in a downloads
+    folder. Same guarantees as the other two filename builders: never
+    includes token, summary text, reviewer name/role, NIC, contact
+    information, staff/summary UUID, or any other database ID."""
+    safe_name = _sanitize_filename_component(employee_display_name, ascii_only=True)
+    return "All_Reviews_" + safe_name + "_" + generated_date.isoformat() + ".pdf"
+
+
+def build_all_reviews_content_disposition_header(employee_display_name: str, generated_date: date_type) -> str:
+    """Same shape/guarantees as build_content_disposition_header above, for
+    build_all_reviews_pdf_filename's "All_Reviews_..." prefix instead of
+    "Review_Summary_...". Kept as its own function (not a shared
+    parameterized helper) so a change to either download's filename
+    handling can never silently affect the other — same convention this
+    module already uses for its PDF vs. ZIP filename builders."""
+    ascii_filename = build_all_reviews_pdf_filename(employee_display_name, generated_date)
+    utf8_name = _sanitize_filename_component(employee_display_name, ascii_only=False)
+    utf8_filename = "All_Reviews_" + utf8_name + "_" + generated_date.isoformat() + ".pdf"
+    encoded = urllib.parse.quote(utf8_filename, safe="")
+    return (
+        'attachment; filename="' + ascii_filename + '"; '
+        "filename*=UTF-8''" + encoded
+    )
+
+
+def count_pdf_pages(pdf_bytes: bytes) -> int:
+    """Total page count of an already-built PDF — used by the router to
+    enforce MAX_HISTORY_PDF_EXPORT_TOTAL_PAGES (backend/config.py) after
+    building the combined "all reviews" export and before ever returning
+    it to the client. Kept here (not a new pypdf import in the router)
+    since this module already owns every pypdf usage in this feature."""
+    return len(PdfReader(BytesIO(pdf_bytes)).pages)
 
 
 # ── PDF body (Phase 7 — management-report redesign) ─────────────────────
@@ -228,13 +285,169 @@ def _styles():
         "ReviewSummaryRecordInfo", parent=base["Normal"], fontSize=8,
         textColor=_MUTED_COLOR, spaceBefore=4,
     )
+    attachments_label = ParagraphStyle(
+        "ReviewSummaryAttachmentsLabel", parent=base["Normal"], fontName="Helvetica-Bold",
+        fontSize=10, textColor=_HEADER_TEXT_COLOR, spaceBefore=8, spaceAfter=3,
+    )
+    attachment_line = ParagraphStyle(
+        "ReviewSummaryAttachmentLine", parent=base["Normal"], fontSize=9.5,
+        textColor=_HEADER_TEXT_COLOR, spaceAfter=2,
+    )
+    attachment_note = ParagraphStyle(
+        "ReviewSummaryAttachmentNote", parent=base["Normal"], fontSize=8,
+        textColor=_MUTED_COLOR, spaceAfter=2,
+    )
     return {
         "title": title, "subtitle": subtitle,
         "section_label": section_label, "section_value": section_value,
         "record_heading": record_heading, "meeting_date": meeting_date,
         "reviewer_line": reviewer_line, "summary_label": summary_label,
         "summary_body": summary_body, "record_info": record_info,
+        "attachments_label": attachments_label, "attachment_line": attachment_line,
+        "attachment_note": attachment_note,
     }
+
+
+# ── Attachments (REQ-CAL-REV-ATTACH-001, 2026-09-23) ─────────────────────
+# This module stays "pure, DB/storage-free" (see the module docstring) —
+# the router (backend/routers/staff_review_summaries.py) is responsible for
+# fetching every attachment's bytes from storage BEFORE calling
+# build_review_summary_pdf; this module only ever receives already-resolved
+# plain dicts. Each attachment dict in a record's "attachments" list has
+# keys: original_filename, attachment_type ('audio'|'word'|'excel'|
+# 'image'|'pdf'), embed_bytes (raw bytes for 'image'/'pdf' types, when
+# under MAX_EMBEDDABLE_ATTACHMENT_BYTES_FOR_PDF — otherwise None), and
+# file_size_bytes.
+
+_ATTACHMENT_TYPE_LABELS = {
+    "audio": "Audio recording",
+    "word": "Word document",
+    "excel": "Excel spreadsheet",
+    "image": "Image",
+    "pdf": "PDF document",
+}
+
+# Never embed or transcribe audio into the PDF (approved requirement) — a
+# fixed constant, never derived, so there is no code path that could ever
+# accidentally set embed_bytes for an audio attachment and have this module
+# render it. Word/Excel are NOT in this set (2026-09-23) — they are
+# converted to PDF pages and appended, same as a native "pdf" attachment;
+# see append_office_conversions below.
+_NEVER_EMBEDDED_TYPES = frozenset({"audio"})
+
+_MAX_IMAGE_WIDTH = _CONTENT_WIDTH
+_MAX_IMAGE_HEIGHT = 11 * cm
+
+
+def _attachment_type_label(attachment_type: str) -> str:
+    return _ATTACHMENT_TYPE_LABELS.get(attachment_type, "File")
+
+
+def _image_flowable(image_bytes: bytes):
+    """A reportlab Image flowable scaled to fit within the content width
+    and a bounded max height (never larger than the original, never wider
+    than the page), or None if the bytes cannot be read as an image (a
+    corrupt/unsupported file never breaks the whole export — it falls back
+    to the filename-only listing instead, exactly like an over-size or
+    non-embeddable attachment does)."""
+    try:
+        reader = ImageReader(BytesIO(image_bytes))
+        native_width, native_height = reader.getSize()
+    except Exception:
+        return None
+    if not native_width or not native_height:
+        return None
+    scale = min(_MAX_IMAGE_WIDTH / native_width, _MAX_IMAGE_HEIGHT / native_height, 1.0)
+    display_width = native_width * scale
+    display_height = native_height * scale
+    try:
+        return PlatypusImage(
+            BytesIO(image_bytes), width=display_width, height=display_height
+        )
+    except Exception:
+        return None
+
+
+def _not_embedded_note(attachment: dict, verb: str) -> str:
+    """The reason an image/pdf/word/excel attachment's embed_bytes is None
+    (2026-09-23) — "too_large" (never even attempted, over
+    MAX_EMBEDDABLE_ATTACHMENT_BYTES_FOR_PDF) vs "fetch_failed" (under the
+    size cap but storage.download_bytes raised — e.g. a storage-provider
+    access restriction). Falls back to the size-cap wording for any
+    unrecognized/missing reason (defensive only — the router always sets
+    one of the two known values whenever embed_bytes is None for an
+    eligible type) so this can never render a blank or malformed note."""
+    if attachment.get("embed_skip_reason") == "fetch_failed":
+        return (
+            "Not " + verb + " — could not be retrieved from storage. "
+            "See “Download complete review” for the original file."
+        )
+    return (
+        "Not " + verb + " — too large to include here. "
+        "See “Download complete review” for the original file."
+    )
+
+
+def _attachment_flowables(attachments: List[dict], styles) -> list:
+    """Builds the "Attachments" subsection for one record — filename/type
+    line for every attachment (audio/word/excel always this way; image/pdf
+    too when not embedded), plus an inline embedded Image flowable for each
+    embeddable image. PDF-attachment PAGES are never embedded here (that
+    would require re-flowing this document mid-build) — see
+    append_pdf_attachments below, which appends them as whole extra pages
+    onto the finished export, once per PDF attachment, each clearly
+    labelled with the record and filename it belongs to."""
+    if not attachments:
+        return []
+    flowables = [Paragraph("Attachments (" + str(len(attachments)) + ")", styles["attachments_label"])]
+    for attachment in attachments:
+        filename = attachment.get("original_filename") or "Unnamed file"
+        attachment_type = attachment.get("attachment_type")
+        label = _attachment_type_label(attachment_type)
+        flowables.append(
+            Paragraph("&#8226; " + _paragraph_text(filename) + " (" + label + ")", styles["attachment_line"])
+        )
+        if attachment_type == "image":
+            image_flowable = None
+            if attachment.get("embed_bytes") is not None:
+                image_flowable = _image_flowable(attachment["embed_bytes"])
+            if image_flowable is not None:
+                flowables.append(image_flowable)
+            else:
+                flowables.append(Paragraph(
+                    _not_embedded_note(attachment, "embedded above")
+                    if attachment.get("embed_bytes") is None
+                    else "Not embedded above — unreadable image file. "
+                    "See “Download complete review” for the original file.",
+                    styles["attachment_note"],
+                ))
+        elif attachment_type == "pdf":
+            if attachment.get("embed_bytes") is not None:
+                flowables.append(Paragraph(
+                    "Included as additional pages at the end of this export.",
+                    styles["attachment_note"],
+                ))
+            else:
+                flowables.append(Paragraph(
+                    _not_embedded_note(attachment, "embedded"),
+                    styles["attachment_note"],
+                ))
+        elif attachment_type in ("word", "excel"):
+            if attachment.get("embed_bytes") is not None:
+                flowables.append(Paragraph(
+                    "Converted and included as additional pages at the end of this export.",
+                    styles["attachment_note"],
+                ))
+            else:
+                flowables.append(Paragraph(
+                    _not_embedded_note(attachment, "converted"),
+                ))
+        elif attachment_type in _NEVER_EMBEDDED_TYPES:
+            flowables.append(Paragraph(
+                "Audio is never embedded or transcribed in this PDF.",
+                styles["attachment_note"],
+            ))
+    return flowables
 
 
 def _paragraph_text(raw_text: str) -> str:
@@ -434,6 +647,8 @@ def build_review_summary_pdf(
 
         story.append(heading_block)
         story.append(Paragraph(_paragraph_text(record.get("summary_text") or ""), styles["summary_body"]))
+        for flowable in _attachment_flowables(record.get("attachments") or [], styles):
+            story.append(flowable)
         story.append(Paragraph(
             "Record information: Created " + _format_timestamp(record.get("created_at"))
             + " &middot; Updated " + _format_timestamp(record.get("updated_at")),
@@ -443,3 +658,148 @@ def build_review_summary_pdf(
 
     doc.build(story, canvasmaker=_NumberedCanvas)
     return buffer.getvalue()
+
+
+def _divider_page_pdf(text: str, heading: str = "Attached PDF") -> bytes:
+    """A single-page, plain reportlab PDF used only as a labelled section
+    divider immediately before an appended attachment's own pages (a native
+    PDF attachment's own pages — append_pdf_attachments — or a converted
+    Word/Excel attachment's rendered pages — append_office_conversions) —
+    so a reader always knows which record and filename the following pages
+    came from, never an unlabelled page boundary. `heading` defaults to
+    "Attached PDF" (append_pdf_attachments' only case); append_office_
+    conversions passes "Converted Word Document"/"Converted Excel
+    Spreadsheet" so a reader is never told a rendered conversion is the
+    literal original attached PDF."""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        leftMargin=_LEFT_MARGIN, rightMargin=_RIGHT_MARGIN,
+        topMargin=_TOP_MARGIN, bottomMargin=_BOTTOM_MARGIN,
+        title=PDF_TITLE,
+    )
+    styles = _styles()
+    story = [
+        Spacer(1, 6 * cm),
+        Paragraph(heading, styles["subtitle"]),
+        Paragraph(_paragraph_text(text), styles["section_value"]),
+    ]
+    doc.build(story)
+    return buffer.getvalue()
+
+
+def append_office_conversions(base_pdf_bytes: bytes, office_attachments: List[dict]) -> bytes:
+    """Appends a converted PDF for every Word/Excel attachment onto the end
+    of base_pdf_bytes, each preceded by one labelled divider page — the
+    Word/Excel counterpart of append_pdf_attachments above. `office_attachments`
+    is a list of dicts with keys record_label (e.g. "Review 2"),
+    original_filename, attachment_type ('word'|'excel'), and embed_bytes
+    (the attachment's raw original file bytes — NOT already a PDF); only
+    ever called by the router for attachments whose embed_bytes were
+    actually resolved (under MAX_EMBEDDABLE_ATTACHMENT_BYTES_FOR_PDF) — an
+    attachment too large to fetch never reaches this function (already
+    handled as a filename-only note by _attachment_flowables above).
+
+    A conversion failure (corrupt file, unsupported legacy .doc, etc.) is
+    never silently dropped and never claimed as included: its divider page
+    is replaced by the specific reported failure reason from
+    backend/attachment_conversion.py, exactly mirroring
+    append_pdf_attachments' own "could not be read" fallback. One failed
+    attachment never prevents every other record's conversion or the rest
+    of the export from succeeding.
+
+    Returns base_pdf_bytes unchanged (byte-for-byte) when office_attachments
+    is empty — always safe to call unconditionally."""
+    if not office_attachments:
+        return base_pdf_bytes
+
+    writer = PdfWriter()
+    writer.append(PdfReader(BytesIO(base_pdf_bytes)))
+
+    for attachment in office_attachments:
+        filename = attachment.get("original_filename") or "Unnamed file"
+        label = attachment.get("record_label") or "Attachment"
+        attachment_type = attachment.get("attachment_type")
+        divider_text = label + " — " + filename
+        divider_heading = "Converted Word Document" if attachment_type == "word" else "Converted Excel Spreadsheet"
+
+        if attachment_type == "word":
+            result = convert_word_bytes_to_pdf(attachment.get("embed_bytes"), filename)
+        elif attachment_type == "excel":
+            result = convert_excel_bytes_to_pdf(attachment.get("embed_bytes"), filename)
+        else:
+            continue
+
+        if not result.success:
+            writer.append(PdfReader(BytesIO(_divider_page_pdf(
+                divider_text + " — could not be converted: " + (result.error_message or "Unknown error."),
+                heading=divider_heading,
+            ))))
+            continue
+
+        try:
+            converted_reader = PdfReader(BytesIO(result.pdf_bytes))
+            if len(converted_reader.pages) == 0:
+                raise PdfReadError("Converted PDF has no pages.")
+        except Exception:
+            writer.append(PdfReader(BytesIO(_divider_page_pdf(
+                divider_text + " — could not be converted: the converted PDF could not "
+                "be read back. See “Download complete review” for the original file.",
+                heading=divider_heading,
+            ))))
+            continue
+
+        writer.append(PdfReader(BytesIO(_divider_page_pdf(divider_text, heading=divider_heading))))
+        writer.append(converted_reader)
+
+    output = BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
+def append_pdf_attachments(base_pdf_bytes: bytes, pdf_attachments: List[dict]) -> bytes:
+    """Appends every PDF-attachment's own pages onto the end of
+    base_pdf_bytes (the already-built main export from
+    build_review_summary_pdf), each preceded by one labelled divider page
+    (see _divider_page_pdf). `pdf_attachments` is a list of dicts with keys
+    record_label (e.g. "Review 2") and original_filename and embed_bytes
+    (the attachment's raw PDF bytes) — only ever called by the router for
+    attachments whose embed_bytes were actually resolved (under
+    MAX_EMBEDDABLE_ATTACHMENT_BYTES_FOR_PDF); an attachment that was too
+    large to embed never reaches this function at all (it was already
+    handled as a filename-only note by _attachment_flowables above).
+
+    A PDF attachment that fails to parse (corrupt/unreadable bytes) is
+    skipped with its divider page replaced by an explanatory note, rather
+    than raising and breaking the entire export — one bad attachment must
+    never prevent every other record's export from succeeding.
+
+    Returns base_pdf_bytes unchanged (byte-for-byte) when pdf_attachments
+    is empty — this function is always safe to call unconditionally."""
+    if not pdf_attachments:
+        return base_pdf_bytes
+
+    writer = PdfWriter()
+    writer.append(PdfReader(BytesIO(base_pdf_bytes)))
+
+    for attachment in pdf_attachments:
+        filename = attachment.get("original_filename") or "Unnamed file"
+        label = attachment.get("record_label") or "Attachment"
+        divider_text = label + " — " + filename
+        embed_bytes = attachment.get("embed_bytes")
+        try:
+            attached_reader = PdfReader(BytesIO(embed_bytes))
+            if len(attached_reader.pages) == 0:
+                raise PdfReadError("PDF attachment has no pages.")
+        except Exception:
+            writer.append(PdfReader(BytesIO(_divider_page_pdf(
+                divider_text + " — could not be read; see “Download complete "
+                "review” for the original file."
+            ))))
+            continue
+        writer.append(PdfReader(BytesIO(_divider_page_pdf(divider_text))))
+        writer.append(attached_reader)
+
+    output = BytesIO()
+    writer.write(output)
+    return output.getvalue()

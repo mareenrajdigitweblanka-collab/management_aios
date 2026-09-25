@@ -664,7 +664,19 @@ test('WebSocket URL is built from ANNOUNCEMENTS_WS_BASE with the ticket in the q
   });
   await flush();
   assert.equal(instances.length, 1);
-  assert.equal(instances[0].url, 'ws://127.0.0.1:8000/api/announcements/ws?ticket=' + WS_TICKET_FIXTURE.ticket);
+  // Asserted against config.js's own LOCAL_API_PORT (2026-09-23 — see that
+  // file's own comment), not a hardcoded 8000, so this test never drifts
+  // out of sync with whatever local port a developer is actually running.
+  // Imported dynamically (not at module top-level) because config.js reads
+  // window.location.hostname at import time — it must only ever be
+  // imported after installFakeBrowserGlobals() (inside withEnv above) has
+  // installed the fake `window`, same as loadAnnModule()'s own dynamic
+  // import of announcements.js.
+  var configMod = await import('./config.js?test-instance=' + (importCounter += 1));
+  assert.equal(
+    instances[0].url,
+    'ws://127.0.0.1:' + configMod.LOCAL_API_PORT + '/api/announcements/ws?ticket=' + WS_TICKET_FIXTURE.ticket
+  );
 }, { storedAuth: { token: 'super-secret-long-lived-member-token', memberKey: 'mayurika' } }));
 
 test('Raw member bearer token never appears anywhere in the WebSocket URL', withEnv(async () => {

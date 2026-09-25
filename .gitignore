@@ -37,3 +37,12 @@ evidence/staff-location-update-reconciliation-*.csv
 # §6 and validation/staff-data-source-storage-discovery-check-2026-07-13.md.
 member-aios/mayurika-hr/staff-data/
 intelligence-inbox/raw-stakeholder-documents/staff-data/Digitweblanka Staffs Data - Overall Staffs.csv
+
+# Local Prototype Attachment mode (REQ-CAL-REV-ATTACH-001-LOCAL-PROTO,
+# 2026-09-23, LOCAL_PROTOTYPE_ATTACHMENTS=true — see backend/config.py and
+# backend/local_attachment_metadata.py). A local-only SQLite file holding
+# attachment metadata (filenames, summary IDs, uploader identities) — never
+# committed, never transfers with the repo to another machine. See
+# docs/2026-09-23_local-prototype-attachment-metadata.md for the export/
+# transition plan to the real PostgreSQL migration.
+local_data/

@@ -2,13 +2,24 @@
    Staff API). Extracted verbatim from the former inline staff-data IIFE
    (2026-07-17 frontend modularization); fully self-contained (own STAFF_API_BASE,
    own helpers). The former inline DOMContentLoaded bootstrap now lives in app.js.
-   No logic changed. */
+
+   2026-09-23: STAFF_API_BASE's local port now reads config.js's shared
+   LOCAL_API_PORT instead of its own independently-hardcoded "8000" — this
+   file's own literal 8000 was exactly what caused GET /api/staff to keep
+   hitting a dead/stale local backend after config.js's other six bases
+   were switched to a different local port, producing "Could not load
+   staff records" with no visible connection to the actual cause. This is
+   the one intentional deviation from "fully self-contained" above —
+   every *_API_BASE in this app must agree on which local backend port
+   they all mean, so there is exactly one place to change it
+   (config.js), never a second one to remember. */
 
 import { trapTab, returnFocus } from './ui/popup.js';
 import { renderSkeletonRows } from './ui/loading.js';
 import { mapApiError, classifyHttpStatus } from './ui/error-mapper.js';
 import { getStoredToken, handleUnauthorizedResponse } from './calendar/auth.js';
 import { isAuthenticated, onAuthChange, buildAuthRequiredNotice } from './auth-gate.js';
+import { LOCAL_API_PORT } from './config.js';
 
 // DEV/FALLBACK-ONLY synthetic sample dataset. As of 2026-08-11 this
 // mirrors the exact-Ledsone-mirror field shape (see STAFF_MAIN_COLUMNS
@@ -141,7 +152,7 @@ function uniqueValues(rows, field) {
    staff list — the export is additive; every existing use within this
    file is unaffected. */
 export var STAFF_API_BASE = (function () {
-  var LOCAL_BASE = 'http://127.0.0.1:8000/api/staff';
+  var LOCAL_BASE = 'http://127.0.0.1:' + LOCAL_API_PORT + '/api/staff';
   var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/staff';
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
   return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
