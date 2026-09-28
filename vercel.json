@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/api/preview-proxy/(.*)",
+      "dest": "/web-view/api/preview-proxy/$1"
+    }
+  ]
+}
