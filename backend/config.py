@@ -57,8 +57,12 @@ ALLOWED_ORIGINS = [
 # documented regex (not a wildcard) so local static-server/file-based
 # development keeps working without needing ALLOWED_ORIGINS set. Safe only
 # because allow_credentials=False (see main.py).
-ALLOWED_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
-
+#
+# Also allow the management-aios Vercel preview host pattern used by
+# preview deployments (e.g. management-aios-<hash>-<team>.vercel.app).
+# This is intentionally narrow to the management-aios project subdomains
+# rather than allowing arbitrary vercel.app origins.
+ALLOWED_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1|management-aios(?:-[a-z0-9]+)*\.vercel\.app)(:\d+)?$"
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 
 SERVICE_NAME = "management-aios-member-schedules"
