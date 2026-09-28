@@ -83,7 +83,7 @@
    HTTP-polling fallback (REQ-ANN-001 Stage A) for exactly this situation;
    see web-view/js/config.js's ANNOUNCEMENTS_WS_BASE comment. */
 
-export var config = { runtime: 'edge' };
+export const config = { runtime: 'edge' };
 
 /* Explicit path+method allowlist. `pattern` matches the backend-relative
    path (i.e. AFTER stripping the "/api/preview-proxy" prefix this
