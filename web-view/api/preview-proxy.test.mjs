@@ -117,6 +117,22 @@ test('isAllowedRoute: anchored patterns reject a name that merely starts with an
   assert.equal(isAllowedRoute('/api/member-schedules/mayurika', 'GET'), true);
 });
 
+test('isAllowedRoute: Staff Data (2026-09-29 fix) — GET-only, "" and "/filter-options" allowed, never confused with staff-review-summaries', function () {
+  assert.equal(isAllowedRoute('/api/staff', 'GET'), true);
+  assert.equal(isAllowedRoute('/api/staff/filter-options', 'GET'), true);
+  // Read-only router (backend/routers/staff.py has no POST/PUT/PATCH/DELETE
+  // route at all) — mutation methods must stay rejected even though the
+  // path itself is allowlisted.
+  assert.equal(isAllowedRoute('/api/staff', 'POST'), false);
+  assert.equal(isAllowedRoute('/api/staff', 'DELETE'), false);
+  // "/api/staff-review-summaries" starts with "/api/staff" but the next
+  // character is "-", not "/" or end-of-string — must not accidentally
+  // match the new staff pattern (same anchoring guarantee as the test
+  // above, checked against this specific new entry).
+  assert.equal(isAllowedRoute('/api/staff-review-summaries', 'GET'), true); // allowed by ITS OWN pattern, not this one — see next line
+  assert.equal(isAllowedRoute('/api/staffXXXX', 'GET'), false);
+});
+
 test('isAllowedRoute: a literal or percent-encoded dot-segment is rejected however it happens to reach this function', function () {
   assert.equal(isAllowedRoute('/api/member-schedules/../../announcements', 'GET'), false); // already-decoded literal ".." — caught by LITERAL_DOT_SEGMENT
   assert.equal(isAllowedRoute('/api/member-schedules/..%2f..%2fannouncements', 'GET'), false); // still-encoded "%2f" — caught by ENCODED_DOT_OR_SLASH
@@ -161,6 +177,32 @@ test(
     var res = await handler(req);
     assert.equal(res.status, 200);
     assert.equal(calls[0].url, 'https://backend-preview.example.vercel.app/api/staff-review-summaries/abc-123/attachments/def-456');
+  })
+);
+
+test(
+  'end-to-end (2026-09-29 fix): GET /api/staff and GET /api/staff/filter-options resolve through the proxy with the query string and Authorization header both forwarded',
+  withEnv(CONFIGURED_ENV, async function () {
+    var calls = stubFetch(async function () {
+      return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'content-type': 'application/json' } });
+    });
+    var req = new Request(proxyUrl('/api/staff', 'limit=25&offset=0'), {
+      method: 'GET',
+      headers: { authorization: 'Bearer real-token' },
+    });
+    var res = await handler(req);
+    assert.equal(res.status, 200);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, 'https://backend-preview.example.vercel.app/api/staff?limit=25&offset=0');
+    assert.equal(calls[0].init.headers.get('authorization'), 'Bearer real-token');
+
+    var filterReq = new Request(proxyUrl('/api/staff/filter-options'), {
+      method: 'GET',
+      headers: { authorization: 'Bearer real-token' },
+    });
+    var filterRes = await handler(filterReq);
+    assert.equal(filterRes.status, 200);
+    assert.equal(calls[1].url, 'https://backend-preview.example.vercel.app/api/staff/filter-options');
   })
 );
 

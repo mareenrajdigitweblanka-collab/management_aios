@@ -19,7 +19,7 @@ import { renderSkeletonRows } from './ui/loading.js';
 import { mapApiError, classifyHttpStatus } from './ui/error-mapper.js';
 import { getStoredToken, handleUnauthorizedResponse } from './calendar/auth.js';
 import { isAuthenticated, onAuthChange, buildAuthRequiredNotice } from './auth-gate.js';
-import { LOCAL_API_PORT } from './config.js';
+import { _resolveApiBase } from './config.js';
 
 // DEV/FALLBACK-ONLY synthetic sample dataset. As of 2026-08-11 this
 // mirrors the exact-Ledsone-mirror field shape (see STAFF_MAIN_COLUMNS
@@ -139,24 +139,24 @@ function uniqueValues(rows, field) {
   return out;
 }
 
-/* Single centralized Staff API base — same host-detection pattern as
-   MEMBER_SCHEDULE_API_BASE above (local dev talks to the local
-   FastAPI server; any other host talks to the hosted backend, once
-   that hosted endpoint is explicitly authorized for real staff data —
-   see the access/deployment-boundary note in the Staff Data tab and
-   validation/staff-data-api-check-2026-07-13.md). Read-only: this
-   script only ever issues GET requests to /api/staff*. */
+/* Single centralized Staff API base — reuses config.js's own
+   _resolveApiBase (2026-09-29 fix; see that function's own comment) so
+   this base gets the exact same local/Preview-proxy/production
+   host-detection every other *_API_BASE constant in this app already
+   has, instead of a second, separately-maintained copy that never grew a
+   Preview branch (that gap is exactly why GET /api/staff kept calling
+   https://management-aios-api.vercel.app directly from a Preview
+   hostname and got blocked by CORS — see web-view/api/preview-proxy.js's
+   ALLOWED_ROUTES for the matching proxy-side allowlist entry this also
+   required). Local/production values are unchanged byte-for-byte — only
+   the Preview case is new. Read-only: this script only ever issues GET
+   requests to /api/staff*. */
 /* Exported (REQ-CAL-REV-001, 2026-08-03) so review-summaries.js's
    reviewed-staff selector can call the same GET /api/staff endpoint
    without inventing a second host-detection constant or a duplicate
    staff list — the export is additive; every existing use within this
    file is unaffected. */
-export var STAFF_API_BASE = (function () {
-  var LOCAL_BASE = 'http://127.0.0.1:' + LOCAL_API_PORT + '/api/staff';
-  var PRODUCTION_BASE = 'https://management-aios-api.vercel.app/api/staff';
-  var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
-  return isLocalHost ? LOCAL_BASE : PRODUCTION_BASE;
-}());
+export var STAFF_API_BASE = _resolveApiBase('staff');
 
 /* GET /api/staff* now requires the existing Calendar member token
    (REQ-AUTH-MODULES-007, 2026-08-10) — the Authorization header is added

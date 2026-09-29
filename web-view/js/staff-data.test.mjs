@@ -390,3 +390,51 @@ test('primary table renders Deleted for a soft-deleted (delete_status: true) row
   assert.doesNotMatch(text, /Resigned/);
   assert.doesNotMatch(text, /Inactive/);
 }, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+// ── STAFF_API_BASE host detection (2026-09-29 Preview-routing fix) ──────
+//
+// Regression coverage for the actual bug: STAFF_API_BASE used to be a
+// second, separately-maintained local-vs-production IIFE (see git history
+// on this file) that never grew a Preview branch, so GET /api/staff kept
+// calling https://management-aios-api.vercel.app directly from a Preview
+// hostname and was blocked by CORS. It now reuses config.js's own
+// _resolveApiBase, so this only needs `window.location.hostname` set
+// before import — not the full fake DOM installFakeBrowserGlobals()
+// builds (STAFF_API_BASE is the only top-level browser-global read in
+// this whole file; nothing else at module scope touches window/document).
+
+var hostBaseImportCounter = 0;
+async function loadStaffApiBaseFor(hostname) {
+  hostBaseImportCounter += 1;
+  globalThis.window = { location: { hostname: hostname } };
+  var mod = await import('./staff-data.js?test-instance=host-' + hostBaseImportCounter);
+  delete globalThis.window;
+  return mod;
+}
+
+test('STAFF_API_BASE: production hostname resolves to the production backend, unchanged', async function () {
+  var mod = await loadStaffApiBaseFor('management-aios.vercel.app');
+  assert.equal(mod.STAFF_API_BASE, 'https://management-aios-api.vercel.app/api/staff');
+});
+
+test('STAFF_API_BASE: localhost resolves to the local backend port, unchanged', async function () {
+  // Reads config.js's own LOCAL_API_PORT rather than a hardcoded literal —
+  // this file has a documented history (see the 2026-09-23 comment above
+  // STAFF_API_BASE) of exactly this kind of port literal drifting stale.
+  // window.location.hostname is set BEFORE importing config.js because
+  // some of its other top-level exports (e.g. ANNOUNCEMENTS_WS_BASE) read
+  // window.location.hostname unconditionally at import time, with no
+  // "typeof window !== 'undefined'" guard — importing it with no window
+  // set at all would throw.
+  hostBaseImportCounter += 1;
+  globalThis.window = { location: { hostname: 'localhost' } };
+  var configMod = await import('./config.js?test-instance=host-port-' + hostBaseImportCounter);
+  delete globalThis.window;
+  var mod = await loadStaffApiBaseFor('localhost');
+  assert.equal(mod.STAFF_API_BASE, 'http://127.0.0.1:' + configMod.LOCAL_API_PORT + '/api/staff');
+});
+
+test('STAFF_API_BASE: a Preview hostname routes through the same-origin proxy — this is the fix (was the production literal, blocked by CORS)', async function () {
+  var mod = await loadStaffApiBaseFor('management-aios-fgbhhkw0d-digitweb1.vercel.app');
+  assert.equal(mod.STAFF_API_BASE, '/api/preview-proxy/api/staff');
+});

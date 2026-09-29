@@ -84,7 +84,17 @@ export var LOCAL_API_PORT = 8001;
 var PREVIEW_HOSTNAME_PATTERN = /^management-aios-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/;
 var PREVIEW_PROXY_PREFIX = '/api/preview-proxy';
 
-function _resolveApiBase(pathPrefix) {
+/* Exported (2026-09-29, staff-list Preview-routing fix) so staff-data.js's
+   STAFF_API_BASE can reuse this exact host-detection logic instead of
+   maintaining its own separate copy — that separate copy (a plain local-
+   vs-production IIFE, never updated for Preview hosts) is exactly why
+   GET /api/staff kept calling the production backend directly from a
+   Preview hostname and got blocked by CORS: it never had a Preview branch
+   to begin with, unlike every *_API_BASE constant in this file. See
+   staff-data.js's STAFF_API_BASE for the fix and web-view/api/preview-
+   proxy.js's ALLOWED_ROUTES for the matching proxy-side allowlist entry
+   this also required. */
+export function _resolveApiBase(pathPrefix) {
   var hostname = (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
   var isLocalHost = /^(localhost|127\.0\.0\.1)$/.test(hostname);
   if (isLocalHost) {

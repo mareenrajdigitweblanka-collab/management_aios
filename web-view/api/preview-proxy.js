@@ -139,6 +139,12 @@ export var ALLOWED_ROUTES = [
   { pattern: /^\/api\/member-schedules(\/.*)?$/, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] },
   { pattern: /^\/api\/member-leave(\/.*)?$/, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] },
   { pattern: /^\/api\/staff-review-summaries(\/.*)?$/, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] },
+  // Staff Data (backend/routers/staff.py, prefix /api/staff — GET "" and
+  // GET "/filter-options" only, no other routes exist on that router).
+  // GET-only here too, on purpose: staff-data.js/review-summaries.js/
+  // issues.js only ever issue GET against this base (2026-09-29 fix —
+  // see web-view/js/staff-data.js's STAFF_API_BASE).
+  { pattern: /^\/api\/staff(\/.*)?$/, methods: ['GET', 'OPTIONS'] },
 ];
 
 /* Defense-in-depth against allowlist escape via an ENCODED path segment
