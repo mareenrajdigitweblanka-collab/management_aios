@@ -34,7 +34,7 @@
    user-authored field (never innerHTML for untrusted text) — same
    convention as knowledge-management.js/issues.js/review-summaries.js. */
 
-import { ANNOUNCEMENTS_API_BASE, ANNOUNCEMENTS_WS_BASE } from './config.js';
+import { ANNOUNCEMENTS_API_BASE, ANNOUNCEMENTS_WS_BASE, isPreviewDeploymentHostname } from './config.js';
 import {
   CALENDAR_AUTH_CHANGED_EVENT,
   ensureAuthorized,
@@ -1012,8 +1012,25 @@ export function mountAnnouncementBell(rootEl, opts) {
   // wsConnecting (a ticket request already in flight, before wsSocket is
   // assigned) — closes the race window where two calls could each fetch
   // their own ticket and open two sockets.
+  //
+  // Preview guard (2026-09-29, same-day follow-up to the Announcements
+  // Preview-proxy fix): checked FIRST, before even the ticket-source
+  // check below, and returns immediately — never calls api.wsTicket(),
+  // never constructs a WebSocket, never schedules a reconnect, on a
+  // Vercel Preview hostname. This is not a graceful-degradation guess;
+  // it is required, because a ticket obtained from the backend PREVIEW
+  // deployment gets presented to ANNOUNCEMENTS_WS_BASE's PRODUCTION
+  // wss:// host (config.js) — no WebSocket proxy exists to route it to
+  // the matching backend instead — and sending a Preview-issued
+  // credential to production is the wrong failure direction, even though
+  // the practical outcome (no live socket) is identical to any other
+  // connection failure. Production and localhost are completely
+  // unaffected: isPreviewDeploymentHostname() is false for both, so this
+  // guard is a no-op for them. See config.js's ANNOUNCEMENTS_WS_BASE
+  // comment for the full rationale.
   function connectRealtimeSocket() {
     if (wsStopped || !isAuthorized() || !WebSocketImpl || wsSocket || wsConnecting) { return; }
+    if (isPreviewDeploymentHostname()) { return; } // see the guard comment above — polling-only on Preview, by design, no error
     if (typeof api.wsTicket !== 'function') { return; } // no ticket source configured — polling-only, no error
     wsConnecting = true;
     api.wsTicket().then(function (result) {

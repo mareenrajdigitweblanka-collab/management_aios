@@ -334,7 +334,14 @@ export function installFakeBrowserGlobals(opts) {
   var fakeLocalStorage = createFakeLocalStorage(seed);
   var fakeWindow = {
     localStorage: fakeLocalStorage,
-    location: { hostname: 'localhost' },
+    // opts.hostname (2026-09-29, Announcements realtime-socket Preview
+    // guard) — optional, defaults to 'localhost' exactly as before this
+    // addition, so every existing caller is unaffected. Lets a test set
+    // window.location.hostname to a Vercel Preview pattern before
+    // mounting/importing a module whose behavior depends on
+    // config.js's isPreviewDeploymentHostname() (currently only
+    // announcements.test.mjs's realtime-socket-on-Preview coverage).
+    location: { hostname: opts.hostname || 'localhost' },
     requestAnimationFrame: function (cb) { cb(); },
     // scrollY/scrollTo (2026-08-11 KM scroll audit) — ui/scroll-lock.js
     // reads window.scrollY and calls window.scrollTo(x, y) verbatim

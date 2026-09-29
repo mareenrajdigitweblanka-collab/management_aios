@@ -697,6 +697,72 @@ test('No WebSocket connection is attempted when no ticket source is configured (
   assert.equal(instances.length, 0, 'connectRealtimeSocket must no-op, not throw, when api.wsTicket is absent');
 }));
 
+// ══════════════════════════════════════════════════════════════════════
+// Preview guard (2026-09-29, same-day follow-up to the Announcements
+// Preview-proxy fix) — a ticket issued by the backend PREVIEW deployment
+// must never be presented to ANNOUNCEMENTS_WS_BASE's PRODUCTION wss://
+// host, so connectRealtimeSocket must never even request one on a Vercel
+// Preview hostname. Production and localhost (every other test in this
+// file, via withEnv's default hostname of 'localhost') stay unaffected.
+// ══════════════════════════════════════════════════════════════════════
+
+var PREVIEW_HOSTNAME_FIXTURE = 'management-aios-fgbhhkw0d-digitweb1.vercel.app';
+
+test('Preview hostname: no ws-ticket request and no WebSocket are attempted at all, even though a ticket source and WebSocketImpl are both configured', withEnv(async (env) => {
+  var instances = [];
+  var wsTicketCalls = 0;
+  await mountBellWithFixture(
+    { wsTicket: function () { wsTicketCalls += 1; return Promise.resolve(WS_TICKET_FIXTURE); } },
+    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+  );
+  assert.equal(wsTicketCalls, 0, 'getWsTicket (via api.wsTicket) must never be called on a Preview hostname');
+  assert.equal(instances.length, 0, 'no WebSocket must ever be constructed on a Preview hostname');
+  // The fake window's setTimeout (review-summaries-test-dom.mjs) records
+  // every still-pending timer in _timeouts, keyed by id — scheduleWsReconnect
+  // is the ONLY thing in this module that would ever call it in this
+  // scenario (the 30s poll interval uses setInterval, a separate map), so
+  // an empty _timeouts here is direct proof no reconnect was ever
+  // scheduled, not just an absence of an immediately-visible symptom.
+  assert.deepEqual(Object.keys(env.window._timeouts), [], 'no setTimeout-based reconnect timer must be pending');
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' }, hostname: PREVIEW_HOSTNAME_FIXTURE }));
+
+test('Preview hostname: the HTTP notification feed (30s poll) is completely unaffected — same fixture, only the socket is skipped', withEnv(async () => {
+  var feedCalls = 0;
+  var { rootEl } = await mountBellWithFixture(
+    {
+      wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); },
+      feed: function () { feedCalls += 1; return Promise.resolve({ unread_count: 3, items: [] }); }
+    },
+    {}
+  );
+  assert.ok(feedCalls >= 1, 'the HTTP feed must still be fetched on mount, independent of the socket guard');
+  var badge = rootEl.querySelector('.msc-ann-bell-badge');
+  assert.equal(badge.hidden, false);
+  assert.equal(badge.textContent, '3');
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' }, hostname: PREVIEW_HOSTNAME_FIXTURE }));
+
+test('Production hostname: the realtime socket still connects normally — the Preview guard is a no-op off of Preview', withEnv(async () => {
+  var instances = [];
+  var wsTicketCalls = 0;
+  await mountBellWithFixture(
+    { wsTicket: function () { wsTicketCalls += 1; return Promise.resolve(WS_TICKET_FIXTURE); } },
+    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+  );
+  assert.equal(wsTicketCalls, 1);
+  assert.equal(instances.length, 1, 'production must still get exactly one socket, unaffected by the Preview guard');
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' }, hostname: 'management-aios.vercel.app' }));
+
+test('Localhost: the realtime socket still connects normally — the Preview guard is a no-op off of Preview', withEnv(async () => {
+  var instances = [];
+  var wsTicketCalls = 0;
+  await mountBellWithFixture(
+    { wsTicket: function () { wsTicketCalls += 1; return Promise.resolve(WS_TICKET_FIXTURE); } },
+    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+  );
+  assert.equal(wsTicketCalls, 1);
+  assert.equal(instances.length, 1, 'localhost must still get exactly one socket, unaffected by the Preview guard');
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' }, hostname: 'localhost' }));
+
 test('An incoming announcement_notification_changed event triggers an authoritative HTTP refresh and updates the badge', withEnv(async () => {
   var feedCalls = 0;
   var instances = [];

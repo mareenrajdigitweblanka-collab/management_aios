@@ -84,6 +84,22 @@ export var LOCAL_API_PORT = 8001;
 var PREVIEW_HOSTNAME_PATTERN = /^management-aios-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/;
 var PREVIEW_PROXY_PREFIX = '/api/preview-proxy';
 
+/* Exported (2026-09-29, Announcements realtime-socket fix) so any module
+   that needs to know "is this a Vercel Preview deployment" for a reason
+   OTHER THAN picking an HTTP API base — currently only
+   announcements.js's connectRealtimeSocket, which must never request a
+   ws-ticket or open the WebSocket on Preview at all (see
+   ANNOUNCEMENTS_WS_BASE's comment below for why: a ticket issued by the
+   backend Preview deployment must never be sent to the production
+   WebSocket host this constant still points at on Preview). Reads
+   window.location.hostname itself rather than taking it as a parameter,
+   same convention as _resolveApiBase below, so every caller shares one
+   source of truth instead of each re-reading window.location.hostname. */
+export function isPreviewDeploymentHostname() {
+  var hostname = (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
+  return PREVIEW_HOSTNAME_PATTERN.test(hostname);
+}
+
 /* Exported (2026-09-29, staff-list Preview-routing fix) so staff-data.js's
    STAFF_API_BASE can reuse this exact host-detection logic instead of
    maintaining its own separate copy — that separate copy (a plain local-
@@ -100,7 +116,7 @@ export function _resolveApiBase(pathPrefix) {
   if (isLocalHost) {
     return 'http://127.0.0.1:' + LOCAL_API_PORT + '/api/' + pathPrefix;
   }
-  if (PREVIEW_HOSTNAME_PATTERN.test(hostname)) {
+  if (isPreviewDeploymentHostname()) {
     // Same-origin — routed through web-view/api/preview-proxy.js.
     // Whether this specific pathPrefix is actually served (vs. a clean 404)
     // is decided solely by that function's own ALLOWED_ROUTES allowlist,
@@ -179,44 +195,64 @@ export var KNOWLEDGE_DOCUMENTS_API_BASE = (function () {
    requires a Calendar member token, same as STAFF_REVIEW_SUMMARIES_API_BASE
    and the (revised) KNOWLEDGE_DOCUMENTS_API_BASE — there is no public GET
    here, matching REQ-AUTH-MODULES-007's whole-module-gated convention.
-   NOTE — Announcements are UNAVAILABLE during Preview testing, in full,
-   by explicit scope decision (not a graceful degradation): every
-   Announcements call, INCLUDING THE HTTP POLLING LOOP ITSELF (not just
-   the realtime-WebSocket ticket fetch), goes through this one base
-   (web-view/js/announcements.js:97, the single shared fetch wrapper both
-   `pollTimer`'s interval and the ws-ticket call use) — and this base is
-   NOT in the Preview proxy's allowlist as of REQ-PREVIEW-PROXY-001, so
-   every Announcements request gets a clean 404 from the proxy. There is
-   no working fallback path left once this base is blocked: the "HTTP
-   polling is the fallback for a missing realtime socket" design
-   (REQ-ANN-001 Stage A/Stage B) assumes polling itself can still reach
-   the backend, which is exactly the assumption this scope decision
-   breaks. If Announcements needs to work during Preview testing, add
-   `{ pattern: /^\/api\/announcements(\/.*)?$/, methods: [...] }` (GET/POST
-   as needed, excluding /ws — see ANNOUNCEMENTS_WS_BASE below for why) to
-   web-view/api/preview-proxy.js's ALLOWED_ROUTES — no change
-   needed here. */
+   UPDATED (2026-09-29): Announcements are now AVAILABLE during Preview
+   testing over HTTP — web-view/api/preview-proxy.js's ALLOWED_ROUTES now
+   includes `/^\/api\/announcements(\/.*)?$/` (GET/POST/PATCH/DELETE),
+   covering every HTTP route this base is used for EXCEPT /ws-ticket (see
+   ANNOUNCEMENTS_WS_BASE below for why that one specific route is
+   deliberately excluded again as of the same-day follow-up fix), including
+   the HTTP polling loop itself (web-view/js/announcements.js:97, the
+   single shared fetch wrapper `pollTimer`'s interval uses). The realtime
+   WebSocket push is a SEPARATE, still-unavailable concern — see
+   ANNOUNCEMENTS_WS_BASE below; it does not use this base at all. */
 export var ANNOUNCEMENTS_API_BASE = (function () {
   return _resolveApiBase('announcements');
 }());
 
 /* Announcements realtime WebSocket (REQ-ANN-001 Stage B, 2026-08-12) —
-   deliberately UNCHANGED by REQ-PREVIEW-PROXY-001 — still resolves to the
-   literal production wss:// host for every non-local hostname, Preview
-   included. This is NOT an oversight: Vercel Serverless/Edge Functions
-   (what web-view/api/preview-proxy.js is built on) cannot accept
-   or proxy an inbound WebSocket upgrade at all — there is no way to make
-   this same-origin proxy "support" a live socket, and this file does not
-   pretend otherwise. Even if ANNOUNCEMENTS_API_BASE's ws-ticket call were
-   added to the proxy allowlist per the note above, a ticket obtained
-   through the backend PREVIEW would still need to be presented to this
-   constant's PRODUCTION wss:// host to be usable at all (no WebSocket
-   proxy exists) — production is very unlikely to recognize/validate a
-   ticket issued by a different deployment, so this is not a viable manual
-   workaround either, only a genuinely separate WebSocket-capable relay
-   would be. As things stand today (announcements excluded from the
-   allowlist, see above), this constant's value is moot: the ws-ticket
-   fetch 404s before any WebSocket connect is ever attempted. */
+   deliberately UNCHANGED by REQ-PREVIEW-PROXY-001 or the 2026-09-29
+   Announcements-allowlist fix above — still resolves to the literal
+   production wss:// host for every non-local hostname, Preview included.
+   This is NOT an oversight: Vercel Serverless/Edge Functions (what
+   web-view/api/preview-proxy.js is built on) cannot accept or proxy an
+   inbound WebSocket upgrade at all — there is no way to make this
+   same-origin proxy "support" a live socket, and this file does not
+   pretend otherwise.
+
+   SAME-DAY FOLLOW-UP (2026-09-29): the first version of the Announcements
+   allowlist fix above also proxied POST /ws-ticket, on the reasoning that
+   the HTTP call itself is harmless. It is NOT harmless once you account
+   for what happens with the ticket it returns: a ticket issued by the
+   BACKEND PREVIEW deployment would still get presented to THIS constant's
+   PRODUCTION wss:// host, since no WebSocket proxy exists to make the
+   actual socket connection same-origin, and production almost certainly
+   does not recognize a ticket issued by a different deployment. Sending a
+   Preview-issued credential to production is the wrong direction to fail
+   in, even though the practical result (a rejected connection) is the
+   same shape as any other socket failure — so this is now prevented at
+   the source instead of tolerated: web-view/js/announcements.js's
+   connectRealtimeSocket() checks config.js's isPreviewDeploymentHostname()
+   FIRST and returns immediately on a Preview hostname, before ever
+   calling getWsTicket() or constructing a WebSocket — no ws-ticket
+   request, no socket, no reconnect-backoff loop, ever, on Preview. Kept
+   out of preview-proxy.js's ALLOWED_ROUTES too, as defense in depth (see
+   that file) — the frontend guard above is what actually stops the
+   request from ever being sent, but the proxy itself should not accept
+   this one path/method even if it were ever called some other way.
+
+   None of this is a regression: every OTHER Announcements feature
+   (history, drafts, create/edit/delete/publish, notifications, unread
+   count) still works correctly on Preview through the 30s HTTP poll
+   (web-view/js/announcements.js mountAnnouncementBell's `pollTimer`),
+   which is the documented fallback for exactly this "no realtime socket"
+   situation (REQ-ANN-001 Stage A) — only the sub-30s instant push is
+   unavailable, exactly as it always was before today's Announcements fix,
+   just for a cleaner reason now (deliberately not attempted, rather than
+   attempted-and-silently-failing-forever). Making the realtime socket
+   itself work on Preview would need a genuinely separate WebSocket-capable
+   relay (not a Vercel Function) or a Preview-aware branch here pointed at
+   the backend Preview's own wss:// origin AND a ticket-validation change
+   on that backend to accept it — out of scope for this fix. */
 export var ANNOUNCEMENTS_WS_BASE = (function () {
   var LOCAL_BASE = 'ws://127.0.0.1:' + LOCAL_API_PORT + '/api/announcements';
   var PRODUCTION_BASE = 'wss://management-aios-api.vercel.app/api/announcements';

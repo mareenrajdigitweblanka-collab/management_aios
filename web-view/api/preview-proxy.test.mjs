@@ -104,8 +104,11 @@ test('isAllowedRoute: allows calendar-auth verify (POST) and rejects other metho
 test('isAllowedRoute: allows nested staff-review-summaries paths (attachments), rejects unlisted routers', function () {
   assert.equal(isAllowedRoute('/api/staff-review-summaries/attachments', 'POST'), true);
   assert.equal(isAllowedRoute('/api/staff-review-summaries/abc-123/attachments/def-456', 'GET'), true);
+  // knowledge-documents remains intentionally excluded (out of scope — see
+  // web-view/js/config.js's KNOWLEDGE_DOCUMENTS_API_BASE comment).
+  // announcements is NOT listed here anymore — it moved to its own
+  // dedicated test block below (2026-09-29 fix: now allowed).
   assert.equal(isAllowedRoute('/api/knowledge-documents', 'GET'), false);
-  assert.equal(isAllowedRoute('/api/announcements', 'GET'), false);
 });
 
 test('isAllowedRoute: anchored patterns reject a name that merely starts with an allowed prefix', function () {
@@ -131,6 +134,49 @@ test('isAllowedRoute: Staff Data (2026-09-29 fix) — GET-only, "" and "/filter-
   // above, checked against this specific new entry).
   assert.equal(isAllowedRoute('/api/staff-review-summaries', 'GET'), true); // allowed by ITS OWN pattern, not this one — see next line
   assert.equal(isAllowedRoute('/api/staffXXXX', 'GET'), false);
+});
+
+test('isAllowedRoute: Announcements (2026-09-29 fix; ws-ticket/ws excluded same-day) — every HTTP route web-view/js/announcements.js actually calls (other than ws-ticket) is permitted', function () {
+  // Every path+method pair from announcements.js's own API-contract header
+  // comment (announcements.js:14-23), checked individually — EXCEPT
+  // POST /ws-ticket, which is deliberately excluded (see the rejected-path
+  // test below and web-view/js/config.js's ANNOUNCEMENTS_WS_BASE comment
+  // for why).
+  assert.equal(isAllowedRoute('/api/announcements', 'GET'), true); // listPublishedAnnouncements
+  assert.equal(isAllowedRoute('/api/announcements/drafts', 'GET'), true); // listOwnDrafts
+  assert.equal(isAllowedRoute('/api/announcements/notifications', 'GET'), true); // getNotificationFeed (the HTTP polling loop)
+  assert.equal(isAllowedRoute('/api/announcements/123', 'GET'), true); // getAnnouncement
+  assert.equal(isAllowedRoute('/api/announcements/123/read-receipts', 'GET'), true); // getReadReceipts
+  assert.equal(isAllowedRoute('/api/announcements', 'POST'), true); // createAnnouncementDraft
+  assert.equal(isAllowedRoute('/api/announcements/notifications/456/read', 'POST'), true); // markNotificationRead
+  assert.equal(isAllowedRoute('/api/announcements/123/publish', 'POST'), true); // publishAnnouncementDraft
+  assert.equal(isAllowedRoute('/api/announcements/123', 'PATCH'), true); // updateAnnouncementDraft
+  assert.equal(isAllowedRoute('/api/announcements/123', 'DELETE'), true); // deleteAnnouncementDraft
+});
+
+test('isAllowedRoute: Announcements — a method this router has no route for is rejected even on an otherwise-allowed path', function () {
+  assert.equal(isAllowedRoute('/api/announcements', 'PUT'), false); // no PUT route exists on this router at all
+  assert.equal(isAllowedRoute('/api/announcements/123', 'PUT'), false);
+});
+
+test('isAllowedRoute: Announcements — "/ws-ticket" and "/ws" are rejected on EVERY method, including the methods those two routes actually use (POST and the WebSocket upgrade respectively)', function () {
+  // A ticket issued by the backend Preview deployment must never be
+  // usable through this proxy at all — see web-view/js/config.js's
+  // ANNOUNCEMENTS_WS_BASE comment for the full rationale. This is
+  // defense in depth: web-view/js/announcements.js's connectRealtimeSocket
+  // is what actually stops the request from ever being sent on a Preview
+  // hostname (see announcements.test.mjs's Preview-guard tests) — this
+  // allowlist entry means even a request that somehow bypassed that
+  // frontend guard would still be rejected here.
+  assert.equal(isAllowedRoute('/api/announcements/ws-ticket', 'POST'), false);
+  assert.equal(isAllowedRoute('/api/announcements/ws-ticket', 'GET'), false);
+  assert.equal(isAllowedRoute('/api/announcements/ws', 'GET'), false);
+  // "/ws-ticketXXXX" and "/wsXXXX" must NOT be treated as "/ws-ticket"/"/ws"
+  // with extra junk — the lookahead requires either exact end-of-string or
+  // a literal "/" immediately after "ws-ticket"/"ws", same anchoring
+  // guarantee this file's other patterns already have.
+  assert.equal(isAllowedRoute('/api/announcements/ws-ticketXXXX', 'POST'), true);
+  assert.equal(isAllowedRoute('/api/announcements/wsXXXX', 'GET'), true);
 });
 
 test('isAllowedRoute: a literal or percent-encoded dot-segment is rejected however it happens to reach this function', function () {
@@ -229,10 +275,16 @@ test(
 );
 
 test(
-  'end-to-end: "../" from an allowed router toward a disallowed one (e.g. into announcements) still 404s — no cross-router escape',
+  'end-to-end: "../" from an allowed router toward a disallowed one (e.g. into knowledge-documents) still 404s — no cross-router escape',
   withEnv(CONFIGURED_ENV, async function () {
+    // knowledge-documents (2026-09-29: unlike announcements, still NOT in
+    // ALLOWED_ROUTES — see web-view/js/config.js's KNOWLEDGE_DOCUMENTS_API_BASE
+    // comment) is the target here specifically because it stays disallowed;
+    // announcements itself is now allowed (see the isAllowedRoute tests
+    // above), so it would no longer prove "escape into a disallowed router"
+    // if used as the target.
     var calls = stubFetch(function () { throw new Error('fetch must not be called'); });
-    var req = new Request(proxyUrl('/api/member-schedules/../../announcements/ws-ticket'), { method: 'POST' });
+    var req = new Request(proxyUrl('/api/member-schedules/../../knowledge-documents'), { method: 'GET' });
     var res = await handler(req);
     assert.equal(res.status, 404);
     assert.equal(calls.length, 0);
@@ -243,7 +295,7 @@ test(
   'end-to-end: a percent-encoded "%2f" traversal attempt still 404s even though the query value arrives already decoded once',
   withEnv(CONFIGURED_ENV, async function () {
     var calls = stubFetch(function () { throw new Error('fetch must not be called'); });
-    var req = new Request(proxyUrl('/api/member-schedules/..%2f..%2fannouncements'), { method: 'GET' });
+    var req = new Request(proxyUrl('/api/member-schedules/..%2f..%2fknowledge-documents'), { method: 'GET' });
     var res = await handler(req);
     assert.equal(res.status, 404);
     assert.equal(calls.length, 0);
@@ -298,16 +350,39 @@ test(
 );
 
 test(
-  'CORRECTED: announcements are fully unavailable through the proxy, not just the WebSocket ticket path — the HTTP polling GET is also rejected',
+  'UPDATED 2026-09-29 (same-day follow-up): the HTTP polling GET reaches the backend with Authorization forwarded, but the ws-ticket POST is rejected by the proxy itself — defense in depth alongside the frontend guard',
   withEnv(CONFIGURED_ENV, async function () {
-    var calls = stubFetch(function () { throw new Error('fetch must not be called — announcements is not in the allowlist'); });
-    var pollReq = new Request(proxyUrl('/api/announcements'), { method: 'GET' });
+    // History: this test first asserted BOTH calls 404 (announcements
+    // fully excluded), then briefly asserted BOTH calls 200 (announcements
+    // fully allowed, including ws-ticket) — that second version is what
+    // this same-day follow-up corrects: ws-ticket must stay rejected even
+    // though the rest of the router is now allowed, because a ticket
+    // issued by the backend Preview deployment would only ever be
+    // presented to the PRODUCTION WebSocket host (see
+    // web-view/js/config.js's ANNOUNCEMENTS_WS_BASE comment).
+    var calls = stubFetch(async function () {
+      return new Response(JSON.stringify({ records: [], total: 0, limit: 200, offset: 0 }), {
+        status: 200, headers: { 'content-type': 'application/json' },
+      });
+    });
+    var pollReq = new Request(proxyUrl('/api/announcements'), {
+      method: 'GET',
+      headers: { authorization: 'Bearer x' },
+    });
     var pollRes = await handler(pollReq);
-    assert.equal(pollRes.status, 404);
-    var ticketReq = new Request(proxyUrl('/api/announcements/ws-ticket'), { method: 'POST' });
+    assert.equal(pollRes.status, 200);
+    assert.equal(calls[0].url, 'https://backend-preview.example.vercel.app/api/announcements');
+    assert.equal(calls[0].init.headers.get('authorization'), 'Bearer x');
+
+    var ticketReq = new Request(proxyUrl('/api/announcements/ws-ticket'), {
+      method: 'POST',
+      headers: { authorization: 'Bearer x' },
+    });
     var ticketRes = await handler(ticketReq);
     assert.equal(ticketRes.status, 404);
-    assert.equal(calls.length, 0);
+    assert.equal(calls.length, 1, 'the ws-ticket request must never reach the backend at all');
+    var ticketBody = await ticketRes.json();
+    assert.equal(ticketBody.error, 'not_proxied');
   })
 );
 

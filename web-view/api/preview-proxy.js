@@ -145,6 +145,43 @@ export var ALLOWED_ROUTES = [
   // issues.js only ever issue GET against this base (2026-09-29 fix —
   // see web-view/js/staff-data.js's STAFF_API_BASE).
   { pattern: /^\/api\/staff(\/.*)?$/, methods: ['GET', 'OPTIONS'] },
+  // Announcements & Notifications (2026-09-29 fix, backend/routers/
+  // announcements.py, prefix /api/announcements — GET "", "/drafts",
+  // "/notifications", "/{id}", "/{id}/read-receipts"; POST "",
+  // "/{id}/publish", "/notifications/{id}/read"; PATCH "/{id}"; DELETE
+  // "/{id}" — see web-view/js/announcements.js's own API-contract header
+  // comment, which lists every route this file calls). The negative
+  // lookahead excludes exactly two sub-paths, on purpose (same-day
+  // follow-up, 2026-09-29 — see web-view/js/config.js's
+  // ANNOUNCEMENTS_WS_BASE comment for the full "why"):
+  //   - "/ws-ticket": a ticket issued by the backend PREVIEW deployment
+  //     must never be usable at all through this proxy, because the
+  //     realtime socket itself (web-view/js/announcements.js
+  //     connectRealtimeSocket) presents that ticket to the PRODUCTION
+  //     WebSocket host (ANNOUNCEMENTS_WS_BASE), never to this backend —
+  //     proxying the ticket REQUEST while the ticket's only real use goes
+  //     to a different deployment serves no purpose and only risks a
+  //     Preview-issued credential reaching production. The frontend guard
+  //     (connectRealtimeSocket checking config.js's
+  //     isPreviewDeploymentHostname() first) is what actually stops the
+  //     request from ever being sent; this exclusion is defense in depth
+  //     for if this path were ever called some other way.
+  //   - "/ws": belt-and-suspenders only — WS_PATH_PATTERN above already
+  //     runs UNCONDITIONALLY, before ALLOWED_ROUTES is ever consulted,
+  //     and always returns 501 for any path containing a "/ws" segment,
+  //     so this exclusion can never actually change what a real request
+  //     experiences; it just keeps isAllowedRoute's own answer consistent
+  //     with the real behavior instead of silently saying "allowed" for a
+  //     path the handler would reject anyway (see the isAllowedRoute-level
+  //     test for this exact distinction).
+  // Every other sub-path (including ones not listed above, e.g. a future
+  // route under this prefix) stays allowed, matching every other entry in
+  // this list's "allow the whole router, not one method/path at a time"
+  // convention.
+  {
+    pattern: /^\/api\/announcements(?!\/(?:ws-ticket|ws)(?:\/|$))(\/.*)?$/,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  },
 ];
 
 /* Defense-in-depth against allowlist escape via an ENCODED path segment
