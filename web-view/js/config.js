@@ -72,7 +72,7 @@ export var LOCAL_API_PORT = 8001;
    The actual fix: any Preview hostname (detected by PATTERN, not an exact
    hash, so it matches every current and future Preview deployment of this
    project) routes through a same-origin serverless proxy function
-   (web-view/api/preview-proxy/[...path].js) instead of any cross-origin
+   (web-view/api/preview-proxy.js) instead of any cross-origin
    backend URL. Same-origin means no CORS preflight is needed for this hop
    at all. The proxy — not this file — holds the actual backend Preview
    origin and the Deployment Protection bypass secret, both as server-side-
@@ -91,7 +91,7 @@ function _resolveApiBase(pathPrefix) {
     return 'http://127.0.0.1:' + LOCAL_API_PORT + '/api/' + pathPrefix;
   }
   if (PREVIEW_HOSTNAME_PATTERN.test(hostname)) {
-    // Same-origin — routed through web-view/api/preview-proxy/[...path].js.
+    // Same-origin — routed through web-view/api/preview-proxy.js.
     // Whether this specific pathPrefix is actually served (vs. a clean 404)
     // is decided solely by that function's own ALLOWED_ROUTES allowlist,
     // never by this file.
@@ -141,7 +141,7 @@ export var CALENDAR_AUTH_API_BASE = (function () {
    web-view/js/review-summaries.js). Attachments (REQ-CAL-REV-ATTACH-001)
    live under this same base/prefix, so Preview testing of the attachment
    feature is covered by the same proxy allowlist entry as the rest of
-   this router — see web-view/api/preview-proxy/[...path].js. */
+   this router — see web-view/api/preview-proxy.js. */
 export var STAFF_REVIEW_SUMMARIES_API_BASE = (function () {
   return _resolveApiBase('staff-review-summaries');
 }());
@@ -184,7 +184,7 @@ export var KNOWLEDGE_DOCUMENTS_API_BASE = (function () {
    breaks. If Announcements needs to work during Preview testing, add
    `{ pattern: /^\/api\/announcements(\/.*)?$/, methods: [...] }` (GET/POST
    as needed, excluding /ws — see ANNOUNCEMENTS_WS_BASE below for why) to
-   web-view/api/preview-proxy/[...path].js's ALLOWED_ROUTES — no change
+   web-view/api/preview-proxy.js's ALLOWED_ROUTES — no change
    needed here. */
 export var ANNOUNCEMENTS_API_BASE = (function () {
   return _resolveApiBase('announcements');
@@ -194,7 +194,7 @@ export var ANNOUNCEMENTS_API_BASE = (function () {
    deliberately UNCHANGED by REQ-PREVIEW-PROXY-001 — still resolves to the
    literal production wss:// host for every non-local hostname, Preview
    included. This is NOT an oversight: Vercel Serverless/Edge Functions
-   (what web-view/api/preview-proxy/[...path].js is built on) cannot accept
+   (what web-view/api/preview-proxy.js is built on) cannot accept
    or proxy an inbound WebSocket upgrade at all — there is no way to make
    this same-origin proxy "support" a live socket, and this file does not
    pretend otherwise. Even if ANNOUNCEMENTS_API_BASE's ws-ticket call were

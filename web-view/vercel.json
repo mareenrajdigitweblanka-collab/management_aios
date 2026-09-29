@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/preview-proxy/(.*)",
-      "dest": "/api/preview-proxy/$1"
+      "source": "/api/preview-proxy/:match*",
+      "destination": "/api/preview-proxy?path=/:match*"
     }
   ]
 }
