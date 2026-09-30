@@ -305,6 +305,9 @@ def _styles():
         "summary_body": summary_body, "record_info": record_info,
         "attachments_label": attachments_label, "attachment_line": attachment_line,
         "attachment_note": attachment_note,
+        "attachment_line_wrap": ParagraphStyle(
+            "ReviewSummaryAttachmentLineWrap", parent=attachment_line, wordWrap="CJK",
+        ),
     }
 
 
@@ -386,6 +389,32 @@ def _not_embedded_note(attachment: dict, verb: str) -> str:
         "Not " + verb + " — too large to include here. "
         "See “Download complete review” for the original file."
     )
+
+
+# Longest filename rendered in the filename-only attachment list; anything
+# longer is cut with an ellipsis so one pathological name cannot dominate a page.
+_MAX_LISTED_FILENAME_CHARS = 200
+
+
+def _attachment_filename_list_flowables(attachments: List[dict], styles) -> list:
+    """Filename-only "Attachments" subsection used by the summary-only
+    "Download PDF" export: one bullet per attachment (display/original
+    filename plus type label), or "No attachments". Never embeds, converts,
+    or refers to attachment contents/pages. Filenames are XML-escaped via
+    _paragraph_text and use a wrap-anywhere style so a long unbroken name
+    wraps instead of overflowing the page."""
+    if not attachments:
+        return [Paragraph("Attachments: No attachments", styles["attachments_label"])]
+    flowables = [Paragraph("Attachments (" + str(len(attachments)) + ")", styles["attachments_label"])]
+    for attachment in attachments:
+        filename = (attachment.get("original_filename") or "Unnamed file").replace(chr(13), " ").replace(chr(10), " ")
+        if len(filename) > _MAX_LISTED_FILENAME_CHARS:
+            filename = filename[: _MAX_LISTED_FILENAME_CHARS - 1] + "…"
+        label = _attachment_type_label(attachment.get("attachment_type"))
+        flowables.append(
+            Paragraph("&#8226; " + _paragraph_text(filename) + " (" + label + ")", styles["attachment_line_wrap"])
+        )
+    return flowables
 
 
 def _attachment_flowables(attachments: List[dict], styles) -> list:
@@ -565,8 +594,12 @@ def build_review_summary_pdf(
     date_to: Optional[date_type],
     generated_at_local: datetime,
     records: List[dict],
+    attachments_filenames_only: bool = False,
 ) -> bytes:
-    """Builds the full PDF and returns its bytes. `records` is a list of
+    """Builds the full PDF and returns its bytes. attachments_filenames_only
+    (default False = unchanged behavior: embedded images plus notes that
+    attachment pages follow) renders only a filename list per record, or
+    "No attachments" — used by the summary-only "Download PDF" export. `records` is a list of
     plain dicts (not ORM rows, not Pydantic models — the router is
     responsible for extracting exactly the fields this function reads,
     keeping this module free of any database/schema dependency), each with
@@ -647,7 +680,12 @@ def build_review_summary_pdf(
 
         story.append(heading_block)
         story.append(Paragraph(_paragraph_text(record.get("summary_text") or ""), styles["summary_body"]))
-        for flowable in _attachment_flowables(record.get("attachments") or [], styles):
+        attachment_flowables = (
+            _attachment_filename_list_flowables(record.get("attachments") or [], styles)
+            if attachments_filenames_only
+            else _attachment_flowables(record.get("attachments") or [], styles)
+        )
+        for flowable in attachment_flowables:
             story.append(flowable)
         story.append(Paragraph(
             "Record information: Created " + _format_timestamp(record.get("created_at"))

@@ -439,12 +439,7 @@ class ReviewSummaryAttachmentsTestCase(unittest.TestCase):
 
     # ── 6. PDF export content ────────────────────────────────────────────
 
-    def test_pdf_export_embeds_image_and_lists_it(self):
-        staff_id = self.seed_staff(full_name="PDF Image Staff")
-        png_bytes = make_png_bytes()
-        up = self.upload("mayurika", "photo.png", png_bytes, "image/png")
-        self.create_summary("mayurika", staff_id, attachment_ids=[up.json()["id"]])
-
+    def _summary_only_pdf(self, staff_id):
         resp = self.client.get(
             "/api/staff-review-summaries/export/pdf",
             params={"reviewed_staff_id": staff_id, "reviewer_member_key": "mayurika"},
@@ -452,127 +447,92 @@ class ReviewSummaryAttachmentsTestCase(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         reader = PdfReader(BytesIO(resp.content))
-        text = "".join(page.extract_text() or "" for page in reader.pages)
-        self.assertIn("photo.png", text)
-        self.assertIn("Image", text)
-        # The image bytes were actually fetched from storage for embedding.
-        self.assertIn(up.json()["id"] and self.storage.uploaded_public_ids[0], self.storage.downloaded_public_ids)
+        return reader, "".join(page.extract_text() or "" for page in reader.pages)
 
-    def test_pdf_export_merges_pdf_attachment_pages(self):
-        staff_id = self.seed_staff(full_name="PDF Merge Staff")
-        pdf_bytes = make_pdf_bytes("Unique attached content marker")
-        up = self.upload("mayurika", "scan.pdf", pdf_bytes, "application/pdf")
-        self.create_summary("mayurika", staff_id, attachment_ids=[up.json()["id"]])
+    def test_pdf_export_lists_every_attachment_filename_without_contents(self):
+        """"Download PDF" is summary-only (2026-09-30): every attachment's
+        filename is listed, but no attachment content — no embedded image,
+        no appended PDF pages, no Word/Excel conversion — and no attachment
+        byte is even fetched from storage."""
+        staff_id = self.seed_staff(full_name="PDF Multi Staff")
+        ups = [
+            self.upload("mayurika", "photo.png", make_png_bytes(), "image/png"),
+            self.upload("mayurika", "scan.pdf", make_pdf_bytes("Unique attached content marker"), "application/pdf"),
+            self.upload("mayurika", "meeting.mp3", b"fake-mp3-bytes", "audio/mpeg"),
+            self.upload(
+                "mayurika", "notes.docx", make_docx_bytes("Unique Word paragraph for conversion assertion."),
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ),
+            self.upload(
+                "mayurika", "sheet.xlsx",
+                make_xlsx_bytes(sheet_name="ConversionSheet", cell_value="UniqueExcelCellValue"),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ),
+        ]
+        self.create_summary("mayurika", staff_id, attachment_ids=[u.json()["id"] for u in ups])
 
-        resp = self.client.get(
-            "/api/staff-review-summaries/export/pdf",
-            params={"reviewed_staff_id": staff_id, "reviewer_member_key": "mayurika"},
-            headers=bearer_header("mayurika"),
-        )
-        self.assertEqual(resp.status_code, 200)
-        reader = PdfReader(BytesIO(resp.content))
-        # At least 2 pages: the main body + the appended attachment page(s)
-        # (a divider page plus the attached PDF's own page).
-        self.assertGreaterEqual(len(reader.pages), 3)
-        text = "".join(page.extract_text() or "" for page in reader.pages)
-        self.assertIn("scan.pdf", text)
-        self.assertIn("Unique attached content marker", text)
+        reader, text = self._summary_only_pdf(staff_id)
+        for name in ("photo.png", "scan.pdf", "meeting.mp3", "notes.docx", "sheet.xlsx"):
+            self.assertIn(name, text)
+        self.assertIn("Attachments (5)", text)
+        # No attachment content anywhere in the file.
+        self.assertNotIn("Unique attached content marker", text)
+        self.assertNotIn("Unique Word paragraph", text)
+        self.assertNotIn("ConversionSheet", text)
+        self.assertNotIn("UniqueExcelCellValue", text)
+        self.assertNotIn("additional pages", text)
+        # Summary-only: one page (no divider/attachment pages appended).
+        self.assertEqual(len(reader.pages), 1)
+        # No attachment byte was fetched from storage at all.
+        self.assertEqual(self.storage.downloaded_public_ids, [])
 
-    def test_pdf_export_never_embeds_audio_lists_filename_only(self):
-        staff_id = self.seed_staff(full_name="PDF Audio Staff")
-        up = self.upload("mayurika", "meeting.mp3", b"fake-mp3-bytes", "audio/mpeg")
-        self.create_summary("mayurika", staff_id, attachment_ids=[up.json()["id"]])
+    def test_pdf_export_without_attachments_says_no_attachments(self):
+        staff_id = self.seed_staff(full_name="PDF No Attachment Staff")
+        self.create_summary("mayurika", staff_id)
+        _reader, text = self._summary_only_pdf(staff_id)
+        self.assertIn("No attachments", text)
+        self.assertIn("Review Summary:", text)
 
-        resp = self.client.get(
-            "/api/staff-review-summaries/export/pdf",
-            params={"reviewed_staff_id": staff_id, "reviewer_member_key": "mayurika"},
-            headers=bearer_header("mayurika"),
-        )
-        self.assertEqual(resp.status_code, 200)
-        reader = PdfReader(BytesIO(resp.content))
-        text = "".join(page.extract_text() or "" for page in reader.pages)
-        self.assertIn("meeting.mp3", text)
-        self.assertIn("never embedded or transcribed", text)
-        # The audio bytes were never fetched from storage at all — the PDF
-        # module never embeds audio, so the router must never even ask for
-        # its bytes.
-        audio_public_id = self.storage.uploaded_public_ids[0]
-        self.assertNotIn(audio_public_id, self.storage.downloaded_public_ids)
+    def test_pdf_export_handles_long_and_special_character_filenames(self):
+        staff_id = self.seed_staff(full_name="PDF Odd Filename Staff")
+        long_name = "A" * 300 + ".pdf"
+        odd_name = "Q3 <report> & “final” (v2).pdf"
+        ups = [
+            self.upload("mayurika", long_name, make_pdf_bytes("x"), "application/pdf"),
+            self.upload("mayurika", odd_name, make_pdf_bytes("y"), "application/pdf"),
+        ]
+        self.create_summary("mayurika", staff_id, attachment_ids=[u.json()["id"] for u in ups])
+        reader, text = self._summary_only_pdf(staff_id)
+        self.assertIn("Attachments (2)", text)
+        self.assertIn("report", text)
+        self.assertEqual(len(reader.pages), 1)
 
-    def test_pdf_export_converts_and_embeds_real_word_and_excel_attachments(self):
-        """2026-09-23 (REQ-CAL-REV-PDF-ATTACH-CONVERT-001): word/excel
-        attachments are now fetched and converted to PDF pages, the same
-        way a native "pdf" attachment is appended — this replaces the
-        pre-conversion-feature "listed without embedding" behavior."""
-        staff_id = self.seed_staff(full_name="PDF Office Staff")
-        docx_bytes = make_docx_bytes("Unique Word paragraph for conversion assertion.")
-        xlsx_bytes = make_xlsx_bytes(sheet_name="ConversionSheet", cell_value="UniqueExcelCellValue")
+    def test_history_pdf_export_still_embeds_attachment_contents(self):
+        """"Download all reviews as one PDF" (/export/pdf/history) is
+        unchanged by the summary-only "Download PDF" fix: attachment
+        contents are still fetched and appended/converted."""
+        staff_id = self.seed_staff(full_name="History Embed Staff")
+        pdf_up = self.upload("mayurika", "scan.pdf", make_pdf_bytes("Unique attached content marker"), "application/pdf")
         word_up = self.upload(
-            "mayurika", "notes.docx", docx_bytes,
+            "mayurika", "notes.docx", make_docx_bytes("Unique Word paragraph for conversion assertion."),
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
-        excel_up = self.upload(
-            "mayurika", "sheet.xlsx", xlsx_bytes,
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
         self.create_summary(
-            "mayurika", staff_id, attachment_ids=[word_up.json()["id"], excel_up.json()["id"]]
+            "mayurika", staff_id, attachment_ids=[pdf_up.json()["id"], word_up.json()["id"]]
         )
-
         resp = self.client.get(
-            "/api/staff-review-summaries/export/pdf",
+            "/api/staff-review-summaries/export/pdf/history",
             params={"reviewed_staff_id": staff_id, "reviewer_member_key": "mayurika"},
             headers=bearer_header("mayurika"),
         )
         self.assertEqual(resp.status_code, 200)
         reader = PdfReader(BytesIO(resp.content))
         text = "".join(page.extract_text() or "" for page in reader.pages)
-        # Filename appears in the attachment listing.
-        self.assertIn("notes.docx", text)
-        self.assertIn("sheet.xlsx", text)
-        # The body note now says "converted and included", never a bare
-        # "listed by filename only" wording, since conversion is attempted.
-        self.assertIn("Converted and included as additional pages", text)
-        # The converted content itself is actually present as real pages.
+        self.assertGreaterEqual(len(reader.pages), 3)
+        self.assertIn("Unique attached content marker", text)
         self.assertIn("Unique Word paragraph for conversion assertion.", text)
-        self.assertIn("ConversionSheet", text)
-        self.assertIn("UniqueExcelCellValue", text)
-        # Bytes ARE now fetched from storage for both (the real public_id,
-        # not the attachment's database id — the two are distinct values).
-        word_public_id = self.storage.uploaded_public_ids[-2]
-        excel_public_id = self.storage.uploaded_public_ids[-1]
-        self.assertIn(word_public_id, self.storage.downloaded_public_ids)
-        self.assertIn(excel_public_id, self.storage.downloaded_public_ids)
-
-    def test_pdf_export_reports_word_and_excel_conversion_failure_explicitly(self):
-        """A genuinely unreadable/corrupt Word or Excel attachment (e.g. a
-        legacy .doc, or simply an invalid file) must never be silently
-        omitted or claimed as included — the specific failure reason is
-        rendered into the export instead (REQ-CAL-REV-PDF-ATTACH-CONVERT-001)."""
-        staff_id = self.seed_staff(full_name="PDF Office Failure Staff")
-        word_up = self.upload("mayurika", "old_notes.doc", b"not a real ole file" * 5, "application/msword")
-        excel_up = self.upload(
-            "mayurika", "broken.xlsx", b"not a real zip at all",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-        self.create_summary(
-            "mayurika", staff_id, attachment_ids=[word_up.json()["id"], excel_up.json()["id"]]
-        )
-
-        resp = self.client.get(
-            "/api/staff-review-summaries/export/pdf",
-            params={"reviewed_staff_id": staff_id, "reviewer_member_key": "mayurika"},
-            headers=bearer_header("mayurika"),
-        )
-        self.assertEqual(resp.status_code, 200)
-        reader = PdfReader(BytesIO(resp.content))
-        text = "".join(page.extract_text() or "" for page in reader.pages)
-        self.assertIn("could not be converted", text)
-        self.assertIn("Legacy .doc format is not supported", text)
-        self.assertIn("old_notes.doc", text)
-        self.assertIn("broken.xlsx", text)
-        # The failure is never silently claimed as included.
-        self.assertNotIn("Not converted", text)  # that wording is for the size-cap/fetch-failure case only
+        self.assertIn("Converted and included as additional pages", text)
+        self.assertIn(self.storage.uploaded_public_ids[0], self.storage.downloaded_public_ids)
 
     # ── 7. ZIP export ("Download complete review") ──────────────────────
 

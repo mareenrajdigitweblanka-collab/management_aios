@@ -966,7 +966,11 @@ def list_staff_review_summaries(
     )
 
 
-def _attachment_export_dict(attachment: StaffReviewSummaryAttachment, storage: AttachmentStorage) -> dict:
+def _attachment_export_dict(
+    attachment: StaffReviewSummaryAttachment,
+    storage: AttachmentStorage,
+    include_content: bool = True,
+) -> dict:
     """Builds one attachment dict for the PDF export module. embed_bytes is
     populated for image/pdf/word/excel attachment types at or under
     MAX_EMBEDDABLE_ATTACHMENT_BYTES_FOR_PDF (2026-09-23: word/excel added —
@@ -986,7 +990,9 @@ def _attachment_export_dict(attachment: StaffReviewSummaryAttachment, storage: A
     filtered-history export for every other record in it."""
     embed_bytes = None
     embed_skip_reason = None
-    if attachment.attachment_type in ("image", "pdf", "word", "excel"):
+    # include_content=False (summary-only "Download PDF"): metadata only —
+    # storage is never called, so no attachment byte is ever fetched.
+    if include_content and attachment.attachment_type in ("image", "pdf", "word", "excel"):
         if attachment.file_size_bytes > MAX_EMBEDDABLE_ATTACHMENT_BYTES_FOR_PDF:
             embed_skip_reason = "too_large"
         else:
@@ -1008,7 +1014,12 @@ def _attachment_export_dict(attachment: StaffReviewSummaryAttachment, storage: A
     }
 
 
-def _build_pdf_ready_records(db: Session, storage: AttachmentStorage, rows: List[StaffReviewSummary]):
+def _build_pdf_ready_records(
+    db: Session,
+    storage: AttachmentStorage,
+    rows: List[StaffReviewSummary],
+    include_attachment_content: bool = True,
+):
     """rows: StaffReviewSummary ORM rows, already ordered (meeting_date
     DESC, created_at DESC — the same order both /export/pdf and /export/zip
     already use). Returns (records_for_pdf, pdf_attachments_to_append,
@@ -1034,7 +1045,7 @@ def _build_pdf_ready_records(db: Session, storage: AttachmentStorage, rows: List
         # yet. Same "table absent => genuinely zero attachments exist"
         # reasoning as _to_out's CREATE/UPDATE case.
         attachment_dicts = [
-            _attachment_export_dict(a, storage)
+            _attachment_export_dict(a, storage, include_attachment_content)
             for a in _list_attachments_for_summary(db, row.id, ok_if_missing_table=True)
         ]
         records_for_pdf.append({
@@ -1129,7 +1140,12 @@ def export_staff_review_summaries_pdf(
             detail="No review summaries match the selected filters.",
         )
 
-    records, pdf_attachments_to_append, office_attachments_to_append = _build_pdf_ready_records(db, storage, rows)
+    # Summary-only export: attachment FILENAMES are listed, attachment
+    # contents are never fetched, converted, or appended (the combined
+    # /export/pdf/history and /export/zip exports carry the contents).
+    records, _no_pdf_attachments, _no_office_attachments = _build_pdf_ready_records(
+        db, storage, rows, include_attachment_content=False
+    )
 
     if include_all_reviewers:
         reviewer_scope_label = "All reviewers"
@@ -1153,17 +1169,8 @@ def export_staff_review_summaries_pdf(
         date_to=date_to,
         generated_at_local=generated_at_local,
         records=records,
+        attachments_filenames_only=True,
     )
-    # REQ-CAL-REV-ATTACH-001 (2026-09-23) — appends every PDF-attachment's
-    # own pages onto the end of the export, each behind a labelled divider
-    # page (see append_pdf_attachments' own docstring). A no-op (returns
-    # pdf_bytes unchanged) when there are no PDF attachments to append.
-    pdf_bytes = append_pdf_attachments(pdf_bytes, pdf_attachments_to_append)
-    # REQ-CAL-REV-PDF-ATTACH-CONVERT-001 (2026-09-23) — appends a converted
-    # PDF for every Word/Excel attachment, each behind its own labelled
-    # divider page (see append_office_conversions' own docstring). A no-op
-    # when there are no Word/Excel attachments to append.
-    pdf_bytes = append_office_conversions(pdf_bytes, office_attachments_to_append)
     content_disposition = build_content_disposition_header(employee_label, date_type.today())
 
     return Response(
