@@ -107,6 +107,7 @@ Authorization:
 
 import mimetypes
 import re
+import logging
 import time
 import unicodedata
 import urllib.parse
@@ -178,6 +179,8 @@ from backend.schemas import (
 from backend.time_utils import colombo_date_of, colombo_today
 
 _COLOMBO = ZoneInfo(SCHEDULE_TIMEZONE)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/staff-review-summaries", tags=["staff-review-summaries"])
 
@@ -689,7 +692,19 @@ def upload_review_summary_attachment(
         )
     except AttachmentStorageUnavailable:
         raise HTTPException(status_code=503, detail="Attachment storage is not available.")
-    except Exception:
+    except Exception as exc:
+        # Sanitized diagnostic (2026-09-30): exception CLASS only (plus the
+        # missing module's name for ImportError) — never str(exc), headers,
+        # credentials, file contents, or URLs, since provider messages can
+        # embed any of those.
+        logger.error(
+            "attachment upload failed: resource_type=%s size_bytes=%d exc=%s.%s missing_module=%s",
+            resource_type,
+            len(chunk),
+            type(exc).__module__,
+            type(exc).__name__,
+            getattr(exc, "name", None) if isinstance(exc, ImportError) else None,
+        )
         # Any other provider-side failure — never insert a database row
         # for a file that is not durably stored (approved requirement §2:
         # "a failed upload must not silently produce a successful summary
