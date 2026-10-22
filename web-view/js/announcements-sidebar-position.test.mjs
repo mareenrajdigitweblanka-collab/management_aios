@@ -33,9 +33,12 @@ function sidebarGroupTitlesInOrder(source) {
   return titles;
 }
 
-test('sidebar groups render in the order Overview, Announcements, Members, Staff, Knowledge', () => {
+test('sidebar groups render in the order Overview, Announcements, Members, Staff, Knowledge, External', () => {
   var titles = sidebarGroupTitlesInOrder(html);
-  assert.deepEqual(titles, ['Overview', 'Announcements', 'Members', 'Staff', 'Knowledge']);
+  // 'External' (the DigitDisplay link, REQ-DIGITDISPLAY-NAV-001, 2026-10-22)
+  // appended at the end does not disturb this file's own Overview/
+  // Announcements/Members ordering guarantees below.
+  assert.deepEqual(titles, ['Overview', 'Announcements', 'Members', 'Staff', 'Knowledge', 'External']);
 });
 
 test('Announcements immediately follows Overview with no other group between them', () => {

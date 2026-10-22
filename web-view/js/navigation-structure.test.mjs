@@ -35,6 +35,9 @@ import { fileURLToPath } from 'node:url';
 var indexHtmlPath = fileURLToPath(new URL('../index.html', import.meta.url));
 var html = readFileSync(indexHtmlPath, 'utf8');
 
+var navigationCssPath = fileURLToPath(new URL('../css/navigation.css', import.meta.url));
+var navigationCss = readFileSync(navigationCssPath, 'utf8');
+
 var TOP_LEVEL_PANEL_RE = /^ {4}<div class="tab-panel[^"]*" id="([^"]+)"/gm;
 
 function topLevelPanels(source) {
@@ -168,4 +171,66 @@ test('the dedicated panel is a top-level sibling tab-panel, not nested inside an
 test('all 5 Task/Leave/Calendar (.msc-instance) member mounts remain present and untouched', () => {
   var matches = html.match(/class="msc-instance"/g) || [];
   assert.equal(matches.length, 5, 'removing the Review Summary mounts must not have touched the unrelated Calendar mounts');
+});
+
+// ── DigitDisplay external nav link (REQ-DIGITDISPLAY-NAV-001, 2026-10-22) ──
+
+test('exactly one DigitDisplay external nav link exists', () => {
+  var matches = html.match(/data-external-auth-link="digitdisplay"/g) || [];
+  assert.equal(matches.length, 1);
+});
+
+test('the DigitDisplay link is a real <a class="app-nav-btn">, not a <button>', () => {
+  var match = /<a class="app-nav-btn"[^>]*data-external-auth-link="digitdisplay"[^>]*>/.exec(html);
+  assert.ok(match, 'an <a class="app-nav-btn" ... data-external-auth-link="digitdisplay"> should exist');
+});
+
+test('the DigitDisplay link opens in a new tab with secure attributes (target="_blank" rel="noopener noreferrer")', () => {
+  var match = /<a class="app-nav-btn"[^>]*data-external-auth-link="digitdisplay"[\s\S]*?>/.exec(html);
+  assert.ok(match);
+  assert.match(match[0], /target="_blank"/);
+  assert.match(match[0], /rel="noopener noreferrer"/);
+});
+
+test('the DigitDisplay link has no data-tab attribute', () => {
+  var openTagMatch = /<a class="app-nav-btn"[^>]*data-external-auth-link="digitdisplay"[^>]*>/.exec(html);
+  assert.ok(openTagMatch);
+  assert.doesNotMatch(openTagMatch[0], /data-tab=/);
+});
+
+test('the DigitDisplay link has no corresponding .tab-panel', () => {
+  var panelIds = topLevelPanels(html).map(function (p) { return p.id; });
+  assert.ok(panelIds.indexOf('tab-digitdisplay') === -1);
+});
+
+test('the DigitDisplay link shows only the icon and the "DigitDisplay" label — no secondary "Opens in new tab" text', () => {
+  var linkMatch = /<a class="app-nav-btn"[^>]*data-external-auth-link="digitdisplay"[\s\S]*?<\/a>/.exec(html);
+  assert.ok(linkMatch, 'the full <a>...</a> DigitDisplay element should be found');
+  var linkHtml = linkMatch[0];
+  assert.doesNotMatch(linkHtml, /app-nav-btn-sub/, 'no sub-label span should remain');
+  assert.doesNotMatch(linkHtml, /Opens in new tab/);
+  var labelMatch = /<span class="app-nav-btn-label">([^<]*)<\/span>/.exec(linkHtml);
+  assert.ok(labelMatch);
+  assert.equal(labelMatch[1], 'DigitDisplay');
+  // Exactly one span inside app-nav-btn-text — the label only, matching
+  // single-line items like Root AIOS/File Map/Data (no app-nav-btn-sub).
+  var textWrapMatch = /<span class="app-nav-btn-text">([\s\S]*?)<\/span>\s*<\/a>/.exec(linkHtml);
+  assert.ok(textWrapMatch, 'the app-nav-btn-text wrapper should be found');
+});
+
+test('.app-nav-btn has text-decoration: none, so the DigitDisplay <a> (the only anchor using this class) is never underlined', () => {
+  // Same no-CSS-engine, source-text proof technique as
+  // entry-auth-css-structure.test.mjs: a single class-level rule, author
+  // origin, applies to normal/hover/focus/visited alike here since no
+  // other rule in this file redeclares text-decoration for any
+  // .app-nav-btn state.
+  var ruleMatch = /\.app-nav-btn\s*\{([^}]*)\}/.exec(navigationCss);
+  assert.ok(ruleMatch, 'the base .app-nav-btn rule should be found');
+  assert.match(ruleMatch[1], /text-decoration:\s*none\s*;/);
+});
+
+test('the DigitDisplay link does not have aria-disabled hardcoded in markup (JS sets it on load, matching the protected-tab convention)', () => {
+  var openTagMatch = /<a class="app-nav-btn"[^>]*data-external-auth-link="digitdisplay"[^>]*>/.exec(html);
+  assert.ok(openTagMatch);
+  assert.doesNotMatch(openTagMatch[0], /aria-disabled=/);
 });

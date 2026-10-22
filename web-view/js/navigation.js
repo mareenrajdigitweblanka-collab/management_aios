@@ -30,7 +30,18 @@ var DEFAULT_TAB_ID = 'root-aios';
 export function initNavigation() {
   'use strict';
 
-  var sideNavBtns = document.querySelectorAll('.app-nav-btn');
+  /* [data-tab] guard (2026-10-22, DigitDisplay external nav link) — this
+     selector used to be plain '.app-nav-btn', which also swept up any
+     future non-tab item sharing that class for styling (e.g. an external
+     link with no data-tab and no .tab-panel). setPanelActive() below
+     compares every matched button's data-tab to the target id; a button
+     with no data-tab at all (getAttribute returns null) would match
+     targetId===null, and EVERY .tab-panel's 'tab-'+null id check would
+     then fail, clearing .active off every panel. Scoping to [data-tab]
+     keeps this NodeList — and the click-wiring loop below that reuses it
+     — exactly to real tab buttons; non-tab .app-nav-btn-styled items
+     (like the DigitDisplay link) get their own, separate wiring below. */
+  var sideNavBtns = document.querySelectorAll('.app-nav-btn[data-tab]');
   var tabPanels = document.querySelectorAll('.tab-panel');
 
   function setPanelActive(targetId) {
@@ -101,6 +112,67 @@ export function initNavigation() {
 
   applyProtectedNavState();
   onAuthChange(applyProtectedNavState);
+
+  /* ── External navigation links gated by AIOS member-token authorization
+     (DigitDisplay, REQ-DIGITDISPLAY-NAV-001, 2026-10-22) ── Marked with
+     [data-external-auth-link] rather than data-tab (see the [data-tab]
+     guard comment above) — it has no .tab-panel and is not part of
+     sideNavBtns, so it never goes through setPanelActive/activatePanel
+     at all. Reuses the exact same isAuthenticated()/requestAuthorization()
+     /onAuthChange() primitives as the protected-tab lock above — same
+     lock visuals (app-nav-btn--locked, aria-disabled), same "Authorize
+     this browser" dialog. This is a convenience/consistency gate on THIS
+     app's sidebar only: DigitDisplay opens in a separate tab using its
+     own independent login, and enforces its own server-side
+     authorization entirely on its own — nothing here grants, bypasses,
+     or weakens that. Guards both 'click' (mouse/keyboard activation) and
+     'auxclick' (e.g. a middle-click new-tab open, which never fires
+     'click') so an unauthorized visitor cannot reach the link's href by
+     either path — the lock is enforced in script, not by CSS/aria alone. */
+  var externalAuthLinks = document.querySelectorAll('[data-external-auth-link]');
+
+  function applyExternalAuthLinkState() {
+    var authed = isAuthenticated();
+    externalAuthLinks.forEach(function (link) {
+      link.classList.toggle('app-nav-btn--locked', !authed);
+      if (authed) { link.removeAttribute('aria-disabled'); }
+      else { link.setAttribute('aria-disabled', 'true'); }
+    });
+  }
+
+  externalAuthLinks.forEach(function (link) {
+    function handleExternalLinkActivation(evt) {
+      /* Same unconditional drawer-close as every other nav item below
+         (sideNavBtns' own click listener, [data-goto] jump) — on mobile,
+         activating ANY nav item closes the drawer immediately, whether
+         or not this particular activation is itself gated. closeDrawer
+         is a hoisted function declaration (defined further down this
+         same initNavigation() body), so calling it here is safe — the
+         existing [data-goto] wiring above already relies on the same
+         hoisting. */
+      closeDrawer();
+      if (isAuthenticated()) { return; }
+      evt.preventDefault();
+      /* Deliberately does NOT auto-open DigitDisplay once requestAuthorization()
+         resolves to granted. window.open() called from inside a Promise
+         .then() callback has no user-gesture context left by then — the
+         dialog's own async token-verification request already broke the
+         chain back to this click — so most browsers' popup blockers would
+         silently swallow it, leaving the user with no visible result and
+         no error. Instead, this only opens the existing "Authorize this
+         browser" dialog; applyExternalAuthLinkState() (re-run by the same
+         onAuthChange event the dialog raises on success) unlocks the link
+         once authorized, and the user's NEXT click is a fresh, direct,
+         user-gesture click on a real <a target="_blank"> — which every
+         browser allows, popup blocker or not. */
+      requestAuthorization();
+    }
+    link.addEventListener('click', handleExternalLinkActivation);
+    link.addEventListener('auxclick', handleExternalLinkActivation);
+  });
+
+  applyExternalAuthLinkState();
+  onAuthChange(applyExternalAuthLinkState);
 
   sideNavBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {

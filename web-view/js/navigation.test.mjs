@@ -18,7 +18,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { installFakeBrowserGlobals, buildNavButtonAndPanel } from './navigation-test-dom.mjs';
+import { installFakeBrowserGlobals, buildNavButtonAndPanel, buildExternalAuthLink } from './navigation-test-dom.mjs';
 
 var importCounter = 0;
 function loadModules() {
@@ -185,4 +185,181 @@ test('losing authorization while a PUBLIC panel is active does not force any nav
   env.document.dispatchEvent(new CustomEvent(authGate.CALENDAR_AUTH_CHANGED_EVENT));
 
   assert.equal(nodes['file-map'].panel.classList.contains('active'), true);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+// ── DigitDisplay external nav link (REQ-DIGITDISPLAY-NAV-001, 2026-10-22) ──
+// Gated by the same AIOS member-token authorization as the protected tabs
+// above, but it is NOT a tab: no data-tab, no .tab-panel. These tests cover
+// the lock/unlock lifecycle and — critically — that it never interacts with
+// setPanelActive's data-tab/'tab-'+targetId matching (the exact bug the
+// '.app-nav-btn[data-tab]' selector guard in navigation.js exists to avoid).
+
+var DIGITDISPLAY_HREF = 'https://digit-display.vercel.app/admin';
+
+function buildNavWithExternalLink(doc) {
+  var nodes = buildStandardNav(doc);
+  nodes['digitdisplay'] = buildExternalAuthLink(doc, 'digitdisplay', DIGITDISPLAY_HREF);
+  return nodes;
+}
+
+test('unauthenticated: the DigitDisplay link is locked (aria-disabled + locked class), never hidden', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  assert.equal(nodes['digitdisplay'].getAttribute('aria-disabled'), 'true');
+  assert.ok(nodes['digitdisplay'].classList.contains('app-nav-btn--locked'));
+  assert.equal(nodes['digitdisplay'].hidden, false);
+}));
+
+test('authenticated: the DigitDisplay link is unlocked (accessible)', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  assert.equal(nodes['digitdisplay'].getAttribute('aria-disabled'), null);
+  assert.equal(nodes['digitdisplay'].classList.contains('app-nav-btn--locked'), false);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('authorizing mid-session unlocks the DigitDisplay link without a page refresh', withEnv(async (env) => {
+  var { navigation, authGate } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  assert.ok(nodes['digitdisplay'].classList.contains('app-nav-btn--locked'));
+
+  env.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
+    version: 1, token: 'granted-token', verifiedMemberKey: 'suman', verifiedAt: '2026-08-10T00:00:00.000Z'
+  }));
+  env.document.dispatchEvent(new CustomEvent(authGate.CALENDAR_AUTH_CHANGED_EVENT));
+
+  assert.equal(nodes['digitdisplay'].classList.contains('app-nav-btn--locked'), false);
+  assert.equal(nodes['digitdisplay'].getAttribute('aria-disabled'), null);
+}));
+
+test('logging out (removing the token) re-locks the DigitDisplay link', withEnv(async (env) => {
+  var { navigation, authGate } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  assert.equal(nodes['digitdisplay'].classList.contains('app-nav-btn--locked'), false);
+
+  env.localStorage.removeItem('management_aios_calendar_auth_v1');
+  env.document.dispatchEvent(new CustomEvent(authGate.CALENDAR_AUTH_CHANGED_EVENT));
+
+  assert.ok(nodes['digitdisplay'].classList.contains('app-nav-btn--locked'));
+  assert.equal(nodes['digitdisplay'].getAttribute('aria-disabled'), 'true');
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('unauthenticated: clicking the DigitDisplay link does not navigate and does not change the active panel', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  nodes['digitdisplay'].click();
+  await flush();
+
+  // No panel/button anywhere was blanked or switched by this click — the
+  // exact regression the [data-tab] selector guard prevents.
+  assert.equal(nodes['root-aios'].panel.classList.contains('active'), true);
+  assert.equal(nodes['root-aios'].btn.classList.contains('active'), true);
+  assert.equal(env.window.open.calls.length, 0);
+}));
+
+test('authenticated: clicking the DigitDisplay link does not change the active panel (native navigation is left to the browser)', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  nodes['file-map'].btn.click();
+  await flush();
+  assert.equal(nodes['file-map'].panel.classList.contains('active'), true);
+
+  nodes['digitdisplay'].click();
+  await flush();
+
+  assert.equal(nodes['file-map'].panel.classList.contains('active'), true);
+  assert.equal(nodes['digitdisplay'].classList.contains('active'), false);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('unauthenticated: middle-click (auxclick) on the DigitDisplay link is also intercepted', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  var prevented = false;
+  nodes['digitdisplay'].dispatchEvent({
+    type: 'auxclick',
+    target: nodes['digitdisplay'],
+    preventDefault: function () { prevented = true; }
+  });
+  await flush();
+
+  assert.equal(prevented, true);
+  assert.equal(env.window.open.calls.length, 0);
+}));
+
+test('authorizing in the background after an unauthenticated click never auto-opens DigitDisplay (popup-blocker safety) — the user must click again', withEnv(async (env) => {
+  var { navigation, authGate } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  nodes['digitdisplay'].click();
+  await flush();
+  assert.equal(env.window.open.calls.length, 0, 'the original click must not have opened anything yet');
+
+  // Simulate the "Authorize this browser" dialog completing successfully
+  // some time after the original click's user-gesture context has already
+  // expired — exactly the scenario a window.open() inside the
+  // requestAuthorization().then() callback would hit a popup blocker for.
+  env.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
+    version: 1, token: 'granted-token', verifiedMemberKey: 'suman', verifiedAt: '2026-08-10T00:00:00.000Z'
+  }));
+  env.document.dispatchEvent(new CustomEvent(authGate.CALENDAR_AUTH_CHANGED_EVENT));
+  await flush();
+
+  // No automatic popup — still zero calls. The link is simply unlocked now;
+  // reaching DigitDisplay requires a second, direct, user-gesture click.
+  assert.equal(env.window.open.calls.length, 0);
+  assert.equal(nodes['digitdisplay'].classList.contains('app-nav-btn--locked'), false);
+}));
+
+test('an unauthenticated click on the DigitDisplay link still closes the mobile drawer (existing drawer convention applies to every nav item)', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  env.document.body.classList.add('sidebar-open');
+  nodes['digitdisplay'].click();
+  await flush();
+
+  assert.equal(env.document.body.classList.contains('sidebar-open'), false);
+}));
+
+test('an authorized click on the DigitDisplay link closes the mobile drawer', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  env.document.body.classList.add('sidebar-open');
+  nodes['digitdisplay'].click();
+  await flush();
+
+  assert.equal(env.document.body.classList.contains('sidebar-open'), false);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('existing internal navigation (click-through across several tabs) still works with the DigitDisplay link present', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildNavWithExternalLink(env.document);
+  navigation.initNavigation();
+
+  nodes['file-map'].btn.click();
+  await flush();
+  assert.equal(nodes['file-map'].panel.classList.contains('active'), true);
+  assert.equal(nodes['root-aios'].panel.classList.contains('active'), false);
+
+  nodes['staff-data'].btn.click();
+  await flush();
+  assert.equal(nodes['staff-data'].panel.classList.contains('active'), true);
+  assert.equal(nodes['file-map'].panel.classList.contains('active'), false);
 }, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));

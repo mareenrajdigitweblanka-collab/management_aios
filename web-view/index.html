@@ -322,6 +322,31 @@
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Knowledge Management</span></span>
         </button>
       </div>
+      <!-- DigitDisplay — external admin panel, opens in a separate browser
+           tab using its OWN independent login (REQ-DIGITDISPLAY-NAV-001,
+           2026-10-22). Deliberately an <a>, not a data-tab button: it has
+           no .tab-panel, so it is excluded from navigation.js's
+           '.app-nav-btn[data-tab]' selector and never participates in
+           tab-switching. Lock state (aria-disabled / app-nav-btn--locked)
+           is applied by navigation.js on load and on every auth change —
+           not hardcoded here — matching the existing protected-tab
+           convention. This frontend gate is a convenience layer only;
+           DigitDisplay enforces its own server-side login independently
+           of anything here. -->
+      <div class="app-sidebar-group">
+        <div class="app-sidebar-title">External</div>
+        <a class="app-nav-btn" href="https://digit-display.vercel.app/admin" target="_blank"
+          rel="noopener noreferrer" data-external-auth-link="digitdisplay" title="DigitDisplay (opens in a new tab)">
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4.5" width="10.5" height="8" rx="1.4" />
+              <path d="M12 3.3h4.2v4.2M16.2 3.3l-5.4 5.4" />
+            </svg>
+          </span>
+          <span class="app-nav-btn-text"><span class="app-nav-btn-label">DigitDisplay</span></span>
+        </a>
+      </div>
     </nav>
   <main class="tab-main">
 
