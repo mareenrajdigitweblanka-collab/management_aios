@@ -34,6 +34,14 @@ function matchesSelector(el, selector) {
   if (withAttr) {
     return el.classList.contains(withAttr[1]) && el.getAttribute(withAttr[2]) === withAttr[3];
   }
+  /* Class + bare attribute presence (no "=value"), e.g. the
+     '.app-nav-btn[data-tab]' selector navigation.js uses (2026-10-22,
+     DigitDisplay [data-tab] guard) — distinct from withAttr above, which
+     requires an exact attribute value. */
+  var classWithBareAttr = /^\.([\w-]+)\[([\w-]+)\]$/.exec(selector);
+  if (classWithBareAttr) {
+    return el.classList.contains(classWithBareAttr[1]) && el.getAttribute(classWithBareAttr[2]) !== null;
+  }
   var plainClass = /^\.([\w-]+)$/.exec(selector);
   if (plainClass) { return el.classList.contains(plainClass[1]); }
   var bareAttr = /^\[([\w-]+)\]$/.exec(selector);
@@ -229,8 +237,18 @@ export function installFakeBrowserGlobals(opts) {
     localStorage: fakeLocalStorage,
     location: { hostname: 'localhost' },
     scrollTo: function () {},
-    requestAnimationFrame: function (cb) { cb(); }
+    requestAnimationFrame: function (cb) { cb(); },
+    /* Spy stub (2026-10-22, DigitDisplay external-link grant flow) — the
+       real window.open(href, '_blank', 'noopener,noreferrer') call
+       navigation.js makes once an unauthenticated click on the
+       DigitDisplay link resolves to a granted authorization. Records
+       every call's args so a test can assert whether/what it opened,
+       without actually opening anything. */
+    open: function (url, target, features) {
+      fakeWindow.open.calls.push([url, target, features]);
+    }
   };
+  fakeWindow.open.calls = [];
   globalThis.document = fakeDocument;
   globalThis.window = fakeWindow;
   if (opts.fetchImpl) { globalThis.fetch = opts.fetchImpl; }
@@ -265,4 +283,19 @@ export function buildNavButtonAndPanel(doc, tabId, active) {
   doc.body.appendChild(panel);
 
   return { btn: btn, panel: panel };
+}
+
+/* Builds one external-auth-gated nav link — the DigitDisplay pattern
+   (web-view/index.html): an <a class="app-nav-btn" href=... target="_blank"
+   rel="noopener noreferrer" data-external-auth-link="..."> with NO
+   data-tab and NO matching .tab-panel, exactly like the real markup. */
+export function buildExternalAuthLink(doc, linkId, href) {
+  var link = doc.createElement('a');
+  link.className = 'app-nav-btn';
+  link.setAttribute('href', href);
+  link.setAttribute('target', '_blank');
+  link.setAttribute('rel', 'noopener noreferrer');
+  link.setAttribute('data-external-auth-link', linkId);
+  doc.body.appendChild(link);
+  return link;
 }

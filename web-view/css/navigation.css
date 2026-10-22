@@ -187,6 +187,18 @@
       /* Light text for the dark sidebar (matches .topbar's #e2e8f0 —
          base.css) — dark-sidebar task, 2026-07-20. */
       color: #e2e8f0;
+      /* Every existing nav item is a <button> (never underlined by the
+         browser's own UA stylesheet); the DigitDisplay link
+         (REQ-DIGITDISPLAY-NAV-001) is the first <a class="app-nav-btn">,
+         which IS underlined by default. One class-level rule here covers
+         normal/hover/focus/visited alike — none of those states re-adds
+         text-decoration via any other rule in this file, and this
+         selector's specificity already beats the UA stylesheet's bare
+         `a` rule — so no separate :hover/:focus/:visited override is
+         needed. The visible keyboard-focus indicator stays the existing
+         box-shadow on .app-nav-btn:focus-visible below, unaffected by
+         this. */
+      text-decoration: none;
       font-size: var(--font-base);
       font-weight: 600;
       /* 6px top/bottom + 32px icon box = 44px row height, inside the
