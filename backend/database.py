@@ -10,7 +10,13 @@ without a live database.
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from backend.config import DATABASE_URL
+from backend.config import (
+    DATABASE_MAX_OVERFLOW,
+    DATABASE_POOL_RECYCLE,
+    DATABASE_POOL_SIZE,
+    DATABASE_POOL_TIMEOUT,
+    DATABASE_URL,
+)
 
 Base = declarative_base()
 
@@ -27,7 +33,14 @@ def get_engine():
                 "Copy .env.example to .env and provide a real connection string "
                 "before running the API against a database."
             )
-        _engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+        _engine = create_engine(
+            DATABASE_URL,
+            pool_pre_ping=True,
+            pool_size=DATABASE_POOL_SIZE,
+            max_overflow=DATABASE_MAX_OVERFLOW,
+            pool_timeout=DATABASE_POOL_TIMEOUT,
+            pool_recycle=DATABASE_POOL_RECYCLE,
+        )
     return _engine
 
 

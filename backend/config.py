@@ -31,6 +31,26 @@ def _normalize_database_url(raw_url):
 
 DATABASE_URL = _normalize_database_url(os.environ.get("DATABASE_URL"))
 
+def _read_integer_setting(name, default, minimum, environ=None):
+    """Read and validate one non-secret integer setting from the environment."""
+    source = os.environ if environ is None else environ
+    raw = source.get(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        value = int(raw.strip())
+    except ValueError as exc:
+        raise RuntimeError(name + " must be an integer.") from exc
+    if value < minimum:
+        raise RuntimeError(name + " must be at least " + str(minimum) + ".")
+    return value
+
+
+DATABASE_POOL_SIZE = _read_integer_setting("DATABASE_POOL_SIZE", 2, 1)
+DATABASE_MAX_OVERFLOW = _read_integer_setting("DATABASE_MAX_OVERFLOW", 0, 0)
+DATABASE_POOL_TIMEOUT = _read_integer_setting("DATABASE_POOL_TIMEOUT", 10, 1)
+DATABASE_POOL_RECYCLE = _read_integer_setting("DATABASE_POOL_RECYCLE", 1800, 0)
+
 # Read-only connection to the Ledsone operational Postgres (the `ledsone`
 # database on the VPS, `tech_user` role — SELECT-only across all schemas
 # including employee_management, sslmode=require). Added 2026-08-11 for
