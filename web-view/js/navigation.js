@@ -60,6 +60,9 @@ export function initNavigation() {
        behind the newly shown panel (professional-calendar-toolbar-
        redesign task, 2026-07-23, Step 12). */
     document.dispatchEvent(new CustomEvent('msc:close-toolbar-popovers'));
+    document.dispatchEvent(new CustomEvent('aios:panel-activated', {
+      detail: { targetId: targetId }
+    }));
   }
 
   /* A protected target requested while unauthenticated never activates —
@@ -193,6 +196,20 @@ export function initNavigation() {
       window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     });
   });
+
+  /* Data-bearing modules use the existing activation path. Announce the panel
+     already active in the document as well, so restored markup is handled
+     without eagerly mounting every tab. */
+  var activePanel = null;
+  tabPanels.forEach(function (panel) {
+    if (!activePanel && panel.classList.contains('active')) { activePanel = panel; }
+  });
+  if (activePanel) {
+    var activeTargetId = activePanel.id.replace(/^tab-/, '');
+    document.dispatchEvent(new CustomEvent('aios:panel-activated', {
+      detail: { targetId: activeTargetId }
+    }));
+  }
 
   /* ── Responsive sidebar drawer (<1024px) ──
      Desktop keeps the sidebar as a static column (no toggle shown, see

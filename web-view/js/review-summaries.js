@@ -1259,6 +1259,8 @@ export function mountReviewSummariesWorkspace(mountEl) {
   var attachmentsStorageModeNoteEl = el('p', 'review-summaries-attachments-storage-mode-note');
   attachmentsStorageModeNoteEl.hidden = true;
   var storageModeChecked = false;
+  var storageModeRequestId = 0;
+  var storageModeRequestInFlight = false;
 
   /* 2026-09-25: shows the TRUE active state instead of only ever warning.
        local_prototype -> the warning (metadata still on this computer's SQLite file);
@@ -1289,12 +1291,19 @@ export function mountReviewSummariesWorkspace(mountEl) {
   }
 
   function ensureAttachmentStorageModeLoaded() {
-    if (storageModeChecked || currentAccess() === 'unauthorized') { return; }
+    if (storageModeChecked || storageModeRequestInFlight || currentAccess() === 'unauthorized') { return; }
     storageModeChecked = true;
+    storageModeRequestInFlight = true;
+    var requestId = ++storageModeRequestId;
     guardedRequest('/attachments/storage-mode').then(function (body) {
+      if (requestId !== storageModeRequestId || currentAccess() === 'unauthorized') { return; }
       applyAttachmentStorageMode(body && body.mode);
     }).catch(function () {
-      storageModeChecked = false; // allow a retry on the next panel show
+      if (requestId === storageModeRequestId) {
+        storageModeChecked = false; // allow a retry on the next panel show
+      }
+    }).then(function () {
+      if (requestId === storageModeRequestId) { storageModeRequestInFlight = false; }
     });
   }
 
@@ -2540,11 +2549,19 @@ export function mountReviewSummariesWorkspace(mountEl) {
      genuine identity change, not preserve the previous employee selection
      for later. */
   function reactToAuthChange() {
+    storageModeRequestId += 1;
+    storageModeChecked = false;
+    storageModeRequestInFlight = false;
+    applyAttachmentStorageMode(null);
     invalidateStaffDirectory();
     resetWorkspaceState();
     updateAuthorizedAsLabel();
     var mode = renderAccessGate();
-    if (mode !== 'unauthorized') { renderHistory(); ensureAttachmentStorageModeLoaded(); }
+    if (mode !== 'unauthorized') {
+      renderHistory();
+      var activePanel = document.getElementById('tab-review-summaries');
+      if (activePanel && activePanel.classList.contains('active')) { ensureAttachmentStorageModeLoaded(); }
+    }
   }
 
   /* navigation.js's 'msc:close-toolbar-popovers' fires on every panel
@@ -2564,6 +2581,11 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
   document.addEventListener('msc:close-toolbar-popovers', onLeaveOrPanelSwitch);
   document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, reactToAuthChange);
+  document.addEventListener('aios:panel-activated', function (event) {
+    if (event && event.detail && event.detail.targetId === 'review-summaries') {
+      ensureAttachmentStorageModeLoaded();
+    }
+  });
 
   mountEl.appendChild(headerEl);
   mountEl.appendChild(staffPanel);
@@ -2572,7 +2594,10 @@ export function mountReviewSummariesWorkspace(mountEl) {
 
   renderAccessGate();
   renderHistory();
-  ensureAttachmentStorageModeLoaded();
+  var activePanelAtMount = document.getElementById('tab-review-summaries');
+  if (activePanelAtMount && activePanelAtMount.classList.contains('active')) {
+    ensureAttachmentStorageModeLoaded();
+  }
 
   return {
     selectStaff: selectStaff,

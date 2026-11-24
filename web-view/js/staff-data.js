@@ -157,6 +157,21 @@ function uniqueValues(rows, field) {
    staff list — the export is additive; every existing use within this
    file is unaffected. */
 export var STAFF_API_BASE = _resolveApiBase('staff');
+/* Filter options are identical for mounts using the same current token. Keep
+   this short-lived, in-memory cache scoped to that token; never share staff
+   rows, which may reflect different filters or views. */
+var staffFilterOptionsByToken = new Map();
+function loadStaffFilterOptions(token) {
+  if (staffFilterOptionsByToken.has(token)) { return staffFilterOptionsByToken.get(token); }
+  var request = staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (options) {
+    return options;
+  }).catch(function (err) {
+    if (staffFilterOptionsByToken.get(token) === request) { staffFilterOptionsByToken.delete(token); }
+    throw err;
+  });
+  staffFilterOptionsByToken.set(token, request);
+  return request;
+}
 
 /* GET /api/staff* now requires the existing Calendar member token
    (REQ-AUTH-MODULES-007, 2026-08-10) — the Authorization header is added
@@ -613,6 +628,9 @@ function mountStaffTableView(containerEl, viewLabel) {
       state.baseFilters = baseEffectiveFilters || {};
       state.page = 0;
       doFetch();
+    },
+    dispose: function () {
+      if (state.abortController) { state.abortController.abort(); }
     }
   };
 }
@@ -810,48 +828,77 @@ function setStaffDataAuthGateVisibility(hostEl, contentEls, authed) {
 // something that fakes a distinction the data no longer carries. ──
 function initStaffDataTab() {
   var panel = document.getElementById('tab-staff-data');
-  if (!panel) return;
+  if (!panel) { return; }
   var filterBarEl = document.getElementById('staff-data-filter-bar');
   var subpanel = panel.querySelector('.staff-subpanel');
-  if (!subpanel) return;
+  if (!subpanel) { return; }
 
-  /* Re-run on mount and on every authentication transition
-     (CALENDAR_AUTH_CHANGED_EVENT, via onAuthChange). While unauthenticated
-     this renders ONLY the shared placeholder — no mountStaffTableView()
-     call, no filter bar, and critically no staffApiRequest() call at all
-     (not even for filter-options), so no Staff Data request of any kind
-     ever leaves the browser without a stored token. */
+  var active = panel.classList.contains('active');
+  var initialized = false;
+  var optionsPending = false;
+  var generation = 0;
+  var controller = null;
+
   function mountData() {
     var authed = isAuthenticated();
     setStaffDataAuthGateVisibility(panel, [filterBarEl, subpanel], authed);
-    if (!authed) { return; }
+    if (!authed || !active || initialized) { return; }
 
-    var controller = mountStaffTableView(subpanel.querySelector('.staff-table-container'), 'all-staff');
+    initialized = true;
+    optionsPending = true;
+    var thisGeneration = ++generation;
+    var token = getStoredToken();
+    controller = mountStaffTableView(subpanel.querySelector('.staff-table-container'), 'all-staff');
 
+    function isCurrent() {
+      return thisGeneration === generation && active && isAuthenticated() && getStoredToken() === token;
+    }
     function load(userFilters) {
-      controller.load(mergeStaffFilters(null, userFilters));
+      if (isCurrent()) { controller.load(mergeStaffFilters(null, userFilters)); }
+    }
+    function buildFilterBar(options) {
+      if (!isCurrent()) { return; }
+      optionsPending = false;
+      var filterApi = createStaffFilterBar(filterBarEl, options.team_ids || [], load, { instanceId: 'staff-data' });
+      load(filterApi.getFilters());
     }
 
-    // Team ID dropdown options come from the live API (distinct team_id
-    // values currently in the table — Ledsone's raw integer, no
-    // human-readable name available), not a hardcoded or client-side list.
-    staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
-      var filterApi = createStaffFilterBar(filterBarEl, opts.team_ids || [], load, { instanceId: 'staff-data' });
-      load(filterApi.getFilters());
-    }).catch(function () {
-      // Filter-options fetch failed (e.g. backend not running) — still
-      // let the table controller show its own error+Retry state, and
-      // fall back to an empty (unlocked, no options) filter bar rather
-      // than leaving the page half-built.
-      var filterApi = createStaffFilterBar(filterBarEl, [], load, { instanceId: 'staff-data' });
-      load(filterApi.getFilters());
+    loadStaffFilterOptions(token).then(buildFilterBar).catch(function () {
+      /* Preserve the existing empty-options fallback and table Retry state. */
+      buildFilterBar({ team_ids: [] });
     });
   }
 
-  mountData();
-  onAuthChange(mountData);
-}
+  function handlePanelActivation(event) {
+    var targetId = event && event.detail && event.detail.targetId;
+    active = targetId === 'staff-data';
+    if (active) {
+      mountData();
+    } else if (optionsPending) {
+      generation += 1;
+      optionsPending = false;
+      initialized = false;
+      if (controller && controller.dispose) { controller.dispose(); }
+      controller = null;
+    }
+  }
+  function handleAuthChange() {
+    generation += 1;
+    optionsPending = false;
+    initialized = false;
+    if (controller && controller.dispose) { controller.dispose(); }
+    controller = null;
+    var authed = isAuthenticated();
+    /* Hide old-scope rows first; an active panel is rebuilt synchronously below. */
+    setStaffDataAuthGateVisibility(panel, [filterBarEl, subpanel], false);
+    if (active && authed) { mountData(); }
+  }
 
+  document.addEventListener('aios:panel-activated', handlePanelActivation);
+  onAuthChange(handleAuthChange);
+  setStaffDataAuthGateVisibility(panel, [filterBarEl, subpanel], isAuthenticated());
+  if (active) { mountData(); }
+}
 // ── Team-scoped staff + KPI pilot section — used identically by the
 // Arun PH view and the Paraparan tab. One function, two call sites,
 // no parallel implementations.
@@ -867,46 +914,88 @@ function initStaffDataTab() {
 // see member-aios/staff-data/README.md §0. The KPI panel below is
 // unaffected (synthetic, in-memory, keyed by its own team_code — never
 // touches the Staff API). ──
-function initTeamScopedStaffPilot(mountEl) {
-  if (!mountEl) return;
+function initTeamScopedStaffPilot(mountEl, panelId) {
+  if (!mountEl) { return; }
   var teamCode = mountEl.getAttribute('data-team-code') || 'PH';
   var mountId = mountEl.id || teamCode;
   var filterBarEl = mountEl.querySelector('.staff-filter-bar');
   var tableEl = mountEl.querySelector('.staff-table-container');
   var kpiMountEl = mountEl.querySelector('.kpi-pilot-mount');
 
-  /* renderKpiPanel is synthetic, in-memory, non-Staff-API data (see its
-     own comment above) — unaffected by REQ-AUTH-MODULES-007 and rendered
-     unconditionally, exactly as before; only the live staff table+filter
-     bar below is gated. */
+  /* Synthetic KPI content remains mounted as before; only Staff API reads
+     are deferred until this containing member panel is explicitly active. */
   renderKpiPanel(kpiMountEl, teamCode);
+
+  var active = panelId !== 'paraparan' && !!(document.getElementById('tab-' + panelId) && document.getElementById('tab-' + panelId).classList.contains('active'));
+  var initialized = false;
+  var optionsPending = false;
+  var generation = 0;
+  var controller = null;
 
   function mountData() {
     var authed = isAuthenticated();
     setStaffDataAuthGateVisibility(mountEl, [filterBarEl, tableEl], authed);
-    if (!authed) { return; }
+    if (!authed || !active || initialized) { return; }
 
-    var controller = mountStaffTableView(tableEl, mountId);
-
-    function loadTable(userFilters) {
-      controller.load(mergeStaffFilters(null, userFilters));
+    initialized = true;
+    optionsPending = true;
+    var thisGeneration = ++generation;
+    var token = getStoredToken();
+    controller = mountStaffTableView(tableEl, mountId);
+    function isCurrent() {
+      return thisGeneration === generation && active && isAuthenticated() && getStoredToken() === token;
     }
-
-    staffApiRequest(STAFF_API_BASE + '/filter-options').then(function (opts) {
-      var filterApi = createStaffFilterBar(filterBarEl, opts.team_ids || [], loadTable, { instanceId: mountId });
+    function loadTable(userFilters) {
+      if (isCurrent()) { controller.load(mergeStaffFilters(null, userFilters)); }
+    }
+    function buildFilterBar(options) {
+      if (!isCurrent()) { return; }
+      optionsPending = false;
+      var filterApi = createStaffFilterBar(filterBarEl, options.team_ids || [], loadTable, { instanceId: mountId });
       loadTable(filterApi.getFilters());
-    }).catch(function () {
-      var filterApi = createStaffFilterBar(filterBarEl, [], loadTable, { instanceId: mountId });
-      loadTable(filterApi.getFilters());
+    }
+    loadStaffFilterOptions(token).then(buildFilterBar).catch(function () {
+      buildFilterBar({ team_ids: [] });
     });
   }
 
-  mountData();
-  onAuthChange(mountData);
-}
+  function handlePanelActivation(event) {
+    var targetId = event && event.detail && event.detail.targetId;
+    active = targetId === panelId;
+    if (active) {
+      mountData();
+    } else if (optionsPending) {
+      generation += 1;
+      optionsPending = false;
+      initialized = false;
+      if (controller && controller.dispose) { controller.dispose(); }
+      controller = null;
+    }
+  }
+  function handleAuthChange() {
+    generation += 1;
+    optionsPending = false;
+    initialized = false;
+    if (controller && controller.dispose) { controller.dispose(); }
+    controller = null;
+    var authed = isAuthenticated();
+    /* Hide old-scope rows first; an active panel is rebuilt synchronously below. */
+    setStaffDataAuthGateVisibility(mountEl, [filterBarEl, tableEl], false);
+    if (active && authed) { mountData(); }
+  }
 
+  document.addEventListener('aios:panel-activated', handlePanelActivation);
+  onAuthChange(handleAuthChange);
+  setStaffDataAuthGateVisibility(mountEl, [filterBarEl, tableEl], isAuthenticated());
+  if (active) { mountData(); }
+}
+var staffDataPilotInitialized = false;
 export function initStaffDataPilot() {
+  if (staffDataPilotInitialized) { return; }
+  staffDataPilotInitialized = true;
+  /* Clear shared filter metadata whenever the authenticated scope changes. */
+  onAuthChange(function () { staffFilterOptionsByToken.clear(); });
   initStaffDataTab();
-  initTeamScopedStaffPilot(document.getElementById('arun-staff-pilot'));
-  initTeamScopedStaffPilot(document.getElementById('paraparan-staff-pilot'));
+  initTeamScopedStaffPilot(document.getElementById('arun-staff-pilot'), 'arun-implementation');
+  initTeamScopedStaffPilot(document.getElementById('paraparan-staff-pilot'), 'paraparan');
 }

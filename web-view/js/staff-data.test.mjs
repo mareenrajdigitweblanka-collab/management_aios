@@ -58,6 +58,10 @@ function flush() {
   return new Promise(function (resolve) { setTimeout(resolve, 0); });
 }
 
+function activatePanel(env, targetId) {
+  env.document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: targetId } });
+}
+
 function withEnv(testFn, envOpts) {
   return async function (t) {
     var env = installFakeBrowserGlobals(envOpts || {});
@@ -157,6 +161,9 @@ test('authenticated: initStaffDataPilot fetches filter-options and clears the pl
 
   mod.initStaffDataPilot();
   await flush();
+  assert.equal(calls.length, 0, 'startup does not fetch an inactive Staff Data panel');
+  activatePanel(env, 'staff-data');
+  await flush();
   await flush();
 
   assert.ok(calls.some(function (u) { return u.indexOf('/api/staff/filter-options') !== -1; }));
@@ -165,12 +172,114 @@ test('authenticated: initStaffDataPilot fetches filter-options and clears the pl
   assert.equal(filterBar.hidden, false);
 }, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
 
+test('a restored active Staff Data panel initializes after authorization is already valid', withEnv(async (env) => {
+  var mod = await loadStaffDataModule();
+  var panel = buildStaffDataTabDom(env.document);
+  panel.classList.add('active');
+  var calls = [];
+  globalThis.fetch = function (url) {
+    calls.push(String(url));
+    if (String(url).indexOf('/filter-options') !== -1) { return jsonResponse(200, { team_ids: [] }); }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0, filters: {} });
+  };
+  mod.initStaffDataPilot();
+  await flush();
+  await flush();
+  assert.ok(calls.some(function (url) { return url.indexOf('/filter-options') !== -1; }));
+  assert.ok(calls.some(function (url) { return /\/api\/staff\?/.test(url); }));
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('rapid Staff Data navigation ignores stale filter results and starts only one records request', withEnv(async (env) => {
+  var mod = await loadStaffDataModule();
+  buildStaffDataTabDom(env.document);
+  var resolveOptions;
+  var calls = [];
+  globalThis.fetch = function (url) {
+    calls.push(String(url));
+    if (String(url).indexOf('/filter-options') !== -1) {
+      return new Promise(function (resolve) { resolveOptions = resolve; });
+    }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0, filters: {} });
+  };
+  mod.initStaffDataPilot();
+  activatePanel(env, 'staff-data');
+  activatePanel(env, 'file-map');
+  activatePanel(env, 'staff-data');
+  resolveOptions({ ok: true, status: 200, json: function () { return Promise.resolve({ team_ids: [] }); } });
+  await flush();
+  await flush();
+  assert.equal(calls.filter(function (url) { return url.indexOf('/filter-options') !== -1; }).length, 1);
+  assert.equal(calls.filter(function (url) { return /\/api\/staff\?/.test(url); }).length, 1);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+test('repeated Staff Data navigation shares filter options and performs only one initial records request', withEnv(async (env) => {
+  var mod = await loadStaffDataModule();
+  buildStaffDataTabDom(env.document);
+  var calls = [];
+  globalThis.fetch = function (url) {
+    calls.push(String(url));
+    if (String(url).indexOf('/filter-options') !== -1) { return jsonResponse(200, { team_ids: [4] }); }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0, filters: {} });
+  };
+  mod.initStaffDataPilot();
+  activatePanel(env, 'staff-data');
+  activatePanel(env, 'file-map');
+  activatePanel(env, 'staff-data');
+  activatePanel(env, 'staff-data');
+  await flush();
+  await flush();
+  assert.equal(calls.filter(function (url) { return url.indexOf('/filter-options') !== -1; }).length, 1);
+  assert.equal(calls.filter(function (url) { return /\/api\/staff\?/.test(url); }).length, 1);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('a failed staff records load retains the existing Retry action', withEnv(async (env) => {
+  var mod = await loadStaffDataModule();
+  buildStaffDataTabDom(env.document);
+  var recordCalls = 0;
+  globalThis.fetch = function (url) {
+    if (String(url).indexOf('/filter-options') !== -1) { return jsonResponse(200, { team_ids: [] }); }
+    recordCalls += 1;
+    return recordCalls === 1
+      ? jsonResponse(503, { detail: 'temporary failure' })
+      : jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0, filters: {} });
+  };
+  mod.initStaffDataPilot();
+  activatePanel(env, 'staff-data');
+  await flush();
+  await flush();
+  var retry = env.document.querySelector('.staff-table-retry-btn');
+  assert.ok(retry, 'the existing Retry button is shown after failure');
+  retry.click();
+  await flush();
+  assert.equal(recordCalls, 2);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('authorization changes invalidate the filter-options cache and issue requests only with the new scope', withEnv(async (env) => {
+  var mod = await loadStaffDataModule();
+  buildStaffDataTabDom(env.document);
+  var authHeaders = [];
+  globalThis.fetch = function (url, options) {
+    authHeaders.push(options && options.headers && options.headers.Authorization);
+    if (String(url).indexOf('/filter-options') !== -1) { return jsonResponse(200, { team_ids: [] }); }
+    return jsonResponse(200, { records: [], total: 0, limit: 50, offset: 0, filters: {} });
+  };
+  mod.initStaffDataPilot();
+  activatePanel(env, 'staff-data');
+  await flush();
+  await flush();
+  env.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({ version: 1, token: 'replacement-token', verifiedMemberKey: 'arun' }));
+  env.document.dispatchEvent({ type: 'management-aios:calendar-auth-changed', detail: { memberKey: 'arun' } });
+  await flush();
+  await flush();
+  assert.ok(authHeaders.includes('Bearer test-token'));
+  assert.ok(authHeaders.includes('Bearer replacement-token'));
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
 test('a 401 from the Staff API clears the stored token (handleUnauthorizedResponse)', withEnv(async (env) => {
   var mod = await loadStaffDataModule();
   buildStaffDataTabDom(env.document);
   globalThis.fetch = function () { return jsonResponse(401, { detail: 'Invalid token.' }); };
 
   mod.initStaffDataPilot();
+  activatePanel(env, 'staff-data');
   await flush();
   await flush();
 
@@ -204,6 +313,10 @@ test('authenticated: the embedded PH Staff Data pilot (Paraparan tab) fetches an
   };
 
   mod.initStaffDataPilot();
+  await flush();
+  assert.equal(calls.length, 0, 'hidden Paraparan does not fetch at startup');
+  activatePanel(env, 'paraparan');
+  await flush();
   await flush();
 
   assert.ok(calls.some(function (u) { return u.indexOf('/api/staff?') !== -1; }));
@@ -344,6 +457,7 @@ test('primary table renders staff_code/name/designation/roster/staff_type/staff_
   };
 
   mod.initStaffDataPilot();
+  activatePanel(env, 'staff-data');
   await flush();
   await flush();
 
@@ -382,6 +496,7 @@ test('primary table renders Deleted for a soft-deleted (delete_status: true) row
   };
 
   mod.initStaffDataPilot();
+  activatePanel(env, 'staff-data');
   await flush();
   await flush();
 

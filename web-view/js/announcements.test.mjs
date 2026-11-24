@@ -156,11 +156,31 @@ function makeWorkspaceFixtureApi(overrides) {
   return Object.assign(base, overrides || {});
 }
 
+test('announcement workspace requests are deferred until its panel is activated and initialize once', withEnv(async () => {
+  var calls = { published: 0, drafts: 0, notifications: 0 };
+  var mod = await loadAnnModule();
+  var mountEl = document.createElement('div');
+  var api = makeWorkspaceFixtureApi({
+    listPublished: function () { calls.published += 1; return Promise.resolve({ records: [], total: 0 }); },
+    listDrafts: function () { calls.drafts += 1; return Promise.resolve({ records: [], total: 0 }); },
+    notifications: function () { calls.notifications += 1; return Promise.resolve({ items: [], unread_count: 0 }); }
+  });
+  var handle = mod.mountAnnouncementsWorkspace(mountEl, { api: api });
+  await flush();
+  assert.deepEqual(calls, { published: 0, drafts: 0, notifications: 0 });
+  document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'announcements' } });
+  document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'announcements' } });
+  await flush();
+  assert.deepEqual(calls, { published: 1, drafts: 1, notifications: 1 });
+  handle.stop();
+}));
+
 function mountWorkspaceWithFixture(apiOverrides) {
   return loadAnnModule().then(function (mod) {
     var mountEl = document.createElement('div');
     var api = makeWorkspaceFixtureApi(apiOverrides);
     var handle = mod.mountAnnouncementsWorkspace(mountEl, { api: api });
+    document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'announcements' } });
     return flush().then(function () { return { mod: mod, mountEl: mountEl, api: api, handle: handle }; });
   });
 }
@@ -574,6 +594,24 @@ test('Bell click refreshes the unread count and invokes onOpenHistory (primary d
 
   assert.ok(feedCalls >= 2, 'clicking the bell refreshes the unread count');
   assert.equal(openHistoryCalls, 1);
+}));
+
+test('overlapping bell refresh triggers share one request and a stopped response cannot restore stale badge state', withEnv(async () => {
+  var resolveFeed;
+  var feedCalls = 0;
+  var mod = await loadAnnModule();
+  var rootEl = document.createElement('div');
+  var handle = mod.mountAnnouncementBell(rootEl, {
+    api: makeBellFixtureApi({ feed: function () { feedCalls += 1; return new Promise(function (resolve) { resolveFeed = resolve; }); } })
+  });
+  var first = handle.refresh();
+  var second = handle.refresh();
+  await flush();
+  assert.equal(feedCalls, 1, 'initial, visibility and explicit refreshes should deduplicate while pending');
+  handle.stop();
+  resolveFeed({ unread_count: 7, items: [] });
+  await Promise.all([first, second]);
+  assert.equal(rootEl.querySelector('.msc-ann-bell-badge').hidden, true, 'a response from an old authorization lifecycle must not repopulate the badge');
 }));
 
 test('Becoming visible again triggers an immediate refresh instead of waiting for the next poll tick', withEnv(async () => {
@@ -1154,6 +1192,7 @@ test('Clicking an unread notification marks only that one item read and shows th
   });
   var mountEl = document.createElement('div');
   mod.mountAnnouncementsWorkspace(mountEl, { api: api, onChanged: function () { onChangedCalls += 1; } });
+  document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'announcements' } });
   await flush();
 
   var notificationsTab = mountEl.querySelector('#msc-ann-view-tab-notifications');
@@ -1184,6 +1223,7 @@ test('Clicking an already-read notification is idempotent — it does not call m
   });
   var mountEl = document.createElement('div');
   mod.mountAnnouncementsWorkspace(mountEl, { api: api });
+  document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'announcements' } });
   await flush();
 
   var notificationsTab = mountEl.querySelector('#msc-ann-view-tab-notifications');
@@ -1215,6 +1255,7 @@ test('Marking one notification read preserves other items\' read/unread state', 
   });
   var mountEl = document.createElement('div');
   mod.mountAnnouncementsWorkspace(mountEl, { api: api });
+  document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'announcements' } });
   await flush();
 
   var notificationsTab = mountEl.querySelector('#msc-ann-view-tab-notifications');

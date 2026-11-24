@@ -98,6 +98,19 @@ test('authenticated: every protected nav item is unlocked (accessible)', withEnv
   });
 }, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
 
+test('navigation announces the restored active panel and each authorized panel activation', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  var nodes = buildStandardNav(env.document);
+  var activations = [];
+  env.document.addEventListener('aios:panel-activated', function (event) {
+    activations.push(event.detail.targetId);
+  });
+
+  navigation.initNavigation();
+  assert.equal(activations[0], 'root-aios');
+  nodes['staff-data'].btn.click();
+  assert.deepEqual(activations, ['root-aios', 'staff-data']);
+}, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
 // ── Direct tab activation (Phase 13 items 7-9, 12) ──────────────────────
 
 PROTECTED.forEach(function (id) {

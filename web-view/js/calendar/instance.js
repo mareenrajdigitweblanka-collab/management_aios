@@ -7,6 +7,7 @@
    The former inline DOMContentLoaded bootstrap now lives in app.js. */
 
 import { MEMBER_SCHEDULE_API_BASE, MEMBER_LEAVE_API_BASE } from '../config.js';
+import { createPanelLazyInitializer } from '../panel-lazy-init.js';
 import {
   CATEGORY_CLASS
 , LEAVE_TYPE_DISPLAY_LABEL
@@ -6755,16 +6756,21 @@ function mountScheduleCalendarInstance(container) {
   });
 }
 
+var scheduleCalendarInitializer = null;
+
 export function initAllScheduleCalendars() {
-  var containers = document.querySelectorAll('.msc-instance');
-  containers.forEach(function (container) {
-    try {
-      mountScheduleCalendarInstance(container);
-    } catch (err) {
-      if (window.console && window.console.error) {
-        window.console.error('Schedule calendar failed to initialize for member "' +
-          container.getAttribute('data-member-key') + '":', err);
+  if (!scheduleCalendarInitializer) {
+    scheduleCalendarInitializer = createPanelLazyInitializer(document, {
+      selector: '.msc-instance',
+      initialize: mountScheduleCalendarInstance,
+      onError: function (container, err) {
+        if (window.console && window.console.error) {
+          window.console.error('Schedule calendar failed to initialize for member "' +
+            container.getAttribute('data-member-key') + '":', err);
+        }
       }
-    }
-  });
+    });
+  }
+  /* Navigation announces activation before this listener is installed. */
+  scheduleCalendarInitializer.initActivePanel();
 }

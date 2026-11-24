@@ -3565,6 +3565,7 @@ async function mountWithStorageMode(t, mode) {
   var mod = await freshReviewSummariesModule();
   var mountEl = globals.document.createElement('div');
   var api = mod.mountReviewSummariesWorkspace(mountEl);
+  globals.document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'review-summaries' } });
   await new Promise(function (resolve) { setTimeout(resolve, 0); });
   return {
     mod: mod, mountEl: mountEl, api: api, fetchMock: fetchMock, globals: globals,
@@ -3572,10 +3573,36 @@ async function mountWithStorageMode(t, mode) {
   };
 }
 
-test('the storage state is loaded when the workspace mounts — no click on "Add files" is needed', async (t) => {
+test('Review Summaries startup defers storage mode until the panel is activated', async (t) => {
+  var fetchMock = storageModeHandler('postgres');
+  var globals = installFakeBrowserGlobals({ storedAuth: AUTHORIZED, fetchImpl: fetchMock });
+  t.after(globals.restore);
+  var mod = await freshReviewSummariesModule();
+  var mountEl = globals.document.createElement('div');
+  mod.mountReviewSummariesWorkspace(mountEl);
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(fetchMock.calls.some(function (c) { return String(c.url).indexOf('/attachments/storage-mode') !== -1; }), false);
+  globals.document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'review-summaries' } });
+  globals.document.dispatchEvent({ type: 'aios:panel-activated', detail: { targetId: 'review-summaries' } });
+  await new Promise(function (resolve) { setTimeout(resolve, 0); });
+  assert.equal(fetchMock.calls.filter(function (c) { return String(c.url).indexOf('/attachments/storage-mode') !== -1; }).length, 1);
+});
+
+test('opening Review Summaries loads storage state without requiring an attachment click', async (t) => {
   var ctx = await mountWithStorageMode(t, 'local_prototype');
   assert.ok(ctx.fetchMock.calls.some(function (c) { return String(c.url).indexOf('/attachments/storage-mode') !== -1; }));
   assert.equal(ctx.noteEl.hidden, false);
+});
+
+test('authorization changes clear the previously displayed attachment storage mode', async (t) => {
+  var ctx = await mountWithStorageMode(t, 'postgres');
+  assert.equal(ctx.noteEl.hidden, false);
+  ctx.globals.localStorage.setItem('management_aios_calendar_auth_v1', JSON.stringify({
+    token: 'replacement-token', memberKey: 'arun'
+  }));
+  ctx.api.reactToAuthChange();
+  assert.equal(ctx.noteEl.hidden, true, 'storage state from the prior authorization must be cleared immediately');
+  assert.equal(ctx.noteEl.textContent, '');
 });
 
 test('local_prototype mode keeps showing the Local prototype storage warning', async (t) => {

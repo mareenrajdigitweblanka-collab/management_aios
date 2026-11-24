@@ -241,6 +241,7 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
   };
 
   mountEl.textContent = '';
+  var workspaceLoaded = false;
 
   function isAuthorized() { return !!getStoredMemberKey(); }
 
@@ -861,14 +862,30 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
 
   createBtn.addEventListener('click', function () { openDraftEditor(null, createBtn); });
 
-  loadHistory();
-  loadDrafts();
-  loadNotificationHistory();
+  function loadInitialWorkspaceData() {
+    if (workspaceLoaded || !isAuthorized()) { return; }
+    workspaceLoaded = true;
+    loadHistory();
+    loadDrafts();
+    loadNotificationHistory();
+  }
+  function onPanelActivated(event) {
+    if (event && event.detail && event.detail.targetId === 'announcements') { loadInitialWorkspaceData(); }
+  }
+  document.addEventListener('aios:panel-activated', onPanelActivated);
+  var announcementsPanel = document.getElementById('tab-announcements');
+  if (announcementsPanel && announcementsPanel.classList.contains('active')) { loadInitialWorkspaceData(); }
 
   return {
     getState: function () { return state; },
-    reload: function () { loadHistory(); loadDrafts(); loadNotificationHistory(); },
-    showNotificationHistory: function () { setView('notifications'); }
+    reload: function () { if (workspaceLoaded) { loadHistory(); loadDrafts(); loadNotificationHistory(); } },
+    showNotificationHistory: function () { loadInitialWorkspaceData(); setView('notifications'); },
+    stop: function () {
+      state.historyRequestId += 1;
+      state.draftsRequestId += 1;
+      state.notificationsRequestId += 1;
+      document.removeEventListener('aios:panel-activated', onPanelActivated);
+    }
   };
 }
 
@@ -916,6 +933,9 @@ export function mountAnnouncementBell(rootEl, opts) {
   var WebSocketImpl = opts.WebSocketImpl || (typeof window !== 'undefined' ? window.WebSocket : undefined);
 
   var pollTimer = null;
+  var refreshInFlight = null;
+  var requestGeneration = 0;
+  var stopped = false;
   var state = { unreadCount: 0 };
 
   rootEl.textContent = '';
@@ -954,13 +974,22 @@ export function mountAnnouncementBell(rootEl, opts) {
   });
 
   function refresh() {
-    return api.feed(20).then(function (result) {
-      state.unreadCount = result.unread_count || 0;
-      renderBadge();
+    if (stopped || !isAuthorized()) { return Promise.resolve(); }
+    if (refreshInFlight) { return refreshInFlight; }
+    var generation = requestGeneration;
+    var request = Promise.resolve().then(function () { return api.feed(20); }).then(function (result) {
+      if (!stopped && generation === requestGeneration && isAuthorized()) {
+        state.unreadCount = result.unread_count || 0;
+        renderBadge();
+      }
     }, function () {
       // Silent — a failed poll must never surface a toast/error UI; the
       // badge simply keeps its last-known value until the next successful poll.
+    }).then(function () {
+      if (refreshInFlight === request) { refreshInFlight = null; }
     });
+    refreshInFlight = request;
+    return request;
   }
 
   function startPolling() {
@@ -1104,6 +1133,10 @@ export function mountAnnouncementBell(rootEl, opts) {
   return {
     refresh: refresh,
     stop: function () {
+      stopped = true;
+      requestGeneration += 1;
+      refreshInFlight = null;
+      state.unreadCount = 0;
       stopPolling();
       stopRealtimeSocket();
       document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -1113,7 +1146,10 @@ export function mountAnnouncementBell(rootEl, opts) {
 
 // ── Wiring ────────────────────────────────────────────────────────────
 
+var announcementsInit = null;
+
 export function initAnnouncements() {
+  if (announcementsInit) { return announcementsInit; }
   var mountEl = document.getElementById('announcementsWorkspace');
   var bellRootEl = document.getElementById('announcementBell');
 
@@ -1153,6 +1189,7 @@ export function initAnnouncements() {
 
   document.addEventListener(CALENDAR_AUTH_CHANGED_EVENT, function () {
     if (currentBell) { currentBell.stop(); }
+    if (currentWorkspace && typeof currentWorkspace.stop === 'function') { currentWorkspace.stop(); }
     if (mountEl) {
       currentWorkspace = mountAnnouncementsWorkspace(mountEl, {
         onChanged: function () { if (currentBell) { currentBell.refresh(); } }
@@ -1164,7 +1201,12 @@ export function initAnnouncements() {
         onRealtimeSignal: reloadWorkspaceOnRealtimeSignal
       });
     }
+    if (announcementsInit) {
+      announcementsInit.workspace = currentWorkspace;
+      announcementsInit.bell = currentBell;
+    }
   });
 
-  return { workspace: currentWorkspace, bell: currentBell };
+  announcementsInit = { workspace: currentWorkspace, bell: currentBell };
+  return announcementsInit;
 }
