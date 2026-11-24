@@ -452,3 +452,117 @@
       margin: 0;
     }
 
+
+
+/* Stage 3: header modernization refinements */
+.topbar { padding: 0 24px; gap: 16px; background: linear-gradient(135deg, #0c1526 0%, #1e293b 100%); }
+.topbar-left { gap: 14px; }
+.app-sidebar-toggle { width: 36px; height: 36px; border-radius: var(--radius); border-color: #40516a; }
+.topbar-search { max-width: 520px; margin-left: 12px; }
+.topbar-search-pill { height: 38px; border-color: #40516a; border-radius: 999px; background: rgba(255,255,255,.075); }
+.topbar-search-pill:hover { border-color: #526783; background: rgba(255,255,255,.1); }
+#searchClear { height: 38px; border-color: #40516a; border-radius: 999px; }
+.topbar-calendar-auth { padding: 7px 13px; border-color: #40516a; border-radius: 999px; background: rgba(255,255,255,.075); }
+.topbar-calendar-auth-change-btn { min-height: 24px; }
+.topbar-announcement-bell { flex-shrink: 0; }
+.topbar .msc-ann-bell-btn { width: 38px; height: 38px; border: 1px solid transparent; border-radius: var(--radius); color: #cbd5e1; }
+.topbar .msc-ann-bell-btn:hover { background: rgba(255,255,255,.1); border-color: rgba(148,163,184,.24); }
+.topbar .msc-ann-bell-btn:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(125,211,252,.18); }
+@media (max-width: 900px) {
+  .topbar { padding: 0 18px; gap: 12px; }
+  .topbar-search { margin-left: 6px; max-width: 380px; }
+}
+@media (max-width: 640px) {
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-left { gap: 8px; }
+  .topbar-search { margin-left: 0; }
+  .topbar-search-pill { height: 36px; padding: 0 10px; }
+  #searchClear { height: 36px; padding: 0 11px; }
+  .topbar-calendar-auth { padding: 5px 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-search-pill, #searchClear, .topbar .msc-ann-bell-btn, .topbar-planning-warning { transition: none !important; }
+  .topbar-planning-warning--visible:hover { transform: none; }
+}
+
+
+/* Stage 5C: keep the mobile header readable by giving its controls explicit
+   rows instead of allowing the auth chip and search to compete for one line. */
+@media (max-width: 640px) {
+  .topbar {
+    align-content: center;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--header-height);
+    row-gap: 6px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .topbar-left {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .topbar-sep {
+    display: none;
+  }
+
+  .topbar-announcement-bell {
+    order: 2;
+    flex: 0 0 auto;
+  }
+
+  .topbar-calendar-auth {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
+  .topbar-calendar-auth-change-btn {
+    flex: 0 0 auto;
+    min-height: 36px;
+  }
+
+  .topbar-search {
+    order: 4;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .topbar-planning-warning {
+    order: 5;
+    flex: 1 1 100%;
+    width: 100%;
+    margin-left: 0;
+    max-width: none;
+  }
+}
+
+/* Stage 6E: keep header regions shrinkable so search, auth, and notification controls retain their existing behavior without competing for fixed width. */
+.topbar-left,
+.topbar-logo,
+.topbar-search,
+.topbar-calendar-auth,
+.topbar-planning-warning { min-width: 0; }
+.topbar-search { flex: 1 1 18rem; }
+.topbar-calendar-auth-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) { .topbar-search { flex-basis: 12rem; } }
+
+/* Stage 1: official Digit Web Lanka branding in the application header. */
+.topbar-brand { display:flex; align-items:center; gap:10px; min-width:0; }
+.topbar-logo-mark { width:32px; height:32px; flex:0 0 32px; display:block; object-fit:contain; border-radius:6px; }
+.topbar-logo { gap:0; }
+.topbar-logo::before { display:none; }
+@media (max-width:640px) {
+.topbar-brand { gap:8px; }
+.topbar-logo-mark { width:28px; height:28px; flex-basis:28px; }
+}

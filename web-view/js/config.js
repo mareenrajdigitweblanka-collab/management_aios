@@ -253,6 +253,9 @@ export var ANNOUNCEMENTS_API_BASE = (function () {
    relay (not a Vercel Function) or a Preview-aware branch here pointed at
    the backend Preview's own wss:// origin AND a ticket-validation change
    on that backend to accept it — out of scope for this fix. */
+/* Temporarily keep announcements on authenticated HTTP polling. Set true to restore the WebSocket fast path. */
+export var ANNOUNCEMENTS_WEBSOCKET_ENABLED = false;
+
 export var ANNOUNCEMENTS_WS_BASE = (function () {
   var LOCAL_BASE = 'ws://127.0.0.1:' + LOCAL_API_PORT + '/api/announcements';
   var PRODUCTION_BASE = 'wss://management-aios-api.vercel.app/api/announcements';

@@ -186,7 +186,11 @@ export function initNavigation() {
     el.addEventListener('click', function () {
       activatePanel(el.getAttribute('data-goto'));
       closeDrawer();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      var reducedMotion = false;
+      if (window.matchMedia) {
+        try { reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (err) { reducedMotion = false; }
+      }
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     });
   });
 

@@ -26,6 +26,7 @@ import { initIssues } from './issues.js';
 import { initKnowledgeManagement } from './knowledge-management.js';
 import { initAnnouncements } from './announcements.js';
 import { initEntryAuthGate } from './entry-auth.js';
+import { initHomeGreeting } from './home-greeting.js';
 
 function boot() {
   /* Each subsystem is idempotent to a single call and mounts its listeners /
@@ -33,6 +34,7 @@ function boot() {
   initNavigation();
   initAllScheduleCalendars();
   initCalendarAuthIndicator();
+  initHomeGreeting();
   initStaffDataPilot();
   initPlanningWarning();
   // REQ-CAL-REV-001 (2026-08-03) — Staff Review Summaries workspace, one

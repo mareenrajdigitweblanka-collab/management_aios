@@ -549,3 +549,23 @@
     align-items: flex-start;
   }
 }
+
+/* Stage 6D: module-specific overview accents for Issues. */
+.module-overview--issues {
+  border-top-color: var(--blocked);
+  background: linear-gradient(145deg, var(--surface), var(--blocked-bg));
+}
+.module-overview--issues .module-overview-icon {
+  background: var(--blocked-bg);
+  color: var(--blocked);
+}
+
+
+/* Stage 6G.6: issue helper and state-message typography. */
+.msc-issues-loading,
+.msc-issues-empty,
+.msc-issues-error {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-description);
+  line-height: var(--line-height-description);
+}

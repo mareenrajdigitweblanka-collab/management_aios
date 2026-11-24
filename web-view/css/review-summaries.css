@@ -891,3 +891,20 @@
     align-items: flex-start;
   }
 }
+
+
+/* Stage 6G.6: Review Summaries descriptive copy typography. */
+.review-summaries-unauthorized-message,
+.review-summaries-card-status-message,
+.review-summaries-empty,
+.review-summaries-attachments-storage-mode-note,
+.review-summaries-attachments-requirement-note {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-description);
+  line-height: var(--line-height-description);
+}
+.review-summary-text {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-reading);
+  line-height: var(--line-height-reading);
+}

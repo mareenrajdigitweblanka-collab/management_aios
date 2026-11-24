@@ -372,3 +372,16 @@
     right: -8px;
   }
 }
+
+
+/* Stage 6G.6: Announcements helper and empty-state typography. */
+.msc-ann-header-helper,
+.msc-ann-loading,
+.msc-ann-empty-state,
+.msc-ann-empty,
+.msc-ann-receipt-summary,
+.msc-ann-bell-empty {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-description);
+  line-height: var(--line-height-description);
+}

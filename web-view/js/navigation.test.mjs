@@ -45,6 +45,13 @@ function buildStandardNav(doc) {
   return nodes;
 }
 
+function buildGotoElement(doc, targetId) {
+  var el = doc.createElement('button');
+  el.setAttribute('data-goto', targetId);
+  doc.body.appendChild(el);
+  return el;
+}
+
 function withEnv(testFn, envOpts) {
   return async function (t) {
     var env = installFakeBrowserGlobals(envOpts || {});
@@ -186,6 +193,43 @@ test('losing authorization while a PUBLIC panel is active does not force any nav
 
   assert.equal(nodes['file-map'].panel.classList.contains('active'), true);
 }, { storedAuth: { token: 'test-token', memberKey: 'mayurika' } }));
+
+test('data-goto scrolling uses auto behavior when reduced motion is requested', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  buildStandardNav(env.document);
+  var goto = buildGotoElement(env.document, 'root-aios');
+  var calls = [];
+  env.window.scrollTo = function (options) { calls.push(options); };
+  var mediaQuery = '';
+  env.window.matchMedia = function (query) { mediaQuery = query; return { matches: true }; };
+  navigation.initNavigation();
+  goto.click();
+  assert.equal(mediaQuery, '(prefers-reduced-motion: reduce)');
+  assert.deepEqual(calls, [{ top: 0, behavior: 'auto' }]);
+}));
+
+test('data-goto scrolling remains smooth when reduced motion is not requested', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  buildStandardNav(env.document);
+  var goto = buildGotoElement(env.document, 'root-aios');
+  var calls = [];
+  env.window.scrollTo = function (options) { calls.push(options); };
+  env.window.matchMedia = function () { return { matches: false }; };
+  navigation.initNavigation();
+  goto.click();
+  assert.deepEqual(calls, [{ top: 0, behavior: 'smooth' }]);
+}));
+
+test('data-goto scrolling safely falls back to smooth when matchMedia is unavailable', withEnv(async (env) => {
+  var { navigation } = await loadModules();
+  buildStandardNav(env.document);
+  var goto = buildGotoElement(env.document, 'root-aios');
+  var calls = [];
+  env.window.scrollTo = function (options) { calls.push(options); };
+  navigation.initNavigation();
+  goto.click();
+  assert.deepEqual(calls, [{ top: 0, behavior: 'smooth' }]);
+}));
 
 // ── DigitDisplay external nav link (REQ-DIGITDISPLAY-NAV-001, 2026-10-22) ──
 // Gated by the same AIOS member-token authorization as the protected tabs

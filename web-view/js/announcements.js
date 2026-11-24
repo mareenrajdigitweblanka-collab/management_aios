@@ -34,7 +34,7 @@
    user-authored field (never innerHTML for untrusted text) — same
    convention as knowledge-management.js/issues.js/review-summaries.js. */
 
-import { ANNOUNCEMENTS_API_BASE, ANNOUNCEMENTS_WS_BASE, isPreviewDeploymentHostname } from './config.js';
+import { ANNOUNCEMENTS_API_BASE, ANNOUNCEMENTS_WEBSOCKET_ENABLED, ANNOUNCEMENTS_WS_BASE, isPreviewDeploymentHostname } from './config.js';
 import {
   CALENDAR_AUTH_CHANGED_EVENT,
   ensureAuthorized,
@@ -875,12 +875,11 @@ export function mountAnnouncementsWorkspace(mountEl, opts) {
 // ── Bell (topbar unread-count indicator) ─────────────────────────────────
 
 var POLL_INTERVAL_MS = 30000;
+var WS_TICKET_UNAVAILABLE_DETAIL = 'Realtime notifications are not available.';
 
-/* REQ-ANN-001 Stage B — bounded reconnect backoff (ms), capped at 30s, per
-   opts.onOpenHistory-style explicit design. Reset to the first entry on
-   every stable connection (see connectRealtimeSocket's onopen below), so a
-   brief outage never leaves a socket waiting the full 30s to try again
-   after recovering. */
+/* REQ-ANN-001 Stage B — bounded reconnect delays (ms), capped at 30s.
+   The number of retries is bounded by this table. Reset after a stable
+   connection or when the page becomes visible again. */
 var WS_RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 30000];
 
 /* Mounted exactly once (initAnnouncements below), inside the topbar
@@ -979,7 +978,16 @@ export function mountAnnouncementBell(rootEl, opts) {
      up to a full tick after the tab regains focus. Removed on stop() so a
      remounted bell (auth-change) never accumulates a second listener. */
   function onVisibilityChange() {
-    if (document.visibilityState === 'visible' && isAuthorized()) { refresh(); }
+    if (document.visibilityState !== 'visible') {
+      clearWsReconnectTimer();
+      return;
+    }
+    if (!isAuthorized()) { return; }
+    refresh();
+    if (!wsTicketUnavailable && !wsSocket && !wsConnecting) {
+      wsReconnectAttempt = 0;
+      connectRealtimeSocket();
+    }
   }
   document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -990,17 +998,18 @@ export function mountAnnouncementBell(rootEl, opts) {
   var wsReconnectTimer = null;
   var wsReconnectAttempt = 0;
   var wsStopped = false;
+  var wsTicketUnavailable = false;
 
   function clearWsReconnectTimer() {
     if (wsReconnectTimer) { window.clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
   }
 
   // Never a duplicate pending reconnect (the wsReconnectTimer guard) —
-  // bounded at WS_RECONNECT_DELAYS_MS's last entry (30s), never an
-  // infinite rapid-retry loop.
+  // the delay table also caps total attempts so persistent failures stop.
   function scheduleWsReconnect() {
-    if (wsStopped || wsReconnectTimer) { return; }
-    var delay = WS_RECONNECT_DELAYS_MS[Math.min(wsReconnectAttempt, WS_RECONNECT_DELAYS_MS.length - 1)];
+    if (!(ANNOUNCEMENTS_WEBSOCKET_ENABLED || opts.enableWebSocket === true) || wsStopped || wsTicketUnavailable || document.visibilityState !== 'visible' || wsReconnectTimer) { return; }
+    if (wsReconnectAttempt >= WS_RECONNECT_DELAYS_MS.length) { return; }
+    var delay = WS_RECONNECT_DELAYS_MS[wsReconnectAttempt];
     wsReconnectAttempt += 1;
     wsReconnectTimer = window.setTimeout(function () {
       wsReconnectTimer = null;
@@ -1029,13 +1038,13 @@ export function mountAnnouncementBell(rootEl, opts) {
   // guard is a no-op for them. See config.js's ANNOUNCEMENTS_WS_BASE
   // comment for the full rationale.
   function connectRealtimeSocket() {
-    if (wsStopped || !isAuthorized() || !WebSocketImpl || wsSocket || wsConnecting) { return; }
+    if (!(ANNOUNCEMENTS_WEBSOCKET_ENABLED || opts.enableWebSocket === true) || wsStopped || wsTicketUnavailable || document.visibilityState !== 'visible' || !isAuthorized() || !WebSocketImpl || wsSocket || wsConnecting) { return; }
     if (isPreviewDeploymentHostname()) { return; } // see the guard comment above — polling-only on Preview, by design, no error
     if (typeof api.wsTicket !== 'function') { return; } // no ticket source configured — polling-only, no error
     wsConnecting = true;
     api.wsTicket().then(function (result) {
       wsConnecting = false;
-      if (wsStopped || !isAuthorized()) { return; } // auth changed while the ticket request was in flight
+      if (wsStopped || document.visibilityState !== 'visible' || !isAuthorized()) { return; } // lifecycle changed while ticket request was in flight
       var socket = new WebSocketImpl(ANNOUNCEMENTS_WS_BASE + '/ws?ticket=' + encodeURIComponent(result.ticket));
       wsSocket = socket;
       socket.onopen = function () {
@@ -1060,11 +1069,16 @@ export function mountAnnouncementBell(rootEl, opts) {
         // A WebSocket always fires close after error — reconnect is
         // scheduled from onclose only, never duplicated here.
       };
-    }, function () {
-      // Ticket request failed (feature unavailable, network blip, auth
-      // lost mid-flight) — polling remains the correctness fallback;
-      // retry with the same bounded backoff as a dropped connection.
+    }, function (err) {
       wsConnecting = false;
+      // This exact backend 503 detail identifies the optional signing secret
+      // being unavailable. Polling remains the fallback; wait for auth remount.
+      if (err && err.status === 503 && err.body && err.body.detail === WS_TICKET_UNAVAILABLE_DETAIL) {
+        wsTicketUnavailable = true;
+        clearWsReconnectTimer();
+        return;
+      }
+      // Treat all other failures as transient, with a finite retry budget.
       if (!wsStopped) { scheduleWsReconnect(); }
     });
   }

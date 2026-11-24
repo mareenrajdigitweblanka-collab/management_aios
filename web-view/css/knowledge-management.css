@@ -774,3 +774,25 @@ textarea.msc-km-input {
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* Stage 6D: module-specific overview accents for Knowledge Management. */
+.module-overview--knowledge {
+  border-top-color: var(--preview);
+  background: linear-gradient(145deg, var(--surface), var(--preview-bg));
+}
+.module-overview--knowledge .module-overview-icon {
+  background: var(--preview-bg);
+  color: var(--preview);
+}
+
+
+/* Stage 6G.6: Knowledge Management descriptive copy typography. */
+.msc-km-header-helper,
+.msc-km-empty,
+.msc-km-readonly-note,
+.msc-km-history-note,
+.msc-km-summary-empty {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-description);
+  line-height: var(--line-height-description);
+}

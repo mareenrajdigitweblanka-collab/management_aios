@@ -3730,3 +3730,20 @@
       }
     }
 
+
+
+/* Stage 6G.6: calendar instructional and state-message typography. */
+.msc-note,
+.msc-api-status,
+.msc-rajiv-note,
+.msc-tasks-nav-note,
+.msc-tasks-empty,
+.msc-cal-search-empty,
+.msc-cal-help-note,
+.msc-cal-help-section-body p,
+.msc-cal-help-states dd,
+.msc-cal-help-messages dd {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-description);
+  line-height: var(--line-height-description);
+}

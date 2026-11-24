@@ -38,6 +38,12 @@ var html = readFileSync(indexHtmlPath, 'utf8');
 var navigationCssPath = fileURLToPath(new URL('../css/navigation.css', import.meta.url));
 var navigationCss = readFileSync(navigationCssPath, 'utf8');
 
+var baseCssPath = fileURLToPath(new URL('../css/base.css', import.meta.url));
+var baseCss = readFileSync(baseCssPath, 'utf8');
+
+var componentsCssPath = fileURLToPath(new URL('../css/components.css', import.meta.url));
+var componentsCss = readFileSync(componentsCssPath, 'utf8');
+
 var TOP_LEVEL_PANEL_RE = /^ {4}<div class="tab-panel[^"]*" id="([^"]+)"/gm;
 
 function topLevelPanels(source) {
@@ -175,9 +181,9 @@ test('all 5 Task/Leave/Calendar (.msc-instance) member mounts remain present and
 
 // ── DigitDisplay external nav link (REQ-DIGITDISPLAY-NAV-001, 2026-10-22) ──
 
-test('exactly one DigitDisplay external nav link exists', () => {
+test('sidebar and dashboard DigitDisplay external links both exist', () => {
   var matches = html.match(/data-external-auth-link="digitdisplay"/g) || [];
-  assert.equal(matches.length, 1);
+  assert.equal(matches.length, 2);
 });
 
 test('the DigitDisplay link is a real <a class="app-nav-btn">, not a <button>', () => {
@@ -233,4 +239,245 @@ test('the DigitDisplay link does not have aria-disabled hardcoded in markup (JS 
   var openTagMatch = /<a class="app-nav-btn"[^>]*data-external-auth-link="digitdisplay"[^>]*>/.exec(html);
   assert.ok(openTagMatch);
   assert.doesNotMatch(openTagMatch[0], /aria-disabled=/);
+});
+
+test('Stage 2 aggregate Members panel exposes only the four verified member destinations', () => {
+  assert.match(html, /id="tab-members"/);
+  const membersPanel = segments['tab-members'];
+  assert.ok(membersPanel);
+  for (const target of ['mayurika-hr', 'suman-recruitment', 'arun-implementation', 'rajiv-blocked']) assert.match(membersPanel, new RegExp('data-goto="'+target+'"'));
+  assert.doesNotMatch(membersPanel, /data-goto="paraparan"/);
+});
+test('Paraparan remains a panel but is absent from the Members sidebar list', () => {
+  assert.match(html, /id="tab-paraparan"/);
+  const membersGroup = /<div class="app-sidebar-title">Members<\/div>([\s\S]*?)<div class="app-sidebar-group">/.exec(html);
+  assert.ok(membersGroup);
+  assert.doesNotMatch(membersGroup[1], /data-tab="paraparan"/);
+});
+test('twelve dashboard module cards preserve navigation and DigitDisplay security hooks', () => {
+  const cards = html.match(/class="module-card module-card--[a-z-]+"/g) || [];
+  assert.equal(cards.length, 12);
+  for (const target of ['mayurika-hr', 'suman-recruitment', 'arun-implementation', 'rajiv-blocked', 'members', 'staff-data', 'review-summaries', 'issues', 'knowledge-management', 'announcements', 'help-usage']) assert.match(html, new RegExp('class="module-card module-card--[a-z-]+"[^>]*data-goto="'+target+'"'));
+  const digit = /<a class="module-card module-card--digitdisplay"[^>]*>/ .exec(html);
+  assert.ok(digit);
+  assert.match(digit[0], /href="https:\/\/digit-display\.vercel\.app\/admin"/);
+  assert.match(digit[0], /target="_blank"/);
+  assert.match(digit[0], /rel="noopener noreferrer"/);
+  assert.match(digit[0], /data-external-auth-link="digitdisplay"/);
+});
+test('Stage 2 cards retain search hooks and currentColor SVG icons', () => {
+  const moduleStart = html.indexOf('<section class="module-card-section"');
+  const moduleEnd = html.indexOf('</section>', moduleStart) + '</section>'.length;
+  const root = html.slice(moduleStart, moduleEnd);
+  assert.ok(root);
+  assert.equal((root.match(/data-searchable/g) || []).length, 12);
+  assert.equal((root.match(/stroke="currentColor"/g) || []).length, 12);
+});
+
+test('Stage 6C.1 omits redundant compact member cards from All Members', () => {
+  const membersPanel = segments['tab-members'];
+  assert.ok(membersPanel);
+  assert.equal((membersPanel.match(/member-directory-card/g) || []).length, 0);
+  assert.doesNotMatch(membersPanel, /member-directory-grid/);
+});
+
+test('Stage 6C All Members cards preserve names, status labels, search hooks, and navigation', () => {
+  const root = segments['tab-members'];
+  const snapshotStart = root.indexOf('class="member-snap-grid"');
+  const snapshotEnd = root.indexOf('<!-- How to use -->', snapshotStart);
+  const snapshots = root.slice(snapshotStart, snapshotEnd);
+  assert.equal((snapshots.match(/class="member-snap /g) || []).length, 4);
+  for (const target of ['mayurika-hr', 'suman-recruitment', 'arun-implementation', 'rajiv-blocked']) assert.match(snapshots, new RegExp('data-goto="' + target + '"'));
+  for (const name of ['Mayurika', 'Suman', 'Arun', 'Rajiv / Admin']) assert.match(snapshots, new RegExp('member-snap-name">' + name.replace('/', '\/')));
+  assert.equal((snapshots.match(/badge-pass">ACTIVE/g) || []).length, 3);
+  assert.match(snapshots, /badge-amber">ACTIVE WITH LIMITS/);
+  assert.equal((snapshots.match(/data-searchable/g) || []).length, 4);
+  assert.equal((snapshots.match(/member-snap-avatar/g) || []).length, 4);
+  assert.equal((snapshots.match(/stroke="currentColor"/g) || []).length, 4);
+});
+
+test('Stage 4A keeps the module grid immediately after the compact Root heading', () => {
+  const root = segments['tab-root-aios'];
+  const introStart = root.indexOf('class="root-dashboard-intro');
+  const moduleStart = root.indexOf('<section class="module-card-section"');
+  const overviewStart = root.indexOf('class="root-home-overview"');
+  assert.ok(introStart >= 0, 'the compact Root dashboard introduction should be present');
+  assert.ok(moduleStart > introStart, 'the module grid should follow the compact introduction');
+  assert.ok(overviewStart > moduleStart, 'the System Overview should follow the module grid');
+});
+
+test('Stage 3 sidebar styles preserve active, focus, badge, and reduced-motion hooks', () => {
+  assert.ok(navigationCss.includes('.app-nav-btn.active'));
+  assert.ok(navigationCss.includes('.app-nav-btn:focus-visible'));
+  assert.ok(navigationCss.includes('.app-nav-btn-badge'));
+  assert.ok(navigationCss.includes('@media (prefers-reduced-motion: reduce)'));
+});
+test('Stage 3 header styles preserve search, authorization, bell, touch, and reduced-motion hooks', () => {
+  assert.ok(baseCss.includes('.topbar-search-pill:hover'));
+  assert.ok(baseCss.includes('.topbar-calendar-auth'));
+  assert.ok(baseCss.includes('.topbar .msc-ann-bell-btn:focus-visible'));
+  assert.ok(baseCss.includes('@media (max-width: 640px)'));
+  assert.ok(baseCss.includes('@media (prefers-reduced-motion: reduce)'));
+});
+
+test('sidebar uses solid navy without decorative wave layers', () => {
+  const sidebarRules = [...navigationCss.matchAll(/\.app-sidebar\s*\{([^}]+)\}/g)];
+  const backgrounds = sidebarRules.flatMap(([, rule]) => [...rule.matchAll(/background:\s*([^;]+);/g)].map(([, value]) => value));
+  assert.equal(backgrounds.at(-1), '#0f172a');
+  assert.doesNotMatch(navigationCss, /\.app-sidebar::(?:before|after)|sidebar-wave-art/);
+  assert.doesNotMatch(html, /sidebar-wave-art|sidebarWave[AB]/);
+});
+
+
+test('Stage 5C mobile header uses explicit rows without changing existing hooks', () => {
+  assert.match(html, /class="app-sidebar-toggle" id="sidebarToggle"/);
+  assert.match(html, /class="topbar-logo"/);
+  assert.match(html, /class="topbar-announcement-bell" id="announcementBell"/);
+  assert.match(html, /class="topbar-search" role="search"/);
+  assert.match(html, /id="searchInput"/);
+  assert.match(html, /id="searchClear"/);
+  assert.match(html, /id="calendarAuthIndicator"/);
+  assert.match(html, /id="calendarAuthChangeTokenBtn"/);
+
+  const mobileHeader = baseCss.match(/\/\* Stage 5C:[\s\S]*?@media \(max-width: 640px\) \{([\s\S]*?)\n\}/);
+  assert.ok(mobileHeader, 'Stage 5C mobile header rules should be present');
+  const rules = mobileHeader[1];
+  assert.match(rules, /\.topbar[\s\S]*?flex-wrap:\s*wrap/);
+  assert.match(rules, /\.topbar-left[\s\S]*?order:\s*1/);
+  assert.match(rules, /\.topbar-announcement-bell[\s\S]*?order:\s*2/);
+  assert.match(rules, /\.topbar-calendar-auth[\s\S]*?order:\s*3/);
+  assert.match(rules, /\.topbar-search[\s\S]*?order:\s*4/);
+  assert.match(rules, /\.topbar-planning-warning[\s\S]*?order:\s*5/);
+  assert.match(rules, /\.topbar-calendar-auth-change-btn[\s\S]*?min-height:\s*36px/);
+});
+
+
+test('Stage 6C removes detailed member cards from the dashboard', () => {
+  assert.equal((segments['tab-root-aios'].match(/member-snap /g) || []).length, 0);
+  assert.equal((segments['tab-members'].match(/member-snap /g) || []).length, 4);
+});
+
+test('Stage 6B data modules expose focused overview headings without changing mounts', () => {
+  const staffPanel = segments['tab-staff-data'];
+  const reviewsPanel = segments['tab-review-summaries'];
+  assert.match(staffPanel, /class="module-overview module-overview--staff"/);
+  assert.match(staffPanel, /id="staff-data-heading">Staff Data<\/h1>/);
+  assert.match(staffPanel, /id="staff-data-filter-bar"/);
+  assert.match(reviewsPanel, /class="module-overview module-overview--reviews"/);
+  assert.match(reviewsPanel, /id="review-summaries-heading">Review Summaries<\/h1>/);
+  assert.match(reviewsPanel, /id="reviewSummariesWorkspace"/);
+  assert.match(reviewsPanel, /Shared read/);
+  assert.match(reviewsPanel, /Owner edits/);
+});
+
+test('Stage 6G.4 Root dashboard keeps twelve modules first and preserves targets', () => {
+  var root = html.slice(html.indexOf('id="tab-root-aios"'), html.indexOf('/tab-root-aios'));
+  var targets = ['mayurika-hr', 'suman-recruitment', 'arun-implementation', 'rajiv-blocked', 'members', 'staff-data', 'review-summaries', 'issues', 'knowledge-management', 'announcements', 'help-usage'];
+  assert.match(root, /class="module-card-section"[^>]*aria-labelledby="module-card-heading"/);
+  assert.equal((root.match(/class="module-card module-card--/g) || []).length, 12);
+  for (const target of targets) assert.match(root, new RegExp('data-goto="' + target + '"'));
+  assert.match(root, /data-external-auth-link="digitdisplay"/);
+});
+
+test('Stage 6G.7 keeps five System Overview cards visible on Home', () => {
+  const root = html.slice(html.indexOf('id="tab-root-aios"'), html.indexOf('/tab-root-aios'));
+  const help = segments['tab-help-usage'];
+  const overviewStart = root.indexOf('class="root-home-overview"');
+  const overviewEnd = root.indexOf('</section>', overviewStart);
+  const overview = root.slice(overviewStart, overviewEnd);
+  assert.doesNotMatch(root, /class="root-status-notice"/);
+  assert.match(root, /aria-labelledby="root-home-overview-heading"/);
+  assert.match(overview, /System Overview/);
+  assert.match(overview, /root-status-grid root-status-grid--overview/);
+  assert.equal((overview.match(/class="root-status-card/g) || []).length, 5);
+  assert.doesNotMatch(overview, /<details|<summary/);
+  for (const label of ['Last Sync', 'System', 'Member workbenches', 'Sources registered', 'Needs confirmation']) {
+    assert.ok(overview.includes(label), label);
+  }
+  assert.match(help, /System Status Snapshot/);
+  assert.equal((help.match(/class="root-status-card/g) || []).length, 3);
+  assert.doesNotMatch(help, /root-status-grid--overview/);
+});
+
+test('Stage 6G.6 Help status groups use native details/summary semantics', () => {
+  var root = html.slice(html.indexOf('id="tab-root-aios"'), html.indexOf('/tab-root-aios'));
+  assert.equal((root.match(/<details class="root-reference-group/g) || []).length, 0);
+  assert.doesNotMatch(root, /<details class="root-reference-group" open/);
+  const help = segments['tab-help-usage'];
+  assert.equal((help.match(/<summary/g) || []).length, 8);
+  assert.equal((help.match(/root-reference-chevron/g) || []).length, 8);
+  assert.match(help, /HELP CENTER/);;
+  for (const label of ['Getting Started', 'Status Label Guide', 'Governance &amp; Safety Rules', 'Deployment Information', 'Evidence &amp; Technical Details']) assert.match(help, new RegExp(label));
+  assert.match(segments['tab-help-usage'], /Getting Started/);
+  assert.match(segments['tab-help-usage'], /Status Label Guide/);
+  assert.doesNotMatch(root, /Getting Started|Status Label Guide|Governance &amp; Safety Rules|Deployment Information|Evidence &amp; Technical Details/);
+  assert.ok((help.match(/<summary/g) || []).length >= 8);
+});
+
+
+test('Stage 6G.6 system-wide description typography uses scoped Inter tokens', () => {
+  const cssRoot = fileURLToPath(new URL('../css/', import.meta.url));
+  const tokens = readFileSync(cssRoot + 'tokens.css', 'utf8');
+  const base = readFileSync(cssRoot + 'base.css', 'utf8');
+  const styleFiles = ['components.css', 'issues.css', 'knowledge-management.css', 'announcements.css', 'review-summaries.css', 'staff-data.css', 'calendar.css']
+    .map((name) => readFileSync(cssRoot + name, 'utf8')).join('\n');
+  assert.match(tokens, /--font-family-ui:\s*Inter, ui-sans-serif, system-ui/);
+  assert.match(tokens, /--font-description:\s*14px/);
+  assert.match(tokens, /--line-height-description:\s*1\.6/);
+  assert.match(tokens, /--font-reading:\s*15px/);
+  assert.match(tokens, /font-family:\s*var\(--font-family-ui\)/);
+  for (const selector of ['module-card-description', 'module-overview-lede', 'member-header-lede', 'root-reference-body p', 'msc-issues-empty', 'msc-km-header-helper', 'msc-ann-header-helper', 'review-summary-text', 'member-testing-table-note', 'msc-cal-help-note']) {
+    assert.ok(styleFiles.includes('.' + selector), selector);
+  }
+  assert.doesNotMatch(styleFiles, /(?:body|\*|h1|h2|h3|button)\s*\{[^}]*font-size:\s*var\(--font-description\)/);
+});
+
+
+test('Stage 6G.7 compact Home module cards preserve a responsive four-two-one layout', () => {
+  assert.match(componentsCss, /#tab-root-aios \.module-card-grid[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(componentsCss, /#tab-root-aios \.module-card[\s\S]*?min-height: 104px/);
+  assert.match(componentsCss, /#tab-root-aios \.module-card[\s\S]*?height: 100%/);
+  assert.match(componentsCss, /#tab-root-aios \.module-card[\s\S]*?background: var\(--module-card-bg\)/);
+  assert.match(componentsCss, /#tab-root-aios \.module-card[\s\S]*?border: 1px solid var\(--module-card-border/);
+  assert.match(componentsCss, /module-card--calendar-mayurika[\s\S]*?#DDEAFE[\s\S]*?#4879D8/);
+  assert.match(componentsCss, /module-card--calendar-suman[\s\S]*?#D9F1E5[\s\S]*?#27936B/);
+  assert.match(componentsCss, /module-card--calendar-arun[\s\S]*?#F2E2FC[\s\S]*?#A05ACD/);
+  assert.match(componentsCss, /module-card--calendar-rajiv[\s\S]*?#FFE5D6[\s\S]*?#D77A3A/);
+  assert.match(componentsCss, /@media \(max-width: 1024px\)[\s\S]*?#tab-root-aios \.module-card-grid[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(componentsCss, /@media \(max-width: 768px\)[\s\S]*?#tab-root-aios \.module-card-grid[\s\S]*?grid-template-columns: 1fr/);
+  assert.match(componentsCss, /#tab-root-aios \.module-card:focus-visible/);
+  const root = segments['tab-root-aios'];
+  assert.equal((root.match(/class="module-card module-card--/g) || []).length, 12);
+});
+
+
+test('Stage 6G.8a stronger card visibility and interaction styles stay scoped', () => {
+  assert.match(componentsCss, /#tab-root-aios \.module-card:hover[\s\S]*?translateY\(-4px\)/);
+  assert.match(componentsCss, /#tab-root-aios \.module-card:hover[\s\S]*?box-shadow: 0 12px 28px rgba\(15, 23, 42, 0.18\)/);
+  assert.match(componentsCss, /#tab-root-aios \.root-home-overview[\s\S]*?background: linear-gradient\(135deg, #D6E5F7 0%, #C4DAF3 52%, #AFCFF2 100%\)/);
+  assert.match(componentsCss, /#tab-root-aios \.root-home-overview::before[\s\S]*?pointer-events: none/);
+  assert.match(componentsCss, /#tab-root-aios \.root-home-overview::after[\s\S]*?pointer-events: none/);
+  assert.match(componentsCss, /#tab-root-aios \.root-home-overview[\s\S]*?border: 1px solid #C8D5E5/);
+  assert.match(componentsCss, /#tab-root-aios \.root-home-overview \.root-status-label[\s\S]*?color: #475569/);
+  assert.match(componentsCss, /#tab-members \.member-snap[\s\S]*?border-left-color: #94A3B8/);
+  assert.match(componentsCss, /#tab-members \.member-snap-role,[\s\S]*?font-size: 14px[\s\S]*?line-height: 1\.5/);
+  assert.match(componentsCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?#tab-root-aios \.module-card/);
+  assert.match(componentsCss, /#tab-members \.member-snap:hover[\s\S]*?translateY\(-4px\)[\s\S]*?#tab-members \.member-snap:focus-visible/);
+  assert.doesNotMatch(componentsCss, /(?<!#tab-root-aios )\.module-card-grid\s*\{[^}]*background/);
+  const root = segments['tab-root-aios'];
+  const members = segments['tab-members'];
+  assert.equal((root.match(/class="module-card module-card--/g) || []).length, 12);
+  assert.equal((members.match(/class="member-snap /g) || []).length, 4);
+});
+
+test('Stage 1 official logo preserves the existing header controls', () => {
+  assert.match(html, /class="topbar-brand"/);
+  assert.match(html, /<img class="topbar-logo-mark" src="assets\/images\/logo-mark\.png" alt="Digit Web Lanka logo" \/>/);
+  assert.doesNotMatch(html, /class="topbar-sep"/);
+  assert.match(html, /class="topbar-sub">Dashboard v0\.1/);
+  assert.match(html, /id="calendarAuthIndicator"/);
+  assert.match(html, /id="calendarAuthChangeTokenBtn"/);
+  assert.match(html, /id="announcementBell"/);
+  assert.match(html, /id="searchInput"/);
+  assert.match(html, /id="searchClear"/);
 });

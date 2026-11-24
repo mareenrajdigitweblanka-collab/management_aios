@@ -120,3 +120,13 @@ test('index.html contains no copied reference ISSUES fixture array', () => {
   assert.ok(!/const ISSUES = \[/.test(html));
   assert.ok(!/"ticketId":\s*"ND-001"/.test(html));
 });
+
+
+test('Stage 6D Issues overview preserves the workspace mount and existing navigation surface', () => {
+  var panel = segments['tab-issues'];
+  assert.match(panel, /module-overview module-overview--issues/);
+  assert.match(panel, /issues-heading/);
+  assert.match(panel, /data-searchable/);
+  assert.match(panel, /issuesWorkspace/);
+  assert.doesNotMatch(panel, /member-header/);
+});

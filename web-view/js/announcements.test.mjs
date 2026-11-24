@@ -639,7 +639,7 @@ test('No socket is created for an unauthenticated bell', withEnv(async () => {
   var rootEl = document.createElement('div');
   mod.mountAnnouncementBell(rootEl, {
     api: makeBellFixtureApi({ wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } }),
-    WebSocketImpl: makeFakeWebSocketClass(instances)
+    enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
   });
   await flush();
   assert.equal(instances.length, 0);
@@ -649,7 +649,7 @@ test('A socket connects after authentication, exactly once', withEnv(async () =>
   var instances = [];
   await mountBellWithFixture(
     { wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } },
-    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+    { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) }
   );
   assert.equal(instances.length, 1, 'exactly one socket — never duplicated');
 }));
@@ -660,7 +660,7 @@ test('WebSocket URL is built from ANNOUNCEMENTS_WS_BASE with the ticket in the q
   var rootEl = document.createElement('div');
   mod.mountAnnouncementBell(rootEl, {
     api: makeBellFixtureApi({ wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } }),
-    WebSocketImpl: makeFakeWebSocketClass(instances)
+    enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
   });
   await flush();
   assert.equal(instances.length, 1);
@@ -685,7 +685,7 @@ test('Raw member bearer token never appears anywhere in the WebSocket URL', with
   var rootEl = document.createElement('div');
   mod.mountAnnouncementBell(rootEl, {
     api: makeBellFixtureApi({ wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } }),
-    WebSocketImpl: makeFakeWebSocketClass(instances)
+    enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
   });
   await flush();
   assert.equal(instances[0].url.indexOf('super-secret-long-lived-member-token'), -1);
@@ -693,7 +693,7 @@ test('Raw member bearer token never appears anywhere in the WebSocket URL', with
 
 test('No WebSocket connection is attempted when no ticket source is configured (production safety default)', withEnv(async () => {
   var instances = [];
-  await mountBellWithFixture(undefined, { WebSocketImpl: makeFakeWebSocketClass(instances) });
+  await mountBellWithFixture(undefined, { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) });
   assert.equal(instances.length, 0, 'connectRealtimeSocket must no-op, not throw, when api.wsTicket is absent');
 }));
 
@@ -713,7 +713,7 @@ test('Preview hostname: no ws-ticket request and no WebSocket are attempted at a
   var wsTicketCalls = 0;
   await mountBellWithFixture(
     { wsTicket: function () { wsTicketCalls += 1; return Promise.resolve(WS_TICKET_FIXTURE); } },
-    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+    { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) }
   );
   assert.equal(wsTicketCalls, 0, 'getWsTicket (via api.wsTicket) must never be called on a Preview hostname');
   assert.equal(instances.length, 0, 'no WebSocket must ever be constructed on a Preview hostname');
@@ -746,7 +746,7 @@ test('Production hostname: the realtime socket still connects normally — the P
   var wsTicketCalls = 0;
   await mountBellWithFixture(
     { wsTicket: function () { wsTicketCalls += 1; return Promise.resolve(WS_TICKET_FIXTURE); } },
-    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+    { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) }
   );
   assert.equal(wsTicketCalls, 1);
   assert.equal(instances.length, 1, 'production must still get exactly one socket, unaffected by the Preview guard');
@@ -757,7 +757,7 @@ test('Localhost: the realtime socket still connects normally — the Preview gua
   var wsTicketCalls = 0;
   await mountBellWithFixture(
     { wsTicket: function () { wsTicketCalls += 1; return Promise.resolve(WS_TICKET_FIXTURE); } },
-    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+    { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) }
   );
   assert.equal(wsTicketCalls, 1);
   assert.equal(instances.length, 1, 'localhost must still get exactly one socket, unaffected by the Preview guard');
@@ -774,7 +774,7 @@ test('An incoming announcement_notification_changed event triggers an authoritat
         return Promise.resolve(feedCalls === 1 ? { unread_count: 0, items: [] } : { unread_count: 1, items: [] });
       }
     },
-    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+    { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) }
   );
   var callsBeforeSignal = feedCalls;
   assert.equal(rootEl.querySelector('.msc-ann-bell-badge').hidden, true);
@@ -795,7 +795,7 @@ test('An incoming realtime signal invokes onRealtimeSignal so a mounted Notifica
   var rootEl = document.createElement('div');
   mod.mountAnnouncementBell(rootEl, {
     api: makeBellFixtureApi({ wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } }),
-    WebSocketImpl: makeFakeWebSocketClass(instances),
+    enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances),
     onRealtimeSignal: function () { realtimeSignalCalls += 1; }
   });
   await flush();
@@ -811,7 +811,7 @@ test('An unrelated/malformed message is ignored — never crashes, never trigger
   var instances = [];
   await mountBellWithFixture(
     { wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); }, feed: function () { feedCalls += 1; return Promise.resolve(FEED_FIXTURE); } },
-    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+    { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) }
   );
   var callsAfterMount = feedCalls;
 
@@ -831,7 +831,7 @@ test('A dropped connection schedules a bounded reconnect, starting at 1 second',
     var rootEl = document.createElement('div');
     mod.mountAnnouncementBell(rootEl, {
       api: makeBellFixtureApi({ wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } }),
-      WebSocketImpl: makeFakeWebSocketClass(instances)
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
     });
     await flush();
     assert.equal(instances.length, 1);
@@ -856,7 +856,7 @@ test('Reconnect backoff progresses through the bounded delay table and resets on
     var rootEl = document.createElement('div');
     mod.mountAnnouncementBell(rootEl, {
       api: makeBellFixtureApi({ wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } }),
-      WebSocketImpl: makeFakeWebSocketClass(instances)
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
     });
     await flush();
 
@@ -895,7 +895,7 @@ test('stop() closes the socket and cancels any pending reconnect — an old memb
     var rootEl = document.createElement('div');
     var handle = mod.mountAnnouncementBell(rootEl, {
       api: makeBellFixtureApi({ wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } }),
-      WebSocketImpl: makeFakeWebSocketClass(instances)
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
     });
     await flush();
     instances[0].onclose(); // a pending reconnect is now scheduled
@@ -910,11 +910,158 @@ test('stop() closes the socket and cancels any pending reconnect — an old memb
   }
 }));
 
+test('A confirmed unavailable ticket configuration stops retries while HTTP polling remains available', withEnv(async () => {
+  var env = installFakeBrowserGlobals({ storedAuth: { token: 't', memberKey: 'mayurika' } });
+  var ticketCalls = 0;
+  var feedCalls = 0;
+  try {
+    var mod = await loadAnnModule();
+    var handle = mod.mountAnnouncementBell(document.createElement('div'), {
+      api: makeBellFixtureApi({
+        wsTicket: function () {
+          ticketCalls += 1;
+          return Promise.reject(Object.assign(new Error('unavailable'), {
+            status: 503,
+            body: { detail: 'Realtime notifications are not available.' }
+          }));
+        },
+        feed: function () { feedCalls += 1; return Promise.resolve(FEED_FIXTURE); }
+      }),
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass([])
+    });
+    await flush();
+
+    assert.equal(ticketCalls, 1, 'configuration 503 is not retried');
+    assert.deepEqual(Object.keys(env.window._timeouts), [], 'no reconnect timer remains pending');
+    await handle.refresh();
+    assert.ok(feedCalls >= 2, 'the HTTP polling fallback remains usable');
+    handle.stop();
+  } finally {
+    env.restore();
+  }
+}));
+
+test('WebSocket feature flag defaults off while authenticated HTTP polling continues', withEnv(async () => {
+  var env = installFakeBrowserGlobals({ storedAuth: { token: 't', memberKey: 'mayurika' } });
+  var ticketCalls = 0;
+  var feedCalls = 0;
+  var instances = [];
+  try {
+    var mod = await loadAnnModule();
+    var handle = mod.mountAnnouncementBell(document.createElement('div'), {
+      api: makeBellFixtureApi({
+        wsTicket: function () { ticketCalls += 1; return Promise.resolve(WS_TICKET_FIXTURE); },
+        feed: function () { feedCalls += 1; return Promise.resolve(FEED_FIXTURE); }
+      }),
+      WebSocketImpl: makeFakeWebSocketClass(instances)
+    });
+    await flush();
+
+    assert.equal(ticketCalls, 0, 'disabled WebSocket does not request a ticket');
+    assert.equal(instances.length, 0, 'disabled WebSocket does not open a connection');
+    assert.ok(feedCalls >= 1, 'HTTP notification feed still loads');
+    assert.ok(env.window._intervalIdCounter >= 1, 'HTTP polling interval remains armed');
+    handle.stop();
+  } finally {
+    env.restore();
+  }
+}));
+test('Transient ticket failures use the delay table and stop after the finite retry budget', withEnv(async () => {
+  var env = installFakeBrowserGlobals({ storedAuth: { token: 't', memberKey: 'mayurika' } });
+  var ticketCalls = 0;
+  try {
+    var mod = await loadAnnModule();
+    var handle = mod.mountAnnouncementBell(document.createElement('div'), {
+      api: makeBellFixtureApi({
+        wsTicket: function () {
+          ticketCalls += 1;
+          return Promise.reject(Object.assign(new Error('temporary failure'), { status: 503, body: { detail: 'Temporary overload.' } }));
+        }
+      }),
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass([])
+    });
+    await flush();
+
+    var expectedDelays = [1000, 2000, 5000, 10000, 30000];
+    for (var i = 0; i < expectedDelays.length; i += 1) {
+      var pending = Object.values(env.window._timeouts);
+      assert.equal(pending.length, 1);
+      assert.equal(pending[0].delay, expectedDelays[i]);
+      pending[0].cb();
+      await flush();
+    }
+
+    assert.equal(ticketCalls, expectedDelays.length + 1, 'initial request plus the finite retry budget');
+    assert.deepEqual(Object.keys(env.window._timeouts), [], 'persistent transient errors eventually stop retrying');
+    handle.stop();
+  } finally {
+    env.restore();
+  }
+}));
+
+test('Hidden pages cancel reconnect timers and resume the socket when visible and authenticated', withEnv(async () => {
+  var instances = [];
+  var env = installFakeBrowserGlobals({ storedAuth: { token: 't', memberKey: 'mayurika' } });
+  var ticketCalls = 0;
+  try {
+    var mod = await loadAnnModule();
+    var handle = mod.mountAnnouncementBell(document.createElement('div'), {
+      api: makeBellFixtureApi({
+        wsTicket: function () {
+          ticketCalls += 1;
+          return Promise.resolve(WS_TICKET_FIXTURE);
+        }
+      }),
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
+    });
+    await flush();
+    instances[0].onclose();
+    assert.equal(Object.keys(env.window._timeouts).length, 1);
+
+    document.visibilityState = 'hidden';
+    document.dispatchEvent({ type: 'visibilitychange' });
+    assert.deepEqual(Object.keys(env.window._timeouts), [], 'hidden state clears the pending reconnect timer');
+
+    document.visibilityState = 'visible';
+    document.dispatchEvent({ type: 'visibilitychange' });
+    await flush();
+    assert.equal(ticketCalls, 2, 'visible authenticated page requests a fresh ticket');
+    assert.equal(instances.length, 2, 'visible page restores the WebSocket');
+    handle.stop();
+  } finally {
+    env.restore();
+  }
+}));
+test('stop() prevents a late failed ticket request from scheduling a retry', withEnv(async () => {
+  var env = installFakeBrowserGlobals({ storedAuth: { token: 't', memberKey: 'mayurika' } });
+  var rejectTicket;
+  var instances = [];
+  try {
+    var mod = await loadAnnModule();
+    var handle = mod.mountAnnouncementBell(document.createElement('div'), {
+      api: makeBellFixtureApi({
+        wsTicket: function () {
+          return new Promise(function (_resolve, reject) { rejectTicket = reject; });
+        }
+      }),
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
+    });
+    assert.equal(typeof rejectTicket, 'function');
+    handle.stop();
+    rejectTicket(Object.assign(new Error('late failure'), { status: 503, body: { detail: 'Temporary overload.' } }));
+    await flush();
+
+    assert.deepEqual(Object.keys(env.window._timeouts), [], 'a late failure after stop cannot schedule another ticket attempt');
+    assert.equal(instances.length, 0, 'a stopped mount cannot open a socket');
+  } finally {
+    env.restore();
+  }
+}));
 test('stop() closes an open socket', withEnv(async () => {
   var instances = [];
   var { handle } = await mountBellWithFixture(
     { wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); } },
-    { WebSocketImpl: makeFakeWebSocketClass(instances) }
+    { enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances) }
   );
   handle.stop();
   assert.equal(instances[0].closeCalls, 1);
@@ -933,7 +1080,7 @@ test('Polling continues as the fallback alongside an active WebSocket — neithe
         wsTicket: function () { return Promise.resolve(WS_TICKET_FIXTURE); },
         feed: function () { feedCalls += 1; return Promise.resolve(FEED_FIXTURE); }
       }),
-      WebSocketImpl: makeFakeWebSocketClass(instances)
+      enableWebSocket: true, WebSocketImpl: makeFakeWebSocketClass(instances)
     });
     await flush();
     // startPolling() still registers its interval (the fake window's

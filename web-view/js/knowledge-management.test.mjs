@@ -2329,3 +2329,13 @@ test('172. clearing a search filter with existing results keeps the table visibl
   resolveList({ records: [FIXTURE_DOC], total: 1, limit: 200, offset: 0 });
   await flush();
 }));
+
+
+test('Stage 6D Knowledge Management overview preserves the workspace mount and existing navigation surface', () => {
+  var panel = segments['tab-knowledge-management'];
+  assert.match(panel, /module-overview module-overview--knowledge/);
+  assert.match(panel, /knowledge-management-heading/);
+  assert.match(panel, /data-searchable/);
+  assert.match(panel, /knowledgeManagementWorkspace/);
+  assert.doesNotMatch(panel, /member-header/);
+});

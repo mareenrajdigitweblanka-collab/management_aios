@@ -27,7 +27,7 @@ var navCss = readFileSync(navCssPath, 'utf8');
 
 var EXPECTED_NAV_TABS = [
   'root-aios', 'file-map',
-  'mayurika-hr', 'suman-recruitment', 'arun-implementation', 'rajiv-blocked', 'paraparan',
+  'members', 'mayurika-hr', 'suman-recruitment', 'arun-implementation', 'rajiv-blocked',
   'staff-data', 'review-summaries', 'issues',
   'knowledge-management', 'announcements'
 ];
@@ -109,7 +109,18 @@ test('the compact-height media queries reduce .app-sidebar padding, group spacin
     assert.match(block, /\.app-sidebar\s*\{[^}]*padding\s*:/, 'sidebar padding should be reduced');
     assert.match(block, /\.app-sidebar-group \+ \.app-sidebar-group\s*\{[^}]*margin-top\s*:/, 'inter-group spacing should be reduced');
     assert.match(block, /\.app-nav-btn\s*\{[^}]*padding\s*:/, 'nav-btn padding should be reduced');
-    assert.match(block, /\.app-nav-icon,?\s*\n?\s*\.app-sidebar-collapse-toggle\s*\{[^}]*width\s*:/, 'icon/button container size should be reduced');
+    assert.match(block, /\.app-nav-icon[\s\S]*?width\s*:/, 'icon size should be defined');
+    assert.match(block, /\.app-sidebar-collapse-toggle[\s\S]*?width\s*:/, 'collapse control size should be defined');
+  });
+});
+
+test('short-height sidebar controls retain 44px clickable rows while icons stay compact', () => {
+  var stage3 = navCss.slice(navCss.indexOf('/* Stage 3: sidebar modernization refinements */'));
+  var blocks = stage3.split(/@media \(max-height:\s*\d+px\)/).slice(1);
+  assert.ok(blocks.length >= 2);
+  blocks.forEach(function (block) {
+    assert.match(block, /\.app-nav-btn\s*\{[^}]*min-height\s*:\s*44px/);
+    assert.match(block, /\.app-sidebar-collapse-toggle\s*\{[^}]*width\s*:\s*44px[^}]*height\s*:\s*44px/);
   });
 });
 

@@ -704,3 +704,49 @@
         height: 13px;
       }
     }
+
+
+/* Stage 3: sidebar modernization refinements */
+.app-sidebar {
+  background: #0f172a;
+  border-right-color: rgba(148,163,184,.22);
+}
+.app-sidebar-group + .app-sidebar-group { margin-top: var(--space-4); }
+.app-sidebar-title { padding: 5px 10px 7px; color: #a8b8cc; font-size: .68rem; letter-spacing: .09em; }
+.app-nav-btn { min-height: 44px; padding: 6px 10px; border: 1px solid transparent; }
+.app-nav-btn:hover { background: rgba(255,255,255,.085); border-color: rgba(148,163,184,.16); }
+.app-nav-btn.active { background: linear-gradient(90deg, rgba(37,99,235,.28), rgba(37,99,235,.12)); border-color: rgba(96,165,250,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+.app-nav-btn:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 2px; box-shadow: 0 0 0 4px rgba(125,211,252,.18); }
+.app-nav-btn--locked { opacity: .68; }
+.app-nav-btn--locked:hover { background: rgba(255,255,255,.055); border-color: transparent; }
+.app-nav-btn-badge { min-height: 22px; align-items: center; border: 1px solid rgba(180,83,9,.25); }
+.app-nav-btn-sub { color: #a8b8cc; }
+.app-nav-btn.active .app-nav-btn-sub { color: #bae6fd; }
+.app-nav-icon { box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+.app-nav-btn.active .app-nav-icon { box-shadow: 0 0 0 3px rgba(96,165,250,.1), inset 0 1px 0 rgba(255,255,255,.08); }
+@media (max-height: 820px) {
+  .app-sidebar { padding: var(--space-3) var(--space-3); }
+  .app-sidebar-group + .app-sidebar-group { margin-top: var(--space-2); }
+  .app-sidebar-title { padding: 3px 10px 4px; }
+  .app-nav-btn { min-height: 44px; padding: 0 10px; }
+  .app-nav-icon { width: 26px; height: 26px; }
+  .app-sidebar-collapse-toggle { width: 44px; height: 44px; }
+}
+@media (max-height: 620px) {
+  .app-sidebar { padding: var(--space-2) var(--space-3); }
+  .app-sidebar-group + .app-sidebar-group { margin-top: 4px; }
+  .app-sidebar-title { padding: 2px 10px 3px; }
+  .app-nav-btn { min-height: 44px; padding: 0 10px; }
+  .app-nav-icon { width: 22px; height: 22px; }
+  .app-sidebar-collapse-toggle { width: 44px; height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-nav-btn, .app-nav-btn::before, .app-sidebar-collapse-toggle { transition: none !important; }
+}
+
+/* Stage 6E: preserve the sidebar navigation contracts while making its text and status affordances resilient at narrow widths. */
+.app-nav-btn { line-height: 1.2; }
+.app-nav-btn-text,
+.app-nav-btn-sub { min-width: 0; }
+.app-nav-btn-sub { line-height: 1.2; }
+.app-nav-btn-badge { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

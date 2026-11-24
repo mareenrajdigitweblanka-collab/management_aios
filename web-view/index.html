@@ -83,8 +83,10 @@
           <path d="M3 5.5h14M3 10h14M3 14.5h14" />
         </svg>
       </button>
-      <span class="topbar-logo">Management <span>AIOS</span></span>
-      <div class="topbar-sep"></div>
+      <div class="topbar-brand">
+        <img class="topbar-logo-mark" src="assets/images/logo-mark.png" alt="Digit Web Lanka logo" />
+        <span class="topbar-logo">Management <span>AIOS</span></span>
+      </div>
       <span class="topbar-sub">Dashboard v0.1</span>
     </div>
     <!-- Calendar member-token authorization (2026-07-29; Change-token UX
@@ -217,6 +219,7 @@
       </div>
       <div class="app-sidebar-group">
         <div class="app-sidebar-title">Members</div>
+        <button type="button" class="app-nav-btn" data-tab="members" title="All Members"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7.5" cy="7" r="2.5"/><path d="M3 16c0-2.8 2-5 4.5-5s4.5 2.2 4.5 5M14 5v5M11.5 7.5h5"/></svg></span><span class="app-nav-btn-text"><span class="app-nav-btn-label">All Members</span></span></button>
         <button type="button" class="app-nav-btn" data-tab="mayurika-hr" title="Mayurika — HR">
           <span class="app-nav-icon" aria-hidden="true">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -261,18 +264,6 @@
           </span>
           <span class="app-nav-btn-text"><span class="app-nav-btn-label">Rajiv</span><span
               class="app-nav-btn-sub">Admin</span></span>
-        </button>
-        <button type="button" class="app-nav-btn" data-tab="paraparan" title="Paraparan — Auditor">
-          <span class="app-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round" aria-hidden="true">
-              <rect x="5" y="4.5" width="10" height="12.5" rx="1.3" />
-              <path d="M8 3.3h4v2.2H8z" />
-              <path d="M7.5 10.7l1.8 1.8 3.2-3.6" />
-            </svg>
-          </span>
-          <span class="app-nav-btn-text"><span class="app-nav-btn-label">Paraparan</span><span
-              class="app-nav-btn-sub">Auditor</span></span>
         </button>
       </div>
       <div class="app-sidebar-group">
@@ -355,43 +346,110 @@
   ══════════════════════════════════ -->
     <div class="tab-panel active" id="tab-root-aios" role="tabpanel">
 
-      <!-- Landing summary hero -->
-      <div class="landing-hero" data-searchable
-        data-tags="landing summary welcome overview read only internal build what you can do gated pass amber">
-        <h1>Management <span>AIOS</span> Dashboard</h1>
-        <p class="lh-sub">A plain-language, read-only window into the Management AIOS — the system that watches for
-          management gaps and tracks HR records, recruitment, and KPI processes. Nothing here can be edited, saved, or
-          sent. Use it to check status at a glance and see what each team member is working on.</p>
-
-        <div class="landing-hero-meta">
-          <span class="lh-pill lh-pill-ok"><span aria-hidden="true">&#9679;</span> Build status: <strong>Internal Build v0.1 · PASS</strong></span>
-          <span class="lh-pill lh-pill-amber"><span aria-hidden="true">&#9679;</span> <strong>AMBER</strong> — user review pending</span>
-          <span class="lh-pill lh-pill-lock"><span aria-hidden="true">&#128274;</span> <strong>READ-ONLY</strong> · no data saved or changed</span>
-          <span class="lh-pill">Last sync: <strong>2026-07-07</strong> · commit <strong>d649652</strong></span>
+      <div class="root-dashboard-intro greeting-panel" data-searchable data-tags="management aios dashboard modules overview read only"><svg class="dashboard-wave-art" viewBox="0 0 1000 180" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="welcomeWaveBody" x1="0" y1="0" x2="0" y2="1">
+              <stop stop-color="#0758d7" stop-opacity=".34"/>
+              <stop offset=".42" stop-color="#0868e8" stop-opacity=".24"/>
+              <stop offset="1" stop-color="#071b43" stop-opacity=".02"/>
+            </linearGradient>
+            <linearGradient id="welcomeWaveAtmosphere" x1="470" y1="170" x2="940" y2="40" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#0758d7" stop-opacity=".12"/>
+              <stop offset=".48" stop-color="#087dff" stop-opacity=".46"/>
+              <stop offset=".72" stop-color="#20baff" stop-opacity=".58"/>
+              <stop offset="1" stop-color="#1269e8" stop-opacity=".32"/>
+            </linearGradient>
+            <linearGradient id="welcomeWaveCrest" x1="470" y1="170" x2="940" y2="40" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#1677f4" stop-opacity=".28"/>
+              <stop offset=".42" stop-color="#118cff" stop-opacity=".86"/>
+              <stop offset=".7" stop-color="#65dcff"/>
+              <stop offset=".9" stop-color="#28baff" stop-opacity=".92"/>
+              <stop offset="1" stop-color="#1686f5" stop-opacity=".72"/>
+            </linearGradient>
+            <filter id="welcomeWaveBodySoft" x="-40" y="-30" width="1080" height="260" filterUnits="userSpaceOnUse">
+              <feGaussianBlur stdDeviation="7"/>
+            </filter>
+            <filter id="welcomeWaveAtmosphereBlur" x="-80" y="-80" width="1160" height="340" filterUnits="userSpaceOnUse">
+              <feGaussianBlur stdDeviation="19"/>
+            </filter>
+          </defs>
+          <path d="M350 172 C430 171 466 164 510 148 C560 128 615 88 690 65 C750 47 815 41 875 42 C922 43 962 40 1000 39 L1000 92 C958 94 916 93 875 91 C810 89 752 95 690 111 C615 129 560 160 510 177 C462 193 405 194 350 180 Z" fill="url(#welcomeWaveBody)" filter="url(#welcomeWaveBodySoft)"/>
+          <path d="M350 172 C430 171 466 164 510 148 C560 128 615 88 690 65 C750 47 815 41 875 42 C922 43 962 40 1000 39" fill="none" stroke="url(#welcomeWaveAtmosphere)" stroke-width="34" stroke-linecap="round" filter="url(#welcomeWaveAtmosphereBlur)" opacity=".72"/>
+          <path d="M350 172 C430 171 466 164 510 148 C560 128 615 88 690 65 C750 47 815 41 875 42 C922 43 962 40 1000 39" fill="none" stroke="url(#welcomeWaveCrest)" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        </svg><div class="greeting-panel-copy"><p class="module-card-kicker">WELCOME TO MANAGEMENT AIOS</p><h1 id="homeGreeting">Welcome to Management AIOS</h1><p>Choose a workspace to get started with your management activities.</p></div><div id="homeGreetingIcon" class="greeting-panel-icon" aria-hidden="true"></div></div>
+      <section class="module-card-section" aria-labelledby="module-card-heading"><div class="module-card-section-heading"><h2 id="module-card-heading">Modules</h2><p>Open a workspace or connected tool.</p></div><div class="module-card-grid">
+<button type="button" class="module-card module-card--calendar-mayurika" data-goto="mayurika-hr" data-searchable data-tags="mayurika hr calendar schedule"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h3M8 16h5"/></svg></span><span class="module-card-label">Mayurika — HR Calendar</span><span class="module-card-description">Open Mayurika's schedule</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--calendar-suman" data-goto="suman-recruitment" data-searchable data-tags="suman recruitment calendar schedule"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13l2 2 5-5"/></svg></span><span class="module-card-label">Suman — Recruitment Calendar</span><span class="module-card-description">Open Suman's schedule</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--calendar-arun" data-goto="arun-implementation" data-searchable data-tags="arun implementation calendar schedule"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h8M8 16h4"/><path d="M17 13v5M14.5 15.5h5"/></svg></span><span class="module-card-label">Arun — Implementation Calendar</span><span class="module-card-description">Open Arun's schedule</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--calendar-rajiv" data-goto="rajiv-blocked" data-searchable data-tags="rajiv admin calendar schedule"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M12 12l1.2 2.2L15.5 15l-1.7 1.7-2.2-1.1.4-2.3L8.5 15l2.3-.8z"/></svg></span><span class="module-card-label">Rajiv — Admin Calendar</span><span class="module-card-description">Open Rajiv's schedule</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--members" data-goto="members" data-searchable data-tags="members"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.2 2.5-5.5 5.5-5.5s5.5 2.3 5.5 5.5M16 11a3 3 0 1 0 0-6M15.5 13.8c2.9.2 5 2.3 5 5.2"/></svg></span><span class="module-card-label">Members Overview</span><span class="module-card-description">Team workspaces</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--staff" data-goto="staff-data" data-searchable data-tags="staff data"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span><span class="module-card-label">Staff Data</span><span class="module-card-description">Staff records</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--reviews" data-goto="review-summaries" data-searchable data-tags="review summaries"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3.5h6M9 9h6M9 13h6M9 17h4"/></svg></span><span class="module-card-label">Review Summaries</span><span class="module-card-description">Review status</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--issues" data-goto="issues" data-searchable data-tags="issues"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 9v5M12 17.5v.1"/></svg></span><span class="module-card-label">Issues</span><span class="module-card-description">Open concerns</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--knowledge" data-goto="knowledge-management" data-searchable data-tags="knowledge management"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5c2.8-1.4 5.5-1.2 8 1v13c-2.5-2.2-5.2-2.4-8-1.2v-12.8ZM20 5.5c-2.8-1.4-5.5-1.2-8 1v13c2.5-2.2 5.2-2.4 8-1.2v-12.8Z"/><path d="M12 6.5v13"/></svg></span><span class="module-card-label">Knowledge Management</span><span class="module-card-description">Source guidance</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+          <a class="module-card module-card--digitdisplay" href="https://digit-display.vercel.app/admin" target="_blank" rel="noopener noreferrer" data-external-auth-link="digitdisplay" data-searchable data-tags="digitdisplay external"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h13v10H3zM8 20h4M5 18h10M18 4h3v7M21 4l-7 7"/></svg></span><span class="module-card-label">DigitDisplay</span><span class="module-card-description">External workspace</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></a>
+<button type="button" class="module-card module-card--announcements" data-goto="announcements" data-searchable data-tags="announcements notifications"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10v4h3l8 4V6l-8 4H4Z"/><path d="M7 14l1.5 5h2L9 14M18 9c1.5 1.5 1.5 4.5 0 6M20.5 7c2.5 2.7 2.5 7.3 0 10"/></svg></span><span class="module-card-label">Announcements</span><span class="module-card-description">Team notices</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button>
+<button type="button" class="module-card module-card--help" data-goto="help-usage" data-searchable data-tags="help information reference labels"><span class="module-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.4 2.4 0 1 1 4 1.8c-1 .7-1.7 1.2-1.7 2.7M12 17.2v.1"/></svg></span><span class="module-card-label">Help &amp; Information</span><span class="module-card-description">Dashboard guide and labels</span><span class="module-card-arrow" aria-hidden="true">&#8250;</span></button></div></section>
+      <section class="root-home-overview" aria-labelledby="root-home-overview-heading" data-searchable
+        data-tags="system overview snapshot sync foundation member workbenches sources confirmation"><svg class="overview-wave-art" viewBox="0 0 720 180" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="overviewWaveA" x1="0" y1="0" x2="1" y2="1">
+              <stop stop-color="#e9f4ff" stop-opacity=".3"/>
+              <stop offset=".6" stop-color="#8fc5fa" stop-opacity=".8"/>
+              <stop offset="1" stop-color="#cce6ff"/>
+            </linearGradient>
+            <linearGradient id="overviewWaveB" x1="0" y1="0" x2="1" y2="0">
+              <stop stop-color="#c4e2ff" stop-opacity=".2"/>
+              <stop offset=".55" stop-color="#b9ddff" stop-opacity=".9"/>
+              <stop offset="1" stop-color="#94c7f5" stop-opacity=".85"/>
+            </linearGradient>
+          </defs>
+          <path d="M0 180C155 177 238 163 339 108S516 4 605 16 684 36 720 49V180Z" fill="url(#overviewWaveA)"/>
+          <path d="M64 180C211 172 251 113 339 101S444 151 539 109 655 56 720 79V180Z" fill="url(#overviewWaveB)"/>
+          <path d="M200 180C313 154 341 137 420 153S593 108 720 126V180Z" fill="#dceeff" fill-opacity=".55"/>
+        </svg>
+        <div class="root-section-heading">
+          <p class="module-card-kicker">Recorded snapshot</p>
+          <h2 id="root-home-overview-heading">System Overview</h2>
+          <p>These displayed values are a recorded snapshot, not live monitoring.</p>
         </div>
-
-        <div class="landing-hero-cols">
-          <div class="lh-col lh-col-do">
-            <h4><span aria-hidden="true">&#128161;</span> What you can do here</h4>
-            <ul>
-              <li>Read the current status of each area and team member.</li>
-              <li>Open a member tab to see their systems, tables, and next actions.</li>
-              <li>Search across every tab for a name, topic, or file path.</li>
-              <li>Follow evidence and source pointers back to the real files.</li>
-            </ul>
+          <div class="root-status-grid root-status-grid--overview">
+          <article class="root-status-card">
+            <span class="root-status-label">Last Sync</span>
+            <strong>Last sync: 2026-07-07</strong>
+            <span class="root-status-note">Commit d649652</span>
+          </article>
+          <article class="root-status-card">
+            <span class="root-status-label">System</span>
+            <strong>Foundation Draft</strong>
+            <span class="root-status-note">v0.1 &middot; Root CLAUDE.md canonical</span>
+          </article>
+          <article class="root-status-card">
+            <span class="root-status-label">Member workbenches</span>
+            <strong>4 / 4</strong>
+            <span class="root-status-note">Arun ACTIVE &middot; Suman ACTIVE &middot; Mayurika ACTIVE &middot; Rajiv ACTIVE WITH LIMITS</span>
+          </article>
+          <article class="root-status-card">
+            <span class="root-status-label">Sources registered</span>
+            <strong>40</strong>
+            <span class="root-status-note">Most READY &middot; 2 PENDING &middot; 2 SUPERSEDED &middot; +14 Mayurika confirmations (GAP-42, 2026-07-07)</span>
+          </article>
+          <article class="root-status-card root-status-card--amber">
+            <span class="root-status-label">Needs confirmation</span>
+            <strong>9</strong>
+            <span class="root-status-note">9 items open; 3 earlier items resolved 2026-06-30 by Arun's confirmation</span>
+          </article>
           </div>
-          <div class="lh-col lh-col-gated">
-            <h4><span aria-hidden="true">&#128274;</span> What is still gated</h4>
-            <ul>
-              <li>Rajiv/Admin draft governance sections remain pending required reviewer approvals.</li>
-              <li>All 9 open confirmation items — cannot be resolved from this dashboard.</li>
-              <li>Live KPI, AXIOM, ROI and leave figures — no real data is shown.</li>
-              <li>Any editing, saving, or sending — done in VS Code only.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      </section>
 
+    </div><!-- /tab-root-aios -->
+
+
+    <!-- ══════════════════════════════════
+       TAB 2 — MAYURIKA HR
+  ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-members" role="tabpanel">
+      <div class="members-directory-header" data-searchable data-tags="members management team workspaces"><p class="module-card-kicker">Members</p><h1>Management Team</h1><p>Review the current source-backed member summaries below. Select a card to open that member workspace.</p></div>
       <!-- Member snapshot — quick navigation -->
       <h2 class="section-title">Team Members at a Glance</h2>
       <div class="member-snap-grid">
@@ -399,6 +457,7 @@
         <button type="button" class="member-snap member-snap-active" data-goto="mayurika-hr" data-searchable
           data-tags="mayurika hr officer active nslp control system snapshot navigation">
           <div class="member-snap-top">
+            <span class="member-snap-avatar" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="2.5"/><path d="M4.5 16c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span>
             <span class="member-snap-name">Mayurika</span>
             <span class="badge badge-pass">ACTIVE</span>
           </div>
@@ -426,6 +485,7 @@
         <button type="button" class="member-snap member-snap-active" data-goto="suman-recruitment" data-searchable
           data-tags="suman recruitment officer active snapshot navigation head hunter onboarder">
           <div class="member-snap-top">
+            <span class="member-snap-avatar" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="2.5"/><path d="M4.5 16c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span>
             <span class="member-snap-name">Suman</span>
             <span class="badge badge-pass">ACTIVE</span>
           </div>
@@ -448,6 +508,7 @@
         <button type="button" class="member-snap member-snap-active" data-goto="arun-implementation" data-searchable
           data-tags="arun implementation officer active snapshot navigation kpi axiom control tables">
           <div class="member-snap-top">
+            <span class="member-snap-avatar" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="2.5"/><path d="M4.5 16c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span>
             <span class="member-snap-name">Arun</span>
             <span class="badge badge-pass">ACTIVE</span>
           </div>
@@ -471,6 +532,7 @@
         <button type="button" class="member-snap member-snap-amber" data-goto="rajiv-blocked" data-searchable
           data-tags="rajiv admin manager registered working draft partly approved partly draft src-admin-001 active with limits">
           <div class="member-snap-top">
+            <span class="member-snap-avatar" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7" r="2.5"/><path d="M4.5 16c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/></svg></span>
             <span class="member-snap-name">Rajiv / Admin</span>
             <span class="badge badge-amber">ACTIVE WITH LIMITS</span>
           </div>
@@ -495,264 +557,9 @@
 
       </div>
 
-      <!-- How to use -->
-      <div class="how-to-box">
-        <h3>How to use this dashboard</h3>
-        <p>This dashboard gives you a quick view of the Management AIOS — a system that tracks management gaps, HR
-          records, recruitment, and KPI processes. It is a <strong>read-only view</strong>. You cannot change anything
-          from here.</p>
-        <ul>
-          <li>Use the tabs above to move between different areas (Root overview, each team member's section, review
-            actions, and the file map).</li>
-          <li>Use the search bar to find anything — file paths, names, or topics — across all tabs.</li>
-          <li>Editing is done in VS Code only, by opening the repository files directly.</li>
-          <li>Every tab has a "What should I do next?" box at the bottom — check that first if you're unsure what to do.
-          </li>
-        </ul>
-      </div>
 
-      <!-- Label legend -->
-      <details style="margin-bottom:20px;">
-        <summary
-          style="cursor:pointer;font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">
-          What the labels mean (reference)</summary>
-        <div class="label-legend" style="margin-top:14px;">
-          <div class="legend-item">
-            <span class="legend-item-label">Active</span>
-            <span class="badge badge-pass" style="margin-bottom:4px;">ACTIVE</span>
-            <span class="legend-item-desc">Approved by its owner for current internal use.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Pass</span>
-            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
-            <span class="legend-item-desc">Validation complete — this check has passed.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Amber</span>
-            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
-            <span class="legend-item-desc">Needs review, a source, or approval before it is final.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Gated</span>
-            <span class="badge badge-blocked" style="margin-bottom:4px;">GATED</span>
-            <span class="legend-item-desc">Intentionally blocked until a required document or sign-off arrives.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Read-Only</span>
-            <span class="badge badge-viewonly" style="margin-bottom:4px;">READ-ONLY</span>
-            <span class="legend-item-desc">No data is saved or changed — this is a view only.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">View Only</span>
-            <span class="badge badge-viewonly" style="margin-bottom:4px;">VIEW ONLY</span>
-            <span class="legend-item-desc">This dashboard cannot edit or save any files.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Draft</span>
-            <span class="badge badge-draft" style="margin-bottom:4px;">DRAFT</span>
-            <span class="legend-item-desc">File created but not yet reviewed and approved by its owner.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Pending</span>
-            <span class="badge badge-pending" style="margin-bottom:4px;">PENDING</span>
-            <span class="legend-item-desc">Waiting for a review, confirmation, or source document.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Blocked</span>
-            <span class="badge badge-blocked" style="margin-bottom:4px;">BLOCKED</span>
-            <span class="legend-item-desc">Cannot proceed — a required document or source is missing.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Pass-Amber</span>
-            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
-            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
-            <span class="legend-item-desc">PASS = safe to continue. AMBER = non-blocking items still to resolve.</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-item-label">Needs Confirmation</span>
-            <span class="badge badge-verify" style="margin-bottom:4px;" title="Technical label: [VERIFY]">Needs
-              Confirmation</span>
-            <span class="legend-item-desc">An item that is unconfirmed (shown as <code>[VERIFY]</code> in source files).
-              Cannot be treated as fact until resolved.</span>
-          </div>
-        </div>
-      </details>
+    </div>
 
-      <!-- Status summary -->
-      <h2 class="section-title">Current System Status</h2>
-      <div class="status-bar" data-searchable data-tags="status summary foundation draft pass amber">
-        <div class="status-item">
-          <span class="status-label">System</span>
-          <span class="status-value">Foundation Draft</span>
-          <span class="status-sub">v0.1 — Root CLAUDE.md canonical</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label">Member Workbenches</span>
-          <span class="status-value">4 / 4</span>
-          <span class="status-sub">Arun: ACTIVE · Suman: ACTIVE · Mayurika: ACTIVE · Rajiv: ACTIVE WITH LIMITS</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label">Sources Registered</span>
-          <span class="status-value">40</span>
-          <span class="status-sub">Most READY · 2 PENDING · 2 SUPERSEDED · +14 Mayurika confirmations (GAP-42,
-            2026-07-07)</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label" title="Technical label: [VERIFY] Items Open">Needs Confirmation</span>
-          <span class="status-value">9</span>
-          <span class="status-sub">9 items open — 3 earlier items resolved 2026-06-30 by Arun's confirmation</span>
-        </div>
-        <div class="status-divider"></div>
-        <div class="status-item">
-          <span class="status-label">Overall</span>
-          <span class="status-value" style="color:var(--pass);">PASS</span>
-          <span class="status-sub">AMBER — domain approvals pending</span>
-        </div>
-      </div>
-
-      <!-- Root rules -->
-      <h2 class="section-title">Key Rules</h2>
-      <div class="cards gap">
-        <div class="card" data-searchable data-tags="claude.md canonical root truth">
-          <div class="card-header">
-            <div class="card-title">CLAUDE.md is the root truth</div>
-            <span class="badge badge-source" title="Technical label: CANONICAL">Master Reference</span>
-          </div>
-          <div class="card-note">The file <code>CLAUDE.md</code> in the root of the repository is the master reference.
-            This dashboard is a summary view only — if anything here conflicts with CLAUDE.md, CLAUDE.md is correct.
-          </div>
-        </div>
-        <div class="card" data-searchable data-tags="source register evidence authority">
-          <div class="card-header">
-            <div class="card-title">Source register controls evidence</div>
-            <span class="badge badge-source" title="Technical label: AUTHORITY">Rule</span>
-          </div>
-          <div class="card-note">Every fact in the AIOS must trace to a source registered in
-            <code>evidence/source-register.md</code>. If there is no registered source, the fact must be flagged as
-            <em>needing confirmation</em> (technically tagged <code>[VERIFY]</code>) until one is provided.
-          </div>
-        </div>
-        <div class="card" data-searchable data-tags="verify register unresolved items">
-          <div class="card-header">
-            <div class="card-title">Verify register tracks unresolved items</div>
-            <span class="badge badge-verify" title="Technical label: [VERIFY]">Needs Confirmation</span>
-          </div>
-          <div class="card-note">The file <code>context/verify-register.md</code> lists all 9 open items (items 8–10
-            from the original list were resolved 2026-06-30 by SRC-ARUN-CONF-001). An open item cannot be marked
-            resolved until registered source evidence is produced and the relevant domain owner confirms it.</div>
-        </div>
-        <div class="card" data-searchable data-tags="read only vs code editing dashboard static">
-          <div class="card-header">
-            <div class="card-title">Editing is in VS Code only</div>
-            <span class="badge badge-viewonly">VIEW ONLY</span>
-          </div>
-          <div class="card-note">This dashboard is a static HTML file. There is no edit button, no save button, and no
-            form. All changes to the AIOS are made by editing source files in VS Code and regenerating this dashboard
-            via Claude Code.</div>
-        </div>
-      </div>
-
-      <!-- Safety rules + Deployment — two-column on desktop, stacked below 1024px -->
-      <div class="root-info-grid">
-        <div class="root-info-cell">
-          <h2 class="section-title">Safety Rules</h2>
-          <div class="warning-box" data-searchable
-            data-tags="safety rules read only no sensitive data verify preserved">
-            <h3>What this dashboard will never do</h3>
-            <ul>
-              <li>Store or display sensitive HR, staff, candidate, salary, health, disciplinary, grievance, or PDPA
-                personal data.</li>
-              <li>Resolve any open confirmation item — all 9 remain open.</li>
-              <li>Mark any DRAFT workbench as ACTIVE — that requires domain owner sign-off.</li>
-              <li>Treat the Rajiv / Admin Manager workbench's draft governance sections as approved — SRC-ADMIN-001 is
-                registered, but Governance Principles, KPI Governance System, Accountability Framework, Governance
-                Meetings, Management Drift Assessment, and Governance Improvement Roadmap remain draft pending MD (and,
-                for KPI Governance, Arun/Implementation Officer) review.</li>
-              <li>Reproduce policy rules, KPI band tables, recruitment criteria, or leave policy as if this file is the
-                source of truth.</li>
-              <li>Connect to any backend, API, or database — this is a static HTML file with no server-side code.</li>
-              <li>Allow any file editing or writing from the browser.</li>
-              <li>Promote content to parent AIOS truth — domain owner sign-off is required before any promotion.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="root-info-cell">
-          <h2 class="section-title">Netlify Deployment</h2>
-          <div class="deploy-box" data-searchable data-tags="netlify deployment static html no build">
-            <h3>Netlify Deployment Note</h3>
-            <ul>
-              <li>This is a single self-contained HTML file. No build step required.</li>
-              <li>No external CDN, no JavaScript frameworks, no server-side dependencies.</li>
-              <li>Deploy by connecting the repository to Netlify. Set the publish directory to <code>web-view</code> and
-                leave the build command empty.</li>
-              <li>All CSS and JavaScript are inline. The file is fully self-contained at deployment.</li>
-              <li>Editing is done exclusively through VS Code on the source repository. This dashboard does not expose
-                any edit interface.</li>
-              <li>No environment variables, secrets, or API keys are required or used.</li>
-              <li>For updated content: edit source files in VS Code, then regenerate this index.html through Claude Code
-                and redeploy to Netlify.</li>
-              <li>Branch: <code>individual-aios</code> — confirm merge to main before final Netlify production
-                deployment.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pass/fail -->
-      <h2 class="section-title">Overall Result</h2>
-      <div class="result-box" data-searchable
-        data-tags="pass amber result internal build active arun suman mayurika system build 2026-07-06">
-        <h3 title="Technical result: PASS — AMBER noted">Overall Result: Ready — a few items still need confirmation
-        </h3>
-        <p>
-          The dashboard is built and working. Arun's, Suman's, and Mayurika's sections are active and reviewed.
-          Rajiv / Admin is active with limits — SRC-ADMIN-001 is registered, but its draft governance sections
-          remain pending approval. 9 items across the AIOS still need confirmation before this can be treated as
-          final. The dashboard stays read-only throughout — nothing here can be changed, saved, or sent.
-        </p>
-        <details style="margin-top:10px;">
-          <summary style="cursor:pointer;font-size:.76rem;color:var(--muted);">Evidence / Technical Details</summary>
-          <p style="font-size:.78rem;color:var(--muted);margin-top:6px;line-height:1.6;">
-            Management AIOS Dashboard v0.1 — Internal Build. System interface build applied 2026-07-06 (build-first,
-            validate-later). Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is ACTIVE — Suman
-            Reviewed 2026-06-30. Mayurika's workbench is ACTIVE — Mayurika Reviewed 2026-07-03. [VERIFY] count corrected
-            to 9 (items 8–10 resolved 2026-06-30). Safety note updated. All source pointers correct. No sensitive
-            data shown. No policy text duplicated. (Historical note, 2026-07-10: the preview-only tabs referenced
-            in earlier build history — including Skills Register, Handover Preview, Overview, Recurring Issues,
-            Blocked/Gated Modules, Review Queue, Markdown Viewer, and Document Register — were removed from this
-            dashboard's navigation; the underlying repository files they referenced were not deleted and remain
-            in the repository.)
-            <br><br>
-            <strong>Build evidence:</strong>
-            <code>evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md</code>
-            <br><strong>Validation:</strong> <code>validation/management-aios-system-build-check.md</code>
-            <br><br>
-            <strong>AMBER:</strong> Future user validation pending — Mayurika, Varmen, Management Team must inspect and
-            confirm. Rajiv / Admin Manager section is ACTIVE WITH LIMITS — SRC-ADMIN-001 is registered; its draft
-            governance sections remain pending MD (and, for KPI Governance, Arun/Implementation Officer) review.
-            9 [VERIFY] items remain open. Dashboard
-            remains read-only.
-          </p>
-        </details>
-      </div>
-
-      <div class="next-step-box">
-        <h3>What should I do next?</h3>
-        <p>All domain owner workbench reviews are complete (Arun, Suman, Mayurika). Rajiv/Admin is registered and
-          active with limits — its draft governance sections remain pending MD and domain-owner review. Next:
-          complete those remaining reviews, then commit and redeploy to Netlify.</p>
-      </div>
-
-    </div><!-- /tab-root-aios -->
-
-
-    <!-- ══════════════════════════════════
-       TAB 2 — MAYURIKA HR
-  ══════════════════════════════════ -->
     <div class="tab-panel tab-panel--calendar" id="tab-mayurika-hr" role="tabpanel">
 
       <!-- 1. Introduction -->
@@ -1700,10 +1507,10 @@
   ══════════════════════════════════ -->
     <div class="tab-panel" id="tab-staff-data" role="tabpanel">
 
-      <div class="member-header">
-        <h2>Staff Data — Technical Pilot</h2>
-        <p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p>
-      </div>
+      <section class="module-overview module-overview--staff" aria-labelledby="staff-data-heading" data-searchable data-tags="staff data technical pilot live read only ledsone sourced">
+        <div class="module-overview-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+        <div class="module-overview-body"><p class="module-overview-kicker">Staff / Read-only data</p><div class="module-overview-heading-row"><div><h1 id="staff-data-heading">Staff Data</h1><p class="module-overview-lede">Browse the current staff record set from the Staff API. Use the filters, table controls, and record details below to inspect the source-backed data.</p></div><div class="module-overview-meta" aria-label="Staff Data context"><span class="module-overview-badge module-overview-badge--info">Read-only</span><span class="module-overview-badge">Ledsone-sourced</span></div></div><p class="staff-pilot-classification-label">TECHNICAL PILOT CLASSIFICATION — BUSINESS RULE [VERIFY]</p></div>
+      </section>
 
       <div class="member-testing-table-note" data-searchable
         data-tags="staff data live ledsone verify api">
@@ -1738,11 +1545,10 @@
   ══════════════════════════════════ -->
     <div class="tab-panel" id="tab-review-summaries" role="tabpanel">
 
-      <div class="member-header">
-        <h2>Review Summaries</h2>
-        <p class="staff-pilot-classification-label">Shared read across every authenticated Management Team
-          reviewer — only the reviewer who created a summary may edit or delete it.</p>
-      </div>
+      <section class="module-overview module-overview--reviews" aria-labelledby="review-summaries-heading" data-searchable data-tags="review summaries staff meeting reviewer history shared read edit attachments pdf zip">
+        <div class="module-overview-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 19h4"/></svg></div>
+        <div class="module-overview-body"><p class="module-overview-kicker">Staff / Review workspace</p><div class="module-overview-heading-row"><div><h1 id="review-summaries-heading">Review Summaries</h1><p class="module-overview-lede">Find a staff member, review the saved history, and work with summaries using the controls below.</p></div><div class="module-overview-meta" aria-label="Review Summaries access"><span class="module-overview-badge module-overview-badge--info">Shared read</span><span class="module-overview-badge">Owner edits</span></div></div><p class="staff-pilot-classification-label">Shared read across every authenticated Management Team reviewer — only the reviewer who created a summary may edit or delete it.</p></div>
+      </section>
 
       <div class="review-summaries-workspace" id="reviewSummariesWorkspace" data-searchable
         data-tags="review summaries staff meeting reviewer history mayurika suman arun rajiv paraparan"></div>
@@ -1760,11 +1566,10 @@
   ══════════════════════════════════ -->
     <div class="tab-panel" id="tab-issues" role="tabpanel">
 
-      <div class="member-header">
-        <h2>Issues</h2>
-        <p class="member-header-lede">View, filter and manage operational issues assigned through Management AIOS.</p>
-      </div>
-
+      <section class="module-overview module-overview--issues" aria-labelledby="issues-heading" data-searchable data-tags="issues tickets management raised by team status assign assigned">
+        <div class="module-overview-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 17H3L12 3z"/><path d="M12 9v5M12 17h.01"/></svg></div>
+        <div class="module-overview-body"><p class="module-overview-kicker">Operations / Issue tracking</p><div class="module-overview-heading-row"><div><h1 id="issues-heading">Issues</h1><p class="module-overview-lede">Review the current Issues workspace, filter tickets by owner, team, or status, and use the available assignment and ticket controls below.</p></div></div></div>
+      </section>
       <div class="msc-issues-workspace" id="issuesWorkspace" data-searchable
         data-tags="issues tickets management raised by domain status red amber green assign assigned"></div>
 
@@ -1791,11 +1596,10 @@
   ══════════════════════════════════ -->
     <div class="tab-panel" id="tab-knowledge-management" role="tabpanel">
 
-      <div class="member-header">
-        <h2>Knowledge Management</h2>
-        <p class="member-header-lede">Find and open approved company documents from one centralized location.</p>
-      </div>
-
+      <section class="module-overview module-overview--knowledge" aria-labelledby="knowledge-management-heading" data-searchable data-tags="knowledge management company documents search team type source history">
+        <div class="module-overview-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v5h5M8 13h8M8 17h6"/></svg></div>
+        <div class="module-overview-body"><p class="module-overview-kicker">Knowledge / Company documents</p><div class="module-overview-heading-row"><div><h1 id="knowledge-management-heading">Knowledge Management</h1><p class="module-overview-lede">Search the authorized company document library, refine results by team or type, and use the available document and history controls below.</p></div></div></div>
+      </section>
       <div class="msc-km-workspace" id="knowledgeManagementWorkspace" data-searchable
         data-tags="knowledge management company documents search team type google sheet doc"></div>
 
@@ -1805,6 +1609,278 @@
     <!-- ══════════════════════════════════
        TAB — ANNOUNCEMENTS (REQ-ANN-001, 2026-08-12)
   ══════════════════════════════════ -->
+    <div class="tab-panel" id="tab-help-usage" role="tabpanel">
+      <div class="module-overview module-overview--help help-information-header" data-searchable data-tags="help information reference labels">
+        <p class="module-card-kicker">HELP CENTER</p>
+        <h1 id="help-usage-heading">Help &amp; Information</h1>
+        <p>Use this guide to understand the dashboard, its labels, and its read-only boundaries.</p>
+      </div>
+      <!-- How to use -->
+      <details class="root-reference-group">
+        <summary><span class="root-reference-summary-label">Getting Started</span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="root-reference-body how-to-box">
+        <p>This dashboard gives you a quick view of the Management AIOS — a system that tracks management gaps, HR
+          records, recruitment, and KPI processes. It is a <strong>read-only view</strong>. You cannot change anything
+          from here.</p>
+        <ul>
+          <li>Use the tabs above to move between different areas (Root overview, each team member's section, review
+            actions, and the file map).</li>
+          <li>Use the search bar to find anything — file paths, names, or topics — across all tabs.</li>
+          <li>Editing is done in VS Code only, by opening the repository files directly.</li>
+          <li>Every tab has a "What should I do next?" box at the bottom — check that first if you're unsure what to do.
+          </li>
+        </ul>
+        <h3>What you can do here</h3>
+        <ul>
+          <li>Read the current status of each area and team member.</li>
+          <li>Open a member tab to see systems, tables, and next actions.</li>
+          <li>Search across every tab for a name, topic, or file path.</li>
+          <li>Follow evidence and source pointers back to the real files.</li>
+        </ul>
+        </div>
+      </details>
+
+      <!-- Label legend -->
+      <details class="root-reference-group">
+        <summary><span class="root-reference-summary-label">Status Label Guide</span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="label-legend" style="margin-top:14px;">
+          <div class="legend-item">
+            <span class="legend-item-label">Active</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">ACTIVE</span>
+            <span class="legend-item-desc">Approved by its owner for current internal use.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pass</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+            <span class="legend-item-desc">Validation complete — this check has passed.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Amber</span>
+            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+            <span class="legend-item-desc">Needs review, a source, or approval before it is final.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Gated</span>
+            <span class="badge badge-blocked" style="margin-bottom:4px;">GATED</span>
+            <span class="legend-item-desc">Intentionally blocked until a required document or sign-off arrives.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Read-Only</span>
+            <span class="badge badge-viewonly" style="margin-bottom:4px;">READ-ONLY</span>
+            <span class="legend-item-desc">No data is saved or changed — this is a view only.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">View Only</span>
+            <span class="badge badge-viewonly" style="margin-bottom:4px;">VIEW ONLY</span>
+            <span class="legend-item-desc">This dashboard cannot edit or save any files.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Draft</span>
+            <span class="badge badge-draft" style="margin-bottom:4px;">DRAFT</span>
+            <span class="legend-item-desc">File created but not yet reviewed and approved by its owner.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pending</span>
+            <span class="badge badge-pending" style="margin-bottom:4px;">PENDING</span>
+            <span class="legend-item-desc">Waiting for a review, confirmation, or source document.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Blocked</span>
+            <span class="badge badge-blocked" style="margin-bottom:4px;">BLOCKED</span>
+            <span class="legend-item-desc">Cannot proceed — a required document or source is missing.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Pass-Amber</span>
+            <span class="badge badge-pass" style="margin-bottom:4px;">PASS</span>
+            <span class="badge badge-amber" style="margin-bottom:4px;">AMBER</span>
+            <span class="legend-item-desc">PASS = safe to continue. AMBER = non-blocking items still to resolve.</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-item-label">Needs Confirmation</span>
+            <span class="badge badge-verify" style="margin-bottom:4px;" title="Technical label: [VERIFY]">Needs
+              Confirmation</span>
+            <span class="legend-item-desc">An item that is unconfirmed (shown as <code>[VERIFY]</code> in source files).
+              Cannot be treated as fact until resolved.</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="root-reference-group">
+        <summary><span class="root-reference-summary-label">Governance &amp; Safety Rules</span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="root-reference-body cards gap">
+        <div class="card" data-searchable data-tags="claude.md canonical root truth">
+          <div class="card-header">
+            <div class="card-title">CLAUDE.md is the root truth</div>
+            <span class="badge badge-source" title="Technical label: CANONICAL">Master Reference</span>
+          </div>
+          <div class="card-note">The file <code>CLAUDE.md</code> in the root of the repository is the master reference.
+            This dashboard is a summary view only — if anything here conflicts with CLAUDE.md, CLAUDE.md is correct.
+          </div>
+        </div>
+        <div class="card" data-searchable data-tags="source register evidence authority">
+          <div class="card-header">
+            <div class="card-title">Source register controls evidence</div>
+            <span class="badge badge-source" title="Technical label: AUTHORITY">Rule</span>
+          </div>
+          <div class="card-note">Every fact in the AIOS must trace to a source registered in
+            <code>evidence/source-register.md</code>. If there is no registered source, the fact must be flagged as
+            <em>needing confirmation</em> (technically tagged <code>[VERIFY]</code>) until one is provided.
+          </div>
+        </div>
+        <div class="card" data-searchable data-tags="verify register unresolved items">
+          <div class="card-header">
+            <div class="card-title">Verify register tracks unresolved items</div>
+            <span class="badge badge-verify" title="Technical label: [VERIFY]">Needs Confirmation</span>
+          </div>
+          <div class="card-note">The file <code>context/verify-register.md</code> lists all 9 open items (items 8–10
+            from the original list were resolved 2026-06-30 by SRC-ARUN-CONF-001). An open item cannot be marked
+            resolved until registered source evidence is produced and the relevant domain owner confirms it.</div>
+        </div>
+        <div class="card" data-searchable data-tags="read only vs code editing dashboard static">
+          <div class="card-header">
+            <div class="card-title">Editing is in VS Code only</div>
+            <span class="badge badge-viewonly">VIEW ONLY</span>
+          </div>
+          <div class="card-note">This dashboard is a static HTML file. There is no edit button, no save button, and no
+            form. All changes to the AIOS are made by editing source files in VS Code and regenerating this dashboard
+            via Claude Code.</div>
+        </div>
+
+          <h3 class="root-reference-subheading">Safety Rules</h3>
+          <div class="warning-box" data-searchable
+            data-tags="safety rules read only no sensitive data verify preserved">
+            <h3>What this dashboard will never do</h3>
+            <ul>
+              <li>Store or display sensitive HR, staff, candidate, salary, health, disciplinary, grievance, or PDPA
+                personal data.</li>
+              <li>Resolve any open confirmation item — all 9 remain open.</li>
+              <li>Mark any DRAFT workbench as ACTIVE — that requires domain owner sign-off.</li>
+              <li>Treat the Rajiv / Admin Manager workbench's draft governance sections as approved — SRC-ADMIN-001 is
+                registered, but Governance Principles, KPI Governance System, Accountability Framework, Governance
+                Meetings, Management Drift Assessment, and Governance Improvement Roadmap remain draft pending MD (and,
+                for KPI Governance, Arun/Implementation Officer) review.</li>
+              <li>Reproduce policy rules, KPI band tables, recruitment criteria, or leave policy as if this file is the
+                source of truth.</li>
+              <li>Connect to any backend, API, or database — this is a static HTML file with no server-side code.</li>
+              <li>Allow any file editing or writing from the browser.</li>
+              <li>Promote content to parent AIOS truth — domain owner sign-off is required before any promotion.</li>
+            </ul>
+          </div>
+                </div>
+      </details>
+
+
+
+      <details class="root-reference-group">
+        <summary><span class="root-reference-summary-label">Deployment Information <span class="root-verification-note">[VERIFY later]</span></span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="root-reference-body">
+          <div class="deploy-box" data-searchable data-tags="netlify deployment static html no build">
+            <h3>Netlify Deployment Note <span class="root-verification-note">[VERIFY later]</span></h3>
+            <ul>
+              <li>This is a single self-contained HTML file. No build step required.</li>
+              <li>No external CDN, no JavaScript frameworks, no server-side dependencies.</li>
+              <li>Deploy by connecting the repository to Netlify. Set the publish directory to <code>web-view</code> and
+                leave the build command empty.</li>
+              <li>All CSS and JavaScript are inline. The file is fully self-contained at deployment.</li>
+              <li>Editing is done exclusively through VS Code on the source repository. This dashboard does not expose
+                any edit interface.</li>
+              <li>No environment variables, secrets, or API keys are required or used.</li>
+              <li>For updated content: edit source files in VS Code, then regenerate this index.html through Claude Code
+                and redeploy to Netlify.</li>
+              <li><span class="root-verification-note">[VERIFY later]</span> Branch: <code>individual-aios</code> — confirm merge to main before final Netlify production
+                deployment.</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <details class="root-reference-group">
+        <summary><span class="root-reference-summary-label">Evidence &amp; Technical Details</span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="root-reference-body">
+          <p style="font-size:.78rem;color:var(--muted);margin-top:6px;line-height:1.6;">
+            Management AIOS Dashboard v0.1 — Internal Build. System interface build applied 2026-07-06 (build-first,
+            validate-later). Arun's workbench is ACTIVE — Arun Reviewed 2026-06-30. Suman's workbench is ACTIVE — Suman
+            Reviewed 2026-06-30. Mayurika's workbench is ACTIVE — Mayurika Reviewed 2026-07-03. [VERIFY] count corrected
+            to 9 (items 8–10 resolved 2026-06-30). Safety note updated. All source pointers correct. No sensitive
+            data shown. No policy text duplicated. (Historical note, 2026-07-10: the preview-only tabs referenced
+            in earlier build history — including Skills Register, Handover Preview, Overview, Recurring Issues,
+            Blocked/Gated Modules, Review Queue, Markdown Viewer, and Document Register — were removed from this
+            dashboard's navigation; the underlying repository files they referenced were not deleted and remain
+            in the repository.)
+            <br><br>
+            <strong>Build evidence:</strong>
+            <code>evidence/stakeholder-confirmations/management-aios-system-build-request-2026-07-06.md</code>
+            <br><strong>Validation:</strong> <code>validation/management-aios-system-build-check.md</code>
+            <br><br>
+            <strong>AMBER:</strong> Future user validation pending — Mayurika, Varmen, Management Team must inspect and
+            confirm. Rajiv / Admin Manager section is ACTIVE WITH LIMITS — SRC-ADMIN-001 is registered; its draft
+            governance sections remain pending MD (and, for KPI Governance, Arun/Implementation Officer) review.
+            9 [VERIFY] items remain open. Dashboard
+            remains read-only.
+          </p>
+        </div>
+      </details>
+
+
+
+      <details class="root-reference-group help-status-group">
+        <summary><span class="root-reference-summary-label">System Status Snapshot</span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="root-reference-body">
+          <div class="root-section-heading">
+            <p class="module-card-kicker">Recorded snapshot</p>
+            <h2>System Status Snapshot</h2>
+            <p>Existing build, review, access, and evidence indicators. These are static dashboard values, not live monitoring.</p>
+          </div>
+        <div class="root-status-grid root-status-grid--primary">
+          <article class="root-status-card root-status-card--pass">
+            <span class="root-status-label">Build status</span>
+            <strong>Internal Build v0.1 &middot; PASS</strong>
+            <span class="root-status-note">Existing internal build status</span>
+          </article>
+          <article class="root-status-card root-status-card--amber">
+            <span class="root-status-label">Review status</span>
+            <strong>AMBER</strong>
+            <span class="root-status-note">User review pending; domain approvals remain pending</span>
+          </article>
+          <article class="root-status-card root-status-card--readonly">
+            <span class="root-status-label">Access</span>
+            <strong>READ-ONLY</strong>
+            <span class="root-status-note">No data saved or changed</span>
+          </article>
+        </div>
+
+        </div>
+      </details>
+
+      <details class="root-reference-group help-status-group">
+        <summary><span class="root-reference-summary-label">Pending Actions &amp; Restrictions</span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="root-reference-body">
+          <article class="root-alert-card root-alert-card--amber">
+            <h3>Outstanding actions and restrictions</h3>
+            <ul>
+              <li>Rajiv/Admin draft governance sections remain pending required reviewer approvals.</li>
+              <li>All 9 open confirmation items cannot be resolved from this dashboard.</li>
+              <li>Live KPI, AXIOM, ROI, and leave figures are not shown because no real data is available here.</li>
+              <li>Editing, saving, or sending is done in VS Code only.</li>
+            </ul>
+          </article>
+        </div>
+      </details>
+
+      <details class="root-reference-group help-status-group">
+        <summary><span class="root-reference-summary-label">Next Steps &amp; Guidance</span><svg class="root-reference-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></summary>
+        <div class="root-reference-body">
+          <article class="root-alert-card root-alert-card--pass">
+            <h3>What should I do next?</h3>
+            <p>All domain owner workbench reviews are complete (Arun, Suman, Mayurika). Rajiv/Admin is registered and
+              active with limits; its draft governance sections remain pending MD and domain-owner review. Next:
+              complete those remaining reviews, then commit and redeploy to Netlify.</p>
+          </article>
+        </div>
+      </details>
+
+    </div><!-- /tab-help-usage -->
+
     <div class="tab-panel" id="tab-announcements" role="tabpanel">
 
       <div class="member-header">

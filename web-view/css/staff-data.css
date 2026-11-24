@@ -827,3 +827,16 @@
         width: 100vw;
       }
     }
+
+
+/* Stage 6G.6: Staff Data helper and state-message typography. */
+.hr-testing-table-note,
+.member-testing-table-note,
+.hr-testing-table-footnote,
+.member-testing-table-footnote,
+.data-table-card-footnote,
+.staff-table-empty {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-description);
+  line-height: var(--line-height-description);
+}
